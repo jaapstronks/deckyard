@@ -4,8 +4,13 @@
  */
 
 import { validateApiKey, TIER_LIMITS, hasScope } from '../../../storage/api-keys.js';
-import { normalizeEmail } from '../../../utils/normalize.js';
-import { normalizePresentationScope, canActorAccessPresentation } from '../../../utils/presentation-authz.js';
+import {
+  normalizePresentationScope,
+  canActorAccessPresentation,
+  hasIdentity,
+  isOwnerOrCreator,
+} from '../../../utils/presentation-authz.js';
+import { resolveIdentityByEmail } from '../../../storage/identity-resolver.js';
 import { incrementUsage, getRateLimitHeaders, checkAiRateLimit, checkExportRateLimit } from '../../../storage/api-usage.js';
 import { allowRequest } from '../../../utils/rate-limit.js';
 import { serveJson, forbidden, rateLimited as sendRateLimited, json } from '../../../utils/http.js';
@@ -58,9 +63,16 @@ export async function authenticateApiKey(ctx) {
     return { ok: false, reason: result.reason };
   }
 
-  // Attach API key data to context
+  // Attach API key data to context. An `api_keys` row identifies its owner by
+  // email, so this is where that email becomes the stable `users.id` the
+  // authorization layer keys on — resolved once per request rather than per
+  // deck. A key whose owner has no user row (external/legacy) resolves to null
+  // and the deciders fall back to the email identifier; see
+  // utils/presentation-authz/identity-match.js.
   ctx.apiKey = result;
+  const ownerResolution = await resolveIdentityByEmail(result.ownerEmail);
   ctx.authedUser = {
+    id: ownerResolution?.userId || null,
     email: result.ownerEmail,
     role: 'user',
   };
@@ -121,23 +133,16 @@ export function requireScope(ctx, scope) {
  * getPresentationWithAccess, which is collaborator-aware and distinguishes
  * read from write access.
  * @param {Object} presentation - The presentation object
- * @param {string} ownerEmail - The API key owner's email
+ * @param {Object} actor - The acting API-key owner (`ctx.authedUser`: `{id, email}`)
  * @returns {boolean}
  */
-export function canAccessPresentation(presentation, ownerEmail) {
-  const normalized = normalizeEmail(ownerEmail);
-  if (!normalized) return false;
+export function canAccessPresentation(presentation, actor) {
+  if (!hasIdentity(actor)) return false;
 
   const scope = normalizePresentationScope(presentation?.scope);
   if (scope === 'workspace') return true;
 
-  const owner = normalizeEmail(presentation?.ownerEmail);
-  const createdBy = normalizeEmail(presentation?.createdBy);
-
-  if (owner && owner === normalized) return true;
-  if (createdBy && createdBy === normalized) return true;
-
-  return false;
+  return isOwnerOrCreator(actor, presentation);
 }
 
 /**

@@ -401,6 +401,13 @@ export async function getUserFromRequestAsync(req, ctx) {
         ? 'admin'
         : 'user';
     return {
+      // The stable `users.id`. This is the key every ownership decision keys on
+      // (utils/presentation-authz/identity-match.js); the email beside it is a
+      // display/contact value and a fallback identifier for the shapes that have
+      // no id — file mode, external/legacy rows, the auth-off operator. Only
+      // this async path can carry it: the synchronous getUserFromRequest reads a
+      // cookie without touching the database, and takes no authz decision.
+      id: dbUser.id,
       email,
       role,
       name: dbUser.name || '',

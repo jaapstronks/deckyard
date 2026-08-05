@@ -1,9 +1,13 @@
 import { listPresentations } from '../../../storage/presentations/index.js';
 import { getTagsForPresentations } from '../../../storage/tags/index.js';
 import { serveJson } from '../../../utils/http.js';
-import { normalizePresentationScope, isUnrestricted } from '../../../utils/presentation-authz.js';
+import {
+  normalizePresentationScope,
+  isUnrestricted,
+  hasIdentity,
+  isOwnerOrCreator,
+} from '../../../utils/presentation-authz.js';
 import { resolveThemeThumbBg } from '../../../utils/themes.js';
-import { normalizeEmail } from '../../../utils/normalize.js';
 import { withDbGuard } from '../../../storage/utils/db-guard.js';
 import { getOrgId } from '../../../utils/context.js';
 
@@ -18,17 +22,11 @@ export function belongsInCollection({ user, pres } = {}) {
   const scope = normalizePresentationScope(pres?.scope);
   if (scope === 'workspace') return true;
 
-  const userEmail = normalizeEmail(user?.email);
-  if (!userEmail) return false;
+  if (!hasIdentity(user)) return false;
 
-  const owner = normalizeEmail(pres?.ownerEmail);
-  const createdBy = normalizeEmail(pres?.createdBy);
-
-  // User owns or created the presentation
-  if (owner && owner === userEmail) return true;
-  if (createdBy && createdBy === userEmail) return true;
-
-  return false;
+  // User owns or created the presentation (decided on users.id; see
+  // utils/presentation-authz/identity-match.js).
+  return isOwnerOrCreator(user, pres);
 }
 
 export async function handlePresentationsList({ repoRoot, storageScope, res, authedUser } = {}) {

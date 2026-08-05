@@ -16,7 +16,7 @@
 import { getPresentation } from '../storage/presentations/index.js';
 import {
   canActorAccessPresentation,
-  canDeletePresentation,
+  canActorDeletePresentation,
 } from '../utils/presentation-authz.js';
 
 /**
@@ -54,7 +54,7 @@ export async function loadPresentationChecked(
     throw new Error(`You have read-only access to this presentation: ${presentationId}`);
   }
 
-  if (access === 'delete' && !canDeletePresentation({ user: { email: ownerEmail }, pres })) {
+  if (access === 'delete' && !(await canActorDeletePresentation(pres, ownerEmail))) {
     throw new Error(`Only the presentation owner can delete it: ${presentationId}`);
   }
 

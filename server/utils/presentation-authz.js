@@ -6,7 +6,15 @@
  * - presentation-authz/presentations.js: Core presentation permissions
  * - presentation-authz/comments.js: Comment permissions
  * - presentation-authz/guests.js: Guest permissions
+ * - presentation-authz/identity-match.js: Who an actor is (keyed on `users.id`)
  */
+
+// Identity matching — the one place ownership stamps are compared
+export {
+  isOwnerOrCreator,
+  matchesIdentity,
+  hasIdentity,
+} from './presentation-authz/identity-match.js';
 
 // Core presentation permissions
 export {
@@ -42,6 +50,8 @@ export {
 export {
   checkActorAccess,
   canActorAccessPresentation,
+  canActorDeletePresentation,
+  canActorResolveComment,
   checkActorCommentAccess,
   canActorCommentOnPresentation,
 } from './presentation-authz/actor-access.js';

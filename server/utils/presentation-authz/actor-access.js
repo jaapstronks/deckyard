@@ -6,14 +6,27 @@
  * session/guest context exists. Wraps the canonical canRead/canWrite checks
  * with collaborator-permission lookup so machine clients follow the exact
  * same rules as the editor routes.
+ *
+ * ## Where the email becomes a user id
+ *
+ * These surfaces carry an *email*, because that is what an API key row and the
+ * MCP owner setting hold — while the deciders now key on `users.id`
+ * (identity-match.js). This module is that boundary: the async entry points
+ * resolve the actor's email through the identity resolver once, and hand the
+ * deciders an actor that carries both. An email with no `users` row resolves to
+ * a defined NULL (`external: true`), which simply leaves the actor id-less and
+ * the deciders on their email fallback — the same answer as before.
  */
 
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
+import { resolveIdentityByEmail } from '../../storage/identity-resolver.js';
 import {
   canReadPresentation,
   canWritePresentation,
   canCommentOnPresentation,
+  canDeletePresentation,
 } from './presentations.js';
+import { canResolveComment } from './comments.js';
 
 /**
  * Pure check: can an actor (email only) read or write a presentation?
@@ -22,20 +35,27 @@ import {
  * @param {Object} options
  * @param {Object} options.pres - The presentation object
  * @param {string} options.actorEmail - The acting user's email
+ * @param {string|null} [options.actorUserId=null] - The acting user's `users.id`, when resolved
  * @param {'read'|'write'} [options.access='read'] - Required access level
  * @param {string|null} [options.collaboratorPermission=null] - Collaborator permission level, if any
  * @returns {boolean}
  */
-export function checkActorAccess({ pres, actorEmail, access = 'read', collaboratorPermission = null } = {}) {
+export function checkActorAccess({
+  pres,
+  actorEmail,
+  actorUserId = null,
+  access = 'read',
+  collaboratorPermission = null,
+} = {}) {
   if (!pres || typeof pres !== 'object') return false;
-  const user = actorUser(actorEmail, pres);
+  const user = actorUser(actorEmail, pres, actorUserId);
   const check = access === 'write' ? canWritePresentation : canReadPresentation;
   return check({ user, pres, collaboratorPermission });
 }
 
 /**
  * Build the user shape the canonical checks expect from an actor we only know
- * by email.
+ * by email (plus, once resolved, their stable user id).
  *
  * The organization is taken from the presentation, which makes the workspace
  * grant behave for machine clients exactly as it did before the authorization
@@ -49,10 +69,28 @@ export function checkActorAccess({ pres, actorEmail, access = 'read', collaborat
  *
  * @param {string} actorEmail
  * @param {Object} pres
- * @returns {{email: string, organizationId: string|undefined}}
+ * @param {string|null} [actorUserId]
+ * @returns {{id: string|null, email: string, organizationId: string|undefined}}
  */
-function actorUser(actorEmail, pres) {
-  return { email: actorEmail, organizationId: pres?.organizationId };
+function actorUser(actorEmail, pres, actorUserId = null) {
+  return { id: actorUserId || null, email: actorEmail, organizationId: pres?.organizationId };
+}
+
+/**
+ * Resolve an actor email to its stable `users.id`, if the instance knows one.
+ *
+ * Returns null for an email with no user row (an external/legacy identity, or
+ * file mode, which has no `users` table) — a defined state, not a failure: the
+ * deciders then fall back to the email identifier, which is what such an actor
+ * has. See server/storage/identity-resolver.js.
+ *
+ * @param {string} actorEmail
+ * @returns {Promise<string|null>}
+ */
+async function resolveActorUserId(actorEmail) {
+  if (!actorEmail) return null;
+  const resolution = await resolveIdentityByEmail(actorEmail);
+  return resolution?.userId || null;
 }
 
 /**
@@ -66,10 +104,45 @@ function actorUser(actorEmail, pres) {
  */
 export async function canActorAccessPresentation(pres, actorEmail, access = 'read') {
   if (!pres || typeof pres !== 'object') return false;
-  const collaboratorPermission = actorEmail
-    ? await getCollaboratorPermission(pres.id, actorEmail)
-    : null;
-  return checkActorAccess({ pres, actorEmail, access, collaboratorPermission });
+  const [collaboratorPermission, actorUserId] = await Promise.all([
+    actorEmail ? getCollaboratorPermission(pres.id, actorEmail) : null,
+    resolveActorUserId(actorEmail),
+  ]);
+  return checkActorAccess({ pres, actorEmail, actorUserId, access, collaboratorPermission });
+}
+
+/**
+ * Async check: may an actor (email only) delete a presentation?
+ *
+ * Deletion is owner/creator-only and consults no collaborator row, so this is
+ * the ownership decider with the actor's identity resolved — the machine-client
+ * counterpart of the editor route's canDeletePresentation.
+ *
+ * @param {Object} pres - The presentation object
+ * @param {string} actorEmail - The acting user's email
+ * @returns {Promise<boolean>}
+ */
+export async function canActorDeletePresentation(pres, actorEmail) {
+  if (!pres || typeof pres !== 'object') return false;
+  const actorUserId = await resolveActorUserId(actorEmail);
+  return canDeletePresentation({ user: actorUser(actorEmail, pres, actorUserId), pres });
+}
+
+/**
+ * Async check: may an actor (email only) moderate a comment — resolve, dismiss
+ * or reopen it?
+ *
+ * Deck-ownership-only, like the editor route's canResolveComment, with the
+ * actor's identity resolved to a `users.id` first.
+ *
+ * @param {Object} pres - The presentation the comment lives on
+ * @param {string} actorEmail - The acting user's email
+ * @returns {Promise<boolean>}
+ */
+export async function canActorResolveComment(pres, actorEmail) {
+  if (!pres || typeof pres !== 'object') return false;
+  const actorUserId = await resolveActorUserId(actorEmail);
+  return canResolveComment({ user: actorUser(actorEmail, pres, actorUserId), pres });
 }
 
 /**
@@ -80,12 +153,22 @@ export async function canActorAccessPresentation(pres, actorEmail, access = 'rea
  * @param {Object} options
  * @param {Object} options.pres - The presentation object
  * @param {string} options.actorEmail - The acting user's email
+ * @param {string|null} [options.actorUserId=null] - The acting user's `users.id`, when resolved
  * @param {string|null} [options.collaboratorPermission=null]
  * @returns {boolean}
  */
-export function checkActorCommentAccess({ pres, actorEmail, collaboratorPermission = null } = {}) {
+export function checkActorCommentAccess({
+  pres,
+  actorEmail,
+  actorUserId = null,
+  collaboratorPermission = null,
+} = {}) {
   if (!pres || typeof pres !== 'object') return false;
-  return canCommentOnPresentation({ user: actorUser(actorEmail, pres), pres, collaboratorPermission });
+  return canCommentOnPresentation({
+    user: actorUser(actorEmail, pres, actorUserId),
+    pres,
+    collaboratorPermission,
+  });
 }
 
 /**
@@ -98,8 +181,9 @@ export function checkActorCommentAccess({ pres, actorEmail, collaboratorPermissi
  */
 export async function canActorCommentOnPresentation(pres, actorEmail) {
   if (!pres || typeof pres !== 'object') return false;
-  const collaboratorPermission = actorEmail
-    ? await getCollaboratorPermission(pres.id, actorEmail)
-    : null;
-  return checkActorCommentAccess({ pres, actorEmail, collaboratorPermission });
+  const [collaboratorPermission, actorUserId] = await Promise.all([
+    actorEmail ? getCollaboratorPermission(pres.id, actorEmail) : null,
+    resolveActorUserId(actorEmail),
+  ]);
+  return checkActorCommentAccess({ pres, actorEmail, actorUserId, collaboratorPermission });
 }
