@@ -22,7 +22,7 @@ import { listUsers } from '../../storage/users.js';
 import { sendCollaboratorInviteEmail } from '../../integrations/brevo.js';
 import { canManageCollaborators } from '../../utils/presentation-authz.js';
 import { createRouteContext } from '../../utils/context.js';
-import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, parseJsonBody, jsonError, serverError } from '../../utils/http.js';
+import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, parseJsonBody, jsonError, serverError, getErrorStatus } from '../../utils/http.js';
 import { validatePermission } from '../../utils/request-validators.js';
 import { createNotification } from '../../storage/notifications.js';
 import { broadcastToUser, NotificationEventTypes } from '../../services/notification-events.js';
@@ -31,6 +31,24 @@ import { normalizeEmail } from '../../utils/normalize.js';
 import { createLogger } from '../../utils/logger.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
 const log = createLogger('collaborators');
+
+/**
+ * Human-readable text per invite-failure reason, for the single-invite
+ * response. A reason without an entry sends no `message`, so the canonical
+ * envelope's `error` code carries the meaning on its own — that is what
+ * `already_exists` has always done and what the share modal reads.
+ *
+ * The status per reason is not here: it comes from the shared
+ * `getErrorStatus()` table in `utils/http.js`, so one reason has one status
+ * across every route that answers it.
+ */
+const INVITE_FAILURE_MESSAGES = {
+  user_not_found: 'User not found in organization',
+  invalid_permission: 'Unsupported permission',
+  invalid_email: 'Invalid email address',
+  database_error: 'Failed to add collaborator',
+  unavailable: 'Collaborator storage is unavailable',
+};
 
 /**
  * Handle collaborator management endpoints.
@@ -260,13 +278,19 @@ export async function handleCollaborators({ repoRoot, storageScope, req, res, ur
       // Single mode response (backward compatible)
       const singleResult = results[0];
       if (!singleResult.ok) {
-        if (singleResult.reason === 'already_exists') {
-          return jsonError(res, 409, 'already_exists');
-        }
-        if (singleResult.reason === 'user_not_found') {
-          return badRequest(res, 'User not found in organization');
-        }
-        return badRequest(res, singleResult.reason);
+        // The reason decides the status, and an unmapped reason defaults to
+        // 500 rather than 400: the reasons on this path are a mix of "your
+        // request" (`user_not_found`, `invalid_permission`) and "our side"
+        // (`database_error`, `unavailable`), so a 400 fallthrough silently
+        // blames the caller for a failed insert. The batch branch below has
+        // always reported the reason factually per address; single mode did
+        // not.
+        return jsonError(
+          res,
+          getErrorStatus(singleResult.reason, 500),
+          singleResult.reason,
+          INVITE_FAILURE_MESSAGES[singleResult.reason]
+        );
       }
       serveJson(res, 201, {
         collaborator: singleResult.collaborator,

@@ -234,18 +234,37 @@ const ERROR_STATUS_MAP = {
   // Rate limiting
   rate_limited: 429,
 
-  // Bad request
+  // Conflict (the resource is already in the requested state)
+  already_exists: 409,
+
+  // Bad request — the caller sent something we cannot act on
+  invalid: 400,
   invalid_email: 400,
+  invalid_permission: 400,
+  user_not_found: 400,
+
+  // Ours, not the caller's. These must never answer 4xx: telling a client its
+  // request is malformed when our insert failed sends it off to fix something
+  // that is not broken, and hides the outage from every error dashboard that
+  // watches 5xx.
+  database_error: 500,
+  unavailable: 503,
 };
 
 /**
  * Get HTTP status code for an error reason.
+ *
+ * Pass `500` as the default on any surface whose reasons can be server-side:
+ * an unrecognised reason is our vocabulary failing, not the caller's request.
+ *
  * @param {string} reason - Error reason code
  * @param {number} defaultStatus - Default status if reason not mapped (default: 400)
  * @returns {number} HTTP status code
  */
 export function getErrorStatus(reason, defaultStatus = 400) {
-  return ERROR_STATUS_MAP[reason] || defaultStatus;
+  // `hasOwn`, not truthiness: a bare property read would answer `Object`'s
+  // inherited members (`constructor`, `toString`) with a function.
+  return Object.hasOwn(ERROR_STATUS_MAP, reason) ? ERROR_STATUS_MAP[reason] : defaultStatus;
 }
 
 export function methodNotAllowed(res, allowed) {
