@@ -36,7 +36,8 @@ const log = createLogger('collaborators');
  * Human-readable text per invite-failure reason, for the single-invite
  * response. A reason without an entry sends no `message`, so the canonical
  * envelope's `error` code carries the meaning on its own — that is what
- * `already_exists` has always done and what the share modal reads.
+ * `already_exists` has always done. Adding a message here stays free: clients
+ * branch on the code, not on the display text.
  *
  * The status per reason is not here: it comes from the shared
  * `getErrorStatus()` table in `utils/http.js`, so one reason has one status

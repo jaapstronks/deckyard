@@ -359,11 +359,14 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
         toast?.success(t('share.collaborators.invited', 'Invitation sent'), { durationMs: 2500 });
       }
     } catch (e) {
-      const msg = e?.message || String(e);
-      if (msg.includes('already_exists')) {
+      // Branch on the machine code, never on the message: `api()` puts the
+      // envelope's `error` on `err.code` precisely so display text stays free
+      // to be friendly, translated or absent. Reading the message only ever
+      // worked because this 409 happens to send none.
+      if (e?.code === 'already_exists') {
         toast?.error(t('share.collaborators.alreadyExists', 'One or more users are already collaborators'), { durationMs: 3000 });
       } else {
-        toast?.error(msg, { durationMs: 3000 });
+        toast?.error(e?.message || String(e), { durationMs: 3000 });
       }
     } finally {
       isAddingCollaborator = false;
