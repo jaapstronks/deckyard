@@ -116,10 +116,16 @@ export async function handleJourney(ctx, presentationId) {
 /**
  * GET /api/presentations/:id/analytics/sessions - Get viewer session list.
  *
- * Readable by every reader of the deck, so the device id is replaced here by a
- * per-deck label (see `publicDeviceLabel`): stable within this deck, unrelated
- * to the label the same browser gets in someone else's deck. Same field name,
- * derived value — the raw id does not cross this boundary in any shape.
+ * Readable by every reader of the deck, so two fields are narrowed here at the
+ * response boundary, not in the storage mapper (internal callers —
+ * heartbeat/end/lookup-by-token — still need the raw shapes):
+ *
+ *   - `deviceId` is replaced by a per-deck label (see `publicDeviceLabel`):
+ *     stable within this deck, unrelated to the label the same browser gets in
+ *     someone else's deck. Same field name, derived value.
+ *   - `sessionToken` is dropped entirely. It is the proof-of-possession a
+ *     viewer's browser uses to update or (under the erasure path) delete its own
+ *     session, so it must not be handed to every reader of the deck.
  */
 export async function handleSessions(ctx, presentationId) {
   const { res, url, authedUser } = ctx;
@@ -145,7 +151,7 @@ export async function handleSessions(ctx, presentationId) {
     ...dateRange,
   });
 
-  const sessions = result.sessions.map((session) => ({
+  const sessions = result.sessions.map(({ sessionToken, ...session }) => ({
     ...session,
     deviceId: publicDeviceLabel(session.deviceId, presentationId),
   }));

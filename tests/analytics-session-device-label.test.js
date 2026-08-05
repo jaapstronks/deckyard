@@ -1,5 +1,5 @@
 /**
- * The device id stops at the response boundary of the session list.
+ * Two identifiers stop at the response boundary of the session list.
  *
  * `GET /api/presentations/:id/analytics/sessions` is readable by every reader
  * of a deck (`withPresentationAuth permission: 'read'`), and it used to hand
@@ -17,7 +17,15 @@
  * database, where the erasure path and the `COUNT(DISTINCT device_id)`
  * aggregations need it.
  *
- * Three rules are pinned here, in the order they matter:
+ * The same boundary also drops `sessionToken` entirely. The token is the
+ * proof-of-possession a viewer's own browser uses to update or (under the
+ * erasure path) delete its session; handing it to every reader of the deck
+ * would let any reader act on a session that isn't theirs. Unlike `deviceId`
+ * the response has no use for it at all, so it is omitted rather than derived.
+ * The raw token stays in the storage mapper (`rowToSession`), where the
+ * internal heartbeat/end/lookup-by-token callers need it.
+ *
+ * Four rules are pinned here, in the order they matter:
  *
  *   1. **One browser, two decks → two unrelated labels.** This is the whole
  *      point: cross-deck correlation is broken.
@@ -27,6 +35,9 @@
  *   3. **No field of the response is a raw device id in any shape.** Asserted
  *      over every string in the payload rather than over `deviceId` alone, so a
  *      future field that leaks the raw value fails this test too.
+ *   4. **No session token, in any field, reaches the response.** Asserted the
+ *      same way — over every string and over the `sessionToken` field by name —
+ *      so a future re-spread of the raw row fails here.
  *
  * House shape (see `tests/analytics-gdpr-delete-path.test.js`,
  * `tests/collaborator-cross-org-endpoints.test.js`): the exported handler is
@@ -70,6 +81,10 @@ const OWNER = {
 const DEVICE = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6';
 /** A 32-hex value in any field is the shape rule 3 forbids. */
 const RAW_DEVICE_ID_SHAPE = /^[a-f0-9]{32}$/i;
+/** A live session token, in the 64-hex shape `generateSessionToken` writes. */
+const TOKEN = 'f00dfeed'.repeat(8);
+/** A 64-hex value in any field is the shape rule 4 forbids. */
+const SESSION_TOKEN_SHAPE = /^[a-f0-9]{64}$/i;
 
 // ---------------------------------------------------------------------------
 // Doubles and seeding
@@ -99,11 +114,17 @@ function deckRow(id) {
 }
 
 /** A `view_sessions` row in the shape `createViewSession` writes. */
-function sessionRow({ id, deck, device = DEVICE, startedAt = '2026-03-01T10:00:00.000Z' }) {
+function sessionRow({
+  id,
+  deck,
+  device = DEVICE,
+  token = TOKEN,
+  startedAt = '2026-03-01T10:00:00.000Z',
+}) {
   return {
     id,
     presentation_id: deck,
-    session_token: `tok-${id}`,
+    session_token: token,
     source_type: 'share_link',
     source_id: null,
     viewer_type: 'anonymous',
@@ -276,6 +297,50 @@ test('no field of the response carries a raw device id', async () => {
   assert.ok(
     !strings.includes(DEVICE),
     'and the seeded device id specifically is nowhere in the payload'
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Rule 4 — the session token does not cross the boundary at all
+// ---------------------------------------------------------------------------
+
+test('no field of the response carries a session token', async () => {
+  seed([
+    sessionRow({ id: 's-one', deck: DECK_ONE }),
+    sessionRow({ id: 's-two', deck: DECK_ONE }),
+  ]);
+
+  const { status, body } = await callSessions(DECK_ONE);
+
+  assert.equal(status, 200);
+  assert.equal(body.sessions.length, 2);
+
+  // The field is gone by name, not merely renamed or nulled.
+  for (const session of body.sessions) {
+    assert.ok(
+      !('sessionToken' in session),
+      'the sessions list no longer exposes the sessionToken field'
+    );
+  }
+
+  /** Every string anywhere in the payload, field name included. */
+  const strings = [];
+  (function walk(value) {
+    if (typeof value === 'string') strings.push(value);
+    else if (Array.isArray(value)) value.forEach(walk);
+    else if (value && typeof value === 'object') Object.values(value).forEach(walk);
+  })(body);
+
+  assert.ok(strings.length > 0, 'the payload was actually inspected');
+  for (const value of strings) {
+    assert.ok(
+      !SESSION_TOKEN_SHAPE.test(value),
+      `a 64-hex session token reached the response: ${value}`
+    );
+  }
+  assert.ok(
+    !strings.includes(TOKEN),
+    'and the seeded token specifically is nowhere in the payload'
   );
 });
 
