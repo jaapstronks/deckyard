@@ -165,6 +165,7 @@ nothing is discoverable only by `ls`.
 | [`standalone-html-export.md`](reference/standalone-html-export.md) | Standalone HTML export |
 | [`reflowable-html-export.md`](reference/reflowable-html-export.md) | Reflowable "reader" export |
 | [`bulk-export.md`](reference/bulk-export.md) | Bulk export / backup |
+| [`publishing.md`](reference/publishing.md) | Publish/unpublish, the public deck pages and embed, and the RSS/Atom/JSON feed |
 | [`pdf-export-performance.md`](reference/pdf-export-performance.md) | What makes a PDF export heavy, and how to measure it |
 
 **Presenting & collaboration**
