@@ -8,8 +8,8 @@
  *
  * **The data subject is the scope; the organization plays no part.** These
  * functions act on one email address across the whole instance. A person is
- * one person on this deployment — `user_settings` already keys on their email
- * rather than on a workspace (tenant-isolation.md rule R3) — and the operator
+ * one person on this deployment — `user_settings` holds one row per person
+ * instance-wide, not one per workspace (tenant-isolation.md rule R3) — and the operator
  * of the instance is the single controller answering the request, so an
  * erasure that stopped at a workspace boundary would silently under-delete and
  * still report success. That is exactly what the earlier organization filter

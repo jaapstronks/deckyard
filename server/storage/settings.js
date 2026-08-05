@@ -3,30 +3,71 @@
  *
  * Both persist in PostgreSQL (see migration 059): the whole instance settings
  * object lives as one jsonb bag in the singleton `app_settings` row, and each
- * user's preferences as one jsonb bag in `user_settings`, keyed on the e-mail
- * in its own column. The facade is unchanged from the file-backed version —
+ * user's preferences as one jsonb bag in `user_settings`. The facade is
+ * unchanged from the file-backed version —
  * every function still takes `repoRoot` first for call-site stability — but
  * that argument is now unused: persistence no longer touches disk. Storage is
  * store-raw / normalize-on-read, so all the normalization below is the single
  * source of truth for shape regardless of what a migrate-imported row holds.
+ *
+ * ## `user_settings` is dual-keyed (T10 PR E)
+ *
+ * Migration 059 keyed the table on the e-mail in its own column, explicitly so
+ * that the identity epic's re-key would be one UPDATE per row. Migration 067
+ * is that re-key: a nullable `user_id` beside the e-mail primary key, unique on
+ * its non-NULL rows.
+ *
+ * The **stable id leads and the e-mail is the fallback**. A person with a
+ * `users` row is read and written by `users.id`, so renaming their address
+ * keeps their preferences; the e-mail column is re-stamped on write so the two
+ * keys never drift. A row with no id — the shared `anonymous` bucket, a legacy
+ * row imported off disk, everything in file mode (no `users` table at all) —
+ * keeps working on the e-mail key exactly as before, and picks up an id on its
+ * owner's first write. That NULL is a defined state, not an error; see
+ * {@link module:storage/identity-resolver}.
  */
 
 import { sql } from 'kysely';
 import { withDbGuard } from './utils/db-guard.js';
+import { resolveIdentityByEmail } from './identity-resolver.js';
 import { DEFAULT_AI_NAME, DEFAULT_AI_EMAIL } from '../../shared/constants/ai.js';
 import { getAppName } from '../config/branding.js';
 import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
 import { SUBSCRIPTION_LEVELS } from './presentation-subscriptions.js';
 
 /**
+ * The shared bucket a caller with no e-mail writes to (mirrors the old file
+ * backend's `anonymous.json`). It is not a person, so it never resolves to a
+ * `users.id` and stays e-mail-keyed forever.
+ */
+const ANONYMOUS_KEY = 'anonymous';
+
+/**
  * Normalize an e-mail to its stored `user_settings.email` key: trimmed,
- * lowercased, with the empty case mapping to a single shared bucket (mirrors
- * the old file backend's `anonymous.json`).
+ * lowercased, with the empty case mapping to {@link ANONYMOUS_KEY}.
  * @param {string} email
  * @returns {string}
  */
 function userEmailKey(email) {
-  return String(email || '').trim().toLowerCase() || 'anonymous';
+  return String(email || '').trim().toLowerCase() || ANONYMOUS_KEY;
+}
+
+/**
+ * Resolve the settings key to the stable `users.id` it belongs to, or null.
+ *
+ * Null is a normal, expected answer — not a failure. It means the row is
+ * *external*: the shared anonymous bucket, a legacy row imported off disk by
+ * migration 059 whose address never became an account, or file mode, which has
+ * no `users` table at all and therefore resolves everything this way. Those
+ * rows keep working on the e-mail key.
+ *
+ * @param {string} key - A normalized `user_settings.email` key.
+ * @returns {Promise<string|null>} The `users.id`, or null when there is none.
+ */
+async function resolveSettingsUserId(key) {
+  if (!key || key === ANONYMOUS_KEY) return null;
+  const resolution = await resolveIdentityByEmail(key);
+  return resolution?.userId ?? null;
 }
 
 export function normalizeSupportedLang(v) {
@@ -591,7 +632,35 @@ function normalizeThickness(v, fallback = 4) {
 
 export async function getUserSettings(repoRoot, email) {
   const key = userEmailKey(email);
+  return loadUserSettings(key, await resolveSettingsUserId(key));
+}
+
+/**
+ * Read and normalize one person's settings, given their already-resolved keys.
+ *
+ * Split out of {@link getUserSettings} so {@link writeUserSettings} can reuse
+ * it without resolving the identity a second time.
+ *
+ * @param {string} key - The normalized `user_settings.email` key.
+ * @param {string|null} userId - The resolved `users.id`, or null when external.
+ * @returns {Promise<Object>} The normalized settings object.
+ */
+async function loadUserSettings(key, userId) {
   const raw = await withDbGuard(null, async (db) => {
+    // The stable id leads: after a rename the row still carries the old
+    // address in its `email` column until the next write re-stamps it, so an
+    // e-mail-first read would miss it and hand the person a fresh default set.
+    if (userId) {
+      const byId = await db
+        .selectFrom('user_settings')
+        .select('settings')
+        .where('user_id', '=', userId)
+        .executeTakeFirst();
+      if (byId) return byId.settings ?? null;
+    }
+    // Fallback for the rows that have no id: the anonymous bucket, legacy
+    // imports, and every row in file mode. Also the path a known user's first
+    // read takes when their row predates the backfill.
     const row = await db
       .selectFrom('user_settings')
       .select('settings')
@@ -658,7 +727,8 @@ export async function getUserSettings(repoRoot, email) {
 
 export async function writeUserSettings(repoRoot, email, next) {
   const key = userEmailKey(email);
-  const prev = await getUserSettings(repoRoot, email);
+  const userId = await resolveSettingsUserId(key);
+  const prev = await loadUserSettings(key, userId);
   const nextProfile =
     next?.profile && typeof next.profile === 'object'
       ? next.profile
@@ -746,11 +816,35 @@ export async function writeUserSettings(repoRoot, email, next) {
     highlighter,
   };
   await withDbGuard(null, async (db) => {
+    const payload = JSON.stringify(merged);
+
+    // Update the row this person already owns by id, and re-stamp its `email`
+    // to their current address while we are there. That re-stamp is the point
+    // of the dual key: the id says *who*, and keeping the e-mail column in step
+    // is what lets the later per-row verification (brief § PR G) assert "id
+    // present ⇒ e-mail matches the users row" instead of tolerating drift.
+    if (userId) {
+      const updated = await db
+        .updateTable('user_settings')
+        .set({ email: key, settings: payload, updated_at: sql`now()` })
+        .where('user_id', '=', userId)
+        .executeTakeFirst();
+      if (Number(updated?.numUpdatedRows ?? 0) > 0) return;
+    }
+
+    // No id row yet: upsert on the e-mail primary key and stamp `user_id` on
+    // the way through, so a row that predates the backfill picks up its
+    // identity on its owner's first write. `userId` is null for the anonymous
+    // bucket and for external addresses — the defined state, not an error.
     await db
       .insertInto('user_settings')
-      .values({ email: key, settings: JSON.stringify(merged), updated_at: sql`now()` })
+      .values({ email: key, user_id: userId, settings: payload, updated_at: sql`now()` })
       .onConflict((oc) =>
-        oc.column('email').doUpdateSet({ settings: JSON.stringify(merged), updated_at: sql`now()` })
+        oc.column('email').doUpdateSet({
+          user_id: userId,
+          settings: payload,
+          updated_at: sql`now()`,
+        })
       )
       .execute();
   });
