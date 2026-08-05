@@ -99,6 +99,10 @@ export function mapVersionRowSummary(row) {
     id: row.id,
     presentationId: row.presentation_id,
     created: row.created_at,
+    // Identity travels as a pair (T10 PR F1): the stable `users.id`
+    // (migration 069) beside the display/fallback e-mail. See
+    // shared/identity-match.js and mapPresentationRow below.
+    createdById: row.created_by_user_id || null,
     createdBy: row.created_by,
     reason: row.reason,
     label: row.label,

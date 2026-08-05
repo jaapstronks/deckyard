@@ -20,10 +20,10 @@
  * The **stable id leads and the e-mail is the fallback**. A person with a
  * `users` row is read and written by `users.id`, so renaming their address
  * keeps their preferences; the e-mail column is re-stamped on write so the two
- * keys never drift. A row with no id — the shared `anonymous` bucket, a legacy
- * row imported off disk, everything in file mode (no `users` table at all) —
- * keeps working on the e-mail key exactly as before, and picks up an id on its
- * owner's first write. That NULL is a defined state, not an error; see
+ * keys never drift. A row with no id — the shared `anonymous` bucket, or a
+ * legacy row imported off disk by migration 059 whose address never became an
+ * account — keeps working on the e-mail key exactly as before, and picks up an
+ * id on its owner's first write. That NULL is a defined state, not an error; see
  * {@link module:storage/identity-resolver}.
  *
  * **When the two collide, the id wins** (T10 PR G). Renaming into an address
@@ -64,10 +64,9 @@ function userEmailKey(email) {
  * Resolve the settings key to the stable `users.id` it belongs to, or null.
  *
  * Null is a normal, expected answer — not a failure. It means the row is
- * *external*: the shared anonymous bucket, a legacy row imported off disk by
- * migration 059 whose address never became an account, or file mode, which has
- * no `users` table at all and therefore resolves everything this way. Those
- * rows keep working on the e-mail key.
+ * *external*: the shared anonymous bucket, or a legacy row imported off disk by
+ * migration 059 whose address never became an account. Those rows keep working
+ * on the e-mail key.
  *
  * @param {string} key - A normalized `user_settings.email` key.
  * @returns {Promise<string|null>} The `users.id`, or null when there is none.
@@ -666,9 +665,9 @@ async function loadUserSettings(key, userId) {
         .executeTakeFirst();
       if (byId) return byId.settings ?? null;
     }
-    // Fallback for the rows that have no id: the anonymous bucket, legacy
-    // imports, and every row in file mode. Also the path a known user's first
-    // read takes when their row predates the backfill.
+    // Fallback for the rows that have no id: the anonymous bucket and legacy
+    // imports. Also the path a known user's first read takes when their row
+    // predates the backfill.
     const row = await db
       .selectFrom('user_settings')
       .select('settings')

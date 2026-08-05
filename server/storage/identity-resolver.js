@@ -24,10 +24,10 @@
  *
  * A well-formed identifier that matches no `users` row is a **normal, expected
  * state**, not an error: external collaborators (invited by email, never a user
- * on this instance) and legacy rows both live there, and file mode — which has
- * no `users` table at all — resolves *every* email this way. The resolver names
- * that state explicitly (`resolved: false`, `external: true`) instead of
- * collapsing it into a bare `null` that a caller might read as "lookup failed".
+ * on this instance) and legacy rows whose address never became an account both
+ * live there. The resolver names that state explicitly (`resolved: false`,
+ * `external: true`) instead of collapsing it into a bare `null` that a caller
+ * might read as "lookup failed".
  * A caller that must keep the external identity (an external-collaborator email)
  * still gets the normalized `value` back. Only a structurally absent/blank
  * identifier returns `null`.
@@ -72,16 +72,16 @@ export const IDENTIFIER_KINDS = {
  * @property {string} value - The normalized identifier value that was looked up.
  * @property {boolean} resolved - True iff `userId` is set (a `users` row matched).
  * @property {boolean} external - True iff the identifier is well-formed but matched no
- *   user row (external collaborator or legacy/file-mode data) — a defined state, not an error.
+ *   user row (external collaborator or legacy data) — a defined state, not an error.
  */
 
 /**
  * Resolve an external identifier to a stable `users.id`.
  *
- * Read-only: performs at most one lookup and mutates nothing. In file mode (no
- * database) the lookup yields nothing, so every well-formed identifier resolves
- * `external` — the correct answer, since file-mode identity lives in the deck
- * JSON and there is no `users` table to key on.
+ * Read-only: performs at most one lookup and mutates nothing. With no database
+ * handle installed the lookup yields nothing, so every well-formed identifier
+ * resolves `external` — the correct answer when there is no `users` table to
+ * key on.
  *
  * @param {{ kind?: string, value?: string }} [identifier] - The identifier to resolve.
  *   `kind` defaults to `EMAIL`. `value` is normalized per kind.

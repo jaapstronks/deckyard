@@ -23,8 +23,7 @@
  *   2. **Either side lacks one → the emails decide**, exactly as before.
  *
  * Case 2 is not a second key, it is the *defined absence* of the first one, and
- * it covers three real shapes the resolver already names (identity-resolver.js):
- * file mode, which has no `users` table and keeps identity in the deck JSON;
+ * it covers the real shapes the resolver already names (identity-resolver.js):
  * legacy/external rows whose email never matched a `users` row, so the id column
  * is a defined NULL; and the auth-off operator and dev bypass, which are not
  * database users at all. Those shapes must keep working, which is why the
@@ -122,7 +121,7 @@ export function matchesIdentity(user, stamp = {}) {
   // 1. Both sides carry the stable key: it alone decides.
   if (actor.userId && stampedId) return actor.userId === stampedId;
 
-  // 2. One side has no id (file mode, external/legacy row, auth-off operator):
+  // 2. One side has no id (external/legacy row, auth-off operator):
   //    fall back to the email identifier, which is what those shapes carry.
   const stampedEmail = normalizeEmail(stamp?.email);
   return Boolean(actor.email && stampedEmail && actor.email === stampedEmail);

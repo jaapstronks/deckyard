@@ -172,7 +172,7 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
     assert.equal(
       createdBy,
       ALICE,
-      'the created_by column is a separate first-class field and belongs to PR F'
+      'the created_by column is a separate first-class field, dual-keyed in its own right (PR F1)'
     );
   });
 
@@ -326,12 +326,26 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
         permission: 'view',
       })
       .execute();
+    await db
+      .insertInto('presentation_versions')
+      .values({
+        presentation_id: DECK_ID,
+        organization_id: ORG,
+        created_by: ALICE,
+        created_by_user_id: ALICE_ID,
+        reason: 'snapshot',
+        revision: 1,
+        title: 'A deck',
+        presentation_data: JSON.stringify({ id: DECK_ID, title: 'A deck', slides: [] }),
+      })
+      .execute();
     await writeUserSettings(null, ALICE, {});
 
     const report = await verifyIdentityConsistency();
     assert.equal(report.ok, true, formatIdentityReport(report).join('\n'));
     assert.equal(report.mismatched, 0);
     assert.equal(check(report, 'presentations', 'owner_user_id').linked, 1);
+    assert.equal(check(report, 'presentation_versions', 'created_by_user_id').linked, 1);
     assert.equal(check(report, 'presentation_collaborators', 'user_id').linked, 1);
     assert.equal(check(report, 'user_settings', 'user_id').linked, 1);
   });
