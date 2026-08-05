@@ -37,9 +37,12 @@ import { canActorAccessPresentation } from '../../server/utils/presentation-auth
 import { resolveIdentityByEmail } from '../../server/storage/identity-resolver.js';
 import { getDefaultOrganizationId } from '../../server/config/database.js';
 
-// The seeded org is the instance DEFAULT so the composed machine-client checks
-// (canActorAccessPresentation) see the same workspace the deck is in. The
-// collaborator lookups themselves no longer take an organization at all — a
+// The seeded org is the instance DEFAULT, and the machine actors below state it
+// explicitly: since L10 an actor carries the workspace its key acts in instead
+// of inheriting the deck's (see server/utils/presentation-authz/actor-access.js).
+// On these private decks it changes nothing either way — the collaborator row is
+// a relation to the deck, not to a workspace — which is exactly what the actor
+// cases pin. The collaborator lookups themselves take no organization at all: a
 // row is scoped by its deck, and `(presentation_id, user_email)` is the whole
 // key (see the header of server/storage/collaborators.js).
 const ORG = getDefaultOrganizationId();
@@ -173,8 +176,8 @@ pgDescribe('collaborator authz resolution + identity resolver (real PostgreSQL)'
     await addCollaborator(PID, { userEmail: email, permission: 'edit' });
     const pres = { id: PID, scope: 'private', ownerEmail: OWNER_EMAIL, organizationId: ORG };
 
-    assert.equal(await canActorAccessPresentation(pres, email, 'read'), true);
-    assert.equal(await canActorAccessPresentation(pres, email, 'write'), true);
+    assert.equal(await canActorAccessPresentation(pres, { email, organizationId: ORG }, 'read'), true);
+    assert.equal(await canActorAccessPresentation(pres, { email, organizationId: ORG }, 'write'), true);
   });
 
   it('a view collaborator can read but not write', async () => {
@@ -182,8 +185,8 @@ pgDescribe('collaborator authz resolution + identity resolver (real PostgreSQL)'
     await addCollaborator(PID, { userEmail: email, permission: 'view' });
     const pres = { id: PID, scope: 'private', ownerEmail: OWNER_EMAIL, organizationId: ORG };
 
-    assert.equal(await canActorAccessPresentation(pres, email, 'read'), true);
-    assert.equal(await canActorAccessPresentation(pres, email, 'write'), false);
+    assert.equal(await canActorAccessPresentation(pres, { email, organizationId: ORG }, 'read'), true);
+    assert.equal(await canActorAccessPresentation(pres, { email, organizationId: ORG }, 'write'), false);
   });
 
   // --- The "external collaborator" path: ACL access without a user record --
@@ -194,7 +197,7 @@ pgDescribe('collaborator authz resolution + identity resolver (real PostgreSQL)'
     const pres = { id: PID, scope: 'private', ownerEmail: OWNER_EMAIL, organizationId: ORG };
 
     assert.equal(await getCollaboratorPermission(PID, email), 'edit');
-    assert.equal(await canActorAccessPresentation(pres, email, 'write'), true);
+    assert.equal(await canActorAccessPresentation(pres, { email, organizationId: ORG }, 'write'), true);
 
     // …and the resolver names them external rather than failing — this is the
     // seam the epic must preserve when ACL moves from email to user_id.

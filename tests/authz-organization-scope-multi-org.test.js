@@ -299,15 +299,45 @@ test('an unrestricted operator is unaffected', async () => {
   assert.equal(getEffectivePermission({ user: operator, pres: alphaDeck }), 'edit');
 });
 
-test('machine clients are decided by the presentation, not by this change', async () => {
+test('a machine client acting in another workspace is refused (L10)', async () => {
   seedDb();
   const alphaDeck = await loadDeck('deck-alpha', ORG_A);
-  // The public API and MCP know their actor by email only and resolve their
-  // context against the default organization — a separate open item in
-  // docs/reference/tenant-isolation.md. Until that is closed this path keeps
-  // the behaviour it had, rather than quietly becoming the place where
-  // multi-workspace access is decided.
-  assert.equal(checkActorAccess({ pres: alphaDeck, actorEmail: 'dave@beta.example' }), true);
+  // This used to pass. The actor's organization was read off the presentation
+  // being checked, so the workspace grant was unconditional for machine
+  // clients: whatever workspace the deck was in, the key appeared to be in it.
+  // An API key belongs to one organization and now says so, which is what turns
+  // the check into a check.
+  assert.equal(
+    checkActorAccess({ pres: alphaDeck, actor: { email: 'dave@beta.example', organizationId: ORG_B } }),
+    false
+  );
+});
+
+test('a machine client of the deck’s own workspace still gets the workspace grant', async () => {
+  seedDb();
+  const alphaDeck = await loadDeck('deck-alpha', ORG_A);
+  assert.equal(
+    checkActorAccess({ pres: alphaDeck, actor: { email: 'dave@alpha.example', organizationId: ORG_A } }),
+    true
+  );
+});
+
+test('a machine client that states no workspace fails closed on the workspace grant', async () => {
+  seedDb();
+  const alphaDeck = await loadDeck('deck-alpha', ORG_A);
+  // Multi-workspace mode refuses an organization it cannot read on either side
+  // rather than waving it through — the same fail-closed rule the session path
+  // follows. Grants that rest on a relation to the deck are unaffected.
+  assert.equal(checkActorAccess({ pres: alphaDeck, actor: { email: 'dave@beta.example' } }), false);
+  assert.equal(
+    checkActorAccess({
+      pres: alphaDeck,
+      actor: { email: 'dave@beta.example' },
+      collaboratorPermission: 'edit',
+      access: 'write',
+    }),
+    true
+  );
 });
 
 // ---------------------------------------------------------------------------

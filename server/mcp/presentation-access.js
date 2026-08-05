@@ -22,6 +22,10 @@ import {
 /**
  * Load a presentation by id and enforce the owner's access to it.
  *
+ * The session's own organization comes off the storage scope — an SSE session
+ * acts in the workspace its API key belongs to — so the workspace grant is
+ * decided against the session, not against the deck being checked (L10).
+ *
  * @param {Object} scope - Storage scope (see server/storage/scope.js)
  * @param {string} presentationId - Presentation ID
  * @param {string|null} ownerEmail - Acting owner email (null = trusted local session)
@@ -44,17 +48,19 @@ export async function loadPresentationChecked(
 
   if (!ownerEmail) return pres; // trusted local session, no owner configured
 
+  const actor = { email: ownerEmail, organizationId: scope?.organizationId || null };
+
   // Read is the baseline for every access level. Fail with the same message
   // as "not found" so unreadable decks don't leak their existence.
-  if (!(await canActorAccessPresentation(pres, ownerEmail, 'read'))) {
+  if (!(await canActorAccessPresentation(pres, actor, 'read'))) {
     throw new Error(`Presentation not found or not accessible: ${presentationId}`);
   }
 
-  if (access === 'write' && !(await canActorAccessPresentation(pres, ownerEmail, 'write'))) {
+  if (access === 'write' && !(await canActorAccessPresentation(pres, actor, 'write'))) {
     throw new Error(`You have read-only access to this presentation: ${presentationId}`);
   }
 
-  if (access === 'delete' && !(await canActorDeletePresentation(pres, ownerEmail))) {
+  if (access === 'delete' && !(await canActorDeletePresentation(pres, actor))) {
     throw new Error(`Only the presentation owner can delete it: ${presentationId}`);
   }
 

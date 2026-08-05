@@ -202,15 +202,25 @@ test('an explicit override still wins over the session', async () => {
   assert.equal(ctx.organizationId, ORG_A, 'options.organizationId is the top precedence');
 });
 
-test('a user without a resolved organization falls back to the default', () => {
+test('a context with nobody authenticated falls back to the default', () => {
   seedTwoOrgs();
 
   // The callers that build a context before (or without) authentication:
-  // password reset, magic link, SSO, the public API key routes.
+  // password reset, magic link, SSO, email templates. They pass null, so the
+  // absence is stated rather than lost, and the default is not a guess.
   assert.equal(createRouteContext(null).organizationId, ORG_A);
+});
+
+test('an authenticated user with no resolved organization gets none (L10)', () => {
+  seedTwoOrgs();
+
+  // This used to fall back to the default organization, which let a session act
+  // in a workspace it was never resolved to — the L10 finding of the 2026-07
+  // audit. Once an instance holds several workspaces the request gets no
+  // organization at all and getOrgId() refuses the query instead of guessing.
   assert.equal(
     createRouteContext({ email: 'apikey-owner@example.com' }).organizationId,
-    ORG_A
+    null
   );
 });
 
@@ -219,14 +229,16 @@ test('an unverified organization from the synchronous path is ignored', () => {
 
   // getUserFromRequest() copies payload.orgId through without checking
   // membership and flags itself for validation. Its organization must never
-  // reach a query; only resolveActiveOrganization()'s verdict may.
+  // reach a query; only resolveActiveOrganization()'s verdict may. Under
+  // multi-workspace that leaves the request with no organization (see above)
+  // rather than the default one.
   const unverified = {
     email: 'alice@example.com',
     organizationId: ORG_GONE,
     _needsDbValidation: true,
   };
 
-  assert.equal(createRouteContext(unverified).organizationId, ORG_A);
+  assert.equal(createRouteContext(unverified).organizationId, null);
 });
 
 // ---------------------------------------------------------------------------

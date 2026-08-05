@@ -146,7 +146,7 @@ async function handleListComments(ctx, presentationId) {
  * Body: { body, slideId?, parentId? }. Author = the API key owner.
  */
 async function handleCreateComment(ctx, presentationId) {
-  const { repoRoot, req, apiKey } = ctx;
+  const { repoRoot, req, apiKey, authedUser } = ctx;
 
   if (!requireScope(ctx, 'comments:write')) return true;
 
@@ -158,7 +158,7 @@ async function handleCreateComment(ctx, presentationId) {
 
   // Commenting needs comment permission (owner/creator, workspace user, or
   // collaborator with comment rights or higher) — not full write access.
-  if (!(await canActorCommentOnPresentation(pres, apiKey.ownerEmail))) {
+  if (!(await canActorCommentOnPresentation(pres, authedUser))) {
     await apiError(ctx, 403, 'API key owner may not comment on this presentation');
     return true;
   }

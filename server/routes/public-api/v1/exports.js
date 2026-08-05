@@ -46,7 +46,7 @@ async function prepareExportContext(ctx, presentationId) {
     return { ok: false, status: 404, error: 'Presentation not found' };
   }
 
-  if (!(await canActorAccessPresentation(pres, apiKey.ownerEmail, 'read'))) {
+  if (!(await canActorAccessPresentation(pres, ctx.authedUser, 'read'))) {
     return { ok: false, status: 403, error: 'Access denied to this presentation' };
   }
 

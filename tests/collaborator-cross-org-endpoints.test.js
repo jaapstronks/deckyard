@@ -337,9 +337,17 @@ test('the shared route middleware admits the same person for a write', async () 
 test('the machine-client seam gives the same answer as the routes', async () => {
   await seed();
   const pres = { id: DECK, scope: 'private', ownerEmail: OWNER_EMAIL, organizationId: HOME_ORG };
-  assert.equal(await canActorAccessPresentation(pres, COLLABORATOR.email, 'read'), true);
-  assert.equal(await canActorAccessPresentation(pres, COLLABORATOR.email, 'write'), true);
-  assert.equal(await canActorAccessPresentation(pres, COLLEAGUE.email, 'read'), false);
+  // A machine actor states its own workspace (an API key belongs to one), which
+  // on a private deck changes nothing: the collaborator row is the only thing
+  // that can grant here, and it is a relation to the deck, not to a workspace.
+  // The collaborator is signed into AWAY_ORG and still gets in.
+  const collaborator = { email: COLLABORATOR.email, organizationId: AWAY_ORG };
+  assert.equal(await canActorAccessPresentation(pres, collaborator, 'read'), true);
+  assert.equal(await canActorAccessPresentation(pres, collaborator, 'write'), true);
+  assert.equal(
+    await canActorAccessPresentation(pres, { email: COLLEAGUE.email, organizationId: HOME_ORG }, 'read'),
+    false
+  );
 });
 
 // ---------------------------------------------------------------------------

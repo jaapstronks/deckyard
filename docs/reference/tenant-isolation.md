@@ -256,8 +256,19 @@ missing is listed under *What is not done yet* below.
   flags itself `_needsDbValidation`; such a user's organization is ignored when
   the context is built. Precedence is: explicit `options.organizationId` (used
   by the few callers that name an organization themselves) → the session's
-  resolved organization → the default organization (for contexts built before
-  or without authentication, such as password reset, magic link and SSO).
+  resolved organization → a last resort that depends on whether anyone is
+  authenticated at all.
+
+  That last resort is the difference between a stated absence and a lost value.
+  A context built with **no user** — password reset, magic link, SSO, email
+  templates — runs before there is a session to resolve, passes `null`
+  explicitly, and takes the default organization. A context built **with** a
+  user who nonetheless carries no verified organization (only the unverified
+  synchronous path produces one) takes **nothing** once the instance holds more
+  than one workspace: handing it the default organization would let a session
+  act in a workspace it was never resolved to, so `getOrgId()` refuses the query
+  instead. Single-workspace installations keep the default in both branches,
+  where it is the only organization and therefore not a guess.
 
   Single-organization installations are unaffected in behaviour and in cost:
   there `resolveActiveOrganization()` answers from configuration without
@@ -305,6 +316,25 @@ missing is listed under *What is not done yet* below.
   over stdio has no key and no organization — it is a trusted local process
   bound to the instance — so it takes the single workspace and refuses to guess
   once an instance holds several.
+
+  **The authorization check follows the same organization as the storage scope.**
+  It did not, for a while: `checkActorAccess` built its actor with the
+  organization read off *the presentation being checked*, which made the
+  workspace grant unconditional for machine clients — whatever workspace a deck
+  was in, the key appeared to be in it. Every entry point in
+  `server/utils/presentation-authz/actor-access.js` now takes an **actor**
+  (`{ email, organizationId }`) instead of a bare email, and both call sites
+  supply the organization they already act in: the public API from
+  `ctx.authedUser` (built from the key row), MCP from its own session scope. An
+  actor that states no organization fails the workspace grant closed under
+  multi-workspace, and is unaffected in a single-workspace install, where
+  `isSameOrganization()` answers yes from the feature flag. Grants that rest on
+  a relation to the deck — ownership, a collaborator row — never consult the
+  organization and are unchanged either way. Pinned in
+  `tests/authz-organization-scope-multi-org.test.js` (the actor of another
+  workspace is refused, the deck's own workspace still granted, no workspace
+  stated fails closed) and in the collaborator pgtest, where a collaborator
+  signed into a foreign workspace still gets in.
 
 - **The storage layer has no default to fall back on — done.** The storage
   facades used to build their own context with a hardcoded

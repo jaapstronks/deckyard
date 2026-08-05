@@ -124,8 +124,8 @@ pgDescribe('presentation authorization reads on users.id (real PostgreSQL)', () 
     const pres = await getPresentation(scope, created.id);
 
     // The API-key/MCP surfaces know only an email; actor-access resolves it.
-    assert.equal(await canActorAccessPresentation(pres, OWNER_EMAIL, 'write'), true);
-    assert.equal(await canActorAccessPresentation(pres, 'twin@example.com', 'read'), false);
+    assert.equal(await canActorAccessPresentation(pres, { email: OWNER_EMAIL, organizationId: ORG }, 'write'), true);
+    assert.equal(await canActorAccessPresentation(pres, { email: 'twin@example.com', organizationId: ORG }, 'read'), false);
   });
 
   it('the collection listing projects the ids too, so the list filter keys on them', async () => {

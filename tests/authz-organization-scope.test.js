@@ -201,11 +201,13 @@ test('machine clients keep their workspace access', async () => {
   seedDb();
   const pres = await loadDeck('deck-workspace');
 
-  assert.equal(checkActorAccess({ pres, actorEmail: 'alice@example.com' }), true);
-  assert.equal(
-    checkActorAccess({ pres, actorEmail: 'alice@example.com', access: 'write' }),
-    true
-  );
+  // A single-workspace install has nothing to compare, so a machine client that
+  // states no organization is unaffected by the L10 rewiring — the point of
+  // that change is that in multi-workspace mode the workspace grant is decided
+  // against the *key's* organization instead of the deck's.
+  const actor = { email: 'alice@example.com' };
+  assert.equal(checkActorAccess({ pres, actor }), true);
+  assert.equal(checkActorAccess({ pres, actor, access: 'write' }), true);
 });
 
 // ---------------------------------------------------------------------------
