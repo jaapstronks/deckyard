@@ -75,6 +75,10 @@ export async function authenticateApiKey(ctx) {
     id: ownerResolution?.userId || null,
     email: result.ownerEmail,
     role: 'user',
+    // The workspace this key acts in. Carried on the acting user (not read off
+    // whatever deck is being checked) so the workspace grant is decided against
+    // the key's own organization — see utils/presentation-authz/actor-access.js.
+    organizationId: result.organizationId,
   };
   // A machine client acts in the organization its key belongs to. That is a
   // real answer rather than the default organization the storage layer used to
@@ -153,14 +157,14 @@ export function canAccessPresentation(presentation, actor) {
  * editor routes: reads allow owner/creator, workspace scope, and any
  * collaborator; writes additionally require edit rights (owner/creator,
  * writable workspace deck, or a collaborator with edit/admin permission).
- * @param {Object} ctx - Request context with repoRoot and apiKey
+ * @param {Object} ctx - Request context with repoRoot, authedUser and apiKey
  * @param {string} presentationId - The presentation ID to fetch
  * @param {Object} [options]
  * @param {'read'|'write'} [options.access='read'] - Required access level
  * @returns {Promise<{ok: boolean, pres?: Object}>} - Result with presentation if successful
  */
 export async function getPresentationWithAccess(ctx, presentationId, { access = 'read' } = {}) {
-  const { storageScope, apiKey } = ctx;
+  const { storageScope, authedUser } = ctx;
 
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) {
@@ -168,12 +172,12 @@ export async function getPresentationWithAccess(ctx, presentationId, { access = 
     return { ok: false };
   }
 
-  if (!(await canActorAccessPresentation(pres, apiKey.ownerEmail, 'read'))) {
+  if (!(await canActorAccessPresentation(pres, authedUser, 'read'))) {
     await apiError(ctx, 403, 'Access denied to this presentation');
     return { ok: false };
   }
 
-  if (access === 'write' && !(await canActorAccessPresentation(pres, apiKey.ownerEmail, 'write'))) {
+  if (access === 'write' && !(await canActorAccessPresentation(pres, authedUser, 'write'))) {
     await apiError(ctx, 403, 'You have read-only access to this presentation');
     return { ok: false };
   }

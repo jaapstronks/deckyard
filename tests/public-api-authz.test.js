@@ -51,6 +51,9 @@ function makeCtx(ownerEmail) {
     storageScope: testScope(),
     res,
     apiKey: { id: 'test-key', tier: 'free', ownerEmail },
+    // What authenticateApiKey puts on the context: who is acting and in which
+    // workspace. Per-deck checks read the actor from here, not off the deck.
+    authedUser: { id: null, email: ownerEmail, role: 'user', organizationId: null },
   };
 }
 

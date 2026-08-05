@@ -150,6 +150,22 @@ export function registerTools(
   }
 
   /**
+   * The acting machine client for a per-deck authorization check: who is acting
+   * and in which workspace. The organization comes off the session's own scope
+   * (an SSE session acts in its API key's workspace; a stdio session in the
+   * single workspace it is bound to), never off the deck being checked — see
+   * utils/presentation-authz/actor-access.js.
+   * @param {Object} [context] - Per-request context (SSE session)
+   * @returns {{email: string|null, organizationId: string|null}}
+   */
+  function actorOf(context) {
+    return {
+      email: getOwner(context),
+      organizationId: scopeOf(context)?.organizationId || null,
+    };
+  }
+
+  /**
    * Load a deck by id and enforce the session owner's access to it.
    * `access: 'write'` for mutating tools, `'delete'` for deletion,
    * default read for everything else. No owner configured = trusted
@@ -1507,7 +1523,7 @@ export function registerTools(
     const owner = requireCommentActor(context);
     const pres = await getCheckedPresentation(presentationId, context);
 
-    if (!(await canActorCommentOnPresentation(pres, owner))) {
+    if (!(await canActorCommentOnPresentation(pres, actorOf(context)))) {
       throw new Error('You do not have comment permission on this presentation');
     }
 
@@ -1650,7 +1666,7 @@ export function registerTools(
       }
 
       const pres = await getCheckedPresentation(presentationId, context);
-      if (!(await canActorResolveComment(pres, owner))) {
+      if (!(await canActorResolveComment(pres, actorOf(context)))) {
         throw new Error('Only the presentation owner can change comment status');
       }
 

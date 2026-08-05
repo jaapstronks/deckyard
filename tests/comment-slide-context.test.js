@@ -90,16 +90,16 @@ describe('checkActorCommentAccess', () => {
   const workspaceDeck = { id: 'w1', ownerEmail: OWNER, scope: 'workspace' };
 
   it('owner and workspace users can comment', () => {
-    assert.equal(checkActorCommentAccess({ pres: privateDeck, actorEmail: OWNER }), true);
-    assert.equal(checkActorCommentAccess({ pres: workspaceDeck, actorEmail: OTHER }), true);
+    assert.equal(checkActorCommentAccess({ pres: privateDeck, actor: { email: OWNER } }), true);
+    assert.equal(checkActorCommentAccess({ pres: workspaceDeck, actor: { email: OTHER } }), true);
   });
 
   it('outsiders cannot comment on private decks', () => {
-    assert.equal(checkActorCommentAccess({ pres: privateDeck, actorEmail: OTHER }), false);
+    assert.equal(checkActorCommentAccess({ pres: privateDeck, actor: { email: OTHER } }), false);
   });
 
   it('comment/edit collaborators can, view collaborators cannot', () => {
-    const base = { pres: privateDeck, actorEmail: OTHER };
+    const base = { pres: privateDeck, actor: { email: OTHER } };
     assert.equal(checkActorCommentAccess({ ...base, collaboratorPermission: 'comment' }), true);
     assert.equal(checkActorCommentAccess({ ...base, collaboratorPermission: 'edit' }), true);
     assert.equal(checkActorCommentAccess({ ...base, collaboratorPermission: 'view' }), false);

@@ -11,6 +11,7 @@
  */
 
 import { getDefaultOrganizationId } from '../config/database.js';
+import { isMultiWorkspaceEnabled } from '../config/features.js';
 import { getClientIp } from './rate-limit.js';
 
 // Re-export getClientIp for backward compatibility with existing imports
@@ -71,6 +72,9 @@ export function getOrgId(ctx) {
  * `authedUser.organizationId` *is* the default organization and this resolves
  * to exactly the value it did before, at the same query cost.
  *
+ * The last resort is {@link fallbackOrganizationId}, and it depends on whether
+ * anyone is authenticated — see there.
+ *
  * The context doubles as a storage scope (see server/storage/scope.js), so it
  * also carries the repository root when the caller has one. That is what lets
  * the presentations facade take a single "where and on whose behalf" object
@@ -89,12 +93,41 @@ export function createRouteContext(authedUser, options = {}) {
     : authedUser?.organizationId;
 
   const organizationId =
-    options.organizationId || sessionOrganizationId || getDefaultOrganizationId();
+    options.organizationId || sessionOrganizationId || fallbackOrganizationId(authedUser);
 
   return {
     organizationId,
     actorEmail: authedUser?.email,
     repoRoot: options.repoRoot ?? null,
   };
+}
+
+/**
+ * The organization for a context that could name none — deliberately not the
+ * same answer for a request with a person behind it and one without.
+ *
+ * **Nobody authenticated → the default organization.** These are the pre-auth
+ * and system routes (login, password reset, magic link, SSO, email templates),
+ * which run before there is a session to resolve an organization from. They
+ * pass `null` explicitly, so this is a stated absence, not a lost value.
+ *
+ * **Someone authenticated but with no verified organization → nothing, once an
+ * instance holds more than one workspace.** The only user shape that reaches
+ * here is one whose organization was deliberately discarded above (the
+ * unverified synchronous path). Handing that request the *default* organization
+ * would let a session act in a workspace it was never resolved to — the L10
+ * finding of the 2026-07 security audit. Under multi-workspace it therefore
+ * gets no organization at all, and `getOrgId()` refuses the query rather than
+ * guessing; the request fails instead of reading someone else's workspace.
+ *
+ * Single-workspace installations keep the default in both branches, and are
+ * unaffected: there is exactly one organization, so it is not a guess.
+ *
+ * @param {Object} [authedUser] - The authenticated user, if any
+ * @returns {string|null}
+ */
+function fallbackOrganizationId(authedUser) {
+  if (!authedUser) return getDefaultOrganizationId();
+  return isMultiWorkspaceEnabled() ? null : getDefaultOrganizationId();
 }
 
