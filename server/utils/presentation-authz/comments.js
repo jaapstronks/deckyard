@@ -1,7 +1,7 @@
 /**
  * Comment authorization functions.
  *
- * Deck ownership is decided by {@link isOwnerOrCreator} (identity-match.js),
+ * Deck ownership is decided by {@link isOwnerOrCreator} (shared/identity-match.js),
  * which keys on `users.id`. Comment *authorship* is the exception and still
  * compares emails: `presentation_comments` carries `author_email` and no
  * author id column (migration 003), so there is no stable key to compare yet.
@@ -10,7 +10,7 @@
  */
 
 import { normalizeEmail } from '../normalize.js';
-import { hasIdentity, isOwnerOrCreator } from './identity-match.js';
+import { hasIdentity, isOwnerOrCreator } from '../../../shared/identity-match.js';
 
 /**
  * Check if a user can resolve/reopen a comment.

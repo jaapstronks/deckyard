@@ -6,7 +6,8 @@
  * and stays green unchanged. This file covers the other half: what happens once
  * both sides carry the stable key, and where the email fallback still applies.
  *
- * The rule under test lives in server/utils/presentation-authz/identity-match.js:
+ * The rule under test lives in shared/identity-match.js — shared, because the
+ * client's advisory mirrors decide the same question the same way:
  *
  *   1. actor id + stamped id present → the ids decide, no email is consulted;
  *   2. either missing → the emails decide, exactly as before.

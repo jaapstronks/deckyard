@@ -43,8 +43,9 @@ export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
   const owner = pres.ownerEmail || null;
   // Only expose the owner's raw email to the owner themselves; redact it for
   // decks reached via workspace/collaborator access so one user's address never
-  // leaks to another. The full identity/user-id decoupling is tracked in
-  // docs/plans/briefs/identity-decoupling.md.
+  // leaks to another. This stays a *display* decision: the identity a consumer
+  // compares is `ownerId`, which is not redacted because it discloses nothing
+  // about a person — see shared/identity-match.js and docs/openapi.yaml.
   const ownerEmail =
     requesterEmail &&
     owner &&
@@ -56,6 +57,10 @@ export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
     id: pres.id,
     title: pres.title,
     description: pres.description || null,
+    // Identity as an (id, email) pair: the id is the key, the email display.
+    ownerId: pres.ownerId || null,
+    createdById: pres.createdById || null,
+    updatedById: pres.updatedById || null,
     ownerEmail,
     scope: pres.scope || 'private',
     themeId: pres.themeId || null,

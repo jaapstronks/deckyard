@@ -2,7 +2,7 @@
  * Core presentation authorization functions.
  *
  * Who a deck belongs to is decided by {@link isOwnerOrCreator} in
- * identity-match.js, which keys on the stable `users.id` and falls back to the
+ * shared/identity-match.js, which keys on the stable `users.id` and falls back to the
  * email identifier only where no id exists (file mode, external/legacy rows,
  * the auth-off operator). These functions therefore never compare an email
  * themselves — see that module for the rule and why it is not a second key.
@@ -11,7 +11,7 @@
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { isMultiWorkspaceEnabled } from '../../config/features.js';
 import { canComment, canWrite, canManage } from '../../../shared/constants/permissions.js';
-import { hasIdentity, isOwnerOrCreator } from './identity-match.js';
+import { hasIdentity, isOwnerOrCreator } from '../../../shared/identity-match.js';
 
 /**
  * Normalize presentation scope to either 'workspace' or 'private'.

@@ -1,32 +1,28 @@
 /**
  * Slide locking authorization helpers for the client.
- * These complement the server-side validation in presentation-authz.
+ *
+ * Advisory only: these complement the server-side enforcement in
+ * presentation-authz, on the same rule — deck ownership through
+ * {@link isOwnerOrCreator} in shared/identity-match.js, which keys on the
+ * stable `users.id` and falls back to the email identifier only where no id
+ * exists (file mode, external/legacy rows).
  */
 
-/**
- * Normalize email to lowercase for comparison.
- */
-function normalizeEmail(email) {
-  return typeof email === 'string' ? email.trim().toLowerCase() : '';
-}
+import { isOwnerOrCreator } from '../../../shared/identity-match.js';
 
 /**
  * Check if a user is the author of a presentation.
  * Authors are: owner, creator, or admin.
  * Authors can lock/unlock slides to prevent editing by collaborators.
  *
- * @param {Object} user - The user object with email and isAdmin
- * @param {Object} pres - The presentation object with ownerEmail and createdBy
+ * @param {Object} user - The user object with id, email and isAdmin
+ * @param {Object} pres - The presentation, with ownerId/createdById (and their emails)
  * @returns {boolean} True if user is an author
  */
 export function isPresentationAuthor(user, pres) {
   if (!pres || typeof pres !== 'object') return false;
   if (user?.isAdmin) return true;
-  const userEmail = normalizeEmail(user?.email);
-  if (!userEmail) return false;
-  const owner = normalizeEmail(pres?.ownerEmail);
-  const createdBy = normalizeEmail(pres?.createdBy);
-  return (owner && owner === userEmail) || (createdBy && createdBy === userEmail);
+  return isOwnerOrCreator(user, pres);
 }
 
 /**

@@ -25,7 +25,7 @@ export function belongsInCollection({ user, pres } = {}) {
   if (!hasIdentity(user)) return false;
 
   // User owns or created the presentation (decided on users.id; see
-  // utils/presentation-authz/identity-match.js).
+  // shared/identity-match.js).
   return isOwnerOrCreator(user, pres);
 }
 

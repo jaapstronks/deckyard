@@ -264,7 +264,7 @@ export async function buildBulkExport(opts) {
   // the stable `users.id` like every other one — resolved once here, since a
   // detached job has no request context to carry it. An exporter with no user
   // row (file mode, legacy) leaves the actor id-less and the match falls back
-  // to the email identifier. See utils/presentation-authz/identity-match.js.
+  // to the email identifier. See shared/identity-match.js.
   const exporterResolution = await resolveIdentityByEmail(userEmail);
   const exporter = { id: exporterResolution?.userId || null, email: userEmail };
   const allPresentations = await listPresentations(storageScope);

@@ -62,6 +62,7 @@ export function createEditorDropdowns({
     root,
     openOverlayClosers,
     editorState,
+    currentUser: user,
     currentUserEmail: user?.email,
     isAdmin: user?.isAdmin,
   });

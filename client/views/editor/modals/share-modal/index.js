@@ -12,6 +12,7 @@
  */
 
 import { t } from '../../../../lib/ui-i18n.js';
+import { isOwnerOrCreator } from '../../../../../shared/identity-match.js';
 import { createFocusTrap } from '../../../../lib/dom.js';
 import { createSegmented } from '../../../../lib/dom/segmented.js';
 import { getFeatures } from '../../../../lib/state/features.js';
@@ -33,7 +34,8 @@ import { createPublishSection } from './publish-section.js';
  * @param {Function} options.lockDocumentScroll - Locks document scroll
  * @param {Function} options.copyToClipboard - Copies text to the clipboard
  * @param {Object} options.toast - Toast notification service
- * @param {string} options.currentUserEmail - Current user's email
+ * @param {Object} options.currentUser - Current user (carries `id`); decides ownership
+ * @param {string} options.currentUserEmail - Current user's email, for invites and display
  * @param {boolean} options.isAdmin - Whether the current user is an admin
  * @param {Function} options.isDirty - Returns true if there are unsaved edits
  * @param {Function} options.requestSave - Persists pending edits
@@ -59,6 +61,7 @@ export function openShareModal({
   lockDocumentScroll,
   copyToClipboard,
   toast,
+  currentUser,
   currentUserEmail,
   isAdmin,
   isDirty,
@@ -120,10 +123,11 @@ export function openShareModal({
     })
   );
 
-  // Owner check drives the transfer-ownership affordance in collaborators.
-  const ownerEmail = pres?.ownerEmail || pres?.createdBy;
-  const isOwner = currentUserEmail && ownerEmail &&
-    currentUserEmail.toLowerCase() === ownerEmail.toLowerCase();
+  // Owner check drives the transfer-ownership affordance in collaborators. It
+  // is decided on the stable user id, like the server's — an address is not an
+  // identity (shared/identity-match.js). The emails below stay: inviting a
+  // collaborator is an email mechanism, and the owner's address is displayed.
+  const isOwner = isOwnerOrCreator(currentUser, pres);
 
   // --- Workspace tab ---
   const visibility = createWorkspaceVisibilitySection({

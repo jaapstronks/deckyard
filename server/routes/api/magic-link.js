@@ -226,6 +226,9 @@ export async function handleMagicLink({ repoRoot, req, res, url }) {
     serveJson(res, 200, {
       ok: true,
       user: {
+        // Same shape as the password login and /api/auth/me: the id is the
+        // identity, the email beside it is display/contact.
+        id: userResult.user.id ?? null,
         email: userResult.user.email,
         name: userResult.user.name,
         role: userResult.user.role,
