@@ -148,6 +148,7 @@ nothing is discoverable only by `ls`.
 |-----|----------------|
 | [`mcp-server.md`](reference/mcp-server.md) | MCP tools, prompts, transports |
 | [`mcp-test-prompt.md`](reference/mcp-test-prompt.md) | A manual MCP test script |
+| [`ai-pipeline.md`](reference/ai-pipeline.md) | The two-phase generation pipeline: LLM transport, prompts, catalogue, validate-and-fix |
 | [`ai-wizard-prompts.md`](reference/ai-wizard-prompts.md) | The deck-generation prompts |
 | [`ai-slide-review.md`](reference/ai-slide-review.md) | Deck grid, batch review, section refine |
 | [`api-error-format.md`](reference/api-error-format.md) | The internal API error envelope |
