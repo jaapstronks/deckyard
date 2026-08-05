@@ -58,7 +58,6 @@ function dispatchLock(type, data) {
 }
 
 test('a second identical lock event produces zero onLocksChanged calls', async () => {
-  window.__currentUserEmail = 'me@example.com';
   const { mgr, getCalls } = makeManager();
   await mgr.init();
 
@@ -81,7 +80,6 @@ test('a second identical lock event produces zero onLocksChanged calls', async (
 });
 
 test('a lock refresh that only advances expiresAt is suppressed', async () => {
-  window.__currentUserEmail = 'me@example.com';
   const { mgr, getCalls } = makeManager();
   await mgr.init();
 
@@ -111,7 +109,6 @@ test('a lock refresh that only advances expiresAt is suppressed', async () => {
 });
 
 test('a real lock take and release each notify (indicator appears and disappears)', async () => {
-  window.__currentUserEmail = 'me@example.com';
   const { mgr, getCalls } = makeManager();
   await mgr.init();
 
