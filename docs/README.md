@@ -195,6 +195,7 @@ nothing is discoverable only by `ls`.
 | [`auth-and-sessions.md`](reference/auth-and-sessions.md) | Session cookies/tokens, the login paths, and auth rate limits |
 | [`sandbox-mode.md`](reference/sandbox-mode.md) | The public anonymous try-it playground: guest identity, ephemeral decks, TTL cleanup |
 | [`security-posture.md`](reference/security-posture.md) | Server-side hardening controls, what each blocks, and where it lives |
+| [`webhooks.md`](reference/webhooks.md) | The eight outgoing events, their payload contract, the SSRF guard and the admin config |
 | [`analytics.md`](reference/analytics.md) | View analytics end to end: tracking routes, aggregations, reports, retention job |
 | [`analytics-privacy.md`](reference/analytics-privacy.md) | What view analytics stores per viewer, the two erase routes, retention |
 | [`email-infrastructure.md`](reference/email-infrastructure.md) | The Brevo transport, the senders, and the admin-customizable templates |
