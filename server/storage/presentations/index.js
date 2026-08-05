@@ -20,6 +20,7 @@ import { normalizeSlides } from './slides.js';
 import { normalizeI18n } from './i18n.js';
 import { prepareNewPresentation } from './crud/factory.js';
 import { assertSandboxQuotaForCreate } from './sandbox-quota.js';
+import { stripIdentityForSnapshot } from './snapshot-identity.js';
 import { recordSlideLevelMerge } from '../../services/activity-events.js';
 import { validatePresentationSize } from '../../utils/presentation-limits.js';
 import { invalidatePresentationCache } from '../presentation-cache.js';
@@ -411,7 +412,12 @@ export async function createPresentationVersion(scope, presentationId, pres, opt
     actorEmail: opts?.actorEmail,
   });
   const storage = getStorage();
-  return storage.createPresentationVersion(presentationId, pres, ctx, {
+  // Identity is the living deck's, not the snapshot's: strip it from the
+  // embedded copy rather than stamping a person's address into every
+  // historical row. Who *took* the snapshot is still recorded, in the
+  // `created_by` column the adapter fills from `ctx.actorEmail`. See
+  // snapshot-identity.js for why restore does not need it back.
+  return storage.createPresentationVersion(presentationId, stripIdentityForSnapshot(pres), ctx, {
     reason: opts?.reason,
     label: opts?.label,
   });
