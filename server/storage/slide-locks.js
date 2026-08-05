@@ -8,6 +8,7 @@
 
 import { getOrgId } from '../utils/context.js';
 import { norm, nowIso, isoAfter } from '../utils/normalize.js';
+import { matchesIdentity } from '../../shared/identity-match.js';
 import { withDbGuard } from './utils/db-guard.js';
 
 const LOCK_TTL_MS = 2 * 60 * 1000; // 2 minutes
@@ -25,12 +26,22 @@ function mapLockRow(row) {
   return {
     presentationId: row.presentation_id,
     slideId: row.slide_id,
+    holderId: row.holder_user_id || null,
     holderEmail: row.holder_email,
     holderName: row.holder_name,
     acquiredAt: row.acquired_at,
     refreshedAt: row.refreshed_at,
     expiresAt: row.expires_at,
   };
+}
+
+/**
+ * The identity stamp on a lock row, as {@link matchesIdentity} expects it.
+ * @param {Object} row - A slide_locks row
+ * @returns {{userId: string|null, email: string}}
+ */
+function holderStamp(row) {
+  return { userId: row.holder_user_id || null, email: row.holder_email };
 }
 
 // ============================================================
@@ -107,11 +118,12 @@ export async function getSlideLock(presentationId, slideId, ctx) {
  * @param {Object} ctx - Context with organization info
  * @returns {Promise<Object>} { ok: boolean, reason?, lock? }
  */
-export async function acquireSlideLock(presentationId, slideId, { email, name } = {}, ctx) {
+export async function acquireSlideLock(presentationId, slideId, { email, name, userId } = {}, ctx) {
   const pid = norm(presentationId);
   const sid = norm(slideId);
   const holderEmail = norm(email).toLowerCase();
   const holderName = norm(name) || holderEmail;
+  const holderId = userId || null;
 
   if (!pid || !sid || !holderEmail) {
     return { ok: false, reason: 'invalid' };
@@ -142,6 +154,7 @@ export async function acquireSlideLock(presentationId, slideId, { email, name } 
         presentation_id: pid,
         slide_id: sid,
         organization_id: orgId,
+        holder_user_id: holderId,
         holder_email: holderEmail,
         holder_name: holderName,
         acquired_at: now,
@@ -152,18 +165,22 @@ export async function acquireSlideLock(presentationId, slideId, { email, name } 
         oc
           .columns(['presentation_id', 'slide_id'])
           .doUpdateSet({
+            holder_user_id: holderId,
             holder_email: holderEmail,
             holder_name: holderName,
             acquired_at: now,
             refreshed_at: now,
             expires_at: expiresAt,
           })
-          .where((eb) =>
-            eb.or([
-              eb('slide_locks.expires_at', '<=', now),
-              eb('slide_locks.holder_email', '=', holderEmail),
-            ])
-          )
+          .where((eb) => {
+            // The DO UPDATE only fires when the lock is expired or already this
+            // user's. Matching by id too means a holder who renamed still
+            // re-acquires their own live lock (the e-mail no longer equals the
+            // stored one, but the stable id does) — the rename-robustness F3 buys.
+            const mine = [eb('slide_locks.holder_email', '=', holderEmail)];
+            if (holderId) mine.push(eb('slide_locks.holder_user_id', '=', holderId));
+            return eb.or([eb('slide_locks.expires_at', '<=', now), ...mine]);
+          })
       )
       .returningAll()
       .executeTakeFirst();
@@ -200,10 +217,11 @@ export async function acquireSlideLock(presentationId, slideId, { email, name } 
  * @param {Object} ctx - Context with organization info
  * @returns {Promise<Object>} { ok: boolean, reason?, lock? }
  */
-export async function refreshSlideLock(presentationId, slideId, { email } = {}, ctx) {
+export async function refreshSlideLock(presentationId, slideId, { email, userId } = {}, ctx) {
   const pid = norm(presentationId);
   const sid = norm(slideId);
   const holderEmail = norm(email).toLowerCase();
+  const actor = { id: userId || null, email: holderEmail };
 
   if (!pid || !sid || !holderEmail) {
     return { ok: false, reason: 'invalid' };
@@ -239,8 +257,8 @@ export async function refreshSlideLock(presentationId, slideId, { email } = {}, 
       return { ok: false, reason: 'expired' };
     }
 
-    // Check if held by different user
-    if (existing.holder_email !== holderEmail) {
+    // Check if held by different user (id-primary, e-mail fallback)
+    if (!matchesIdentity(actor, holderStamp(existing))) {
       return {
         ok: false,
         reason: 'held',
@@ -277,10 +295,11 @@ export async function refreshSlideLock(presentationId, slideId, { email } = {}, 
  * @param {Object} ctx - Context with organization info
  * @returns {Promise<Object>} { ok: boolean, reason?, released? }
  */
-export async function releaseSlideLock(presentationId, slideId, { email } = {}, ctx) {
+export async function releaseSlideLock(presentationId, slideId, { email, userId } = {}, ctx) {
   const pid = norm(presentationId);
   const sid = norm(slideId);
   const holderEmail = norm(email).toLowerCase();
+  const actor = { id: userId || null, email: holderEmail };
 
   if (!pid || !sid || !holderEmail) {
     return { ok: false, reason: 'invalid' };
@@ -302,8 +321,8 @@ export async function releaseSlideLock(presentationId, slideId, { email } = {}, 
       return { ok: true, released: false };
     }
 
-    // Check if held by different user
-    if (existing.holder_email !== holderEmail) {
+    // Check if held by different user (id-primary, e-mail fallback)
+    if (!matchesIdentity(actor, holderStamp(existing))) {
       return {
         ok: false,
         reason: 'held',
@@ -331,9 +350,10 @@ export async function releaseSlideLock(presentationId, slideId, { email } = {}, 
  * @param {Object} ctx - Context with organization info
  * @returns {Promise<Object>} { ok: boolean, releasedCount: number }
  */
-export async function releaseAllUserSlideLocks(presentationId, { email } = {}, ctx) {
+export async function releaseAllUserSlideLocks(presentationId, { email, userId } = {}, ctx) {
   const pid = norm(presentationId);
   const holderEmail = norm(email).toLowerCase();
+  const holderId = userId || null;
 
   if (!pid || !holderEmail) {
     return { ok: false, reason: 'invalid', releasedCount: 0 };
@@ -345,8 +365,14 @@ export async function releaseAllUserSlideLocks(presentationId, { email } = {}, c
     const result = await db
       .deleteFrom('slide_locks')
       .where('presentation_id', '=', pid)
-      .where('holder_email', '=', holderEmail)
       .where('organization_id', '=', orgId)
+      // Match the caller's own locks by id or e-mail: a holder who renamed
+      // mid-session still tears down the locks they took under the old address.
+      .where((eb) => {
+        const mine = [eb('holder_email', '=', holderEmail)];
+        if (holderId) mine.push(eb('holder_user_id', '=', holderId));
+        return eb.or(mine);
+      })
       .executeTakeFirst();
 
     return {
@@ -363,8 +389,9 @@ export async function releaseAllUserSlideLocks(presentationId, { email } = {}, c
  * @param {Object} ctx - Context with organization info
  * @returns {Promise<Object>} { ok: boolean, releasedCount: number }
  */
-export async function releaseAllUserLocksGlobally({ email } = {}, ctx) {
+export async function releaseAllUserLocksGlobally({ email, userId } = {}, ctx) {
   const holderEmail = norm(email).toLowerCase();
+  const holderId = userId || null;
 
   if (!holderEmail) {
     return { ok: false, reason: 'invalid', releasedCount: 0 };
@@ -375,8 +402,12 @@ export async function releaseAllUserLocksGlobally({ email } = {}, ctx) {
 
     const result = await db
       .deleteFrom('slide_locks')
-      .where('holder_email', '=', holderEmail)
       .where('organization_id', '=', orgId)
+      .where((eb) => {
+        const mine = [eb('holder_email', '=', holderEmail)];
+        if (holderId) mine.push(eb('holder_user_id', '=', holderId));
+        return eb.or(mine);
+      })
       .executeTakeFirst();
 
     return {
@@ -414,9 +445,9 @@ export async function cleanupExpiredSlideLocks() {
  * @param {Object} ctx - Context with organization info
  * @returns {Promise<Array>} Array of lock objects for slides locked by others
  */
-export async function getLockedByOthers(presentationId, { email } = {}, ctx) {
+export async function getLockedByOthers(presentationId, { email, userId } = {}, ctx) {
   const pid = norm(presentationId);
-  const userEmail = norm(email).toLowerCase();
+  const actor = { id: userId || null, email: norm(email).toLowerCase() };
   if (!pid) return [];
 
   return withDbGuard([], async (db) => {
@@ -429,9 +460,11 @@ export async function getLockedByOthers(presentationId, { email } = {}, ctx) {
       .where('presentation_id', '=', pid)
       .where('organization_id', '=', orgId)
       .where('expires_at', '>', now)
-      .where('holder_email', '!=', userEmail)
       .execute();
 
-    return rows.map(mapLockRow);
+    // Exclude the caller's own locks by identity, not by a raw e-mail match:
+    // a holder who renamed still owns a lock stamped with their old address, so
+    // an e-mail-only filter would wrongly report it as held by someone else.
+    return rows.filter((row) => !matchesIdentity(actor, holderStamp(row))).map(mapLockRow);
   });
 }

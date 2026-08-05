@@ -20,8 +20,32 @@ import {
 } from '../../../utils/presentation-locks.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { createRouteContext } from '../../../utils/context.js';
+import { matchesIdentity } from '../../../../shared/identity-match.js';
 
 const getCtx = createRouteContext;
+
+/**
+ * Whether the authed user holds this lock — id-primary, e-mail fallback.
+ * The one place the route decides "is this mine?", so every holder gate reads
+ * the same rule (shared/identity-match.js) instead of a raw lowercased compare.
+ *
+ * @param {Object} [user] - The authed user ({ id, email })
+ * @param {Object} [lock] - The lock, carrying holderId/holderEmail
+ * @returns {boolean}
+ */
+function isLockHolder(user, lock) {
+  if (!lock) return false;
+  return matchesIdentity(user, { userId: lock.holderId, email: lock.holderEmail });
+}
+
+/** The identity an authed user carries into a lock write. */
+function lockActor(authedUser) {
+  return {
+    email: authedUser?.email,
+    name: authedUser?.name,
+    userId: authedUser?.id || null,
+  };
+}
 
 export async function handlePresentationLockStatus(
   { repoRoot, req, res, authedUser } = {},
@@ -35,13 +59,12 @@ export async function handlePresentationLockStatus(
   const lock = await getPresentationLock(id, ctx);
 
   // Check if the current user is the lock holder
-  const isHolder = lock && authedUser?.email &&
-    lock.holderEmail === authedUser.email.toLowerCase();
+  const isHolder = isLockHolder(authedUser, lock);
 
   // Also include user's pending request status if they have one
   let myRequest = null;
   if (authedUser?.email) {
-    myRequest = await getUserLockRequestStatus(id, { email: authedUser.email }, ctx);
+    myRequest = await getUserLockRequestStatus(id, { email: authedUser.email, userId: authedUser?.id || null }, ctx);
   }
 
   serveJson(res, 200, { ok: true, lock, myRequest, isHolder });
@@ -57,10 +80,7 @@ export async function handlePresentationLockAcquire(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const result = await acquirePresentationLock(id, {
-    email: authedUser?.email,
-    name: authedUser?.name,
-  }, ctx);
+  const result = await acquirePresentationLock(id, lockActor(authedUser), ctx);
 
   serveJson(res, result.ok ? 200 : 409, result);
   return true;
@@ -75,11 +95,11 @@ export async function handlePresentationLockRefresh(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const result = await refreshPresentationLock(id, { email: authedUser?.email }, ctx);
+  const result = await refreshPresentationLock(id, { email: authedUser?.email, userId: authedUser?.id || null }, ctx);
 
   // Include pending requests count if user is the holder
   let pendingRequestsCount = 0;
-  if (result.ok && result.lock?.holderEmail === authedUser?.email?.toLowerCase()) {
+  if (result.ok && isLockHolder(authedUser, result.lock)) {
     const requests = await listPendingLockRequests(id, ctx);
     pendingRequestsCount = requests.length;
   }
@@ -97,7 +117,7 @@ export async function handlePresentationLockRelease(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const result = await releasePresentationLock(id, { email: authedUser?.email }, ctx);
+  const result = await releasePresentationLock(id, { email: authedUser?.email, userId: authedUser?.id || null }, ctx);
 
   serveJson(res, result.ok ? 200 : 409, result);
   return true;
@@ -154,7 +174,7 @@ export async function handlePresentationLockRequestsList(
 
   // Verify user is the current lock holder
   const lock = await getPresentationLock(id, ctx);
-  if (!lock || lock.holderEmail !== authedUser?.email?.toLowerCase()) {
+  if (!isLockHolder(authedUser, lock)) {
     return forbidden(res, 'Only the current lock holder can view requests');
   }
 
@@ -176,7 +196,7 @@ export async function handlePresentationLockRequestAccept(
 
   // Verify user is the current lock holder
   const lock = await getPresentationLock(id, ctx);
-  if (!lock || lock.holderEmail !== authedUser?.email?.toLowerCase()) {
+  if (!isLockHolder(authedUser, lock)) {
     return forbidden(res, 'Only the current lock holder can accept requests');
   }
 
@@ -207,7 +227,7 @@ export async function handlePresentationLockRequestReject(
 
   // Verify user is the current lock holder
   const lock = await getPresentationLock(id, ctx);
-  if (!lock || lock.holderEmail !== authedUser?.email?.toLowerCase()) {
+  if (!isLockHolder(authedUser, lock)) {
     return forbidden(res, 'Only the current lock holder can reject requests');
   }
 
@@ -232,7 +252,7 @@ export async function handlePresentationLockMyRequest(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const request = await getUserLockRequestStatus(id, { email: authedUser?.email }, ctx);
+  const request = await getUserLockRequestStatus(id, { email: authedUser?.email, userId: authedUser?.id || null }, ctx);
 
   serveJson(res, 200, { ok: true, request });
   return true;

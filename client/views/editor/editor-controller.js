@@ -214,6 +214,7 @@ export async function createEditorController({
   const slideLockManager = createSlideLockManager({
     api,
     presentationId: id,
+    user,
     getSelectedSlideId: () => selectedSlideId,
     onLocksChanged: ({ currentSlideIsLocked, lockedByOthers } = {}) => {
       // Patch the affected rows' lock indicators. A full rerenderSlideList()
@@ -262,11 +263,6 @@ export async function createEditorController({
   // Read-only state (lock source OR maintenance source) is owned by
   // createReadOnlyController; it mirrors onto the shell, so it is created once
   // the shell exists (below). See ./read-only-controller.js.
-
-  // Store user email for SSE event filtering
-  if (user?.email) {
-    window.__currentUserEmail = user.email;
-  }
 
   // Collaborator presence (initialized further down when features.collab)
   let presenceHandle = null;
@@ -1119,6 +1115,7 @@ export async function createEditorController({
       api,
       presentationId: id,
       pres,
+      user,
       getSelectedSlideId: () => selectedSlideId,
       getCurrentLockedSlideId: () => slideLockManager.getCurrentLockedSlideId(),
       rerenderSlideList: () => rerenderSlideList(),

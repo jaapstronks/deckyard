@@ -23,8 +23,18 @@ import {
 } from '../../../services/comment-events.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { createRouteContext } from '../../../utils/context.js';
+import { matchesIdentity } from '../../../../shared/identity-match.js';
 
 const getCtx = createRouteContext;
+
+/** The identity an authed user carries into a slide-lock write. */
+function lockActor(authedUser) {
+  return {
+    email: authedUser?.email,
+    name: authedUser?.name,
+    userId: authedUser?.id || null,
+  };
+}
 
 /**
  * HTTP status for a slide-lock acquire/refresh/release result.
@@ -62,7 +72,7 @@ export async function handleSlideLocksList(
 
   // Also include list of slides locked by others (for UI)
   const lockedByOthers = authedUser?.email
-    ? await getLockedByOthers(id, { email: authedUser.email }, ctx)
+    ? await getLockedByOthers(id, { email: authedUser.email, userId: authedUser?.id || null }, ctx)
     : [];
 
   serveJson(res, 200, {
@@ -96,9 +106,7 @@ export async function handleSlideLockStatus(
   const lock = await getSlideLock(presentationId, slideId, ctx);
 
   const isHolder =
-    lock &&
-    authedUser?.email &&
-    lock.holderEmail === authedUser.email.toLowerCase();
+    !!lock && matchesIdentity(authedUser, { userId: lock.holderId, email: lock.holderEmail });
 
   serveJson(res, 200, { ok: true, lock, isHolder });
   return true;
@@ -124,17 +132,11 @@ export async function handleSlideLockAcquire(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const result = await acquireSlideLock(
-    presentationId,
-    slideId,
-    {
-      email: authedUser?.email,
-      name: authedUser?.name,
-    },
-    ctx
-  );
+  const result = await acquireSlideLock(presentationId, slideId, lockActor(authedUser), ctx);
 
-  // Broadcast lock event to other clients
+  // Broadcast lock event to other clients. `result.lock` carries holderId
+  // alongside holderEmail/holderName, so listeners decide "is this mine?" on
+  // the stable id (shared/identity-match.js), not a raw e-mail compare.
   if (result.ok) {
     broadcastToPresentation(presentationId, SlideLockEventTypes.LOCKED, {
       slideId,
@@ -169,7 +171,7 @@ export async function handleSlideLockRefresh(
   const result = await refreshSlideLock(
     presentationId,
     slideId,
-    { email: authedUser?.email },
+    { email: authedUser?.email, userId: authedUser?.id || null },
     ctx
   );
 
@@ -202,15 +204,17 @@ export async function handleSlideLockRelease(
   const result = await releaseSlideLock(
     presentationId,
     slideId,
-    { email: authedUser?.email },
+    { email: authedUser?.email, userId: authedUser?.id || null },
     ctx
   );
 
-  // Broadcast unlock event to other clients
+  // Broadcast unlock event to other clients. The payload carries only the
+  // slide: `releasedBy` was never read by any client (the receiver deletes the
+  // lock and clears the indicator regardless of who released it), so the
+  // beta-stance drops the unused actor rather than dressing it up as a pair.
   if (result.ok && result.released) {
     broadcastToPresentation(presentationId, SlideLockEventTypes.UNLOCKED, {
       slideId,
-      releasedBy: authedUser?.email,
     });
   }
 
@@ -240,14 +244,15 @@ export async function handleSlideLocksReleaseAll(
   const ctx = getCtx(authedUser);
   const result = await releaseAllUserSlideLocks(
     presentationId,
-    { email: authedUser?.email },
+    { email: authedUser?.email, userId: authedUser?.id || null },
     ctx
   );
 
-  // Broadcast that locks have changed
+  // Broadcast that locks have changed. Listeners re-fetch the whole lock set on
+  // this event, so who released them is not consulted — `releasedBy` was dead
+  // weight and is dropped (same beta-stance call as slide:unlocked above).
   if (result.ok && result.releasedCount > 0) {
     broadcastToPresentation(presentationId, SlideLockEventTypes.LOCKS_CHANGED, {
-      releasedBy: authedUser?.email,
       count: result.releasedCount,
     });
   }
