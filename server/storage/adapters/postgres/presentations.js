@@ -656,7 +656,7 @@ export function withPresentations(Base) {
 
       let query = db
         .selectFrom('presentation_versions')
-        .select(['id', 'presentation_id', 'created_at', 'created_by', 'reason', 'label', 'revision', 'title'])
+        .select(['id', 'presentation_id', 'created_at', 'created_by', 'created_by_user_id', 'reason', 'label', 'revision', 'title'])
         .where('presentation_id', '=', presentationId)
         .where('organization_id', '=', orgId)
         .orderBy('created_at', 'desc');
@@ -687,12 +687,24 @@ export function withPresentations(Base) {
       const db = getDb();
       const orgId = getOrgId(ctx);
 
+      // Dual-key (T10 PR F1): stamp the stable user_id beside created_by from a
+      // single resolution of the same address, so the two halves can never
+      // drift (the invariant verifyIdentityConsistency checks). A known actor
+      // maps to their users.id; an actor with no users row resolves `external`
+      // and stays NULL (the pinned legacy path). The version list still renders
+      // the e-mail; nothing keys authz on this audit column.
+      const createdByEmail = ctx?.actorEmail || null;
+      const createdByResolution = createdByEmail
+        ? await resolveIdentityByEmail(createdByEmail)
+        : null;
+
       const row = await db
         .insertInto('presentation_versions')
         .values({
           presentation_id: presentationId,
           organization_id: orgId,
-          created_by: ctx?.actorEmail || null,
+          created_by: createdByEmail,
+          created_by_user_id: createdByResolution?.userId ?? null,
           reason: opts?.reason || 'snapshot',
           label: opts?.label || null,
           revision: snapshot.revision,

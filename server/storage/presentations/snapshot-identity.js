@@ -29,9 +29,11 @@
  *
  * ## What is deliberately *not* stripped
  *
- *  - **`presentation_versions.created_by`** — a first-class column, not part of
+ *  - **`presentation_versions.created_by`** (and its paired
+ *    `created_by_user_id`, migration 069) — a first-class column, not part of
  *    the embedded copy, holding who *took* the snapshot. The version list shows
- *    it ("Alice, 3 days ago"). Moving that column off e-mail belongs to PR F.
+ *    it ("Alice, 3 days ago"). It is dual-keyed in its own right (T10 PR F1)
+ *    and stays put; only the embedded copy is stripped here.
  *  - **`organizationId`** — tenancy, not identity, and the restore write is
  *    org-scoped through the caller's own scope rather than through the body.
  *

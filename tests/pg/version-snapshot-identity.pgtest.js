@@ -169,14 +169,42 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
     assert.deepEqual(bag.slides, SLIDES_NOW);
   });
 
-  it('who took the snapshot is still recorded, in its own column', async () => {
+  it('who took the snapshot is still recorded, in its own dual-keyed column', async () => {
     const pres = await getPresentation(scope, DECK_ID);
-    await createPresentationVersion(scope, DECK_ID, pres, { actorEmail: ALICE, reason: 'manual' });
+    const created = await createPresentationVersion(scope, DECK_ID, pres, {
+      actorEmail: ALICE,
+      reason: 'manual',
+    });
 
     // `created_by` is a first-class column, not part of the embedded copy: the
     // version list renders it. Stripping the bag must not have taken it too.
+    // Since T10 PR F1 it carries a stable `users.id` beside the e-mail; both
+    // halves are stamped from one resolution of the acting user's address.
     const [summary] = await listPresentationVersions(scope, DECK_ID);
     assert.equal(summary.createdBy, ALICE);
+    assert.equal(summary.createdById, ALICE_ID, 'the version author id is stamped');
+    assert.equal(created.createdById, ALICE_ID, 'and returned from the create call');
+
+    // Pin the actual stored column, not just the mapped shape.
+    const row = await db
+      .selectFrom('presentation_versions')
+      .select('created_by_user_id')
+      .where('id', '=', created.id)
+      .executeTakeFirstOrThrow();
+    assert.equal(row.created_by_user_id, ALICE_ID);
+  });
+
+  it('an external snapshot author (no users row) stamps a NULL id, not a failure', async () => {
+    const pres = await getPresentation(scope, DECK_ID);
+    const created = await createPresentationVersion(scope, DECK_ID, pres, {
+      actorEmail: 'stranger@example.com',
+      reason: 'manual',
+    });
+
+    const [summary] = await listPresentationVersions(scope, DECK_ID);
+    assert.equal(summary.createdBy, 'stranger@example.com', 'the e-mail is still recorded');
+    assert.equal(summary.createdById, null, 'and the id half is a defined NULL (external)');
+    assert.equal(created.createdById, null);
   });
 
   it('snapshotting does not strip the live deck', async () => {
