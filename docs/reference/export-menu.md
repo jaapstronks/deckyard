@@ -24,6 +24,23 @@ overlapping PDF entries and a duplicated "other language" section.
 The full server-side pipeline (routes, async queue, builders) is in
 `server/routes/api/export.js` and `server/export/`.
 
+## Direct export routes (no menu row)
+
+`server/routes/api/export.js` registers three more export routes that the modal
+does **not** surface — they are reachable by URL but have no button. Documented
+here so the route inventory is complete, not because they are user-facing today.
+
+| Format | Route (`/api/presentations/:id/export/…`) | Builder |
+|--------|--------------------------------------------|---------|
+| `.deck` bundle | `deck.zip` | `buildDeckBundle` (`server/export/deck-bundle.js`) — self-contained portable deck (deck.json + content-addressed assets + manifest); renders/round-trips without the server |
+| PNG ZIP | `png.zip` | `buildSlidesPngZipBuffer` (`server/export/png-zip.js`) — every slide as PNG in one ZIP; `?scale=` supported |
+| Single-slide PNG | `png/:n.png` (1-based) | `renderSlideToPngBuffer` (`server/render/png.js`) — one slide as PNG; `?scale=` supported |
+
+Implementation status: the routes are live and covered by the export pipeline.
+Whether the `.deck` bundle and PNG-ZIP earn a menu row is an open product
+question, not a promise — treat their URLs as internal until the modal exposes
+them.
+
 ## The single PDF entry
 
 There is one **PDF** row, not two. It downloads the deterministic

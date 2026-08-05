@@ -1,0 +1,153 @@
+# Storage layer
+
+## Purpose & scope
+
+The storage layer is everything under `server/storage/` — the seam between
+route/business code and the database. It owns two jobs: **tenancy** (no query
+runs without an explicit organization scope) and the **adapter contract** (one
+Postgres-only backend behind a stable set of facades). Route handlers never
+touch SQL directly; they call a per-domain facade (`server/storage/presentations/`,
+`server/storage/themes.js`, …) with a *scope* as the first argument, and the
+facade delegates to the adapter.
+
+This document maps the layer: the module inventory, the adapter seam, the
+config that selects it (there is only one choice), and how the scope threads
+org-isolation through every call. It does not re-document the deck data format
+([`deck-format.md`](deck-format.md)) or the isolation rules
+([`tenant-isolation.md`](tenant-isolation.md)); it points at them.
+
+## Module map
+
+`server/storage/` holds **91 `.js` files** — 35 top-level facades/helpers and
+the rest under 14 subdirectories. Rather than list all 91, this is the shape;
+each path resolves.
+
+**The seam (read these first):**
+
+- `server/storage/scope.js` — defines and validates storage *scopes*; the
+  tenancy gate (see *Authz & tenancy*).
+- `server/storage/backend-dispatch.js` — reduces a caller scope to the adapter's
+  `StorageContext` via `toStorageContext()`.
+- `server/storage/adapters/index.js` — the adapter factory
+  (`initializeStorage` / `getStorage` / `closeStorage`), a memoized singleton.
+- `server/storage/adapters/types.js` — the data-shape contract (`StorageContext`,
+  `Presentation`, `PresentationSummary`, …).
+- `server/storage/adapters/postgres/` — the only backend: `index.js` composes
+  the adapter from `with*()` mixins (`presentations.js`, `images.js`,
+  `slides.js`, `published.js`, `tags.js`, `collections.js`, …) over
+  `BasePostgresAdapter`.
+- `server/storage/boot-check.js` — refuses to start on an empty DB while legacy
+  on-disk data still exists.
+
+**Domain subdirectories** (each takes a scope as first arg):
+
+- `server/storage/presentations/` — the deck facade + `crud/`, `slides.js`,
+  `ownership.js`, `i18n.js`, `slide-notes.js`, `sandbox.js`, `sandbox-quota.js`.
+- `server/storage/published/` — published-deck facade; `getPublishedById` is the
+  one deliberately cross-org read.
+- `server/storage/share-links/` — token share links (`crud.js`, `guests.js`,
+  `access-log.js`).
+- `server/storage/present-sessions/` — live present/follow sessions (`sessions.js`,
+  `sse.js`, `control.js`, `state.js`, `close.js`, `db.js`). See
+  [`live-sessions.md`](live-sessions.md).
+- `server/storage/slide-library/`, `server/storage/slide-library-usage/`,
+  `server/storage/collections/` — the reusable-slide shelf and its usage/id sets.
+- `server/storage/image-library/` — per-org images + per-user favorites.
+- `server/storage/tags/` — per-organization tags.
+- `server/storage/user-organizations/` — memberships/roles (`memberships.js`) and
+  organization CRUD (`organizations.js`).
+- `server/storage/analytics/` — dashboard/aggregation/report/view-session
+  storage (incl. the GDPR view-session path).
+- `server/storage/cache/` — `permission-cache.js`.
+- `server/storage/utils/` — `db-guard.js` (`withDbGuard`), `helpers.js`.
+
+**Top-level facades** cover the remaining domains: auth/account
+(`users.js`, `sso.js`, `magic-link.js`, `password-reset.js`, `api-keys.js`,
+`api-usage.js`, `access-attempts.js`), presentation-adjacent
+(`presentation-comments.js`, `presentation-locks-db.js`,
+`presentation-subscriptions.js`, `presentation-ydocs.js`, `slide-locks.js`),
+collaboration/live (`collaborators.js`, `notifications.js`,
+`activity-events.js`, `feedback.js`, `leads.js`, `questions.js`,
+`interactions.js`, `follow-codes.js`), and content
+(`themes.js`, `font-families.js`, `custom-slide-types.js`, `settings.js`,
+`email-templates.js`, `uploads.js`). `mappers.js` turns snake_case rows into
+camelCase API objects.
+
+## Data model
+
+Schema lives in `server/db/migrations/` (**65 numbered migrations**,
+`001_initial_schema.js` … `065_drop_view_sessions_organization_id.js`).
+`001_initial_schema.js` creates the core: `organizations`, `users`,
+`presentations` (the deck table), `presentation_versions`,
+`published_presentations`, plus `follow_codes`, `present_sessions`,
+`interactions`, `interaction_votes`, `feedback`. Later migrations add domain
+tables — share links, collaborators, tags, themes, `custom_slide_types`,
+`user_organizations`, `slide_collections`, analytics `view_sessions`, and the
+2026-08 org-threading migrations (`062`–`065`) that carry `organization_id`
+onto collaborators/owners. Roughly 45 distinct tables in total; each domain's
+columns live with its facade and migration, not duplicated here.
+
+## Flows
+
+- **A scoped read/write.** Route handler builds a scope (org + actor) →
+  facade validates it through `resolveScope` (`scope.js`) → `toStorageContext`
+  (`backend-dispatch.js`) hands the adapter a `StorageContext` → the Postgres
+  mixin runs a query filtered by `organization_id`. No org on the scope and no
+  declared cross-org reason → `TypeError` before any SQL.
+- **A deliberate cross-org read.** Published decks, share tokens and follow
+  codes are authorized by the *token*, not the org. These go through
+  `crossOrganizationScope(repoRoot, reason, …)` — the mandatory `reason` string
+  makes `grep -r crossOrganization` a complete census of every unscoped path.
+- **Adapter boot.** `initializeStorage()` dynamically imports
+  `adapters/postgres/index.js`, constructs the composed adapter once, and
+  memoizes it; `getStorage()` returns it or throws `"Storage not initialized"`.
+- **Boot safety.** `boot-check.js` aborts startup if the DB is empty but legacy
+  file data still sits on disk, so an accidental empty-DB boot cannot silently
+  shadow real data.
+
+## Config & flags
+
+Storage selection lives in `server/config/database.js`:
+
+- `STORAGE_MODE` — accepts exactly `postgres` (the default when unset).
+  `storageModeError()` rejects anything else, with targeted messages for the
+  removed `file` mode (→ run `npm run db:import`) and the misspelling
+  `postgresql` (→ `postgres`).
+- Connection: `DATABASE_URL` **or** the discrete `DATABASE_HOST/PORT/NAME/USER/
+  PASSWORD` set (`DATABASE_URL` wins when both are present), plus
+  `DATABASE_SSL`, `DATABASE_SSL_REJECT_UNAUTHORIZED`, `DATABASE_POOL_MIN/MAX`.
+- `DEFAULT_ORGANIZATION_ID` — single-workspace default org
+  (`00000000-0000-0000-0000-000000000001`), used only where a scope is legitimately
+  org-less (see below).
+
+## Authz & tenancy
+
+`server/storage/scope.js` is the enforcement point. Its rule: *a storage call
+may not invent an organization the caller did not give it — there is no
+fallback.* The entry points:
+
+- `resolveScope(scope, operation, { allowCrossOrganization })` — validates the
+  scope object and reduces it to `{organizationId, actorEmail, crossOrganization}`;
+  throws on a bare-string/objectless scope or a missing org with no cross-org
+  reason. Writes may never run cross-org.
+- `crossOrganizationScope(repoRoot, reason, …)` — the only sanctioned unscoped
+  read path (token-authorized).
+- `singleWorkspaceScope(repoRoot, entryPoint, …)` — org-less entry points (CLI,
+  stdio MCP, maintenance) resolve to `DEFAULT_ORGANIZATION_ID` **only** when
+  `isMultiWorkspaceEnabled()` is false; otherwise it throws.
+- `jobScope(jobData, operation)` — background jobs carry `organizationId` in the
+  payload, else fall back to `singleWorkspaceScope`.
+
+The full isolation model (hosting shapes, `MULTI_WORKSPACE_ENABLED`, rules
+R1–R3) is in [`tenant-isolation.md`](tenant-isolation.md); it is not repeated
+here.
+
+## Implementation status
+
+Postgres is the **only** backend today. The file/JSON backend was removed during
+1.x; `adapters/` contains no file adapter, `STORAGE_MODE` accepts only
+`postgres`, and `types.js` states plainly that the contract *is* the Postgres
+adapter (no abstract base). This is the beta stance — one canonical backend, no
+compatibility shim for the old on-disk store. If a second backend is ever
+reintroduced it would re-materialize the adapter base that `types.js` currently
+only documents as a type; nothing in the tree promises that today.
