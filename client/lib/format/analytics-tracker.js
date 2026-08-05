@@ -321,12 +321,17 @@ export function createAnalyticsTracker({
    *
    * @returns {Promise<{ok: boolean, deleted?: Object}|null>} Server result, or
    *   null when there is no live session to erase (analytics off, or start()
-   *   has not resolved yet).
+   *   has not resolved yet) or the erase request failed.
    */
   async function erase() {
     if (isDestroyed || !isStarted || !sessionToken) return null;
 
     const result = await sendTrack('/api/track/my-data/erase', { sessionToken });
+
+    // Nothing was erased (rate limit, network, server error): keep the tracker
+    // live and the device id in place, so a retry click can actually succeed
+    // and the history stays reachable for a later erase.
+    if (!result?.ok) return result;
 
     // Tear down like destroy(), but skip the end beacon: the rows are deleted.
     isDestroyed = true;
