@@ -153,6 +153,7 @@ nothing is discoverable only by `ls`.
 | [`ai-slide-review.md`](reference/ai-slide-review.md) | Deck grid, batch review, section refine |
 | [`api-error-format.md`](reference/api-error-format.md) | The internal API error envelope |
 | [`comments-api.md`](reference/comments-api.md) | Comments via public API v1 + MCP |
+| [`notion-import.md`](reference/notion-import.md) | Importing a Notion page as a deck, publishing back, and the Notion data-source providers |
 
 **Formats & export**
 
