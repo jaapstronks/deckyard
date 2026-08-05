@@ -67,7 +67,7 @@ export function createEraseMyDataButton({
     if (!confirmed) return;
 
     btn.disabled = true;
-    let result = null;
+    let result;
     try {
       result = await tracker.erase();
     } catch {
