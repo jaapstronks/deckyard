@@ -57,6 +57,10 @@ export const SNAPSHOT_IDENTITY_FIELDS = Object.freeze([
   'updatedById',
   'updatedBy',
   'trashedBy',
+  // `trashedBy` gained an id half in T10 PR F2 (migration 070). Like every
+  // other dual key here, both halves are stripped — keeping the id would leave
+  // a stable person-pointer in history.
+  'trashedById',
 ]);
 
 /**

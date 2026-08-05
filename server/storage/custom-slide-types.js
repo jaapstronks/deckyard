@@ -2,6 +2,17 @@
  * Storage layer for custom slide types.
  * Handles CRUD operations for organization-scoped custom slide type definitions.
  * Follows the same patterns as server/storage/themes.js.
+ *
+ * ## `created_by` is id-only here, on purpose (T10)
+ *
+ * Unlike `presentations`/`slide_library`/`slide_collections`, whose `created_by`
+ * holds an e-mail paired with a `*_user_id` (the identity-decoupling dual key),
+ * this table's `created_by` stores a **`users.id` directly** (stamped via
+ * `getUserIdByEmail`). That is deliberate: custom slide types have no external
+ * writers — only an authenticated in-org user with a `users` row creates one —
+ * so there is no external/legacy identity to fall back to an e-mail for, and no
+ * dual key is warranted. See shared/identity-match.js for why the dual key
+ * exists where external identities *can* appear.
  */
 
 import { getOrgId } from '../utils/context.js';

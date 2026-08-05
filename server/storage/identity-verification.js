@@ -101,6 +101,36 @@ export const IDENTITY_DUAL_KEYS = Object.freeze([
     emailColumn: 'email',
     label: 'user settings',
   },
+  {
+    table: 'presentations',
+    idColumn: 'trashed_by_user_id',
+    emailColumn: 'trashed_by',
+    label: 'presentation trasher',
+  },
+  {
+    table: 'slide_library',
+    idColumn: 'created_by_user_id',
+    emailColumn: 'created_by',
+    label: 'slide library creator',
+  },
+  {
+    table: 'slide_library',
+    idColumn: 'updated_by_user_id',
+    emailColumn: 'updated_by',
+    label: 'slide library last editor',
+  },
+  {
+    table: 'slide_collections',
+    idColumn: 'created_by_user_id',
+    emailColumn: 'created_by',
+    label: 'slide collection creator',
+  },
+  {
+    table: 'slide_collections',
+    idColumn: 'updated_by_user_id',
+    emailColumn: 'updated_by',
+    label: 'slide collection last editor',
+  },
 ]);
 
 /**

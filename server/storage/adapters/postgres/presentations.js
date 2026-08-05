@@ -404,12 +404,21 @@ export function withPresentations(Base) {
       const db = getDb();
       const orgId = getOrgId(ctx);
 
-      // Soft delete: set trashed_at and trashed_by instead of deleting
+      // Soft delete: set trashed_at and trashed_by instead of deleting.
+      // Dual-key (T10 PR F2): stamp the id beside trashed_by from one
+      // resolution of the same address, so the trash-visibility / restore
+      // authz reads can match on the stable id. An actor with no users row
+      // resolves `external` and stays NULL (the pinned legacy path).
+      const trashedByEmail = ctx?.actorEmail || null;
+      const trashedByResolution = trashedByEmail
+        ? await resolveIdentityByEmail(trashedByEmail)
+        : null;
       const result = await db
         .updateTable('presentations')
         .set({
           trashed_at: now(),
-          trashed_by: ctx?.actorEmail || null,
+          trashed_by: trashedByEmail,
+          trashed_by_user_id: trashedByResolution?.userId ?? null,
         })
         .where('id', '=', id)
         .where('organization_id', '=', orgId)
@@ -439,6 +448,7 @@ export function withPresentations(Base) {
           'created_at as created',
           'trashed_at as trashedAt',
           'trashed_by as trashedBy',
+          'trashed_by_user_id as trashedById',
           'theme',
           'owner_user_id as ownerId',
           'owner_email as ownerEmail',
@@ -470,6 +480,7 @@ export function withPresentations(Base) {
           created: row.created,
           trashedAt: row.trashedAt,
           trashedBy: row.trashedBy,
+          trashedById: row.trashedById || null,
           theme: row.theme,
           ownerId: row.ownerId || null,
           ownerEmail: row.ownerEmail,
@@ -505,6 +516,9 @@ export function withPresentations(Base) {
         .set({
           trashed_at: null,
           trashed_by: null,
+          // Clear both halves of the dual key together (T10 PR F2), so a
+          // restored deck carries no stale trasher id.
+          trashed_by_user_id: null,
         })
         .where('id', '=', id)
         .where('organization_id', '=', orgId)

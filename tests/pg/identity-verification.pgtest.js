@@ -79,7 +79,15 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
   });
 
   beforeEach(async () => {
-    await truncate(db, 'presentations', 'presentation_collaborators', 'user_settings', 'organizations');
+    await truncate(
+      db,
+      'slide_collections',
+      'slide_library',
+      'presentations',
+      'presentation_collaborators',
+      'user_settings',
+      'organizations'
+    );
     await seedDefaultOrganization(db);
     await db
       .insertInto('users')
@@ -314,6 +322,8 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
         owner_user_id: ALICE_ID,
         created_by: ALICE,
         created_by_user_id: ALICE_ID,
+        trashed_by: ALICE,
+        trashed_by_user_id: ALICE_ID,
       })
       .execute();
     await db
@@ -339,14 +349,43 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
         presentation_data: JSON.stringify({ id: DECK_ID, title: 'A deck', slides: [] }),
       })
       .execute();
+    await db
+      .insertInto('slide_library')
+      .values({
+        organization_id: ORG,
+        scope: 'team',
+        name: 'Shelf item',
+        slide_type: 'title-slide',
+        created_by: ALICE,
+        created_by_user_id: ALICE_ID,
+        updated_by: ALICE,
+        updated_by_user_id: ALICE_ID,
+      })
+      .execute();
+    await db
+      .insertInto('slide_collections')
+      .values({
+        organization_id: ORG,
+        scope: 'team',
+        name: 'A set',
+        created_by: ALICE,
+        created_by_user_id: ALICE_ID,
+        updated_by: ALICE,
+        updated_by_user_id: ALICE_ID,
+      })
+      .execute();
     await writeUserSettings(null, ALICE, {});
 
     const report = await verifyIdentityConsistency();
     assert.equal(report.ok, true, formatIdentityReport(report).join('\n'));
     assert.equal(report.mismatched, 0);
     assert.equal(check(report, 'presentations', 'owner_user_id').linked, 1);
+    assert.equal(check(report, 'presentations', 'trashed_by_user_id').linked, 1);
     assert.equal(check(report, 'presentation_versions', 'created_by_user_id').linked, 1);
     assert.equal(check(report, 'presentation_collaborators', 'user_id').linked, 1);
+    assert.equal(check(report, 'slide_library', 'created_by_user_id').linked, 1);
+    assert.equal(check(report, 'slide_library', 'updated_by_user_id').linked, 1);
+    assert.equal(check(report, 'slide_collections', 'created_by_user_id').linked, 1);
     assert.equal(check(report, 'user_settings', 'user_id').linked, 1);
   });
 

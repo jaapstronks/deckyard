@@ -27,19 +27,24 @@ import {
   updateTeamCollection,
   deleteTeamCollection,
 } from '../../storage/collections/index.js';
+import { matchesIdentity } from '../../../shared/identity-match.js';
 
 /**
  * Team collections may only be mutated by an admin or the creator.
+ *
+ * Identity is matched through shared/identity-match.js (id-first, e-mail
+ * fallback) rather than raw lowercased e-mail, so the creator keeps their
+ * mutate right across a rename (T10 PR F2).
  * @param {object} authedUser
- * @returns {(collection: object, ctx: { actorEmail: string }) => boolean}
+ * @returns {(collection: object) => boolean}
  */
 function teamMutateGuard(authedUser) {
-  return (collection, { actorEmail }) => {
+  return (collection) => {
     if (authedUser?.isAdmin) return true;
-    return (
-      String(collection?.createdBy || '').toLowerCase() ===
-      String(actorEmail || '').toLowerCase()
-    );
+    return matchesIdentity(authedUser, {
+      userId: collection?.createdById,
+      email: collection?.createdBy,
+    });
   };
 }
 
