@@ -643,6 +643,81 @@ test('re-adding a revoked collaborator reactivates the row at the new permission
   assert.equal(rowsFor('deck-owned').length, 4, 'reactivated, not duplicated');
 });
 
+/**
+ * Make the next insert into a table blow up, the way a real database does when
+ * a connection drops or a constraint fires unexpectedly. The route's own
+ * try/catch around `addCollaborator` is the thing under test: `withDbGuard`
+ * only guards *availability* (`server/storage/utils/db-guard.js`), so a
+ * throwing query propagates out of the storage layer untouched.
+ *
+ * @param {string} table - Table whose insert must throw.
+ */
+function breakInsertsInto(table) {
+  const realInsertInto = db.insertInto.bind(db);
+  db.insertInto = (name) => {
+    if (name === table) throw new Error('deadlock detected');
+    return realInsertInto(name);
+  };
+}
+
+test('a database failure during a single invite is our fault, not the caller\'s', async () => {
+  await seed();
+  breakInsertsInto('presentation_collaborators');
+
+  const res = await call('POST', '/api/presentations/deck-owned/collaborators', {
+    as: ACTORS.owner,
+    body: { userEmail: ACTORS.newcomer.email, permission: 'view' },
+  });
+
+  // The regression: `database_error` used to fall through to `badRequest`, so
+  // a failed insert told the client its request was malformed — nothing for it
+  // to fix, and invisible to any dashboard watching 5xx.
+  assert.equal(res.status, 500, 'a failed insert is a 500, not a 400');
+  assert.equal(res.body.error, 'database_error');
+  assert.equal(rowFor('deck-owned', ACTORS.newcomer.email), undefined, 'and nothing is written');
+});
+
+test('a database failure inside a batch is reported per address, not as a 400', async () => {
+  await seed();
+  breakInsertsInto('presentation_collaborators');
+
+  const res = await call('POST', '/api/presentations/deck-owned/collaborators', {
+    as: ACTORS.owner,
+    body: { permission: 'view', userEmails: [ACTORS.newcomer.email, ACTORS.stranger.email] },
+  });
+
+  // Batch mode already answered factually and must keep doing so: the batch
+  // envelope is a report, so the transport stays 201 and each address carries
+  // its own reason.
+  assert.equal(res.status, 201);
+  assert.deepEqual(
+    res.body.results.map((r) => [r.email, r.ok, r.reason]),
+    [
+      [ACTORS.newcomer.email, false, 'database_error'],
+      [ACTORS.stranger.email, false, 'database_error'],
+    ]
+  );
+});
+
+test('the reasons a single invite can fail each carry their own status', async () => {
+  const cases = [
+    // [body, expected status, expected error code]
+    [{ userEmail: ACTORS.newcomer.email, permission: 'view' }, 201, null],
+    [{ userEmail: ACTORS.viewer.email, permission: 'view' }, 409, 'already_exists'],
+    [{ userEmail: 'ghost@example.com', permission: 'view' }, 400, 'user_not_found'],
+  ];
+
+  for (const [body, status, code] of cases) {
+    await seed();
+    const res = await call('POST', '/api/presentations/deck-owned/collaborators', {
+      as: ACTORS.owner,
+      body,
+    });
+    assert.equal(res.status, status, `${JSON.stringify(body)} → ${status}`);
+    if (code) assert.equal(res.body.error, code, `${JSON.stringify(body)} → ${code}`);
+  }
+});
+
 test('a batch reports per address and does not let one failure sink the rest', async () => {
   await seed();
   const res = await call('POST', '/api/presentations/deck-owned/collaborators', {
