@@ -218,8 +218,9 @@ const PERMISSION_CHECKS = {
  * Load a presentation and check authorization in one call.
  * Sends appropriate error response if the check fails.
  *
- * This is a simpler alternative to the composition middleware pattern,
- * useful for gradual refactoring of existing route handlers.
+ * This is the canonical way a presentation route authorizes: load and check in
+ * one call, then branch on the result. Not a stopgap — there is no wrapper
+ * form to migrate to (see the file header).
  *
  * @param {Object} options
  * @param {string} options.repoRoot - Repository root path

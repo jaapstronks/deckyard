@@ -97,23 +97,37 @@ export async function handleApi(ctx) {
 
 Each handler checks the URL pattern and returns `true` if it handled the request, or `false` to pass to the next handler.
 
-### Middleware Composition
+### Route authorization
 
-Middleware uses functional composition (`server/utils/route-middleware.js`):
+Authorization uses **direct helpers**, not wrappers
+(`server/utils/route-middleware.js`): a handler calls one, and branches on what
+it gets back. The helper sends the error response itself, so a falsy return
+means "already answered, stop here".
 
 ```javascript
-import { compose, requireMethod, withPresentation, requiresWrite } from './route-middleware.js';
+import { withPresentationAuth } from '../../utils/route-middleware.js';
 
-// Compose middleware for a route
-const handler = compose(
-  requireMethod('PUT'),
-  withPresentation,
-  requiresWrite,
-  async (ctx) => {
-    // Handle the request
-  }
-);
+export async function handlePresentationLockAcquire({ repoRoot, req, res, authedUser } = {}, id) {
+  if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+
+  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
+  if (!pres) return true; // 404/401 already sent
+
+  // Handle the request…
+  return true;
+}
 ```
+
+Permissions are `read` | `write` | `delete` | `manage` | `forceLock`. Sibling
+helpers cover the other shapes: `withPresentationReadAuth`,
+`withPresentationCommentAuth` (guest access via share links), `canManage`, and
+the custom-HTML capability checks.
+
+There is deliberately **no composition/wrapper family**. One existed alongside
+these helpers for months with zero call sites and was removed rather than
+adopted (2026-08-05) — a second dispatch form for the same job is what the beta
+stance rules out. Dispatch itself is the route table; keep new routes on the
+direct helpers.
 
 ---
 
