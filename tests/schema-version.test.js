@@ -226,7 +226,11 @@ test('v4->v5 drops an align the group never offered without inventing a value', 
   assert.equal(content.textStyles, undefined);
 });
 
-test('v4->v5 leaves other types and other fields alone, and is idempotent', () => {
+test('v5->v6 folds inert per-field align on every group member, across types', () => {
+  // The two keys the v4 -> v5 quote fold deliberately left behind: a title-slide
+  // header member (`title`) and a quote member that is not the designated field
+  // (`authorName`). Both are inert since the group model; v5 -> v6 is where they
+  // finally go. Start at v4 so the whole chain runs.
   const deck = {
     id: randomUUID(),
     schemaVersion: 4,
@@ -245,10 +249,98 @@ test('v4->v5 leaves other types and other fields alone, and is idempotent', () =
     ],
   };
   const once = migratePresentation(deck);
-  assert.deepEqual(once.slides[0].content.textStyles, { title: { align: 'center' } });
-  assert.deepEqual(once.slides[1].content.textStyles, { authorName: { align: 'center' } });
+  // Both inert member-align keys are gone, and the now-empty textStyles with them.
+  assert.equal(once.slides[0].content.textStyles, undefined);
+  assert.equal(once.slides[1].content.textStyles, undefined);
   const twice = migratePresentation(structuredClone(once));
   assert.deepEqual(twice, once);
+});
+
+test('v5->v6 drops only align, keeping per-field colour/size on the same member', () => {
+  const deck = {
+    id: randomUUID(),
+    schemaVersion: 5,
+    title: 'Styled',
+    slides: [
+      {
+        id: randomUUID(),
+        type: 'title-slide',
+        content: { title: 'T', textStyles: { title: { align: 'center', color: 'muted', size: 'lg' } } },
+      },
+    ],
+  };
+  const migrated = migratePresentation(deck);
+  assert.deepEqual(migrated.slides[0].content.textStyles, { title: { color: 'muted', size: 'lg' } });
+});
+
+test('v5->v6 leaves a non-group field and unknown types untouched, and is idempotent', () => {
+  const deck = {
+    id: randomUUID(),
+    schemaVersion: 5,
+    title: 'Untouched',
+    slides: [
+      {
+        // `body` is not a group member on a text-blocks slide, so its per-field
+        // align is a live text-align and must survive.
+        id: randomUUID(),
+        type: 'text-blocks-slide',
+        content: { rows: [{ blocks: [] }], textStyles: { body: { align: 'center' } } },
+      },
+      {
+        // A foreign/unknown type has no registry def; the sweep must skip it.
+        id: randomUUID(),
+        type: 'com.example.custom',
+        content: { textStyles: { whatever: { align: 'center' } } },
+      },
+    ],
+  };
+  const once = migratePresentation(deck);
+  assert.deepEqual(once.slides[0].content.textStyles, { body: { align: 'center' } });
+  assert.deepEqual(once.slides[1].content.textStyles, { whatever: { align: 'center' } });
+  const twice = migratePresentation(structuredClone(once));
+  assert.deepEqual(twice, once);
+});
+
+test('gate: the v5->v6 sweep clears inert align for every declared group member in the registry', () => {
+  // Built from the registry, not a hardcoded list: one slide per adopting type,
+  // seeding a per-field align on every one of that type's group members. A type
+  // that adopts a group later is swept by the same migration code AND proven
+  // swept here, without editing this test — that is the gate that keeps new
+  // inert keys out.
+  const slides = [];
+  for (const [type, def] of Object.entries(SLIDE_TYPES)) {
+    const groupIds = new Set(
+      (Array.isArray(def.fieldGroups) ? def.fieldGroups : [])
+        .map((g) => (g && typeof g.id === 'string' ? g.id : ''))
+        .filter(Boolean)
+    );
+    if (!groupIds.size) continue;
+    const members = (Array.isArray(def.fields) ? def.fields : []).filter(
+      (f) => typeof f?.group === 'string' && groupIds.has(f.group.trim())
+    );
+    if (!members.length) continue;
+    const textStyles = {};
+    for (const m of members) textStyles[m.key] = { align: 'center' };
+    slides.push({ id: randomUUID(), type, content: { textStyles } });
+  }
+  assert.ok(slides.length >= 5, 'the registry still has adopting types to sweep');
+
+  const migrated = migratePresentation({
+    id: randomUUID(),
+    schemaVersion: 5,
+    title: 'Gate',
+    slides,
+  });
+
+  for (const slide of migrated.slides) {
+    const styles = slide.content.textStyles || {};
+    for (const [key, fieldStyle] of Object.entries(styles)) {
+      assert.ok(
+        !Object.prototype.hasOwnProperty.call(fieldStyle || {}, 'align'),
+        `${slide.type}.${key} still carries an inert align after migration`
+      );
+    }
+  }
 });
 
 test('the renderer no longer reads the legacy quote align at all', () => {

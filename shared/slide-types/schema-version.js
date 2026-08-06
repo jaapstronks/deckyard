@@ -17,10 +17,10 @@
 
 import { resolveRows } from './types/text-blocks-slide.js';
 import { getSlideType, resolveSlideTypeName } from './registry.js';
-import { getFieldGroup, groupAlignValues } from './field-groups.js';
+import { getFieldGroup, getFieldGroups, groupAlignValues } from './field-groups.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 5;
+export const CURRENT_SCHEMA_VERSION = 6;
 
 /** Type + group the v4 -> v5 quote-alignment fold reads its target key from. */
 const QUOTE_SLIDE_TYPE = 'quote-slide';
@@ -133,6 +133,54 @@ export const SCHEMA_MIGRATIONS = [
       if (!content[alignKey] && offered.includes(legacy)) content[alignKey] = legacy;
       delete quoteStyle.align;
       if (!Object.keys(quoteStyle).length) delete styles.quote;
+      if (!Object.keys(styles).length) delete content.textStyles;
+    }
+    return pres;
+  },
+
+  // v5 -> v6: fold away every remaining inert per-field `align`. The v4 -> v5
+  // step handled only quote-slide's one designated field; but since the
+  // field-group model (#593) a group MEMBER's own `align` is inert on render for
+  // *every* member on *every* adopting type — `fieldAllowedAlignValues` returns
+  // [] for a member, so the value has no effect and the block's alignment lives
+  // in the group's own `alignKey` (`titleBlockAlign`, `headerAlign`, `quoteAlign`
+  // …). That left a second stored shape for one meaning on title/chapter/list/
+  // logo-wall/chart/kpi headers and on quote's name/role — with no end date.
+  // This is that end date: for each slide, every group-member field on its type
+  // drops its `textStyles.<field>.align`.
+  //
+  // Render-equivalent by construction: the key was already inert, so removing it
+  // changes nothing on screen. Only `align` is touched — `color`/`size` on the
+  // same field are per-field styling and stay. Members are read from the
+  // registry, so a type that adopts a group later is swept by the same code.
+  // Idempotent: a field without the legacy key is untouched.
+  (pres) => {
+    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
+    for (const slide of slides) {
+      if (!slide || typeof slide.type !== 'string') continue;
+      const def = getSlideType(slide.type);
+      if (!def) continue;
+      const groupIds = new Set(
+        getFieldGroups(def)
+          .map((g) => (g && typeof g.id === 'string' ? g.id : ''))
+          .filter(Boolean)
+      );
+      if (!groupIds.size) continue;
+      const content = slide.content;
+      if (!content || typeof content !== 'object') continue;
+      const styles = content.textStyles;
+      if (!styles || typeof styles !== 'object') continue;
+      const fields = Array.isArray(def.fields) ? def.fields : [];
+      for (const field of fields) {
+        if (!field || typeof field.key !== 'string') continue;
+        const group = typeof field.group === 'string' ? field.group.trim() : '';
+        if (!group || !groupIds.has(group)) continue;
+        const fieldStyle = styles[field.key];
+        if (!fieldStyle || typeof fieldStyle !== 'object') continue;
+        if (!Object.prototype.hasOwnProperty.call(fieldStyle, 'align')) continue;
+        delete fieldStyle.align;
+        if (!Object.keys(fieldStyle).length) delete styles[field.key];
+      }
       if (!Object.keys(styles).length) delete content.textStyles;
     }
     return pres;
