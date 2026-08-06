@@ -100,14 +100,18 @@ Rate-limited by the same expensive-op bucket, keyed by IP. Pinned by
 ## Retention
 
 The `analytics-cleanup` job (`server/jobs/analytics-cleanup.js`) applies two
-schedules, both env-tunable (`ANALYTICS_RETENTION_DAYS`,
-`ANALYTICS_IP_ANONYMIZATION_DAYS`):
+schedules. Both windows come from instance settings
+(`settings.analytics.retention.*`, set in the admin UI) and are read fresh on
+every run; the env vars `ANALYTICS_RETENTION_DAYS` and
+`ANALYTICS_IP_ANONYMIZATION_DAYS` only seed the defaults an instance falls back
+to before the UI is touched:
 
-- **IP anonymization after 30 days** — `ip_address` is nulled on rows older than
-  the window (hashing would still be linkable, so it is dropped outright).
-- **Full deletion after 90 days** — raw `view_sessions` and `slide_views` older
-  than the window are removed. Aggregate snapshots, which carry no per-viewer
-  identity, are kept.
+- **IP anonymization after 7 days (default)** — `ip_address` is nulled on rows
+  older than the window (hashing would still be linkable, so it is dropped
+  outright).
+- **Full deletion after 90 days (default)** — raw `view_sessions` and
+  `slide_views` older than the window are removed. Nothing else is retained:
+  there is no aggregate/snapshot table.
 
 ## Why a bare device id is not an accepted identifier (GDPR art. 11)
 

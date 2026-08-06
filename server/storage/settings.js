@@ -138,10 +138,10 @@ export function defaultAppSettings() {
     // Engagement insights (analytics) settings
     analytics: {
       enabled: true, // Master switch for all analytics — the only tracking toggle
-      retention: {
-        sessionDataDays: 90, // How long to keep detailed session data
-        ipAnonymizationDays: 7, // How long before IP addresses are anonymized
-      },
+      // Retention: how long to keep detailed session data, and how long before
+      // IP addresses are anonymized. Defaults seeded from env; see
+      // seedRetentionDefaults(). The cleanup job reads these (getAnalyticsRetention).
+      retention: seedRetentionDefaults(),
       // External analytics providers (UI-configurable, overrides env vars when set)
       externalProviders: {
         umami: {
@@ -205,6 +205,29 @@ function normalizePositiveInt(v, fallback, min = 1, max = 365) {
   const n = parseInt(v, 10);
   if (Number.isNaN(n) || n < min) return fallback;
   return Math.min(n, max);
+}
+
+/**
+ * The analytics-retention defaults, the single place each value is defined.
+ *
+ * Settings win at runtime — the cleanup job reads {@link getAnalyticsRetention},
+ * i.e. `settings.analytics.retention.*` — so these are only the defaults an
+ * instance falls back to before an admin touches the UI. The env vars
+ * `ANALYTICS_RETENTION_DAYS` / `ANALYTICS_IP_ANONYMIZATION_DAYS` **seed** those
+ * defaults (fork/bootstrap knob), matching how `getDefaultThemeId` and
+ * `getEmailSender` treat env in this file. There is one default per value, so
+ * the two IP-anonymization defaults that used to disagree (7 in settings vs 30
+ * in the old env config) can no longer drift.
+ *
+ * Read at call time, not module load, so a changed env var takes effect on the
+ * next read without a rebuild.
+ * @returns {{ sessionDataDays: number, ipAnonymizationDays: number }}
+ */
+function seedRetentionDefaults() {
+  return {
+    sessionDataDays: normalizePositiveInt(process.env.ANALYTICS_RETENTION_DAYS, 90, 1, 365),
+    ipAnonymizationDays: normalizePositiveInt(process.env.ANALYTICS_IP_ANONYMIZATION_DAYS, 7, 1, 90),
+  };
 }
 
 function normalizeThemeId(v) {
@@ -342,11 +365,12 @@ export async function getAppSettings(repoRoot) {
   const externalProvidersObj = analyticsObj?.externalProviders && typeof analyticsObj.externalProviders === 'object'
     ? analyticsObj.externalProviders : {};
 
+  const retentionSeed = seedRetentionDefaults();
   const analytics = {
     enabled: analyticsObj?.enabled !== false,
     retention: {
-      sessionDataDays: normalizePositiveInt(retentionObj?.sessionDataDays, 90, 1, 365),
-      ipAnonymizationDays: normalizePositiveInt(retentionObj?.ipAnonymizationDays, 7, 1, 90),
+      sessionDataDays: normalizePositiveInt(retentionObj?.sessionDataDays, retentionSeed.sessionDataDays, 1, 365),
+      ipAnonymizationDays: normalizePositiveInt(retentionObj?.ipAnonymizationDays, retentionSeed.ipAnonymizationDays, 1, 90),
     },
     externalProviders: normalizeExternalProviders(externalProvidersObj) || defaults.analytics.externalProviders,
   };
@@ -485,16 +509,17 @@ export async function writeAppSettings(repoRoot, next) {
 
     // Legacy team/external-analytics keys in the payload are dropped, not
     // persisted: `analytics.enabled` is the only tracking switch.
+    const retentionSeed = seedRetentionDefaults();
     analytics = {
       enabled: nextAnalytics?.enabled !== false,
       retention: {
         sessionDataDays: normalizePositiveInt(
           nextRetention?.sessionDataDays ?? prev.analytics?.retention?.sessionDataDays,
-          90, 1, 365
+          retentionSeed.sessionDataDays, 1, 365
         ),
         ipAnonymizationDays: normalizePositiveInt(
           nextRetention?.ipAnonymizationDays ?? prev.analytics?.retention?.ipAnonymizationDays,
-          7, 1, 90
+          retentionSeed.ipAnonymizationDays, 1, 90
         ),
       },
       externalProviders: nextExternalProviders
@@ -950,4 +975,24 @@ export async function getDefaultThemeId(repoRoot) {
 export async function getSessionDurationDays(repoRoot) {
   const settings = await getAppSettings(repoRoot);
   return settings.sessionDurationDays || 30;
+}
+
+/**
+ * Resolve the analytics retention policy the cleanup job applies.
+ *
+ * The single runtime source: whatever the admin set in the UI
+ * (`settings.analytics.retention.*`), falling back to the env-seeded defaults
+ * (see {@link seedRetentionDefaults}). `getAppSettings` already normalizes the
+ * stored bag to defined, in-range values, so this is a thin accessor that keeps
+ * the retention job from reaching into the settings shape directly.
+ * @param {string} repoRoot - Repository root path
+ * @returns {Promise<{ sessionDataDays: number, ipAnonymizationDays: number }>}
+ */
+export async function getAnalyticsRetention(repoRoot) {
+  const settings = await getAppSettings(repoRoot);
+  const seed = seedRetentionDefaults();
+  return {
+    sessionDataDays: settings.analytics?.retention?.sessionDataDays ?? seed.sessionDataDays,
+    ipAnonymizationDays: settings.analytics?.retention?.ipAnonymizationDays ?? seed.ipAnonymizationDays,
+  };
 }

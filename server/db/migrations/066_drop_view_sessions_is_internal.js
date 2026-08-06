@@ -14,9 +14,10 @@
  * signal on the track route, not a payload claim) live in
  * `docs/plans/done/decisions.md` § analytics-privacy-naden.
  *
- * `attribution_allowed` (added in the same 024 migration) and the
- * `aggregate_analytics` table are deliberately kept — they are not part of this
- * seam.
+ * `attribution_allowed` (added in the same 024 migration) is kept — it is not
+ * part of this seam. The `aggregate_analytics` table was left in place here as
+ * "not part of this seam" too, but it was already dead (no reader, no writer);
+ * migration 072 drops it along with `analytics_snapshots`.
  *
  * No data is lost that anyone can act on: the column is `false` for every row,
  * no query filters on it after this commit, and it carries no constraint

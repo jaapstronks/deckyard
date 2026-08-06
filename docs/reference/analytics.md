@@ -132,8 +132,10 @@ Table `analytics_reports` — `presentation_id`, `title`, `report_type`,
 `is_public`, `report_data` (jsonb — the frozen numbers), `created_by`,
 `organization_id`.
 
-Tables `analytics_snapshots` (014) and `aggregate_analytics` (024) exist in the
-schema but **no code reads or writes them** — see *Implementation status*.
+There is no snapshot or pre-aggregate table: every metric is computed live from
+`view_sessions` + `slide_views` on each request. (`analytics_snapshots` (014) and
+`aggregate_analytics` (024) once sat in the schema as caching layers that were
+never wired; migration 072 dropped them.)
 
 ## Flows
 
@@ -168,8 +170,10 @@ schema but **no code reads or writes them** — see *Implementation status*.
   token *shape* before hitting the database, and re-checks that the deck still
   exists and has not gone `private` (a private deck 403s even with a valid
   token). `POST …/regenerate-token` invalidates the old link.
-- **Retention** — the daily job deletes sessions and slide views older than
-  `RETENTION_DAYS` and nulls `ip_address` older than `IP_ANONYMIZATION_DAYS`.
+- **Retention** — the daily job deletes sessions and slide views older than the
+  configured session-data window and nulls `ip_address` older than the
+  IP-anonymization window. Both come from `settings.analytics.retention.*` (the
+  admin UI), read fresh on every run; the env vars only seed the defaults.
 
 ## Config & flags
 
@@ -181,8 +185,8 @@ schema but **no code reads or writes them** — see *Implementation status*.
 | `ANALYTICS_SSE_UPDATE_INTERVAL_MS` | 5 000 | Realtime push cadence. |
 | `ANALYTICS_MAX_USER_AGENT_LENGTH` | 500 | Truncation ceiling. |
 | `ANALYTICS_MAX_SLIDE_INDEX` | 1 000 | Sanity bound on a reported slide index. |
-| `ANALYTICS_RETENTION_DAYS` | 90 | Raw-row deletion age. |
-| `ANALYTICS_IP_ANONYMIZATION_DAYS` | 30 | IP-nulling age. |
+| `ANALYTICS_RETENTION_DAYS` | 90 | **Seeds** the default raw-row deletion age; `settings.analytics.retention.sessionDataDays` overrides it. |
+| `ANALYTICS_IP_ANONYMIZATION_DAYS` | 7 | **Seeds** the default IP-nulling age; `settings.analytics.retention.ipAnonymizationDays` overrides it. |
 | `AUTH_SECRET` | — | Keys the per-deck device label HMAC. |
 
 Third-party head snippet (`analytics/head.js`), separate from the above:
@@ -195,8 +199,10 @@ are also configurable from the settings UI
 
 Settings, not env: `settings.analytics.enabled` is the **single master switch**
 for Deckyard's own tracking — off means `/api/track/session/start` returns a null
-token and nothing is recorded. Per-user, `settings.privacy.disableAllTracking`
-opts one authenticated viewer out everywhere.
+token and nothing is recorded. `settings.analytics.retention.*` is the retention
+policy the cleanup job applies (the env vars above only seed its defaults).
+Per-user, `settings.privacy.disableAllTracking` opts one authenticated viewer out
+everywhere.
 
 Rate limits (token buckets, `analytics/helpers.js`): per IP — session start
 10 burst / 0.5 per s, heartbeat 20 / 2, session end 10 / 1, slide view 30 / 3;
@@ -237,22 +243,14 @@ Shipped and in use: the four tracking endpoints, the four on-demand aggregations
 the cross-deck dashboard, the realtime SSE count, report CRUD with public share
 tokens, the weekly digest summary, and the daily retention job.
 
+No pre-aggregate/caching layer exists: every metric is computed live from
+`view_sessions` + `slide_views` on each request, which is why the aggregation
+queries carry the cost. The two dead tables that once implied one
+(`analytics_snapshots`, `aggregate_analytics`) were dropped in migration 072; if
+a caching path is ever wanted it is a fresh design against the cost measured then.
+
 Honest gaps:
 
-- **Two tables are dead.** `analytics_snapshots` (014) and `aggregate_analytics`
-  (024) have no reader and no writer anywhere in the codebase — the
-  "pre-computed aggregation" and "privacy-safe aggregate" designs were never
-  wired. Every metric is computed live from `view_sessions` + `slide_views` on
-  each request, which is why the aggregation queries carry the cost. The
-  normative target is one shape: either the snapshot path gets built or the
-  tables go. Today neither has happened, and the schema implies a caching layer
-  that does not exist.
-- **`settings.analytics.retention.*` is stored but not honoured.** The settings
-  object normalizes `sessionDataDays` (default 90) and `ipAnonymizationDays`
-  (default 7), but `scheduleAnalyticsCleanup()` reads `ANALYTICS_CONFIG`, i.e.
-  the env vars (90 / 30). Changing retention in the UI has no effect, and the two
-  IP-anonymization defaults disagree. This is a real defect, not a documentation
-  gap.
 - **Realtime SSE is process-local.** `activeConnections` lives in one worker's
   memory, and the viewer count is a database query, so the count is right but the
   push only reaches clients attached to that worker. Same limitation as

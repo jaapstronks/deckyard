@@ -2,26 +2,33 @@
  * Analytics cleanup job.
  * Deletes old view sessions and slide views based on retention policy.
  *
- * Default retention: 90 days for raw data.
- * Analytics snapshots are retained indefinitely.
+ * Retention is read from instance settings on every run
+ * (`settings.analytics.retention.*` via getAnalyticsRetention), so a change in
+ * the admin UI takes effect on the next daily pass without a restart. Defaults
+ * (90 days raw data, 7 days IP anonymization) are seeded from env; see
+ * `server/storage/settings.js`.
  */
 
 import { deleteOldViewSessions, anonymizeOldIpAddresses } from '../storage/analytics/view-sessions.js';
 import { deleteOldSlideViews } from '../storage/analytics/slide-views.js';
 import { anonymizeExpiredLeads, anonymizeOldLeadIpAddresses } from '../storage/leads.js';
-import { ANALYTICS_CONFIG } from '../analytics/helpers.js';
+import { getAnalyticsRetention } from '../storage/settings.js';
 
 /**
  * Run the analytics cleanup job.
- * @param {Object} options
- * @param {number} [options.retentionDays] - Number of days to retain data
- * @param {number} [options.ipAnonymizationDays] - Number of days before IP anonymization
+ *
+ * With no overrides it reads the retention policy from instance settings. An
+ * explicit value (used by tests) wins over the settings value for that field.
+ * @param {Object} [overrides]
+ * @param {number} [overrides.retentionDays] - Days to retain raw session data
+ * @param {number} [overrides.ipAnonymizationDays] - Days before IP anonymization
  * @returns {Promise<{deletedSessions: number, deletedSlideViews: number, anonymizedIps: number, anonymizedLeads: number, anonymizedLeadIps: number}>}
  */
-async function runAnalyticsCleanup({
-  retentionDays = ANALYTICS_CONFIG.RETENTION_DAYS,
-  ipAnonymizationDays = ANALYTICS_CONFIG.IP_ANONYMIZATION_DAYS,
-} = {}) {
+async function runAnalyticsCleanup(overrides = {}) {
+  const retention = await getAnalyticsRetention(null);
+  const retentionDays = overrides.retentionDays ?? retention.sessionDataDays;
+  const ipAnonymizationDays = overrides.ipAnonymizationDays ?? retention.ipAnonymizationDays;
+
   // Calculate cutoff dates
   const deletionCutoff = new Date();
   deletionCutoff.setDate(deletionCutoff.getDate() - retentionDays);
@@ -68,15 +75,14 @@ async function runAnalyticsCleanup({
 
 /**
  * Schedule the cleanup job to run daily.
- * @param {Object} options
- * @param {number} [options.retentionDays] - Retention period
- * @param {number} [options.ipAnonymizationDays] - IP anonymization period
+ *
+ * The retention policy is not captured here: each run reads it fresh from
+ * settings, so an admin change applies on the next pass.
+ * @param {Object} [options]
  * @param {number} [options.intervalMs] - Run interval (default: 24 hours)
  * @returns {Object} Job control object with stop method
  */
 export function scheduleAnalyticsCleanup({
-  retentionDays = ANALYTICS_CONFIG.RETENTION_DAYS,
-  ipAnonymizationDays = ANALYTICS_CONFIG.IP_ANONYMIZATION_DAYS,
   intervalMs = 24 * 60 * 60 * 1000, // 24 hours
 } = {}) {
   let intervalId = null;
@@ -90,7 +96,7 @@ export function scheduleAnalyticsCleanup({
 
     isRunning = true;
     try {
-      await runAnalyticsCleanup({ retentionDays, ipAnonymizationDays });
+      await runAnalyticsCleanup();
     } catch (err) {
       console.error('[analytics-cleanup] Job failed:', err.message);
     } finally {
@@ -117,7 +123,7 @@ export function scheduleAnalyticsCleanup({
 
 // CLI support: run directly with `node analytics-cleanup.js`
 if (process.argv[1]?.endsWith('analytics-cleanup.js')) {
-  // CLI can override via environment variables (already handled in ANALYTICS_CONFIG)
+  // No args: retention comes from instance settings (env-seeded defaults).
   runAnalyticsCleanup()
     .then((result) => {
       console.log(`Deleted ${result.deletedSessions} sessions and ${result.deletedSlideViews} slide views`);
