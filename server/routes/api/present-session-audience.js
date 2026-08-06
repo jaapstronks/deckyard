@@ -30,11 +30,11 @@ import { updateSlideNotes } from '../../storage/presentations/slide-notes.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 import {
   badRequest,
-  json,
   methodNotAllowed,
   notFound,
   rateLimited,
   serveJson,
+  requireJsonBody,
 } from '../../utils/http.js';
 import { errorToResponse } from '../../utils/errors.js';
 import { allowCompanionNotesWrite, getClientIp } from '../../utils/rate-limit.js';
@@ -182,7 +182,9 @@ async function handleSessionNotesWrite({ repoRoot, req, res }, sessionId, slideI
   if (!resolved) return notFound(res);
   const { pres } = resolved;
 
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   if (typeof body?.notes !== 'string')
     return badRequest(res, 'Expected { notes: string }');
   if (body.notes.length > MAX_NOTES_LENGTH)

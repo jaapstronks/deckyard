@@ -1,4 +1,4 @@
-import { badRequest, json, jsonError, serveJson, serverError, unauthorized } from '../../utils/http.js';
+import { badRequest, jsonError, serveJson, serverError, unauthorized, requireJsonBody } from '../../utils/http.js';
 import { getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
 
@@ -12,7 +12,9 @@ export async function handleUploads({ repoRoot, req, res, url, authedUser }) {
       return badRequest(res, 'Uploads disabled in demo/sandbox mode');
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const { dataUrl, originalName } = body || {};
     if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) {
       return badRequest(

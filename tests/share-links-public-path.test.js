@@ -391,12 +391,16 @@ test('a missing or wrong password buys nothing and costs the link nothing', asyn
   assert.deepEqual(accessLog(), [], 'and it is not logged as an access');
 });
 
-test('an unparseable body is a missing password, not a crash', async () => {
+test('an unparseable body is a bad request, not a password attempt', async () => {
   seed();
   const res = await call('POST', '/api/share/tok-password/verify', { body: '{nope' });
 
-  assert.equal(res.status, 401);
-  assert.equal(res.body.error, 'password_required');
+  // Since A7.19 C6 a broken body is answered as such rather than silently read
+  // as `{}`. An *absent* body still means "no password given" (the test above)
+  // — absent and malformed are different requests.
+  assert.equal(res.status, 400);
+  assert.equal(res.body.error, 'bad_request');
+  assert.equal(link('tok-password').use_count, 0, 'a refused attempt is not a use');
 });
 
 test('a use-limited link stops working once it is spent', async () => {

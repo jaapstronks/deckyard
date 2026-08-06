@@ -3,11 +3,11 @@ import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { getFeatureFlags } from '../../../config/feature-flags.js';
 import { translateFieldMap } from '../../../utils/ai.js';
 import {
-  json,
   methodNotAllowed,
   notFound,
   serveJson,
   unauthorized,
+  requireJsonBody,
 } from '../../../utils/http.js';
 import { getOptionalString } from '../../../utils/request-validators.js';
 import {
@@ -24,7 +24,9 @@ export async function handlePresentationTranslateFields(
   const flags = getFeatureFlags();
   if (flags.disableAi) return notFound(res);
 
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const vendor = getOptionalString(body, 'vendor');
   const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);

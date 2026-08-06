@@ -1,4 +1,4 @@
-import { badRequest, json, serveJson } from '../../../utils/http.js';
+import { badRequest, serveJson, requireJsonBody } from '../../../utils/http.js';
 import {
   getString,
   getOptionalString,
@@ -19,7 +19,9 @@ import { loadSlideTypeContext } from './shared.js';
  * @param {import('./shared.js').AiContext} ctx
  */
 export async function handleAiAppendSlides({ req, res, authedUser }) {
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const raw = getString(body, 'raw');
   if (!raw.trim()) return badRequest(res, 'Expected { raw: "..." }');
   const vendor = getOptionalString(body, 'vendor');

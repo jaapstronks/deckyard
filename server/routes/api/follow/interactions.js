@@ -1,11 +1,11 @@
 import {
   badRequest,
-  json,
   jsonError,
   methodNotAllowed,
   notFound,
   serveJson,
   serverError,
+  requireJsonBody,
 } from '../../../utils/http.js';
 import { getFollowStateForPresentation } from '../../../storage/present-sessions/index.js';
 import { getString } from '../../../utils/request-validators.js';
@@ -281,7 +281,9 @@ export async function handleFollowInteractionVote(
         type === 'likert' ? 'likert has no options' : 'poll has no options'
       );
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const optionIndex = Number(body?.optionIndex ?? NaN);
     if (!Number.isFinite(optionIndex))
       return badRequest(res, 'optionIndex must be a number');
@@ -350,7 +352,9 @@ export async function handleFollowInteractionFeedback(
     if (liveInteractionKind(slideType) !== 'feedback')
       return badRequest(res, 'current slide is not a feedback slide');
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const text = getString(body, 'text');
     const result = await submitFeedback(repoRoot, state.sessionId, {
       slideId: requested,

@@ -13,7 +13,7 @@ import {
   notFound,
   unauthorized,
   badRequest,
-  parseJsonBody,
+  requireJsonBody,
 } from '../../../utils/http.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
@@ -113,10 +113,8 @@ export async function handleAnalyzeThemeChange(
   }
 
   // Parse request body
-  const parsed = await parseJsonBody(req);
-  if (!parsed.ok) {
-    return badRequest(res, parsed.error || 'Invalid request body');
-  }
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
 
   const { newThemeId } = parsed.body || {};
   if (!newThemeId || typeof newThemeId !== 'string') {
@@ -199,10 +197,8 @@ export async function handleChangeTheme(
   }
 
   // Parse request body
-  const parsed = await parseJsonBody(req);
-  if (!parsed.ok) {
-    return badRequest(res, parsed.error || 'Invalid request body');
-  }
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
 
   const { newThemeId, convertSlides } = parsed.body || {};
   if (!newThemeId || typeof newThemeId !== 'string') {

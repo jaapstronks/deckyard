@@ -4,11 +4,11 @@ import { getFeatureFlags } from '../../../config/feature-flags.js';
 import { translatePresentationStrings } from '../../../utils/ai.js';
 import {
   badRequest,
-  json,
   methodNotAllowed,
   notFound,
   serveJson,
   unauthorized,
+  requireJsonBody,
 } from '../../../utils/http.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { normalizeTranslationLang, normalizeLang } from '../../../storage/presentations/i18n.js';
@@ -21,7 +21,9 @@ export async function handlePresentationTranslate(
   const flags = getFeatureFlags();
   if (flags.disableAi) return notFound(res);
 
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
 

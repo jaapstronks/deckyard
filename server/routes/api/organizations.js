@@ -4,7 +4,7 @@
  */
 
 import { getUserFromRequestAsync, updateSessionOrganization } from '../../auth/auth.js';
-import { json, serveJson, badRequest, unauthorized, forbidden, notFound, serverError } from '../../utils/http.js';
+import { serveJson, badRequest, unauthorized, forbidden, notFound, serverError, requireJsonBody } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { createRouteContext } from '../../utils/context.js';
 import { isMultiWorkspaceEnabled } from '../../config/features.js';
@@ -89,7 +89,9 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
   // ============================================================
   if (url.pathname === '/api/organizations' && req.method === 'POST') {
     try {
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const name = getTrimmedString(body, 'name') || '';
       const slug = (getTrimmedString(body, 'slug') || '').toLowerCase();
       const displayName = body?.displayName ? String(body.displayName).trim() : null;
@@ -186,7 +188,9 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
         return forbidden(res, 'Admin or owner access required');
       }
 
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const updates = {};
 
       if ('name' in body) {

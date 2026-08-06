@@ -3,7 +3,7 @@
  * Handles lead submission (public) and lead management (authenticated).
  */
 
-import { badRequest, json, notFound, serveJson, unauthorized, jsonError } from '../../utils/http.js';
+import { badRequest, notFound, serveJson, unauthorized, jsonError, requireJsonBody } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';
 import { getPresentation } from '../../storage/presentations/index.js';
@@ -59,7 +59,9 @@ export async function handleLeadsPublic({ repoRoot, req, res, url }) {
       return true;
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     if (!body) {
       return badRequest(res, 'Invalid request body'), true;
     }
@@ -340,7 +342,9 @@ async function handleDeleteLead(ctx, leadId) {
 async function handleRequestMyData(ctx) {
   const { req, res } = ctx;
 
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const email = (getTrimmedString(body, 'email') || '').toLowerCase();
 
   if (!email || !email.includes('@')) {

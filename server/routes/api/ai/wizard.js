@@ -1,4 +1,4 @@
-import { badRequest, json, serveJson } from '../../../utils/http.js';
+import { badRequest, serveJson, requireJsonBody } from '../../../utils/http.js';
 import { getAiParams, getTrimmedString } from '../../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { generateDeckJsonFromRawContent } from '../../../utils/ai.js';
@@ -11,7 +11,9 @@ import { loadSlideTypeContext, createPresentationWithI18n } from './shared.js';
  * @param {import('./shared.js').AiContext} ctx
  */
 export async function handleAiWizard({ repoRoot, storageScope, req, res, authedUser }) {
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const {
     raw,
     vendor,

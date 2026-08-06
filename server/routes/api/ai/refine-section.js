@@ -1,4 +1,4 @@
-import { badRequest, json, serveJson, withErrorHandler } from '../../../utils/http.js';
+import { badRequest, serveJson, withErrorHandler, requireJsonBody } from '../../../utils/http.js';
 import {
   getOptionalObject,
   getOptionalString,
@@ -16,7 +16,9 @@ import { loadSlideTypeContext } from './shared.js';
  * @param {import('./shared.js').AiContext} ctx
  */
 export const handleAiRefineSection = withErrorHandler('ai-refine-section', async ({ req, res, authedUser }) => {
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const presentation = getOptionalObject(body, 'presentation');
   if (!presentation || !Array.isArray(presentation.slides)) {
     return badRequest(

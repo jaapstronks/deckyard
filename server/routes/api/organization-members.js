@@ -4,7 +4,7 @@
  */
 
 import { getUserFromRequestAsync } from '../../auth/auth.js';
-import { json, serveJson, badRequest, unauthorized, forbidden, notFound, serverError } from '../../utils/http.js';
+import { serveJson, badRequest, unauthorized, forbidden, notFound, serverError, requireJsonBody } from '../../utils/http.js';
 import { createRouteContext } from '../../utils/context.js';
 import { isMultiWorkspaceEnabled } from '../../config/features.js';
 import { normalizeEmail } from '../../utils/normalize.js';
@@ -119,7 +119,9 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
     }
 
     try {
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const email = normalizeEmail(body?.email);
       const role = body?.role || 'member';
       const sendInvitation = body?.sendInvitation !== false;
@@ -247,7 +249,9 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
     }
 
     try {
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const newRole = body?.role;
 
       if (!newRole || !WORKSPACE_ROLES.includes(newRole)) {

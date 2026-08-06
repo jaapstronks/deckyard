@@ -10,7 +10,7 @@
  * PUT    /api/custom-slide-types/reorder - Set display order (designer only)
  */
 
-import { badRequest, json, methodNotAllowed, serveJson, unauthorized, notFound } from '../../utils/http.js';
+import { badRequest, methodNotAllowed, serveJson, unauthorized, notFound, requireJsonBody } from '../../utils/http.js';
 import { createRouteContext } from '../../utils/context.js';
 import {
   listCustomSlideTypes,
@@ -54,7 +54,9 @@ export async function handleCustomSlideTypes({ req, res, url, authedUser }) {
   // ─── CREATE ───────────────────────────────────────────────
   if (pathname === '/api/custom-slide-types' && req.method === 'POST') {
     if (!canManage(authedUser)) return unauthorized(res);
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     if (!body || typeof body !== 'object') return badRequest(res, 'Missing JSON body.');
 
     const ctx = createRouteContext(authedUser);
@@ -81,7 +83,9 @@ export async function handleCustomSlideTypes({ req, res, url, authedUser }) {
     if (req.method !== 'PUT') return methodNotAllowed(res, ['PUT']);
     if (!canManage(authedUser)) return unauthorized(res);
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     if (!body || typeof body !== 'object') return badRequest(res, 'Missing JSON body.');
 
     const ctx = createRouteContext(authedUser);
@@ -100,7 +104,9 @@ export async function handleCustomSlideTypes({ req, res, url, authedUser }) {
 
     const sourceId = dupMatch[1];
     const ctx = createRouteContext(authedUser);
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+    if (!parsed.ok) return true;
+    const body = parsed.body;
 
     // Source can be a custom type or a core type slug
     let sourceData;
@@ -169,7 +175,9 @@ export async function handleCustomSlideTypes({ req, res, url, authedUser }) {
 
     if (req.method === 'PUT') {
       if (!canManage(authedUser)) return unauthorized(res);
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       if (!body || typeof body !== 'object') return badRequest(res, 'Missing JSON body.');
 
       const result = await updateCustomSlideType(typeId, body, ctx);

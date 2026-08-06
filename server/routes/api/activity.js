@@ -4,10 +4,10 @@
  */
 
 import {
-  json,
   methodNotAllowed,
   serveJson,
   unauthorized,
+  requireJsonBody,
 } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import {
@@ -90,7 +90,9 @@ export async function handleActivity({ repoRoot, storageScope, req, res, url, au
   if (url.pathname === '/api/activity/mark-read') {
     if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const eventId = body?.eventId || null; // Can be null to mark "all read"
 
     const result = await updateUserEventRead(email, eventId, ctx);

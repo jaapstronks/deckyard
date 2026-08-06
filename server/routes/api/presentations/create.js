@@ -1,5 +1,5 @@
 import { createPresentation } from '../../../storage/presentations/index.js';
-import { json, serveJson } from '../../../utils/http.js';
+import { serveJson, requireJsonBody } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import { recordPresentationCreated } from '../../../services/activity-events.js';
 import { recordSlideLibraryUsage } from '../../../storage/slide-library-usage/index.js';
@@ -25,7 +25,9 @@ function usageRefsFromBody(body) {
 }
 
 export async function handlePresentationsCreate({ storageScope, req, res, authedUser } = {}) {
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const created = await createPresentation(storageScope, {
     ...body,
     ownerEmail: authedUser?.email || null,

@@ -1,4 +1,4 @@
-import { badRequest, json, serveJson, withErrorHandler } from '../../../utils/http.js';
+import { badRequest, serveJson, withErrorHandler, requireJsonBody } from '../../../utils/http.js';
 import {
   getOptionalObject,
   getOptionalString,
@@ -12,7 +12,9 @@ import { analyzeForCompression, applyCompression } from '../../../utils/ai/compr
  * @param {import('./shared.js').AiContext} ctx
  */
 export const handleAiCompressDeck = withErrorHandler('ai-compress-deck', async ({ req, res }) => {
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const presentation = getOptionalObject(body, 'presentation');
   if (!presentation || !Array.isArray(presentation.slides)) {
     return badRequest(res, 'Expected { presentation: { slides: [...] } }');

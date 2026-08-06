@@ -5,12 +5,12 @@
 
 import { getPresentation } from '../../../storage/presentations/index.js';
 import {
-  json,
   methodNotAllowed,
   serveJson,
   unauthorized,
   badRequest,
   notFound,
+  requireJsonBody,
 } from '../../../utils/http.js';
 import {
   canReadPresentation,
@@ -110,7 +110,9 @@ export async function handlePresentationCommentsCreate(
     isGuest = true;
   }
 
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   if (!body?.body || typeof body.body !== 'string' || !body.body.trim()) {
     return badRequest(res, 'Comment body is required');
   }
@@ -204,7 +206,9 @@ export async function handlePresentationCommentUpdate(
     return unauthorized(res);
   }
 
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   if (!body?.body || typeof body.body !== 'string' || !body.body.trim()) {
     return badRequest(res, 'Comment body is required');
   }

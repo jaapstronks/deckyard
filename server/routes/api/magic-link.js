@@ -7,7 +7,7 @@ import {
   authEnabled,
   setSessionCookie,
 } from '../../auth/auth.js';
-import { json, serveJson, badRequest } from '../../utils/http.js';
+import { serveJson, badRequest, requireJsonBody } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
 import { getClientIp, createRouteContext } from '../../utils/context.js';
@@ -75,7 +75,9 @@ export async function handleMagicLink({ repoRoot, req, res, url }) {
       return badRequest(res, t('api.error.authNotEnabled', 'Authentication is not enabled'));
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const email = normalizeEmail(body?.email);
 
     const emailValidation = validateEmail(email);
@@ -161,7 +163,9 @@ export async function handleMagicLink({ repoRoot, req, res, url }) {
       return badRequest(res, t('api.error.authNotEnabled', 'Authentication is not enabled'));
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const token = getTrimmedString(body, 'token') || '';
 
     if (!token) {

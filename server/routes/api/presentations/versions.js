@@ -8,13 +8,13 @@ import {
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { isAiCompareAvailable, compareVersionsWithAi } from '../../../utils/ai/compare-versions.js';
 import {
-  json,
   jsonError,
   methodNotAllowed,
   noContent,
   notFound,
   serveJson,
   unauthorized,
+  requireJsonBody,
 } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import {
@@ -50,7 +50,9 @@ export async function handlePresentationVersions(
 
   if (req.method === 'POST') {
     if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) return unauthorized(res);
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const label = getTrimmedString(body, 'label') || '';
     const snap = await createPresentationVersion(storageScope, id, pres, {
       actorEmail: authedUser?.email || null,

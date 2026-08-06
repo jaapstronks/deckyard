@@ -13,7 +13,7 @@ import {
 import { resolveIdentityByEmail } from '../../../storage/identity-resolver.js';
 import { incrementUsage, getRateLimitHeaders, checkAiRateLimit, checkExportRateLimit } from '../../../storage/api-usage.js';
 import { allowRequest } from '../../../utils/rate-limit.js';
-import { serveJson, forbidden, rateLimited as sendRateLimited, json } from '../../../utils/http.js';
+import { serveJson, forbidden, rateLimited as sendRateLimited, readRequestBody } from '../../../utils/http.js';
 import { getPresentation } from '../../../storage/presentations/index.js';
 
 // ============================================================
@@ -198,9 +198,20 @@ export async function getPresentationWithAccess(ctx, presentationId, { access = 
  * @returns {Promise<{ok: boolean, body?: Object}>} - Result with parsed body if successful
  */
 export async function readApiV1Body(ctx, req) {
+  let raw;
   try {
-    const body = await json(req);
-    return { ok: true, body };
+    raw = (await readRequestBody(req)).toString('utf8');
+  } catch (err) {
+    // The size cap throws; the v1 surface answers it in its own envelope.
+    await apiError(ctx, err?.statusCode === 413 ? 413 : 400, 'Request body too large');
+    return { ok: false };
+  }
+  // An absent body stays `null` here, unlike the internal `requireJsonBody`:
+  // `/api/v1` is a published contract, and endpoints that tolerate a missing
+  // payload today must keep doing so.
+  if (!raw) return { ok: true, body: null };
+  try {
+    return { ok: true, body: JSON.parse(raw) };
   } catch {
     await apiError(ctx, 400, 'Invalid JSON body');
     return { ok: false };

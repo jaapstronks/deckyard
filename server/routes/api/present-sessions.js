@@ -22,11 +22,11 @@ import {
 } from '../../storage/feedback.js';
 import {
   badRequest,
-  json,
   methodNotAllowed,
   notFound,
   serveJson,
   unauthorized,
+  requireJsonBody,
 } from '../../utils/http.js';
 import {
   findSlideById,
@@ -75,7 +75,9 @@ function csvEscapeCell(v) {
 
 export async function handlePresentSessions({ repoRoot, req, res, url, authedUser }) {
   if (url.pathname === '/api/present-sessions' && req.method === 'POST') {
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const presentationId = getString(body, 'presentationId');
     if (!presentationId.trim())
       return badRequest(res, 'Expected { presentationId: string }');
@@ -115,7 +117,9 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
         res,
       });
       if (!pres) return true;
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const presentationId = getString(body, 'presentationId');
       if (!presentationId.trim() || presentationId.trim() !== s.presentationId)
         return badRequest(res, 'presentationId mismatch');
@@ -398,7 +402,9 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
       res,
     });
     if (!pres) return true;
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const result = await sendPresentSessionControlCommand(repoRoot, sessionId, body);
     if (!result.ok) {
       if (result.reason === 'disabled')

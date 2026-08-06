@@ -10,11 +10,11 @@
  */
 
 import {
-  json,
   methodNotAllowed,
   serveJson,
   badRequest,
   serverError,
+  requireJsonBody,
 } from '../../utils/http.js';
 import { getAppSettings } from '../../storage/settings.js';
 import { createImageLibraryItem } from '../../storage/image-library/index.js';
@@ -136,7 +136,9 @@ export async function handleStockMedia({ repoRoot, storageScope, req, res, url, 
       return badRequest(res, 'Unsplash is not available');
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const { photoId, size = 'regular' } = body || {};
 
     if (!photoId) {
@@ -247,7 +249,9 @@ export async function handleStockMedia({ repoRoot, storageScope, req, res, url, 
       return badRequest(res, 'Giphy is not available');
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const { gifId } = body || {};
 
     if (!gifId) {

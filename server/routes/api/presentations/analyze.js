@@ -5,10 +5,10 @@
 
 import { getPresentation } from '../../../storage/presentations/index.js';
 import {
-  json,
   methodNotAllowed,
   notFound,
   unauthorized,
+  requireJsonBody,
 } from '../../../utils/http.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { createComment } from '../../../storage/presentation-comments.js';
@@ -64,17 +64,12 @@ export async function handlePresentationAnalyze(
     return unauthorized(res);
   }
 
-  // Parse request body for optional category filter (body is size-capped by
-  // json()/readRequestBody; oversized or invalid bodies fall back to defaults).
-  let categories = null;
-  try {
-    const body = await json(req);
-    if (Array.isArray(body?.categories)) {
-      categories = body.categories;
-    }
-  } catch {
-    // Ignore parse/size errors, use defaults
-  }
+  // Optional category filter. An absent body means "analyze everything"; a
+  // malformed or oversized one is answered before the SSE stream opens, since
+  // once the 200 + event-stream headers are out there is no way back to a 400.
+  const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+  if (!parsed.ok) return true;
+  const categories = Array.isArray(parsed.body?.categories) ? parsed.body.categories : null;
 
   // Set up SSE headers
   res.writeHead(200, {

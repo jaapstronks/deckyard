@@ -4,7 +4,7 @@
  * These endpoints are feature-gated.
  */
 
-import { badRequest, json, jsonError, serveJson } from '../../../utils/http.js';
+import { badRequest, jsonError, serveJson, requireJsonBody } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import {
   getPlainTextFromPage,
@@ -32,7 +32,9 @@ export async function handleNotionSubjects({ req, res, url }) {
     return true;
   }
 
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const keyword = getTrimmedString(body, 'keyword') || '';
   const hasKeyword = keyword.length >= 2;
 
@@ -101,7 +103,9 @@ export async function handleNotionCompose({ req, res, url }) {
     return true;
   }
 
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const pageId = getTrimmedString(body, 'pageId') || '';
   const keywordRaw = getTrimmedString(body, 'keyword') || '';
   const keyword = keywordRaw ? keywordRaw.toLowerCase() : '';

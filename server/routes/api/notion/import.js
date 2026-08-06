@@ -3,7 +3,7 @@
  * Handles importing Notion pages as presentations (standard and streaming).
  */
 
-import { badRequest, json, serveJson, jsonError } from '../../../utils/http.js';
+import { badRequest, serveJson, jsonError, requireJsonBody } from '../../../utils/http.js';
 import {
   getTrimmedString,
   getOptionalString,
@@ -37,7 +37,9 @@ export async function handleNotionImport({ req, res, url, authedUser, repoRoot, 
     return true;
   }
 
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const urlOrId = getTrimmedString(body, 'url') || '';
   const lang = getLangOrAuto(body);
   const theme = getTrimmedString(body, 'theme') || 'default';
@@ -133,7 +135,9 @@ export async function handleNotionImportStream({ req, res, url, authedUser, repo
     return true;
   }
 
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const urlOrId = getTrimmedString(body, 'url') || '';
   const lang = getLangOrAuto(body);
   const theme = getTrimmedString(body, 'theme') || 'default';

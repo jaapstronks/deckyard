@@ -11,11 +11,11 @@ import { getImageLibraryUsage } from '../../storage/image-library-usage.js';
 import { replaceUploadFromDataUrl } from '../../storage/uploads.js';
 import {
   badRequest,
-  json,
   methodNotAllowed,
   notFound,
   serveJson,
   unauthorized,
+  requireJsonBody,
 } from '../../utils/http.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
 import { generateImageAltTexts } from '../../utils/llm/alt-text.js';
@@ -50,7 +50,9 @@ export async function handleImageLibrary({ repoRoot, storageScope, req, res, url
       // Demo stance: keep the library read-only (curated) to avoid abuse.
       if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
       if (!authedUser) return unauthorized(res, 'Login required');
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       // Capture who uploaded this image
       const created = await createImageLibraryItem(storageScope, {
         ...body,
@@ -68,7 +70,9 @@ export async function handleImageLibrary({ repoRoot, storageScope, req, res, url
     if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
     if (!authedUser) return unauthorized(res, 'Login required');
     if (!flags.aiAltText) return unauthorized(res, 'AI alt text is not enabled');
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const out = await generateImageAltTexts({
       repoRoot,
       imageUrl: body?.url,
@@ -112,7 +116,9 @@ export async function handleImageLibrary({ repoRoot, storageScope, req, res, url
     if (!flags.aiAltText) return unauthorized(res, 'AI alt text is not enabled');
     const item = await getImageLibraryItem(storageScope, imageId);
     if (!item) return notFound(res);
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const out = await generateImageAltTexts({
       repoRoot,
       imageUrl: item.url,
@@ -145,7 +151,9 @@ export async function handleImageLibrary({ repoRoot, storageScope, req, res, url
       );
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const { dataUrl } = body || {};
     if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) {
       return badRequest(res, 'Expected { dataUrl: "data:<mime>;base64,..." }');
@@ -188,7 +196,9 @@ export async function handleImageLibrary({ repoRoot, storageScope, req, res, url
     if (req.method === 'PUT') {
       if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
       if (!authedUser) return unauthorized(res, 'Login required');
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const updated = await updateImageLibraryItem(storageScope, imageId, body);
       if (!updated) return notFound(res);
       serveJson(res, 200, updated);

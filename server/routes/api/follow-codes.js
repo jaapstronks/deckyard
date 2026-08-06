@@ -1,5 +1,5 @@
 import { createFollowCode, resolveFollowCode } from '../../storage/follow-codes.js';
-import { badRequest, methodNotAllowed, parseJsonBody, payloadTooLarge, serveJson, serverError, unauthorized, rateLimited } from '../../utils/http.js';
+import { badRequest, methodNotAllowed, requireJsonBody, serveJson, serverError, unauthorized, rateLimited } from '../../utils/http.js';
 import { getClientIp } from '../../utils/context.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('follow-codes');
@@ -70,15 +70,8 @@ export async function handleFollowCodes({ repoRoot, req, res, url, authedUser })
       return true;
     }
 
-    const parsed = await parseJsonBody(req);
-    if (!parsed.ok) {
-      if (parsed.statusCode === 413) {
-        payloadTooLarge(res, parsed.error);
-      } else {
-        badRequest(res, parsed.error);
-      }
-      return true;
-    }
+    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+    if (!parsed.ok) return true;
 
     try {
       const body = parsed.body || {};

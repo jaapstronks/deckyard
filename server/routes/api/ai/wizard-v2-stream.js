@@ -1,4 +1,4 @@
-import { badRequest, json } from '../../../utils/http.js';
+import { badRequest, requireJsonBody } from '../../../utils/http.js';
 import {
   getAiParams,
   getBoolean,
@@ -37,7 +37,9 @@ import {
  * @param {import('./shared.js').AiContext} ctx
  */
 export async function handleAiWizardV2Stream({ repoRoot, storageScope, req, res, authedUser }) {
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const {
     raw,
     vendor,

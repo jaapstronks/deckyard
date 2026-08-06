@@ -1,5 +1,5 @@
 import { createPresentation, updatePresentation } from '../../../storage/presentations/index.js';
-import { json, serveJson, serverError } from '../../../utils/http.js';
+import { serveJson, serverError, requireJsonBody } from '../../../utils/http.js';
 import { isAppError } from '../../../utils/errors.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
@@ -15,7 +15,9 @@ export async function handlePresentationsImportJson({
 } = {}) {
   try {
     log.info('[import-json] Starting import...');
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
 
     const deck = body?.deck || body;
     const lang = body?.lang === 'nl' || body?.lang === 'en-GB' ? body.lang : 'nl';

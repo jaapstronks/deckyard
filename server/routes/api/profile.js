@@ -9,7 +9,7 @@
  */
 
 import sharp from 'sharp';
-import { badRequest, json, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError, serverError } from '../../utils/http.js';
+import { badRequest, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError, serverError, requireJsonBody } from '../../utils/http.js';
 import { writeUserSettings } from '../../storage/settings.js';
 import { getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
@@ -40,7 +40,9 @@ export async function handleProfile({ repoRoot, req, res, url, authedUser }) {
       return badRequest(res, 'Media provider not initialized');
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const { dataUrl } = body || {};
 
     if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) {
@@ -147,7 +149,9 @@ export async function handleProfile({ repoRoot, req, res, url, authedUser }) {
         return badRequest(res, 'Media provider not initialized');
       }
 
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const { dataUrl } = body || {};
 
       if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) {

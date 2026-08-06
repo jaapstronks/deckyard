@@ -4,7 +4,7 @@
  */
 
 import { getUserFromRequestAsync } from '../../auth/auth.js';
-import { json, serveJson, badRequest, unauthorized } from '../../utils/http.js';
+import { serveJson, badRequest, unauthorized, requireJsonBody } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { createRouteContext } from '../../utils/context.js';
 import {
@@ -88,7 +88,9 @@ export async function handleEmailTemplates({ repoRoot, req, res, url }) {
   // PUT /api/admin/email-templates/settings - Update default locale
   // ============================================================
   if (url.pathname === '/api/admin/email-templates/settings' && req.method === 'PUT') {
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const locale = getTrimmedString(body, 'defaultLocale') || '';
 
     if (!SUPPORTED_LOCALES.includes(locale)) {
@@ -118,7 +120,9 @@ export async function handleEmailTemplates({ repoRoot, req, res, url }) {
       return badRequest(res, `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}`);
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const fields = {};
 
     // Extract allowed fields
@@ -177,7 +181,9 @@ export async function handleEmailTemplates({ repoRoot, req, res, url }) {
       return badRequest(res, `Invalid template type. Valid types: ${Object.keys(TEMPLATE_METADATA).join(', ')}`);
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const locale = getTrimmedString(body, 'locale') || 'en';
     const customFields = body?.fields || null;
 
@@ -214,7 +220,9 @@ export async function handleEmailTemplates({ repoRoot, req, res, url }) {
       return badRequest(res, `Invalid template type. Valid types: ${Object.keys(TEMPLATE_METADATA).join(', ')}`);
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const locale = getTrimmedString(body, 'locale') || 'en';
     const customFields = body?.fields || null;
 

@@ -8,7 +8,7 @@ import {
   getUserFromRequestAsync,
   setSessionCookie,
 } from '../../auth/auth.js';
-import { json, serveJson, badRequest, unauthorized } from '../../utils/http.js';
+import { serveJson, badRequest, unauthorized, requireJsonBody } from '../../utils/http.js';
 import { getString, getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
 import { getClientIp, createRouteContext } from '../../utils/context.js';
@@ -65,7 +65,9 @@ export async function handlePasswordReset({ repoRoot, req, res, url }) {
       return badRequest(res, t('api.error.authNotEnabled', 'Authentication is not enabled'));
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const email = normalizeEmail(body?.email);
 
     if (!email || !email.includes('@')) {
@@ -179,7 +181,9 @@ export async function handlePasswordReset({ repoRoot, req, res, url }) {
       return badRequest(res, t('api.error.authNotEnabled', 'Authentication is not enabled'));
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const token = getTrimmedString(body, 'token') || '';
     const password = getString(body, 'password');
 
@@ -265,7 +269,9 @@ export async function handlePasswordReset({ repoRoot, req, res, url }) {
       return unauthorized(res, t('api.error.mustBeLoggedIn', 'You must be logged in to change your password'));
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const currentPassword = getString(body, 'currentPassword');
     const newPassword = getString(body, 'newPassword');
 

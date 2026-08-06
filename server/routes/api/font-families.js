@@ -12,7 +12,7 @@
  * POST   /api/font-families/import-adobe-family     - Import Adobe family (designer only)
  */
 
-import { badRequest, json, methodNotAllowed, serveJson, unauthorized, notFound } from '../../utils/http.js';
+import { badRequest, methodNotAllowed, serveJson, unauthorized, notFound, requireJsonBody } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { createRouteContext } from '../../utils/context.js';
 import { clearCustomThemeCache } from '../../utils/themes.js';
@@ -66,7 +66,9 @@ export async function handleFontFamilies({ req, res, url, authedUser }) {
   // ─── CREATE ───────────────────────────────────────────────
   if (pathname === '/api/font-families' && req.method === 'POST') {
     if (!canManage(authedUser)) return unauthorized(res);
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     if (!body || typeof body !== 'object') return badRequest(res, 'Missing JSON body.');
 
     const ctx = createRouteContext(authedUser);
@@ -86,7 +88,9 @@ export async function handleFontFamilies({ req, res, url, authedUser }) {
   // ─── DISCOVER ADOBE FONTS ────────────────────────────────
   if (pathname === '/api/font-families/discover-adobe' && req.method === 'POST') {
     if (!canManage(authedUser)) return unauthorized(res);
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     if (!body?.projectId) return badRequest(res, 'Missing projectId.');
 
     const projectId = String(body.projectId).trim();
@@ -113,7 +117,9 @@ export async function handleFontFamilies({ req, res, url, authedUser }) {
   // ─── IMPORT ADOBE FAMILY ─────────────────────────────────
   if (pathname === '/api/font-families/import-adobe-family' && req.method === 'POST') {
     if (!canManage(authedUser)) return unauthorized(res);
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     if (!body?.projectId || !body?.familyName) {
       return badRequest(res, 'Missing projectId or familyName.');
     }
@@ -173,7 +179,9 @@ export async function handleFontFamilies({ req, res, url, authedUser }) {
       return true;
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     if (!body?.dataUrl) return badRequest(res, 'Missing dataUrl.');
 
     const weight = Number(body.weight) || 400;
@@ -294,7 +302,9 @@ export async function handleFontFamilies({ req, res, url, authedUser }) {
 
     if (req.method === 'PUT') {
       if (!canManage(authedUser)) return unauthorized(res);
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       if (!body || typeof body !== 'object') return badRequest(res, 'Missing JSON body.');
 
       const result = await updateFontFamily(familyId, body, ctx);

@@ -20,7 +20,7 @@ import {
 } from '../../../storage/share-links/index.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { createRouteContext } from '../../../utils/context.js';
-import { serveJson, notFound, badRequest, requireJsonBody, parseJsonBody } from '../../../utils/http.js';
+import { serveJson, notFound, badRequest, requireJsonBody } from '../../../utils/http.js';
 import { validatePermission, parsePaginationParams } from '../../../utils/request-validators.js';
 import { buildShareUrl } from '../../../utils/request-url.js';
 
@@ -162,8 +162,9 @@ export async function handleShareLinkManagement({ repoRoot, req, res, url, authe
     if (!link) return true;
 
     // Parse optional message from request body
-    const { body } = await parseJsonBody(req);
-    const message = body?.message || null;
+    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+    if (!parsed.ok) return true;
+    const message = parsed.body?.message || null;
 
     const result = await revokeShareLink(linkId, authedUser?.email, { message }, ctx);
     if (!result.ok) {

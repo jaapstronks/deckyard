@@ -7,11 +7,11 @@
 
 import { createPresentation, updatePresentation } from '../../../storage/presentations/index.js';
 import {
-  json,
   jsonError,
   serveJson,
   serverError,
   badRequest,
+  requireJsonBody,
 } from '../../../utils/http.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { convertMarkdownText } from '../../../utils/markdown-import/index.js';
@@ -28,7 +28,9 @@ export async function handlePresentationsImportMarkdown({
 } = {}) {
   try {
     log.info('[import-markdown] Starting import...');
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
 
     const markdown = body?.markdown;
     if (!markdown || typeof markdown !== 'string') {

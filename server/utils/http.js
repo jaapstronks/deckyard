@@ -37,6 +37,11 @@ export function maxRequestBodyBytes() {
  * Read a request body into a Buffer, aborting once the byte cap is exceeded.
  * Throws an Error with statusCode 413 when the body is too large (the
  * top-level handler maps that to a 413 response).
+ *
+ * This is the layer under `requireJsonBody` and the only reader for bodies that
+ * are *not* JSON — currently just the `.deck` bundle upload. Route handlers
+ * that expect JSON use `requireJsonBody`, never this.
+ *
  * @param {import('node:http').IncomingMessage} req
  * @returns {Promise<Buffer>}
  */
@@ -58,77 +63,49 @@ export async function readRequestBody(req) {
   return Buffer.concat(chunks);
 }
 
-export async function json(req) {
-  const raw = (await readRequestBody(req)).toString('utf8');
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    throw new Error('Invalid JSON body');
-  }
-}
-
 /**
- * Parse JSON from request body with configurable error handling.
- * Reduces boilerplate try-catch blocks in route handlers.
+ * The single JSON body entry point for route handlers.
  *
- * @param {Object} req - HTTP request object
- * @param {Object} options - Configuration options
- * @param {boolean} options.required - If true, returns badRequest on empty/invalid body (default: false)
- * @param {*} options.defaultValue - Value to return on parse failure (default: null)
- * @param {Object} res - HTTP response (required if options.required is true)
- * @returns {Promise<{ok: boolean, body: *, error?: string}>} Parsed result
+ * It owns the whole HTTP contract rather than leaving pieces to the call site:
+ * `400` on an empty or unparseable body, `413` on one over
+ * `maxRequestBodyBytes()`, each in the canonical error envelope. When it
+ * answers `{ ok: false }` the response has already been sent — the handler just
+ * returns.
+ *
+ * @param {import('node:http').IncomingMessage} req
+ * @param {import('node:http').ServerResponse} res
+ * @param {Object} [opts]
+ * @param {boolean} [opts.allowEmpty] Treat an empty body as `{}` instead of a
+ *   400. For endpoints where "no payload" is a legitimate request (a toggle, a
+ *   DELETE with optional options). Invalid JSON is still a 400 — an empty body
+ *   is an absent payload, a broken one is a broken request.
+ * @returns {Promise<{ok: true, body: *}|{ok: false}>}
  */
-export async function parseJsonBody(req, { required = false, defaultValue = null } = {}) {
+export async function requireJsonBody(req, res, { allowEmpty = false } = {}) {
   let raw;
   try {
     raw = (await readRequestBody(req)).toString('utf8');
   } catch (err) {
     if (err?.statusCode === 413) {
-      return {
-        ok: false,
-        body: defaultValue,
-        error: 'Request body too large',
-        statusCode: 413,
-      };
-    }
-    return { ok: false, body: defaultValue, error: 'Failed to read request body' };
-  }
-
-  if (!raw || !raw.trim()) {
-    if (required) {
-      return { ok: false, body: defaultValue, error: 'Request body is required' };
-    }
-    return { ok: true, body: defaultValue };
-  }
-
-  try {
-    const body = JSON.parse(raw);
-    return { ok: true, body };
-  } catch {
-    return { ok: false, body: defaultValue, error: 'Invalid JSON body' };
-  }
-}
-
-/**
- * Parse JSON and send badRequest response on failure.
- * Convenience function for the common pattern of requiring valid JSON.
- *
- * @param {Object} req - HTTP request object
- * @param {Object} res - HTTP response object
- * @returns {Promise<{ok: true, body: *}|{ok: false}>} Result with body on success, or ok:false if error response was sent
- */
-export async function requireJsonBody(req, res) {
-  const result = await parseJsonBody(req, { required: true });
-  if (!result.ok) {
-    if (result.statusCode === 413) {
-      payloadTooLarge(res, result.error);
+      payloadTooLarge(res, 'Request body too large');
     } else {
-      badRequest(res, result.error);
+      badRequest(res, 'Failed to read request body');
     }
     return { ok: false };
   }
-  return result;
+
+  if (!raw.trim()) {
+    if (allowEmpty) return { ok: true, body: {} };
+    badRequest(res, 'Request body is required');
+    return { ok: false };
+  }
+
+  try {
+    return { ok: true, body: JSON.parse(raw) };
+  } catch {
+    badRequest(res, 'Invalid JSON body');
+    return { ok: false };
+  }
 }
 
 export function ok(res, body, contentType = 'text/plain; charset=utf-8') {

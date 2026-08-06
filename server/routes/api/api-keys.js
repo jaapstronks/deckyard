@@ -17,8 +17,7 @@ import {
   AVAILABLE_SCOPES,
 } from '../../storage/api-keys.js';
 import { getUsageHistory, getTodayUsage } from '../../storage/api-usage.js';
-import { serveJson, methodNotAllowed, notFound, badRequest } from '../../utils/http.js';
-import { parseJsonBody } from '../../utils/http.js';
+import { serveJson, methodNotAllowed, notFound, badRequest, requireJsonBody } from '../../utils/http.js';
 import { createRouteContext } from '../../utils/context.js';
 
 /**
@@ -56,10 +55,9 @@ export async function handleApiKeys({ req, res, url, authedUser }) {
   // POST /api/api-keys - Create a new API key
   // ============================================================
   if (url.pathname === '/api/api-keys' && req.method === 'POST') {
-    const parsed = await parseJsonBody(req);
-    if (!parsed.ok) {
-      return badRequest(res, parsed.error || 'Invalid request body');
-    }
+    // An empty body is a legitimate "create a key with the defaults".
+    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+    if (!parsed.ok) return true;
 
     const { name, scopes } = parsed.body || {};
 

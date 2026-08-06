@@ -7,7 +7,7 @@ import {
 import { updatePresentation } from '../../storage/presentations/index.js';
 import { getUserSettings } from '../../storage/settings.js';
 import { pickOgImageUrlFromPresentation } from '../../render/og-image.js';
-import { serveJson, json, forbidden, serverError, badRequest, payloadTooLarge } from '../../utils/http.js';
+import { serveJson, forbidden, serverError, badRequest, requireJsonBody } from '../../utils/http.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { maybeFireWebhook } from '../../utils/webhooks.js';
@@ -174,17 +174,9 @@ export async function handlePublish({ repoRoot, storageScope, req, res, url, aut
       return true;
     }
 
-    let body = {};
-    try {
-      body = (await json(req)) || {};
-    } catch (err) {
-      if (err?.statusCode === 413) {
-        payloadTooLarge(res);
-        return true;
-      }
-      body = {};
-    }
-    const nextSlug = body?.slug;
+    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+    if (!parsed.ok) return true;
+    const nextSlug = parsed.body?.slug;
     const entry = await updatePublishedSlug(storageScope, publishId, nextSlug);
 
     const nextPres = {
