@@ -169,11 +169,6 @@
       "count": 1
     }
   },
-  "server/routes/api/publish.js": {
-    "no-useless-assignment": {
-      "count": 1
-    }
-  },
   "server/routes/static/static-files.js": {
     "no-useless-assignment": {
       "count": 1
