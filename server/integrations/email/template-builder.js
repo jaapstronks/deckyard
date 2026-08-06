@@ -4,6 +4,7 @@
 
 import { resolveTemplate, interpolatePlaceholders } from '../email-template-resolver.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
+import { TEMPLATE_METADATA } from '../../storage/email-templates.js';
 import {
   EMAIL_STYLES,
   emailButton,
@@ -11,6 +12,9 @@ import {
   troubleClickingFooter,
 } from '../email-templates.js';
 import { sendEmail } from './core.js';
+import { createLogger } from '../../utils/logger.js';
+
+const log = createLogger('email');
 
 /**
  * Try to send an email using a custom template if available.
@@ -28,6 +32,14 @@ import { sendEmail } from './core.js';
 export async function trySendCustomTemplate({ repoRoot, templateType, locale, vars, actionUrl, emailOpts }) {
   if (!repoRoot) return null;
 
+  // An unknown template type is a programmer error (a sender referencing a type
+  // that isn't in the canonical list), not a transient failure — log it loudly
+  // instead of letting the catch-all below swallow it silently.
+  if (!TEMPLATE_METADATA[templateType]) {
+    log.error(`Unknown email template type "${templateType}"; falling back to code default`);
+    return null;
+  }
+
   try {
     const resolved = await resolveTemplate(repoRoot, templateType, locale);
     if (!resolved.isCustom) return null;
@@ -41,8 +53,10 @@ export async function trySendCustomTemplate({ repoRoot, templateType, locale, va
       htmlContent,
       textContent,
     });
-  } catch {
-    // Fall through to default behavior
+  } catch (err) {
+    // Custom override unavailable or a transport hiccup: fall back to the code
+    // default. These are expected at runtime, so warn rather than error.
+    log.warn(`Custom template "${templateType}" unavailable, using default:`, err.message);
     return null;
   }
 }

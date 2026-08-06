@@ -297,6 +297,7 @@
   "settings.admin.emailTemplates.types.commentNotification": "Reactiemelding",
   "settings.admin.emailTemplates.types.guestInvitation": "Gastuitnodiging",
   "settings.admin.emailTemplates.types.guestVerification": "Gast e-mailverificatie",
+  "settings.admin.emailTemplates.types.leadNotification": "Leadmelding",
   "settings.admin.emailTemplates.types.magicLink": "Magic Link",
   "settings.admin.emailTemplates.types.passwordReset": "Wachtwoord herstellen",
   "settings.admin.emailTemplates.types.userInvitation": "Gebruikersuitnodiging",

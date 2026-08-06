@@ -16,7 +16,7 @@ import { withDbGuard } from './utils/db-guard.js';
 import {
   SUPPORTED_LOCALES as SHARED_SUPPORTED_LOCALES,
   DEFAULT_LOCALE as SHARED_DEFAULT_LOCALE,
-  TEMPLATE_FIELDS,
+  TEMPLATE_METADATA,
 } from '../../shared/constants/email-templates.js';
 
 // ============================================================
@@ -78,96 +78,12 @@ import {
 // ============================================================
 
 /**
- * Template type metadata with available placeholders.
- * Used for UI documentation and validation.
+ * Template type metadata with available placeholders. Single source of truth
+ * lives in shared constants; re-exported here so server call sites
+ * (resolver, API route) keep importing it from the storage layer.
  * @type {TemplateMetadataMap}
  */
-export const TEMPLATE_METADATA = {
-  userInvitation: {
-    label: 'User Invitation',
-    description: 'Sent when inviting a new user to the system',
-    placeholders: [
-      { key: 'name', description: 'Recipient name' },
-      { key: 'inviter', description: 'Name of person who sent the invite' },
-    ],
-    fields: TEMPLATE_FIELDS,
-  },
-  activationReminder: {
-    label: 'Activation Reminder',
-    description: 'Sent as a reminder to users who have not yet activated their account',
-    placeholders: [
-      { key: 'name', description: 'Recipient name' },
-      { key: 'inviter', description: 'Name of person who sent the original invite' },
-    ],
-    fields: TEMPLATE_FIELDS,
-  },
-  collaboratorInvite: {
-    label: 'Collaborator Invitation',
-    description: 'Sent when sharing a presentation with a collaborator',
-    placeholders: [
-      { key: 'name', description: 'Recipient name' },
-      { key: 'inviter', description: 'Name of person who shared' },
-      { key: 'presTitle', description: 'Presentation title' },
-      { key: 'permission', description: 'Permission level (view/comment/edit)' },
-      { key: 'accessLevel', description: 'Access level description' },
-    ],
-    fields: TEMPLATE_FIELDS,
-  },
-  guestInvitation: {
-    label: 'Guest Invitation',
-    description: 'Sent when inviting a guest to view a presentation',
-    placeholders: [
-      { key: 'name', description: 'Recipient name' },
-      { key: 'inviter', description: 'Name of person who sent the invite' },
-      { key: 'presTitle', description: 'Presentation title' },
-    ],
-    fields: TEMPLATE_FIELDS,
-  },
-  passwordReset: {
-    label: 'Password Reset',
-    description: 'Sent when a user requests to reset their password',
-    placeholders: [
-      { key: 'name', description: 'Recipient name' },
-    ],
-    fields: TEMPLATE_FIELDS,
-  },
-  magicLink: {
-    label: 'Magic Link',
-    description: 'Sent for passwordless sign-in',
-    placeholders: [],
-    fields: TEMPLATE_FIELDS,
-  },
-  commentNotification: {
-    label: 'Comment Notification',
-    description: 'Sent when someone comments on a presentation',
-    placeholders: [
-      { key: 'commenterName', description: 'Name of the commenter' },
-      { key: 'presTitle', description: 'Presentation title' },
-      { key: 'commentBody', description: 'Comment text' },
-    ],
-    fields: TEMPLATE_FIELDS,
-  },
-  guestVerification: {
-    label: 'Guest Email Verification',
-    description: 'Sent to verify guest email before commenting',
-    placeholders: [
-      { key: 'name', description: 'Recipient name' },
-      { key: 'presTitle', description: 'Presentation title' },
-    ],
-    fields: TEMPLATE_FIELDS,
-  },
-  leadNotification: {
-    label: 'Lead Notification',
-    description: 'Sent to presentation owner when a lead is captured',
-    placeholders: [
-      { key: 'presTitle', description: 'Presentation title' },
-      { key: 'leadName', description: 'Name of the lead' },
-      { key: 'leadEmail', description: 'Email of the lead' },
-      { key: 'submittedAt', description: 'Submission date/time' },
-    ],
-    fields: TEMPLATE_FIELDS,
-  },
-};
+export { TEMPLATE_METADATA };
 
 /**
  * Supported locales for email templates.

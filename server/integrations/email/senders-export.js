@@ -4,9 +4,7 @@
 
 import { createTranslator } from '../../i18n/index.js';
 import { buildExportReadyEmail } from '../email-templates.js';
-import { formatBytes } from '../email-templates/helpers.js';
 import { sendEmail, getSenderIdentity } from './core.js';
-import { trySendCustomTemplate } from './template-builder.js';
 
 /**
  * Send an export-ready notification email.
@@ -31,21 +29,10 @@ export async function sendExportReadyNotification({
   // Get sender identity from settings
   const senderOverride = await getSenderIdentity(repoRoot);
 
-  // Try custom template first
-  const customResult = await trySendCustomTemplate({
-    repoRoot,
-    templateType: 'exportReady',
-    locale,
-    vars: {
-      presentations: String(stats?.presentations || 0),
-      size: formatBytes(stats?.totalSizeBytes || 0),
-    },
-    actionUrl: downloadUrl,
-    emailOpts: { to: recipientEmail, toName: recipientName, senderOverride },
-  });
-  if (customResult) return customResult;
-
-  // Default behavior
+  // The export-ready email uses a bespoke renderer (buildExportReadyEmail, with
+  // a stats table) rather than the generic customizable template, so there is
+  // no admin override path for it — it is intentionally absent from
+  // TEMPLATE_METADATA.
   const subject = tr('email.exportReady.subject', 'Your data export is ready');
 
   const { htmlContent, textContent } = buildExportReadyEmail({

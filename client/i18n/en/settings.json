@@ -297,6 +297,7 @@
   "settings.admin.emailTemplates.types.commentNotification": "Comment Notification",
   "settings.admin.emailTemplates.types.guestInvitation": "Guest Invitation",
   "settings.admin.emailTemplates.types.guestVerification": "Guest Verification",
+  "settings.admin.emailTemplates.types.leadNotification": "Lead Notification",
   "settings.admin.emailTemplates.types.magicLink": "Magic Link",
   "settings.admin.emailTemplates.types.passwordReset": "Password Reset",
   "settings.admin.emailTemplates.types.userInvitation": "User Invitation",
