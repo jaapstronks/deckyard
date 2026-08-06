@@ -193,6 +193,43 @@ export default [
     },
   },
 
+  // `zod` is for LLM *output* schemas, nothing else.
+  //
+  // It sits in `dependencies` on the strength of a single import
+  // (`server/utils/ai/schemas/`), where it parses what a model hands back —
+  // genuinely untyped, genuinely worth a schema library. Reaching for it on
+  // request bodies is the standing temptation, and it would make
+  // `server/utils/request-validators.js` the *second* validation vocabulary
+  // instead of the first, with `docs/openapi.yaml` as a third place the same
+  // contract is written down. A7.19 B2 decided against that (see
+  // docs/reference/versioning.md § the beta stance: one canonical form per
+  // concept); this is that decision with teeth instead of a note in a brief.
+  //
+  // The narrow allowance below is the whole permitted surface. Widening it is a
+  // design decision, not a lint fix — if a second place genuinely needs schema
+  // parsing, argue that in a PR rather than adding a path here.
+  {
+    files: ['**/*.js'],
+    ignores: ['server/utils/ai/schemas/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'zod',
+              message:
+                'zod is for LLM output schemas only (server/utils/ai/schemas/). ' +
+                'Validate request bodies with server/utils/request-validators.js — ' +
+                'a second validation vocabulary is a second place the contract drifts ' +
+                '(A7.19 B2).',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // Baseline rule tuning. Starts from eslint:recommended; the deltas below keep
   // the gate green on a large never-linted codebase without silencing real bugs.
   {
