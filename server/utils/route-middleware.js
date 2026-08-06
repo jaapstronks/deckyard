@@ -1,16 +1,17 @@
 /**
  * Route middleware utilities for common authorization patterns.
- * Reduces boilerplate in route handlers by providing composable wrappers.
+ *
+ * These are *direct* helpers: a handler calls them and branches on the result.
+ * There is deliberately no wrapper/composition family here — one existed
+ * alongside them for months with zero call sites, and it was removed rather
+ * than adopted (A7.19 C2, decision B1, 2026-08-05). Adding a second dispatch
+ * form to serve one route is what that decision rules out; the dispatch norm
+ * itself is the route table, see `docs/reference/`.
  */
 
 import { getPresentation } from '../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../storage/collaborators.js';
-import {
-  notFound,
-  unauthorized,
-  methodNotAllowed,
-  badRequest,
-} from './http.js';
+import { notFound, unauthorized, badRequest } from './http.js';
 import {
   canReadPresentation,
   canWritePresentation,
@@ -217,8 +218,9 @@ const PERMISSION_CHECKS = {
  * Load a presentation and check authorization in one call.
  * Sends appropriate error response if the check fails.
  *
- * This is a simpler alternative to the composition middleware pattern,
- * useful for gradual refactoring of existing route handlers.
+ * This is the canonical way a presentation route authorizes: load and check in
+ * one call, then branch on the result. Not a stopgap — there is no wrapper
+ * form to migrate to (see the file header).
  *
  * @param {Object} options
  * @param {string} options.repoRoot - Repository root path
@@ -335,250 +337,4 @@ export async function withPresentationCommentAuth({ repoRoot, req, id, authedUse
   }
 
   return { pres, guestInfo, collaboratorPermission };
-}
-
-/**
- * Create a handler wrapper that requires specific HTTP methods.
- * @param {string[]} allowedMethods - Array of allowed HTTP methods
- * @param {Function} handler - The handler function to wrap
- * @returns {Function} Wrapped handler
- */
-export function requireMethod(allowedMethods, handler) {
-  return async (params) => {
-    const { req, res } = params;
-    if (!allowedMethods.includes(req.method)) {
-      return methodNotAllowed(res, allowedMethods);
-    }
-    return handler(params);
-  };
-}
-
-/**
- * Create a handler wrapper that loads a presentation and requires it to exist.
- * Adds `pres` to the params object.
- * @param {Function} handler - The handler function to wrap
- * @returns {Function} Wrapped handler
- */
-export function withPresentation(handler) {
-  return async (params, presentationId) => {
-    const { repoRoot, res, authedUser } = params;
-    const pres = await getPresentation(
-      createRouteContext(authedUser, { repoRoot }),
-      presentationId
-    );
-    if (!pres) return notFound(res);
-    return handler({ ...params, pres }, presentationId);
-  };
-}
-
-/**
- * Create a handler wrapper that requires read permission on a presentation.
- * Must be used after withPresentation (expects params.pres to exist).
- * Also checks for guest access via share links.
- * @param {Function} handler - The handler function to wrap
- * @returns {Function} Wrapped handler
- */
-export function requiresRead(handler) {
-  return async (params, ...args) => {
-    const { req, res, authedUser, pres } = params;
-
-    // Check authenticated user permission
-    let canRead = canReadPresentation({ user: authedUser, pres });
-
-    // If not authorized as user, check for guest session
-    if (!canRead) {
-      const guestInfo = await getGuestFromRequest(req);
-      if (guestInfo && guestInfo.shareLink.presentationId === pres.id) {
-        canRead = true;
-        params.guestInfo = guestInfo;
-      }
-    }
-
-    if (!canRead) return unauthorized(res);
-    return handler(params, ...args);
-  };
-}
-
-/**
- * Create a handler wrapper that requires write permission on a presentation.
- * Must be used after withPresentation (expects params.pres to exist).
- * @param {Function} handler - The handler function to wrap
- * @returns {Function} Wrapped handler
- */
-export function requiresWrite(handler) {
-  return async (params, ...args) => {
-    const { res, authedUser, pres } = params;
-    if (!canWritePresentation({ user: authedUser, pres })) {
-      return unauthorized(res);
-    }
-    return handler(params, ...args);
-  };
-}
-
-/**
- * Create a handler wrapper that requires delete permission on a presentation.
- * Must be used after withPresentation (expects params.pres to exist).
- * @param {Function} handler - The handler function to wrap
- * @returns {Function} Wrapped handler
- */
-export function requiresDelete(handler) {
-  return async (params, ...args) => {
-    const { res, authedUser, pres } = params;
-    if (!canDeletePresentation({ user: authedUser, pres })) {
-      return unauthorized(res);
-    }
-    return handler(params, ...args);
-  };
-}
-
-/**
- * Create a handler wrapper that requires collaborator management permission.
- * Must be used after withPresentation (expects params.pres to exist).
- * @param {Function} handler - The handler function to wrap
- * @returns {Function} Wrapped handler
- */
-export function requiresManageCollaborators(handler) {
-  return async (params, ...args) => {
-    const { res, authedUser, pres } = params;
-    if (!canManageCollaborators({ user: authedUser, pres })) {
-      return unauthorized(res);
-    }
-    return handler(params, ...args);
-  };
-}
-
-/**
- * Create a handler wrapper that requires force lock release permission.
- * Must be used after withPresentation (expects params.pres to exist).
- * @param {Function} handler - The handler function to wrap
- * @returns {Function} Wrapped handler
- */
-export function requiresForceLockRelease(handler) {
-  return async (params, ...args) => {
-    const { res, authedUser, pres } = params;
-    if (!canForceLockRelease({ user: authedUser, pres })) {
-      return unauthorized(res);
-    }
-    return handler(params, ...args);
-  };
-}
-
-/**
- * Create a handler wrapper that adds route context to params.
- * Adds `ctx` to the params object.
- * @param {Function} handler - The handler function to wrap
- * @returns {Function} Wrapped handler
- */
-export function withContext(handler) {
-  return async (params, ...args) => {
-    const { authedUser } = params;
-    const ctx = createRouteContext(authedUser);
-    return handler({ ...params, ctx }, ...args);
-  };
-}
-
-/**
- * Create a handler wrapper that requires admin permission.
- * @param {Function} handler - The handler function to wrap
- * @returns {Function} Wrapped handler
- */
-export function requiresAdmin(handler) {
-  return async (params, ...args) => {
-    const { res, authedUser } = params;
-    if (!authedUser?.isAdmin) {
-      return unauthorized(res);
-    }
-    return handler(params, ...args);
-  };
-}
-
-/**
- * Create a handler wrapper that requires authentication.
- * @param {Function} handler - The handler function to wrap
- * @returns {Function} Wrapped handler
- */
-export function requiresAuth(handler) {
-  return async (params, ...args) => {
-    const { res, authedUser } = params;
-    if (!authedUser?.email) {
-      return unauthorized(res);
-    }
-    return handler(params, ...args);
-  };
-}
-
-/**
- * Create a handler wrapper that requires designer capability.
- * Checks isDesigner flag on the authedUser object.
- * @param {Function} handler - The handler function to wrap
- * @returns {Function} Wrapped handler
- */
-export function requiresDesigner(handler) {
-  return async (params, ...args) => {
-    const { res, authedUser } = params;
-    if (!authedUser?.isDesigner) {
-      return unauthorized(res);
-    }
-    return handler(params, ...args);
-  };
-}
-
-/**
- * Compose multiple middleware wrappers into a single wrapper.
- * Middleware is applied from left to right (first middleware is outermost).
- *
- * @example
- * const handler = compose(
- *   requireMethod(['GET']),
- *   withPresentation,
- *   requiresRead,
- *   withContext
- * )(async ({ pres, ctx, res }) => {
- *   // Handler logic here
- * });
- *
- * @param {...Function} middlewares - Middleware functions to compose
- * @returns {Function} A function that takes a handler and returns a wrapped handler
- */
-export function compose(...middlewares) {
-  return (handler) => {
-    return middlewares.reduceRight((acc, middleware) => middleware(acc), handler);
-  };
-}
-
-/**
- * Create a presentation route handler with common patterns pre-applied.
- * This is a convenience function for the most common pattern:
- * - Load presentation (404 if not found)
- * - Check read/write permission
- * - Create context
- *
- * @param {Object} options
- * @param {string[]} options.methods - Allowed HTTP methods
- * @param {'read'|'write'|'delete'|'manage'|'forceLock'} options.permission - Required permission
- * @param {Function} handler - The handler function
- * @returns {Function} Wrapped handler
- */
-export function presentationRoute({ methods, permission }, handler) {
-  const middlewares = [withPresentation];
-
-  if (permission === 'read') {
-    middlewares.push(requiresRead);
-  } else if (permission === 'write') {
-    middlewares.push(requiresWrite);
-  } else if (permission === 'delete') {
-    middlewares.push(requiresDelete);
-  } else if (permission === 'manage') {
-    middlewares.push(requiresManageCollaborators);
-  } else if (permission === 'forceLock') {
-    middlewares.push(requiresForceLockRelease);
-  }
-
-  middlewares.push(withContext);
-
-  if (methods) {
-    middlewares.unshift((h) => requireMethod(methods, h));
-  }
-
-  return compose(...middlewares)(handler);
 }
