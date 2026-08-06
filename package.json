@@ -85,6 +85,6 @@
     "es-module-lexer": "^2.3.1",
     "eslint": "^10.8.0",
     "eslint-plugin-import-x": "^4.17.1",
-    "globals": "^17.8.0"
+    "globals": "^17.9.0"
   }
 }
