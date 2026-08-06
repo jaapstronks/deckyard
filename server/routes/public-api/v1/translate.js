@@ -12,7 +12,7 @@ import {
   normalizeLang,
   TRANSLATION_LANGS,
 } from '../../../storage/presentations/i18n.js';
-import { requireScope, getPresentationWithAccess, parseJsonBody, checkAiLimit, trackAiRequest, apiSuccess, apiError } from './middleware.js';
+import { requireScope, getPresentationWithAccess, readApiV1Body, checkAiLimit, trackAiRequest, apiSuccess, apiError } from './middleware.js';
 
 // ============================================================
 // ROUTE HANDLERS
@@ -44,7 +44,7 @@ async function handleTranslate(ctx, presentationId) {
     return true;
   }
 
-  const { ok: bodyOk, body } = await parseJsonBody(ctx, req);
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
 
   // Load presentation

@@ -20,7 +20,7 @@ import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('ai');
 import {
   requireScope,
-  parseJsonBody,
+  readApiV1Body,
   checkAiLimit,
   trackAiRequest,
   apiSuccess,
@@ -73,7 +73,7 @@ async function handleWizard(ctx) {
   // Check AI limit
   if (!(await checkAiLimit(ctx))) return true;
 
-  const { ok: bodyOk, body } = await parseJsonBody(ctx, ctx.req);
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req);
   if (!bodyOk) return true;
 
   const { raw, vendor, lang, theme } = getAiParams(body);
@@ -164,7 +164,7 @@ async function handleAppendSlides(ctx) {
 
   if (!(await checkAiLimit(ctx))) return true;
 
-  const { ok: bodyOk, body } = await parseJsonBody(ctx, ctx.req);
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req);
   if (!bodyOk) return true;
 
   const raw = String(body?.raw || '').trim();

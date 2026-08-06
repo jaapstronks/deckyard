@@ -42,7 +42,7 @@ import { broadcastCommentCounts, MAX_COMMENT_LENGTH } from '../../api/presentati
 import {
   requireScope,
   getPresentationWithAccess,
-  parseJsonBody,
+  readApiV1Body,
   apiSuccess,
   apiCreated,
   apiError,
@@ -150,7 +150,7 @@ async function handleCreateComment(ctx, presentationId) {
 
   if (!requireScope(ctx, 'comments:write')) return true;
 
-  const { ok: bodyOk, body } = await parseJsonBody(ctx, req);
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
 
   const { ok, pres } = await getPresentationWithAccess(ctx, presentationId);
@@ -252,7 +252,7 @@ async function handleCommentStatus(ctx, commentId) {
 
   if (!requireScope(ctx, 'comments:write')) return true;
 
-  const { ok: bodyOk, body } = await parseJsonBody(ctx, req);
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
 
   const status = body?.status;
