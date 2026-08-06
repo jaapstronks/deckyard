@@ -44,9 +44,11 @@
  * called directly with a req/res double over `tests/helpers/fake-db.js`. No
  * HTTP server, no browser.
  *
- * AUTH_SECRET is set before the imports because the helper reads it at call
- * time and refuses to derive a label without one; this file relies on
- * node --test giving it its own process.
+ * AUTH_SECRET is set before the imports so the default-path tests derive
+ * against a stable, known key; the helper reads it at call time, so the
+ * secretless-boot tests at the bottom delete it around their own calls to
+ * exercise the ephemeral-key fallback (B48/D7). This file relies on node --test
+ * giving it its own process.
  *
  * Run with: node --test tests/analytics-session-device-label.test.js
  */
@@ -65,7 +67,9 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } = await import(
   '../server/storage/adapters/index.js'
 );
-const { publicDeviceLabel } = await import('../server/analytics/helpers.js');
+const { publicDeviceLabel, deviceLabelKeySource } = await import(
+  '../server/analytics/helpers.js'
+);
 const { handleSessions } = await import('../server/routes/api/analytics/metrics.js');
 
 /** Two decks owned by the same person, so authorization is never the variable. */
@@ -348,7 +352,7 @@ test('no field of the response carries a session token', async () => {
 // The helper's own contract
 // ---------------------------------------------------------------------------
 
-test('the label helper refuses to guess a key or a deck', async () => {
+test('the label helper refuses to guess a deck', async () => {
   assert.equal(publicDeviceLabel(null, DECK_ONE), null);
   assert.equal(publicDeviceLabel('', DECK_ONE), null);
 
@@ -357,15 +361,77 @@ test('the label helper refuses to guess a key or a deck', async () => {
     /presentation id/,
     'a deckless label would be an instance-wide identifier again'
   );
+});
+
+// ---------------------------------------------------------------------------
+// Secretless boot modes (auth-off / sandbox / demo) — B48 / D7
+// ---------------------------------------------------------------------------
+//
+// Those modes boot without AUTH_SECRET on purpose. The helper used to throw
+// when it was missing, which turned the whole session list into a 500 the
+// moment any session had been tracked. It now falls back to an ephemeral
+// per-boot random key: a real label, still unguessable and still per-deck, so
+// the list works without a configured secret. What it must NOT do is invent a
+// guessable constant — that would make the label reversible again.
+
+test('the key source is auth-secret when one is set, ephemeral when not', () => {
+  assert.deepEqual(deviceLabelKeySource(), { source: 'auth-secret' });
 
   const secret = process.env.AUTH_SECRET;
   delete process.env.AUTH_SECRET;
   try {
-    assert.throws(
-      () => publicDeviceLabel(DEVICE, DECK_ONE),
-      /AUTH_SECRET/,
-      'no fallback secret: a guessable key makes the label reversible'
+    assert.deepEqual(
+      deviceLabelKeySource(),
+      { source: 'ephemeral' },
+      'no configured secret falls back to the ephemeral per-boot key'
     );
+  } finally {
+    process.env.AUTH_SECRET = secret;
+  }
+});
+
+test('without a secret the helper still derives a label, and a different one', () => {
+  const withSecret = publicDeviceLabel(DEVICE, DECK_ONE);
+
+  const secret = process.env.AUTH_SECRET;
+  delete process.env.AUTH_SECRET;
+  try {
+    const first = publicDeviceLabel(DEVICE, DECK_ONE);
+    const again = publicDeviceLabel(DEVICE, DECK_ONE);
+
+    assert.match(first, /^[a-f0-9]{12}$/, 'a real 12-hex label, not a throw');
+    assert.equal(first, again, 'stable within the boot — a returning viewer still lines up');
+    assert.notEqual(
+      first,
+      withSecret,
+      'the ephemeral key is not the configured secret, nor a shared constant'
+    );
+    assert.notEqual(first, DEVICE.slice(0, 12), 'still derived, never a prefix of the raw id');
+  } finally {
+    process.env.AUTH_SECRET = secret;
+  }
+});
+
+test('the session list does not 500 in a secretless boot with tracked sessions', async () => {
+  seed([
+    sessionRow({ id: 's-one', deck: DECK_ONE }),
+    sessionRow({ id: 's-two', deck: DECK_ONE }),
+  ]);
+
+  const secret = process.env.AUTH_SECRET;
+  delete process.env.AUTH_SECRET;
+  try {
+    const { status, body } = await callSessions(DECK_ONE);
+
+    assert.equal(status, 200, 'the list renders instead of throwing a 500');
+    assert.equal(body.sessions.length, 2);
+    for (const session of body.sessions) {
+      assert.match(session.deviceId, /^[a-f0-9]{12}$/, 'each session still carries a label');
+      assert.ok(
+        !RAW_DEVICE_ID_SHAPE.test(session.deviceId),
+        'and the label is never the raw device id'
+      );
+    }
   } finally {
     process.env.AUTH_SECRET = secret;
   }
