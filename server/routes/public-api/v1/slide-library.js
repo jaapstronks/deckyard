@@ -12,7 +12,7 @@ import {
 import { updatePresentation } from '../../../storage/presentations/index.js';
 import { methodNotAllowed } from '../../../utils/http.js';
 import { newSlide } from '../../../../shared/slide-types.js';
-import { requireScope, getPresentationWithAccess, parseJsonBody, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
+import { requireScope, getPresentationWithAccess, readApiV1Body, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
 
 /**
  * Sanitize a library item for API response.
@@ -115,7 +115,7 @@ async function handleAddFromLibrary(ctx, presentationId) {
 
   if (!requireScope(ctx, 'write')) return true;
 
-  const { ok: bodyOk, body } = await parseJsonBody(ctx, ctx.req);
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req);
   if (!bodyOk) return true;
 
   const libraryItemId = body?.libraryItemId;

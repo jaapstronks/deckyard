@@ -186,13 +186,18 @@ export async function getPresentationWithAccess(ctx, presentationId, { access = 
 }
 
 /**
- * Parse JSON body from request with error handling.
- * Sends 400 error response if JSON is invalid.
+ * Read a JSON body on the public `/api/v1` surface, answering that surface's
+ * own error envelope (via `apiError`) rather than the internal one.
+ *
+ * Named for the surface on purpose: the internal `/api/*` routes have their own
+ * body entry in `server/utils/http.js`, and the two contracts differ. One name
+ * for both was a homonym: the same word for two error envelopes.
+ *
  * @param {Object} ctx - Request context
  * @param {Object} req - HTTP request object
  * @returns {Promise<{ok: boolean, body?: Object}>} - Result with parsed body if successful
  */
-export async function parseJsonBody(ctx, req) {
+export async function readApiV1Body(ctx, req) {
   try {
     const body = await json(req);
     return { ok: true, body };

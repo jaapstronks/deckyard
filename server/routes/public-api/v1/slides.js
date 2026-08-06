@@ -7,7 +7,7 @@ import { updatePresentation } from '../../../storage/presentations/index.js';
 import { methodNotAllowed } from '../../../utils/http.js';
 import { newSlide, validateSlide, resolveSlideTypeName, canonicalSlideType } from '../../../../shared/slide-types.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
-import { requireScope, getPresentationWithAccess, parseJsonBody, apiSuccess, apiCreated, apiError } from './middleware.js';
+import { requireScope, getPresentationWithAccess, readApiV1Body, apiSuccess, apiCreated, apiError } from './middleware.js';
 import { emailCanEditCustomHtml, customHtmlEditViolation } from '../../../utils/route-middleware.js';
 
 /**
@@ -62,7 +62,7 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
 
   if (!requireScope(ctx, 'write')) return true;
 
-  const { ok: bodyOk, body } = await parseJsonBody(ctx, req);
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
 
   const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, { access: 'write' });
@@ -155,7 +155,7 @@ async function handleCreateSlide(ctx, presentationId) {
 
   if (!requireScope(ctx, 'write')) return true;
 
-  const { ok: bodyOk, body } = await parseJsonBody(ctx, req);
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
 
   const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, { access: 'write' });
@@ -322,7 +322,7 @@ async function handleReorderSlides(ctx, presentationId) {
 
   if (!requireScope(ctx, 'write')) return true;
 
-  const { ok: bodyOk, body } = await parseJsonBody(ctx, req);
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
 
   const slideIds = body?.slideIds;

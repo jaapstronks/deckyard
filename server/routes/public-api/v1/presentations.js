@@ -15,7 +15,7 @@ import { getTagsForPresentations, getTagsForPresentation } from '../../../storag
 import { methodNotAllowed } from '../../../utils/http.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { canonicalSlideType } from '../../../../shared/slide-types.js';
-import { requireScope, canAccessPresentation, getPresentationWithAccess, parseJsonBody, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
+import { requireScope, canAccessPresentation, getPresentationWithAccess, readApiV1Body, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -155,7 +155,7 @@ async function handleCreate(ctx) {
 
   if (!requireScope(ctx, 'write')) return true;
 
-  const { ok: bodyOk, body } = await parseJsonBody(ctx, ctx.req);
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req);
   if (!bodyOk) return true;
 
   if (!body || typeof body !== 'object') {
@@ -203,7 +203,7 @@ async function handleUpdate(ctx, id) {
   const { ok } = await getPresentationWithAccess(ctx, id, { access: 'write' });
   if (!ok) return true;
 
-  const { ok: bodyOk, body } = await parseJsonBody(ctx, ctx.req);
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req);
   if (!bodyOk) return true;
 
   if (!body || typeof body !== 'object') {
