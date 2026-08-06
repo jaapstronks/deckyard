@@ -20,6 +20,8 @@ export const EVENT_TYPES = {
   PRESENTATION_MOVED_TO_WORKSPACE: 'presentation.moved_to_workspace',
   OWNERSHIP_TRANSFERRED: 'presentation.ownership_transferred',
   COLLABORATOR_ADDED: 'collaborator.added',
+  COLLABORATOR_REMOVED: 'collaborator.removed',
+  COLLABORATOR_PERMISSION_CHANGED: 'collaborator.permission_changed',
   COMMENT_CREATED: 'comment.created',
   COMMENT_RESOLVED: 'comment.resolved',
   COMMENT_REOPENED: 'comment.reopened',

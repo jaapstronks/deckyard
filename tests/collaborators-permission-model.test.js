@@ -823,6 +823,47 @@ test('the owner revokes an invite, with a message and an attribution', async () 
   assert.equal(rowsFor('deck-owned').length, 4, 'revoked, not deleted');
 });
 
+test('revoking logs a collaborator.removed event and hands the message back', async () => {
+  await seed();
+  const res = await call(
+    'DELETE',
+    `/api/presentations/deck-owned/collaborators/${ACTORS.viewer.email}`,
+    { as: ACTORS.owner, body: { message: 'Project finished.' } }
+  );
+
+  assert.equal(res.status, 200);
+  // The revocation message is delivered, not merely stored — share-links already
+  // hand theirs to the denied accessor; the collaborator response now does the
+  // symmetric thing (B44(a)/D8).
+  assert.equal(res.body.collaborator.revocationMessage, 'Project finished.');
+
+  // And the revoke lands in the feed the way a grant does — the audit half that
+  // was missing.
+  const event = activity().find((e) => e.event_type === 'collaborator.removed');
+  assert.ok(event, 'a revoke writes an event, symmetric with collaborator.added');
+  assert.equal(event.presentation_id, 'deck-owned');
+  assert.equal(event.entity_type, 'collaborator');
+  assert.equal(event.actor_email, ACTORS.owner.email);
+  assert.equal(event.data.collaboratorEmail, ACTORS.viewer.email);
+  assert.equal(event.data.revocationMessage, 'Project finished.');
+});
+
+test('a revoke with no message still logs, with a null message in the payload', async () => {
+  await seed();
+  const res = await call(
+    'DELETE',
+    `/api/presentations/deck-owned/collaborators/${ACTORS.editor.email}`,
+    { as: ACTORS.owner }
+  );
+
+  assert.equal(res.status, 200);
+  assert.equal(res.body.collaborator.revocationMessage, null, 'absent stays null, not undefined');
+  assert.ok(
+    activity().some((e) => e.event_type === 'collaborator.removed'),
+    'the event is written whether or not a message was given'
+  );
+});
+
 test('an url-encoded address in the path reaches the right row', async () => {
   await seed();
   const res = await call(
@@ -900,6 +941,38 @@ test('the owner changes a permission', async () => {
   assert.equal(res.status, 200);
   assert.equal(res.body.collaborator.permission, 'admin');
   assert.equal(rowFor('deck-owned', ACTORS.viewer.email).permission, 'admin');
+});
+
+test('changing a permission logs a collaborator.permission_changed event', async () => {
+  await seed();
+  const res = await call(
+    'PATCH',
+    `/api/presentations/deck-owned/collaborators/${ACTORS.viewer.email}`,
+    { as: ACTORS.owner, body: { permission: 'admin' } }
+  );
+
+  assert.equal(res.status, 200);
+  const event = activity().find((e) => e.event_type === 'collaborator.permission_changed');
+  assert.ok(event, 'a permission change is an access-model event too');
+  assert.equal(event.presentation_id, 'deck-owned');
+  assert.equal(event.entity_type, 'collaborator');
+  assert.equal(event.actor_email, ACTORS.owner.email);
+  assert.equal(event.data.collaboratorEmail, ACTORS.viewer.email);
+  assert.equal(event.data.permission, 'admin');
+});
+
+test('a refused permission change writes no event', async () => {
+  await seed();
+  await call(
+    'PATCH',
+    `/api/presentations/deck-owned/collaborators/${ACTORS.viewer.email}`,
+    { as: ACTORS.editor, body: { permission: 'admin' } }
+  );
+  assert.deepEqual(
+    activity().filter((e) => e.event_type === 'collaborator.permission_changed'),
+    [],
+    'an unauthorized change reaches neither the row nor the feed'
+  );
 });
 
 test('an invalid permission changes nothing', async () => {

@@ -376,7 +376,32 @@ export async function handleCollaborators({ repoRoot, storageScope, req, res, ur
         return badRequest(res, result.reason);
       }
 
-      serveJson(res, 200, { ok: true });
+      // Log the revocation the way a grant is logged (non-blocking): a grant
+      // writes collaborator.added, so a revoke writes collaborator.removed —
+      // without it the security-relevant half of the model is nowhere in the
+      // feed.
+      try {
+        await createActivityEvent(
+          {
+            eventType: EVENT_TYPES.COLLABORATOR_REMOVED,
+            entityType: ENTITY_TYPES.COLLABORATOR,
+            entityId: result.collaborator?.id || presentationId,
+            presentationId,
+            actorEmail: authedUser?.email,
+            actorName: authedUser?.name,
+            data: {
+              collaboratorEmail: result.collaborator?.userEmail || email,
+              presentationTitle: pres.title || 'Untitled presentation',
+              revocationMessage: result.collaborator?.revocationMessage || null,
+            },
+          },
+          ctx
+        );
+      } catch (err) {
+        log.error(`[collaborators] Failed to record revoke event for ${email}:`, err);
+      }
+
+      serveJson(res, 200, { ok: true, collaborator: result.collaborator });
     } catch (err) {
       log.error('[collaborators] Failed to remove collaborator:', err);
       return serverError(res, 'Failed to remove collaborator');
@@ -408,6 +433,29 @@ export async function handleCollaborators({ repoRoot, storageScope, req, res, ur
       if (!result.ok) {
         if (result.reason === 'not_found') return notFound(res);
         return badRequest(res, result.reason);
+      }
+
+      // Log the permission change symmetrically with grant and revoke
+      // (non-blocking): a promotion or demotion is an access-model event too.
+      try {
+        await createActivityEvent(
+          {
+            eventType: EVENT_TYPES.COLLABORATOR_PERMISSION_CHANGED,
+            entityType: ENTITY_TYPES.COLLABORATOR,
+            entityId: result.collaborator?.id || presentationId,
+            presentationId,
+            actorEmail: authedUser?.email,
+            actorName: authedUser?.name,
+            data: {
+              collaboratorEmail: result.collaborator?.userEmail || email,
+              permission,
+              presentationTitle: pres.title || 'Untitled presentation',
+            },
+          },
+          ctx
+        );
+      } catch (err) {
+        log.error(`[collaborators] Failed to record permission-change event for ${email}:`, err);
       }
 
       serveJson(res, 200, { collaborator: result.collaborator });

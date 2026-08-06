@@ -226,7 +226,10 @@ export async function removeCollaborator(presentationId, userEmail, revokedBy, o
     // Invalidate cache for this user
     await invalidatePermission(pid, email);
 
-    return { ok: true };
+    // Return the revoked row so `revocation_message` reaches the response — the
+    // field was written here and read nowhere, unlike the share-link path which
+    // hands its revocation message to the denied accessor.
+    return { ok: true, collaborator: formatCollaborator(row) };
   });
 }
 
@@ -428,5 +431,6 @@ function formatCollaborator(row) {
     acceptedAt: row.accepted_at,
     revokedAt: row.revoked_at,
     revokedBy: row.revoked_by,
+    revocationMessage: row.revocation_message ?? null,
   };
 }

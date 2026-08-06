@@ -590,6 +590,12 @@ function renderActivityPreviewItem(h, nav, { event, count }, detachThumbs) {
     case 'collaborator.added':
       actionText = t('activity.shared', 'shared');
       break;
+    case 'collaborator.removed':
+      actionText = t('activity.unshared', 'removed sharing on');
+      break;
+    case 'collaborator.permission_changed':
+      actionText = t('activity.permissionChanged', 'changed access on');
+      break;
     case 'slide.added': {
       const n = Number(event.data?.count) || 1;
       actionText = t('activity.slidesAdded', 'added {count} slides to', { count: n });
