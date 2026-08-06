@@ -217,7 +217,7 @@ than at whatever time the process happened to boot.
 | `REDIS_URL` | Full connection URL. When set (or `REDIS_HOST` is), the queue system initializes; otherwise everything runs synchronously. |
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` / `REDIS_DB` | The discrete-parameter alternative to `REDIS_URL`. |
 | `REDIS_ENABLED=false` | Explicitly disables Redis even when a URL or host is configured — the supported way to force the synchronous path. |
-| `ANALYTICS_RETENTION_DAYS`, `ANALYTICS_IP_ANONYMIZATION_DAYS` | Read through `ANALYTICS_CONFIG`; see [`analytics.md`](analytics.md) and [`analytics-privacy.md`](analytics-privacy.md). |
+| `ANALYTICS_RETENTION_DAYS`, `ANALYTICS_IP_ANONYMIZATION_DAYS` | Seed the defaults for `settings.analytics.retention.*`; the cleanup job reads the settings value (admin UI wins). See [`analytics.md`](analytics.md) and [`analytics-privacy.md`](analytics-privacy.md). |
 | `ACTIVITY_RETENTION_DAYS` | Retention for `activity_events`, default 180. Those rows carry actor emails, which is why they expire at all. |
 
 The intervals themselves are not env-configurable: they are defaults in each

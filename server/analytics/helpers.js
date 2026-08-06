@@ -31,11 +31,11 @@ export const ANALYTICS_CONFIG = {
   // Max slide index (sanity check for slide navigation)
   MAX_SLIDE_INDEX: parseInt(process.env.ANALYTICS_MAX_SLIDE_INDEX || '', 10) || 1000,
 
-  // Data retention (days before cleanup)
-  RETENTION_DAYS: parseInt(process.env.ANALYTICS_RETENTION_DAYS || '', 10) || 90,
-
-  // IP anonymization (days before IPs are anonymized)
-  IP_ANONYMIZATION_DAYS: parseInt(process.env.ANALYTICS_IP_ANONYMIZATION_DAYS || '', 10) || 30,
+  // Retention lives in instance settings, not here: the cleanup job reads
+  // `settings.analytics.retention.*` so the admin UI is the single source of
+  // truth (`server/storage/settings.js` getAnalyticsRetention). The env vars
+  // ANALYTICS_RETENTION_DAYS / ANALYTICS_IP_ANONYMIZATION_DAYS survive only as
+  // the *seed* for those settings' defaults, applied there.
 };
 
 // ============================================================
