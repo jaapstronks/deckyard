@@ -1,12 +1,12 @@
 import { getPresentation, updatePresentation } from '../../../storage/presentations/index.js';
 import {
   badRequest,
-  json,
   methodNotAllowed,
   notFound,
   serveJson,
   unauthorized,
   jsonError,
+  requireJsonBody,
 } from '../../../utils/http.js';
 import { errorToResponse } from '../../../utils/errors.js';
 import { canChangePresentationScope, isPresentationAuthor } from '../../../utils/presentation-authz.js';
@@ -22,7 +22,9 @@ export async function handlePresentationScope(
   if (!existing) return notFound(res);
   if (!authedUser) return unauthorized(res);
 
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const nextScope =
     body?.scope === 'workspace'
       ? 'workspace'

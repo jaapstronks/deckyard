@@ -1,10 +1,10 @@
 import {
   badRequest,
-  json,
   methodNotAllowed,
   serveJson,
   unauthorized,
   notFound,
+  requireJsonBody,
 } from '../../utils/http.js';
 import {
   createPersonalLibraryItem,
@@ -54,7 +54,9 @@ export async function handleSlideLibrary({ repoRoot, storageScope, req, res, url
       return true;
     }
     if (req.method === 'POST') {
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const r = await recordSlideLibraryUsage(storageScope, email, body?.items);
       serveJson(res, 200, { ok: true, recorded: r?.recorded || 0 });
       return true;
@@ -78,7 +80,9 @@ export async function handleSlideLibrary({ repoRoot, storageScope, req, res, url
       return true;
     }
     if (req.method === 'POST') {
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const r = await createPersonalLibraryItem(storageScope, email, body, {
         actorEmail: email,
       });
@@ -93,7 +97,9 @@ export async function handleSlideLibrary({ repoRoot, storageScope, req, res, url
   if (personalIdMatch) {
     const id = personalIdMatch[1];
     if (req.method === 'PATCH') {
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const r = await updatePersonalLibraryItem(storageScope, email, id, body, {
         actorEmail: email,
       });
@@ -126,7 +132,9 @@ export async function handleSlideLibrary({ repoRoot, storageScope, req, res, url
       return true;
     }
     if (req.method === 'POST') {
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const r = await createTeamLibraryItem(storageScope, body, { actorEmail: email });
       if (!r.ok) return badRequest(res, r.reason);
 
@@ -170,7 +178,9 @@ export async function handleSlideLibrary({ repoRoot, storageScope, req, res, url
   if (teamIdMatch) {
     const id = teamIdMatch[1];
     if (req.method === 'PATCH') {
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       // Permission model:
       // - Favorites are per-user and always allowed for authed users.
       // - Trashing (soft delete) is restricted to admins or the creator.
@@ -234,7 +244,9 @@ export async function handleSlideLibrary({ repoRoot, storageScope, req, res, url
       return true;
     }
     if (req.method === 'PUT') {
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const tagNames = Array.isArray(body) ? body : (body?.tags || []);
       const tags = await setTagsForSlideLibraryItem(storageScope, id, tagNames, { userEmail: email });
       serveJson(res, 200, tags);
@@ -253,7 +265,9 @@ export async function handleSlideLibrary({ repoRoot, storageScope, req, res, url
       return true;
     }
     if (req.method === 'PUT') {
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const tagNames = Array.isArray(body) ? body : (body?.tags || []);
       const tags = await setTagsForSlideLibraryItem(storageScope, id, tagNames, { userEmail: email });
       serveJson(res, 200, tags);

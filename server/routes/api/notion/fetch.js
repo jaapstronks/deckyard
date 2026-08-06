@@ -3,7 +3,7 @@
  * Handles fetching Notion pages and publishing embeds back to Notion.
  */
 
-import { badRequest, json, serveJson, jsonError } from '../../../utils/http.js';
+import { badRequest, serveJson, jsonError, requireJsonBody } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import {
   extractPageId,
@@ -30,7 +30,9 @@ export async function handleNotionFetch({ req, res, url }) {
     return true;
   }
 
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const urlOrId = getTrimmedString(body, 'url') || '';
   if (!urlOrId) {
     return badRequest(res, 'Expected { url } with a Notion page URL or ID');
@@ -71,7 +73,9 @@ export async function handleNotionPublish({ req, res, url }) {
     return true;
   }
 
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const pageId = getTrimmedString(body, 'pageId') || '';
   const embedUrl = getTrimmedString(body, 'embedUrl') || '';
   const title = getTrimmedString(body, 'title') || '';

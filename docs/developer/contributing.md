@@ -213,26 +213,38 @@ unauthorized(res);
 notFound(res);
 ```
 
-### Validation
+### Read the body through `requireJsonBody`
 
-Validate external input at boundaries:
+`requireJsonBody` is the **only** JSON body entry point for route handlers. It
+owns the whole HTTP contract — 400 on an empty or unparseable body, 413 over the
+size cap, always in the canonical error envelope. When it answers `ok: false`
+the response has already been sent, so the handler just returns.
 
 ```javascript
-import { z } from 'zod';
+import { requireJsonBody, badRequest, serveJson } from '../../utils/http.js';
+import { getTrimmedString } from '../../utils/request-validators.js';
 
-const CreateSchema = z.object({
-  title: z.string().min(1).max(200),
-  theme: z.string().optional(),
-});
+const parsed = await requireJsonBody(req, res);
+if (!parsed.ok) return true;
+const body = parsed.body;
 
-// In handler
-try {
-  const input = CreateSchema.parse(await parseJsonBody(req));
-  // Process valid input
-} catch (e) {
-  badRequest(res, 'Invalid input');
-}
+const title = getTrimmedString(body, 'title');
+if (!title) return badRequest(res, 'title is required');
 ```
+
+Where an absent payload is a legitimate request (a toggle, a DELETE with
+optional options), pass `{ allowEmpty: true }` and an empty body arrives as
+`{}`. A *malformed* body is still a 400 — absent and broken are different
+requests.
+
+### Validation
+
+Validate external input at boundaries with the helpers in
+`server/utils/request-validators.js` (`getString`, `getTrimmedString`,
+`getBoolean`, `getLang`, `parsePaginationParams`, …). Don't reach for a schema
+library: `zod` is in the tree for **LLM output schemas only**
+(`server/utils/ai/schemas/`), and a second validation vocabulary on request
+bodies is a second place the contract can drift from `docs/openapi.yaml`.
 
 ---
 

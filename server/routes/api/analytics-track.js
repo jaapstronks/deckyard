@@ -3,7 +3,7 @@
  * These endpoints do NOT require authentication and are used by viewers.
  */
 
-import { json } from '../../utils/http.js';
+import { requireJsonBody } from '../../utils/http.js';
 import { norm } from '../../utils/normalize.js';
 import { redactSecret } from '../../utils/log-redact.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';
@@ -194,12 +194,9 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
       return sendRateLimitResponse(res), true;
     }
 
-    let body;
-    try {
-      body = await json(req);
-    } catch (err) {
-      return sendErrorResponse(res, 400, 'Invalid JSON body'), true;
-    }
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
 
     const presentationId = norm(body?.presentationId);
     const sourceType = norm(body?.sourceType);
@@ -308,12 +305,9 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
       return sendRateLimitResponse(res), true;
     }
 
-    let body;
-    try {
-      body = await json(req);
-    } catch (err) {
-      return sendErrorResponse(res, 400, 'Invalid JSON body'), true;
-    }
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
 
     const sessionToken = norm(body?.sessionToken);
 
@@ -368,12 +362,9 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
       return sendRateLimitResponse(res), true;
     }
 
-    let body;
-    try {
-      body = await json(req);
-    } catch (err) {
-      return sendErrorResponse(res, 400, 'Invalid JSON body'), true;
-    }
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
 
     const sessionToken = norm(body?.sessionToken);
 
@@ -424,12 +415,9 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
       return sendRateLimitResponse(res), true;
     }
 
-    let body;
-    try {
-      body = await json(req);
-    } catch (err) {
-      return sendErrorResponse(res, 400, 'Invalid JSON body'), true;
-    }
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
 
     const sessionToken = norm(body?.sessionToken);
     const slideId = norm(body?.slideId);
@@ -522,12 +510,9 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
       return sendRateLimitResponse(res), true;
     }
 
-    let body;
-    try {
-      body = await json(req);
-    } catch (err) {
-      return sendErrorResponse(res, 400, 'Invalid JSON body'), true;
-    }
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
 
     const sessionToken = norm(body?.sessionToken);
 

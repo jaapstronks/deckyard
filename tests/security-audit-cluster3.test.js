@@ -96,13 +96,18 @@ test('H8: HSTS only when the connection is secure', () => {
 
 // ============================================================================
 // H7 — import endpoints must not leak err.message / err.stack
+//
+// Since A7.19 C6 these answer 400, not 500: a body the client sent wrong is the
+// client's error, and `requireJsonBody` answers it before the handler runs.
+// The H7 guarantee is unchanged and still asserted — what comes back is a fixed
+// literal from our own helper, never the parser's text or a stack.
 // ============================================================================
 
 function badJsonReq() {
   return Readable.from([Buffer.from('{ this is : not valid json')]);
 }
 
-test('H7: JSON import 500 is generic (no stack, no raw message)', async () => {
+test('H7: JSON import rejects a broken body as 400 (no stack, no parser text)', async () => {
   const res = new MockRes();
   await handlePresentationsImportJson({
     repoRoot: '/tmp',
@@ -110,15 +115,16 @@ test('H7: JSON import 500 is generic (no stack, no raw message)', async () => {
     res,
     authedUser: { email: 'a@b.com' },
   });
-  assert.equal(res.statusCode, 500);
+  assert.equal(res.statusCode, 400);
   const body = JSON.parse(res.bodyText());
-  assert.equal(body.error, 'internal_error');
-  assert.equal(body.message, 'Internal server error', 'generic message, no leak');
+  assert.equal(body.ok, false);
+  assert.equal(body.error, 'bad_request');
+  assert.equal(body.message, 'Invalid JSON body', 'our literal, not the parser’s');
   assert.ok(!('stack' in body), 'stack must not be in the response');
-  assert.doesNotMatch(res.bodyText(), /Invalid JSON body/, 'raw error message must not leak');
+  assert.doesNotMatch(res.bodyText(), /Unexpected token/, 'parser text must not leak');
 });
 
-test('H7: markdown import 500 is generic (no stack, no raw message)', async () => {
+test('H7: markdown import rejects a broken body as 400 (no stack, no parser text)', async () => {
   const res = new MockRes();
   await handlePresentationsImportMarkdown({
     repoRoot: '/tmp',
@@ -126,11 +132,11 @@ test('H7: markdown import 500 is generic (no stack, no raw message)', async () =
     res,
     authedUser: { email: 'a@b.com' },
   });
-  assert.equal(res.statusCode, 500);
+  assert.equal(res.statusCode, 400);
   const body = JSON.parse(res.bodyText());
-  assert.equal(body.error, 'internal_error');
-  assert.equal(body.message, 'Internal server error', 'generic message, no leak');
+  assert.equal(body.error, 'bad_request');
   assert.ok(!('stack' in body), 'stack must not be in the response');
+  assert.doesNotMatch(res.bodyText(), /Unexpected token/, 'parser text must not leak');
 });
 
 // ============================================================================

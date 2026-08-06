@@ -1,5 +1,5 @@
 import { getFeatureFlags } from '../../config/feature-flags.js';
-import { badRequest, json, jsonError, methodNotAllowed, serveJson, serverError, unauthorized } from '../../utils/http.js';
+import { badRequest, jsonError, methodNotAllowed, serveJson, serverError, unauthorized, requireJsonBody } from '../../utils/http.js';
 import {
   getImageKitConfigFromEnv,
   listImageKitFiles,
@@ -38,7 +38,9 @@ export async function handleMedia({ repoRoot, req, res, url, authedUser }) {
       return badRequest(res, 'Current media provider does not support presigned uploads');
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const { filename, contentType, size } = body || {};
 
     if (!filename || typeof filename !== 'string') {
@@ -68,7 +70,9 @@ export async function handleMedia({ repoRoot, req, res, url, authedUser }) {
       return badRequest(res, 'Media provider not initialized');
     }
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const { key } = body || {};
 
     if (!key || typeof key !== 'string') {
@@ -143,7 +147,9 @@ export async function handleMedia({ repoRoot, req, res, url, authedUser }) {
     if (req.method !== 'PATCH') return methodNotAllowed(res, ['GET', 'PATCH']);
     if (!authedUser) return unauthorized(res);
     if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const out = await patchImageKitFileDetails(fileId, body || {});
     serveJson(res, 200, out);
     return true;

@@ -7,7 +7,7 @@
  *   GET    /api/data-sources/providers     - List available providers
  */
 
-import { badRequest, json, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError } from '../../utils/http.js';
+import { badRequest, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError, requireJsonBody } from '../../utils/http.js';
 import { isLiveDataEnabled } from '../../config/features.js';
 import { validateDataSource, DATA_SOURCE_PROVIDERS, BINDABLE_SLIDE_TYPES } from '../../../shared/data-source.js';
 import { refreshSlideData, fetchProviderData } from '../../utils/data-source/index.js';
@@ -35,7 +35,9 @@ export async function handleDataSources({ req, res, url, authedUser }) {
   if (url.pathname === '/api/data-sources/preview') {
     if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     if (!body?.provider || !body?.config) {
       return badRequest(res, 'provider and config are required');
     }
@@ -59,7 +61,9 @@ export async function handleDataSources({ req, res, url, authedUser }) {
   if (url.pathname === '/api/data-sources/refresh') {
     if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     if (!body?.dataSource || !body?.content) {
       return badRequest(res, 'dataSource and content are required');
     }

@@ -2,7 +2,7 @@
  * Analytics reports CRUD endpoints.
  */
 
-import { json } from '../../../utils/http.js';
+import { requireJsonBody } from '../../../utils/http.js';
 import { norm, validateDateRange } from '../../../utils/normalize.js';
 import { parsePaginationParams } from '../../../utils/request-validators.js';
 import { allowRequest } from '../../../utils/rate-limit.js';
@@ -118,12 +118,9 @@ export async function handleCreateReport(ctx, presentationId, rateLimitKey) {
   });
   if (!pres) return true;
 
-  let body;
-  try {
-    body = await json(req);
-  } catch (err) {
-    return sendErrorResponse(res, 400, 'Invalid JSON body'), true;
-  }
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
 
   const title = norm(body?.title);
   const reportType = norm(body?.reportType) || 'summary';
@@ -212,12 +209,9 @@ export async function handleUpdateReport(ctx, presentationId, reportId) {
   });
   if (!pres) return true;
 
-  let body;
-  try {
-    body = await json(req);
-  } catch (err) {
-    return sendErrorResponse(res, 400, 'Invalid JSON body'), true;
-  }
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
 
   const result = await updateAnalyticsReport(reportId, body, ctx);
 

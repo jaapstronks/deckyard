@@ -1,10 +1,10 @@
 import {
   badRequest,
-  json,
   methodNotAllowed,
   notFound,
   serveJson,
   unauthorized,
+  requireJsonBody,
 } from '../../utils/http.js';
 import { getFollowStateForPresentation } from '../../storage/present-sessions/index.js';
 import crypto from 'node:crypto';
@@ -73,7 +73,9 @@ export async function handleQuestions({ repoRoot, storageScope, req, res, url, a
     if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission }))
       return unauthorized(res);
 
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const position = body?.position === 'next' ? 'next' : 'end';
     const afterSlideIndex = Number(body?.afterSlideIndex ?? NaN);
 

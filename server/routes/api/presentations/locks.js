@@ -1,9 +1,9 @@
 import {
   forbidden,
-  json,
   methodNotAllowed,
   notFound,
   serveJson,
+  requireJsonBody,
 } from '../../../utils/http.js';
 import {
   acquirePresentationLock,
@@ -150,7 +150,9 @@ export async function handlePresentationLockRequest(
   const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const ctx = getCtx(authedUser);
   const result = await createLockRequest(id, {
     email: authedUser?.email,

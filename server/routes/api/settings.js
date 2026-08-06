@@ -1,4 +1,4 @@
-import { badRequest, json, methodNotAllowed, serveJson, unauthorized, serverError } from '../../utils/http.js';
+import { badRequest, methodNotAllowed, serveJson, unauthorized, serverError, requireJsonBody } from '../../utils/http.js';
 import {
   getAppSettings,
   getUserSettings,
@@ -59,7 +59,9 @@ export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
     }
     if (req.method === 'PUT') {
       if (!authedUser?.isAdmin) return unauthorized(res);
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       if (!body || typeof body !== 'object')
         return badRequest(res, 'Missing JSON body');
       const settings = await writeAppSettings(repoRoot, body);
@@ -90,12 +92,9 @@ export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
     }
     if (req.method === 'PATCH') {
       // disabledSlideTypes can be updated by designers, other keys require admin
-      let body;
-      try {
-        body = await json(req);
-      } catch {
-        return badRequest(res, 'Invalid JSON body');
-      }
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       if (!body || typeof body !== 'object') {
         return badRequest(res, 'Missing JSON body');
       }
@@ -179,7 +178,9 @@ export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
       return true;
     }
     if (req.method === 'PUT') {
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       if (!body || typeof body !== 'object')
         return badRequest(res, 'Missing JSON body');
       const settings = await writeUserSettings(repoRoot, email, body);

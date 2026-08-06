@@ -22,7 +22,7 @@ import { listUsers } from '../../storage/users.js';
 import { sendCollaboratorInviteEmail } from '../../integrations/brevo.js';
 import { canManageCollaborators } from '../../utils/presentation-authz.js';
 import { createRouteContext } from '../../utils/context.js';
-import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, parseJsonBody, jsonError, serverError, getErrorStatus } from '../../utils/http.js';
+import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, jsonError, serverError, getErrorStatus } from '../../utils/http.js';
 import { validatePermission } from '../../utils/request-validators.js';
 import { createNotification } from '../../storage/notifications.js';
 import { broadcastToUser, NotificationEventTypes } from '../../services/notification-events.js';
@@ -362,8 +362,9 @@ export async function handleCollaborators({ repoRoot, storageScope, req, res, ur
     }
 
     // Parse optional message from request body
-    const { body } = await parseJsonBody(req);
-    const message = body?.message || null;
+    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+    if (!parsed.ok) return true;
+    const message = parsed.body?.message || null;
 
     try {
       const result = await removeCollaborator(presentationId, email, authedUser?.email, {

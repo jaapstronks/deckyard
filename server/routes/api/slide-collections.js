@@ -9,11 +9,11 @@
 
 import {
   badRequest,
-  json,
   methodNotAllowed,
   serveJson,
   unauthorized,
   notFound,
+  requireJsonBody,
 } from '../../utils/http.js';
 import {
   listPersonalCollections,
@@ -68,7 +68,9 @@ export async function handleSlideCollections({ storageScope, req, res, url, auth
       return true;
     }
     if (req.method === 'POST') {
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const r = await createPersonalCollection(storageScope, email, body, { actorEmail: email });
       if (!r.ok) return badRequest(res, r.reason);
       serveJson(res, 201, r.item);
@@ -87,7 +89,9 @@ export async function handleSlideCollections({ storageScope, req, res, url, auth
       return true;
     }
     if (req.method === 'PATCH') {
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const r = await updatePersonalCollection(storageScope, email, id, body, { actorEmail: email });
       if (!r.ok) return mutationError(res, r.reason);
       serveJson(res, 200, r.item);
@@ -110,7 +114,9 @@ export async function handleSlideCollections({ storageScope, req, res, url, auth
       return true;
     }
     if (req.method === 'POST') {
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const r = await createTeamCollection(storageScope, body, { actorEmail: email });
       if (!r.ok) return badRequest(res, r.reason);
       serveJson(res, 201, r.item);
@@ -129,7 +135,9 @@ export async function handleSlideCollections({ storageScope, req, res, url, auth
       return true;
     }
     if (req.method === 'PATCH') {
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const r = await updateTeamCollection(storageScope, id, body, {
         actorEmail: email,
         allowMutate: teamMutateGuard(authedUser),

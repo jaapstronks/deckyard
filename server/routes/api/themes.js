@@ -13,7 +13,7 @@
  * POST /api/themes/custom/clear-default - Clear org default (admin only)
  */
 
-import { serveJson, badRequest, notFound, parseJsonBody, forbidden } from '../../utils/http.js';
+import { serveJson, badRequest, notFound, requireJsonBody, forbidden } from '../../utils/http.js';
 import {
   listThemeIds,
   listCoreThemeIds,
@@ -166,10 +166,9 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
       return forbidden(res, 'Admin access required');
     }
 
-    const parsed = await parseJsonBody(req);
-    if (!parsed.ok) {
-      return badRequest(res, parsed.error || 'Invalid request body');
-    }
+    // An empty body previews the theme defaults, so it is a legitimate request.
+    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+    if (!parsed.ok) return true;
 
     const draft = parsed.body && typeof parsed.body === 'object' ? parsed.body : {};
 
@@ -225,10 +224,8 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
     }
 
     const ctx = createRouteContext(authedUser);
-    const parsed = await parseJsonBody(req);
-    if (!parsed.ok) {
-      return badRequest(res, parsed.error || 'Invalid request body');
-    }
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
 
     const result = await createTheme(parsed.body, ctx);
 
@@ -291,10 +288,8 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
         return forbidden(res, 'Admin access required');
       }
 
-      const parsed = await parseJsonBody(req);
-      if (!parsed.ok) {
-        return badRequest(res, parsed.error || 'Invalid request body');
-      }
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
       const result = await updateTheme(themeId, parsed.body, ctx);
 
       if (!result.ok) {

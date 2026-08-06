@@ -8,9 +8,9 @@ import {
 } from '../../storage/presentations/index.js';
 import {
   badRequest,
-  json,
   jsonError,
   serveJson,
+  requireJsonBody,
 } from '../../utils/http.js';
 import {
   getConvertParams,
@@ -41,7 +41,9 @@ export async function handleConvert({
     url.pathname === '/api/convert' &&
     req.method === 'POST'
   ) {
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const { dataUrl, filename, vendor, lang, theme } = getConvertParams(body);
 
     if (!dataUrl) {
@@ -171,7 +173,9 @@ export async function handleConvert({
     url.pathname === '/api/convert/stream' &&
     req.method === 'POST'
   ) {
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const { dataUrl, filename, vendor, lang, theme } = getConvertParams(body);
 
     if (!dataUrl) {

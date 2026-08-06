@@ -1,6 +1,6 @@
 import { duplicatePresentation, getPresentation } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
-import { json, methodNotAllowed, notFound, serveJson, unauthorized } from '../../../utils/http.js';
+import { methodNotAllowed, notFound, serveJson, unauthorized, requireJsonBody } from '../../../utils/http.js';
 import { canReadPresentation } from '../../../utils/presentation-authz.js';
 
 export async function handlePresentationDuplicate(
@@ -22,11 +22,8 @@ export async function handlePresentationDuplicate(
 
   // For now we only support simple server-side duplication. Keep request body as a
   // forward-compatible hook for future options (e.g. scope override for admins).
-  try {
-    await json(req);
-  } catch {
-    // ignore invalid/empty bodies
-  }
+  const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+  if (!parsed.ok) return true;
 
   const created = await duplicatePresentation(storageScope, id, {
     actorEmail: authedUser?.email || null,

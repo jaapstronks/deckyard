@@ -1,4 +1,4 @@
-import { badRequest, json, serveJson, withErrorHandler } from '../../../utils/http.js';
+import { badRequest, serveJson, withErrorHandler, requireJsonBody } from '../../../utils/http.js';
 import {
   getOptionalObject,
   getOptionalString,
@@ -12,7 +12,9 @@ import { convertSlideWithAi } from '../../../utils/ai.js';
  * @param {import('./shared.js').AiContext} ctx
  */
 export const handleAiConvertSlide = withErrorHandler('ai-convert-slide', async ({ req, res }) => {
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const slide = getOptionalObject(body, 'slide');
   const toType = getTrimmedString(body, 'toType');
   if (!slide) {

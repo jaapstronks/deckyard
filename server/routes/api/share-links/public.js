@@ -20,7 +20,7 @@ import {
 import { sendGuestVerificationEmail } from '../../../integrations/brevo.js';
 import { notifyAuthorOfAccessAttempt, ACCESS_TYPES } from '../../../services/access-notifications.js';
 import { parseCookies } from '../../../utils/cookies.js';
-import { json, serveJson, badRequest, getErrorStatus, jsonError, rateLimited } from '../../../utils/http.js';
+import { serveJson, badRequest, getErrorStatus, jsonError, rateLimited, requireJsonBody } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import { buildRequestUrl, shouldUseSecureCookies } from '../../../utils/request-url.js';
 import { getClientIp, allowShareVerifyAttempt } from '../../../utils/rate-limit.js';
@@ -104,12 +104,9 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
   if (verifyMatch && req.method === 'POST') {
     const token = verifyMatch[1];
 
-    let body;
-    try {
-      body = await json(req);
-    } catch {
-      body = {};
-    }
+    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+    if (!parsed.ok) return true;
+    const body = parsed.body;
 
     const ipAddress = getClientIp(req);
 
@@ -169,12 +166,9 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
       return true;
     }
 
-    let body;
-    try {
-      body = await json(req);
-    } catch {
-      return badRequest(res, 'Invalid JSON body');
-    }
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
 
     const email = normalizeEmail(body?.email);
     const name = getTrimmedString(body, 'name') || '';

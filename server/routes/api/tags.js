@@ -17,7 +17,7 @@ import {
   getTagsForPresentation,
   setTagsForPresentation,
 } from '../../storage/tags/index.js';
-import { serveJson, badRequest, notFound, parseJsonBody, methodNotAllowed } from '../../utils/http.js';
+import { serveJson, badRequest, notFound, requireJsonBody, methodNotAllowed } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 
 /**
@@ -44,7 +44,9 @@ export async function handleTags({ storageScope, req, res, url }) {
 
   // POST /api/tags - Create a new tag
   if (pathname === '/api/tags' && req.method === 'POST') {
-    const { body } = await parseJsonBody(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     if (!body?.name) {
       return badRequest(res, 'Tag name is required');
     }
@@ -96,7 +98,9 @@ export async function handlePresentationTags({ storageScope, req, res, url, pres
 
   // PUT /api/presentations/:id/tags - Set tags for a presentation
   if (req.method === 'PUT') {
-    const { body } = await parseJsonBody(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     if (!Array.isArray(body?.tags)) {
       return badRequest(res, 'Tags array is required');
     }

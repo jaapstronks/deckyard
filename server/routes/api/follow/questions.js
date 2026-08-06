@@ -1,4 +1,4 @@
-import { badRequest, json, methodNotAllowed, serveJson } from '../../../utils/http.js';
+import { badRequest, methodNotAllowed, serveJson, requireJsonBody } from '../../../utils/http.js';
 import { getString } from '../../../utils/request-validators.js';
 import { getFollowStateForPresentation } from '../../../storage/present-sessions/index.js';
 import { getPresentation } from '../../../storage/presentations/index.js';
@@ -63,7 +63,9 @@ export async function handleFollowQuestions({ repoRoot, req, res }, presentation
     const caps = computeAudienceCapabilitiesFromState(state, pres);
     if (caps.canUseQa === false)
       return badRequest(res, 'Q&A is disabled for this presentation');
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const dev = ensureQaDeviceCookie(req);
     const authorId = dev.id;
     const authorName = getString(body, 'authorName');

@@ -4,12 +4,12 @@ import {
 } from '../../../storage/presentations/index.js';
 import { getTagsForPresentation } from '../../../storage/tags/index.js';
 import {
-  json,
   methodNotAllowed,
   notFound,
   serveJson,
   forbidden,
   jsonError,
+  requireJsonBody,
 } from '../../../utils/http.js';
 import { getEffectivePermission } from '../../../utils/presentation-authz.js';
 import { errorToResponse } from '../../../utils/errors.js';
@@ -115,7 +115,9 @@ export async function handlePresentationItem(
   }
 
   if (req.method === 'PUT') {
-    const body = await json(req);
+    const jsonResult = await requireJsonBody(req, res);
+    if (!jsonResult.ok) return true;
+    const body = jsonResult.body;
     const existing = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
     if (!existing) return true;
 
@@ -278,13 +280,9 @@ export async function handlePresentationItem(
     if (!existing) return true;
 
     // Parse optional message from request body
-    let message = null;
-    try {
-      const body = await json(req);
-      message = body?.message || null;
-    } catch {
-      // No body or invalid JSON is fine
-    }
+    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+    if (!parsed.ok) return true;
+    const message = parsed.body?.message || null;
 
     const deleted = await deletePresentation(storageScope, id, {
       actorEmail: authedUser?.email,

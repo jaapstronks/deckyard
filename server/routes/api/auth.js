@@ -7,7 +7,7 @@ import {
   setSessionCookie,
   verifyLoginAsync,
 } from '../../auth/auth.js';
-import { json, rateLimited, serveJson, unauthorized } from '../../utils/http.js';
+import { rateLimited, serveJson, unauthorized, requireJsonBody } from '../../utils/http.js';
 import { getString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
@@ -45,7 +45,9 @@ export async function handleAuth({ repoRoot, req, res, url }) {
   }
 
   if (url.pathname === '/api/auth/login' && req.method === 'POST') {
-    const body = await json(req);
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const body = parsed.body;
     const email = getString(body, 'email');
     const password = getString(body, 'password');
 

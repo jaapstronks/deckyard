@@ -3,11 +3,11 @@ import { uploadImageKitBuffer, getImageKitConfigFromEnv } from '../../../media/i
 import { getMediaProvider, isMediaProviderInitialized } from '../../../media/index.js';
 import { pdfToImages } from '../../../render/pdf-to-images.js';
 import {
-  json,
   methodNotAllowed,
   notFound,
   forbidden,
   badRequest,
+  requireJsonBody,
 } from '../../../utils/http.js';
 import { sseWrite, sseError } from '../../../utils/sse.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
@@ -90,7 +90,9 @@ export async function handlePresentationImportSlidesAsImages(
     return forbidden(res, 'Not authorized');
   }
 
-  const body = await json(req);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
   const { dataUrl, filename, insertAfterSlideId } = body || {};
 
   if (!dataUrl || typeof dataUrl !== 'string') {

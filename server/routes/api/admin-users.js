@@ -4,7 +4,7 @@
  */
 
 import { getUserFromRequestAsync } from '../../auth/auth.js';
-import { json, serveJson, badRequest, unauthorized, notFound, serverError, rateLimited } from '../../utils/http.js';
+import { serveJson, badRequest, unauthorized, notFound, serverError, rateLimited, requireJsonBody } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { createRouteContext, getClientIp, getOrgId } from '../../utils/context.js';
 import { sendUserInvitationEmail, sendActivationReminderEmail } from '../../integrations/brevo.js';
@@ -154,7 +154,9 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
     }
 
     try {
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
       const email = normalizeEmail(body?.email);
       const name = getTrimmedString(body, 'name');
       const role = body?.role === 'admin' ? 'admin' : 'user';
@@ -259,7 +261,9 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
   if (userMatch && req.method === 'PATCH') {
     try {
       const userId = userMatch[1];
-      const body = await json(req);
+      const parsed = await requireJsonBody(req, res);
+      if (!parsed.ok) return true;
+      const body = parsed.body;
 
       const updates = {};
       if ('name' in body) updates.name = getTrimmedString(body, 'name');
