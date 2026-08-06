@@ -12,7 +12,8 @@ code, duplicate keys).
 |---|---|
 | `npm run lint` | The **gate**. Must stay green; CI runs it before the tests. |
 | `npm run lint:fix` | Auto-fix what ESLint can fix safely. |
-| `npm run lint:deadcode` | **Advisory** dead-exports + import-cycle discovery. Never gates. |
+| `npm run lint:deadcode` | **Advisory** dead-exports + import-cycle discovery (runs `lint:deadexports` then the cycle config). Never gates. |
+| `npm run lint:deadexports` | **Advisory** unused-export discovery on its own (the Node scanner). Never gates. |
 | `npm run lint:deadcss` | **Advisory** unreferenced CSS-selector discovery. Never gates. |
 
 ## The gate (`npm run lint`)
@@ -156,18 +157,39 @@ The file only shrinks.
 
 ## The advisory pass (`npm run lint:deadcode`)
 
-Config: [`eslint.deadcode.config.js`](../../eslint.deadcode.config.js). It adds
-two structural rules from `eslint-plugin-import-x`:
+Two halves, run back to back:
 
-- `import-x/no-unused-modules` — exports that nothing statically imports.
-- `import-x/no-cycle` — import cycles.
+- **Dead exports** — [`scripts/lint-dead-exports.js`](../../scripts/lint-dead-exports.js),
+  a plain Node scan (`npm run lint:deadexports`). It builds a static import graph
+  over `git ls-files` and reports every export in `client/ server/ shared/
+  scripts/` that no tracked module imports.
+- **Import cycles** — [`eslint.deadcode.config.js`](../../eslint.deadcode.config.js)'s
+  `import-x/no-cycle`.
 
-**This is a triage tool, not a gate.** `no-unused-modules` over-reports because
-the app loads a lot of code dynamically (route dispatchers, DB migrations,
-slide-type registries, MCP tools) — those exports look "unused" to a static
-scan but are reached at runtime. Treat every hit as a *candidate* and confirm it
-by hand against the reachability method in the dead-code audit brief before
-deleting anything. The import-cycle hits, by contrast, are precise.
+**Why the export half is a Node script, not an ESLint rule.** It used to be
+`import-x/no-unused-modules`, but ESLint 10 removed the `FileEnumerator` API that
+rule depends on, so under this repo's ESLint 10 it became a **silent no-op** —
+zero unused exports reported, with only an easy-to-miss "rule disabled" notice
+(B47). A gate that silently reports nothing is drift, so the mechanism moved
+in-house, matching `lint:deadcss` and `audit-codebase.js`, and is now immune to
+ESLint major bumps. `import-x/no-cycle` still works on ESLint 10 and is precise,
+so it stayed in the ESLint config.
+
+**This is a triage tool, not a gate.** The export scan over-reports because the
+app loads a lot of code by directory scan and string-keyed registry (route
+dispatchers, DB migrations, slide-type registries, MCP tools) — those exports
+have no static importer but are reached at runtime. Treat every hit as a
+*candidate* and confirm it by hand against the reachability method in the
+dead-code audit brief before deleting anything. The import-cycle hits, by
+contrast, are precise.
+
+The scanner is deliberately generous about what counts as *used* (the safe
+direction is "alive"): a named/default/namespace import, a re-export, and a
+dynamic `import('…')` or JSDoc `{import('…')}` type ref all keep an export
+alive, and importers anywhere in the tracked tree count — including tests and
+`capture/`, so a test-only export is not flagged. That is why its candidate
+count is a fresh baseline and not comparable to the old `no-unused-modules`
+numbers.
 
 **Hand-verification does not stop at this repo's edge.** Some exports have their
 only consumer in a *sibling* repo: `deckyard-website`'s docs generator imports
@@ -182,12 +204,6 @@ about that consumer; removing an entry there means coordinating with
 `deckyard-website` first (a `_meta` briefing), never editing the list to make a
 sweep pass. If a second external consumer ever appears, give it its own pinned
 list the same way.
-
-> The `no-unused-modules` rule has a quirk: even under flat config it needs a
-> legacy `.eslintrc.json` (ignore patterns only) to know which files to skip.
-> That shim is read *only* by this advisory pass — ESLint 9 uses the flat
-> `eslint.config.js` by default, so `.eslintrc.json` does not affect
-> `npm run lint`.
 
 ## The advisory pass (`npm run lint:deadcss`)
 

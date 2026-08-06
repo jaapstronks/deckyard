@@ -1,15 +1,12 @@
-// Advisory-only ESLint config for structural discovery: dead exports and
-// import cycles. Run with `npm run lint:deadcode`. NOT part of the CI gate.
+// Advisory-only ESLint config for structural discovery: import cycles. Run via
+// `npm run lint:deadcode`. NOT part of the CI gate.
 //
-// Why separate and non-gating: `no-unused-modules` reports any export that is
-// never statically imported. This repo loads a lot of code dynamically — route
-// dispatchers, DB migrations, slide-type registries, MCP tools — so it WILL
-// over-report those as "unused". The output is a triage list to hand-verify
-// against the reachability method in docs/plans/briefs/dead-code-audit.md, not
-// a pass/fail signal. Treat every hit as "candidate", confirm before deleting.
-//
-// This is the discovery tool behind the dead-exports sweep in TODO.md
-// ("Nog te draaien — gerichte audits").
+// Scope note: this config used to also carry `import-x/no-unused-modules` for
+// dead-export discovery, but ESLint 10 removed the `FileEnumerator` API that
+// rule needs, turning it into a silent no-op (B47). That half moved to a plain
+// Node scan — `scripts/lint-dead-exports.js` — which `npm run lint:deadcode`
+// runs first. `import-x/no-cycle` still works on ESLint 10 and is precise, so it
+// stays here. Its output is a triage list, not a pass/fail signal.
 
 import base from './eslint.config.js';
 import importX from 'eslint-plugin-import-x';
@@ -30,9 +27,6 @@ export default [
       },
     },
     rules: {
-      // Exports that nothing statically imports. Over-reports on dynamically
-      // loaded modules — verify each hit by hand.
-      'import-x/no-unused-modules': ['warn', { unusedExports: true }],
       // Import cycles. The storage facade has 3 deliberate cycle-breakers
       // (see dynamic-imports-simplification.md) that will show up here.
       'import-x/no-cycle': ['warn', { maxDepth: 6 }],
