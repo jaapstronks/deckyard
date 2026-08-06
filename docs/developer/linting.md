@@ -102,6 +102,28 @@ That second argument is what Tier-2 locales degrade to when a key is missing
 instead of English, which is the one way the tiering safety net breaks. See
 [`docs/reference/i18n-locale-tiers.md`](../reference/i18n-locale-tiers.md).
 
+### `no-restricted-imports` on `zod` — one validation vocabulary
+
+`zod` may be imported **only** from `server/utils/ai/schemas/`. Anywhere else
+the gate fails with a message pointing at
+[`server/utils/request-validators.js`](../../server/utils/request-validators.js).
+
+The dependency earns its place parsing what a model hands back — genuinely
+untyped input, genuinely worth a schema library. On *request bodies* it would be
+a second validation vocabulary next to `request-validators.js`, with
+[`docs/openapi.yaml`](../openapi.yaml) as a third place the same contract is
+written down. Deckyard has no build step to collect zod's real payoff (type
+inference) either, so what would be left is runtime validation the twelve
+existing helpers already do.
+
+Widening the allowance is a design decision, not a lint fix: argue it in a PR
+rather than adding a path to the config.
+
+`tests/zod-scope-guard.test.js` asserts the same thing, so a plain local
+`npm test` catches it without the lint pass having run — and fails the other way
+too, if `server/utils/ai/schemas/` ever stops using zod and the carve-out
+outlives its reason.
+
 ### The suppressions baseline (burndown)
 
 The first run surfaced **397 `no-unused-vars`** and **10 `no-useless-escape`**
