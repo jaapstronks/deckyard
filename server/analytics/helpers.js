@@ -3,7 +3,7 @@
  * Centralizes configuration, validation, rate limiting responses, and security logging.
  */
 
-import { createHmac } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
 
 // ============================================================
 // CONFIGURATION CONSTANTS (can be overridden via env vars)
@@ -143,6 +143,45 @@ export function sanitizeUserAgent(userAgent) {
 const DEVICE_LABEL_HEX_LENGTH = 12;
 
 /**
+ * Ephemeral per-boot key, generated once when this module loads. It stands in
+ * for `AUTH_SECRET` in the boot modes that legitimately run without one —
+ * auth-off, sandbox, demo. 32 random bytes: as unguessable as a real secret, so
+ * the label stays unreversible and cross-deck correlation stays broken. Its one
+ * difference from `AUTH_SECRET` is that it does not survive a restart, which is
+ * irrelevant in exactly those modes — a returning-viewer marker only has to be
+ * stable within a boot, and a secretless instance keeps nothing to be stable
+ * against across restarts anyway.
+ *
+ * Not a fallback *constant*: a fixed string would be the same on every install
+ * and therefore guessable, reinstating the reversibility the real secret
+ * prevents. The randomness is the whole point.
+ */
+const EPHEMERAL_LABEL_KEY = randomBytes(32).toString('hex');
+
+/**
+ * The key `publicDeviceLabel` derives labels with, and where it came from: the
+ * configured `AUTH_SECRET` when one is set, otherwise the ephemeral per-boot
+ * key. Exposed so the boot-mode contract is pinnable — a real secret is always
+ * preferred, and only its absence falls back — without leaking the key material
+ * itself.
+ *
+ * @returns {{ source: 'auth-secret' | 'ephemeral' }}
+ */
+export function deviceLabelKeySource() {
+  return { source: String(process.env.AUTH_SECRET || '').trim() ? 'auth-secret' : 'ephemeral' };
+}
+
+/**
+ * Resolve the HMAC key: the configured secret, or the ephemeral per-boot key
+ * when none is set. Read at call time so a secret configured after import (as
+ * tests do) is honoured.
+ * @returns {string}
+ */
+function deviceLabelKey() {
+  return String(process.env.AUTH_SECRET || '').trim() || EPHEMERAL_LABEL_KEY;
+}
+
+/**
  * Derive the per-deck label that stands in for a raw device id on a response.
  *
  * The raw `view_sessions.device_id` is browser-generated and instance-wide: the
@@ -162,12 +201,18 @@ const DEVICE_LABEL_HEX_LENGTH = 12;
  * where the erasure path needs it and `COUNT(DISTINCT device_id)` aggregations
  * keep working.
  *
+ * The key is the configured `AUTH_SECRET`, or an ephemeral per-boot key when
+ * none is set (see `EPHEMERAL_LABEL_KEY`). A guessable *constant* fallback is
+ * still refused — that would reinstate the reversibility the secret prevents —
+ * but a random per-boot key derives a usable label in the secretless boot modes
+ * (auth-off/sandbox/demo) instead of throwing and 500-ing the session list.
+ *
  * @param {string|null|undefined} deviceId - The raw device id from storage.
  * @param {string} presentationId - The deck the response is about.
  * @returns {string|null} 12 hex chars, or null when there is no device id.
- * @throws {Error} When called without a presentation id, or when AUTH_SECRET is
- *   unset — there is deliberately no fallback secret, since a guessable key
- *   would make the label reversible and silently reinstate the correlation.
+ * @throws {Error} When called without a presentation id — the label is per-deck
+ *   by construction, so a deckless one would be an instance-wide identifier
+ *   again.
  */
 export function publicDeviceLabel(deviceId, presentationId) {
   if (deviceId === null || deviceId === undefined || deviceId === '') return null;
@@ -179,15 +224,7 @@ export function publicDeviceLabel(deviceId, presentationId) {
     );
   }
 
-  const secret = String(process.env.AUTH_SECRET || '').trim();
-  if (!secret) {
-    throw new Error(
-      'AUTH_SECRET is required to derive a per-deck device label. Set AUTH_SECRET, ' +
-        'or disable analytics — returning raw device ids instead is not an option.'
-    );
-  }
-
-  return createHmac('sha256', secret)
+  return createHmac('sha256', deviceLabelKey())
     .update(`${String(deviceId)}:${presId}`)
     .digest('hex')
     .slice(0, DEVICE_LABEL_HEX_LENGTH);
