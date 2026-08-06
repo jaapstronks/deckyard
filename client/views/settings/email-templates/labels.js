@@ -24,6 +24,7 @@ export function getTemplateLabel(type) {
     magicLink: t('settings.admin.emailTemplates.types.magicLink', 'Magic Link'),
     commentNotification: t('settings.admin.emailTemplates.types.commentNotification', 'Comment Notification'),
     guestVerification: t('settings.admin.emailTemplates.types.guestVerification', 'Guest Verification'),
+    leadNotification: t('settings.admin.emailTemplates.types.leadNotification', 'Lead Notification'),
   };
   return labels[type] || type;
 }
