@@ -191,8 +191,8 @@ export async function getValidShareLinkById(db, shareLinkId, orgId) {
  * schema). The anonymous public path has no session to take an organization
  * from; the link's own row carries the organization for everything after
  * resolution. Filtering this lookup on a caller-supplied organization was the
- * silent-default leak in another guise: on a multi-workspace instance it made
- * every share link outside the default workspace unresolvable.
+ * silent-default leak in another guise: on a multi-organization instance it made
+ * every share link outside the default organization unresolvable.
  *
  * @param {string} token - The share token
  * @returns {Promise<Object>} - Validation result

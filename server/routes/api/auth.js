@@ -116,7 +116,7 @@ export async function handleAuth({ repoRoot, req, res, url }) {
 
   if (url.pathname === '/api/auth/me' && req.method === 'GET') {
     // Sandbox mode: /me must reflect the sandbox guest (not the auth-less "anonymous admin" user),
-    // otherwise the client will treat the user as admin and show global/workspace data.
+    // otherwise the client will treat the user as admin and show global/organization data.
     // Use async version to properly validate database users who migrated from ENV auth.
     const u = sandboxEnabled()
       ? ensureSandboxUser(req, res)

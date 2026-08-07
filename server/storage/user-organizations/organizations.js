@@ -1,6 +1,6 @@
 /**
  * Storage layer for organization CRUD.
- * Handles workspace records: creation, lookup, updates, and deletion.
+ * Handles organization records: creation, lookup, updates, and deletion.
  */
 
 import { nowIso } from '../../utils/normalize.js';
@@ -40,7 +40,7 @@ export async function getOrganizationById(organizationId) {
  * @param {string} data.name - Organization name
  * @param {string} data.slug - Unique slug
  * @param {string} [data.displayName] - Display name, may differ from `name`
- * @param {string} [data.description] - Workspace description
+ * @param {string} [data.description] - Organization description
  * @param {string} data.ownerId - User ID of the owner
  * @returns {Promise<Object>}
  */
@@ -134,7 +134,7 @@ export async function updateOrganization(organizationId, updates) {
 }
 
 /**
- * Whether this is the organization every single-workspace path falls back to.
+ * Whether this is the organization every single-organization path falls back to.
  *
  * It is the one organization that may not be deleted, and it is configurable
  * (`DEFAULT_ORGANIZATION_ID`), so the check has to ask for it rather than

@@ -2,7 +2,7 @@ import { listPresentations } from '../../../storage/presentations/index.js';
 import { getTagsForPresentations } from '../../../storage/tags/index.js';
 import { serveJson } from '../../../utils/http.js';
 import {
-  normalizePresentationScope,
+  normalizePresentationVisibility,
   isUnrestricted,
   hasIdentity,
   isOwnerOrCreator,
@@ -19,8 +19,8 @@ export function belongsInCollection({ user, pres } = {}) {
   if (!pres || typeof pres !== 'object') return false;
   // Auth-off single operator sees every deck (matches canReadPresentation).
   if (isUnrestricted(user)) return true;
-  const scope = normalizePresentationScope(pres?.scope);
-  if (scope === 'workspace') return true;
+  const visibility = normalizePresentationVisibility(pres?.visibility);
+  if (visibility === 'organization') return true;
 
   if (!hasIdentity(user)) return false;
 
@@ -31,7 +31,7 @@ export function belongsInCollection({ user, pres } = {}) {
 
 export async function handlePresentationsList({ repoRoot, storageScope, res, authedUser } = {}) {
   const list = await listPresentations(storageScope);
-  // Filter to show only the user's own presentations + workspace presentations.
+  // Filter to show only the user's own presentations + organization-visible presentations.
   // Admin status doesn't change what appears in their collection.
   const filtered = authedUser
     ? list.filter((p) => belongsInCollection({ user: authedUser, pres: p }))
@@ -43,7 +43,7 @@ export async function handlePresentationsList({ repoRoot, storageScope, res, aut
 
   // Fetch published status and collaborator counts. The organization rides
   // along on the request's storage scope, so these stay in the session's
-  // workspace instead of resolving against the instance default.
+  // organization instead of resolving against the instance default.
   const ctx = { user: authedUser, organizationId: storageScope?.organizationId };
   const publishedSet = await getPublishedPresentationIds(presentationIds, ctx);
   const collaboratorCounts = await getCollaboratorCounts(presentationIds, ctx);

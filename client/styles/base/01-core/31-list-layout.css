@@ -84,7 +84,7 @@
 /* Sections.
    Flush by default: no box, no inset — every home section (Recent, Popular,
    Activity, Start-new) shares the column's left edge for one clean line.
-   A visible box is re-added only on the tinted workspace/private variants
+   A visible box is re-added only on the tinted organization/private variants
    below, where the tint carries real grouping meaning. */
 .presentation-section {
   margin-bottom: var(--ps-space-8);
@@ -92,18 +92,18 @@
 }
 
 /* Tinted grouping variants keep their card treatment (padding + radius). */
-.presentation-section[data-section='workspace'],
+.presentation-section[data-section='organization'],
 .presentation-section[data-section='private'] {
   padding: var(--ps-space-4);
   border-radius: var(--ps-radius-xl);
 }
 
-.presentation-section[data-section='workspace'] {
+.presentation-section[data-section='organization'] {
   background: hsl(215 80% 97%);
   border: 1px solid hsl(215 60% 90%);
 }
 
-:root[data-ui-mode='dark'] .presentation-section[data-section='workspace'] {
+:root[data-ui-mode='dark'] .presentation-section[data-section='organization'] {
   background: hsl(215 40% 12%);
   border-color: hsl(215 30% 22%);
 }
@@ -146,12 +146,12 @@
   box-sizing: border-box;
 }
 
-.presentation-section[data-section='workspace'] .presentation-section-icon {
+.presentation-section[data-section='organization'] .presentation-section-icon {
   background: hsl(215 80% 92%);
   color: hsl(215 80% 45%);
 }
 
-:root[data-ui-mode='dark'] .presentation-section[data-section='workspace'] .presentation-section-icon {
+:root[data-ui-mode='dark'] .presentation-section[data-section='organization'] .presentation-section-icon {
   background: hsl(215 50% 25%);
   color: hsl(215 80% 70%);
 }
@@ -293,7 +293,7 @@
     margin-bottom: var(--ps-space-6);
   }
 
-  .presentation-section[data-section='workspace'],
+  .presentation-section[data-section='organization'],
   .presentation-section[data-section='private'] {
     padding: var(--ps-space-3);
   }

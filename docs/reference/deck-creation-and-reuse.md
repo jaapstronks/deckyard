@@ -65,7 +65,7 @@ does not copy content. Fields: `id`, `name`, `description?`, `scope`
 
 ## Theme default
 
-The theme picker defaults to a workspace-configured default theme; non-default
+The theme picker defaults to an organization-configured default theme; non-default
 themes sit behind a "Show all themes" toggle governed by the `enabledThemes`
 allowlist. `GET /api/themes` honours the allowlist and returns a resolved
 `defaultThemeId` (app settings + the `DEFAULT_THEME` env seam, via
@@ -78,8 +78,8 @@ Themes settings tab. Forks (e.g. CIIIC) default to their own theme through
 The per-deck `is_starter_kit` flag and its dedicated tab/mode/share-option were
 removed in Slice 4 (migration `047_drop_starter_kits.js` drops the column).
 Their job is covered by Duplicate + the library + Collections. Former kit decks
-are now normal workspace decks, editable and duplicable under the usual
-workspace rules. `isViewOnly` is a separate, still-supported concept.
+are now normal organization decks, editable and duplicable under the usual
+organization rules. `isViewOnly` is a separate, still-supported concept.
 
 ## Known limitation
 

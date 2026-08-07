@@ -79,7 +79,7 @@ Semantics:
   `slideId`, `since` (ISO 8601); replies come nested under their parent.
   Needs read access to the deck.
 - **Create** (`POST …/comments`) — author is always the key owner. Needs
-  *comment* permission (owner/creator, workspace member, or collaborator
+  *comment* permission (owner/creator, organization member, or collaborator
   with comment rights or higher) — deliberately weaker than deck `write`.
   `slideId` must exist in the deck; `parentId` must be a comment on the
   same deck.

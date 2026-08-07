@@ -14,8 +14,8 @@ const log = createLogger('sandbox-cleanup');
  *
  * Sandbox runs on Postgres, so the sweep is a single bulk `DELETE` against the
  * `presentations` table rather than the old directory scan. A deck is ephemeral
- * when its scope is not `workspace` (mirroring `isSandboxEphemeralPresentation`
- * — workspace-scope decks are curated seed decks that never expire), and
+ * when its visibility is not `organization` (mirroring `isSandboxEphemeralPresentation`
+ * — organization-visible decks are curated seed decks that never expire), and
  * expired once it is older than the TTL. Foreign keys cascade, so the delete
  * also removes the deck's version snapshots, published entry, and cold Y.Doc
  * state in one statement — much cheaper than the per-file cleanup it replaces.
@@ -32,7 +32,7 @@ export async function sweepExpiredSandboxDecks() {
   const result = await db
     .deleteFrom('presentations')
     .where('organization_id', '=', orgId)
-    .where('scope', '<>', 'workspace')
+    .where('visibility', '<>', 'organization')
     .where('created_at', '<=', cutoff)
     .executeTakeFirst();
 

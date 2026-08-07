@@ -22,7 +22,7 @@
  * @property {string|null} ownerEmail
  * @property {string|null} createdBy
  * @property {string|null} updatedBy
- * @property {string} scope
+ * @property {string} visibility
  * @property {number} revision
  * @property {Object|null} i18n
  * @property {boolean} hasSlides
@@ -34,7 +34,7 @@
  * @property {string} modified
  * @property {string} theme
  * @property {string} lang
- * @property {string} scope
+ * @property {string} visibility
  * @property {number} revision
  * @property {string|null} ownerEmail
  * @property {string|null} createdBy

@@ -18,7 +18,7 @@
  *      someone else changed in the meantime.
  *   2. **Deleting is gated on typing the name.** The organization row is the
  *      parent of nearly every table in the schema with ON DELETE CASCADE on it,
- *      so this one click takes the workspace's entire contents with it, for
+ *      so this one click takes the organization's entire contents with it, for
  *      everyone in it. A plain "Are you sure?" is not proof that the reader
  *      knows which organization they are on.
  *
@@ -54,7 +54,7 @@ const ORGANIZATION = {
   name: 'Beta Works',
   slug: 'beta',
   displayName: 'Beta',
-  description: 'The second workspace',
+  description: 'The second organization',
   logoUrl: null,
   isDefault: false,
 };
@@ -96,12 +96,12 @@ const { renderOrganizationProfilePanel } = await import(
 const { showDeleteOrganizationModal } = await import(
   '../client/views/settings/organization-profile/delete-modal.js'
 );
-const { isWorkspaceAdmin, canSeeMemberList, isWorkspaceMember } = await import(
-  '../client/lib/user/workspace-role.js'
+const { isOrganizationAdmin, canSeeMemberList, isOrganizationMember } = await import(
+  '../client/lib/user/organization-role.js'
 );
 const { createSettingsSidebar } = await import('../client/views/settings/settings-sidebar.js');
 
-setFeatures({ multiWorkspace: true });
+setFeatures({ multiOrganization: true });
 
 /** The signed-in person, at a given membership role. */
 const viewer = (role) => ({
@@ -157,7 +157,7 @@ test('writing the profile needs admin or owner; deleting needs the owner', () =>
   assert.equal(canDeleteOrganization(viewer('admin'), ORGANIZATION), false);
   assert.equal(canDeleteOrganization(viewer('member'), ORGANIZATION), false);
 
-  // No membership role at all (single-workspace, dev bypass, sandbox): this
+  // No membership role at all (single-organization, dev bypass, sandbox): this
   // screen is not on it, and nothing falls back to the instance-wide flag.
   assert.equal(canEditProfile({ email: 'jaap@example.com', isAdmin: true }), false);
   assert.equal(canDeleteOrganization({ email: 'jaap@example.com', isAdmin: true }, ORGANIZATION), false);
@@ -390,7 +390,7 @@ test('a near miss does not unlock it', async () => {
     assert.equal(dialog.confirm.disabled, true, `"${attempt}" is not the name`);
   }
 
-  // Case and stray whitespace are typing accidents, not the wrong workspace.
+  // Case and stray whitespace are typing accidents, not the wrong organization.
   dialog.input.value = '  beta works ';
   dialog.input.dispatchEvent(new dom.window.Event('input'));
   assert.equal(dialog.confirm.disabled, false);
@@ -460,10 +460,10 @@ test('the panel opens the dialog for the organization on screen', async () => {
 /** Sidebar entries for this user, in render order, dividers included. */
 function sidebarEntries(user) {
   const sidebar = createSettingsSidebar({
-    isAdmin: isWorkspaceAdmin(user),
+    isAdmin: isOrganizationAdmin(user),
     isDesigner: false,
     canSeeMembers: canSeeMemberList(user),
-    canSeeOrganization: isWorkspaceMember(user),
+    canSeeOrganization: isOrganizationMember(user),
     activeTab: 'account',
     onTabChange: () => {},
   });
@@ -472,14 +472,14 @@ function sidebarEntries(user) {
   ).map((el) => el.dataset.tab || 'divider');
 }
 
-test('single-workspace has no organization tab, for anyone', () => {
+test('single-organization has no organization tab, for anyone', () => {
   const admin = { email: 'jaap@example.com', isAdmin: true };
-  assert.equal(isWorkspaceMember(admin), false, 'no membership to speak of');
+  assert.equal(isOrganizationMember(admin), false, 'no membership to speak of');
   assert.equal(sidebarEntries(admin).includes('organization'), false);
   assert.equal(sidebarEntries({ email: 'a@b.c', isAdmin: false }).includes('organization'), false);
 });
 
-test('multi-workspace: an admin finds it in the Admin group, before the members', () => {
+test('multi-organization: an admin finds it in the Admin group, before the members', () => {
   const entries = sidebarEntries(viewer('admin'));
   assert.ok(entries.includes('organization'));
   assert.ok(
@@ -488,11 +488,11 @@ test('multi-workspace: an admin finds it in the Admin group, before the members'
   );
   assert.ok(
     entries.indexOf('organization') < entries.indexOf('users'),
-    'what this workspace is, then who is in it'
+    'what this organization is, then who is in it'
   );
 });
 
-test('multi-workspace: a plain member gets it without an Admin heading over it', () => {
+test('multi-organization: a plain member gets it without an Admin heading over it', () => {
   const entries = sidebarEntries(viewer('member'));
   const divider = entries.indexOf('divider');
   assert.ok(entries.includes('organization'));

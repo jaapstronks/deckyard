@@ -80,7 +80,7 @@ test('a typo is rejected rather than resolved to file storage', () => {
 
 test('an unvalidated caller falls back to the default, never to file storage', () => {
   // Scripts and tests skip the boot guard; a typo there must not silently open
-  // an empty file workspace next to a populated database.
+  // an empty file organization next to a populated database.
   withMode('postgresqlx', () => {
     assert.equal(getStorageMode(), 'postgres');
   });

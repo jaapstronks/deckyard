@@ -9,9 +9,9 @@
  * **The data subject is the scope; the organization plays no part.** These
  * functions act on one email address across the whole instance. A person is
  * one person on this deployment — `user_settings` holds one row per person
- * instance-wide, not one per workspace (tenant-isolation.md rule R3) — and the operator
+ * instance-wide, not one per organization (tenant-isolation.md rule R3) — and the operator
  * of the instance is the single controller answering the request, so an
- * erasure that stopped at a workspace boundary would silently under-delete and
+ * erasure that stopped at an organization boundary would silently under-delete and
  * still report success. That is exactly what the earlier organization filter
  * did (#627): it matched `view_sessions.organization_id`, a column the viewer's
  * own browser filled in, against the authenticated caller's organization. The

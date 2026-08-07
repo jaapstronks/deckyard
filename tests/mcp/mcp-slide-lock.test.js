@@ -8,7 +8,7 @@
  * author-locked slides were read-only via MCP even for the author.
  * Expected behavior:
  * - the author (API-key session) can edit/remove their own locked slide
- * - a non-author with write access (workspace deck) still gets a 423
+ * - a non-author with write access (organization deck) still gets a 423
  * - a trusted local session (no owner configured) is not blocked, matching
  *   how per-deck access checks are skipped for it
  *
@@ -76,12 +76,12 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
     });
     deckId = created.id;
 
-    // Workspace scope so the non-author has write access and reaches the
+    // Organization scope so the non-author has write access and reaches the
     // slide-lock policy instead of failing the per-deck access check.
     await updatePresentation(testScope(repoRoot), deckId, {
       ...created,
-      scope: 'workspace',
-    }, { allowScopeChange: true, actorEmail: OWNER });
+      visibility: 'organization',
+    }, { allowVisibilityChange: true, actorEmail: OWNER });
   });
 
   after(async () => {

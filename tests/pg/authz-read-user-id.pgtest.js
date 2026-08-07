@@ -46,7 +46,7 @@ import { belongsInCollection } from '../../server/routes/api/presentations/list.
 import { getDefaultOrganizationId } from '../../server/config/database.js';
 
 const ORG = getDefaultOrganizationId();
-const scope = testScope();
+const storageScope = testScope();
 
 const OWNER_EMAIL = 'owner@example.com';
 const OWNER_ID = '11111111-1111-1111-1111-111111111111';
@@ -81,8 +81,8 @@ pgDescribe('presentation authorization reads on users.id (real PostgreSQL)', () 
   });
 
   it('a stored deck comes back carrying the owner and creator ids', async () => {
-    const created = await createPresentation(scope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
-    const pres = await getPresentation(scope, created.id);
+    const created = await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
+    const pres = await getPresentation(storageScope, created.id);
 
     assert.equal(pres.ownerId, OWNER_ID);
     assert.equal(pres.createdById, OWNER_ID);
@@ -91,8 +91,8 @@ pgDescribe('presentation authorization reads on users.id (real PostgreSQL)', () 
   });
 
   it('the owner is authorized by id, with an address the deck never saw', async () => {
-    const created = await createPresentation(scope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
-    const pres = await getPresentation(scope, created.id);
+    const created = await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
+    const pres = await getPresentation(storageScope, created.id);
 
     const ownerUnderAnotherAddress = { id: OWNER_ID, email: 'owner-elsewhere@example.com' };
     assert.equal(canReadPresentation({ user: ownerUnderAnotherAddress, pres }), true);
@@ -100,8 +100,8 @@ pgDescribe('presentation authorization reads on users.id (real PostgreSQL)', () 
   });
 
   it("a different user carrying the owner's address is refused", async () => {
-    const created = await createPresentation(scope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
-    const pres = await getPresentation(scope, created.id);
+    const created = await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
+    const pres = await getPresentation(storageScope, created.id);
 
     const twin = { id: TWIN_ID, email: OWNER_EMAIL };
     assert.equal(canReadPresentation({ user: twin, pres }), false);
@@ -111,8 +111,8 @@ pgDescribe('presentation authorization reads on users.id (real PostgreSQL)', () 
 
   it('a deck whose owner has no users row still resolves on the email', async () => {
     const external = 'nobody@external.test'; // deliberately NOT in `users`
-    const created = await createPresentation(scope, { title: 'Deck', ownerEmail: external });
-    const pres = await getPresentation(scope, created.id);
+    const created = await createPresentation(storageScope, { title: 'Deck', ownerEmail: external });
+    const pres = await getPresentation(storageScope, created.id);
 
     assert.equal(pres.ownerId, null); // defined NULL, the external/legacy path
     assert.equal(canReadPresentation({ user: { id: TWIN_ID, email: external }, pres }), true);
@@ -120,8 +120,8 @@ pgDescribe('presentation authorization reads on users.id (real PostgreSQL)', () 
   });
 
   it('the machine-client check resolves the actor email to the same id', async () => {
-    const created = await createPresentation(scope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
-    const pres = await getPresentation(scope, created.id);
+    const created = await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
+    const pres = await getPresentation(storageScope, created.id);
 
     // The API-key/MCP surfaces know only an email; actor-access resolves it.
     assert.equal(await canActorAccessPresentation(pres, { email: OWNER_EMAIL, organizationId: ORG }, 'write'), true);
@@ -129,8 +129,8 @@ pgDescribe('presentation authorization reads on users.id (real PostgreSQL)', () 
   });
 
   it('the collection listing projects the ids too, so the list filter keys on them', async () => {
-    await createPresentation(scope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
-    const list = await listPresentations(scope);
+    await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
+    const list = await listPresentations(storageScope);
     const summary = list.find((p) => p.title === 'Deck');
 
     assert.equal(summary.ownerId, OWNER_ID);

@@ -16,7 +16,7 @@
  *      whether or not the request was rate-limited; the only observable
  *      difference is a token row that does or does not appear in the database,
  *      never the response. That is what these tests read.
- *   2. **Identity is instance-wide, the write lands in the acting workspace.** A
+ *   2. **Identity is instance-wide, the write lands in the acting organization.** A
  *      reset or a magic link proves an *email*, which names one person across
  *      all organizations, so the lookup is global (`getUserByEmailGlobal`); a
  *      brand-new person, though, is created in the organization the request acts
@@ -33,7 +33,7 @@
  *
  * No production code changes with this file.
  *
- * MULTI_WORKSPACE_ENABLED is read at module scope (server/config/features.js),
+ * MULTI_ORG_ENABLED is read at module scope (server/config/features.js),
  * so this file fixes its environment before importing anything and relies on
  * node --test giving each file its own process.
  *
@@ -48,7 +48,7 @@ import assert from 'node:assert/strict';
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
-delete process.env.MULTI_WORKSPACE_ENABLED;
+delete process.env.MULTI_ORG_ENABLED;
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 // The reset/magic-link mail is fire-and-forget; without a key the Brevo client
 // answers before it reaches the network, so nothing here touches SMTP.
@@ -405,7 +405,7 @@ test('reset-password for a home organization that is not the default still resol
   assert.equal(res.status, 200);
   const carol = db.__tables.users.filter((u) => u.email === 'carol@other.example');
   assert.equal(carol.length, 1, 'the global lookup updates her, it does not duplicate her');
-  assert.equal(carol[0].organization_id, OTHER_ORG, 'her workspace is untouched');
+  assert.equal(carol[0].organization_id, OTHER_ORG, 'her organization is untouched');
   assert.notEqual(carol[0].password_hash, before);
 });
 
@@ -420,7 +420,7 @@ test('reset-password for a brand-new address creates the person in the acting or
   assert.equal(res.status, 200);
   const created = userFor('newcomer@example.com');
   assert.ok(created, 'a row was created for the previously-unknown address');
-  assert.equal(created.organization_id, DEFAULT_ORG, 'the new row lands in the default workspace');
+  assert.equal(created.organization_id, DEFAULT_ORG, 'the new row lands in the default organization');
   assert.equal(created.auth_source, 'database');
 });
 

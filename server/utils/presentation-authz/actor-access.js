@@ -6,7 +6,7 @@
  * canonical canRead/canWrite checks with collaborator-permission lookup so
  * machine clients follow the exact same rules as the editor routes.
  *
- * ## An actor is an identity *and* a workspace
+ * ## An actor is an identity *and* an organization
  *
  * Every entry point here takes an **actor**: `{ email, organizationId }`. Both
  * halves are load-bearing and neither can be derived from the deck:
@@ -17,17 +17,17 @@
  *     resolver once per check. An email with no `users` row resolves to a
  *     defined NULL and simply leaves the actor id-less, putting the deciders on
  *     their email fallback — the same answer as before;
- *   - the **organization** is the workspace the key or session acts in, and it
- *     gates the one grant that rests on "we are in the same workspace"
+ *   - the **organization** is the one the key or session acts in, and it
+ *     gates the one grant that rests on "we are in the same organization"
  *     (`isSameOrganization`). It used to be read off the presentation being
  *     checked, which made that grant unconditional for machine clients: whatever
- *     workspace the deck was in, the actor appeared to be in it. Taking it from
+ *     organization the deck was in, the actor appeared to be in it. Taking it from
  *     the caller is what turns the check into a check (L10).
  *
- * There is no fallback when an actor states no organization: in single-workspace
+ * There is no fallback when an actor states no organization: in single-organization
  * mode there is nothing to compare and `isSameOrganization` answers yes from the
- * feature flag, and in multi-workspace mode a workspace grant with no stated
- * workspace fails closed. Grants that rest on a relation to the deck itself —
+ * feature flag, and in multi-organization mode an organization-wide grant with no stated
+ * organization fails closed. Grants that rest on a relation to the deck itself —
  * ownership, a collaborator row — do not consult the organization at all and are
  * unaffected either way.
  */
@@ -47,7 +47,7 @@ import { canResolveComment } from './comments.js';
  *
  * @typedef {Object} Actor
  * @property {string} email - The identity: API key owner / MCP session owner.
- * @property {string|null} [organizationId] - The workspace the key or session acts in.
+ * @property {string|null} [organizationId] - The organization the key or session acts in.
  */
 
 /**
@@ -161,7 +161,7 @@ export async function canActorResolveComment(pres, actor) {
 /**
  * Pure check: can an actor comment on a presentation?
  * Same rules as the editor routes (canCommentOnPresentation): owner/creator,
- * any user of that same workspace, or a collaborator with comment permission or
+ * any user of that same organization, or a collaborator with comment permission or
  * higher.
  *
  * @param {Object} options

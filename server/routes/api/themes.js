@@ -90,7 +90,7 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
     }
 
     // Load custom themes from database. Sandbox is a public, neutral
-    // playground, so it deliberately hides workspace custom themes (which may
+    // playground, so it deliberately hides organization custom themes (which may
     // carry a customer's branding) and shows only the built-in system themes.
     const customThemes = sandboxEnabled() ? [] : await listThemes(ctx);
     const customThemeList = customThemes.map((t) => ({
@@ -112,7 +112,7 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
       return String(a.label).localeCompare(String(b.label));
     });
 
-    // Annotate with the workspace picker allowlist + default so the creation
+    // Annotate with the organization picker allowlist + default so the creation
     // picker can show a default-visible subset and hide the rest behind a
     // "Show all themes" toggle. An empty allowlist means every theme is shown.
     const [{ enabledThemes }, defaultThemeId] = await Promise.all([

@@ -1,9 +1,9 @@
 /**
- * The request-to-organization binding, with MULTI_WORKSPACE_ENABLED (A1 phase 1).
+ * The request-to-organization binding, with MULTI_ORG_ENABLED (A1 phase 1).
  *
  * `createRouteContext` used to discard `authedUser.organizationId` and hand
  * every request the default organization, so a person who had switched
- * workspaces still read and wrote in the default one. This file walks the whole
+ * organizations still read and wrote in the default one. This file walks the whole
  * chain the way a request does — session cookie → `getUserFromRequestAsync` →
  * `createRouteContext` → the Postgres presentations adapter — and pins that the
  * organization the session is resolved to is the organization the queries scope
@@ -25,9 +25,9 @@
  *   - 'switching organizations moves the request with it' — the switch endpoint
  *     updates the cookie but nothing downstream notices.
  *
- * MULTI_WORKSPACE_ENABLED is read at module scope (server/config/features.js:15),
+ * MULTI_ORG_ENABLED is read at module scope (server/config/features.js:15),
  * so this file sets it before importing anything and relies on node --test
- * giving each file its own process. The single-workspace half, which pins that
+ * giving each file its own process. The single-organization half, which pins that
  * none of this changes for existing installations, lives in
  * request-organization-binding.test.js.
  *
@@ -42,7 +42,7 @@ import assert from 'node:assert/strict';
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
-process.env.MULTI_WORKSPACE_ENABLED = 'true';
+process.env.MULTI_ORG_ENABLED = 'true';
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const ORG_A = process.env.DEFAULT_ORGANIZATION_ID;
@@ -52,7 +52,7 @@ const ORG_GONE = '00000000-0000-0000-0000-0000000000cc';
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { hashPassword } = await import('../server/utils/password-hash.js');
-const { isMultiWorkspaceEnabled } = await import('../server/config/features.js');
+const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const auth = await import('../server/auth/auth.js');
 const { createRouteContext } = await import('../server/utils/context.js');
 const { withPresentations } = await import(
@@ -65,7 +65,7 @@ let passwordHash;
 
 test.before(async () => {
   passwordHash = await hashPassword('correct horse battery');
-  assert.equal(isMultiWorkspaceEnabled(), true, 'multi-workspace flag is on for this file');
+  assert.equal(isMultiOrgEnabled(), true, 'multi-organization flag is on for this file');
 });
 
 test.afterEach(() => {
@@ -74,7 +74,7 @@ test.afterEach(() => {
 
 /**
  * Alice holds memberships in Alpha (older) and Beta (newer); her home
- * organization is Beta. Each organization owns one workspace deck.
+ * organization is Beta. Each organization owns one organization deck.
  * @param {Object} [options] - `memberships` overrides the seeded memberships
  * @returns {Object} the fake db
  */
@@ -108,7 +108,7 @@ function seedTwoOrgs(options = {}) {
     owner_email: 'alice@example.com',
     created_by: 'alice@example.com',
     updated_by: 'alice@example.com',
-    scope: 'workspace',
+    visibility: 'organization',
     theme: 'default',
     lang: 'nl',
     revision: 1,
@@ -215,8 +215,8 @@ test('an authenticated user with no resolved organization gets none (L10)', () =
   seedTwoOrgs();
 
   // This used to fall back to the default organization, which let a session act
-  // in a workspace it was never resolved to — the L10 finding of the 2026-07
-  // audit. Once an instance holds several workspaces the request gets no
+  // in an organization it was never resolved to — the L10 finding of the 2026-07
+  // audit. Once an instance holds several organizations the request gets no
   // organization at all and getOrgId() refuses the query instead of guessing.
   assert.equal(
     createRouteContext({ email: 'apikey-owner@example.com' }).organizationId,
@@ -230,7 +230,7 @@ test('an unverified organization from the synchronous path is ignored', () => {
   // getUserFromRequest() copies payload.orgId through without checking
   // membership and flags itself for validation. Its organization must never
   // reach a query; only resolveActiveOrganization()'s verdict may. Under
-  // multi-workspace that leaves the request with no organization (see above)
+  // multi-organization that leaves the request with no organization (see above)
   // rather than the default one.
   const unverified = {
     email: 'alice@example.com',
@@ -289,7 +289,7 @@ test('a new deck is created in the active organization', async () => {
   const created = await adapter.createPresentation({ title: 'Written in Beta' }, inBeta);
 
   const row = db.__tables.presentations.find((p) => p.id === created.id);
-  assert.equal(row.organization_id, ORG_B, 'writes land in the workspace being used');
+  assert.equal(row.organization_id, ORG_B, 'writes land in the organization being used');
 });
 
 // ---------------------------------------------------------------------------
@@ -316,11 +316,11 @@ test('a revoked membership moves the request to the fallback organization', asyn
 
   const { ctx } = await contextFor(ORG_A);
   assert.equal(ctx.organizationId, ORG_B, 'oldest remaining membership, per the phase 0 rule');
-  assert.ok(await adapter.getPresentation('deck-beta', ctx), 'her remaining workspace works');
+  assert.ok(await adapter.getPresentation('deck-beta', ctx), 'her remaining organization works');
   assert.equal(
     await adapter.getPresentation('deck-alpha', ctx),
     null,
-    'the workspace she was removed from is no longer readable'
+    'the organization she was removed from is no longer readable'
   );
 });
 

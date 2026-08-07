@@ -302,7 +302,7 @@ export function createSaveManager({
     else if (typeof updated.revision === 'string' && updated.revision.trim())
       pres.revision = Number(updated.revision) || pres.revision;
     if (typeof updated.updatedBy === 'string') pres.updatedBy = updated.updatedBy;
-    if (typeof updated.scope === 'string') pres.scope = updated.scope;
+    if (typeof updated.visibility === 'string') pres.visibility = updated.visibility;
   };
 
   /**

@@ -12,7 +12,7 @@ import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 
 /**
  * Get popular presentations based on recent activity.
- * Returns presentations that are workspace-scoped or published,
+ * Returns presentations that are organization-visible or published,
  * sorted by recent activity (views, updates).
  */
 export async function handlePopularPresentations({ storageScope, res, authedUser }) {
@@ -21,7 +21,7 @@ export async function handlePopularPresentations({ storageScope, res, authedUser
   }
 
   // The organization comes from the request's storage scope, so this list stays
-  // inside the workspace the session is working in.
+  // inside the organization the session is working in.
   const ctx = { user: authedUser, organizationId: storageScope?.organizationId };
   const presentations = await getPopularPresentations(ctx);
 
@@ -46,7 +46,7 @@ export async function getPopularPresentations(ctx) {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
     // Query: Find presentations with activity events, sorted by most recent
-    // Filter to workspace scope OR published presentations
+    // Filter to organization visibility OR published presentations
     const rows = await db
       .selectFrom('presentations as p')
       .leftJoin('activity_events as ae', (join) =>
@@ -60,7 +60,7 @@ export async function getPopularPresentations(ctx) {
         'p.id',
         'p.title',
         'p.theme',
-        'p.scope',
+        'p.visibility',
         'p.owner_email',
         'p.created_by',
         'p.updated_by',
@@ -74,7 +74,7 @@ export async function getPopularPresentations(ctx) {
       .where('p.trashed_at', 'is', null)
       .where((eb) =>
         eb.or([
-          eb('p.scope', '=', 'workspace'),
+          eb('p.visibility', '=', 'organization'),
           eb('pub.id', 'is not', null),
         ])
       )
@@ -82,7 +82,7 @@ export async function getPopularPresentations(ctx) {
         'p.id',
         'p.title',
         'p.theme',
-        'p.scope',
+        'p.visibility',
         'p.owner_email',
         'p.created_by',
         'p.updated_by',
@@ -95,7 +95,7 @@ export async function getPopularPresentations(ctx) {
       .limit(10)
       .execute();
 
-    // If no presentations with activity, fall back to recently modified workspace presentations
+    // If no presentations with activity, fall back to recently modified organization-visible presentations
     if (rows.length === 0) {
       const fallbackRows = await db
         .selectFrom('presentations as p')
@@ -104,7 +104,7 @@ export async function getPopularPresentations(ctx) {
           'p.id',
           'p.title',
           'p.theme',
-          'p.scope',
+          'p.visibility',
           'p.owner_email',
           'p.created_by',
           'p.updated_by',
@@ -116,7 +116,7 @@ export async function getPopularPresentations(ctx) {
         .where('p.trashed_at', 'is', null)
         .where((eb) =>
           eb.or([
-            eb('p.scope', '=', 'workspace'),
+            eb('p.visibility', '=', 'organization'),
             eb('pub.id', 'is not', null),
           ])
         )
@@ -141,14 +141,14 @@ async function filterReadableRows(rows, ctx) {
   // Every row here came out of a query scoped on getOrgId(ctx), so the deck's
   // organization is the one the request is acting in. Naming it explicitly
   // keeps this hand-built presentation shape readable by the authorization
-  // layer, which refuses a workspace deck whose organization it cannot see.
+  // layer, which refuses an organization-visible deck whose organization it cannot see.
   const organizationId = getOrgId(ctx);
   const readable = [];
   for (const row of rows) {
     const pres = {
       id: row.id,
       organizationId,
-      scope: row.scope,
+      visibility: row.visibility,
       ownerEmail: row.owner_email,
       createdBy: row.created_by,
     };
@@ -188,7 +188,7 @@ async function formatPresentations(rows, ctx) {
       id: row.id,
       title: row.title,
       theme: row.theme,
-      scope: row.scope,
+      visibility: row.visibility,
       ownerEmail: row.owner_email,
       createdBy: row.created_by,
       updatedBy: row.updated_by,

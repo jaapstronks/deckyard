@@ -7,7 +7,7 @@ import {
 } from '../storage/identity.js';
 import { shouldUseSecureCookies } from '../utils/request-url.js';
 import { sessionVersion } from '../utils/session-version.js';
-import { isMultiWorkspaceEnabled } from '../config/features.js';
+import { isMultiOrgEnabled } from '../config/features.js';
 import { getDefaultOrganizationId } from '../config/database.js';
 
 const COOKIE_NAME = 'sb_session';
@@ -323,7 +323,7 @@ export function getUserFromRequest(req) {
       role,
       name: payload?.name || '',
       isAdmin: role === 'admin',
-      // Include organization context from session (multi-workspace mode).
+      // Include organization context from session (multi-organization mode).
       // No default fallback: this synchronous path is marked
       // `_needsDbValidation` and is ignored by createRouteContext, so a missing
       // orgId must stay missing rather than resolve to the default organization.
@@ -375,7 +375,7 @@ export async function getUserFromRequestAsync(req, ctx) {
   const email = String(payload?.email || '').toLowerCase();
 
   // Check database users - support all auth sources. Identity is resolved
-  // across organizations: which workspace the session is in is a separate
+  // across organizations: which organization the session is in is a separate
   // question, answered by resolveActiveMembership() below.
   const dbUser = await getUserByEmailGlobal(email);
   if (!dbUser) return null;
@@ -385,8 +385,8 @@ export async function getUserFromRequestAsync(req, ctx) {
   const expectedV = sessionVersion(dbUser);
 
   if (String(payload?.v || '') === expectedV) {
-    // Which workspace this session may act in. Single-workspace mode answers
-    // this from configuration without touching the database; multi-workspace
+    // Which organization this session may act in. Single-organization mode answers
+    // this from configuration without touching the database; multi-organization
     // mode re-verifies membership, because the token outlives a revocation.
     const {
       organizationId,
@@ -415,14 +415,14 @@ export async function getUserFromRequestAsync(req, ctx) {
       authSource: dbUser.auth_source || 'database',
       organizationId,
       // The role held in *this* organization (owner/admin/member), as opposed
-      // to the instance-wide `isAdmin` above. Null in single-workspace mode,
+      // to the instance-wide `isAdmin` above. Null in single-organization mode,
       // where there is only one organization and no membership to read. The
-      // UI gates admin surfaces on both; see client/lib/user/workspace-role.js.
+      // UI gates admin surfaces on both; see client/lib/user/organization-role.js.
       organizationRole,
       // The raw `is_designer` flag on that same membership row. Carried so
       // designer-capability resolution can reuse the row already read here
       // instead of re-querying it (see utils/designer.js). Null whenever
-      // `organizationRole` is — single-workspace has no membership row to read.
+      // `organizationRole` is — single-organization has no membership row to read.
       organizationIsDesigner,
     };
   }
@@ -446,11 +446,11 @@ export function setSessionCookie(
     v: user.v,
   };
 
-  // Include organization ID in session when multi-workspace is enabled
-  // This allows workspace context to persist across requests
-  if (isMultiWorkspaceEnabled()) {
-    // No default fallback under multi-workspace: stamping the default
-    // organization into the cookie would let a session act in a workspace it
+  // Include organization ID in session when multi-organization is enabled
+  // This allows organization context to persist across requests
+  if (isMultiOrgEnabled()) {
+    // No default fallback under multi-organization: stamping the default
+    // organization into the cookie would let a session act in an organization it
     // was never resolved to. A missing org stays missing.
     payload.orgId = organizationId || user.organizationId;
   }
@@ -477,13 +477,13 @@ export function setSessionCookie(
 
 /**
  * Update the organization context in the user's session cookie.
- * Used when switching workspaces in multi-workspace mode.
+ * Used when switching organizations in multi-organization mode.
  * @param {Object} req - HTTP request
  * @param {Object} res - HTTP response
  * @param {string} organizationId - New organization ID
  */
 export function updateSessionOrganization(req, res, organizationId) {
-  if (!isMultiWorkspaceEnabled()) return;
+  if (!isMultiOrgEnabled()) return;
 
   const payload = parseSessionToken(req);
   if (!payload) return;
@@ -543,7 +543,7 @@ export async function verifyLoginAsync(emailRaw, passwordRaw, ctx) {
   const password = String(passwordRaw || '');
 
   // Check database user. Logging in is an identity question, so the lookup is
-  // not scoped to an organization; the workspace is picked afterwards.
+  // not scoped to an organization; the organization is picked afterwards.
   const dbUser = await getUserByEmailGlobal(email);
   if (dbUser?.password_hash && dbUser?.auth_source === 'database') {
     const valid = await verifyDbPassword(password, dbUser.password_hash);

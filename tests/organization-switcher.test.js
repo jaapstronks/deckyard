@@ -1,10 +1,10 @@
 /**
- * Organization switcher in the user menu (multi-workspace slice 1).
+ * Organization switcher in the user menu (multi-organization slice 1).
  *
- * The load-bearing assertion is the first one: on a single-workspace instance
+ * The load-bearing assertion is the first one: on a single-organization instance
  * the section must not exist *and* must not cost a request. `/api/organizations`
  * is behind the same feature flag on the server, so asking would earn a 403 on
- * every page render — the switcher has to decide from `features.multiWorkspace`
+ * every page render — the switcher has to decide from `features.multiOrganization`
  * alone, before any network.
  *
  * The rest pins the switch behaviour: a full reload on success (never a partial
@@ -65,8 +65,8 @@ function orgRows(el) {
   return Array.from(el.querySelectorAll('.user-menu-org'));
 }
 
-test('single workspace: no organization section and no /api/organizations request', async () => {
-  setFeatures({ multiWorkspace: false });
+test('single organization: no organization section and no /api/organizations request', async () => {
+  setFeatures({ multiOrganization: false });
   requested.length = 0;
 
   const menu = createUserMenu({
@@ -84,15 +84,15 @@ test('single workspace: no organization section and no /api/organizations reques
   assert.deepEqual(
     requested.filter((r) => r.includes('/api/organizations')),
     [],
-    'the organization list is never requested in single-workspace mode'
+    'the organization list is never requested in single-organization mode'
   );
 
   menu.detach();
   menu.el.remove();
 });
 
-test('multi-workspace with a single organization: section renders nothing', async () => {
-  setFeatures({ multiWorkspace: true });
+test('multi-organization with a single organization: section renders nothing', async () => {
+  setFeatures({ multiOrganization: true });
 
   const section = createOrganizationSection({
     activeOrganizationId: 'org-a',
@@ -106,7 +106,7 @@ test('multi-workspace with a single organization: section renders nothing', asyn
 });
 
 test('two organizations: both listed, the active one checked', async () => {
-  setFeatures({ multiWorkspace: true });
+  setFeatures({ multiOrganization: true });
 
   const section = createOrganizationSection({
     activeOrganizationId: 'org-a',
@@ -145,7 +145,7 @@ test('two organizations: both listed, the active one checked', async () => {
 });
 
 test('clicking the organization you are already in does nothing', async () => {
-  setFeatures({ multiWorkspace: true });
+  setFeatures({ multiOrganization: true });
 
   let switches = 0;
   let reloads = 0;
@@ -169,7 +169,7 @@ test('clicking the organization you are already in does nothing', async () => {
 });
 
 test('a successful switch posts, then reloads the whole page', async () => {
-  setFeatures({ multiWorkspace: true });
+  setFeatures({ multiOrganization: true });
 
   const switched = [];
   let reloads = 0;
@@ -198,7 +198,7 @@ test('a successful switch posts, then reloads the whole page', async () => {
 });
 
 test('a refused switch shows a toast and leaves the page where it is', async () => {
-  setFeatures({ multiWorkspace: true });
+  setFeatures({ multiOrganization: true });
   document.querySelector('.toast-stack')?.remove();
 
   let reloads = 0;
@@ -206,7 +206,7 @@ test('a refused switch shows a toast and leaves the page where it is', async () 
     activeOrganizationId: 'org-a',
     load: async () => ORGS,
     switchTo: async () => {
-      const err = new Error('Multi-workspace features are not enabled');
+      const err = new Error('Multi-organization features are not enabled');
       err.statusCode = 403;
       throw err;
     },
@@ -230,7 +230,7 @@ test('a refused switch shows a toast and leaves the page where it is', async () 
 });
 
 test('a list that fails to load hides the section instead of erroring', async () => {
-  setFeatures({ multiWorkspace: true });
+  setFeatures({ multiOrganization: true });
 
   const warn = console.warn;
   console.warn = () => {}; // the failure is logged on purpose; keep test output clean

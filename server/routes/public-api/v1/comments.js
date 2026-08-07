@@ -156,7 +156,7 @@ async function handleCreateComment(ctx, presentationId) {
   const { ok, pres } = await getPresentationWithAccess(ctx, presentationId);
   if (!ok) return true;
 
-  // Commenting needs comment permission (owner/creator, workspace user, or
+  // Commenting needs comment permission (owner/creator, organization user, or
   // collaborator with comment rights or higher) — not full write access.
   if (!(await canActorCommentOnPresentation(pres, authedUser))) {
     await apiError(ctx, 403, 'API key owner may not comment on this presentation');

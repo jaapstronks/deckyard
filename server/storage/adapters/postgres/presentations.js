@@ -43,7 +43,7 @@ export function withPresentations(Base) {
           'created_by_user_id as createdById',
           'created_by as createdBy',
           'updated_by as updatedBy',
-          'scope',
+          'visibility',
           'is_view_only as isViewOnly',
           'revision',
           'i18n',
@@ -73,7 +73,7 @@ export function withPresentations(Base) {
           createdById: row.createdById || null,
           createdBy: row.createdBy,
           updatedBy: row.updatedBy,
-          scope: row.scope,
+          visibility: row.visibility,
           isViewOnly: !!row.isViewOnly,
           revision: row.revision,
           i18n: i18n
@@ -190,7 +190,7 @@ export function withPresentations(Base) {
           description: data.description || null,
           theme: data.theme || 'default',
           lang: data.lang || 'nl',
-          scope: 'private',
+          visibility: 'private',
           revision: 1,
           settings: jsonb(data.settings || {}),
           i18n: jsonb(data.i18n || {}),
@@ -349,12 +349,12 @@ export function withPresentations(Base) {
       if (data.slides !== undefined) updateData.slides = jsonb(data.slides);
       if (data.published !== undefined) updateData.published = jsonb(data.published);
 
-      if (opts?.allowScopeChange && data.scope) {
-        updateData.scope = data.scope;
+      if (opts?.allowVisibilityChange && data.visibility) {
+        updateData.visibility = data.visibility;
       }
 
       // Ownership transfer is the one write that rewrites `owner_email`, and it
-      // is gated exactly like `allowScopeChange`: only the ownership route opts
+      // is gated exactly like `allowVisibilityChange`: only the ownership route opts
       // in via `allowOwnerChange`, so a regular editor save (which never carries
       // the flag, and whose body may omit `ownerEmail` entirely) can never move
       // the owner. Because the transfer is the *only* mover of `owner_email` in
@@ -373,12 +373,12 @@ export function withPresentations(Base) {
 
       // Theme is hard-locked on the shared write path; only an explicit,
       // permission-checked switch (the /change-theme route) opts in via
-      // allowThemeChange, mirroring the allowScopeChange escape hatch above.
+      // allowThemeChange, mirroring the allowVisibilityChange escape hatch above.
       if (opts?.allowThemeChange && data.theme) {
         updateData.theme = data.theme;
       }
 
-      // Only the /scope route passes allowViewOnlyChange; regular editor saves
+      // Only the /visibility route passes allowViewOnlyChange; regular editor saves
       // must not touch the stored flag (their body may omit it entirely).
       if (opts?.allowViewOnlyChange && typeof data.isViewOnly === 'boolean') {
         updateData.is_view_only = data.isViewOnly;
@@ -455,7 +455,7 @@ export function withPresentations(Base) {
           'created_by_user_id as createdById',
           'created_by as createdBy',
           'updated_by as updatedBy',
-          'scope',
+          'visibility',
           'revision',
           'i18n',
           'slides',
@@ -487,7 +487,7 @@ export function withPresentations(Base) {
           createdById: row.createdById || null,
           createdBy: row.createdBy,
           updatedBy: row.updatedBy,
-          scope: row.scope,
+          visibility: row.visibility,
           revision: row.revision,
           i18n: i18n
             ? {

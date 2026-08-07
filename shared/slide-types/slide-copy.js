@@ -122,9 +122,9 @@ export const SLIDE_COPY = {
  * direction degrades tier-2 locales to English rather than Dutch.
  *
  * This is NOT the default language of a new deck. That is a stored, editable
- * property of the presentation (`pres.lang`, seeded from the workspace by
+ * property of the presentation (`pres.lang`, seeded from the organization by
  * `resolveInitialDeckLang()`), and it still starts at `nl` for a Dutch
- * workspace. This constant only decides what happens when there is genuinely no
+ * organization. This constant only decides what happens when there is genuinely no
  * language information to go on.
  */
 export const DEFAULT_SLIDE_COPY_LANG = 'en-GB';

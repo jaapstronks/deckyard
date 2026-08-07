@@ -122,7 +122,7 @@ export function createHomeView({
 
   for (const p of allByDate.slice(0, 4)) {
     homeRecentList.append(renderCard(p, {
-      isWorkspace: p.scope === 'workspace',
+      isOrganization: p.visibility === 'organization',
       isSharedWithMe: p.isSharedWithMe,
       sharedBy: p.sharedBy,
       permission: p.permission,
@@ -249,7 +249,7 @@ export function createHomeView({
       } else {
         for (const p of presentations.slice(0, 4)) {
           homePopularList.append(renderCard(p, {
-            isWorkspace: p.scope === 'workspace',
+            isOrganization: p.visibility === 'organization',
           }));
         }
         homePopularSection.append(homePopularList);

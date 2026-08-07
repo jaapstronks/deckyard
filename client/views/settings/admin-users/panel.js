@@ -9,7 +9,7 @@ import { renderUsersList } from './user-list.js';
 import { showAddModal } from './add-modal.js';
 import { showEditModal } from './edit-modal.js';
 import { fetchUsers } from './actions.js';
-import { isWorkspaceAdmin } from '../../../lib/user/workspace-role.js';
+import { isOrganizationAdmin } from '../../../lib/user/organization-role.js';
 
 /**
  * Render the admin users panel.
@@ -18,7 +18,7 @@ import { isWorkspaceAdmin } from '../../../lib/user/workspace-role.js';
  * @returns {HTMLElement} - The panel element
  */
 export function renderAdminUsersPanel({ user }) {
-  const canManage = isWorkspaceAdmin(user);
+  const canManage = isOrganizationAdmin(user);
   const card = h('div', {
     class: 'stack editor-card admin-users-card',
     style: canManage ? '' : 'display:none;',

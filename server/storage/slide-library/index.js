@@ -3,7 +3,7 @@
  *
  * Every function takes a **storage scope** rather than a bare `repoRoot`, so the
  * organization comes from the caller instead of a hardcoded default — see
- * server/storage/scope.js. A team library is a workspace's shared shelf, so
+ * server/storage/scope.js. A team library is an organization's shared shelf, so
  * reading it out of the wrong organization is exactly what this removes.
  *
  * `userEmail` stays a separate argument where it appears: it names the *subject*

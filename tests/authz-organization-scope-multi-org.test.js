@@ -1,10 +1,10 @@
 /**
- * The organization-aware authorization layer, with MULTI_WORKSPACE_ENABLED
+ * The organization-aware authorization layer, with MULTI_ORG_ENABLED
  * (A1 phase 2).
  *
- * `presentation-authz/presentations.js` returned `true` for `scope: 'workspace'`
+ * `presentation-authz/presentations.js` returned `true` for `visibility: 'organization'`
  * without ever mentioning organizations, so as far as the authorization layer
- * was concerned every authenticated person was a member of every workspace. The
+ * was concerned every authenticated person was a member of every organization. The
  * storage layer stopped that from mattering — every presentation query scopes on
  * `organization_id` — but a layer that only holds because the layer beneath it
  * remembers to scope is not a layer. This file holds the assertions that fail
@@ -15,19 +15,19 @@
  * server/utils/presentation-authz/presentations.js and these six go red, the
  * rest stay green):
  *
- *   - 'a workspace deck from another organization is not readable'
- *   - 'a workspace deck from another organization is not writable'
- *   - 'a workspace deck from another organization does not accept comments'
+ *   - 'an organization deck from another organization is not readable'
+ *   - 'an organization deck from another organization is not writable'
+ *   - 'an organization deck from another organization does not accept comments'
  *   - 'the effective permission on another organization's deck is view'
- *   - 'a workspace deck with no organization is refused'
- *   - 'a user with no organization is refused a workspace deck'
+ *   - 'an organization deck with no organization is refused'
+ *   - 'a user with no organization is refused an organization deck'
  *
- * The rest pin what must *not* change: the person's own workspace decks, the
- * grants that never rested on the workspace at all (ownership, a collaborator
+ * The rest pin what must *not* change: the person's own organization decks, the
+ * grants that never rested on the organization at all (ownership, a collaborator
  * row), and the machine-client path, whose organization resolution is a
  * separate open item (see docs/reference/tenant-isolation.md).
  *
- * MULTI_WORKSPACE_ENABLED is read at module scope (server/config/features.js:15),
+ * MULTI_ORG_ENABLED is read at module scope (server/config/features.js:15),
  * so this file sets it before importing anything and relies on node --test
  * giving each file its own process.
  *
@@ -42,7 +42,7 @@ import assert from 'node:assert/strict';
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
-process.env.MULTI_WORKSPACE_ENABLED = 'true';
+process.env.MULTI_ORG_ENABLED = 'true';
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const ORG_A = process.env.DEFAULT_ORGANIZATION_ID;
@@ -51,7 +51,7 @@ const ORG_B = '00000000-0000-0000-0000-0000000000bb';
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { hashPassword } = await import('../server/utils/password-hash.js');
-const { isMultiWorkspaceEnabled } = await import('../server/config/features.js');
+const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const auth = await import('../server/auth/auth.js');
 const {
   isSameOrganization,
@@ -74,12 +74,12 @@ let passwordHash;
 
 test.before(async () => {
   passwordHash = await hashPassword('correct horse battery');
-  assert.equal(isMultiWorkspaceEnabled(), true, 'multi-workspace flag is on for this file');
+  assert.equal(isMultiOrgEnabled(), true, 'multi-organization flag is on for this file');
 });
 
 /**
  * Alice works in organization Alpha, Bob in organization Beta. Each has a
- * workspace deck owned by a third person, so nothing here is decided by
+ * organization deck owned by a third person, so nothing here is decided by
  * ownership.
  */
 function seedDb() {
@@ -111,9 +111,9 @@ function seedDb() {
       },
     ],
     presentations: [
-      deckRow({ id: 'deck-alpha', org: ORG_A, scope: 'workspace' }),
-      deckRow({ id: 'deck-beta', org: ORG_B, scope: 'workspace' }),
-      deckRow({ id: 'deck-alpha-owned', org: ORG_A, scope: 'private', owner: 'bob@beta.example' }),
+      deckRow({ id: 'deck-alpha', org: ORG_A, visibility: 'organization' }),
+      deckRow({ id: 'deck-beta', org: ORG_B, visibility: 'organization' }),
+      deckRow({ id: 'deck-alpha-owned', org: ORG_A, visibility: 'private', owner: 'bob@beta.example' }),
     ],
   });
   __setTestDb(db);
@@ -136,7 +136,7 @@ function person({ id, org, email }) {
   };
 }
 
-function deckRow({ id, org, scope, owner = 'carol@alpha.example' }) {
+function deckRow({ id, org, visibility, owner = 'carol@alpha.example' }) {
   return {
     id,
     organization_id: org,
@@ -144,7 +144,7 @@ function deckRow({ id, org, scope, owner = 'carol@alpha.example' }) {
     owner_email: owner,
     created_by: owner,
     updated_by: owner,
-    scope,
+    visibility,
     theme: 'default',
     lang: 'nl',
     revision: 1,
@@ -192,10 +192,10 @@ async function loadDeck(id, organizationId) {
 }
 
 // ---------------------------------------------------------------------------
-// The workspace grant stops at the organization boundary
+// The organization grant stops at the organization boundary
 // ---------------------------------------------------------------------------
 
-test('a workspace deck from another organization is not readable', async () => {
+test('an organization deck from another organization is not readable', async () => {
   seedDb();
   const bob = await sessionUser('bob@beta.example', ORG_B);
   const alphaDeck = await loadDeck('deck-alpha', ORG_A);
@@ -203,7 +203,7 @@ test('a workspace deck from another organization is not readable', async () => {
   assert.equal(canReadPresentation({ user: bob, pres: alphaDeck }), false);
 });
 
-test('a workspace deck from another organization is not writable', async () => {
+test('an organization deck from another organization is not writable', async () => {
   seedDb();
   const bob = await sessionUser('bob@beta.example', ORG_B);
   const alphaDeck = await loadDeck('deck-alpha', ORG_A);
@@ -211,7 +211,7 @@ test('a workspace deck from another organization is not writable', async () => {
   assert.equal(canWritePresentation({ user: bob, pres: alphaDeck }), false);
 });
 
-test('a workspace deck from another organization does not accept comments', async () => {
+test('an organization deck from another organization does not accept comments', async () => {
   seedDb();
   const bob = await sessionUser('bob@beta.example', ORG_B);
   const alphaDeck = await loadDeck('deck-alpha', ORG_A);
@@ -227,18 +227,18 @@ test("the effective permission on another organization's deck is view", async ()
   assert.equal(getEffectivePermission({ user: bob, pres: alphaDeck }), 'view');
 });
 
-test('a workspace deck with no organization is refused', async () => {
+test('an organization deck with no organization is refused', async () => {
   seedDb();
   const bob = await sessionUser('bob@beta.example', ORG_B);
   // A presentation shape that lost its organization on the way here must fail
-  // closed: in multi-workspace mode "no organization" is not "any organization".
-  const pres = { id: 'deck-nowhere', scope: 'workspace', ownerEmail: 'carol@alpha.example' };
+  // closed: in multi-organization mode "no organization" is not "any organization".
+  const pres = { id: 'deck-nowhere', visibility: 'organization', ownerEmail: 'carol@alpha.example' };
 
   assert.equal(canReadPresentation({ user: bob, pres }), false);
   assert.equal(getEffectivePermission({ user: bob, pres }), 'view');
 });
 
-test('a user with no organization is refused a workspace deck', async () => {
+test('a user with no organization is refused an organization deck', async () => {
   seedDb();
   const alphaDeck = await loadDeck('deck-alpha', ORG_A);
 
@@ -250,7 +250,7 @@ test('a user with no organization is refused a workspace deck', async () => {
 // What must not change
 // ---------------------------------------------------------------------------
 
-test('a workspace deck in the person own organization stays fully available', async () => {
+test('an organization deck in the person own organization stays fully available', async () => {
   seedDb();
   const alice = await sessionUser('alice@alpha.example', ORG_A);
   const alphaDeck = await loadDeck('deck-alpha', ORG_A);
@@ -265,8 +265,8 @@ test('ownership still grants access across the organization boundary', async () 
   seedDb();
   const bob = await sessionUser('bob@beta.example', ORG_B);
   // Bob owns a deck that sits in Alpha. Ownership is a relation to the deck,
-  // not to the workspace, so the organization check must not swallow it — the
-  // guards narrow the workspace grant and let everything else fall through.
+  // not to the organization, so the organization check must not swallow it — the
+  // guards narrow the organization grant and let everything else fall through.
   const deck = await loadDeck('deck-alpha-owned', ORG_A);
 
   assert.equal(canReadPresentation({ user: bob, pres: deck }), true);
@@ -299,12 +299,12 @@ test('an unrestricted operator is unaffected', async () => {
   assert.equal(getEffectivePermission({ user: operator, pres: alphaDeck }), 'edit');
 });
 
-test('a machine client acting in another workspace is refused (L10)', async () => {
+test('a machine client acting in another organization is refused (L10)', async () => {
   seedDb();
   const alphaDeck = await loadDeck('deck-alpha', ORG_A);
   // This used to pass. The actor's organization was read off the presentation
-  // being checked, so the workspace grant was unconditional for machine
-  // clients: whatever workspace the deck was in, the key appeared to be in it.
+  // being checked, so the organization grant was unconditional for machine
+  // clients: whatever organization the deck was in, the key appeared to be in it.
   // An API key belongs to one organization and now says so, which is what turns
   // the check into a check.
   assert.equal(
@@ -313,7 +313,7 @@ test('a machine client acting in another workspace is refused (L10)', async () =
   );
 });
 
-test('a machine client of the deck’s own workspace still gets the workspace grant', async () => {
+test('a machine client of the deck’s own organization still gets the organization grant', async () => {
   seedDb();
   const alphaDeck = await loadDeck('deck-alpha', ORG_A);
   assert.equal(
@@ -322,10 +322,10 @@ test('a machine client of the deck’s own workspace still gets the workspace gr
   );
 });
 
-test('a machine client that states no workspace fails closed on the workspace grant', async () => {
+test('a machine client that states no organization fails closed on the organization grant', async () => {
   seedDb();
   const alphaDeck = await loadDeck('deck-alpha', ORG_A);
-  // Multi-workspace mode refuses an organization it cannot read on either side
+  // Multi-organization mode refuses an organization it cannot read on either side
   // rather than waving it through — the same fail-closed rule the session path
   // follows. Grants that rest on a relation to the deck are unaffected.
   assert.equal(checkActorAccess({ pres: alphaDeck, actor: { email: 'dave@beta.example' } }), false);

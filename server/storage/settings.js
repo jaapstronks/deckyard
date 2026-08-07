@@ -104,7 +104,7 @@ export function defaultAppSettings() {
   return {
     supportedSlideLangs: ['nl', 'en-GB'],
     webhooks: {
-      presentationMovedToWorkspaceUrl: '',
+      presentationMovedToOrganizationUrl: '',
       slideAddedToTeamLibraryUrl: '',
       presentationPublishedUrl: '',
       commentCreatedUrl: '',
@@ -132,7 +132,7 @@ export function defaultAppSettings() {
     // themes shown by default in the creation theme picker; the rest sit behind
     // a "Show all themes" toggle.
     enabledThemes: [],
-    // Workspace default theme ID (empty = fall back to the DEFAULT_THEME env
+    // Organization default theme ID (empty = fall back to the DEFAULT_THEME env
     // var, then the built-in default). Resolve via getDefaultThemeId().
     defaultThemeId: '',
     // Engagement insights (analytics) settings
@@ -311,8 +311,8 @@ export async function getAppSettings(repoRoot) {
     [];
   const wh = obj?.webhooks && typeof obj.webhooks === 'object' ? obj.webhooks : {};
   const webhooks = {
-    presentationMovedToWorkspaceUrl: normalizeWebhookUrl(
-      wh?.presentationMovedToWorkspaceUrl
+    presentationMovedToOrganizationUrl: normalizeWebhookUrl(
+      wh?.presentationMovedToOrganizationUrl
     ),
     slideAddedToTeamLibraryUrl: normalizeWebhookUrl(wh?.slideAddedToTeamLibraryUrl),
     presentationPublishedUrl: normalizeWebhookUrl(wh?.presentationPublishedUrl),
@@ -352,7 +352,7 @@ export async function getAppSettings(repoRoot) {
   // Enabled themes (empty = all enabled)
   const enabledThemes = normalizeStringArray(obj?.enabledThemes);
 
-  // Workspace default theme (empty = resolve via env/built-in default)
+  // Organization default theme (empty = resolve via env/built-in default)
   const defaultThemeId = normalizeThemeId(obj?.defaultThemeId);
 
   // Analytics settings. Any legacy team/external-analytics keys in the stored
@@ -425,8 +425,8 @@ export async function writeAppSettings(repoRoot, next) {
     next?.webhooks && typeof next.webhooks === 'object' ? next.webhooks : null;
   const webhooks = nextWh
     ? {
-        presentationMovedToWorkspaceUrl: normalizeWebhookUrl(
-          nextWh?.presentationMovedToWorkspaceUrl
+        presentationMovedToOrganizationUrl: normalizeWebhookUrl(
+          nextWh?.presentationMovedToOrganizationUrl
         ),
         slideAddedToTeamLibraryUrl: normalizeWebhookUrl(
           nextWh?.slideAddedToTeamLibraryUrl
@@ -491,7 +491,7 @@ export async function writeAppSettings(repoRoot, next) {
       ? normalizeStringArray(next.enabledThemes)
       : null;
 
-  // Workspace default theme
+  // Organization default theme
   const defaultThemeId =
     next?.defaultThemeId !== undefined
       ? normalizeThemeId(next.defaultThemeId)
@@ -951,7 +951,7 @@ export async function getEmailSender(repoRoot) {
 }
 
 /**
- * Resolve the workspace default theme ID.
+ * Resolve the organization default theme ID.
  *
  * Precedence: the admin-configured `defaultThemeId` app setting, then the
  * `DEFAULT_THEME` env var (fork seam, e.g. CIIIC), then the built-in default.

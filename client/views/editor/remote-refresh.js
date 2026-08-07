@@ -100,7 +100,7 @@ export function createRemoteRefresh({
       if (typeof fresh.revision === 'number') pres.revision = fresh.revision;
       if (typeof fresh.modified === 'string') pres.modified = fresh.modified;
       if (typeof fresh.updatedBy === 'string') pres.updatedBy = fresh.updatedBy;
-      if (typeof fresh.scope === 'string') pres.scope = fresh.scope;
+      if (typeof fresh.visibility === 'string') pres.visibility = fresh.visibility;
       // Re-point the active-language buffers exactly like the initial load.
       initPresentationI18n({ pres, initialLang: active || null });
       normalizeSlideNotes(pres);

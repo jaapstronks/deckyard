@@ -7,7 +7,7 @@
  * PR G.
  *
  *  - the sweep (server/utils/sandbox-cleanup.js) hard-deletes expired ephemeral
- *    decks, spares fresh decks and curated workspace-scope decks, and cascades
+ *    decks, spares fresh decks and curated organization-visible decks, and cascades
  *    to each deck's version snapshots and published entry;
  *  - the quota (server/storage/presentations/sandbox-quota.js) counts a guest's
  *    decks and stored bytes within the organization, and refuses a mint past
@@ -46,7 +46,7 @@ const ctx = { organizationId: getDefaultOrganizationId() };
  */
 async function insertDeck(
   db,
-  { ownerEmail = null, scope = 'private', agedHours = 0, slides = [], title = 'Deck' } = {}
+  { ownerEmail = null, visibility = 'private', agedHours = 0, slides = [], title = 'Deck' } = {}
 ) {
   const id = crypto.randomUUID();
   const createdAt = new Date(Date.now() - agedHours * HOUR).toISOString();
@@ -57,7 +57,7 @@ async function insertDeck(
       organization_id: getDefaultOrganizationId(),
       owner_email: ownerEmail,
       title,
-      scope,
+      visibility,
       slides: JSON.stringify(slides),
       i18n: JSON.stringify({}),
       created_at: createdAt,
@@ -104,10 +104,10 @@ pgDescribe('sandbox TTL sweep + quota (real PostgreSQL)', () => {
     else process.env.SANDBOX_MAX_BYTES_PER_GUEST = prevMaxBytes;
   });
 
-  it('deletes expired ephemeral decks, spares fresh and workspace decks', async () => {
+  it('deletes expired ephemeral decks, spares fresh and organization decks', async () => {
     const expired = await insertDeck(db, { agedHours: 48, title: 'expired' });
     const fresh = await insertDeck(db, { agedHours: 1, title: 'fresh' });
-    const curated = await insertDeck(db, { agedHours: 72, scope: 'workspace', title: 'seed' });
+    const curated = await insertDeck(db, { agedHours: 72, visibility: 'organization', title: 'seed' });
 
     const deleted = await sweepExpiredSandboxDecks();
     assert.equal(deleted, 1);

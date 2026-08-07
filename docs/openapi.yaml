@@ -1659,7 +1659,7 @@ paths:
         Creates a comment (or a reply when `parentId` is given) authored by
         the API key owner. When `slideId` is given, a snapshot of that slide
         is stored with the comment. Requires the `comments:write` permission and
-        comment permission on the presentation (owner/creator, workspace
+        comment permission on the presentation (owner/creator, organization
         member, or collaborator with comment rights).
       parameters:
         - name: id
@@ -1803,15 +1803,19 @@ components:
           description: >-
             **Display and contact only — never an identity.** The deck owner's
             email, returned only when the requesting API key belongs to the
-            owner; for decks reached via workspace or collaborator access it is
+            owner; for decks reached via organization or collaborator access it is
             null, so one user's address is never disclosed to another. Do not
             compare it to decide ownership: an address can be reassigned and a
             person can hold several, which is why `ownerId` exists. No request
             body identifies an owner by email — email remains the mechanism for
             *inviting collaborators*, and nothing else.
-        scope:
+        visibility:
           type: string
-          enum: [private, workspace]
+          enum: [private, organization]
+          description: >-
+            Who can see the deck besides its owner, creator, and collaborators:
+            'private' (default) or 'organization' (every member of the deck's
+            organization).
         themeId:
           type: string
         language:

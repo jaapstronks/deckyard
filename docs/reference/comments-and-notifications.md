@@ -82,7 +82,7 @@ Separate from comments: when a collaborator **adds slides** to a deck you own
 or collaborate on, you get one bundled bell notification, not a ping per slide.
 
 - **Activity feed (layer 1)** — the save route emits a granular `slide.added`
-  activity event (`recordSlidesAdded`), so the workspace Activity feed shows
+  activity event (`recordSlidesAdded`), so the organization Activity feed shows
   "… added N slides to *Deck*" instead of a generic "updated". Feed-only, no
   inbox load.
 - **Bundled bell notification (layer 2)** — `server/services/deck-activity-notifications.js`

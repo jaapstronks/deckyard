@@ -1,6 +1,6 @@
 /**
  * Storage layer for user-organization membership management.
- * Handles multi-workspace user membership and role operations.
+ * Handles multi-organization user membership and role operations.
  */
 
 import { sql } from 'kysely';
@@ -12,10 +12,10 @@ import { withDbGuard } from '../utils/db-guard.js';
 // ============================================================
 
 /**
- * Workspace roles in order of increasing privileges.
+ * Organization roles in order of increasing privileges.
  * - member: Regular user, can view and edit content
- * - admin: Can manage members and workspace settings
- * - owner: Billing contact, full control, can delete workspace
+ * - admin: Can manage members and organization settings
+ * - owner: Billing contact, full control, can delete organization
  */
 export const WORKSPACE_ROLES = ['member', 'admin', 'owner'];
 
@@ -25,7 +25,7 @@ export const WORKSPACE_ROLES = ['member', 'admin', 'owner'];
  * @param {string} requiredRole - Required minimum role
  * @returns {boolean}
  */
-export function hasWorkspaceRole(userRole, requiredRole) {
+export function hasOrganizationRole(userRole, requiredRole) {
   const userLevel = WORKSPACE_ROLES.indexOf(userRole);
   const requiredLevel = WORKSPACE_ROLES.indexOf(requiredRole);
   return userLevel >= 0 && requiredLevel >= 0 && userLevel >= requiredLevel;

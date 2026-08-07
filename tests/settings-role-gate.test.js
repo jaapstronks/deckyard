@@ -10,9 +10,9 @@
  *
  * What this pins down:
  *
- *   - Single-workspace instances behave exactly as before: no
+ *   - Single-organization instances behave exactly as before: no
  *     `organizationRole` on the user means the gate is `isAdmin`.
- *   - In multi-workspace mode the membership role only ever *narrows* the
+ *   - In multi-organization mode the membership role only ever *narrows* the
  *     instance flag. It never grants: the instance-scoped APIs behind these
  *     tabs (admin users, email, integrations, API keys, analytics) still check
  *     `isAdmin`, so showing them to an organization admin who is not an
@@ -38,8 +38,8 @@ globalThis.Element = dom.window.Element;
 globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.Event = dom.window.Event;
 
-const { isWorkspaceAdmin, getWorkspaceRole, hasWorkspaceRole } = await import(
-  '../client/lib/user/workspace-role.js'
+const { isOrganizationAdmin, getOrganizationRole, hasOrganizationRole } = await import(
+  '../client/lib/user/organization-role.js'
 );
 const { createSettingsSidebar } = await import(
   '../client/views/settings/settings-sidebar.js'
@@ -55,7 +55,7 @@ const admin = (role) => ({
 /** Tab keys the sidebar actually renders for this user. */
 function visibleTabKeys(user) {
   const sidebar = createSettingsSidebar({
-    isAdmin: isWorkspaceAdmin(user),
+    isAdmin: isOrganizationAdmin(user),
     isDesigner: false,
     activeTab: 'account',
     onTabChange: () => {},
@@ -67,18 +67,18 @@ function visibleTabKeys(user) {
 // The gate itself
 // ---------------------------------------------------------------------------
 
-test('single-workspace: the gate is the instance flag, unchanged', () => {
-  assert.equal(isWorkspaceAdmin(admin(undefined)), true, 'no membership role, no narrowing');
-  assert.equal(isWorkspaceAdmin(admin(null)), true, 'an explicit null reads the same');
-  assert.equal(isWorkspaceAdmin({ email: 'a@example.com', isAdmin: false }), false);
-  assert.equal(isWorkspaceAdmin(undefined), false, 'no user is not an admin');
+test('single-organization: the gate is the instance flag, unchanged', () => {
+  assert.equal(isOrganizationAdmin(admin(undefined)), true, 'no membership role, no narrowing');
+  assert.equal(isOrganizationAdmin(admin(null)), true, 'an explicit null reads the same');
+  assert.equal(isOrganizationAdmin({ email: 'a@example.com', isAdmin: false }), false);
+  assert.equal(isOrganizationAdmin(undefined), false, 'no user is not an admin');
 });
 
-test('multi-workspace: the membership role narrows the instance flag', () => {
-  assert.equal(isWorkspaceAdmin(admin('owner')), true);
-  assert.equal(isWorkspaceAdmin(admin('admin')), true);
+test('multi-organization: the membership role narrows the instance flag', () => {
+  assert.equal(isOrganizationAdmin(admin('owner')), true);
+  assert.equal(isOrganizationAdmin(admin('admin')), true);
   assert.equal(
-    isWorkspaceAdmin(admin('member')),
+    isOrganizationAdmin(admin('member')),
     false,
     'admin in one organization is not admin in the one they switched to'
   );
@@ -86,42 +86,42 @@ test('multi-workspace: the membership role narrows the instance flag', () => {
 
 test('the membership role never grants what the instance flag withholds', () => {
   // The APIs behind these tabs are instance-scoped and still check isAdmin.
-  assert.equal(isWorkspaceAdmin({ isAdmin: false, organizationRole: 'owner' }), false);
-  assert.equal(isWorkspaceAdmin({ isAdmin: false, organizationRole: 'admin' }), false);
+  assert.equal(isOrganizationAdmin({ isAdmin: false, organizationRole: 'owner' }), false);
+  assert.equal(isOrganizationAdmin({ isAdmin: false, organizationRole: 'admin' }), false);
 });
 
 test('an unknown role is treated as no role at all', () => {
-  assert.equal(getWorkspaceRole({ organizationRole: 'superuser' }), null);
-  assert.equal(getWorkspaceRole({ organizationRole: 'owner' }), 'owner');
+  assert.equal(getOrganizationRole({ organizationRole: 'superuser' }), null);
+  assert.equal(getOrganizationRole({ organizationRole: 'owner' }), 'owner');
   assert.equal(
-    isWorkspaceAdmin({ isAdmin: true, organizationRole: 'superuser' }),
+    isOrganizationAdmin({ isAdmin: true, organizationRole: 'superuser' }),
     true,
     'a role the client does not know falls back to the instance flag'
   );
 });
 
-test('hasWorkspaceRole ranks the roles like the server does', () => {
-  assert.equal(hasWorkspaceRole('owner', 'admin'), true);
-  assert.equal(hasWorkspaceRole('admin', 'admin'), true);
-  assert.equal(hasWorkspaceRole('member', 'admin'), false);
-  assert.equal(hasWorkspaceRole(null, 'member'), false);
+test('hasOrganizationRole ranks the roles like the server does', () => {
+  assert.equal(hasOrganizationRole('owner', 'admin'), true);
+  assert.equal(hasOrganizationRole('admin', 'admin'), true);
+  assert.equal(hasOrganizationRole('member', 'admin'), false);
+  assert.equal(hasOrganizationRole(null, 'member'), false);
 });
 
 test('the client ladder is still the server ladder', async () => {
-  // workspace-role.js copies WORKSPACE_ROLES because the client cannot import
+  // organization-role.js copies WORKSPACE_ROLES because the client cannot import
   // from server/. A copy drifts, and this one drifts *open*: a role the client
   // does not recognise reads as "no role", which falls back to the bare isAdmin
   // check the gate exists to narrow. So pin the mirror rather than the comment.
-  const { WORKSPACE_ROLES, hasWorkspaceRole: serverHasRole } = await import(
+  const { WORKSPACE_ROLES, hasOrganizationRole: serverHasRole } = await import(
     '../server/storage/user-organizations/memberships.js'
   );
 
   for (const role of WORKSPACE_ROLES) {
     assert.equal(
-      getWorkspaceRole({ organizationRole: role }),
+      getOrganizationRole({ organizationRole: role }),
       role,
       `the client does not know the membership role "${role}" — update ` +
-        'WORKSPACE_ROLES in client/lib/user/workspace-role.js'
+        'WORKSPACE_ROLES in client/lib/user/organization-role.js'
     );
   }
 
@@ -129,7 +129,7 @@ test('the client ladder is still the server ladder', async () => {
   for (const role of WORKSPACE_ROLES) {
     for (const required of WORKSPACE_ROLES) {
       assert.equal(
-        hasWorkspaceRole(role, required),
+        hasOrganizationRole(role, required),
         serverHasRole(role, required),
         `client and server disagree on whether "${role}" satisfies "${required}"`
       );
@@ -153,6 +153,6 @@ test('the admin tabs disappear in an organization where you are a member', () =>
   );
 });
 
-test('single-workspace keeps every admin tab it had', () => {
+test('single-organization keeps every admin tab it had', () => {
   assert.deepEqual(visibleTabKeys(admin(undefined)), [...USER_TABS, ...ADMIN_TABS]);
 });

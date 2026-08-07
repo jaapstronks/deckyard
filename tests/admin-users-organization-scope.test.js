@@ -5,17 +5,17 @@
  * `handleAdminUsers` built its route context from `null`, so `getOrgId(ctx)`
  * answered with the instance default and the two explicit
  * `getDefaultOrganizationId()` calls said the same thing three times over. The
- * effect in multi-workspace mode: an instance admin who had switched into
+ * effect in multi-organization mode: an instance admin who had switched into
  * another organization still listed the *default* organization's people, read
  * their designer flag from the *default* organization's memberships, and — on
  * a PATCH — wrote the flag onto a membership in an organization they were not
  * even looking at, creating one there if it did not exist.
  *
- * Every assertion below fails against that code. In single-workspace mode
+ * Every assertion below fails against that code. In single-organization mode
  * nothing changes: the session's organization *is* the default one, which is
  * what `tests/request-organization-binding.test.js` pins.
  *
- * MULTI_WORKSPACE_ENABLED is read at module scope (server/config/features.js),
+ * MULTI_ORG_ENABLED is read at module scope (server/config/features.js),
  * so this file sets it before importing anything and relies on node --test
  * giving each file its own process.
  *
@@ -30,7 +30,7 @@ import assert from 'node:assert/strict';
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
-process.env.MULTI_WORKSPACE_ENABLED = 'true';
+process.env.MULTI_ORG_ENABLED = 'true';
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const ORG_A = process.env.DEFAULT_ORGANIZATION_ID;
@@ -38,7 +38,7 @@ const ORG_B = '00000000-0000-0000-0000-0000000000bb';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { isMultiWorkspaceEnabled } = await import('../server/config/features.js');
+const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const { sessionVersion } = await import('../server/utils/session-version.js');
 const auth = await import('../server/auth/auth.js');
 const { handleAdminUsers } = await import('../server/routes/api/admin-users.js');
@@ -46,7 +46,7 @@ const { handleAdminUsers } = await import('../server/routes/api/admin-users.js')
 const UPDATED_AT = '2026-02-01T00:00:00.000Z';
 
 test.before(() => {
-  assert.equal(isMultiWorkspaceEnabled(), true, 'multi-workspace flag is on for this file');
+  assert.equal(isMultiOrgEnabled(), true, 'multi-organization flag is on for this file');
 });
 
 test.afterEach(() => {

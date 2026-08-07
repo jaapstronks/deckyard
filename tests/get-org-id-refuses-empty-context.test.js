@@ -3,13 +3,13 @@
  *
  * `getOrgId` used to fall back to the default organization when the context
  * carried none (`ctx?.organizationId || getDefaultOrganizationId()`). On a
- * multi-workspace instance that turns a missing organization into an unfiltered
- * query against the *default* workspace — the tenant-isolation leak
+ * multi-organization instance that turns a missing organization into an unfiltered
+ * query against the *default* organization — the tenant-isolation leak
  * `server/storage/scope.js` refuses to allow, in another guise. The org-scoping
  * fallback-sweep made `getOrgId` refuse instead (brief `org-scoping-decision.md`
  * § *Uitvoeringsspec fallback-sweep*: "weigeren, niet undefined"). This locks
  * that in: a call site that reaches `getOrgId` without an organization is a bug,
- * and it fails loudly rather than silently scoping to the default workspace.
+ * and it fails loudly rather than silently scoping to the default organization.
  *
  * Run with: node --test tests/get-org-id-refuses-empty-context.test.js
  */

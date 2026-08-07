@@ -34,7 +34,7 @@ import {
   setYDocState,
 } from '../../server/storage/presentation-ydocs.js';
 
-const scope = testScope();
+const storageScope = testScope();
 
 pgDescribe('presentation Y.Doc state (real PostgreSQL, via facade)', () => {
   /** @type {import('kysely').Kysely<any>} */
@@ -68,32 +68,32 @@ pgDescribe('presentation Y.Doc state (real PostgreSQL, via facade)', () => {
   });
 
   it('returns null before any state is stored', async () => {
-    assert.equal(await getYDocState(scope, pid), null);
+    assert.equal(await getYDocState(storageScope, pid), null);
   });
 
   it('round-trips the bytea payload byte-for-byte', async () => {
     const state = new Uint8Array([0, 1, 2, 253, 254, 255]);
-    assert.equal(await setYDocState(scope, pid, state), true);
+    assert.equal(await setYDocState(storageScope, pid, state), true);
 
-    const read = await getYDocState(scope, pid);
+    const read = await getYDocState(storageScope, pid);
     assert.ok(read instanceof Uint8Array, 'reads back as a Uint8Array');
     assert.deepEqual([...read], [...state]);
   });
 
   it('replaces the blob in place on the presentation_id conflict', async () => {
-    await setYDocState(scope, pid, new Uint8Array([1, 1, 1]));
-    await setYDocState(scope, pid, new Uint8Array([9, 8, 7, 6]));
+    await setYDocState(storageScope, pid, new Uint8Array([1, 1, 1]));
+    await setYDocState(storageScope, pid, new Uint8Array([9, 8, 7, 6]));
 
-    const read = await getYDocState(scope, pid);
+    const read = await getYDocState(storageScope, pid);
     assert.deepEqual([...read], [9, 8, 7, 6], 'the second write wins');
     assert.equal(await countRows(), 1, 'exactly one row per deck');
   });
 
   it('deletes the stored state', async () => {
-    await setYDocState(scope, pid, new Uint8Array([1, 2, 3]));
-    assert.equal(await deleteYDocState(scope, pid), true);
+    await setYDocState(storageScope, pid, new Uint8Array([1, 2, 3]));
+    assert.equal(await deleteYDocState(storageScope, pid), true);
 
-    assert.equal(await getYDocState(scope, pid), null);
+    assert.equal(await getYDocState(storageScope, pid), null);
     assert.equal(await countRows(), 0);
   });
 });

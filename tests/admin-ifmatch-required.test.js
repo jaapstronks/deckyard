@@ -1,7 +1,7 @@
 /**
  * Regression: the admin If-Match escape hatch is gone.
  *
- * The presentation write routes (PUT /:id, POST /:id/scope, POST
+ * The presentation write routes (PUT /:id, POST /:id/visibility, POST
  * /:id/versions/:v/restore) used to exempt admins from the optimistic-lock
  * header — an admin request without If-Match got expectedRevision=null, a blind
  * overwrite with no slide-level merge that could wipe slides the admin never
@@ -37,8 +37,8 @@ const { createPresentation, getPresentation, createPresentationVersion } = await
 const { handlePresentationItem } = await import(
   '../server/routes/api/presentations/presentation.js'
 );
-const { handlePresentationScope } = await import(
-  '../server/routes/api/presentations/scope.js'
+const { handlePresentationVisibility } = await import(
+  '../server/routes/api/presentations/visibility.js'
 );
 const { handlePresentationRestoreVersion } = await import(
   '../server/routes/api/presentations/restore.js'
@@ -153,13 +153,13 @@ test('PUT with a matching If-Match still succeeds for an admin', async () => {
   assert.equal(after.title, 'Properly merged');
 });
 
-test('POST /scope without If-Match is 428 for an admin', async () => {
+test('POST /visibility without If-Match is 428 for an admin', async () => {
   const pres = await seedDeck();
   const res = fakeRes();
-  await handlePresentationScope(
+  await handlePresentationVisibility(
     {
       storageScope: testScope(),
-      req: fakeReq({ method: 'PATCH', headers: {}, body: { scope: 'workspace' } }),
+      req: fakeReq({ method: 'PATCH', headers: {}, body: { visibility: 'organization' } }),
       res,
       authedUser: admin,
     },

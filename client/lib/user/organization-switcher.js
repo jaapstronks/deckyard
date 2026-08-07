@@ -1,12 +1,12 @@
 /**
- * Organization switcher section for the user menu (multi-workspace mode).
+ * Organization switcher section for the user menu (multi-organization mode).
  *
  * Lists the organizations the signed-in user is a member of and switches the
  * session to one of them. Two deliberate behaviours:
  *
- * - **Nothing renders, and nothing is fetched, unless `features.multiWorkspace`
+ * - **Nothing renders, and nothing is fetched, unless `features.multiOrganization`
  *   is on.** The whole `/api/organizations` surface is behind the same flag on
- *   the server (403 otherwise), so a single-workspace instance must not even ask.
+ *   the server (403 otherwise), so a single-organization instance must not even ask.
  * - **A successful switch does a full `location.reload()`**, not a targeted
  *   cache invalidation. The session cookie now points at a different
  *   organization and every in-memory cache in the view still holds the previous
@@ -58,7 +58,7 @@ function organizationLabel(org) {
 /**
  * Create the organization section for the user menu.
  *
- * Returns `null` when multi-workspace is disabled — the caller then renders no
+ * Returns `null` when multi-organization is disabled — the caller then renders no
  * section at all and no request is made. When enabled, the returned element
  * starts empty and fills itself once the list arrives; it stays empty when the
  * user belongs to fewer than two organizations, since a switcher only carries
@@ -82,7 +82,7 @@ export function createOrganizationSection({
   switchTo = switchOrganization,
   reload = () => location.reload(),
 } = {}) {
-  if (!getFeatures()?.multiWorkspace) return null;
+  if (!getFeatures()?.multiOrganization) return null;
 
   // `radiogroup` + `radio`, the same pairing `ui-mode-switcher.js` uses for
   // "pick exactly one of these". Deliberately *not* `menuitemradio`: that role

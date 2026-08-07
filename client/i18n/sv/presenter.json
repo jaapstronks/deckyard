@@ -1,5 +1,5 @@
 {
-  "activity.action.sharedToWorkspace": "delat med arbetsyta",
+  "activity.action.sharedToOrganization": "delat med arbetsyta",
   "notesJoin.copyLink": "Kopiera länk",
   "notesJoin.copyPrompt": "Kopiera denna länk:",
   "notesJoin.help": "Skanna QR-koden med din telefon för att öppna anteckningshjälpen.",

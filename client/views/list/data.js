@@ -29,7 +29,7 @@ export async function loadPresentationList(api) {
 
   for (const p of Array.isArray(list) ? list : []) {
     mainListIds.add(p.id);
-    if (p?.scope === 'workspace') {
+    if (p?.visibility === 'organization') {
       workspace.push(p);
     } else {
       priv.push(p);

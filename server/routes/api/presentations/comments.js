@@ -1,6 +1,6 @@
 /**
  * Route handlers for presentation comments.
- * Allows workspace members to annotate slides.
+ * Allows organization members to annotate slides.
  *
  * This module re-exports all comment handlers from their respective files:
  * - comments-list.js: Read operations (list, get, counts, events)

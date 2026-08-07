@@ -34,7 +34,7 @@ import {
   setYDocState as defaultSetYDocState,
 } from '../storage/presentation-ydocs.js';
 import { canEditCustomHtml } from '../utils/route-middleware.js';
-import { singleWorkspaceScope } from '../storage/scope.js';
+import { singleOrganizationScope } from '../storage/scope.js';
 import { extractCustomHtml, guardCustomHtml } from './custom-html-guard.js';
 
 /**
@@ -59,8 +59,8 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
    * The storage scope for one collab document. Preferred source is the
    * organization mount.js recorded when it authorized the connection; the
    * bootstrap read fills it in as a backstop. A deck with no organization at all
-   * means the file backend, which multi-workspace refuses outright — so falling
-   * back to the single workspace there is exact, and throws if there ever is
+   * means the file backend, which multi-organization mode refuses outright — so falling
+   * back to the single organization there is exact, and throws if there ever is
    * more than one.
    */
   function storageScopeFor(documentName) {
@@ -69,7 +69,7 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
       base.organizationId || documentOrganizations.get(documentName) || null;
     return organizationId
       ? { ...base, repoRoot, organizationId }
-      : singleWorkspaceScope(repoRoot, 'collab document persistence');
+      : singleOrganizationScope(repoRoot, 'collab document persistence');
   }
   const {
     Y = YDefault,

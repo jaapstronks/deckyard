@@ -1,7 +1,7 @@
 # SSO via OIDC (self-hosted, single IdP)
 
 Deckyard can delegate login to one OpenID Connect (OIDC) identity provider per
-install: Google Workspace, Microsoft Entra ID (Azure AD), Okta, Auth0,
+install: Google Organization, Microsoft Entra ID (Azure AD), Okta, Auth0,
 Keycloak, and most modern IdPs. This is **Track 1** of the SSO work: one IdP,
 configured entirely through environment variables, no multi-tenant machinery.
 
@@ -78,8 +78,8 @@ rather than at first login.
 
 ## Provider notes
 
-- **Google Workspace** — `OIDC_ISSUER_URL=https://accounts.google.com`. Use
-  `OIDC_ALLOWED_DOMAINS` to restrict to your workspace domain.
+- **Google Organization** — `OIDC_ISSUER_URL=https://accounts.google.com`. Use
+  `OIDC_ALLOWED_DOMAINS` to restrict to your organization domain.
 - **Microsoft Entra ID** — issuer
   `https://login.microsoftonline.com/<tenant-id>/v2.0`.
 - **Okta** — issuer `https://<org>.okta.com` (or a custom auth-server issuer).

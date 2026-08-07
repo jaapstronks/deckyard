@@ -55,7 +55,7 @@ async function installDb() {
         title: 'A deck',
         theme: 'default',
         lang: 'nl',
-        scope: 'private',
+        visibility: 'private',
         revision: 1,
         slides: [{ id: 'slide-1', type: 'title-slide', content: { title: 'Hoi' }, parentId: null }],
         created_at: '2026-07-01T00:00:00.000Z',
@@ -100,7 +100,7 @@ function makeCtx(method, pathname, body = null) {
     storageScope: { repoRoot: process.cwd(), organizationId: ORG, actorEmail: OWNER },
     apiKey: { id: 'key-1', tier: 'free', ownerEmail: OWNER, permissions: ['read', 'write'], organizationId: ORG },
     // What authenticateApiKey puts on the context: who is acting and in which
-    // workspace. Per-deck checks read the actor from here, not off the deck.
+    // organization. Per-deck checks read the actor from here, not off the deck.
     authedUser: { id: null, email: OWNER, role: 'user', organizationId: ORG },
   };
 }

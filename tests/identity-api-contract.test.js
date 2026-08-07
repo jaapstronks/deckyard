@@ -30,7 +30,7 @@ import assert from 'node:assert/strict';
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
-delete process.env.MULTI_WORKSPACE_ENABLED;
+delete process.env.MULTI_ORG_ENABLED;
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -160,7 +160,7 @@ test('a deck with no user record behind its owner reports a null id, not an erro
 
 const dualKeyDeck = {
   id: 'p1',
-  scope: 'private',
+  visibility: 'private',
   ownerId: USER_ID,
   ownerEmail: 'alice@example.com',
   createdById: USER_ID,
@@ -188,7 +188,7 @@ test("a different user carrying the owner's address is refused by both", () => {
 
 test('the id-less shapes still fall back to the email on the client too', () => {
   // File mode / an external owner: no ids anywhere, the address is all there is.
-  const legacyDeck = { id: 'p2', scope: 'private', ownerEmail: 'legacy@example.com' };
+  const legacyDeck = { id: 'p2', visibility: 'private', ownerEmail: 'legacy@example.com' };
 
   assert.equal(clientIsAuthor({ email: 'legacy@example.com' }, legacyDeck), true);
   assert.equal(isCommentOwner({ email: 'legacy@example.com' }, legacyDeck), true);

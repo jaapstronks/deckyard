@@ -7,7 +7,7 @@
  * working in. The facade now takes a scope and has no default left to fall back
  * to; `server/storage/scope.js` is where that rule lives.
  *
- * This file pins the rule itself, in single-workspace mode — the mode every
+ * This file pins the rule itself, in single-organization mode — the mode every
  * current installation runs in, where the *behaviour* is unchanged and only the
  * shape of the call differs. The multi-organization consequences (organization A
  * cannot read organization B's deck through the facade) live in
@@ -25,7 +25,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
-delete process.env.MULTI_WORKSPACE_ENABLED;
+delete process.env.MULTI_ORG_ENABLED;
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
@@ -33,7 +33,7 @@ const {
   resolveScope,
   repoRootOf,
   crossOrganizationScope,
-  singleWorkspaceScope,
+  singleOrganizationScope,
   jobScope,
 } = await import('../server/storage/scope.js');
 const { createRouteContext } = await import('../server/utils/context.js');
@@ -138,8 +138,8 @@ test('a stated organization wins over a cross-organization declaration', () => {
 
 // ─── the entry points that have no session ─────────────────────────────────
 
-test('singleWorkspaceScope answers with the configured organization', () => {
-  const scope = singleWorkspaceScope('/srv/deckyard', 'MCP stdio session');
+test('singleOrganizationScope answers with the configured organization', () => {
+  const scope = singleOrganizationScope('/srv/deckyard', 'MCP stdio session');
   assert.equal(scope.organizationId, ORG);
   assert.equal(scope.repoRoot, '/srv/deckyard');
 });
@@ -153,7 +153,7 @@ test('jobScope prefers the organization the job payload carries', () => {
   assert.equal(scope.actorEmail, 'a@b.c');
 });
 
-test('a job enqueued before the organization travelled still runs single-workspace', () => {
+test('a job enqueued before the organization travelled still runs single-organization', () => {
   const scope = jobScope({ repoRoot: '/srv', ownerEmail: 'a@b.c' }, 'export job');
   assert.equal(scope.organizationId, ORG, 'exact here: this instance has one organization');
   assert.equal(scope.actorEmail, 'a@b.c');

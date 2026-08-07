@@ -116,7 +116,7 @@ export async function handleSlideLibrary({ repoRoot, storageScope, req, res, url
     return methodNotAllowed(res, ['PATCH', 'DELETE']);
   }
 
-  // Team library (workspace-wide)
+  // Team library (organization-wide)
   if (url.pathname === '/api/slide-library/team') {
     if (req.method === 'GET') {
       const out = await listTeamLibrary(storageScope, { themeId, userEmail: email });
@@ -161,7 +161,7 @@ export async function handleSlideLibrary({ repoRoot, storageScope, req, res, url
         log.warn('[slide-library] Preview generation failed:', err.message);
       }
 
-      // Fire webhook for team library addition (reuses workspace share webhook URL)
+      // Fire webhook for team library addition (reuses organization share webhook URL)
       void maybeFireWebhook(repoRoot, req, {
         event: 'slide.added_to_team_library',
         slideItem: { ...r.item, previewUrl },

@@ -30,7 +30,7 @@ import {
   updatePersonalLibraryItem,
 } from '../../server/storage/slide-library/index.js';
 
-const scope = testScope();
+const storageScope = testScope();
 const ALICE = 'alice@example.com';
 
 const BILINGUAL = {
@@ -66,7 +66,7 @@ pgDescribe('slide-library i18n round-trip (real PostgreSQL, via facade)', () => 
     assert.ok(created?.ok && created.item?.id, 'created item has an id');
     assert.deepStrictEqual(created.item.i18n, BILINGUAL, 'i18n survives create');
 
-    const listed = await listPersonalLibrary(scope, ALICE);
+    const listed = await listPersonalLibrary(storageScope, ALICE);
     const found = listed.items.find((i) => i.id === created.item.id);
     assert.deepStrictEqual(found?.i18n, BILINGUAL, 'i18n survives read-back');
 

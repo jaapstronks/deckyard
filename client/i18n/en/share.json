@@ -161,13 +161,13 @@
   "share.revoke.modalTitle.trash": "Move to Trash",
   "share.tab.link": "Link",
   "share.tab.publish": "Publish",
-  "share.tab.workspace": "Workspace",
+  "share.tab.organization": "Workspace",
   "share.unlock": "Unlock",
   "share.verifying": "Verifying...",
-  "share.workspace.everyoneDesc": "Appears in the shared workspace for all members.",
-  "share.workspace.everyoneTitle": "Everyone in your workspace",
-  "share.workspace.privateDesc": "Stays private; only you and the people you invite below can see it.",
-  "share.workspace.privateLocked": "Only an admin can move this out of the workspace.",
-  "share.workspace.privateTitle": "Only people you invite",
-  "share.workspace.title": "Who can find this in your workspace?"
+  "share.visibility.everyoneDesc": "Appears in the shared workspace for all members.",
+  "share.visibility.everyoneTitle": "Everyone in your workspace",
+  "share.visibility.privateDesc": "Stays private; only you and the people you invite below can see it.",
+  "share.visibility.privateLocked": "Only an admin can move this out of the workspace.",
+  "share.visibility.privateTitle": "Only people you invite",
+  "share.visibility.title": "Who can find this in your workspace?"
 }

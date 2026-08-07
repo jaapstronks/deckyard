@@ -1,5 +1,5 @@
 {
-  "activity.action.sharedToWorkspace": "udostępniono w przestrzeni roboczej",
+  "activity.action.sharedToOrganization": "udostępniono w przestrzeni roboczej",
   "notesJoin.copyLink": "Kopiuj link",
   "notesJoin.copyPrompt": "Skopiuj ten link:",
   "notesJoin.help": "Zeskanuj kod QR telefonem, aby otworzyć asystenta notatek.",

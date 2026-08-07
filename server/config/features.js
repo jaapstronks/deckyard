@@ -1,32 +1,32 @@
 /**
- * Feature configuration for multi-workspace support.
+ * Feature configuration for multi-organization support.
  * These features are gated by environment variables.
  */
 
 import { truthy } from './utils.js';
 
 /**
- * Multi-workspace mode configuration.
- * When enabled, organizations become workspaces that users can create and switch between.
- * When disabled (default), the system operates in single-workspace mode using the default organization.
+ * Multi-organization mode configuration.
+ * When enabled, an instance can hold several organizations that users can create and switch between (the UI labels an organization "Workspace").
+ * When disabled (default), the system operates in single-organization mode using the default organization.
  */
-export const MULTI_WORKSPACE_ENABLED = truthy(process.env.MULTI_WORKSPACE_ENABLED);
+export const MULTI_ORG_ENABLED = truthy(process.env.MULTI_ORG_ENABLED);
 
 /**
- * Check if multi-workspace features are enabled.
+ * Check if multi-organization features are enabled.
  * @returns {boolean}
  */
-export function isMultiWorkspaceEnabled() {
-  return MULTI_WORKSPACE_ENABLED;
+export function isMultiOrgEnabled() {
+  return MULTI_ORG_ENABLED;
 }
 
 /**
- * Guard function that throws if multi-workspace is not enabled.
- * Use this to protect routes that should only be available in multi-workspace mode.
+ * Guard function that throws if multi-organization mode is not enabled.
+ * Use this to protect routes that should only be available in multi-organization mode.
  */
-export function requireMultiWorkspace() {
-  if (!MULTI_WORKSPACE_ENABLED) {
-    const error = new Error('Multi-workspace features are not enabled');
+export function requireMultiOrg() {
+  if (!MULTI_ORG_ENABLED) {
+    const error = new Error('Multi-organization features are not enabled');
     error.statusCode = 403;
     throw error;
   }

@@ -1,5 +1,5 @@
 /**
- * Designer capability is held per organization, with MULTI_WORKSPACE_ENABLED
+ * Designer capability is held per organization, with MULTI_ORG_ENABLED
  * (organization UI, slice 3 / measurement 4).
  *
  * `resolveDesignerCapability()` opened with an unconditional
@@ -12,7 +12,7 @@
  * behind `canManage()` / `requiresDesigner()`: custom slide types, font
  * families and themes.
  *
- * The short-circuit now only applies when multi-workspace is off. This file
+ * The short-circuit now only applies when multi-organization is off. This file
  * holds the assertions that fail without that change; every one of the
  * `isAdmin: true` cases below returns `true` under the old code.
  *
@@ -21,7 +21,7 @@
  * membership, and to organization admins unless the organization sets
  * `adminsAreDesigners: false`. The gap was a bypass in front of it.
  *
- * MULTI_WORKSPACE_ENABLED is read at module scope (server/config/features.js:15),
+ * MULTI_ORG_ENABLED is read at module scope (server/config/features.js:15),
  * so this file sets it before importing anything and relies on node --test
  * giving each file its own process. The mirror-image file for the flag being
  * off is tests/designer-capability-org-scope.test.js.
@@ -32,7 +32,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-process.env.MULTI_WORKSPACE_ENABLED = 'true';
+process.env.MULTI_ORG_ENABLED = 'true';
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const ORG_A = process.env.DEFAULT_ORGANIZATION_ID;
@@ -40,12 +40,12 @@ const ORG_B = '00000000-0000-0000-0000-0000000000bb';
 
 const { createFakeDb, touchedTables } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { isMultiWorkspaceEnabled } = await import('../server/config/features.js');
+const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const { resolveDesignerCapability } = await import('../server/utils/designer.js');
 const { canManage } = await import('../server/utils/route-middleware.js');
 
 test.before(() => {
-  assert.equal(isMultiWorkspaceEnabled(), true, 'multi-workspace flag is on for this file');
+  assert.equal(isMultiOrgEnabled(), true, 'multi-organization flag is on for this file');
 });
 
 /**
@@ -193,7 +193,7 @@ test('no email, no capability', async () => {
 // ---------------------------------------------------------------------------
 
 /**
- * The user object as auth returns it in multi-workspace mode: `organizationRole`
+ * The user object as auth returns it in multi-organization mode: `organizationRole`
  * and `organizationIsDesigner` come straight off the active membership row that
  * resolveActiveMembership() already read, so capability resolution must not read
  * the same row again.

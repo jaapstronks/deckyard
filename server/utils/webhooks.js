@@ -119,7 +119,7 @@ function buildCommonPayload({
       description:
         typeof pres?.description === 'string' ? pres.description : '',
       theme: typeof pres?.theme === 'string' ? pres.theme : '',
-      scope: typeof pres?.scope === 'string' ? pres.scope : 'private',
+      visibility: typeof pres?.visibility === 'string' ? pres.visibility : 'private',
       published:
         publishId && publishSlug
           ? {
@@ -203,8 +203,8 @@ export async function maybeFireWebhook(
       : {};
 
   const url =
-    e === 'presentation.moved_to_workspace'
-      ? String(wh.presentationMovedToWorkspaceUrl || '').trim()
+    e === 'presentation.moved_to_organization'
+      ? String(wh.presentationMovedToOrganizationUrl || '').trim()
       : e === 'slide.added_to_team_library'
         ? String(wh.slideAddedToTeamLibraryUrl || '').trim()
         : e === 'presentation.published'

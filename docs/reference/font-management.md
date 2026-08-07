@@ -283,4 +283,4 @@ Uploaded fonts are embedded in full. For exports with large font files, this inc
 - **Bulk variant upload** — drag a folder or zip of font files, auto-detect weights/styles from filenames
 - **Font usage tracking** — show which themes use a font before deletion (informational, not blocking)
 - **Cloud storage quotas** — limit uploaded font storage per organization in deckyard-cloud
-- **Font library sharing** — allow fonts to be shared across organizations in multi-workspace mode
+- **Font library sharing** — allow fonts to be shared across organizations in multi-organization mode

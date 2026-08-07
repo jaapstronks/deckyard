@@ -5,7 +5,7 @@
  * organization comes from the caller, never from a default (see
  * server/storage/scope.js). A Y.Doc binary belongs to one deck in one
  * organization, so a write that guessed the organization would park collab
- * state on the wrong workspace's deck.
+ * state on the wrong organization's deck.
  */
 
 import { getStorage } from './adapters/index.js';

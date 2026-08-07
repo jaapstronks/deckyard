@@ -23,7 +23,7 @@ import { storage } from '../../../lib/storage.js';
 export function createPresentationsView({ h, api, renderCard, allByDate, onCreate }) {
   const SCOPE_KEY = 'ps:presentations-scope';
   const SORT_KEY = 'ps:presentations-sort';
-  const SCOPES = ['all', 'mine', 'workspace', 'shared'];
+  const SCOPES = ['all', 'mine', 'organization', 'shared'];
   const SORTS = ['recent', 'title'];
 
   let all = [...allByDate];
@@ -87,7 +87,7 @@ export function createPresentationsView({ h, api, renderCard, allByDate, onCreat
   const scopeLabel = (key) => ({
     all: t('list.presentations.scope.all', 'All'),
     mine: t('list.presentations.scope.mine', 'Mine'),
-    workspace: t('list.presentations.scope.workspace', 'Workspace'),
+    organization: t('list.presentations.scope.organization', 'Workspace'),
     shared: t('list.presentations.scope.shared', 'Shared'),
   }[key] || key);
 
@@ -95,8 +95,8 @@ export function createPresentationsView({ h, api, renderCard, allByDate, onCreat
     switch (key) {
       case 'mine':
         return !p.isSharedWithMe;
-      case 'workspace':
-        return p.scope === 'workspace';
+      case 'organization':
+        return p.visibility === 'organization';
       case 'shared':
         return !!p.isSharedWithMe;
       default:
@@ -105,7 +105,7 @@ export function createPresentationsView({ h, api, renderCard, allByDate, onCreat
   };
 
   const cardOpts = (p) => ({
-    isWorkspace: p.scope === 'workspace',
+    isOrganization: p.visibility === 'organization',
     isSharedWithMe: p.isSharedWithMe,
     sharedBy: p.sharedBy,
     permission: p.permission,

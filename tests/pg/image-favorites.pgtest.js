@@ -36,7 +36,7 @@ import {
   toggleImageFavorite,
 } from '../../server/storage/image-library/index.js';
 
-const scope = testScope();
+const storageScope = testScope();
 const ctx = testScope();
 const ALICE = 'alice@example.com';
 const BOB = 'bob@example.com';
@@ -76,7 +76,7 @@ pgDescribe('image favorites (real PostgreSQL, via adapter)', () => {
     const storage = getStorage();
     assert.equal(await storage.addImageFavorite(imageId, ALICE, ctx), true);
 
-    assert.deepEqual(await getImageFavorites(scope, ALICE), [imageId]);
+    assert.deepEqual(await getImageFavorites(storageScope, ALICE), [imageId]);
     assert.equal(await countFor(ALICE), 1);
   });
 
@@ -93,16 +93,16 @@ pgDescribe('image favorites (real PostgreSQL, via adapter)', () => {
     const storage = getStorage();
     await storage.addImageFavorite(imageId, ALICE, ctx);
 
-    assert.deepEqual(await getImageFavorites(scope, BOB), [], "Bob sees none of Alice's");
-    assert.deepEqual(await getImageFavorites(scope, ALICE), [imageId]);
+    assert.deepEqual(await getImageFavorites(storageScope, BOB), [], "Bob sees none of Alice's");
+    assert.deepEqual(await getImageFavorites(storageScope, ALICE), [imageId]);
   });
 
   it('toggles on and off through the facade', async () => {
-    assert.equal(await toggleImageFavorite(scope, imageId, ALICE), true);
-    assert.deepEqual(await getImageFavorites(scope, ALICE), [imageId]);
+    assert.equal(await toggleImageFavorite(storageScope, imageId, ALICE), true);
+    assert.deepEqual(await getImageFavorites(storageScope, ALICE), [imageId]);
 
-    assert.equal(await toggleImageFavorite(scope, imageId, ALICE), false);
-    assert.deepEqual(await getImageFavorites(scope, ALICE), []);
+    assert.equal(await toggleImageFavorite(storageScope, imageId, ALICE), false);
+    assert.deepEqual(await getImageFavorites(storageScope, ALICE), []);
     assert.equal(await countFor(ALICE), 0);
   });
 

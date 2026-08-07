@@ -160,7 +160,7 @@ test('L8: public analytics report gates on presentation scope, not settings.visi
   const src = await readSrc('../server/routes/api/analytics/public.js');
   assert.match(
     src,
-    /normalizePresentationScope\(presentation\.scope\)\s*===\s*'private'/,
+    /normalizePresentationVisibility\(presentation\.visibility\)\s*===\s*'private'/,
     'must check normalized scope',
   );
   assert.doesNotMatch(src, /settings\?\.visibility/, 'the dead visibility check is gone');

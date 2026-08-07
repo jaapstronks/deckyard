@@ -109,7 +109,7 @@ const { renderOrganizationMembersPanel } = await import(
   '../client/views/settings/organization-members/panel.js'
 );
 
-setFeatures({ multiWorkspace: true });
+setFeatures({ multiOrganization: true });
 
 /** The signed-in person, at a given membership role. */
 const viewer = (member, role) => ({
@@ -169,8 +169,8 @@ test('removal follows the same ladder the route enforces', () => {
   assert.equal(canRemove(MEMBER2, asMember), false, 'but not take someone else with them');
 });
 
-test('single-workspace has no membership role, so it has no member actions', () => {
-  // `organizationRole` is null outside multi-workspace (and under the dev
+test('single-organization has no membership role, so it has no member actions', () => {
+  // `organizationRole` is null outside multi-organization (and under the dev
   // bypass). Nothing here should fall back to the instance-wide `isAdmin`,
   // which is exactly the asymmetry slice 2 removed.
   const instanceAdmin = { email: OWNER.user.email, isAdmin: true, organizationId: ORG };

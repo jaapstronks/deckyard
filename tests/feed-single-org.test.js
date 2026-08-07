@@ -1,27 +1,27 @@
 /**
- * The single-workspace mirror of feed-multi-workspace-gate.test.js: with
- * `MULTI_WORKSPACE_ENABLED` off, the default organization *is* the instance, so
- * the public feed is exactly its feed — the multi-workspace gate must be
+ * The single-organization mirror of feed-multi-org-gate.test.js: with
+ * `MULTI_ORG_ENABLED` off, the default organization *is* the instance, so
+ * the public feed is exactly its feed — the multi-organization gate must be
  * transparent and change nothing for existing installations.
  *
  * Both halves resolve the feed's organization from `getDefaultOrganizationId()`.
  * Here that resolution must happen (the gate does not short-circuit): the feed
  * route reaches the organization lookup, and the app-shell advertises the
  * autodiscovery links for an org that has RSS enabled. None of this is new
- * behaviour — the point is that the gate added for multi-workspace leaves it
+ * behaviour — the point is that the gate added for multi-organization leaves it
  * intact.
  *
- * MULTI_WORKSPACE_ENABLED is read at module scope (server/config/features.js),
+ * MULTI_ORG_ENABLED is read at module scope (server/config/features.js),
  * so this file unsets it before importing anything and relies on node --test
  * giving each file its own process.
  *
- * Run with: node --test tests/feed-single-workspace.test.js
+ * Run with: node --test tests/feed-single-org.test.js
  */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-delete process.env.MULTI_WORKSPACE_ENABLED;
+delete process.env.MULTI_ORG_ENABLED;
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 delete process.env.RSS_FEED_ENABLED; // default: RSS on
 
@@ -54,13 +54,13 @@ function mockRes() {
   };
 }
 
-test('handleFeed passes the gate in single-workspace and resolves the organization', async () => {
+test('handleFeed passes the gate in single-organization and resolves the organization', async () => {
   const db = installDb();
   const res = mockRes();
   // The route builds the feed from the storage abstraction, which is not wired
   // up in this unit test — so it may throw once it gets *past* the gate. That is
   // fine: reaching the organization lookup at all is the proof that the
-  // multi-workspace gate (which 404s before any DB access) stayed transparent.
+  // multi-organization gate (which 404s before any DB access) stayed transparent.
   try {
     await handleFeed({
       repoRoot: null,
@@ -72,14 +72,14 @@ test('handleFeed passes the gate in single-workspace and resolves the organizati
     /* storage abstraction not initialized in this unit test — see above */
   }
 
-  assert.notEqual(res.statusCode, 404, 'the feed was not gated off in single-workspace');
+  assert.notEqual(res.statusCode, 404, 'the feed was not gated off in single-organization');
   assert.ok(
     touchedTables(db).includes('organizations'),
     'the feed resolved its organization instead of being gated off'
   );
 });
 
-test('injectFeedDiscovery advertises the feed links in single-workspace', async () => {
+test('injectFeedDiscovery advertises the feed links in single-organization', async () => {
   installDb();
   const html = await injectFeedDiscovery('<head></head>', null);
 

@@ -26,7 +26,7 @@ service container first, then `npm run test:pg`.
 
 ## The DATABASE_URL gate
 
-The suite `TRUNCATE`s tables, so it must never touch a real workspace database.
+The suite `TRUNCATE`s tables, so it must never touch a real organization database.
 It therefore runs **only** when `DATABASE_URL` names a throwaway Postgres —
 a signal a normal dev `.env` does not carry, because the standard dev config
 uses the discrete `DATABASE_HOST`/`DATABASE_NAME` vars. (`db:migrate` and the

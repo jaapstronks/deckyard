@@ -106,7 +106,7 @@ deliberate no-op that only reserves the number) — `enabled`, `title`,
 
 1. **Sandbox refuses outright** (403). A guest owns a private deck and could
    otherwise push arbitrary content onto a public domain; this mirrors
-   `canChangePresentationScope` returning false there.
+   `canChangePresentationVisibility` returning false there.
 2. `withPresentationAuth(… permission: 'write')` — publishing is a write, so
    collaborators with `edit` can do it, viewers cannot.
 3. Reuse the existing publish id if the deck was published before, otherwise
@@ -166,9 +166,9 @@ thrown error, because the result is displayed inside someone else's page.
 and gated four times before it serves anything:
 
 1. `RSS_FEED_ENABLED` — the instance kill switch. Off → 404.
-2. `MULTI_WORKSPACE_ENABLED` → **404**. The feed has no session to resolve an
+2. `MULTI_ORG_ENABLED` → **404**. The feed has no session to resolve an
    organization from, so it uses the default one, which stops being a defined
-   answer once an instance holds several workspaces (org-scoping decision 4 in
+   answer once an instance holds several organizations (org-scoping decision 4 in
    `tenant-isolation.md`).
 3. The organization must resolve. Missing → 404.
 4. `organizations.settings.rss.enabled` — the real user-facing toggle. Off →
@@ -186,7 +186,7 @@ link (`/p/<id>-<slug>`), description, dates, author and image. The base URL is
 
 **Autodiscovery** is injected into the app shell by `injectFeedDiscovery()`
 under exactly the same conditions as the routes — kill switch on,
-multi-workspace off, organization toggle on — so the `<link>` tags and the
+multi-organization off, organization toggle on — so the `<link>` tags and the
 routes can never disagree.
 
 ### 5. Publishing from the public API
@@ -201,7 +201,7 @@ the full publish state.
 | Variable / setting | Effect |
 |---|---|
 | `RSS_FEED_ENABLED` | Instance kill switch for the feed. **Defaults to on**; set it false to remove the feature. |
-| `MULTI_WORKSPACE_ENABLED` | Disables the feed and its autodiscovery links entirely (404 / omitted). |
+| `MULTI_ORG_ENABLED` | Disables the feed and its autodiscovery links entirely (404 / omitted). |
 | `SANDBOX_MODE` | Publishing is refused with 403; published pages that do exist emit `noindex,nofollow`. |
 | `organizations.settings.rss.*` | Per-organization: `enabled` (the real toggle), `title`, `description`, `language`, `copyright`, `authorName`, `customFeedUrl`, `maxItems`. |
 | `presentations.settings.excludeFromFeed` | Per-deck: published, but not listed. |
@@ -211,7 +211,7 @@ the full publish state.
 ## Authz & tenancy
 
 - **Publishing and unpublishing require deck *write* access** — owner, creator,
-  a collaborator with `edit`/`admin`, or a workspace member on a workspace deck.
+  a collaborator with `edit`/`admin`, or an organization member on an organization deck.
   See [`permission-model.md`](permission-model.md). Publishing is not a separate
   capability, and there is no reviewer or approval step.
 - **Reading a published deck requires nothing at all.** The three public routes
@@ -219,11 +219,11 @@ the full publish state.
   to anyone works for anyone.
 - **The publish id is the authorization**, so all four read paths declare
   `crossOrganizationScope(repoRoot, '<reason>')`. Filtering them by organization
-  would 404 every public link the moment an instance holds a second workspace.
+  would 404 every public link the moment an instance holds a second organization.
   Reads only — such a scope cannot reach a write or a listing.
 - **The feed is the exception that proves it**: it is a *listing*, so it must
   state an organization, and having nothing but the default one to state is
-  exactly why multi-workspace turns it off.
+  exactly why multi-organization turns it off.
 - **What a published page exposes**: title, description, every slide the
   `published` visibility filter admits, the theme, and — in the feed only — the
   local-part of the owner's email as a display handle. The raw address is never
@@ -255,7 +255,7 @@ public page family.** Where the code stands, as of 2026-08-05:
   first-meaningful-slide search, the same author-overlay lookup and the same
   fallback ladder. It wants to be one function.
 - **The feed serves the default organization or nothing.** The 404 under
-  multi-workspace is a deliberate refusal, not a limitation being hidden, and it
+  multi-organization is a deliberate refusal, not a limitation being hidden, and it
   stands until a per-organization or per-author feed is designed
   (`tenant-isolation.md`, decision 4).
 - **Unpublishing is silent.** No webhook, no activity event, no notification —

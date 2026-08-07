@@ -59,7 +59,7 @@ import assert from 'node:assert/strict';
 process.env.AUTH_SECRET = 'test-secret-for-device-labels-0123456789';
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
-/** The single workspace both decks and the caller live in. */
+/** The single organization both decks and the caller live in. */
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
@@ -103,7 +103,7 @@ function deckRow(id) {
     owner_email: OWNER.email,
     created_by: OWNER.email,
     updated_by: OWNER.email,
-    scope: 'private',
+    visibility: 'private',
     theme: 'default',
     lang: 'nl',
     revision: 1,

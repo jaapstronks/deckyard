@@ -23,7 +23,7 @@ import { getFeatures } from '../../../lib/state/features.js';
  * @returns {Object} { el, load }
  */
 export function createUsersTab({ user }) {
-  const isMultiWorkspace = Boolean(getFeatures()?.multiWorkspace);
+  const isMultiOrganization = Boolean(getFeatures()?.multiOrganization);
 
   const container = h('div', {
     class: 'settings-tab-view',
@@ -35,7 +35,7 @@ export function createUsersTab({ user }) {
 
   const title = h('h2', {
     class: 'settings-tab-title',
-    text: isMultiWorkspace
+    text: isMultiOrganization
       ? t('settings.tabs.members', 'Members')
       : t('settings.tabs.users', 'Users'),
   });
@@ -46,7 +46,7 @@ export function createUsersTab({ user }) {
     if (loaded) return;
     loaded = true;
 
-    if (isMultiWorkspace) {
+    if (isMultiOrganization) {
       container.append(renderOrganizationMembersPanel({ user }).el);
       return;
     }

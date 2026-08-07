@@ -1,12 +1,12 @@
 /**
- * API routes for organization member management (multi-workspace mode).
- * All routes are guarded by the MULTI_WORKSPACE_ENABLED feature flag.
+ * API routes for organization member management (multi-organization mode).
+ * All routes are guarded by the MULTI_ORG_ENABLED feature flag.
  */
 
 import { getUserFromRequestAsync } from '../../auth/auth.js';
 import { serveJson, badRequest, unauthorized, forbidden, notFound, serverError, requireJsonBody } from '../../utils/http.js';
 import { createRouteContext } from '../../utils/context.js';
-import { isMultiWorkspaceEnabled } from '../../config/features.js';
+import { isMultiOrgEnabled } from '../../config/features.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import {
   listOrganizationMembers,
@@ -19,7 +19,7 @@ import {
   updateMemberDesigner,
   removeMember,
   transferOwnership,
-  hasWorkspaceRole,
+  hasOrganizationRole,
   WORKSPACE_ROLES,
 } from '../../storage/user-organizations/index.js';
 import { createUser } from '../../storage/users.js';
@@ -52,9 +52,9 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
     return false;
   }
 
-  // Feature flag guard - return 403 if multi-workspace is not enabled
-  if (!isMultiWorkspaceEnabled()) {
-    return forbidden(res, 'Multi-workspace features are not enabled');
+  // Feature flag guard - return 403 if multi-organization is not enabled
+  if (!isMultiOrgEnabled()) {
+    return forbidden(res, 'Multi-organization features are not enabled');
   }
 
   const organizationId = membersMatch[1];
@@ -114,7 +114,7 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
   // ============================================================
   if (!memberIdOrUserId && req.method === 'POST') {
     // Only admins and owners can invite members
-    if (!hasWorkspaceRole(actorMembership.role, 'admin')) {
+    if (!hasOrganizationRole(actorMembership.role, 'admin')) {
       return forbidden(res, 'Admin or owner access required to invite members');
     }
 
@@ -244,7 +244,7 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
   // ============================================================
   if (memberIdOrUserId && req.method === 'PATCH') {
     // Only admins and owners can update roles
-    if (!hasWorkspaceRole(actorMembership.role, 'admin')) {
+    if (!hasOrganizationRole(actorMembership.role, 'admin')) {
       return forbidden(res, 'Admin or owner access required');
     }
 
@@ -359,7 +359,7 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
         }
       } else {
         // Only admins and owners can remove others
-        if (!hasWorkspaceRole(actorMembership.role, 'admin')) {
+        if (!hasOrganizationRole(actorMembership.role, 'admin')) {
           return forbidden(res, 'Admin or owner access required to remove members');
         }
 

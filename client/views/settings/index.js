@@ -7,10 +7,10 @@ import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createSettingsSidebar } from './settings-sidebar.js';
 import {
-  isWorkspaceAdmin,
+  isOrganizationAdmin,
   canSeeMemberList,
-  isWorkspaceMember,
-} from '../../lib/user/workspace-role.js';
+  isOrganizationMember,
+} from '../../lib/user/organization-role.js';
 import {
   createAccountTab,
   createPreferencesTab,
@@ -32,7 +32,7 @@ const DESIGNER_TABS = ['fonts', 'themes', 'slide-types'];
 // The members tab is no longer one of these. It sits in the Admin group for an
 // admin, but in multi-workspace mode it is also the only screen where a plain
 // member finds their own way out of an organization, so it carries its own,
-// weaker gate — see MEMBERS_TAB below and lib/user/workspace-role.js.
+// weaker gate — see MEMBERS_TAB below and lib/user/organization-role.js.
 const ADMIN_TABS = ['admin', 'api-keys', 'email', 'integrations', 'analytics'];
 const MEMBERS_TAB = 'users';
 // The organization's own profile. Like the members tab it is not an admin
@@ -106,8 +106,8 @@ function setTabHash(tab) {
 export async function renderSettingsPage(root, { nav, user } = {}) {
   // Admin tabs follow the role held in the *active* organization, not the
   // instance-wide flag: switching to an organization where you are a plain
-  // member must take the admin surfaces with it. See lib/user/workspace-role.js.
-  const isAdmin = isWorkspaceAdmin(user);
+  // member must take the admin surfaces with it. See lib/user/organization-role.js.
+  const isAdmin = isOrganizationAdmin(user);
   const isDesigner = Boolean(user?.isDesigner);
   // Wider than `isAdmin` on purpose: in multi-workspace mode every member may
   // see who else is in the organization and may leave it, and this is the tab
@@ -116,7 +116,7 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
   // Multi-workspace only, and then for everyone in the organization: the
   // profile is readable by any member on the route, and what may be changed on
   // it is decided inside the panel.
-  const canSeeOrganization = isWorkspaceMember(user);
+  const canSeeOrganization = isOrganizationMember(user);
   const initialTab = getTabFromHash({ isAdmin, isDesigner, canSeeMembers, canSeeOrganization });
 
   const shell = h('div', { class: 'app-shell settings-page' });

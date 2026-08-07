@@ -18,36 +18,36 @@ const OWNER = 'owner@example.com';
 const OTHER = 'other@example.com';
 
 describe('belongsInCollection', () => {
-  it('shows workspace decks to any authenticated user', () => {
-    const pres = { id: 'w1', ownerEmail: OWNER, scope: 'workspace' };
+  it('shows organization decks to any authenticated user', () => {
+    const pres = { id: 'w1', ownerEmail: OWNER, visibility: 'organization' };
     assert.equal(belongsInCollection({ user: { email: OTHER }, pres }), true);
   });
 
   it('shows private decks to their owner and creator', () => {
-    const owned = { id: 'p1', ownerEmail: OWNER, scope: 'private' };
-    const created = { id: 'p2', createdBy: OWNER, scope: 'private' };
+    const owned = { id: 'p1', ownerEmail: OWNER, visibility: 'private' };
+    const created = { id: 'p2', createdBy: OWNER, visibility: 'private' };
     assert.equal(belongsInCollection({ user: { email: OWNER }, pres: owned }), true);
     assert.equal(belongsInCollection({ user: { email: OWNER }, pres: created }), true);
   });
 
   it('hides private decks from other users', () => {
-    const pres = { id: 'p1', ownerEmail: OWNER, createdBy: OWNER, scope: 'private' };
+    const pres = { id: 'p1', ownerEmail: OWNER, createdBy: OWNER, visibility: 'private' };
     assert.equal(belongsInCollection({ user: { email: OTHER }, pres }), false);
   });
 
   it('hides ownerless legacy decks (no owner, no createdBy) from everyone', () => {
-    const pres = { id: 'legacy1', scope: 'private' };
+    const pres = { id: 'legacy1', visibility: 'private' };
     assert.equal(belongsInCollection({ user: { email: OTHER }, pres }), false);
     assert.equal(belongsInCollection({ user: { email: OWNER }, pres }), false);
   });
 
   it('matches owner email case-insensitively', () => {
-    const pres = { id: 'p1', ownerEmail: 'Owner@Example.com', scope: 'private' };
+    const pres = { id: 'p1', ownerEmail: 'Owner@Example.com', visibility: 'private' };
     assert.equal(belongsInCollection({ user: { email: OWNER }, pres }), true);
   });
 
   it('rejects missing user or presentation', () => {
-    assert.equal(belongsInCollection({ user: null, pres: { id: 'x', scope: 'private' } }), false);
+    assert.equal(belongsInCollection({ user: null, pres: { id: 'x', visibility: 'private' } }), false);
     assert.equal(belongsInCollection({ user: { email: OWNER }, pres: null }), false);
   });
 });

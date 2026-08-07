@@ -1,13 +1,13 @@
 /**
- * API routes for organization management (multi-workspace mode).
- * All routes are guarded by the MULTI_WORKSPACE_ENABLED feature flag.
+ * API routes for organization management (multi-organization mode).
+ * All routes are guarded by the MULTI_ORG_ENABLED feature flag.
  */
 
 import { getUserFromRequestAsync, updateSessionOrganization } from '../../auth/auth.js';
 import { serveJson, badRequest, unauthorized, forbidden, notFound, serverError, requireJsonBody } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { createRouteContext } from '../../utils/context.js';
-import { isMultiWorkspaceEnabled } from '../../config/features.js';
+import { isMultiOrgEnabled } from '../../config/features.js';
 import {
   listUserOrganizations,
   getOrganizationById,
@@ -15,7 +15,7 @@ import {
   updateOrganization,
   deleteOrganization,
   getMembership,
-  hasWorkspaceRole,
+  hasOrganizationRole,
   isDefaultOrganization,
 } from '../../storage/user-organizations/index.js';
 import { getUserByEmailGlobal } from '../../storage/identity.js';
@@ -44,9 +44,9 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
     return false;
   }
 
-  // Feature flag guard - return 403 if multi-workspace is not enabled
-  if (!isMultiWorkspaceEnabled()) {
-    return forbidden(res, 'Multi-workspace features are not enabled');
+  // Feature flag guard - return 403 if multi-organization is not enabled
+  if (!isMultiOrgEnabled()) {
+    return forbidden(res, 'Multi-organization features are not enabled');
   }
 
   const ctx = createRouteContext(authedUser);
@@ -59,7 +59,7 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
   }
 
   // Get user's database record for ID. Resolved across organizations: this is
-  // the lookup that decides which workspaces the person may switch to, so
+  // the lookup that decides which organizations the person may switch to, so
   // scoping it to the current one would make switching impossible for anyone
   // whose home organization is not the one they are currently in.
   const dbUser = await getUserByEmailGlobal(user.email);
@@ -153,8 +153,8 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
 
       serveJson(res, 200, {
         // `isDefault` is the one rule about this organization that DELETE
-        // enforces and nothing else on the wire reveals: the default workspace
-        // is what every single-workspace path falls back to and may not be
+        // enforces and nothing else on the wire reveals: the default organization
+        // is what every single-organization path falls back to and may not be
         // removed. Without it the profile screen can only offer its owner a
         // Delete button that is certain to be refused.
         organization: { ...organization, isDefault: isDefaultOrganization(organization.id) },
@@ -184,7 +184,7 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
         return forbidden(res, 'You are not a member of this organization');
       }
 
-      if (!hasWorkspaceRole(membership.role, 'admin')) {
+      if (!hasOrganizationRole(membership.role, 'admin')) {
         return forbidden(res, 'Admin or owner access required');
       }
 
@@ -275,7 +275,7 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
 
   // ============================================================
   // POST /api/organizations/:id/switch - Switch active organization
-  // (Sets the user's active workspace for this session)
+  // (Sets the user's active organization for this session)
   // ============================================================
   const switchMatch = url.pathname.match(/^\/api\/organizations\/([^/]+)\/switch$/);
   if (switchMatch && req.method === 'POST') {

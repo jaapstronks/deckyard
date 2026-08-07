@@ -38,10 +38,10 @@ import { resolveIdentityByEmail } from '../../server/storage/identity-resolver.j
 import { getDefaultOrganizationId } from '../../server/config/database.js';
 
 // The seeded org is the instance DEFAULT, and the machine actors below state it
-// explicitly: since L10 an actor carries the workspace its key acts in instead
+// explicitly: since L10 an actor carries the organization its key acts in instead
 // of inheriting the deck's (see server/utils/presentation-authz/actor-access.js).
 // On these private decks it changes nothing either way — the collaborator row is
-// a relation to the deck, not to a workspace — which is exactly what the actor
+// a relation to the deck, not to an organization — which is exactly what the actor
 // cases pin. The collaborator lookups themselves take no organization at all: a
 // row is scoped by its deck, and `(presentation_id, user_email)` is the whole
 // key (see the header of server/storage/collaborators.js).
@@ -79,7 +79,7 @@ pgDescribe('collaborator authz resolution + identity resolver (real PostgreSQL)'
         title: 'Deck',
         owner_email: OWNER_EMAIL,
         created_by: OWNER_EMAIL,
-        scope: 'private',
+        visibility: 'private',
       })
       .execute();
   });
@@ -174,7 +174,7 @@ pgDescribe('collaborator authz resolution + identity resolver (real PostgreSQL)'
   it('an edit collaborator can read and write through canActorAccessPresentation', async () => {
     const email = 'editor@example.com';
     await addCollaborator(PID, { userEmail: email, permission: 'edit' });
-    const pres = { id: PID, scope: 'private', ownerEmail: OWNER_EMAIL, organizationId: ORG };
+    const pres = { id: PID, visibility: 'private', ownerEmail: OWNER_EMAIL, organizationId: ORG };
 
     assert.equal(await canActorAccessPresentation(pres, { email, organizationId: ORG }, 'read'), true);
     assert.equal(await canActorAccessPresentation(pres, { email, organizationId: ORG }, 'write'), true);
@@ -183,7 +183,7 @@ pgDescribe('collaborator authz resolution + identity resolver (real PostgreSQL)'
   it('a view collaborator can read but not write', async () => {
     const email = 'viewer@example.com';
     await addCollaborator(PID, { userEmail: email, permission: 'view' });
-    const pres = { id: PID, scope: 'private', ownerEmail: OWNER_EMAIL, organizationId: ORG };
+    const pres = { id: PID, visibility: 'private', ownerEmail: OWNER_EMAIL, organizationId: ORG };
 
     assert.equal(await canActorAccessPresentation(pres, { email, organizationId: ORG }, 'read'), true);
     assert.equal(await canActorAccessPresentation(pres, { email, organizationId: ORG }, 'write'), false);
@@ -194,7 +194,7 @@ pgDescribe('collaborator authz resolution + identity resolver (real PostgreSQL)'
   it('an external collaborator (no user row) still resolves a permission and gets access', async () => {
     const email = 'external-partner@agency.test'; // deliberately NOT in `users`
     await addCollaborator(PID, { userEmail: email, permission: 'edit' });
-    const pres = { id: PID, scope: 'private', ownerEmail: OWNER_EMAIL, organizationId: ORG };
+    const pres = { id: PID, visibility: 'private', ownerEmail: OWNER_EMAIL, organizationId: ORG };
 
     assert.equal(await getCollaboratorPermission(PID, email), 'edit');
     assert.equal(await canActorAccessPresentation(pres, { email, organizationId: ORG }, 'write'), true);

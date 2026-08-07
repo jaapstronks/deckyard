@@ -36,7 +36,7 @@ const OTHER = 'other@example.com';
 
 describe('loadPresentationChecked', () => {
   let privateId;
-  let workspaceId;
+  let organizationId;
   let viewOnlyId;
 
   before(async () => {
@@ -49,26 +49,26 @@ describe('loadPresentationChecked', () => {
     });
     privateId = privateDeck.id;
 
-    const workspaceDeck = await createPresentation(testScope(), {
-      title: 'Workspace deck',
+    const organizationDeck = await createPresentation(testScope(), {
+      title: 'Organization deck',
       ownerEmail: OWNER,
     });
-    workspaceId = workspaceDeck.id;
-    await updatePresentation(testScope(), workspaceId, {
-      ...workspaceDeck,
-      scope: 'workspace',
-    }, { allowScopeChange: true });
+    organizationId = organizationDeck.id;
+    await updatePresentation(testScope(), organizationId, {
+      ...organizationDeck,
+      visibility: 'organization',
+    }, { allowVisibilityChange: true });
 
     const viewOnlyDeck = await createPresentation(testScope(), {
-      title: 'View-only workspace deck',
+      title: 'View-only organization deck',
       ownerEmail: OWNER,
     });
     viewOnlyId = viewOnlyDeck.id;
     await updatePresentation(testScope(), viewOnlyId, {
       ...viewOnlyDeck,
-      scope: 'workspace',
+      visibility: 'organization',
       isViewOnly: true,
-    }, { allowScopeChange: true, allowViewOnlyChange: true });
+    }, { allowVisibilityChange: true, allowViewOnlyChange: true });
   });
 
   after(async () => {
@@ -104,14 +104,14 @@ describe('loadPresentationChecked', () => {
     );
   });
 
-  it('allows read and write on a workspace deck for any workspace user', async () => {
-    const read = await loadPresentationChecked(testScope(), workspaceId, OTHER);
-    assert.equal(read.id, workspaceId);
-    const write = await loadPresentationChecked(testScope(), workspaceId, OTHER, { access: 'write' });
-    assert.equal(write.id, workspaceId);
+  it('allows read and write on an organization deck for any organization user', async () => {
+    const read = await loadPresentationChecked(testScope(), organizationId, OTHER);
+    assert.equal(read.id, organizationId);
+    const write = await loadPresentationChecked(testScope(), organizationId, OTHER, { access: 'write' });
+    assert.equal(write.id, organizationId);
   });
 
-  it('view-only workspace decks are readable but not writable by non-owners', async () => {
+  it('view-only organization decks are readable but not writable by non-owners', async () => {
     const read = await loadPresentationChecked(testScope(), viewOnlyId, OTHER);
     assert.equal(read.id, viewOnlyId);
     await assert.rejects(
@@ -121,10 +121,10 @@ describe('loadPresentationChecked', () => {
   });
 
   it('delete access is owner-only', async () => {
-    const own = await loadPresentationChecked(testScope(), workspaceId, OWNER, { access: 'delete' });
-    assert.equal(own.id, workspaceId);
+    const own = await loadPresentationChecked(testScope(), organizationId, OWNER, { access: 'delete' });
+    assert.equal(own.id, organizationId);
     await assert.rejects(
-      loadPresentationChecked(testScope(), workspaceId, OTHER, { access: 'delete' }),
+      loadPresentationChecked(testScope(), organizationId, OTHER, { access: 'delete' }),
       /Only the presentation owner can delete it/
     );
   });

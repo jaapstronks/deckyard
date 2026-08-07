@@ -54,7 +54,7 @@ Rich content on the line:
 Event types surfaced include `presentation.created/updated`,
 `comment.created/resolved`, `collaborator.added`, and **`slide.added`** — a
 bundled "added N slides to a deck" event (`data: { count, slideIds, title }`)
-emitted on save for decks of any scope (the feed filters by read access, so it
+emitted on save for decks of any visibility (the feed filters by read access, so it
 only reaches people who can open the deck). See
 `server/services/activity-events.js` (`recordSlidesAdded`) and
 `diffAddedSlideIds` in `server/routes/api/presentations/helpers.js`.
@@ -82,6 +82,6 @@ own endpoint if the aggregate fails.
 ## Navigation
 
 The sidebar consolidated from nine items to six (Home · Presentations · Library ·
-Insights · Activity · Trash). Recent / Workspace / My presentations / Shared with
+Insights · Activity · Trash). Recent / Organization / My presentations / Shared with
 me merged into one filterable **Presentations** view (scope chips + sort + tag
 filter over a single list); see `client/views/list/views/presentations-view.js`.

@@ -3,7 +3,7 @@
  *
  * A collection is a named, ordered, scoped set of slide-library item ids.
  * Personal collections are private to their owner; team collections are
- * workspace-wide and mutable by their creator or an admin (mirroring the
+ * organization-wide and mutable by their creator or an admin (mirroring the
  * slide library's authz model).
  */
 
@@ -106,7 +106,7 @@ export async function handleSlideCollections({ storageScope, req, res, url, auth
     return methodNotAllowed(res, ['GET', 'PATCH', 'DELETE']);
   }
 
-  // Team collections (workspace-wide)
+  // Team collections (organization-wide)
   if (url.pathname === '/api/slide-collections/team') {
     if (req.method === 'GET') {
       const out = await listTeamCollections(storageScope, { userEmail: email });

@@ -2,7 +2,7 @@
  * Regression: the three optimistic-lock catch blocks on the presentation write
  * routes now emit the canonical error envelope.
  *
- * PUT /:id, PATCH /:id/scope and POST /:id/versions/:v/restore each wrap their
+ * PUT /:id, PATCH /:id/visibility and POST /:id/versions/:v/restore each wrap their
  * updatePresentation() call in a catch that used to serve a hand-rolled body
  * (`{ error: <prose>, details }`) — no `ok:false`, the human message sitting in
  * the machine-code slot, and (because these handlers are not wrapped in
@@ -37,8 +37,8 @@ const { createPresentation, createPresentationVersion } = await import(
 const { handlePresentationItem } = await import(
   '../server/routes/api/presentations/presentation.js'
 );
-const { handlePresentationScope } = await import(
-  '../server/routes/api/presentations/scope.js'
+const { handlePresentationVisibility } = await import(
+  '../server/routes/api/presentations/visibility.js'
 );
 const { handlePresentationRestoreVersion } = await import(
   '../server/routes/api/presentations/restore.js'
@@ -139,16 +139,16 @@ test('PUT /:id conflict emits the canonical envelope', async () => {
   assertConflictEnvelope(res, pres.id);
 });
 
-test('PATCH /:id/scope conflict emits the canonical envelope', async () => {
+test('PATCH /:id/visibility conflict emits the canonical envelope', async () => {
   const pres = await seedDeck();
   const res = fakeRes();
-  await handlePresentationScope(
+  await handlePresentationVisibility(
     {
       storageScope: testScope(),
       req: fakeReq({
         method: 'PATCH',
         headers: { 'if-match': STALE_REVISION },
-        body: { scope: 'workspace' },
+        body: { visibility: 'organization' },
       }),
       res,
       authedUser: owner,

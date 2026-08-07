@@ -17,7 +17,7 @@
  * id and email is globally unique on an instance.
  */
 
-import { hasWorkspaceRole, getWorkspaceRole } from '../../../lib/user/workspace-role.js';
+import { hasOrganizationRole, getOrganizationRole } from '../../../lib/user/organization-role.js';
 
 /**
  * Whether a member row is the signed-in person.
@@ -40,7 +40,7 @@ export function isSelf(member, currentUser) {
  * @returns {boolean}
  */
 export function canInvite(currentUser) {
-  return hasWorkspaceRole(getWorkspaceRole(currentUser), 'admin');
+  return hasOrganizationRole(getOrganizationRole(currentUser), 'admin');
 }
 
 /**
@@ -57,7 +57,7 @@ export function canInvite(currentUser) {
  */
 export function invitableRoles(currentUser) {
   if (!canInvite(currentUser)) return [];
-  return getWorkspaceRole(currentUser) === 'owner' ? ['member', 'admin'] : ['member'];
+  return getOrganizationRole(currentUser) === 'owner' ? ['member', 'admin'] : ['member'];
 }
 
 /**
@@ -72,7 +72,7 @@ export function invitableRoles(currentUser) {
  * @returns {boolean}
  */
 export function canChangeRole(member, currentUser) {
-  if (getWorkspaceRole(currentUser) !== 'owner') return false;
+  if (getOrganizationRole(currentUser) !== 'owner') return false;
   if (isSelf(member, currentUser)) return false;
   // The owner is the viewer in this branch; a second owner would be a state the
   // transfer path does not produce, and demoting one is the server's refusal.
@@ -86,7 +86,7 @@ export function canChangeRole(member, currentUser) {
  * @returns {boolean}
  */
 export function canTransferOwnership(member, currentUser) {
-  if (getWorkspaceRole(currentUser) !== 'owner') return false;
+  if (getOrganizationRole(currentUser) !== 'owner') return false;
   return !isSelf(member, currentUser) && member?.role !== 'owner';
 }
 
@@ -102,12 +102,12 @@ export function canTransferOwnership(member, currentUser) {
  * @returns {boolean}
  */
 export function canRemove(member, currentUser) {
-  const role = getWorkspaceRole(currentUser);
+  const role = getOrganizationRole(currentUser);
   if (!role) return false;
 
   if (isSelf(member, currentUser)) return member?.role !== 'owner';
 
-  if (!hasWorkspaceRole(role, 'admin')) return false;
+  if (!hasOrganizationRole(role, 'admin')) return false;
   if (member?.role === 'owner') return false;
   if (role === 'admin' && member?.role !== 'member') return false;
   return true;

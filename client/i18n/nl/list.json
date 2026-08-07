@@ -215,7 +215,7 @@
   "list.presentations.scope.all": "Alle",
   "list.presentations.scope.mine": "Van mij",
   "list.presentations.scope.shared": "Gedeeld",
-  "list.presentations.scope.workspace": "Workspace",
+  "list.presentations.scope.organization": "Workspace",
   "list.presentations.scopeLabel": "Filter presentaties op bron",
   "list.presentations.sort.recent": "Laatst bijgewerkt",
   "list.presentations.sort.title": "Titel A–Z",

@@ -8,8 +8,8 @@
  *
  *   1. **`deleteOrganization()` hard-coded the seed UUID** of the default
  *      organization instead of asking `getDefaultOrganizationId()` for it. The
- *      default organization is what every single-workspace path falls back to
- *      and is the one workspace that may not be removed — but on an instance
+ *      default organization is what every single-organization path falls back to
+ *      and is the one organization that may not be removed — but on an instance
  *      that sets `DEFAULT_ORGANIZATION_ID`, the guard protected an organization
  *      that need not even exist and left the real fallback deletable by its
  *      owner. Invisible on a stock install, wrong on a configured one, and this
@@ -20,7 +20,7 @@
  *      certain to refuse. One boolean on the response is what lets the UI draw
  *      the rule instead of discovering it.
  *
- * MULTI_WORKSPACE_ENABLED is read at module scope (server/config/features.js),
+ * MULTI_ORG_ENABLED is read at module scope (server/config/features.js),
  * so this file sets it before importing anything and relies on node --test
  * giving each file its own process.
  *
@@ -30,7 +30,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-process.env.MULTI_WORKSPACE_ENABLED = 'true';
+process.env.MULTI_ORG_ENABLED = 'true';
 // Deliberately *not* the seed UUID the storage layer used to compare against.
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
@@ -184,7 +184,7 @@ test('deleting the configured default organization is refused', async () => {
 test('the seed organization is deletable when it is not the default', async () => {
   const db = seed();
   // The old guard compared against this UUID literally, so it survived here and
-  // the actual fallback workspace above did not.
+  // the actual fallback organization above did not.
   const deleted = await deleteOrganization(SEED_ORG);
   assert.deepEqual(deleted, { ok: true });
   assert.equal(
@@ -260,9 +260,9 @@ test('a one-character name is refused, so the form checks the same thing', async
 
 test('only the fields that are sent are touched', async () => {
   const db = seed();
-  await callOrganizations('PATCH', 'owner', { body: { description: 'A workspace' } });
+  await callOrganizations('PATCH', 'owner', { body: { description: 'A organization' } });
   const row = db.__tables.organizations.find((o) => o.id === ORG);
-  assert.equal(row.description, 'A workspace');
+  assert.equal(row.description, 'A organization');
   assert.equal(row.name, 'Beta', 'the untouched field kept its value');
 });
 

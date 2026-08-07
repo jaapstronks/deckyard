@@ -77,7 +77,7 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
     assert.equal(settings.sessionDurationDays, 45);
   });
 
-  it('round-trips the workspace theme and normalizes an invalid id to empty', async () => {
+  it('round-trips the organization theme and normalizes an invalid id to empty', async () => {
     await writeAppSettings(null, {
       defaultThemeId: 'clicknl',
       enabledThemes: ['deckyard', 'clicknl'],

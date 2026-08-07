@@ -4,7 +4,7 @@
  * Every function takes a **storage scope** rather than a bare `repoRoot`, so the
  * organization comes from the caller instead of a hardcoded default (see
  * server/storage/scope.js). The image library is per-organization: two
- * workspaces on one instance do not share each other's uploads, and neither do
+ * organizations on one instance do not share each other's uploads, and neither do
  * their per-user favorites.
  */
 

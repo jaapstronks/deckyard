@@ -56,7 +56,7 @@ export async function transferPresentationOwnership(
       actorEmail,
       reason: 'ownership_transfer',
       // Open the owner-write gate: the adapter otherwise drops `ownerEmail` on
-      // an update (mirroring allowScopeChange). Without this the transfer
+      // an update (mirroring allowVisibilityChange). Without this the transfer
       // returned ok but persisted nothing — the bug this fixes.
       allowOwnerChange: true,
     });

@@ -4,7 +4,7 @@
  * database double (tests/helpers/fake-db.js).
  *
  * Regression guard: the public API used canAccessPresentation
- * (owner/workspace only, no read/write distinction), so any workspace-scoped
+ * (owner/organization only, no read/write distinction), so any organization-scoped
  * deck was writable by every API key and collaborators were ignored. It now
  * uses the same collaborator-aware canRead/canWritePresentation checks as the
  * editor routes.
@@ -52,7 +52,7 @@ function makeCtx(ownerEmail) {
     res,
     apiKey: { id: 'test-key', tier: 'free', ownerEmail },
     // What authenticateApiKey puts on the context: who is acting and in which
-    // workspace. Per-deck checks read the actor from here, not off the deck.
+    // organization. Per-deck checks read the actor from here, not off the deck.
     authedUser: { id: null, email: ownerEmail, role: 'user', organizationId: null },
   };
 }
@@ -72,17 +72,17 @@ describe('getPresentationWithAccess', () => {
     privateId = privateDeck.id;
 
     const viewOnlyDeck = await createPresentation(testScope(), {
-      title: 'View-only workspace deck',
+      title: 'View-only organization deck',
       ownerEmail: OWNER,
     });
     viewOnlyId = viewOnlyDeck.id;
     await updatePresentation(testScope(), viewOnlyId, {
       ...viewOnlyDeck,
-      scope: 'workspace',
+      visibility: 'organization',
       isViewOnly: true,
       // Both flips are gated on the write path, so the fixture opts into them
       // explicitly (as the routes that own those switches do).
-    }, { allowScopeChange: true, allowViewOnlyChange: true });
+    }, { allowVisibilityChange: true, allowViewOnlyChange: true });
   });
 
   after(() => {
@@ -122,7 +122,7 @@ describe('getPresentationWithAccess', () => {
     assert.equal(ctx.res.statusCode, 403);
   });
 
-  it('view-only workspace deck: read ok, write 403 for non-owner keys', async () => {
+  it('view-only organization deck: read ok, write 403 for non-owner keys', async () => {
     const read = await getPresentationWithAccess(makeCtx(OTHER), viewOnlyId);
     assert.equal(read.ok, true);
 

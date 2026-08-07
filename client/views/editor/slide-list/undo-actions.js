@@ -37,7 +37,7 @@ export function createUndoActions({
       modified: pres.modified,
       created: pres.created,
       updatedBy: pres.updatedBy,
-      scope: pres.scope,
+      visibility: pres.visibility,
     };
 
     const restoredPres = snapshot.pres;

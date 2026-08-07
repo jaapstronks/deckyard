@@ -150,7 +150,7 @@ export function mapPresentationRow(row) {
     modified: row.modified_at,
     theme: row.theme,
     lang: row.lang,
-    scope: row.scope,
+    visibility: row.visibility,
     isViewOnly: !!row.is_view_only,
     revision: row.revision,
     // Identity travels as a pair per role: the stable `users.id` (migration 063)

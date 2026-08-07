@@ -18,7 +18,7 @@ import { createSegmented } from '../../../../lib/dom/segmented.js';
 import { getFeatures } from '../../../../lib/state/features.js';
 import { createCollaboratorsSection } from './collaborators-section.js';
 import { createShareLinksSection } from './share-links-section.js';
-import { createWorkspaceVisibilitySection } from './workspace-visibility-section.js';
+import { createVisibilitySection } from './visibility-section.js';
 import { createPublishSection } from './publish-section.js';
 
 /**
@@ -48,7 +48,7 @@ import { createPublishSection } from './publish-section.js';
  * @param {Function} options.handleNotionPublish - Adds the embed to Notion
  * @param {Function} options.notionAvailable - Returns true if Notion is enabled
  * @param {Function} options.openExport - Opens the Export modal
- * @param {'workspace'|'link'|'publish'} [options.initialTab] - Tab to open on
+ * @param {'organization'|'link'|'publish'} [options.initialTab] - Tab to open on
  * @returns {{ close: Function, refresh: Function }}
  */
 export function openShareModal({
@@ -75,7 +75,7 @@ export function openShareModal({
   handleNotionPublish,
   notionAvailable,
   openExport,
-  initialTab = 'workspace',
+  initialTab = 'organization',
 } = {}) {
   if (!root) return { close: () => {}, refresh: () => {} };
 
@@ -129,8 +129,8 @@ export function openShareModal({
   // collaborator is an email mechanism, and the owner's address is displayed.
   const isOwner = isOwnerOrCreator(currentUser, pres);
 
-  // --- Workspace tab ---
-  const visibility = createWorkspaceVisibilitySection({
+  // --- Organization tab (labelled "Workspace" in the UI) ---
+  const visibility = createVisibilitySection({
     h,
     api,
     pres,
@@ -161,7 +161,7 @@ export function openShareModal({
     openOverlayClosers,
   });
 
-  const workspacePanel = h('div', { class: 'share-tab-panel', 'data-tab': 'workspace' }, [
+  const organizationPanel = h('div', { class: 'share-tab-panel', 'data-tab': 'organization' }, [
     visibility.element,
     collaborators.element,
   ]);
@@ -208,7 +208,7 @@ export function openShareModal({
     : null;
 
   const panels = {
-    workspace: workspacePanel,
+    organization: organizationPanel,
     link: linkPanel,
     ...(publishPanel ? { publish: publishPanel } : {}),
   };
@@ -224,9 +224,9 @@ export function openShareModal({
     outlined: true,
     className: 'share-tabs',
     ariaLabel: t('share.modal.title', 'Share'),
-    value: panels[initialTab] ? initialTab : 'workspace',
+    value: panels[initialTab] ? initialTab : 'organization',
     segments: [
-      { value: 'workspace', label: t('share.tab.workspace', 'Workspace') },
+      { value: 'organization', label: t('share.tab.organization', 'Workspace') },
       { value: 'link', label: t('share.tab.link', 'Link') },
       ...(publishPanel
         ? [{ value: 'publish', label: t('share.tab.publish', 'Publish') }]
@@ -236,7 +236,7 @@ export function openShareModal({
   });
 
   const body = h('div', { class: 'share-modal-body' }, [
-    workspacePanel,
+    organizationPanel,
     linkPanel,
     ...(publishPanel ? [publishPanel] : []),
   ]);

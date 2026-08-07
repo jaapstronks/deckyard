@@ -26,7 +26,7 @@ import { createTeamLibraryItem } from '../../server/storage/slide-library/index.
 import { createTeamCollection } from '../../server/storage/collections/index.js';
 import { recordSlideLibraryUsage } from '../../server/storage/slide-library-usage/index.js';
 
-const scope = testScope();
+const storageScope = testScope();
 const USER = 'user@example.com';
 
 /** Minimal response stub recording status + parsed JSON body. */
@@ -66,12 +66,12 @@ pgDescribe('handleHome round-trip (real PostgreSQL, via facade)', () => {
     await seedDefaultOrganization(db);
 
     await createTeamLibraryItem(
-      scope,
+      storageScope,
       { name: 'Shared title slide', slideType: 'title', content: {} },
       { actorEmail: USER }
     );
-    await createTeamCollection(scope, { name: 'Onboarding kit', slideIds: [] }, { actorEmail: USER });
-    await recordSlideLibraryUsage(scope, USER, [{ type: 'slide', id: 'used-1' }]);
+    await createTeamCollection(storageScope, { name: 'Onboarding kit', slideIds: [] }, { actorEmail: USER });
+    await recordSlideLibraryUsage(storageScope, USER, [{ type: 'slide', id: 'used-1' }]);
   });
 
   after(async () => {

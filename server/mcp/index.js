@@ -111,7 +111,7 @@ async function main() {
 
   // Same storage guards as the HTTP server (server/server.js): an unknown
   // STORAGE_MODE, or an empty database next to a populated file-storage data
-  // directory, is a stop — an agent silently authoring into an empty workspace
+  // directory, is a stop — an agent silently authoring into an empty organization
   // is worse than a failed handshake.
   {
     const modeErr = storageModeError();

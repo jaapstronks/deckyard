@@ -36,7 +36,7 @@ export function createTrashView({ h, api, renderCard }) {
       } else {
         for (const p of items) {
           trashList.append(renderCard(p, {
-            isWorkspace: p.scope === 'workspace',
+            isOrganization: p.visibility === 'organization',
             isTrashView: true,
           }));
         }

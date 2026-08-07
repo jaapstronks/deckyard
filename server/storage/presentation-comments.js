@@ -1,6 +1,6 @@
 /**
  * Presentation comments storage for collaborative annotations.
- * Allows workspace members to leave feedback on slides without editing.
+ * Allows organization members to leave feedback on slides without editing.
  */
 
 import { getOrgId } from '../utils/context.js';

@@ -7,8 +7,8 @@ Other docs name permission levels (`edit`, `comment`, `view`) and roles
 ("collaborator", "author", "owner") in passing. This is the one place that
 defines them: what the levels are, which grants exist, in what order they are
 consulted, who can hand them out, and how the answer is cached. The
-**organization** axis — which workspace a request acts in, and why a deck in
-another workspace is absent rather than forbidden — is
+**organization** axis — which organization a request acts in, and why a deck in
+another organization is absent rather than forbidden — is
 [`tenant-isolation.md`](tenant-isolation.md), and it sits *underneath*
 everything here: a deck that the storage scope does not return never reaches a
 permission check at all.
@@ -39,7 +39,7 @@ by one barrel:
 - `server/utils/presentation-authz.js` — the barrel every call site imports;
   re-exports the deciders plus the identity helpers from `shared/`.
 - `server/utils/presentation-authz/presentations.js` — the deck-level deciders:
-  read, write, delete, scope change, force-unlock, ownership transfer,
+  read, write, delete, visibility change, force-unlock, ownership transfer,
   authorship, collaborator management, commenting, and the effective level.
 - `server/utils/presentation-authz/share-links.js` — what a validated share
   link grants (read / comment / write, and its effective level).
@@ -149,7 +149,7 @@ and *is* the authorization, which is why link reads take no organization
 `withPresentationAuth({ repoRoot, id, authedUser, res, permission })`:
 
 1. `getPresentation(createRouteContext(authedUser), id)` — organization-scoped.
-   Nothing back → **404**. A deck in another workspace is *absent*, not
+   Nothing back → **404**. A deck in another organization is *absent*, not
    forbidden, so authorization never sees it.
 2. For `read` and `write`, look up the caller's collaborator permission
    (cached).
@@ -169,9 +169,9 @@ Every deck-level decider consults the same grants in the same order. Taking
 
 1. **Unrestricted operator** → grant.
 2. **No identity at all** (neither `users.id` nor an email) → refuse.
-3. **Workspace scope** — the deck is `scope: 'workspace'` *and*
+3. **Organization visibility** — the deck is `visibility: 'organization'` *and*
    `isSameOrganization(user, pres)` → grant. This is the only grant that rests
-   on "we are in the same workspace"; it is what makes a workspace deck
+   on "we are in the same organization"; it is what makes an organization deck
    readable by colleagues who were never invited.
 4. **Ownership** — `isOwnerOrCreator(user, pres)` → grant.
 5. **Collaborator row** — a permission at or above the level the operation
@@ -180,24 +180,24 @@ Every deck-level decider consults the same grants in the same order. Taking
 
 Where the deciders differ from that shape, they differ deliberately:
 
-- **`canWritePresentation`** puts ownership *before* the workspace grant,
-  because two gates sit in between: in sandbox mode a workspace deck is
+- **`canWritePresentation`** puts ownership *before* the organization grant,
+  because two gates sit in between: in sandbox mode an organization deck is
   read-only for guests (curated seed content), and `isViewOnly` makes a deck
   read-only for everyone who is not its owner.
 - **`canDeletePresentation`**, **`canForceLockRelease`**,
   **`canTransferOwnership`** and **`isPresentationAuthor`** consult ownership
   only. No collaborator level reaches them, `admin` included.
 - **`canManageCollaborators`** grants to owner/creator or an `admin`
-  collaborator. Note what is *absent*: the workspace grant. Being in the deck's
-  workspace lets you edit it; it does not let you hand out access to it.
-- **`canChangePresentationScope`** is a transition check, not a level check:
-  same-scope is a no-op and always allowed; the instance `isAdmin` may make any
+  collaborator. Note what is *absent*: the organization grant. Being in the deck's
+  organization lets you edit it; it does not let you hand out access to it.
+- **`canChangePresentationVisibility`** is a transition check, not a level check:
+  same-visibility is a no-op and always allowed; the instance `isAdmin` may make any
   transition; sandbox mode refuses every transition (no guest-to-guest
-  sharing); otherwise only owner/creator, and only `private → workspace`.
-  `workspace → private` is admin-only.
+  sharing); otherwise only owner/creator, and only `private → organization`.
+  `organization → private` is admin-only.
 - **`getEffectivePermission`** is the client's answer, not a gate: it returns
   `edit | comment | view` for the editor to pick a UI, and is delivered as
-  `_userPermission` on `GET /api/presentations/:id`. A view-only workspace deck
+  `_userPermission` on `GET /api/presentations/:id`. A view-only organization deck
   resolves to `comment`; anything unmatched falls back to the collaborator
   level, or `view`.
 
@@ -269,24 +269,24 @@ every authorized request, so it is cached:
 | `REDIS_URL` | When set and reachable, permissions cache in Redis and invalidation is instance-wide. Absent → memory only (the same optional-Redis rule as [`jobs-and-queues.md`](jobs-and-queues.md)). |
 | `AUTH_ENABLED=false` | Produces the single `unrestricted` operator; every ownership-scoped check grants. |
 | `AUTH_DEV_BYPASS` | Auto-login in development. The bypass user is not a database user, so it decides on the email fallback. |
-| `MULTI_WORKSPACE_ENABLED` | Turns `isSameOrganization` into a real comparison. Unset, it answers `true` from the flag without reading anything. |
-| `SANDBOX_MODE` | Workspace decks become read-only for guests and every scope transition is refused. See [`sandbox-mode.md`](sandbox-mode.md). |
+| `MULTI_ORG_ENABLED` | Turns `isSameOrganization` into a real comparison. Unset, it answers `true` from the flag without reading anything. |
+| `SANDBOX_MODE` | Organization decks become read-only for guests and every visibility transition is refused. See [`sandbox-mode.md`](sandbox-mode.md). |
 
 ## Authz & tenancy
 
 The per-deck ladder is one of **three independent axes**, and confusing them is
 the usual mistake:
 
-1. **The organization axis** — which workspace a request acts in. Enforced in
+1. **The organization axis** — which organization a request acts in. Enforced in
    storage, on every query, by `organization_id`. Rules R1–R3 and the edge
    decisions are in [`tenant-isolation.md`](tenant-isolation.md); do not restate
    them here. Its only appearance in this document is `isSameOrganization`,
-   which gates the workspace grant as defense in depth.
+   which gates the organization grant as defense in depth.
 2. **The per-deck ladder** — this document.
 3. **Instance and organization roles** — `isAdmin` (instance) and the
    organization role. These govern admin *screens* and organization
    membership, and they deliberately do **not** grant deck read or write:
-   an instance admin can change a deck's scope and moderate its comments, but
+   an instance admin can change a deck's visibility and moderate its comments, but
    `canReadPresentation` never consults `isAdmin`. Organization roles are in
    `tenant-isolation.md` § *The organization UI*.
 
@@ -295,10 +295,10 @@ Two consequences worth stating explicitly:
 - A collaborator row is addressed by `(presentation_id, user_email)` and its
   reads take no organization. That is not a gap: the caller has already settled
   whether the session may see the deck by loading it on an organization-scoped
-  storage scope. A cross-workspace collaborator therefore reaches the deck
+  storage scope. A cross-organization collaborator therefore reaches the deck
   through every presentation-scoped endpoint — but does not appear in their own
   "shared with me" list, which is the one collaborator query that *is*
-  organization-scoped. Whether that listing should be workspace-scoped is an
+  organization-scoped. Whether that listing should be organization-scoped is an
   open product question (`tenant-isolation.md`, edge decision 5).
 - A share link and a follow code authorize on the token alone, with no
   organization filter, because a globally unique token already names one deck.

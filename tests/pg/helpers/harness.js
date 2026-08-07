@@ -31,7 +31,7 @@
  *
  * ## The DATABASE_URL gate
  *
- * These tests TRUNCATE tables, so they must never touch a real workspace
+ * These tests TRUNCATE tables, so they must never touch a real organization
  * database. They therefore run **only** when `DATABASE_URL` names a throwaway
  * Postgres — a signal a normal dev `.env` (which configures the app through
  * `DATABASE_HOST`/`DATABASE_NAME`, not `DATABASE_URL`) does not carry. With it

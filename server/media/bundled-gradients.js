@@ -327,7 +327,7 @@ export function buildGradientItems(themes) {
 
 /**
  * Load the built-in themes the library is derived from. Only `themes/` — the
- * bundled set has to match committed files, and a DB or per-workspace custom
+ * bundled set has to match committed files, and a DB or per-organization custom
  * theme has nothing rendered on disk.
  *
  * @param {string} repoRoot

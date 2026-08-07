@@ -201,9 +201,9 @@ Two inconsistencies exist today, independent of collab, and should be fixed
    `update_slide`, `add_slide`, `remove_slide`, `reorder_slides`,
    `iterate_presentation`, `append_slides`, `convert_slide`,
    `compress_presentation` fetch any deck by id and write it without an
-   owner/collaborator/scope check (`server/mcp/tools.js:503-956`).
+   owner/collaborator/visibility check (`server/mcp/tools.js:503-956`).
 2. **The public API uses a weaker check** (`canAccessPresentation`:
-   owner/workspace only, ignores the collaborator table,
+   owner/organization only, ignores the collaborator table,
    `server/routes/public-api/v1/middleware.js:111-126`).
 
 ---
@@ -218,7 +218,7 @@ the research transcript) reduces to one architectural fact:
 
 That includes: MCP tools, public API v1 (whole-deck and per-slide), AI wizard
 deck creation, translate routes **and the background translate worker**,
-change-theme, scope changes, version restore, publish metadata, and
+change-theme, visibility changes, version restore, publish metadata, and
 import-slides-as-images. The AI *editing* endpoints (`iterate`, `refine`,
 `append-slides`, `convert-slide`, `compress`) and data-source refresh are
 **client-applied**: they return suggestions and the editor persists them

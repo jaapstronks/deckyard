@@ -64,7 +64,7 @@ const { handleCollaborators } = await import('../server/routes/api/collaborators
 
 /**
  * The people. `organizationId` is what `createRouteContext` binds the request
- * to, so `outsider` acts in a different workspace than everyone else.
+ * to, so `outsider` acts in a different organization than everyone else.
  */
 const ACTORS = {
   owner: { email: 'owner@example.com', name: 'Olive', organizationId: ORG },
@@ -77,7 +77,7 @@ const ACTORS = {
   outsider: { email: 'outsider@other.example', name: 'Otto', organizationId: OTHER_ORG },
 };
 
-const DECKS = ['deck-owned', 'deck-second', 'deck-workspace', 'deck-trashed', 'deck-foreign'];
+const DECKS = ['deck-owned', 'deck-second', 'deck-organization', 'deck-trashed', 'deck-foreign'];
 
 /** @type {ReturnType<typeof createFakeDb>} */
 let db;
@@ -128,7 +128,7 @@ function deckRow(overrides) {
     owner_email: ACTORS.owner.email,
     created_by: ACTORS.owner.email,
     updated_by: ACTORS.owner.email,
-    scope: 'private',
+    visibility: 'private',
     theme: 'default',
     lang: 'nl',
     revision: 1,
@@ -188,7 +188,7 @@ async function seed() {
       // No slides: the "shared with me" grid reduces the thumbnail to a
       // presence boolean, and this deck is the one that must report `false`.
       deckRow({ id: 'deck-second', slides: [] }),
-      deckRow({ id: 'deck-workspace', scope: 'workspace' }),
+      deckRow({ id: 'deck-organization', visibility: 'organization' }),
       deckRow({ id: 'deck-trashed', trashed_at: '2026-03-01T00:00:00.000Z' }),
       deckRow({
         id: 'deck-foreign',
@@ -223,7 +223,7 @@ async function seed() {
         permission: 'view',
       }),
       // The cross-organization row: Vera's address is a collaborator on a deck
-      // in the *other* workspace. Nothing she does in hers may surface it.
+      // in the *other* organization. Nothing she does in hers may surface it.
       collaboratorRow({
         id: 'c-foreign',
         organization_id: OTHER_ORG,
@@ -325,7 +325,7 @@ const REFUSED = [
   ['editor', 'edit is not manage'],
   ['viewer', 'view is not manage'],
   ['revoked', 'a revoked collaborator holds nothing'],
-  ['stranger', 'a workspace colleague is not a collaborator'],
+  ['stranger', 'an organization colleague is not a collaborator'],
   [null, 'an anonymous caller'],
 ];
 
@@ -382,7 +382,7 @@ test('a collaborator row in another organization does not surface', async () => 
   assert.equal(
     res.body.presentations.some((p) => p.id === 'deck-foreign'),
     false,
-    'the same address is a collaborator there; this session does not act in that workspace'
+    'the same address is a collaborator there; this session does not act in that organization'
   );
 });
 
@@ -480,9 +480,9 @@ test('nobody else may add a collaborator', async () => {
   }
 });
 
-test('a workspace deck does not make every colleague a collaborator manager', async () => {
+test('an organization deck does not make every colleague a collaborator manager', async () => {
   await seed();
-  const res = await call('POST', '/api/presentations/deck-workspace/collaborators', {
+  const res = await call('POST', '/api/presentations/deck-organization/collaborators', {
     as: ACTORS.stranger,
     body: { userEmail: ACTORS.newcomer.email, permission: 'edit' },
   });
@@ -490,9 +490,9 @@ test('a workspace deck does not make every colleague a collaborator manager', as
   assert.equal(
     res.status,
     401,
-    'workspace scope grants reading and writing, never handing the deck to someone new'
+    'organization visibility grants reading and writing, never handing the deck to someone new'
   );
-  assert.equal(rowFor('deck-workspace', ACTORS.newcomer.email), undefined);
+  assert.equal(rowFor('deck-organization', ACTORS.newcomer.email), undefined);
 });
 
 test('a deck in another organization is absent, not forbidden', async () => {
@@ -608,7 +608,7 @@ test('someone outside the organization cannot be invited', async () => {
 
   assert.equal(res.status, 400);
   assert.equal(rowFor('deck-owned', ACTORS.outsider.email), undefined);
-  assert.deepEqual(notifications(), [], 'and no notification leaves the workspace');
+  assert.deepEqual(notifications(), [], 'and no notification leaves the organization');
 });
 
 test('adding an existing collaborator twice is a conflict, not a silent upgrade', async () => {

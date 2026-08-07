@@ -38,7 +38,7 @@ export async function handleExportMyData(ctx) {
   }
 
   // Identity is the scope: the export covers this person's sessions on the
-  // whole instance, not just the workspace they happen to be acting in.
+  // whole instance, not just the organization they happen to be acting in.
   const result = await exportUserAnalyticsData({ email: authedUser.email });
 
   if (!result.ok) {
@@ -69,7 +69,7 @@ export async function handleDeleteMyData(ctx) {
     return sendRateLimitResponse(res, 'Rate limit exceeded for data deletion', 5), true;
   }
 
-  // Identity is the scope — an erasure that stopped at the acting workspace
+  // Identity is the scope — an erasure that stopped at the acting organization
   // would report success while leaving the same person's rows behind.
   const result = await deleteUserAnalyticsData({ email: authedUser.email });
 

@@ -3,7 +3,7 @@
  *
  * **The share link is the scope; these functions take no context.** A
  * `presentation_share_links.id` is a globally unique uuid and every row here
- * hangs off exactly one of them, so the link identifies the workspace by
+ * hangs off exactly one of them, so the link identifies the organization by
  * itself — an organization in the filter cannot narrow the answer, only get it
  * wrong. Same reasoning as the collaborator lookups (see
  * `docs/reference/tenant-isolation.md`, edge decision 5) and the share-link
