@@ -58,7 +58,7 @@ pgDescribe('slide-library i18n round-trip (real PostgreSQL, via facade)', () => 
 
   it('keeps both languages through create, read-back and update', async () => {
     const created = await createPersonalLibraryItem(
-      scope,
+      storageScope,
       ALICE,
       { name: 'Intro', slideType: 'content-slide', content: { title: 'Hallo' }, i18n: BILINGUAL },
       { actorEmail: ALICE }
@@ -77,7 +77,7 @@ pgDescribe('slide-library i18n round-trip (real PostgreSQL, via facade)', () => 
       },
     };
     const updated = await updatePersonalLibraryItem(
-      scope,
+      storageScope,
       ALICE,
       created.item.id,
       { i18n: nextI18n },

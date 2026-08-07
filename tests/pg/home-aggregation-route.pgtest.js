@@ -50,7 +50,7 @@ function makeRes() {
 function callHome({ user = { email: USER }, search = '' } = {}) {
   const res = makeRes();
   const url = new URL(`http://localhost/api/home${search}`);
-  return handleHome({ storageScope: scope, req: { method: 'GET' }, res, url, authedUser: user }).then(
+  return handleHome({ storageScope, req: { method: 'GET' }, res, url, authedUser: user }).then(
     (handled) => ({ handled, res })
   );
 }
