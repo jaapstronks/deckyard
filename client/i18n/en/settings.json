@@ -393,7 +393,7 @@
   "settings.apiKeys.headerActions": "Actions",
   "settings.apiKeys.headerDates": "Dates",
   "settings.apiKeys.headerName": "Name & Key",
-  "settings.apiKeys.headerPermissions": "Scopes",
+  "settings.apiKeys.headerPermissions": "Permissions",
   "settings.apiKeys.hoursAgo": "{n}h ago",
   "settings.apiKeys.justNow": "Just now",
   "settings.apiKeys.keyCreated": "API Key Created",
