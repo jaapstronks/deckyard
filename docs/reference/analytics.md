@@ -109,7 +109,7 @@ Table `view_sessions` (`server/db/migrations/014_presentation_analytics.js`;
 | `presentation_id` | uuid | NOT NULL, FK → `presentations(id)` **ON DELETE CASCADE** |
 | `session_token` | varchar(64) | unique — 64 hex chars, the viewer's proof of possession |
 | `source_type` | varchar(20) | `share_link` \| `follow` \| `embed` \| `published` |
-| `source_id` | varchar(100) | share token, publish id, or present-session id |
+| `source_id` | varchar(100) | share token, publish id, or live-session id |
 | `viewer_type` | varchar(20) | `anonymous` \| `guest` \| `authenticated` |
 | `viewer_email` | varchar(320) | only for an authenticated viewer |
 | `device_id` | varchar(100) | 32 hex, browser-generated; never leaves the DB raw |

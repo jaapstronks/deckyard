@@ -15,7 +15,7 @@
  *    one DELETE.
  *
  * "A second process" is modelled by clearing the in-memory `sessions` map of
- * the present-session layer: a cold worker has no map entries and the same
+ * the live-session layer: a cold worker has no map entries and the same
  * tables, so a lookup that still resolves went through Postgres.
  */
 
@@ -24,10 +24,10 @@ import assert from 'node:assert/strict';
 
 import { closeTestDb, openTestDb, pgDescribe, truncate } from './helpers/harness.js';
 import { seedDefaultOrganization, seedPresentation } from './helpers/seed.js';
-import { sessions } from '../../server/storage/present-sessions/state.js';
-import { createPresentSession } from '../../server/storage/present-sessions/sessions.js';
-import { closeSession } from '../../server/storage/present-sessions/close.js';
-import { TTL_MS } from '../../server/storage/present-sessions/constants.js';
+import { sessions } from '../../server/storage/live-sessions/state.js';
+import { createLiveSession } from '../../server/storage/live-sessions/sessions.js';
+import { closeSession } from '../../server/storage/live-sessions/close.js';
+import { TTL_MS } from '../../server/storage/live-sessions/constants.js';
 import { sweepExpiredLiveSessions } from '../../server/utils/live-session-cleanup.js';
 import {
   cancelQuestion,
@@ -87,7 +87,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
     presentationId = await seedPresentation(db, { title: 'Live deck' });
     // Every interaction row is foreign-keyed to a live session, so the session
     // is the fixture rather than a bare string id.
-    ({ sessionId } = await createPresentSession(null, { presentationId }));
+    ({ sessionId } = await createLiveSession(null, { presentationId }));
   });
 
   // -- questions ------------------------------------------------------------

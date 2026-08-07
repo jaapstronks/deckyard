@@ -265,7 +265,7 @@ export async function allowShareVerifyAttempt({ ip } = {}) {
 
 /**
  * Token-bucket limit for the anonymous notes-companion write
- * (`PUT /api/present-sessions/:sessionId/notes/:slideId`). Not a secret gate
+ * (`PUT /api/live-sessions/:sessionId/notes/:slideId`). Not a secret gate
  * like the two above — the session id is the capability and the caller is
  * allowed to write — so this is a volume cap, not a guess cap: the companion
  * saves on a debounce, and a leaked join link must not be usable to hammer the

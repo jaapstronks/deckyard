@@ -1,7 +1,7 @@
 import { methodNotAllowed, serveJson, notFound, serverError } from '../../../utils/http.js';
 import {
   getFollowStateForPresentation,
-} from '../../../storage/present-sessions/index.js';
+} from '../../../storage/live-sessions/index.js';
 import { getPresentationCached } from '../../../storage/presentation-cache.js';
 import { computeAudienceCapabilitiesFromState, followAudienceScope } from './helpers.js';
 import { createLogger } from '../../../utils/logger.js';

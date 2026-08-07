@@ -1,7 +1,7 @@
 /**
  * Connection limiter for public Server-Sent Events streams.
  *
- * The follow/questions/present-session `/events` endpoints are unauthenticated
+ * The follow/questions/live-session `/events` endpoints are unauthenticated
  * and long-lived: a client can open one and hold it open indefinitely. Without a
  * cap, thousands of open streams exhaust file descriptors and memory (a cheap
  * DoS, since each only needs a GET). See docs/plans security audit MH3.

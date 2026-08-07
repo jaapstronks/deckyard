@@ -64,7 +64,7 @@ started from `server/server.js`):
 
 - `server/utils/sandbox-cleanup.js` — expired guest decks, see
   [`sandbox-mode.md`](sandbox-mode.md).
-- `server/utils/live-session-cleanup.js` — present-session and follow-code TTL,
+- `server/utils/live-session-cleanup.js` — live-session and follow-code TTL,
   see [`live-sessions.md`](live-sessions.md).
 
 Supporting and consuming modules:

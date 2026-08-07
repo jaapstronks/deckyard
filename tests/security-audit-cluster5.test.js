@@ -2,7 +2,7 @@
  * Security-audit cluster 5 regression tests (MH3).
  *
  * MH3 — unbounded public SSE connections (DoS). The follow/questions/
- *       present-session events streams are unauthenticated and long-lived;
+ *       live-session events streams are unauthenticated and long-lived;
  *       without a cap a client can open thousands and exhaust FDs/memory. The
  *       shared limiter (server/utils/sse-limiter.js) enforces a global concurrent
  *       cap always, a per-IP cap only for distinguishable (public) client IPs so

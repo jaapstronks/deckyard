@@ -151,7 +151,7 @@ async function castVote(client, optionIndex) {
 // Connect to presenter SSE and monitor for corrupted messages
 function monitorPresenterSSE(sessionId) {
   return new Promise((resolve) => {
-    const url = new URL(`/api/present-sessions/${sessionId}/events`, BASE_URL);
+    const url = new URL(`/api/live-sessions/${sessionId}/events`, BASE_URL);
     console.log(`      SSE URL: ${url.href}`);
 
     const req = httpModule.request({

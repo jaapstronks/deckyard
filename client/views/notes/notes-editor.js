@@ -9,9 +9,9 @@ const AUTOSAVE_DELAY_MS = 1200;
 /**
  * Speaker-notes editing for the companion.
  *
- * The companion is authorized by the present-session id in its join link, so
+ * The companion is authorized by the live-session id in its join link, so
  * the write goes to the session-scoped endpoint
- * (`PUT /api/present-sessions/:sessionId/notes/:slideId`), never to the deck
+ * (`PUT /api/live-sessions/:sessionId/notes/:slideId`), never to the deck
  * route the editor uses. The visitor may not be logged in at all.
  *
  * Two things make this more than a textarea:
@@ -99,7 +99,7 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
     setStatus(t('notes.edit.saving', 'Saving...'));
     try {
       await api(
-        `/api/present-sessions/${encodeURIComponent(sessionId)}/notes/${encodeURIComponent(targetSlideId)}`,
+        `/api/live-sessions/${encodeURIComponent(sessionId)}/notes/${encodeURIComponent(targetSlideId)}`,
         { method: 'PUT', body: { notes: value } }
       );
       if (targetSlideId === slideId) {

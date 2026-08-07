@@ -1,7 +1,7 @@
 /**
  * Periodic TTL sweep for the live-session domains.
  *
- * Present sessions and follow codes are 24h ephemera. While they lived on disk
+ * Live sessions and follow codes are 24h ephemera. While they lived on disk
  * nothing collected them: `cleanupExpiredCodes()` existed but was never called,
  * and an expired session file was only removed if the process that wrote it
  * happened to read the directory again. Both are rows now, so collecting them
@@ -9,7 +9,7 @@
  * (`sandbox-cleanup.js`), which is the precedent this follows.
  *
  * This complements, not replaces, the in-memory expiry timer in
- * `storage/present-sessions/sessions.js`: that one also has to close the
+ * `storage/live-sessions/sessions.js`: that one also has to close the
  * session's SSE clients, so it stays responsible for the sessions *this*
  * process holds. The sweep is for the rows nobody holds — a worker that died,
  * a redeploy, a presenter who never closed the tab.
@@ -27,13 +27,13 @@
  */
 
 import { cleanupExpiredCodes } from '../storage/follow-codes.js';
-import { sweepExpiredSessions } from '../storage/present-sessions/db.js';
+import { sweepExpiredSessions } from '../storage/live-sessions/db.js';
 import { createLogger } from './logger.js';
 
 const log = createLogger('live-session-cleanup');
 
 /**
- * Delete every expired present session and follow code, once.
+ * Delete every expired live session and follow code, once.
  *
  * Sessions go first: interactions, questions and feedback are foreign-keyed to
  * `present_sessions.session_id` with ON DELETE CASCADE, so this one statement

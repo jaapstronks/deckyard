@@ -1,8 +1,8 @@
 /**
  * Security-audit cluster 4 regression tests (H4, MH1, MH2).
  *
- * H4  — present-session control has no per-resource authz
- *       (server/routes/api/present-sessions.js). Creating/resuming a session,
+ * H4  — live-session control has no per-resource authz
+ *       (server/routes/api/live-sessions.js). Creating/resuming a session,
  *       pushing live state, opening/closing interactions, driving remote
  *       control, and exporting audience feedback are all presenter actions and
  *       must require write permission on the backing presentation. A logged-in
@@ -45,15 +45,15 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } = await import(
   '../server/storage/adapters/index.js'
 );
-const { handlePresentSessions } = await import('../server/routes/api/present-sessions.js');
-const { handlePresentSessionsPublic } = await import(
-  '../server/routes/api/present-session-audience.js'
+const { handleLiveSessions } = await import('../server/routes/api/live-sessions.js');
+const { handleLiveSessionsPublic } = await import(
+  '../server/routes/api/live-session-audience.js'
 );
 const { handleShareLinkManagement, shareLinkBelongsToPresentation } = await import(
   '../server/routes/api/share-links/management.js'
 );
 const { fetchCsvData } = await import('../server/utils/data-source/providers/csv-url.js');
-const { sessions } = await import('../server/storage/present-sessions/state.js');
+const { sessions } = await import('../server/storage/live-sessions/state.js');
 
 const OWNER = { email: 'owner@example.com' };
 const FOREIGN = { email: 'attacker@example.com' };
@@ -181,10 +181,10 @@ async function withTempRoot(fn) {
   }
 }
 
-async function callPresentSessions({ root, method, pathname, body, authedUser }) {
+async function callLiveSessions({ root, method, pathname, body, authedUser }) {
   const res = new MockRes();
   const url = new URL(`http://localhost${pathname}`);
-  const handled = await handlePresentSessions({
+  const handled = await handleLiveSessions({
     repoRoot: root,
     req: mockReq(method, body),
     res,
@@ -195,16 +195,16 @@ async function callPresentSessions({ root, method, pathname, body, authedUser })
 }
 
 // ============================================================================
-// H4 — present-session per-resource authorization
+// H4 — live-session per-resource authorization
 // ============================================================================
 
-test('H4: a non-owner cannot create/resume a present session (401)', async () => {
+test('H4: a non-owner cannot create/resume a live session (401)', async () => {
   await withTempRoot(async (root) => {
     seedPresentation('deck-a', { ownerEmail: OWNER.email });
-    const { res } = await callPresentSessions({
+    const { res } = await callLiveSessions({
       root,
       method: 'POST',
-      pathname: '/api/present-sessions',
+      pathname: '/api/live-sessions',
       body: { presentationId: 'deck-a' },
       authedUser: FOREIGN,
     });
@@ -212,13 +212,13 @@ test('H4: a non-owner cannot create/resume a present session (401)', async () =>
   });
 });
 
-test('H4: the owner can create a present session (201)', async () => {
+test('H4: the owner can create a live session (201)', async () => {
   await withTempRoot(async (root) => {
     seedPresentation('deck-b', { ownerEmail: OWNER.email });
-    const { res } = await callPresentSessions({
+    const { res } = await callLiveSessions({
       root,
       method: 'POST',
-      pathname: '/api/present-sessions',
+      pathname: '/api/live-sessions',
       body: { presentationId: 'deck-b' },
       authedUser: OWNER,
     });
@@ -231,10 +231,10 @@ test('H4: a non-owner cannot enable remote control on a live session (401)', asy
   await withTempRoot(async (root) => {
     seedPresentation('deck-c', { ownerEmail: OWNER.email });
     seedSession(root, 'sess-c', 'deck-c');
-    const { res } = await callPresentSessions({
+    const { res } = await callLiveSessions({
       root,
       method: 'POST',
-      pathname: '/api/present-sessions/sess-c/control/enable',
+      pathname: '/api/live-sessions/sess-c/control/enable',
       authedUser: FOREIGN,
     });
     assert.equal(res.statusCode, 401);
@@ -246,10 +246,10 @@ test('H4: the owner can enable remote control (200)', async () => {
   await withTempRoot(async (root) => {
     seedPresentation('deck-d', { ownerEmail: OWNER.email });
     seedSession(root, 'sess-d', 'deck-d');
-    const { res } = await callPresentSessions({
+    const { res } = await callLiveSessions({
       root,
       method: 'POST',
-      pathname: '/api/present-sessions/sess-d/control/enable',
+      pathname: '/api/live-sessions/sess-d/control/enable',
       authedUser: OWNER,
     });
     assert.equal(res.statusCode, 200);
@@ -261,10 +261,10 @@ test('H4: a non-owner cannot push live slide state (401)', async () => {
   await withTempRoot(async (root) => {
     seedPresentation('deck-e', { ownerEmail: OWNER.email });
     seedSession(root, 'sess-e', 'deck-e');
-    const { res } = await callPresentSessions({
+    const { res } = await callLiveSessions({
       root,
       method: 'POST',
-      pathname: '/api/present-sessions/sess-e/state',
+      pathname: '/api/live-sessions/sess-e/state',
       body: { presentationId: 'deck-e', slideId: 's1', slideIndex: 0 },
       authedUser: FOREIGN,
     });
@@ -280,10 +280,10 @@ test('H4: a non-owner cannot export audience feedback CSV (401, no PII leaked)',
       slides: [{ id: 'fb1', type: 'feedback-slide', content: {} }],
     });
     seedSession(root, 'sess-f', 'deck-f');
-    const { res } = await callPresentSessions({
+    const { res } = await callLiveSessions({
       root,
       method: 'GET',
-      pathname: '/api/present-sessions/sess-f/feedback/fb1.csv',
+      pathname: '/api/live-sessions/sess-f/feedback/fb1.csv',
       authedUser: FOREIGN,
     });
     assert.equal(res.statusCode, 401);
@@ -298,13 +298,13 @@ test('H4: reading session state stays open to the audience (GET is capability-ba
     seedSession(root, 'sess-g', 'deck-g');
     // No authedUser at all (audience device): GET /state must still resolve.
     // It is served from the public dispatcher, which runs before the login gate
-    // — see routes/api/present-session-audience.js.
+    // — see routes/api/live-session-audience.js.
     const res = new MockRes();
-    await handlePresentSessionsPublic({
+    await handleLiveSessionsPublic({
       repoRoot: root,
       req: mockReq('GET'),
       res,
-      url: new URL('http://localhost/api/present-sessions/sess-g/state'),
+      url: new URL('http://localhost/api/live-sessions/sess-g/state'),
     });
     assert.equal(res.statusCode, 200);
     assert.equal(JSON.parse(res.body()).presentationId, 'deck-g');

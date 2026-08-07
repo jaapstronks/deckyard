@@ -37,7 +37,7 @@ export function createPresenterInteractionControls({
       if (!sessionId || !cur || interactionTypeFromSlideType(cur.type) !== 'feedback')
         return;
       try {
-        const url = `/api/present-sessions/${encodeURIComponent(
+        const url = `/api/live-sessions/${encodeURIComponent(
           sessionId
         )}/feedback/${encodeURIComponent(cur.id)}.csv`;
         window.open(url, '_blank', 'noopener,noreferrer');
@@ -57,7 +57,7 @@ export function createPresenterInteractionControls({
       if (!sessionId || !cur || !isInteractionSlideType(cur.type)) return;
       try {
         await api(
-          `/api/present-sessions/${encodeURIComponent(
+          `/api/live-sessions/${encodeURIComponent(
             sessionId
           )}/interactions/${encodeURIComponent(cur.id)}/open`,
           { method: 'POST', body: '{}' }
@@ -78,7 +78,7 @@ export function createPresenterInteractionControls({
       if (!sessionId || !cur || !isInteractionSlideType(cur.type)) return;
       try {
         await api(
-          `/api/present-sessions/${encodeURIComponent(
+          `/api/live-sessions/${encodeURIComponent(
             sessionId
           )}/interactions/${encodeURIComponent(cur.id)}/close`,
           { method: 'POST', body: '{}' }
@@ -105,7 +105,7 @@ export function createPresenterInteractionControls({
       }))) return;
       try {
         await api(
-          `/api/present-sessions/${encodeURIComponent(
+          `/api/live-sessions/${encodeURIComponent(
             sessionId
           )}/interactions/${encodeURIComponent(cur.id)}/reset`,
           { method: 'POST', body: '{}' }

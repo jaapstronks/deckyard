@@ -6,11 +6,11 @@ import { t } from '../../lib/ui-i18n.js';
  * Remote-control panel for the speaker-notes companion.
  *
  * Renders the Prev / Next / Goto controls that drive the live presenter session
- * over `/api/present-sessions/:id/control`. Visibility is gated by the session's
+ * over `/api/live-sessions/:id/control`. Visibility is gated by the session's
  * `controlEnabled` flag (toggled live via {@link setEnabled}).
  *
  * @param {object} opts
- * @param {string} opts.sessionId - present-session id to control.
+ * @param {string} opts.sessionId - live-session id to control.
  * @param {boolean} opts.enabled - initial visibility.
  * @param {(msg: unknown) => void} opts.flashHint - surface a transient error/hint.
  * @returns {{ el: HTMLElement, setEnabled: (v: boolean) => void }}
@@ -39,7 +39,7 @@ export function createNotesControls({ sessionId, enabled, flashHint }) {
   });
 
   const sendControl = async (body) => {
-    await api(`/api/present-sessions/${sessionId}/control`, {
+    await api(`/api/live-sessions/${sessionId}/control`, {
       method: 'POST',
       body: JSON.stringify(body),
     });

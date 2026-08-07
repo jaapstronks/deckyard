@@ -99,7 +99,7 @@ organization and which never will:
   have one.
 - **R2 — Content descendants inherit the organization through their FK chain
   and carry no organization column of their own.** The live stack
-  (present-sessions, interactions, questions, feedback), analytics, the
+  (live-sessions, interactions, questions, feedback), analytics, the
   share-link access log and API usage all reach the organization via the row
   they hang off (`session_id` → `present_sessions.presentation_id` →
   `presentations.organization_id`; `api_key_id` → `api_keys.organization_id`).

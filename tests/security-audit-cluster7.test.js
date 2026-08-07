@@ -145,7 +145,7 @@ test('L2: follow-code values are no longer logged; the session token is redacted
   assert.doesNotMatch(codes, /console\.log\([^)]*\$\{upperCode\}/, 'no code in resolve logs');
   assert.doesNotMatch(codes, /Looking up code/, 'verbose code lookup log removed');
 
-  const sessions = await readSrc('../server/storage/present-sessions/sessions.js');
+  const sessions = await readSrc('../server/storage/live-sessions/sessions.js');
   assert.doesNotMatch(sessions, /nl: followCodes\.nl/, 'code values no longer logged');
 
   const track = await readSrc('../server/routes/api/analytics-track.js');

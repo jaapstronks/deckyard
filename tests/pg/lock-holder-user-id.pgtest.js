@@ -42,7 +42,7 @@ import {
   releasePresentationLock,
   createLockRequest,
   acceptLockRequest,
-} from '../../server/storage/presentation-locks-db.js';
+} from '../../server/storage/presentation-locks.js';
 
 // A real uuid: organizations.id and users.organization_id are uuid columns,
 // while slide_locks.organization_id is free text — one value keys all three.

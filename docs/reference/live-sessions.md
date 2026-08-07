@@ -11,45 +11,45 @@ layer. The presenter's own two-window UI is described in
 underneath it.
 
 **Naming.** The code and database call the entity a **present session**
-(`present_sessions` table, `session_id`, `/api/present-sessions/…`). "Live" is
+(`present_sessions` table, `session_id`, `/api/live-sessions/…`). "Live" is
 only ever an adjective — a `follow-state` status value of `'live'` means a
 session whose presenter pushed state recently. This doc uses "present session"
 for the entity and "live" for an active one, matching the code.
 
 ## Module map
 
-Storage (`server/storage/present-sessions/`, 10 modules):
+Storage (`server/storage/live-sessions/`, 10 modules):
 
-- `server/storage/present-sessions/index.js` — barrel; the public surface.
-- `server/storage/present-sessions/constants.js` — timing: `TTL_MS` (24 h idle),
+- `server/storage/live-sessions/index.js` — barrel; the public surface.
+- `server/storage/live-sessions/constants.js` — timing: `TTL_MS` (24 h idle),
   `HEARTBEAT_MS` (15 s), `LIVE_WINDOW_MS` (env `PRESENT_LIVE_WINDOW_MS`, default
   15 min).
-- `server/storage/present-sessions/state.js` — the process-local
+- `server/storage/live-sessions/state.js` — the process-local
   `Map<sessionId, session>` of hot session objects (sockets, timers).
-- `server/storage/present-sessions/ids.js` — `newSessionId()`, `nowState()`.
-- `server/storage/present-sessions/sessions.js` — lifecycle
+- `server/storage/live-sessions/ids.js` — `newSessionId()`, `nowState()`.
+- `server/storage/live-sessions/sessions.js` — lifecycle
   (`createPresentSession` create-or-reuse per deck, `getPresentSession`,
   `touchPresentSession`), follow-code minting, in-memory TTL cleanup.
-- `server/storage/present-sessions/db.js` — Postgres persistence of the *cold*
+- `server/storage/live-sessions/db.js` — Postgres persistence of the *cold*
   half (`present_sessions` row): `persistSession`, `schedulePersist` (600 ms
   debounce), `hydrateSession`, `sweepExpiredSessions`.
-- `server/storage/present-sessions/sse.js` — the SSE fan-out
+- `server/storage/live-sessions/sse.js` — the SSE fan-out
   (`attachSessionSseClient`, `broadcast`, `updatePresentSessionState`,
   `notifyPresentSessionInteractionState`, `notifyPresentSessionDeckUpdated`,
   `broadcastBranch`). **Process-local only** (see *Implementation status*).
-- `server/storage/present-sessions/control.js` — follower remote-control
+- `server/storage/live-sessions/control.js` — follower remote-control
   (`setPresentSessionControlEnabled`, `sendPresentSessionControlCommand`).
-- `server/storage/present-sessions/follow-state.js` — `getFollowStateForPresentation`,
+- `server/storage/live-sessions/follow-state.js` — `getFollowStateForPresentation`,
   the read model resolving a deck's most-recent session to
   `live` / `ended` / `not_started` / `not_found`.
-- `server/storage/present-sessions/close.js` — `closeSession` (emit `close`,
+- `server/storage/live-sessions/close.js` — `closeSession` (emit `close`,
   tear down, delete row).
 
 Routes:
 
-- `server/routes/api/present-sessions.js` (~416 lines) — **presenter** routes,
+- `server/routes/api/live-sessions.js` (~416 lines) — **presenter** routes,
   all behind deck-write.
-- `server/routes/api/present-session-audience.js` (~267 lines) — **public**
+- `server/routes/api/live-session-audience.js` (~267 lines) — **public**
   capability-based routes (the session id is the authorization).
 - `server/routes/api/follow.js` + `server/routes/api/follow/` (`state.js`,
   `events.js`, `presentation.js`, `interactions.js`, `questions.js`,
@@ -100,16 +100,16 @@ ON DELETE CASCADE`, so closing a session cascades them away.
 
 ## Flows
 
-- **Create** — presenter (deck-write) `POST /api/present-sessions
+- **Create** — presenter (deck-write) `POST /api/live-sessions
   {presentationId}`. `createPresentSession` reuses a non-expired session for that
   deck (idempotent per deck) or mints a new UUID, mints per-language follow
   codes, and returns `{sessionId, joinPath, followCodes}`.
 - **Join** — audience connects with only the session id (companion) or the
   presentation id via a follow code (follow-along). No login.
-- **Advance** — presenter `POST /api/present-sessions/:id/state` pushes the
+- **Advance** — presenter `POST /api/live-sessions/:id/state` pushes the
   slide position; `updatePresentSessionState` stores it and `broadcast`s a
   `state` event to all local clients. A follower with control enabled can
-  `POST /api/present-sessions/:id/control` (next/prev/goto), and `control.js`
+  `POST /api/live-sessions/:id/control` (next/prev/goto), and `control.js`
   computes the target slide and pushes state.
 - **Interactions** — the presenter opens/closes/resets a poll, likert, or
   feedback interaction; closing a slide with an `onClose` rule emits a `branch`
@@ -121,7 +121,7 @@ ON DELETE CASCADE`, so closing a session cascades them away.
 
 ## SSE flow
 
-- **Stream endpoints** (`text/event-stream`): `GET /api/present-sessions/:id/events`
+- **Stream endpoints** (`text/event-stream`): `GET /api/live-sessions/:id/events`
   (companion) and `GET /api/follow/:presentationId/events` (audience). Both call
   `guardSseConnection` first, then set `Cache-Control: no-store`,
   `Connection: keep-alive`, `X-Accel-Buffering: no`.
@@ -145,7 +145,7 @@ ON DELETE CASCADE`, so closing a session cascades them away.
 
 | Name | Where | Purpose / default |
 |---|---|---|
-| `PRESENT_LIVE_WINDOW_MS` | `present-sessions/constants.js` | Freshness window for `live` status. 15 min (floor 60 s). |
+| `PRESENT_LIVE_WINDOW_MS` | `live-sessions/constants.js` | Freshness window for `live` status. 15 min (floor 60 s). |
 | `SSE_MAX_CONNECTIONS` | `utils/sse-limiter.js` | Global concurrent public SSE cap. 2000. |
 | `SSE_MAX_CONNECTIONS_PER_IP` | `utils/sse-limiter.js` | Per-IP cap (skipped behind proxy/NAT). 50. |
 | `SSE_MAX_LIFETIME_MS` | `utils/sse-limiter.js` | Absolute stream lifetime. 6 h. |
@@ -157,7 +157,7 @@ and there is **no max-audience** cap beyond the SSE connection caps.
 
 ## Authz & tenancy
 
-- **Start**: deck-write only. Every route in `present-sessions.js` goes through
+- **Start**: deck-write only. Every route in `live-sessions.js` goes through
   `requirePresentationControl` → `withPresentationAuth({permission:'write'})`.
 - **Join**: anonymous, capability-based. The audience and follow routes sit in
   the *public* block of `server/routes/api/index.js`, before the login gate. The
@@ -168,7 +168,7 @@ and there is **no max-audience** cap beyond the SSE connection caps.
 - **Org-scoping**: present sessions are **not** org-scoped (migration 060 dropped
   the column). Cross-org reads go through `crossOrganizationScope(reason, …)`;
   org deletion still cascades sessions away via `presentation_id`. The anonymous
-  speaker-notes write (`PUT /api/present-sessions/:id/notes/:slideId`,
+  speaker-notes write (`PUT /api/live-sessions/:id/notes/:slideId`,
   rate-limited per IP) derives its write scope's `organizationId` from the
   resolved deck, never from the caller. General rules:
   [`tenant-isolation.md`](tenant-isolation.md).

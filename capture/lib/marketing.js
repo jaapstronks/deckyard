@@ -89,12 +89,12 @@ export async function startLiveSession(
   api,
   { deckId, slideId, slideType, slideIndex }
 ) {
-  const session = await api.post('/api/present-sessions', {
+  const session = await api.post('/api/live-sessions', {
     presentationId: deckId,
   });
   const sessionId = session?.sessionId;
   if (!sessionId) throw new Error(`No sessionId returned for deck ${deckId}`);
-  await api.post(`/api/present-sessions/${sessionId}/state`, {
+  await api.post(`/api/live-sessions/${sessionId}/state`, {
     presentationId: deckId,
     slideId,
     slideType,

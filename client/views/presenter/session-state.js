@@ -43,7 +43,7 @@ export function createSessionStatePoster({
         const payload = pendingPostedState;
         pendingPostedState = null;
         // eslint-disable-next-line no-await-in-loop
-        await api(`/api/present-sessions/${sessionId}/state`, {
+        await api(`/api/live-sessions/${sessionId}/state`, {
           method: 'POST',
           body: JSON.stringify(payload),
         }).catch(() => {});

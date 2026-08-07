@@ -126,8 +126,8 @@ neighbouring question a tenth way.
 | `server/utils/interaction-helpers.js` | `isInteractiveSlideType()`, the closest thing to a home the capability had | deleted; callers use the facet |
 | `server/routes/api/follow/helpers.js` | the four, computing the audience's capabilities | `liveInteractionKind()` |
 | `server/routes/api/follow/interactions.js` | the four, in three handlers | `liveInteractionKind()` |
-| `server/routes/api/present-sessions.js` | the four, guarding open/close/reset and the feedback export | `liveInteractionKind()` |
-| `server/storage/present-sessions/control.js` | three of the four (poll missing from the branch, harmlessly) | `liveInteractionKind()` |
+| `server/routes/api/live-sessions.js` | the four, guarding open/close/reset and the feedback export | `liveInteractionKind()` |
+| `server/storage/live-sessions/control.js` | three of the four (poll missing from the branch, harmlessly) | `liveInteractionKind()` |
 | `scripts/test-concurrent-votes.js` | three, to find a votable slide to hammer | `liveInteractionKind()` |
 | `client/views/presenter/deck-controller.js` | `follow-invite` + poll + feedback, to pass follow codes | `isLiveSlideType()` + follow-invite |
 

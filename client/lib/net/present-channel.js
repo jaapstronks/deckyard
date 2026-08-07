@@ -4,7 +4,7 @@
  * The presenter (master) window and the clean projector window are same-origin
  * and live in the same browser, so we sync them over a `BroadcastChannel` —
  * instant and local, no server round-trip. This is deliberately separate from
- * the SSE present-session (which syncs cross-*device* follow/companion): a
+ * the SSE live-session (which syncs cross-*device* follow/companion): a
  * second window on the same machine doesn't need the network.
  *
  * Message shape: `{ kind: 'state' | 'hello' | 'bye' | 'hl' | 'codes', state? }`.

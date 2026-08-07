@@ -1,11 +1,11 @@
 import {
   broadcastBranch,
-  createPresentSession,
-  getPresentSession,
-  sendPresentSessionControlCommand,
-  setPresentSessionControlEnabled,
-  updatePresentSessionState,
-} from '../../storage/present-sessions/index.js';
+  createLiveSession,
+  getLiveSession,
+  sendLiveSessionControlCommand,
+  setLiveSessionControlEnabled,
+  updateLiveSessionState,
+} from '../../storage/live-sessions/index.js';
 import {
   ensurePollInteractionForSlide,
   resetPollInteraction,
@@ -37,11 +37,11 @@ import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { getString } from '../../utils/request-validators.js';
 
 /**
- * Presenter-only present-session routes.
+ * Presenter-only live-session routes.
  *
  * Everything here requires deck-write. The capability-based half of the surface
  * — the audience/companion reads, the SSE stream and the session-scoped notes
- * write — lives in `present-session-audience.js` and is dispatched from the
+ * write — lives in `live-session-audience.js` and is dispatched from the
  * public block, before the login gate.
  */
 
@@ -73,8 +73,8 @@ function csvEscapeCell(v) {
   return s;
 }
 
-export async function handlePresentSessions({ repoRoot, req, res, url, authedUser }) {
-  if (url.pathname === '/api/present-sessions' && req.method === 'POST') {
+export async function handleLiveSessions({ repoRoot, req, res, url, authedUser }) {
+  if (url.pathname === '/api/live-sessions' && req.method === 'POST') {
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
@@ -90,7 +90,7 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
       res,
     });
     if (!pres) return true;
-    const created = await createPresentSession(repoRoot, {
+    const created = await createLiveSession(repoRoot, {
       presentationId: presentationId.trim(),
     });
     if (!created)
@@ -100,14 +100,14 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
   }
 
   const sessStateMatch = url.pathname.match(
-    /^\/api\/present-sessions\/([^/]+)\/state$/
+    /^\/api\/live-sessions\/([^/]+)\/state$/
   );
   if (sessStateMatch) {
     const sessionId = sessStateMatch[1];
-    const s = await getPresentSession(repoRoot, sessionId);
+    const s = await getLiveSession(repoRoot, sessionId);
     if (!s) return notFound(res);
     // GET is capability-based (the session id is the authorization) and is
-    // served from the public block — see routes/api/present-session-audience.js.
+    // served from the public block — see routes/api/live-session-audience.js.
     if (req.method === 'POST') {
       // Pushing live state is a presenter action → require deck-write.
       const pres = await requirePresentationControl({
@@ -139,7 +139,7 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
           : undefined;
       const updatedAt =
         body?.updatedAt != null ? Number(body.updatedAt) : Date.now();
-      const next = await updatePresentSessionState(repoRoot, sessionId, {
+      const next = await updateLiveSessionState(repoRoot, sessionId, {
         slideId,
         slideIndex,
         slideType,
@@ -188,13 +188,13 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
   }
 
   const sessInteractionMatch = url.pathname.match(
-    /^\/api\/present-sessions\/([^/]+)\/interactions\/([^/]+)\/(open|close|reset)$/
+    /^\/api\/live-sessions\/([^/]+)\/interactions\/([^/]+)\/(open|close|reset)$/
   );
   if (sessInteractionMatch && req.method === 'POST') {
     const sessionId = sessInteractionMatch[1];
     const slideId = sessInteractionMatch[2];
     const action = sessInteractionMatch[3];
-    const s = await getPresentSession(repoRoot, sessionId);
+    const s = await getLiveSession(repoRoot, sessionId);
     if (!s) return notFound(res);
     // Opening/closing/resetting an interaction is a presenter action.
     const pres = await requirePresentationControl({
@@ -289,13 +289,13 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
   }
 
   const feedbackExportMatch = url.pathname.match(
-    /^\/api\/present-sessions\/([^/]+)\/feedback\/([^/]+)\.(csv|json)$/
+    /^\/api\/live-sessions\/([^/]+)\/feedback\/([^/]+)\.(csv|json)$/
   );
   if (feedbackExportMatch && req.method === 'GET') {
     const sessionId = feedbackExportMatch[1];
     const slideId = feedbackExportMatch[2];
     const fmt = feedbackExportMatch[3];
-    const s = await getPresentSession(repoRoot, sessionId);
+    const s = await getLiveSession(repoRoot, sessionId);
     if (!s) return notFound(res);
     // Feedback entries are audience PII (free text + deviceId) → deck-write only.
     const pres = await requirePresentationControl({
@@ -351,11 +351,11 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
   }
 
   const sessEnableMatch = url.pathname.match(
-    /^\/api\/present-sessions\/([^/]+)\/control\/enable$/
+    /^\/api\/live-sessions\/([^/]+)\/control\/enable$/
   );
   if (sessEnableMatch && req.method === 'POST') {
     const sessionId = sessEnableMatch[1];
-    const s = await getPresentSession(repoRoot, sessionId);
+    const s = await getLiveSession(repoRoot, sessionId);
     if (!s) return notFound(res);
     const pres = await requirePresentationControl({
       repoRoot,
@@ -364,17 +364,17 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
       res,
     });
     if (!pres) return true;
-    const next = setPresentSessionControlEnabled(repoRoot, sessionId, true);
+    const next = setLiveSessionControlEnabled(repoRoot, sessionId, true);
     serveJson(res, 200, next);
     return true;
   }
 
   const sessDisableMatch = url.pathname.match(
-    /^\/api\/present-sessions\/([^/]+)\/control\/disable$/
+    /^\/api\/live-sessions\/([^/]+)\/control\/disable$/
   );
   if (sessDisableMatch && req.method === 'POST') {
     const sessionId = sessDisableMatch[1];
-    const s = await getPresentSession(repoRoot, sessionId);
+    const s = await getLiveSession(repoRoot, sessionId);
     if (!s) return notFound(res);
     const pres = await requirePresentationControl({
       repoRoot,
@@ -383,17 +383,17 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
       res,
     });
     if (!pres) return true;
-    const next = setPresentSessionControlEnabled(repoRoot, sessionId, false);
+    const next = setLiveSessionControlEnabled(repoRoot, sessionId, false);
     serveJson(res, 200, next);
     return true;
   }
 
   const sessControlMatch = url.pathname.match(
-    /^\/api\/present-sessions\/([^/]+)\/control$/
+    /^\/api\/live-sessions\/([^/]+)\/control$/
   );
   if (sessControlMatch && req.method === 'POST') {
     const sessionId = sessControlMatch[1];
-    const s = await getPresentSession(repoRoot, sessionId);
+    const s = await getLiveSession(repoRoot, sessionId);
     if (!s) return notFound(res);
     const pres = await requirePresentationControl({
       repoRoot,
@@ -405,7 +405,7 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
-    const result = await sendPresentSessionControlCommand(repoRoot, sessionId, body);
+    const result = await sendLiveSessionControlCommand(repoRoot, sessionId, body);
     if (!result.ok) {
       if (result.reason === 'disabled')
         return unauthorized(

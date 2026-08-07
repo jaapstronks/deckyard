@@ -11,7 +11,7 @@ export function createNotesSessionSse({
 
   const connector = withBackoff(
     ({ onOpen, onError }) => {
-      es = new EventSource(`/api/present-sessions/${sessionId}/events`);
+      es = new EventSource(`/api/live-sessions/${sessionId}/events`);
       es.addEventListener('open', () => onOpen?.());
       es.addEventListener('error', () => onError?.());
       es.addEventListener('state', (ev) => {

@@ -1,6 +1,6 @@
 /**
  * Shared interaction helpers for poll, likert, and feedback slides
- * Consolidates duplicate functions from present-sessions.js, follow/interactions.js, and follow/helpers.js
+ * Consolidates duplicate functions from live-sessions.js, follow/interactions.js, and follow/helpers.js
  */
 
 import { nonEmpty } from '../../shared/slide-types/helpers.js';
