@@ -168,7 +168,7 @@ test('route serves a cached webp to the owner', async () => {
   const created = await createPresentation(testScope(), {
     title: 'Owned deck',
     ownerEmail: 'owner@example.com',
-    scope: 'private',
+    visibility: 'private',
     slides: [{ id: 's1', type: 'title-slide', content: { title: 'Hi' } }],
   });
   const pres = await getPresentation(testScope(), created.id);
@@ -200,7 +200,7 @@ test('route denies a non-owner on a private deck', async () => {
   const created = await createPresentation(testScope(), {
     title: 'Private deck',
     ownerEmail: 'owner@example.com',
-    scope: 'private',
+    visibility: 'private',
     slides: [{ id: 's1', type: 'title-slide', content: { title: 'Hi' } }],
   });
 
@@ -282,7 +282,7 @@ test('route serves the previous raster instead of 404 while the new one renders'
   const created = await createPresentation(testScope(), {
     title: 'Edited deck',
     ownerEmail: 'owner@example.com',
-    scope: 'private',
+    visibility: 'private',
     slides: [],
   });
   const seeded = await getPresentation(testScope(), created.id);

@@ -180,7 +180,7 @@ export async function prepareNewPresentation(repoRoot, body) {
 
   if (typeof body?.ownerEmail === 'string' && body.ownerEmail.trim())
     pres.ownerEmail = body.ownerEmail.trim().toLowerCase();
-  pres.scope = 'private';
+  pres.visibility = 'private';
   pres.createdBy = pres.ownerEmail || null;
   pres.updatedBy = pres.ownerEmail || null;
   pres.revision = 1;

@@ -1,10 +1,10 @@
 /**
- * The request-to-organization binding, single-workspace mode (A1 phase 1).
+ * The request-to-organization binding, single-organization mode (A1 phase 1).
  *
  * This is the regression net for the change that lets
  * `authedUser.organizationId` through `createRouteContext`. Every assertion
  * here describes behaviour that MUST NOT change for an existing installation:
- * single-workspace instances have exactly one organization, so the value the
+ * single-organization instances have exactly one organization, so the value the
  * session resolves to *is* the default organization and the binding is a no-op
  * for them — including its cost. None of these tests go red when the change is
  * reverted; that is the point. The assertions that do are in
@@ -15,7 +15,7 @@
  * `resolveActiveOrganization()` must stay in front of the database. Two tests
  * below assert against the query log that nothing extra is issued.
  *
- * MULTI_WORKSPACE_ENABLED is read at module scope (server/config/features.js:15),
+ * MULTI_ORG_ENABLED is read at module scope (server/config/features.js:15),
  * so this file unsets it before importing anything and relies on node --test
  * giving each file its own process.
  *
@@ -30,7 +30,7 @@ import assert from 'node:assert/strict';
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
-delete process.env.MULTI_WORKSPACE_ENABLED;
+delete process.env.MULTI_ORG_ENABLED;
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const DEFAULT_ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -39,7 +39,7 @@ const OTHER_ORG = '00000000-0000-0000-0000-0000000000bb';
 const { createFakeDb, touchedTables } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { hashPassword } = await import('../server/utils/password-hash.js');
-const { isMultiWorkspaceEnabled } = await import('../server/config/features.js');
+const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const auth = await import('../server/auth/auth.js');
 const { createRouteContext } = await import('../server/utils/context.js');
 const { withPresentations } = await import(
@@ -52,7 +52,7 @@ let passwordHash;
 
 test.before(async () => {
   passwordHash = await hashPassword('correct horse battery');
-  assert.equal(isMultiWorkspaceEnabled(), false, 'multi-workspace flag is off for this file');
+  assert.equal(isMultiOrgEnabled(), false, 'multi-organization flag is off for this file');
 });
 
 test.afterEach(() => {
@@ -99,7 +99,7 @@ function seedSingleOrg() {
         owner_email: 'alice@example.com',
         created_by: 'alice@example.com',
         updated_by: 'alice@example.com',
-        scope: 'workspace',
+        visibility: 'organization',
         theme: 'default',
         lang: 'nl',
         revision: 1,
@@ -158,7 +158,7 @@ test('a request resolves to the default organization', async () => {
 test('a session asking for another organization still resolves to the default', async () => {
   seedSingleOrg();
 
-  // Nothing can mint such a cookie in single-workspace mode (setSessionCookie
+  // Nothing can mint such a cookie in single-organization mode (setSessionCookie
   // omits orgId entirely there), but an instance that once ran with the flag on
   // can still be holding one. It must not steer the request.
   const { ctx } = await resolveContext({ organizationId: OTHER_ORG });
@@ -225,6 +225,6 @@ test('resolving a session touches only the users table', async () => {
   assert.deepEqual(
     [...new Set(touchedTables(db))],
     ['users'],
-    'no membership lookup is issued when multi-workspace is off'
+    'no membership lookup is issued when multi-organization is off'
   );
 });

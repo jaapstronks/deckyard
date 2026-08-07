@@ -37,7 +37,7 @@
  */
 
 import { getDefaultOrganizationId } from '../config/database.js';
-import { isMultiWorkspaceEnabled } from '../config/features.js';
+import { isMultiOrgEnabled } from '../config/features.js';
 
 /**
  * @typedef {Object} StorageScope
@@ -149,10 +149,10 @@ export function crossOrganizationScope(repoRoot, reason, extra = {}) {
 /**
  * Build a scope for an entry point that has no organization *because the
  * deployment has only one*: the stdio MCP server, a CLI script, a maintenance
- * task. Those are bound to an instance, not to a workspace within it.
+ * task. Those are bound to an instance, not to an organization within it.
  *
  * It answers with the configured default organization, but only in
- * single-workspace mode. Once an instance holds several organizations "the
+ * single-organization mode. Once an instance holds several organizations "the
  * default one" stops being an answer, so it throws instead — the entry point
  * has to be given a real organization before it can run there.
  *
@@ -161,8 +161,8 @@ export function crossOrganizationScope(repoRoot, reason, extra = {}) {
  * @param {Object} [extra] - Additional scope fields (e.g. actorEmail).
  * @returns {StorageScope}
  */
-export function singleWorkspaceScope(repoRoot, entryPoint, extra = {}) {
-  if (isMultiWorkspaceEnabled()) {
+export function singleOrganizationScope(repoRoot, entryPoint, extra = {}) {
+  if (isMultiOrgEnabled()) {
     throw new Error(
       `${entryPoint} has no organization to act in, and this instance runs several. ` +
         'Give it one explicitly rather than letting it fall back to the default organization.'
@@ -180,8 +180,8 @@ export function singleWorkspaceScope(repoRoot, entryPoint, extra = {}) {
  *
  * Queued work runs outside any request, so the organization has to travel in
  * the job payload. When it did not — a job enqueued before that field existed,
- * or a single-workspace instance that has only ever had one answer — this falls
- * back to {@link singleWorkspaceScope}, which is exact on a single-workspace
+ * or a single-organization instance that has only ever had one answer — this falls
+ * back to {@link singleOrganizationScope}, which is exact on a single-organization
  * instance and throws rather than guess on one that holds several.
  *
  * @param {Object} jobData - The job payload.
@@ -195,5 +195,5 @@ export function jobScope(jobData, operation) {
   if (typeof organizationId === 'string' && organizationId) {
     return { repoRoot, organizationId, actorEmail };
   }
-  return singleWorkspaceScope(repoRoot, operation, { actorEmail });
+  return singleOrganizationScope(repoRoot, operation, { actorEmail });
 }

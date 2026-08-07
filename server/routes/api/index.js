@@ -204,7 +204,7 @@ export async function handleApi({ repoRoot, req, res, url }) {
   if (await handleTags(ctx)) return;
   if (await handleStockMedia(ctx)) return;
   if (await handleJobs(ctx)) return;
-  // Organization management (multi-workspace mode)
+  // Organization management (multi-organization mode)
   if (await handleOrganizations(ctx)) return;
   if (await handleOrganizationMembers(ctx)) return;
   // Follow code creation (POST) requires auth

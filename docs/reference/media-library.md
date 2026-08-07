@@ -51,7 +51,7 @@ Library store:
   `updateImageLibraryItem`, `deleteImageLibraryItem`, `getImageFavorites`,
   `toggleImageFavorite`. Every function takes a storage scope, never a bare
   `repoRoot`.
-- `server/storage/image-library-usage.js` — `getImageLibraryUsage(scope, url)`:
+- `server/storage/image-library-usage.js` — `getImageLibraryUsage(storageScope, url)`:
   which decks use this image and whether any of them are published.
 - `server/storage/uploads.js` — the direct-to-disk path used by the stock-media
   importer: `writeUploadedFile()` (20 MB ceiling for GIFs) and
@@ -106,7 +106,7 @@ Table `image_library` (`server/db/migrations/001_initial_schema.js`, extended by
 Table `image_library_favorites` (033) — `(image_id, user_email,
 organization_id)` composite primary key, both FKs **ON DELETE CASCADE**, indexed
 on `(organization_id, user_email)`. Favourites are per user *within* an
-organization, so the same person in two workspaces has two sets.
+organization, so the same person in two organizations has two sets.
 
 There is **no row for the bytes**: a media provider key is not persisted
 anywhere except inside the `url` of the library item (or of a slide, a theme
@@ -189,7 +189,7 @@ stock-media import 20 MB (GIFs are large), in-place replace 10 MB.
   inside the handlers are a second layer that only bites when auth is disabled
   (`AUTH_ENABLED=false`) or in sandbox mode, where the gate hands out a guest.
 - **Library reads/writes** go through the storage scope, so every query is
-  narrowed to one `organization_id`; two workspaces on one instance never see
+  narrowed to one `organization_id`; two organizations on one instance never see
   each other's images. General rules: [`tenant-isolation.md`](tenant-isolation.md).
 - **Verbs**: read is open to any authenticated member of the organization;
   create, update, replace, favourite and alt-text generation need a real user;

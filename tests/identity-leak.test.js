@@ -53,7 +53,7 @@ test('public API returns the owner email only to the owner', () => {
     id: 'p1',
     title: 'Deck',
     ownerEmail: 'owner@example.com',
-    scope: 'workspace',
+    visibility: 'organization',
     slides: [],
   };
 
@@ -65,7 +65,7 @@ test('public API returns the owner email only to the owner', () => {
   const asOwnerCased = sanitizePresentation(pres, [], 'Owner@Example.com');
   assert.equal(asOwnerCased.ownerEmail, 'owner@example.com');
 
-  // A different requester (workspace/collaborator access) gets null.
+  // A different requester (organization/collaborator access) gets null.
   const asOther = sanitizePresentation(pres, [], 'someone-else@example.com');
   assert.equal(asOther.ownerEmail, null);
 

@@ -86,12 +86,12 @@ describe('enrichCommentsWithSlideContext', () => {
 describe('checkActorCommentAccess', () => {
   const OWNER = 'owner@example.com';
   const OTHER = 'other@example.com';
-  const privateDeck = { id: 'p1', ownerEmail: OWNER, scope: 'private' };
-  const workspaceDeck = { id: 'w1', ownerEmail: OWNER, scope: 'workspace' };
+  const privateDeck = { id: 'p1', ownerEmail: OWNER, visibility: 'private' };
+  const organizationDeck = { id: 'w1', ownerEmail: OWNER, visibility: 'organization' };
 
-  it('owner and workspace users can comment', () => {
+  it('owner and organization users can comment', () => {
     assert.equal(checkActorCommentAccess({ pres: privateDeck, actor: { email: OWNER } }), true);
-    assert.equal(checkActorCommentAccess({ pres: workspaceDeck, actor: { email: OTHER } }), true);
+    assert.equal(checkActorCommentAccess({ pres: organizationDeck, actor: { email: OTHER } }), true);
   });
 
   it('outsiders cannot comment on private decks', () => {

@@ -1,6 +1,6 @@
 /**
  * Storage layer for presentation collaborators.
- * Enables workspace users to collaborate on presentations with specific permissions.
+ * Enables organization members to collaborate on presentations with specific permissions.
  *
  * ## The scope of a collaborator row is the deck, not the session
  *
@@ -14,7 +14,7 @@
  * That disagreement was real. Before this module dropped its `ctx` parameters,
  * the write path stamped `getOrgId(ctx)` — the *inviter's session* org — while
  * the authorization reads fixed in #623 had moved to the *deck's* org, so a
- * cross-workspace collaborator could open a deck but not its versions or
+ * cross-organization collaborator could open a deck but not its versions or
  * thumbnail. One concept, two scopes, asymmetric endpoints.
  *
  * The canonical form, and the reason these functions take no context:
@@ -31,7 +31,7 @@
  * The one function that keeps a context is {@link listPresentationsSharedWithUser}:
  * it is scoped by *user*, not by presentation, so it has no deck to derive an
  * organization from and legitimately answers "decks shared with me, in the
- * workspace I am acting in".
+ * organization I am acting in".
  */
 
 import { getOrgId } from '../utils/context.js';
@@ -75,7 +75,7 @@ async function readPresentationOrgId(db, presentationId) {
  *
  * The row is stamped with the *deck's* organization, not the inviter's session
  * organization — see the module header. An inviter acting from another
- * workspace therefore produces a row the deck's own authorization reads can
+ * organization therefore produces a row the deck's own authorization reads can
  * find, instead of a silently inert one.
  *
  * @param {string} presentationId - The presentation ID
@@ -308,11 +308,11 @@ export async function listCollaborators(presentationId) {
  * The one collaborator query that keeps a context, and the only one that may:
  * it is scoped by user rather than by presentation, so there is no deck to
  * derive an organization from. The organization filter here means "decks in the
- * workspace I am acting in" — a listing decision, not an authorization one. A
- * cross-workspace collaborator still reaches such a deck through every
+ * organization I am acting in" — a listing decision, not an authorization one. A
+ * cross-organization collaborator still reaches such a deck through every
  * presentation-scoped endpoint; it just does not show up in this list. Widening
  * that is a product question about what "shared with me" means across
- * workspaces, tracked with the identity epic rather than decided here.
+ * organizations, tracked with the identity epic rather than decided here.
  *
  * @param {string} userEmail - The user's email
  * @param {Object} ctx - Context object
@@ -332,7 +332,7 @@ export async function listPresentationsSharedWithUser(userEmail, ctx) {
         'p.id',
         'p.title',
         'p.theme',
-        'p.scope',
+        'p.visibility',
         'p.owner_email',
         'p.created_by',
         'p.updated_by',
@@ -353,7 +353,7 @@ export async function listPresentationsSharedWithUser(userEmail, ctx) {
       id: row.id,
       title: row.title,
       theme: row.theme,
-      scope: row.scope,
+      visibility: row.visibility,
       ownerEmail: row.owner_email,
       createdBy: row.created_by,
       updatedBy: row.updated_by,

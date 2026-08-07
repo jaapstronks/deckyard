@@ -1,7 +1,7 @@
 /**
  * One collaborator row, every presentation-scoped endpoint, one answer.
  *
- * A collaborator row grants access to a *deck*. Which workspace the grantee
+ * A collaborator row grants access to a *deck*. Which organization the grantee
  * happens to be signed into is not part of that grant — but for a while the
  * code disagreed with itself about that. #623 moved nine authorization reads
  * onto the deck's organization while ~25 others still passed the session's, and
@@ -16,12 +16,12 @@
  *
  * ## What "cross-organization" actually means here
  *
- * The brief that opened this item expected a live defect: a cross-workspace
+ * The brief that opened this item expected a live defect: a cross-organization
  * collaborator able to open a deck but not its versions or thumbnail. That is
  * **not reachable**, and the difference matters for anyone reading this later.
  * Every endpoint below loads the deck through `getPresentation(storageScope,
  * id)` first, and that scope carries the *session's* organization, so a deck in
- * another workspace is already absent — 404 — before a collaborator row is ever
+ * another organization is already absent — 404 — before a collaborator row is ever
  * consulted. `ALLOW_CROSS_ORG` on that read only relaxes the *token-addressed*
  * case (a scope carrying no organization at all), and no such path resolves a
  * collaborator permission.
@@ -32,9 +32,9 @@
  * pinned below on its own — a row stamped with a foreign organization is no
  * longer inert.
  *
- * Multi-workspace mode is *on*, which is what gives the organization anything
+ * Multi-organization mode is *on*, which is what gives the organization anything
  * to say at all; with it off `isSameOrganization()` answers yes unconditionally.
- * The decks are `scope: 'private'` so the workspace grant is out of the picture
+ * The decks are `visibility: 'private'` so the organization grant is out of the picture
  * and the collaborator row is the only thing that can grant — every assertion
  * is then about that row and nothing else.
  *
@@ -43,7 +43,7 @@
  * source-level guard covers *all* of them — export, render-slide, the collab
  * websocket handshake — by refusing any call site that passes a scope again.
  *
- * MULTI_WORKSPACE_ENABLED and DEFAULT_ORGANIZATION_ID are read at module scope,
+ * MULTI_ORG_ENABLED and DEFAULT_ORGANIZATION_ID are read at module scope,
  * so the environment is set before any import and this file relies on
  * node --test giving it its own process.
  *
@@ -56,12 +56,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-process.env.MULTI_WORKSPACE_ENABLED = 'true';
+process.env.MULTI_ORG_ENABLED = 'true';
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
-/** The workspace both people are signed into. */
+/** The organization both people are signed into. */
 const HOME_ORG = process.env.DEFAULT_ORGANIZATION_ID;
-/** A second workspace, for the deck and the stamp that must not matter. */
+/** A second organization, for the deck and the stamp that must not matter. */
 const AWAY_ORG = '00000000-0000-0000-0000-0000000000bb';
 const DECK = 'deck-under-test';
 
@@ -72,7 +72,7 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } = await import(
   '../server/storage/adapters/index.js'
 );
-const { isMultiWorkspaceEnabled } = await import('../server/config/features.js');
+const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const { createRouteContext } = await import('../server/utils/context.js');
 const { invalidatePermission } = await import(
   '../server/storage/cache/permission-cache.js'
@@ -107,7 +107,7 @@ const OWNER_EMAIL = 'owner@example.test';
 let db;
 
 test.before(async () => {
-  assert.equal(isMultiWorkspaceEnabled(), true, 'multi-workspace mode for this file');
+  assert.equal(isMultiOrgEnabled(), true, 'multi-organization mode for this file');
   __setTestDb(createFakeDb({}));
   await initializeStorage();
 });
@@ -122,7 +122,7 @@ test.after(() => {
  * rasterize and lands on its deterministic `thumbnail_pending` 404, which is
  * the answer this file needs to be able to tell apart from a 401.
  *
- * @param {string} organizationId - The workspace that owns the deck.
+ * @param {string} organizationId - The organization that owns the deck.
  * @returns {Object}
  */
 function deckRow(organizationId) {
@@ -133,7 +133,7 @@ function deckRow(organizationId) {
     owner_email: OWNER_EMAIL,
     created_by: OWNER_EMAIL,
     updated_by: OWNER_EMAIL,
-    scope: 'private',
+    visibility: 'private',
     theme: 'default',
     lang: 'nl',
     revision: 1,
@@ -153,8 +153,8 @@ function deckRow(organizationId) {
  * from an earlier test's grant.
  *
  * @param {Object} [options]
- * @param {string} [options.deckOrg=HOME_ORG] - Workspace that owns the deck.
- * @param {string} [options.rowOrg=HOME_ORG] - Workspace stamped on the collaborator row.
+ * @param {string} [options.deckOrg=HOME_ORG] - Organization that owns the deck.
+ * @param {string} [options.rowOrg=HOME_ORG] - Organization stamped on the collaborator row.
  * @param {boolean} [options.revoked=false] - Whether the row is revoked.
  * @returns {Promise<void>}
  */
@@ -210,7 +210,7 @@ async function seed({ deckOrg = HOME_ORG, rowOrg = HOME_ORG, revoked = false } =
 /**
  * Call an endpoint handler the way `routes/api/index.js` does. The storage
  * scope is `createRouteContext(user)`, so it carries the *session's*
- * organization — which for the cross-workspace cases below deliberately differs
+ * organization — which for the cross-organization cases below deliberately differs
  * from the deck's, and must not be papered over here.
  *
  * @param {Function} handler - The route handler under test.
@@ -336,10 +336,10 @@ test('the shared route middleware admits the same person for a write', async () 
 
 test('the machine-client seam gives the same answer as the routes', async () => {
   await seed();
-  const pres = { id: DECK, scope: 'private', ownerEmail: OWNER_EMAIL, organizationId: HOME_ORG };
-  // A machine actor states its own workspace (an API key belongs to one), which
+  const pres = { id: DECK, visibility: 'private', ownerEmail: OWNER_EMAIL, organizationId: HOME_ORG };
+  // A machine actor states its own organization (an API key belongs to one), which
   // on a private deck changes nothing: the collaborator row is the only thing
-  // that can grant here, and it is a relation to the deck, not to a workspace.
+  // that can grant here, and it is a relation to the deck, not to an organization.
   // The collaborator is signed into AWAY_ORG and still gets in.
   const collaborator = { email: COLLABORATOR.email, organizationId: AWAY_ORG };
   assert.equal(await canActorAccessPresentation(pres, collaborator, 'read'), true);
@@ -356,7 +356,7 @@ test('the machine-client seam gives the same answer as the routes', async () => 
 
 test('a row stamped with a foreign organization still grants — on every endpoint', async () => {
   // The one behaviour this normalisation changes. Such a row is what the old
-  // write path produced when the inviter acted from another workspace: the
+  // write path produced when the inviter acted from another organization: the
   // grant was made, and then silently did nothing. It now means what it says.
   await seed({ rowOrg: AWAY_ORG });
 
@@ -392,10 +392,10 @@ test('inviting onto a deck that does not exist is refused rather than guessed at
 });
 
 // ---------------------------------------------------------------------------
-// A deck in another workspace is absent, not forbidden — uniformly
+// A deck in another organization is absent, not forbidden — uniformly
 // ---------------------------------------------------------------------------
 
-test('a deck in another workspace is absent on every endpoint, row or no row', async () => {
+test('a deck in another organization is absent on every endpoint, row or no row', async () => {
   // The storage scope filters on the session's organization before any
   // collaborator row is consulted, so this is 404 (absent) rather than 401
   // (forbidden) — and the collaborator row does not turn into a way around the

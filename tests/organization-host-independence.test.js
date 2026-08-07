@@ -22,14 +22,14 @@
  *   - 'updating an organization ignores host-routing and billing fields' — the
  *     old update path took `subdomain` (with its own uniqueness check) and
  *     `billingEmail`.
- *   - 'the workspace list carries no subdomain' — the old join selected
+ *   - 'the organization list carries no subdomain' — the old join selected
  *     `organizations.subdomain` and the mapper exposed it.
  *
  * The Host-header cases are a *forward* guard, not a regression proof: the host
  * route was never wired, so they pass on both sides of the change. They exist so
  * that wiring one up later fails here first, with this comment attached.
  *
- * MULTI_WORKSPACE_ENABLED is read at module scope (server/config/features.js),
+ * MULTI_ORG_ENABLED is read at module scope (server/config/features.js),
  * so this file sets it before importing anything and relies on node --test
  * giving each file its own process.
  *
@@ -44,7 +44,7 @@ import assert from 'node:assert/strict';
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
-process.env.MULTI_WORKSPACE_ENABLED = 'true';
+process.env.MULTI_ORG_ENABLED = 'true';
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const ORG_A = process.env.DEFAULT_ORGANIZATION_ID;
@@ -204,7 +204,7 @@ test('the context module exposes no way to derive an organization from a request
     'extractSubdomain',
     'isReservedSubdomain',
     'getOrgContextFromRequest',
-    'createMultiWorkspaceContext',
+    'createMultiOrganizationContext',
   ]) {
     assert.equal(gone in context, false, `${gone} is not part of the context surface`);
   }
@@ -221,7 +221,7 @@ test('creating an organization stores no host-routing or billing column', async 
     name: 'Gamma',
     slug: 'gamma',
     displayName: 'Gamma Inc',
-    description: 'Third workspace',
+    description: 'Third organization',
     ownerId: 'user-alice',
     // A caller that still believes these are supported:
     subdomain: 'gamma',
@@ -262,7 +262,7 @@ test('updating an organization ignores host-routing and billing fields', async (
   }
 });
 
-test('the workspace list carries no subdomain', async () => {
+test('the organization list carries no subdomain', async () => {
   seedTwoOrgs();
 
   const organizations = await listUserOrganizations('user-alice');

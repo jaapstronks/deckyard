@@ -48,8 +48,8 @@ row differs by how the viewer arrived:
 | **Anonymous** (share link or follow, no account) | `device_id` — a random 32-hex value the *browser* generates and keeps in `localStorage` (`ps.analytics.deviceId`) | `POST /api/track/my-data/erase`, proving possession of a live session token |
 
 Also stored: `ip_address` (anonymized on a schedule, below), a truncated
-`user_agent`, timings, and the slides visited. There is **no** cross-workspace
-identity: a view session inherits its workspace from the presentation it belongs
+`user_agent`, timings, and the slides visited. There is **no** cross-organization
+identity: a view session inherits its organization from the presentation it belongs
 to and carries no copy of it (tenant-isolation rule R2); the old
 viewer-claimed organization column was dropped (migration 065).
 
@@ -70,7 +70,7 @@ viewer"). Pinned by `tests/analytics-session-device-label.test.js`.
 ### Logged-in: `DELETE /api/analytics/my-data`
 
 Identity is the scope: the erasure covers every session whose `viewer_email` is
-the caller's, across the whole instance, whatever workspace the caller or the
+the caller's, across the whole instance, whatever organization the caller or the
 viewed deck happens to sit in. Rate-limited by the expensive-op bucket. Pinned
 by `tests/analytics-gdpr-delete-path.test.js`.
 

@@ -173,7 +173,7 @@ itself — see "Server as collaborator" in
 Collab stores bump the deck revision server-side on every debounce, but the
 editor never adopts those bumps into `pres.revision` (server-managed keys
 are deliberately not synced through the doc). If-Match-guarded side routes
-(scope change in the share dropdown, version restore) would therefore 409
+(visibility change in the share dropdown, version restore) would therefore 409
 after the first few edits of a live session.
 
 The fix is client-side and call-site-local: `if-match-revision.js` fetches
@@ -197,9 +197,9 @@ its editor afterwards, as before.
 
 - Publish/export read the stored JSON, which can lag live edits by up to one
   persistence debounce window (~2 s).
-- A scope change made by one collaborator does not update `pres.scope` in
+- A visibility change made by one collaborator does not update `pres.visibility` in
   other open editors (server-managed keys are not adopted from the doc);
-  it lands on their next editor load. Cosmetic — the server enforces scope
+  it lands on their next editor load. Cosmetic — the server enforces visibility
   on every request.
 
 ## Files
@@ -220,7 +220,7 @@ its editor afterwards, as before.
 - `client/views/editor/topbar/language-mode.js` — doc-based language
   loading + translate adoption via the optional `collabLanguage` dep.
 - `client/views/editor/if-match-revision.js` — collab-aware If-Match value
-  for the side routes (scope change, restore); see "Revision hygiene".
+  for the side routes (visibility change, restore); see "Revision hygiene".
 - `tests/collab-editor-binder.test.js` — two editor-like clients over a
   real mount: field edits, same-field character merge, items, add/delete/
   reorder, per-user undo/redo, language versions, persisted JSON.

@@ -1,15 +1,15 @@
 /**
- * Identity resolution on the authentication path, single-workspace mode.
+ * Identity resolution on the authentication path, single-organization mode.
  *
  * This is the regression net for A1 fase 0 (org-independent identity). Every
  * assertion here describes behaviour that MUST NOT change when the user lookup
- * stops filtering on `users.organization_id`: single-workspace installations
+ * stops filtering on `users.organization_id`: single-organization installations
  * have exactly one organization, so dropping the filter is a no-op for them.
  * If one of these breaks, the change leaked into the single-org path, which is
  * every existing installation.
  *
  * The multi-organization half lives in auth-identity-multi-org.test.js, which
- * needs MULTI_WORKSPACE_ENABLED set before module load and therefore its own
+ * needs MULTI_ORG_ENABLED set before module load and therefore its own
  * process (node --test runs one process per file).
  *
  * Run with: node --test tests/auth-identity-resolution.test.js
@@ -20,13 +20,13 @@ import assert from 'node:assert/strict';
 import { sessionVersion } from '../server/utils/session-version.js';
 
 // Auth config must be in place before the modules under test are imported:
-// authEnabled() and the multi-workspace flag are read at module scope.
+// authEnabled() and the multi-organization flag are read at module scope.
 // Assembled rather than written as one literal so secret scanners do not flag
 // it; authConfigError() only requires MIN_AUTH_SECRET_LENGTH characters.
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
-delete process.env.MULTI_WORKSPACE_ENABLED;
+delete process.env.MULTI_ORG_ENABLED;
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const DEFAULT_ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -196,7 +196,7 @@ test('getUserFromRequestAsync rejects a session for a deleted user', async () =>
   assert.equal(await auth.getUserFromRequestAsync(req, ctx), null);
 });
 
-test('single-workspace session resolution issues no membership lookup', async () => {
+test('single-organization session resolution issues no membership lookup', async () => {
   const db = seedSingleOrg();
   const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', ctx);
   const req = requestWithSession(login);
@@ -207,11 +207,11 @@ test('single-workspace session resolution issues no membership lookup', async ()
   assert.deepEqual(
     [...new Set(touchedTables(db))],
     ['users'],
-    'only the users table is touched when multi-workspace is off'
+    'only the users table is touched when multi-organization is off'
   );
 });
 
-test('a single-workspace session carries no membership role', async () => {
+test('a single-organization session carries no membership role', async () => {
   seedSingleOrg();
   const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', ctx);
   const resolved = await auth.getUserFromRequestAsync(requestWithSession(login), ctx);
@@ -238,13 +238,13 @@ test('getUserByEmailGlobal returns null for an unknown email', async () => {
   assert.equal(await identity.getUserByEmailGlobal(''), null);
 });
 
-test('resolveActiveOrganization is configuration-only in single-workspace mode', async () => {
+test('resolveActiveOrganization is configuration-only in single-organization mode', async () => {
   const db = seedSingleOrg();
   db.__queryLog.length = 0;
 
   assert.equal(await identity.resolveActiveOrganization('user-alice', OTHER_ORG), DEFAULT_ORG);
   assert.equal(await identity.resolveActiveOrganization(null, undefined), DEFAULT_ORG);
-  assert.deepEqual(db.__queryLog, [], 'no database access when multi-workspace is off');
+  assert.deepEqual(db.__queryLog, [], 'no database access when multi-organization is off');
 });
 
 test('hasDatabaseCredentials reflects password presence', async () => {

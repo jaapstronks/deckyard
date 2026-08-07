@@ -127,7 +127,7 @@ unset or set to `postgres`, and there is no third spelling:
 > **Upgrading an existing file-storage install?** Your `server/data/` decks are
 > not served from Postgres. Deckyard **refuses to start** when it finds decks
 > on disk while the database holds none — so you get a stopped container,
-> never an empty workspace. Import the data once with `npm run db:import`
+> never an empty organization. Import the data once with `npm run db:import`
 > (in compose: `docker compose exec app npm run db:import`). The import is
 > idempotent and your files are never touched.
 
@@ -204,7 +204,7 @@ What sandbox mode does, and what it deliberately leaves on:
   per-prompt LLM bill. (Same behaviour as `DEMO_MODE`.)
 - **Only neutral built-in themes show.** The theme picker lists the generic
   built-ins (brand, corporate, deckyard, editorial, midnight, playful) and hides any
-  workspace custom themes, which may carry a customer's branding. Drop in
+  organization custom themes, which may carry a customer's branding. Drop in
   `themes/sandbox-*.json` to curate a smaller set.
 - **The slide library is hidden** in the New-presentation flow: a throwaway
   guest has no reusable slides to compose from.

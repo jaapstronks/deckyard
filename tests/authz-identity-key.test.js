@@ -22,7 +22,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-delete process.env.MULTI_WORKSPACE_ENABLED;
+delete process.env.MULTI_ORG_ENABLED;
 delete process.env.SANDBOX_MODE;
 
 const {
@@ -51,7 +51,7 @@ const CREATOR_ID = '33333333-3333-4333-8333-333333333333';
 // resolved from the email in the same statement (the dual-key invariant).
 const dualKeyDeck = {
   id: 'p1',
-  scope: 'private',
+  visibility: 'private',
   ownerId: OWNER_ID,
   ownerEmail: 'owner@example.com',
   createdById: CREATOR_ID,
@@ -128,7 +128,7 @@ describe('the email fallback covers the id-less shapes', () => {
   // what it was before the id existed.
   const legacyDeck = {
     id: 'p2',
-    scope: 'private',
+    visibility: 'private',
     ownerId: null,
     ownerEmail: 'legacy@example.com',
     createdById: null,
@@ -155,7 +155,7 @@ describe('one stamp resolved, the other not', () => {
   // stamped with an external creator email, or the reverse.
   const halfDeck = {
     id: 'p3',
-    scope: 'private',
+    visibility: 'private',
     ownerId: OWNER_ID,
     ownerEmail: 'owner@example.com',
     createdById: null,

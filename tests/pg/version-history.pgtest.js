@@ -39,7 +39,7 @@ import {
   prunePresentationVersions,
 } from '../../server/storage/presentations/index.js';
 
-const scope = testScope();
+const storageScope = testScope();
 
 pgDescribe('version history via the facade (real PostgreSQL)', () => {
   /** @type {import('kysely').Kysely<any>} */
@@ -69,7 +69,7 @@ pgDescribe('version history via the facade (real PostgreSQL)', () => {
       slides: [{ id: 's1', type: 'title-slide', content: {} }],
     };
 
-    const created = await createPresentationVersion(scope, deckId, pres, {
+    const created = await createPresentationVersion(storageScope, deckId, pres, {
       actorEmail: 'alice@example.com',
       reason: 'manual',
       label: 'checkpoint',
@@ -82,7 +82,7 @@ pgDescribe('version history via the facade (real PostgreSQL)', () => {
     assert.strictEqual(created.revision, 7);
     assert.strictEqual(created.createdBy, 'alice@example.com');
 
-    const list = await listPresentationVersions(scope, deckId);
+    const list = await listPresentationVersions(storageScope, deckId);
     assert.strictEqual(list.length, 1, 'one version listed');
     assert.strictEqual(list[0].id, created.id);
     assert.strictEqual(list[0].reason, 'manual');
@@ -91,7 +91,7 @@ pgDescribe('version history via the facade (real PostgreSQL)', () => {
     assert.strictEqual(list[0].revision, 7);
     assert.strictEqual(list[0].label, 'checkpoint');
 
-    const full = await getPresentationVersion(scope, deckId, created.id);
+    const full = await getPresentationVersion(storageScope, deckId, created.id);
     assert.ok(full, 'full version fetched');
     assert.strictEqual(full.id, created.id);
     assert.ok(full.presentation, 'full version carries the presentation payload');
@@ -102,8 +102,8 @@ pgDescribe('version history via the facade (real PostgreSQL)', () => {
   it('prunes through the adapter without dropping recent snapshots', async () => {
     // Retention keeps recent snapshots; this proves the wire-through works and
     // the single manual snapshot survives.
-    await prunePresentationVersions(scope, deckId);
-    const list = await listPresentationVersions(scope, deckId);
+    await prunePresentationVersions(storageScope, deckId);
+    const list = await listPresentationVersions(storageScope, deckId);
     assert.strictEqual(list.length, 1, 'recent manual snapshot retained');
   });
 });

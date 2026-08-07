@@ -13,7 +13,7 @@
  *     from the response's own flags and each gets its own sentence. There is
  *     no acceptance step to model — `addMember()` sets `joined_at` at once —
  *     and no test here pretends there is.
- *   - **The gate.** Slice 2 put the whole tab behind `isWorkspaceAdmin()`.
+ *   - **The gate.** Slice 2 put the whole tab behind `isOrganizationAdmin()`.
  *     That was stricter than the rule it mirrored: the route lets any member
  *     read the list and remove themselves, so a plain member was locked out of
  *     the one screen carrying their own *Leave* button. The tab now opens to
@@ -105,12 +105,12 @@ const { showInviteModal } = await import(
 const { renderOrganizationMembersPanel } = await import(
   '../client/views/settings/organization-members/panel.js'
 );
-const { isWorkspaceAdmin, canSeeMemberList, isWorkspaceMember } = await import(
-  '../client/lib/user/workspace-role.js'
+const { isOrganizationAdmin, canSeeMemberList, isOrganizationMember } = await import(
+  '../client/lib/user/organization-role.js'
 );
 const { createSettingsSidebar } = await import('../client/views/settings/settings-sidebar.js');
 
-setFeatures({ multiWorkspace: true });
+setFeatures({ multiOrganization: true });
 
 /** The signed-in person, at a given membership role. */
 const viewer = (member, role) => ({
@@ -140,7 +140,7 @@ test('inviting needs admin or owner, mirroring the route', () => {
   assert.equal(canInvite(viewer(OWNER, 'owner')), true);
   assert.equal(canInvite(viewer(ADMIN, 'admin')), true);
   assert.equal(canInvite(viewer(MEMBER, 'member')), false);
-  // No membership role at all (single-workspace, dev bypass, sandbox): this
+  // No membership role at all (single-organization, dev bypass, sandbox): this
   // panel is not on screen there, and nothing falls back to `isAdmin`.
   assert.equal(canInvite({ email: OWNER.user.email, isAdmin: true }), false);
 });
@@ -382,7 +382,7 @@ test('a success closes the dialog and reports what happened', async () => {
 /** Tab keys the sidebar renders for this user. */
 function visibleTabKeys(user) {
   const sidebar = createSettingsSidebar({
-    isAdmin: isWorkspaceAdmin(user),
+    isAdmin: isOrganizationAdmin(user),
     isDesigner: false,
     canSeeMembers: canSeeMemberList(user),
     activeTab: 'account',
@@ -391,21 +391,21 @@ function visibleTabKeys(user) {
   return Array.from(sidebar.el.querySelectorAll('[data-tab]')).map((b) => b.dataset.tab);
 }
 
-test('single-workspace is untouched: the tab is the admin tab it always was', () => {
+test('single-organization is untouched: the tab is the admin tab it always was', () => {
   const admin = { email: 'jaap@example.com', isAdmin: true };
   const plain = { email: 'someone@example.com', isAdmin: false };
 
-  assert.equal(isWorkspaceMember(admin), false, 'no membership to speak of');
+  assert.equal(isOrganizationMember(admin), false, 'no membership to speak of');
   assert.equal(canSeeMemberList(admin), true);
   assert.equal(canSeeMemberList(plain), false, 'and no back door into it');
   assert.ok(visibleTabKeys(admin).includes('users'));
   assert.equal(visibleTabKeys(plain).includes('users'), false);
 });
 
-test('multi-workspace: a plain member reaches the member list, and nothing else', () => {
+test('multi-organization: a plain member reaches the member list, and nothing else', () => {
   const member = viewer(MEMBER, 'member');
 
-  assert.equal(isWorkspaceAdmin(member), false, 'still not an admin anywhere on this page');
+  assert.equal(isOrganizationAdmin(member), false, 'still not an admin anywhere on this page');
   assert.equal(canSeeMemberList(member), true);
 
   const tabs = visibleTabKeys(member);

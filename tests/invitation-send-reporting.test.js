@@ -19,7 +19,7 @@
  * Every assertion below fails against that code: the flag was true in all
  * three failure modes (unconfigured, HTTP error, thrown error).
  *
- * MULTI_WORKSPACE_ENABLED is read at module scope (server/config/features.js),
+ * MULTI_ORG_ENABLED is read at module scope (server/config/features.js),
  * so this file sets it before importing anything and relies on node --test
  * giving each file its own process.
  *
@@ -34,7 +34,7 @@ import assert from 'node:assert/strict';
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
-process.env.MULTI_WORKSPACE_ENABLED = 'true';
+process.env.MULTI_ORG_ENABLED = 'true';
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;

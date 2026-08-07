@@ -38,7 +38,7 @@ Key `auth.js` exports:
   user, checks the cookie's version claim against `sessionVersion(dbUser)`, and
   resolves the active org membership.
 - `setSessionCookie` / `updateSessionOrganization` / `clearSessionCookie` — mint,
-  re-mint (workspace switch), and clear the cookie.
+  re-mint (organization switch), and clear the cookie.
 - `verifyLoginAsync(email, password, ctx)` — password login against a
   database-source user.
 - `devAuthBypassEnabled()` / `devBypassUser()` — the dev-only passwordless admin.
@@ -57,7 +57,7 @@ payload = { email, role, name, exp, v, orgId? }
 - `v` is the **session version** (`server/utils/session-version.js`,
   `sessionVersion(dbUser)`) — changing a password or the underlying user row
   bumps it, invalidating every outstanding cookie without server state.
-- `orgId` is embedded only when multi-workspace mode is enabled; a workspace
+- `orgId` is embedded only when multi-organization mode is enabled; an organization
   switch re-mints the cookie (`updateSessionOrganization`) preserving remaining
   lifetime.
 - Cookie attributes: `Path=/; HttpOnly; SameSite=Lax; Max-Age=…`, plus `Domain=`
@@ -133,7 +133,7 @@ magic-link, 1-hour reset.
 Identity resolution ends at `getUserFromRequestAsync`, which also resolves the
 active org membership (`organizationRole`, `organizationIsDesigner`). Everything
 downstream — which organization a request may read or write, the R1–R3 isolation
-rules, `MULTI_WORKSPACE_ENABLED` — is in
+rules, `MULTI_ORG_ENABLED` — is in
 [`tenant-isolation.md`](tenant-isolation.md), not repeated here.
 
 ## Implementation status

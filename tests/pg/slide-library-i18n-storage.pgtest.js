@@ -30,7 +30,7 @@ import {
   updatePersonalLibraryItem,
 } from '../../server/storage/slide-library/index.js';
 
-const scope = testScope();
+const storageScope = testScope();
 const ALICE = 'alice@example.com';
 
 const BILINGUAL = {
@@ -58,7 +58,7 @@ pgDescribe('slide-library i18n round-trip (real PostgreSQL, via facade)', () => 
 
   it('keeps both languages through create, read-back and update', async () => {
     const created = await createPersonalLibraryItem(
-      scope,
+      storageScope,
       ALICE,
       { name: 'Intro', slideType: 'content-slide', content: { title: 'Hallo' }, i18n: BILINGUAL },
       { actorEmail: ALICE }
@@ -66,7 +66,7 @@ pgDescribe('slide-library i18n round-trip (real PostgreSQL, via facade)', () => 
     assert.ok(created?.ok && created.item?.id, 'created item has an id');
     assert.deepStrictEqual(created.item.i18n, BILINGUAL, 'i18n survives create');
 
-    const listed = await listPersonalLibrary(scope, ALICE);
+    const listed = await listPersonalLibrary(storageScope, ALICE);
     const found = listed.items.find((i) => i.id === created.item.id);
     assert.deepStrictEqual(found?.i18n, BILINGUAL, 'i18n survives read-back');
 
@@ -77,7 +77,7 @@ pgDescribe('slide-library i18n round-trip (real PostgreSQL, via facade)', () => 
       },
     };
     const updated = await updatePersonalLibraryItem(
-      scope,
+      storageScope,
       ALICE,
       created.item.id,
       { i18n: nextI18n },

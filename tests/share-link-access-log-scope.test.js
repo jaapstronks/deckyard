@@ -23,9 +23,9 @@
  *   2. **Containment** — the route that exposes the log first authorizes the
  *      presentation and then binds the link id to it through
  *      `getShareLinkById`, which *is* organization-filtered. A link belonging
- *      to another workspace does not resolve there, so it never reaches the
+ *      to another organization does not resolve there, so it never reaches the
  *      log. `tests/security-audit-cluster4.test.js` (MH2) pins the deck half of
- *      that gate; this file pins the workspace half, and a source-level guard
+ *      that gate; this file pins the organization half, and a source-level guard
  *      refuses any call site that passes a scope to the access log again.
  *
  * House shape: storage functions called directly over
@@ -50,8 +50,8 @@ const { logShareLinkAccess, getShareLinkAccessLog, getShareLinkById } = await im
 
 const ORG_A = '00000000-0000-0000-0000-0000000000aa';
 const ORG_B = '00000000-0000-0000-0000-0000000000bb';
-const LINK_IN_A = 'link-in-workspace-a';
-const LINK_IN_B = 'link-in-workspace-b';
+const LINK_IN_A = 'link-in-organization-a';
+const LINK_IN_B = 'link-in-organization-b';
 
 /**
  * A `presentation_share_links` row, in the shape the storage layer writes.
@@ -91,7 +91,7 @@ function logRow({ id, linkId, ip = '203.0.113.7', at = '2026-03-02T00:00:00.000Z
   };
 }
 
-/** Install a fresh double seeded with both workspaces' links. */
+/** Install a fresh double seeded with both organizations' links. */
 function seed(accessLog = []) {
   const db = createFakeDb({
     presentation_share_links: [
@@ -120,7 +120,7 @@ test('the log answers for exactly the link it is asked about', async () => {
   assert.deepEqual(
     entries.map((e) => e.id).sort(),
     ['a1', 'a2'],
-    'the other workspace’s link contributes nothing — different link, different rows'
+    'the other organization’s link contributes nothing — different link, different rows'
   );
   assert.deepEqual(
     [...new Set(entries.map((e) => e.shareLinkId))],
@@ -159,19 +159,19 @@ test('writing a row needs the link and the access info, nothing else', async () 
 // Containment: the gate that stands between a caller and this table
 // ---------------------------------------------------------------------------
 
-test('a link id from another workspace does not resolve, so the log is unreachable', async () => {
+test('a link id from another organization does not resolve, so the log is unreachable', async () => {
   seed([logRow({ id: 'b1', linkId: LINK_IN_B })]);
 
   // This is what `loadLinkForPresentation` calls before the route reads the
-  // log. Acting in workspace A, the workspace-B link is simply absent — the
+  // log. Acting in organization A, the organization-B link is simply absent — the
   // route turns that into a 404 (MH2) and never asks for the log.
   assert.equal(await getShareLinkById(LINK_IN_B, { organizationId: ORG_A }), null);
 
   const own = await getShareLinkById(LINK_IN_A, { organizationId: ORG_A });
-  assert.equal(own?.id, LINK_IN_A, 'its own workspace’s link resolves normally');
+  assert.equal(own?.id, LINK_IN_A, 'its own organization’s link resolves normally');
 });
 
-test('resolving a link with no workspace to act in refuses rather than guessing', async () => {
+test('resolving a link with no organization to act in refuses rather than guessing', async () => {
   seed();
 
   await assert.rejects(

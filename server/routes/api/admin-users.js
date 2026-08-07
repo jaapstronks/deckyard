@@ -105,8 +105,8 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
   // Which organization those accounts belong to *is* per-organization, so the
   // context comes from the session rather than from the instance default.
   // Built from `user` rather than from `null`: an admin who switched
-  // workspaces used to list, create and enrich users against the default
-  // organization no matter which one they were looking at. Single-workspace
+  // organizations used to list, create and enrich users against the default
+  // organization no matter which one they were looking at. Single-organization
   // installations are unaffected — there the session's organization is the
   // default one.
   const ctx = createRouteContext(user, { repoRoot });

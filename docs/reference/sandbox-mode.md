@@ -53,7 +53,7 @@ Versus a normal instance:
 - **Direct uploads off.** `disableUploads` is forced true; guests instead pick
   from the curated `listSandboxMedia()` samples.
 - **Ephemeral decks.** Decks a guest creates get a TTL (default 24 h) and are
-  hard-deleted after it. Curated `workspace`-scope seed decks are exempt.
+  hard-deleted after it. Curated `organization`-scope seed decks are exempt.
 - **Watermarked exports.** Exports carry `SANDBOX_WATERMARK` text.
 - **Quotas.** Per-guest deck-count and stored-byte caps, a lower request-body
   cap, secure cookies, and proxy-trust for rate limiting.
@@ -69,11 +69,11 @@ shared `presentations` table keyed by the guest's synthetic `owner_email`.
 Isolation is per-cookie / per-owner-email within the one org.
 
 - **Ephemeral vs seed** — `server/storage/presentations/sandbox.js`: a deck is
-  ephemeral unless its `scope === 'workspace'`. `attachSandboxMeta()` stamps
+  ephemeral unless its `scope === 'organization'`. `attachSandboxMeta()` stamps
   `pres.sandbox.enabled` and `pres.sandbox.expires = created + TTL`.
 - **TTL sweep** — `server/utils/sandbox-cleanup.js`: `startSandboxCleanupLoop()`
   (started from `server/server.js`) runs every ~10 min, no-op outside sandbox.
-  `sweepExpiredSandboxDecks()` bulk-deletes non-`workspace` decks older than the
+  `sweepExpiredSandboxDecks()` bulk-deletes non-`organization` decks older than the
   TTL; FKs cascade (version snapshots, published entry, cold Y.Doc state). It
   also emits a **non-destructive** warning against `SANDBOX_MAX_TOTAL_BYTES` —
   it never evicts live decks.

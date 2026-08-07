@@ -42,7 +42,7 @@ export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
 
   const owner = pres.ownerEmail || null;
   // Only expose the owner's raw email to the owner themselves; redact it for
-  // decks reached via workspace/collaborator access so one user's address never
+  // decks reached via organization/collaborator access so one user's address never
   // leaks to another. This stays a *display* decision: the identity a consumer
   // compares is `ownerId`, which is not redacted because it discloses nothing
   // about a person — see shared/identity-match.js and docs/openapi.yaml.
@@ -62,7 +62,7 @@ export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
     createdById: pres.createdById || null,
     updatedById: pres.updatedById || null,
     ownerEmail,
-    scope: pres.scope || 'private',
+    visibility: pres.visibility || 'private',
     themeId: pres.themeId || null,
     language: pres.language || 'en-GB',
     slideCount: Array.isArray(pres.slides) ? pres.slides.length : 0,

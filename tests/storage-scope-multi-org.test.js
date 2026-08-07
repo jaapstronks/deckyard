@@ -1,5 +1,5 @@
 /**
- * The presentations facade under MULTI_WORKSPACE_ENABLED (A1 follow-up).
+ * The presentations facade under MULTI_ORG_ENABLED (A1 follow-up).
  *
  * This is the file that holds the bug the scope work exists to remove. Before
  * it, `server/storage/presentations/index.js` built its own context with a hardcoded
@@ -22,7 +22,7 @@
  * answered correctly for Alpha and only for Alpha. That is the whole shape of
  * the bug — invisible on a single-organization instance, wrong on any other.
  *
- * MULTI_WORKSPACE_ENABLED is read at module scope (server/config/features.js),
+ * MULTI_ORG_ENABLED is read at module scope (server/config/features.js),
  * so this file sets it before importing anything and relies on node --test
  * giving each file its own process.
  *
@@ -32,7 +32,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-process.env.MULTI_WORKSPACE_ENABLED = 'true';
+process.env.MULTI_ORG_ENABLED = 'true';
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 // Postgres mode + the in-memory database double, so the assertions below run
 // through the real facade rather than the adapter it delegates to. Driving the
@@ -46,15 +46,15 @@ const ORG_B = '00000000-0000-0000-0000-0000000000bb';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { isMultiWorkspaceEnabled } = await import('../server/config/features.js');
-const { crossOrganizationScope, singleWorkspaceScope } = await import(
+const { isMultiOrgEnabled } = await import('../server/config/features.js');
+const { crossOrganizationScope, singleOrganizationScope } = await import(
   '../server/storage/scope.js'
 );
 const facade = await import('../server/storage/presentations/index.js');
 const { initializeStorage } = await import('../server/storage/adapters/index.js');
 
 test.before(async () => {
-  assert.equal(isMultiWorkspaceEnabled(), true, 'multi-workspace flag is on for this file');
+  assert.equal(isMultiOrgEnabled(), true, 'multi-organization flag is on for this file');
   __setTestDb(
     createFakeDb({
       organizations: [
@@ -67,7 +67,7 @@ test.before(async () => {
       ],
       // PR 2: the same question for the seven small facades. One row per
       // organization per table, so "did the facade filter on the session's
-      // organization" has a visibly different answer per workspace.
+      // organization" has a visibly different answer per organization.
       published_presentations: [
         publishedRow({ id: 'pub-alpha', deck: 'deck-alpha', org: ORG_A }),
         publishedRow({ id: 'pub-beta', deck: 'deck-beta', org: ORG_B }),
@@ -106,7 +106,7 @@ function deckRow({ id, org }) {
     owner_email: 'carol@example.com',
     created_by: 'carol@example.com',
     updated_by: 'carol@example.com',
-    scope: 'workspace',
+    visibility: 'organization',
     theme: 'default',
     lang: 'nl',
     revision: 1,
@@ -253,7 +253,7 @@ test('the short-TTL read cache is keyed per organization', async () => {
 
 test('an entry point with no organization refuses to guess once there are several', () => {
   assert.throws(
-    () => singleWorkspaceScope('/srv', 'MCP stdio session'),
+    () => singleOrganizationScope('/srv', 'MCP stdio session'),
     /has no organization to act in, and this instance runs several/,
     'on a multi-organization instance "the default one" stops being an answer'
   );
@@ -282,7 +282,7 @@ test('a publish id still resolves across organizations, because it is the token'
   const { getPublishedById } = await import('../server/storage/published/index.js');
   const scope = crossOrganizationScope(null, 'published deck: the publish id is the authorization');
   const entry = await getPublishedById(scope, 'pub-beta');
-  assert.equal(entry?.presentationId, 'deck-beta', 'a public link must work from any workspace');
+  assert.equal(entry?.presentationId, 'deck-beta', 'a public link must work from any organization');
 });
 
 test('the image library is per organization', async () => {
@@ -316,7 +316,7 @@ test('the team slide library is per organization', async () => {
   assert.equal(
     await getTeamLibraryItem({ organizationId: ORG_B }, 'lib-alpha'),
     null,
-    "a team shelf is a workspace's own shelf"
+    "a team shelf is an organization's own shelf"
   );
 });
 

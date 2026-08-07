@@ -131,7 +131,7 @@ function seedPresentation(id, { ownerEmail, slides = [] }) {
     description: null,
     theme: 'default',
     lang: 'nl',
-    scope: 'private',
+    visibility: 'private',
     is_view_only: false,
     revision: 1,
     settings: {},

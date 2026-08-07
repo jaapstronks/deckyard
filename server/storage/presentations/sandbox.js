@@ -8,8 +8,8 @@ function safeIsoToMs(iso) {
 function isSandboxEphemeralPresentation(pres) {
   if (!sandboxEnabled()) return false;
   if (!pres || typeof pres !== 'object') return false;
-  // Treat workspace-scope decks as curated seed decks that should not expire.
-  return String(pres.scope || 'private') !== 'workspace';
+  // Treat organization-visible decks as curated seed decks that should not expire.
+  return String(pres.visibility || 'private') !== 'organization';
 }
 
 export function attachSandboxMeta(pres) {

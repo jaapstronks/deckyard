@@ -28,7 +28,7 @@ export async function handlePublish({ repoRoot, storageScope, req, res, url, aut
 
     // Sandbox stance: no public published URLs. A guest owns their own private
     // deck and could otherwise publish arbitrary content onto the public
-    // domain. Mirrors canChangePresentationScope() returning false in sandbox.
+    // domain. Mirrors canChangePresentationVisibility() returning false in sandbox.
     if (sandboxEnabled()) {
       forbidden(res, 'Publishing is disabled in sandbox mode');
       return true;

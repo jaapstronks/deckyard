@@ -2,16 +2,16 @@
  * Tests for actor-based presentation access (checkActorAccess).
  *
  * These are the shared access rules for machine clients (public API keys,
- * MCP sessions), where the actor is an identity plus the workspace its key or
+ * MCP sessions), where the actor is an identity plus the organization its key or
  * session acts in. Regression guard for the pre-collab authz gap: the public
- * API used an owner/workspace check that ignored the collaborator table and
+ * API used an owner/organization check that ignored the collaborator table and
  * made no read/write distinction, and MCP mutating tools did no per-deck check
  * at all.
  *
- * These actors state no organization, which in a default single-workspace
- * install is exactly right: there is one workspace, so `isSameOrganization`
+ * These actors state no organization, which in a default single-organization
+ * install is exactly right: there is one organization, so `isSameOrganization`
  * answers yes from the feature flag and every assertion below is unchanged by
- * the L10 rewiring. The multi-workspace half is in
+ * the L10 rewiring. The multi-organization half is in
  * tests/authz-organization-scope-multi-org.test.js.
  *
  * Run with: node --test tests/presentation-actor-access.test.js
@@ -25,8 +25,8 @@ import { checkActorAccess } from '../server/utils/presentation-authz/actor-acces
 const OWNER = 'owner@example.com';
 const OTHER = 'other@example.com';
 
-const privateDeck = { id: 'p1', ownerEmail: OWNER, createdBy: OWNER, scope: 'private' };
-const workspaceDeck = { id: 'w1', ownerEmail: OWNER, createdBy: OWNER, scope: 'workspace' };
+const privateDeck = { id: 'p1', ownerEmail: OWNER, createdBy: OWNER, visibility: 'private' };
+const organizationDeck = { id: 'w1', ownerEmail: OWNER, createdBy: OWNER, visibility: 'organization' };
 
 describe('checkActorAccess — private decks', () => {
   it('owner can read and write', () => {
@@ -60,14 +60,14 @@ describe('checkActorAccess — private decks', () => {
   });
 });
 
-describe('checkActorAccess — workspace decks', () => {
-  it('any workspace user can read and write a regular workspace deck', () => {
-    assert.equal(checkActorAccess({ pres: workspaceDeck, actor: { email: OTHER }, access: 'read' }), true);
-    assert.equal(checkActorAccess({ pres: workspaceDeck, actor: { email: OTHER }, access: 'write' }), true);
+describe('checkActorAccess — organization decks', () => {
+  it('any organization user can read and write a regular organization deck', () => {
+    assert.equal(checkActorAccess({ pres: organizationDeck, actor: { email: OTHER }, access: 'read' }), true);
+    assert.equal(checkActorAccess({ pres: organizationDeck, actor: { email: OTHER }, access: 'write' }), true);
   });
 
-  it('view-only workspace decks are readable but not writable by non-owners', () => {
-    const viewOnly = { ...workspaceDeck, isViewOnly: true };
+  it('view-only organization decks are readable but not writable by non-owners', () => {
+    const viewOnly = { ...organizationDeck, isViewOnly: true };
     assert.equal(checkActorAccess({ pres: viewOnly, actor: { email: OTHER }, access: 'read' }), true);
     assert.equal(checkActorAccess({ pres: viewOnly, actor: { email: OTHER }, access: 'write' }), false);
     // The owner keeps write access
@@ -82,9 +82,9 @@ describe('checkActorAccess — edge cases', () => {
   });
 
   it('rejects without an actor email', () => {
-    assert.equal(checkActorAccess({ pres: workspaceDeck, actor: { email: null }, access: 'read' }), false);
-    assert.equal(checkActorAccess({ pres: workspaceDeck, actor: { email: '' }, access: 'write' }), false);
-    assert.equal(checkActorAccess({ pres: workspaceDeck, actor: null, access: 'read' }), false);
+    assert.equal(checkActorAccess({ pres: organizationDeck, actor: { email: null }, access: 'read' }), false);
+    assert.equal(checkActorAccess({ pres: organizationDeck, actor: { email: '' }, access: 'write' }), false);
+    assert.equal(checkActorAccess({ pres: organizationDeck, actor: null, access: 'read' }), false);
   });
 
   it('rejects without a presentation', () => {
@@ -93,7 +93,7 @@ describe('checkActorAccess — edge cases', () => {
   });
 
   it('creator (createdBy) counts as owner', () => {
-    const created = { id: 'c1', ownerEmail: 'boss@example.com', createdBy: OTHER, scope: 'private' };
+    const created = { id: 'c1', ownerEmail: 'boss@example.com', createdBy: OTHER, visibility: 'private' };
     assert.equal(checkActorAccess({ pres: created, actor: { email: OTHER }, access: 'write' }), true);
   });
 });

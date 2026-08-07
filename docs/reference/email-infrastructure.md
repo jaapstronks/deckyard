@@ -98,7 +98,7 @@ DO NOTHING`):
 | `email_template_settings` | Singleton: `id boolean PRIMARY KEY DEFAULT true` with a `CHECK (id)`, plus `default_locale`. A missing row means "unset", which the storage layer reads as the code `DEFAULT_LOCALE`. |
 
 Neither table is organization-scoped: template overrides and the default locale
-are **instance-level**, set by an admin, applied to every workspace.
+are **instance-level**, set by an admin, applied to every organization.
 
 Nothing else about email is persisted. There is **no outbox, no send log and no
 delivery-status table** — a send either returns `{ok:true}` from Brevo or it does
@@ -162,7 +162,7 @@ whether `BREVO_API_KEY` is set.
   resolves the session itself and returns `unauthorized` unless
   `user.isAdmin`, for every verb including preview and test-send.
 - **Overrides are instance-level**, not per organization: one admin's edit
-  changes the mail every workspace on the instance sends. This is a deliberate
+  changes the mail every organization on the instance sends. This is a deliberate
   simplification, not an oversight, but it does mean template editing is *not*
   covered by the tenancy rules in
   [`tenant-isolation.md`](tenant-isolation.md) — there is no scope to narrow.

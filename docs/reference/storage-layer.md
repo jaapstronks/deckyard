@@ -162,7 +162,7 @@ Storage selection lives in `server/config/database.js`:
 - Connection: `DATABASE_URL` **or** the discrete `DATABASE_HOST/PORT/NAME/USER/
   PASSWORD` set (`DATABASE_URL` wins when both are present), plus
   `DATABASE_SSL`, `DATABASE_SSL_REJECT_UNAUTHORIZED`, `DATABASE_POOL_MIN/MAX`.
-- `DEFAULT_ORGANIZATION_ID` — single-workspace default org
+- `DEFAULT_ORGANIZATION_ID` — single-organization default org
   (`00000000-0000-0000-0000-000000000001`), used only where a scope is legitimately
   org-less (see below).
 
@@ -172,19 +172,19 @@ Storage selection lives in `server/config/database.js`:
 may not invent an organization the caller did not give it — there is no
 fallback.* The entry points:
 
-- `resolveScope(scope, operation, { allowCrossOrganization })` — validates the
+- `resolveScope(storageScope, operation, { allowCrossOrganization })` — validates the
   scope object and reduces it to `{organizationId, actorEmail, crossOrganization}`;
   throws on a bare-string/objectless scope or a missing org with no cross-org
   reason. Writes may never run cross-org.
 - `crossOrganizationScope(repoRoot, reason, …)` — the only sanctioned unscoped
   read path (token-authorized).
-- `singleWorkspaceScope(repoRoot, entryPoint, …)` — org-less entry points (CLI,
+- `singleOrganizationScope(repoRoot, entryPoint, …)` — org-less entry points (CLI,
   stdio MCP, maintenance) resolve to `DEFAULT_ORGANIZATION_ID` **only** when
-  `isMultiWorkspaceEnabled()` is false; otherwise it throws.
+  `isMultiOrgEnabled()` is false; otherwise it throws.
 - `jobScope(jobData, operation)` — background jobs carry `organizationId` in the
-  payload, else fall back to `singleWorkspaceScope`.
+  payload, else fall back to `singleOrganizationScope`.
 
-The full isolation model (hosting shapes, `MULTI_WORKSPACE_ENABLED`, rules
+The full isolation model (hosting shapes, `MULTI_ORG_ENABLED`, rules
 R1–R3) is in [`tenant-isolation.md`](tenant-isolation.md); it is not repeated
 here.
 

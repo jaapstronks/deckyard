@@ -47,8 +47,8 @@ const MEMBERS_TAB = {
   // In multi-workspace mode this tab lists the members of the organization
   // the session is in, not every user on the instance — so it says so. See
   // tabs/users-tab.js.
-  multiWorkspaceLabelKey: 'settings.tabs.members',
-  multiWorkspaceLabelDefault: 'Members',
+  multiOrganizationLabelKey: 'settings.tabs.members',
+  multiOrganizationLabelDefault: 'Members',
 };
 
 const ADMIN_TABS = [
@@ -103,11 +103,11 @@ export function createSettingsSidebar({
       },
     });
 
-    const renamed = tab.multiWorkspaceLabelKey && getFeatures()?.multiWorkspace;
+    const renamed = tab.multiOrganizationLabelKey && getFeatures()?.multiOrganization;
     const label = h('span', {
       class: 'settings-sidebar-tab-label',
       text: renamed
-        ? t(tab.multiWorkspaceLabelKey, tab.multiWorkspaceLabelDefault)
+        ? t(tab.multiOrganizationLabelKey, tab.multiOrganizationLabelDefault)
         : t(tab.labelKey, tab.labelDefault),
     });
 

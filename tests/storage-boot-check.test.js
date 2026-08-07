@@ -9,7 +9,7 @@ import { strandedFileDataError } from '../server/storage/boot-check.js';
 /**
  * Boot guard for the Postgres default: an install that predates the flip has
  * its decks as JSON on disk. Booting Postgres mode against an empty database
- * would show an empty workspace, which reads as data loss. The guard must stop
+ * would show an empty organization, which reads as data loss. The guard must stop
  * that boot, and must stay quiet in every other combination — a false positive
  * would refuse to start a perfectly healthy install.
  */

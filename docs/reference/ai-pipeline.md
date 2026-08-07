@@ -216,7 +216,7 @@ point of the seam.
   generation verbs create a *new* deck in the caller's scope.
 - **Org context flows into the prompt**: `loadSlideTypeContext(authedUser)` reads
   the caller's organization's disabled and custom slide types, so a model never
-  offers a type that workspace turned off. Theme context comes from the deck's
+  offers a type that organization turned off. Theme context comes from the deck's
   resolved theme.
 - Persistence goes through the ordinary scoped presentation store; the pipeline
   itself holds no organization id. General rules:

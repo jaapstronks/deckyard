@@ -5,7 +5,7 @@
 
 import { validateApiKey, TIER_LIMITS, hasPermission } from '../../../storage/api-keys.js';
 import {
-  normalizePresentationScope,
+  normalizePresentationVisibility,
   canActorAccessPresentation,
   hasIdentity,
   isOwnerOrCreator,
@@ -75,14 +75,14 @@ export async function authenticateApiKey(ctx) {
     id: ownerResolution?.userId || null,
     email: result.ownerEmail,
     role: 'user',
-    // The workspace this key acts in. Carried on the acting user (not read off
-    // whatever deck is being checked) so the workspace grant is decided against
+    // The organization this key acts in. Carried on the acting user (not read
+    // off whatever deck is being checked) so the organization-wide grant is decided against
     // the key's own organization — see utils/presentation-authz/actor-access.js.
     organizationId: result.organizationId,
   };
   // A machine client acts in the organization its key belongs to. That is a
   // real answer rather than the default organization the storage layer used to
-  // assume, so public-API reads and writes stay inside the key's workspace.
+  // assume, so public-API reads and writes stay inside the key's organization.
   ctx.storageScope = {
     repoRoot: ctx.repoRoot ?? null,
     organizationId: result.organizationId,
@@ -123,9 +123,9 @@ export function requirePermission(ctx, permission) {
 // ============================================================
 
 /**
- * Synchronous ownership/scope filter for presentation *listings* only.
+ * Synchronous ownership/visibility filter for presentation *listings* only.
  * Returns true if:
- * - Presentation has workspace scope
+ * - Presentation has organization visibility
  * - API key owner matches presentation owner or creator
  *
  * No ownerless-legacy exception: per-deck reads would refuse those decks
@@ -143,8 +143,8 @@ export function requirePermission(ctx, permission) {
 export function canAccessPresentation(presentation, actor) {
   if (!hasIdentity(actor)) return false;
 
-  const scope = normalizePresentationScope(presentation?.scope);
-  if (scope === 'workspace') return true;
+  const visibility = normalizePresentationVisibility(presentation?.visibility);
+  if (visibility === 'organization') return true;
 
   return isOwnerOrCreator(actor, presentation);
 }
@@ -154,9 +154,9 @@ export function canAccessPresentation(presentation, actor) {
  * Sends appropriate error responses if presentation not found or access denied.
  *
  * Uses the same collaborator-aware canRead/canWritePresentation checks as the
- * editor routes: reads allow owner/creator, workspace scope, and any
+ * editor routes: reads allow owner/creator, organization visibility, and any
  * collaborator; writes additionally require edit rights (owner/creator,
- * writable workspace deck, or a collaborator with edit/admin permission).
+ * writable organization-visible deck, or a collaborator with edit/admin permission).
  * @param {Object} ctx - Request context with repoRoot, authedUser and apiKey
  * @param {string} presentationId - The presentation ID to fetch
  * @param {Object} [options]

@@ -3,14 +3,14 @@
  *
  * Facade that preserves the historical import surface. The implementation is
  * split by domain:
- * - `user-organizations/memberships.js`: workspace roles, designer capability,
+ * - `user-organizations/memberships.js`: organization roles, designer capability,
  *   and membership CRUD (add/remove/list members, roles, ownership transfer).
- * - `user-organizations/organizations.js`: organization (workspace) CRUD.
+ * - `user-organizations/organizations.js`: organization CRUD.
  */
 
 export {
   WORKSPACE_ROLES,
-  hasWorkspaceRole,
+  hasOrganizationRole,
   hasDesignerCapability,
   updateMemberDesigner,
   getMembership,

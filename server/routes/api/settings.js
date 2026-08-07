@@ -9,21 +9,21 @@ import {
   getOrganizationById,
   updateOrganization,
   getMembershipByEmail,
-  hasWorkspaceRole,
+  hasOrganizationRole,
 } from '../../storage/user-organizations/index.js';
 import { getOrgSettings } from '../../utils/org-settings.js';
 import { canManage } from '../../utils/route-middleware.js';
-import { isMultiWorkspaceEnabled } from '../../config/features.js';
+import { isMultiOrgEnabled } from '../../config/features.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('settings');
 
 /**
  * Whether this user may write the organization-level admin settings keys.
  *
- * Instance admin is necessary in both modes. In multi-workspace mode being
+ * Instance admin is necessary in both modes. In multi-organization mode being
  * admin or owner of the organization being written is necessary too, so the
  * instance role can only ever be narrowed by the membership, never widened by
- * it — the same shape as `isWorkspaceAdmin()` on the client and `canManage()`
+ * it — the same shape as `isOrganizationAdmin()` on the client and `canManage()`
  * for the designer capability.
  *
  * @param {Object} [authedUser] - Authenticated user
@@ -32,11 +32,11 @@ const log = createLogger('settings');
  */
 async function canWriteOrgAdminKeys(authedUser, organizationId) {
   if (!authedUser?.isAdmin) return false;
-  if (!isMultiWorkspaceEnabled()) return true;
+  if (!isMultiOrgEnabled()) return true;
   if (!authedUser?.email || !organizationId) return false;
 
   const membership = await getMembershipByEmail(authedUser.email, organizationId);
-  return hasWorkspaceRole(membership?.role, 'admin');
+  return hasOrganizationRole(membership?.role, 'admin');
 }
 
 export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
@@ -74,7 +74,7 @@ export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
   // Organization settings:
   // - adminsAreDesigners toggle
   // - Other org-level settings
-  // Admin-only, works in both single and multi-workspace modes
+  // Admin-only, works in both single and multi-organization modes
   if (url.pathname === '/api/settings/organization') {
     // GET is available to any authenticated user (picker needs disabledSlideTypes)
     // PATCH requires admin
@@ -111,8 +111,8 @@ export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
       // instance-wide flag alone, so an instance admin who is a plain member of
       // the organization they had switched into could still write its settings.
       // The rule is the conjunction the UI already applies through
-      // `isWorkspaceAdmin()`: instance admin *and*, in multi-workspace mode,
-      // admin or owner of the active organization. Single-workspace is
+      // `isOrganizationAdmin()`: instance admin *and*, in multi-organization mode,
+      // admin or owner of the active organization. Single-organization is
       // unchanged — there is no membership to read and none is asked for.
       if (hasAdminKeys && !(await canWriteOrgAdminKeys(authedUser, orgId))) {
         return unauthorized(res);

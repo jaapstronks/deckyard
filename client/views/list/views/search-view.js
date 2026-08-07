@@ -127,7 +127,7 @@ export function createSearchView({ h, renderCard, allPresentations, onClearSearc
       // Render results
       for (const p of results) {
         searchList.append(renderCard(p, {
-          isWorkspace: p.scope === 'workspace',
+          isOrganization: p.visibility === 'organization',
           isSharedWithMe: p.isSharedWithMe,
           sharedBy: p.sharedBy,
           permission: p.permission,

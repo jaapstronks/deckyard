@@ -59,7 +59,7 @@ import { transferPresentationOwnership } from '../../server/storage/presentation
 import { getDefaultOrganizationId } from '../../server/config/database.js';
 
 const ORG = getDefaultOrganizationId();
-const scope = testScope();
+const storageScope = testScope();
 
 const OWNER_EMAIL = 'owner@example.com';
 const OWNER_ID = '11111111-1111-1111-1111-111111111111';
@@ -109,7 +109,7 @@ pgDescribe('presentation owner user_id dual-key write (real PostgreSQL)', () => 
   }
 
   it("create stamps the owner's stable users.id into all three id columns", async () => {
-    const pres = await createPresentation(scope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
+    const pres = await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
     const row = await storedRow(pres.id);
 
     // Email columns unchanged (behaviour-preserving); id columns filled from them.
@@ -121,7 +121,7 @@ pgDescribe('presentation owner user_id dual-key write (real PostgreSQL)', () => 
 
   it('create leaves all three id columns NULL when the owner has no users row', async () => {
     const email = 'nobody@external.test'; // deliberately NOT in `users`
-    const pres = await createPresentation(scope, { title: 'Deck', ownerEmail: email });
+    const pres = await createPresentation(storageScope, { title: 'Deck', ownerEmail: email });
     const row = await storedRow(pres.id);
 
     // The email is still written — the external/legacy path stays first-class.
@@ -132,10 +132,10 @@ pgDescribe('presentation owner user_id dual-key write (real PostgreSQL)', () => 
   });
 
   it('an update stamps updated_by_user_id from the actor and touches neither owner nor created_by id', async () => {
-    const pres = await createPresentation(scope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
+    const pres = await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
 
     // A different user edits the deck.
-    await updatePresentation(scope, pres.id, { title: 'Edited' }, { actorEmail: MEMBER_EMAIL });
+    await updatePresentation(storageScope, pres.id, { title: 'Edited' }, { actorEmail: MEMBER_EMAIL });
     const row = await storedRow(pres.id);
 
     // updated_by (email) and updated_by_user_id both move to the editor.
@@ -148,9 +148,9 @@ pgDescribe('presentation owner user_id dual-key write (real PostgreSQL)', () => 
   });
 
   it('an update by an external actor leaves updated_by_user_id NULL and still does not touch the owner columns', async () => {
-    const pres = await createPresentation(scope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
+    const pres = await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
 
-    await updatePresentation(scope, pres.id, { title: 'Edited' }, { actorEmail: 'ext@external.test' });
+    await updatePresentation(storageScope, pres.id, { title: 'Edited' }, { actorEmail: 'ext@external.test' });
     const row = await storedRow(pres.id);
 
     assert.equal(row.updated_by, 'ext@external.test');
@@ -170,13 +170,13 @@ pgDescribe('presentation owner user_id dual-key write (real PostgreSQL)', () => 
   // that merely names an `ownerEmail` (no gate) still cannot touch the owner.
 
   it('transfer to a known member moves owner_email and owner_user_id together, leaving creator intact', async () => {
-    const pres = await createPresentation(scope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
+    const pres = await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
 
     const result = await transferPresentationOwnership(
       null,
       pres.id,
       { newOwnerEmail: MEMBER_EMAIL, previousOwnerEmail: OWNER_EMAIL, actorEmail: OWNER_EMAIL },
-      scope
+      storageScope
     );
     assert.equal(result.ok, true);
 
@@ -194,13 +194,13 @@ pgDescribe('presentation owner user_id dual-key write (real PostgreSQL)', () => 
 
   it('transfer to an external email moves owner_email but leaves owner_user_id NULL', async () => {
     const external = 'newowner@external.test'; // deliberately NOT in `users`
-    const pres = await createPresentation(scope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
+    const pres = await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
 
     const result = await transferPresentationOwnership(
       null,
       pres.id,
       { newOwnerEmail: external, previousOwnerEmail: OWNER_EMAIL, actorEmail: OWNER_EMAIL },
-      scope
+      storageScope
     );
     assert.equal(result.ok, true);
 
@@ -213,12 +213,12 @@ pgDescribe('presentation owner user_id dual-key write (real PostgreSQL)', () => 
   });
 
   it('a plain update naming ownerEmail (no allowOwnerChange gate) leaves the owner columns untouched', async () => {
-    const pres = await createPresentation(scope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
+    const pres = await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
 
     // An ordinary editor save that happens to carry ownerEmail must NOT move
     // the owner — only the gated transfer route may. This pins the gate itself.
     await updatePresentation(
-      scope,
+      storageScope,
       pres.id,
       { title: 'Edited', ownerEmail: MEMBER_EMAIL },
       { actorEmail: OWNER_EMAIL }

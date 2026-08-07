@@ -289,10 +289,10 @@ test('adding a slide in front of the deck counts as changing slide 1', async () 
 
 test('PUT wires the gate in: slide 1 edited → warm pending, otherwise → nothing', async () => {
   const repoRoot = await tmpRoot();
-  const scope = testScope();
+  const storageScope = testScope();
 
   await withWarmingEnabled(async () => {
-    const created = await createPresentation(scope, {
+    const created = await createPresentation(storageScope, {
       title: 'Deck',
       ownerEmail: OWNER,
       slides: [slide('Cover'), slide('Body', SLIDE_2)],
@@ -303,7 +303,7 @@ test('PUT wires the gate in: slide 1 edited → warm pending, otherwise → noth
     await handlePresentationItem(
       {
         repoRoot,
-        storageScope: scope,
+        storageScope,
         req: fakeReq({
           headers: { 'if-match': String(created.revision) },
           // Slide 1 sent back exactly as stored — this is a slide-2-only save.
@@ -319,12 +319,12 @@ test('PUT wires the gate in: slide 1 edited → warm pending, otherwise → noth
     assert.deepEqual(pendingWarmKeys(), [], 'no render queued for a slide the card never shows');
 
     // A save that touches slide 1.
-    const current = await getPresentation(scope, created.id);
+    const current = await getPresentation(storageScope, created.id);
     const res2 = fakeRes();
     await handlePresentationItem(
       {
         repoRoot,
-        storageScope: scope,
+        storageScope,
         req: fakeReq({
           headers: { 'if-match': String(current.revision) },
           body: { ...current, slides: [slide('Cover, revised'), current.slides[1]] },
@@ -346,18 +346,18 @@ test('PUT wires the gate in: slide 1 edited → warm pending, otherwise → noth
 
 test('after the warm ran, the next Home load is a cache hit instead of a miss', async () => {
   const repoRoot = await tmpRoot();
-  const scope = testScope();
+  const storageScope = testScope();
 
   await withWarmingEnabled(async () => {
-    const created = await createPresentation(scope, {
+    const created = await createPresentation(storageScope, {
       title: 'Deck',
       ownerEmail: OWNER,
       slides: [slide('Cover')],
     });
 
-    const before = await getPresentation(scope, created.id);
+    const before = await getPresentation(storageScope, created.id);
     const updated = await updatePresentation(
-      scope,
+      storageScope,
       created.id,
       { ...before, slides: [slide('Cover, revised')] },
       { expectedRevision: before.revision, actorEmail: OWNER }
@@ -393,7 +393,7 @@ test('after the warm ran, the next Home load is a cache hit instead of a miss', 
     // max-age instead of the 10s revalidate window a stale serve gets.
     const res = fakeRes();
     await handlePresentationThumbnail(
-      { repoRoot, storageScope: scope, req: { method: 'GET' }, res, authedUser: owner },
+      { repoRoot, storageScope, req: { method: 'GET' }, res, authedUser: owner },
       created.id
     );
     assert.equal(res.statusCode, 200);

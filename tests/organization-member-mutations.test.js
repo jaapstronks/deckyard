@@ -27,9 +27,9 @@
  * `adminsAreDesigners` and `rss` hung on the instance-wide `isAdmin`, so an
  * instance admin who had switched into an organization they are only a member
  * of could still write its settings. The rule is now the conjunction the UI
- * already applies through `isWorkspaceAdmin()`.
+ * already applies through `isOrganizationAdmin()`.
  *
- * MULTI_WORKSPACE_ENABLED is read at module scope (server/config/features.js),
+ * MULTI_ORG_ENABLED is read at module scope (server/config/features.js),
  * so this file sets it before importing anything and relies on node --test
  * giving each file its own process.
  *
@@ -39,14 +39,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-process.env.MULTI_WORKSPACE_ENABLED = 'true';
+process.env.MULTI_ORG_ENABLED = 'true';
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const ORG = '00000000-0000-0000-0000-0000000000bb';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { isMultiWorkspaceEnabled } = await import('../server/config/features.js');
+const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const { handleOrganizationMembers } = await import(
   '../server/routes/api/organization-members.js'
 );
@@ -59,7 +59,7 @@ const {
 } = await import('../server/storage/user-organizations/index.js');
 
 test.before(() => {
-  assert.equal(isMultiWorkspaceEnabled(), true, 'multi-workspace flag is on for this file');
+  assert.equal(isMultiOrgEnabled(), true, 'multi-organization flag is on for this file');
 });
 
 /**

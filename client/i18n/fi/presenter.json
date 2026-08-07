@@ -1,5 +1,5 @@
 {
-  "activity.action.sharedToWorkspace": "jaettu työtilaan",
+  "activity.action.sharedToOrganization": "jaettu työtilaan",
   "notesJoin.copyLink": "Kopioi linkki",
   "notesJoin.copyPrompt": "Kopioi tämä linkki:",
   "notesJoin.help": "Skannaa QR-koodi puhelimellasi avataksesi muistiinpanoavustajan.",

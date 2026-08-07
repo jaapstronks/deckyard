@@ -323,7 +323,7 @@ the DB — which rows it writes, which tables it reads, which lookups it skips.
   `UniqueViolationError` (code `23505`), so a path that wrongly re-inserts an
   existing person fails loudly.
 - **`db.__queryLog` / `touchedTables(db, op?)`** — every table touched, in order,
-  so a test can assert what was *not* queried (e.g. single-workspace mode issues
+  so a test can assert what was *not* queried (e.g. single-organization mode issues
   no membership lookups at all).
 - **`db.__tables`** — direct access to the backing rows for arrange/assert.
 - **jsonb round-trip** — columns written via the `jsonb()` helper read back as

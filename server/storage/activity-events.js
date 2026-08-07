@@ -1,5 +1,5 @@
 /**
- * Activity events storage for tracking workspace activity.
+ * Activity events storage for tracking organization activity.
  * Powers the activity feed. (Live comment notifications go through
  * services/comment-notifications.js — email + in-app + SSE — not through here.)
  */
@@ -17,7 +17,7 @@ export const EVENT_TYPES = {
   PRESENTATION_UPDATED: 'presentation.updated',
   PRESENTATION_MERGED: 'presentation.merged',
   PRESENTATION_DELETED: 'presentation.deleted',
-  PRESENTATION_MOVED_TO_WORKSPACE: 'presentation.moved_to_workspace',
+  PRESENTATION_MOVED_TO_ORGANIZATION: 'presentation.moved_to_organization',
   OWNERSHIP_TRANSFERRED: 'presentation.ownership_transferred',
   COLLABORATOR_ADDED: 'collaborator.added',
   COLLABORATOR_REMOVED: 'collaborator.removed',

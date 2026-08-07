@@ -42,7 +42,7 @@ Fire sites (each names the event it fires):
 
 | Event | Fired from |
 |---|---|
-| `presentation.moved_to_workspace` | `server/routes/api/presentations/scope.js` |
+| `presentation.moved_to_organization` | `server/routes/api/presentations/visibility.js` |
 | `presentation.published` | `server/routes/api/publish.js` |
 | `slide.added_to_team_library` | `server/routes/api/slide-library.js` |
 | `comment.created` | `server/services/comment-notifications.js` |
@@ -58,7 +58,7 @@ live in the `webhooks` object of app settings (`server/storage/settings.js`),
 one string key per event, defaulting to `''` (= disabled):
 
 ```
-presentationMovedToWorkspaceUrl   slideAddedToTeamLibraryUrl
+presentationMovedToOrganizationUrl   slideAddedToTeamLibraryUrl
 presentationPublishedUrl          commentCreatedUrl
 interactionPollClosedUrl          interactionLikertClosedUrl
 interactionFeedbackSubmittedUrl   leadSubmittedUrl
@@ -87,7 +87,7 @@ there is no retry.
 
 ### The three payload shapes
 
-**Common** — `presentation.moved_to_workspace`, `presentation.published`,
+**Common** — `presentation.moved_to_organization`, `presentation.published`,
 `comment.created`:
 
 ```json
@@ -97,7 +97,7 @@ there is no retry.
   "actor":  { "id": "…@…", "email": "…@…", "name": "…", "role": "admin|user" },
   "presentation": {
     "id": "…", "title": "…", "description": "…", "theme": "…",
-    "scope": "private|workspace",
+    "visibility": "private|organization",
     "published": { "id": "…", "slug": "…", "path": "/p/<id>-<slug>", "url": "https://…" }
   },
   "links": { "editPath": "/app/<id>", "editUrl": "…", "publicPath": "…", "publicUrl": "…" },
@@ -198,11 +198,11 @@ staging/production distinction beyond running separate instances.
   comment, adding a slide to the team library), and the webhook is a side effect
   of that decision.
 - **Payload exposure.** The receiver gets whatever the payload holds regardless
-  of who may read the deck: title, description, theme, scope, the actor's email
+  of who may read the deck: title, description, theme, visibility, the actor's email
   and name, and for `lead.submitted` a visitor's name and email. Configuring a
   webhook is therefore an act of data export, and should be read that way.
-- **Multi-workspace**: nothing in the payload names an organization, so a
-  receiver cannot tell which workspace an event came from on an instance holding
+- **Multi-organization**: nothing in the payload names an organization, so a
+  receiver cannot tell which organization an event came from on an instance holding
   more than one.
 
 ## Implementation status

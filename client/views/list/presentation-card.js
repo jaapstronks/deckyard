@@ -57,7 +57,7 @@ export function createCardRenderer({
    * Render a presentation card
    * @param {Object} p - Presentation data
    * @param {Object} options - Render options
-   * @param {boolean} [options.isWorkspace] - Is this a workspace presentation
+   * @param {boolean} [options.isOrganization] - Is this a workspace presentation
    * @param {boolean} [options.highlight] - Highlight the card
    * @param {boolean} [options.isSharedWithMe] - Is this from "Shared with me"
    * @param {boolean} [options.isTrashView] - Is this in the trash view
@@ -65,7 +65,7 @@ export function createCardRenderer({
    * @param {string} [options.permission] - Permission level (view, comment, edit)
    * @returns {HTMLElement} Card element
    */
-  const renderCard = (p, { isWorkspace, highlight = false, isSharedWithMe = false, isTrashView = false, sharedBy, permission } = {}) => {
+  const renderCard = (p, { isOrganization, highlight = false, isSharedWithMe = false, isTrashView = false, sharedBy, permission } = {}) => {
     // Check if selection mode is active
     const isSelectionMode = () => selectionState?.isActive?.() ?? false;
     const isSelected = () => selectionState?.isSelected?.(p.id) ?? false;
@@ -500,7 +500,7 @@ export function createCardRenderer({
           ]),
           // Visibility indicator
           getVisibilityIndicator(h, p, t),
-          isWorkspace
+          isOrganization
             ? h('span', {
                 class: 'presentation-shared-badge',
                 text: t('list.sharedBadge', 'Shared'),
@@ -581,9 +581,9 @@ function getVisibilityIndicator(h, p, t) {
       'aria-hidden': 'true',
     });
   }
-  if (p.scope === 'workspace') {
+  if (p.visibility === 'organization') {
     return h('img', {
-      class: 'presentation-visibility-indicator is-workspace',
+      class: 'presentation-visibility-indicator is-organization',
       title: t('list.visibility.workspace', 'Shared with workspace'),
       src: iconUrl('users'),
       alt: '',
@@ -628,7 +628,7 @@ export function toListItem(pres) {
     ownerEmail: p.ownerEmail || null,
     createdBy: p.createdBy || null,
     updatedBy: p.updatedBy || null,
-    scope: p.scope || 'private',
+    visibility: p.visibility || 'private',
     revision: Number(p.revision) || 1,
     i18n: p.i18n || null,
     tags: Array.isArray(p.tags) ? p.tags : [],

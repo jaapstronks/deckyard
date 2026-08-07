@@ -73,7 +73,7 @@ pgDescribe('collaborator user_id dual-key write (real PostgreSQL)', () => {
         title: 'Deck',
         owner_email: OWNER_EMAIL,
         created_by: OWNER_EMAIL,
-        scope: 'private',
+        visibility: 'private',
       })
       .execute();
   });

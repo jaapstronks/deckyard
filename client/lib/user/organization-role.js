@@ -25,13 +25,13 @@ const WORKSPACE_ROLES = ['member', 'admin', 'owner'];
 
 /**
  * Whether a membership role is at least the required level.
- * Mirrors `hasWorkspaceRole()` in
+ * Mirrors `hasOrganizationRole()` in
  * server/storage/user-organizations/memberships.js.
  * @param {string|null|undefined} role - Membership role
  * @param {string} required - Minimum role
  * @returns {boolean}
  */
-export function hasWorkspaceRole(role, required) {
+export function hasOrganizationRole(role, required) {
   const level = WORKSPACE_ROLES.indexOf(role);
   const requiredLevel = WORKSPACE_ROLES.indexOf(required);
   return level >= 0 && requiredLevel >= 0 && level >= requiredLevel;
@@ -43,7 +43,7 @@ export function hasWorkspaceRole(role, required) {
  * @param {Object} [user] - User from `/api/auth/me`
  * @returns {string|null}
  */
-export function getWorkspaceRole(user) {
+export function getOrganizationRole(user) {
   const role = user?.organizationRole;
   return WORKSPACE_ROLES.includes(role) ? role : null;
 }
@@ -59,14 +59,14 @@ export function getWorkspaceRole(user) {
  * @param {Object} [user] - User from `/api/auth/me`
  * @returns {boolean}
  */
-export function isWorkspaceMember(user) {
-  return getWorkspaceRole(user) !== null;
+export function isOrganizationMember(user) {
+  return getOrganizationRole(user) !== null;
 }
 
 /**
  * Whether the member list should be reachable for this user.
  *
- * Gating it on `isWorkspaceAdmin()` alone (slice 2) left a plain member unable
+ * Gating it on `isOrganizationAdmin()` alone (slice 2) left a plain member unable
  * to reach the one screen carrying their own *Leave* button — the API allows
  * any member to read the list and to remove themselves, so the gate was
  * stricter than the rule it was mirroring. The row-level controls stay where
@@ -77,7 +77,7 @@ export function isWorkspaceMember(user) {
  * @returns {boolean}
  */
 export function canSeeMemberList(user) {
-  return isWorkspaceAdmin(user) || isWorkspaceMember(user);
+  return isOrganizationAdmin(user) || isOrganizationMember(user);
 }
 
 /**
@@ -91,9 +91,9 @@ export function canSeeMemberList(user) {
  * @param {Object} [user] - User from `/api/auth/me`
  * @returns {boolean}
  */
-export function isWorkspaceAdmin(user) {
+export function isOrganizationAdmin(user) {
   if (!user?.isAdmin) return false;
-  const role = getWorkspaceRole(user);
+  const role = getOrganizationRole(user);
   if (!role) return true;
-  return hasWorkspaceRole(role, 'admin');
+  return hasOrganizationRole(role, 'admin');
 }

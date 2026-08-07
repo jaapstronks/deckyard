@@ -9,11 +9,11 @@ import {
   requireJsonBody,
 } from '../../../utils/http.js';
 import { errorToResponse } from '../../../utils/errors.js';
-import { canChangePresentationScope, isPresentationAuthor } from '../../../utils/presentation-authz.js';
+import { canChangePresentationVisibility, isPresentationAuthor } from '../../../utils/presentation-authz.js';
 import { maybeFireWebhook } from '../../../utils/webhooks.js';
 import { parseIfMatchRevision } from './helpers.js';
 
-export async function handlePresentationScope(
+export async function handlePresentationVisibility(
   { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
@@ -25,32 +25,32 @@ export async function handlePresentationScope(
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const nextScope =
-    body?.scope === 'workspace'
-      ? 'workspace'
-      : body?.scope === 'private'
+  const nextVisibility =
+    body?.visibility === 'organization'
+      ? 'organization'
+      : body?.visibility === 'private'
       ? 'private'
       : null;
-  if (!nextScope) return badRequest(res, 'Invalid scope');
-  if (!canChangePresentationScope({ user: authedUser, pres: existing, nextScope }))
+  if (!nextVisibility) return badRequest(res, 'Invalid visibility');
+  if (!canChangePresentationVisibility({ user: authedUser, pres: existing, nextVisibility }))
     return unauthorized(res);
 
-  // Handle isViewOnly flag (only when sharing to workspace)
+  // Handle isViewOnly flag (only when sharing to the organization)
   let nextIsViewOnly = existing.isViewOnly || false;
   if (typeof body?.isViewOnly === 'boolean') {
     // Only owner/creator can toggle view-only status
     if (!isPresentationAuthor({ user: authedUser, pres: existing })) {
       return unauthorized(res, 'Only the owner can set view-only status');
     }
-    // View-only must be in workspace scope
-    if (body.isViewOnly && nextScope !== 'workspace') {
-      return badRequest(res, 'View-only presentations must be shared with the workspace');
+    // View-only requires organization visibility
+    if (body.isViewOnly && nextVisibility !== 'organization') {
+      return badRequest(res, 'View-only presentations must be visible to the organization');
     }
     nextIsViewOnly = body.isViewOnly;
   }
 
   // If moving to private, automatically remove view-only status
-  if (nextScope === 'private') {
+  if (nextVisibility === 'private') {
     nextIsViewOnly = false;
   }
 
@@ -59,23 +59,23 @@ export async function handlePresentationScope(
   if (expectedRevision == null)
     return jsonError(res, 428, 'missing_if_match', 'Missing If-Match revision');
 
-  const nextPres = { ...existing, scope: nextScope, isViewOnly: nextIsViewOnly };
+  const nextPres = { ...existing, visibility: nextVisibility, isViewOnly: nextIsViewOnly };
   try {
     const updated = await updatePresentation(storageScope, id, nextPres, {
       expectedRevision,
       actorEmail: authedUser?.email || null,
-      allowScopeChange: true,
+      allowVisibilityChange: true,
       allowViewOnlyChange: true,
     });
 
-    if (existing?.scope !== 'workspace' && updated?.scope === 'workspace') {
+    if (existing?.visibility !== 'organization' && updated?.visibility === 'organization') {
       await maybeFireWebhook(repoRoot, req, {
-        event: 'presentation.moved_to_workspace',
+        event: 'presentation.moved_to_organization',
         pres: updated,
         authedUser,
         extra: {
-          fromScope: existing?.scope || 'private',
-          toScope: 'workspace',
+          fromVisibility: existing?.visibility || 'private',
+          toVisibility: 'organization',
         },
       });
     }

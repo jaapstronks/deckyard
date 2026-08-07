@@ -11,7 +11,7 @@
  */
 
 import { getDefaultOrganizationId } from '../config/database.js';
-import { isMultiWorkspaceEnabled } from '../config/features.js';
+import { isMultiOrgEnabled } from '../config/features.js';
 import { getClientIp } from './rate-limit.js';
 
 // Re-export getClientIp for backward compatibility with existing imports
@@ -24,8 +24,8 @@ export { getClientIp };
  * call site, not something to paper over with the default organization. A
  * request-backed context gets its organization from {@link createRouteContext}
  * (which resolves it from the verified session); an entry point with no request
- * gets one from `singleWorkspaceScope()` (server/storage/scope.js), which is
- * exact on a single-workspace instance and refuses to guess on one that holds
+ * gets one from `singleOrganizationScope()` (server/storage/scope.js), which is
+ * exact on a single-organization instance and refuses to guess on one that holds
  * several. Falling back here would hand an unfiltered query the default
  * organization — the same tenant-isolation leak `storage/scope.js` exists to
  * prevent, in another guise — so this throws in the same shape instead.
@@ -38,7 +38,7 @@ export function getOrgId(ctx) {
   if (!ctx?.organizationId) {
     throw new Error(
       'getOrgId was called with a context that has no organization to act in. ' +
-        'Build it through createRouteContext (a request) or singleWorkspaceScope ' +
+        'Build it through createRouteContext (a request) or singleOrganizationScope ' +
         '(an entry point without a request) rather than falling back to the default organization.'
     );
   }
@@ -50,7 +50,7 @@ export function getOrgId(ctx) {
  *
  * The organization on this context is what every storage query scopes on
  * (`getOrgId(ctx)` → `.where('organization_id', '=', orgId)`), so this is the
- * request-to-organization binding: it decides which workspace a request acts
+ * request-to-organization binding: it decides which organization a request acts
  * in. It takes the organization the session is *already resolved* to rather
  * than defaulting to the instance's single organization.
  *
@@ -67,7 +67,7 @@ export function getOrgId(ctx) {
  *      itself with `_needsDbValidation`. Such a user is ignored here, so the
  *      only organization that can reach a query is a membership-verified one.
  *
- * Single-workspace installations are unaffected: `resolveActiveOrganization()`
+ * Single-organization installations are unaffected: `resolveActiveOrganization()`
  * answers from configuration there without touching the database, so
  * `authedUser.organizationId` *is* the default organization and this resolves
  * to exactly the value it did before, at the same query cost.
@@ -87,7 +87,7 @@ export function getOrgId(ctx) {
  * @returns {Object} - Context object with organizationId, actorEmail and repoRoot
  */
 export function createRouteContext(authedUser, options = {}) {
-  // Allow explicit override of organizationId (for multi-workspace)
+  // Allow explicit override of organizationId (for multi-organization)
   const sessionOrganizationId = authedUser?._needsDbValidation
     ? null
     : authedUser?.organizationId;
@@ -112,15 +112,15 @@ export function createRouteContext(authedUser, options = {}) {
  * pass `null` explicitly, so this is a stated absence, not a lost value.
  *
  * **Someone authenticated but with no verified organization → nothing, once an
- * instance holds more than one workspace.** The only user shape that reaches
+ * instance holds more than one organization.** The only user shape that reaches
  * here is one whose organization was deliberately discarded above (the
  * unverified synchronous path). Handing that request the *default* organization
- * would let a session act in a workspace it was never resolved to — the L10
- * finding of the 2026-07 security audit. Under multi-workspace it therefore
+ * would let a session act in an organization it was never resolved to — the L10
+ * finding of the 2026-07 security audit. Under multi-organization it therefore
  * gets no organization at all, and `getOrgId()` refuses the query rather than
- * guessing; the request fails instead of reading someone else's workspace.
+ * guessing; the request fails instead of reading someone else's organization.
  *
- * Single-workspace installations keep the default in both branches, and are
+ * Single-organization installations keep the default in both branches, and are
  * unaffected: there is exactly one organization, so it is not a guess.
  *
  * @param {Object} [authedUser] - The authenticated user, if any
@@ -128,6 +128,6 @@ export function createRouteContext(authedUser, options = {}) {
  */
 function fallbackOrganizationId(authedUser) {
   if (!authedUser) return getDefaultOrganizationId();
-  return isMultiWorkspaceEnabled() ? null : getDefaultOrganizationId();
+  return isMultiOrgEnabled() ? null : getDefaultOrganizationId();
 }
 

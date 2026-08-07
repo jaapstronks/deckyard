@@ -34,7 +34,7 @@ import { testScope } from '../helpers/storage-scope.js';
 import { getImageLibraryUsage } from '../../server/storage/image-library-usage.js';
 import { upsertPublishedEntry } from '../../server/storage/published/index.js';
 
-const scope = testScope();
+const storageScope = testScope();
 
 const URL_IN_SLIDES = '/uploads/hero.png';
 const URL_IN_I18N = '/uploads/translated.png';
@@ -126,7 +126,7 @@ pgDescribe('image library usage (real PostgreSQL, via facade)', () => {
   });
 
   it('finds every deck whose slide content references the URL, newest first', async () => {
-    const usage = await getImageLibraryUsage(scope, URL_IN_SLIDES);
+    const usage = await getImageLibraryUsage(storageScope, URL_IN_SLIDES);
     assert.deepStrictEqual(
       usage.map((u) => u.id),
       [deckWithNestedImage, deckWithImage],
@@ -137,7 +137,7 @@ pgDescribe('image library usage (real PostgreSQL, via facade)', () => {
   });
 
   it('finds a deck that references the URL only in a language version', async () => {
-    const usage = await getImageLibraryUsage(scope, URL_IN_I18N);
+    const usage = await getImageLibraryUsage(storageScope, URL_IN_I18N);
     assert.deepStrictEqual(usage.map((u) => u.id), [deckWithI18nImage]);
     assert.strictEqual(
       usage[0].title,
@@ -147,23 +147,23 @@ pgDescribe('image library usage (real PostgreSQL, via facade)', () => {
   });
 
   it('ignores a URL that sits outside slide content', async () => {
-    assert.deepStrictEqual(await getImageLibraryUsage(scope, URL_OUTSIDE_CONTENT), []);
+    assert.deepStrictEqual(await getImageLibraryUsage(storageScope, URL_OUTSIDE_CONTENT), []);
   });
 
   it('matches whole values, not substrings', async () => {
     // '/uploads/hero.png' is used; a prefix of it is not a usage of anything.
-    assert.deepStrictEqual(await getImageLibraryUsage(scope, '/uploads/hero'), []);
-    assert.deepStrictEqual(await getImageLibraryUsage(scope, URL_UNUSED), []);
+    assert.deepStrictEqual(await getImageLibraryUsage(storageScope, '/uploads/hero'), []);
+    assert.deepStrictEqual(await getImageLibraryUsage(storageScope, URL_UNUSED), []);
   });
 
   it('returns nothing for a blank URL instead of matching everything', async () => {
-    assert.deepStrictEqual(await getImageLibraryUsage(scope, ''), []);
-    assert.deepStrictEqual(await getImageLibraryUsage(scope, '   '), []);
-    assert.deepStrictEqual(await getImageLibraryUsage(scope, null), []);
+    assert.deepStrictEqual(await getImageLibraryUsage(storageScope, ''), []);
+    assert.deepStrictEqual(await getImageLibraryUsage(storageScope, '   '), []);
+    assert.deepStrictEqual(await getImageLibraryUsage(storageScope, null), []);
   });
 
   it('keeps trashed decks and other organizations out of the result', async () => {
-    const usage = await getImageLibraryUsage(scope, URL_IN_SLIDES);
+    const usage = await getImageLibraryUsage(storageScope, URL_IN_SLIDES);
     assert.strictEqual(usage.length, 2, 'the trashed and the foreign deck also carry the URL');
     const titles = usage.map((u) => u.title);
     assert.ok(!titles.includes('Trashed deck'));
@@ -171,13 +171,13 @@ pgDescribe('image library usage (real PostgreSQL, via facade)', () => {
   });
 
   it('carries the publish entries of a deck that is published', async () => {
-    await upsertPublishedEntry(scope, {
+    await upsertPublishedEntry(storageScope, {
       publishId: 'pub-hero',
       presentationId: deckWithImage,
       title: 'Deck with image',
     });
 
-    const usage = await getImageLibraryUsage(scope, URL_IN_SLIDES);
+    const usage = await getImageLibraryUsage(storageScope, URL_IN_SLIDES);
     const hit = usage.find((u) => u.id === deckWithImage);
     assert.deepStrictEqual(
       hit.published.map((p) => p.publishId),

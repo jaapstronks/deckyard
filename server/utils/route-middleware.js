@@ -21,7 +21,7 @@ import {
   canCommentOnPresentation,
 } from './presentation-authz.js';
 import { createRouteContext } from './context.js';
-import { isMultiWorkspaceEnabled } from '../config/features.js';
+import { isMultiOrgEnabled } from '../config/features.js';
 import { getGuestBySessionToken } from '../storage/share-links/index.js';
 import { parseCookies } from './cookies.js';
 
@@ -34,11 +34,11 @@ import { parseCookies } from './cookies.js';
  * Used by custom-slide-types and font-families routes.
  *
  * `isDesigner` is resolved per request from the membership in the *active*
- * organization (routes/api/index.js), so in multi-workspace mode it is the
+ * organization (routes/api/index.js), so in multi-organization mode it is the
  * whole answer: falling back to the instance-wide flag here would reopen
  * exactly what resolveDesignerCapability() closes, and an instance admin would
  * keep managing slide types and fonts in an organization where they are a plain
- * member. The fallback stays for single-workspace mode, where it is what holds
+ * member. The fallback stays for single-organization mode, where it is what holds
  * the designer surfaces up in the modes that have no membership row at all
  * (auth disabled, dev bypass, sandbox) and where resolution failing open must
  * not lock the only admin out.
@@ -48,7 +48,7 @@ import { parseCookies } from './cookies.js';
  */
 export function canManage(authedUser) {
   if (authedUser?.isDesigner === true) return true;
-  return !isMultiWorkspaceEnabled() && authedUser?.isAdmin === true;
+  return !isMultiOrgEnabled() && authedUser?.isAdmin === true;
 }
 
 /**

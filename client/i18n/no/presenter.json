@@ -1,5 +1,5 @@
 {
-  "activity.action.sharedToWorkspace": "delt med arbeidsområde",
+  "activity.action.sharedToOrganization": "delt med arbeidsområde",
   "notesJoin.copyLink": "Kopier lenke",
   "notesJoin.copyPrompt": "Kopier denne lenken:",
   "notesJoin.help": "Skann QR-koden med telefonen din for å åpne notathjelpen.",

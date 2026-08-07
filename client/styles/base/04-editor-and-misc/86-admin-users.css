@@ -218,7 +218,7 @@
   background: hsl(var(--app-danger));
 }
 
-/* Organization member rows (multi-workspace): the role control sits in the
+/* Organization member rows (multi-organization): the role control sits in the
    actions column next to the buttons, so it has to match their size. */
 .admin-user-role-select {
   font-size: var(--ps-text-xs);

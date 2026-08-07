@@ -380,13 +380,13 @@ curl -X POST https://your-deckyard.com/mcp \
 
 ### Security
 
-- API keys scope access: `read`, `write`, `ai`, `export`
+- API-key permissions gate access: `read`, `write`, `ai`, `export`
 - Rate limiting via existing API key tiers (free/pro/enterprise)
 - Sessions expire after 30 minutes of inactivity
 - Each session is bound to its API key owner — cross-key access is denied
 - Per-deck authorization: tools use the same collaborator-aware
   `canRead`/`canWritePresentation` checks as the app. The key owner can read
-  decks they own, workspace decks, and decks shared with them; mutating tools
+  decks they own, organization decks, and decks shared with them; mutating tools
   additionally require edit rights, and `delete_presentation` is owner-only
 - CORS is open (`*`) — restrict via reverse proxy if needed
 

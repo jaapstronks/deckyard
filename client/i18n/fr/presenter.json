@@ -1,5 +1,5 @@
 {
-  "activity.action.sharedToWorkspace": "partagé avec l'espace de travail",
+  "activity.action.sharedToOrganization": "partagé avec l'espace de travail",
   "notesJoin.copyLink": "Copier le lien",
   "notesJoin.copyPrompt": "Copiez ce lien :",
   "notesJoin.help": "Scannez le code QR avec votre téléphone pour ouvrir le compagnon de notes.",

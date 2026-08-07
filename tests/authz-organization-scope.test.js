@@ -1,11 +1,11 @@
 /**
- * The organization-aware authorization layer, single-workspace (A1 phase 2).
+ * The organization-aware authorization layer, single-organization (A1 phase 2).
  *
- * `presentation-authz/presentations.js` granted `scope: 'workspace'` access
+ * `presentation-authz/presentations.js` granted `visibility: 'organization'` access
  * unconditionally. It now grants it only to someone acting in the organization
  * that owns the deck. This file is the half that pins that **existing
  * installations do not notice**: one organization means there is nothing to
- * compare, so every workspace grant that used to be given is still given, and
+ * compare, so every organization grant that used to be given is still given, and
  * the check itself never reaches the database.
  *
  * None of the assertions here fail without the change — that is the point.
@@ -16,7 +16,7 @@
  * `mapPresentationRow` → the authorization functions. That matters, because the
  * organization now has to survive the mapper to reach the check.
  *
- * MULTI_WORKSPACE_ENABLED is read at module scope (server/config/features.js:15),
+ * MULTI_ORG_ENABLED is read at module scope (server/config/features.js:15),
  * so this file sets its environment before importing anything and relies on
  * node --test giving each file its own process.
  *
@@ -31,7 +31,7 @@ import assert from 'node:assert/strict';
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
-delete process.env.MULTI_WORKSPACE_ENABLED;
+delete process.env.MULTI_ORG_ENABLED;
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const DEFAULT_ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -39,7 +39,7 @@ const DEFAULT_ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { hashPassword } = await import('../server/utils/password-hash.js');
-const { isMultiWorkspaceEnabled } = await import('../server/config/features.js');
+const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const auth = await import('../server/auth/auth.js');
 const {
   isSameOrganization,
@@ -61,10 +61,10 @@ let passwordHash;
 
 test.before(async () => {
   passwordHash = await hashPassword('correct horse battery');
-  assert.equal(isMultiWorkspaceEnabled(), false, 'single-workspace mode for this file');
+  assert.equal(isMultiOrgEnabled(), false, 'single-organization mode for this file');
 });
 
-/** One organization, one person, one workspace deck and one private deck. */
+/** One organization, one person, one organization deck and one private deck. */
 function seedDb() {
   const db = createFakeDb({
     organizations: [{ id: DEFAULT_ORG, name: 'Default', slug: 'default' }],
@@ -94,15 +94,15 @@ function seedDb() {
       },
     ],
     presentations: [
-      deckRow({ id: 'deck-workspace', scope: 'workspace', owner: 'bob@example.com' }),
-      deckRow({ id: 'deck-private', scope: 'private', owner: 'bob@example.com' }),
+      deckRow({ id: 'deck-organization', visibility: 'organization', owner: 'bob@example.com' }),
+      deckRow({ id: 'deck-private', visibility: 'private', owner: 'bob@example.com' }),
     ],
   });
   __setTestDb(db);
   return db;
 }
 
-function deckRow({ id, scope, owner }) {
+function deckRow({ id, visibility, owner }) {
   return {
     id,
     organization_id: DEFAULT_ORG,
@@ -110,7 +110,7 @@ function deckRow({ id, scope, owner }) {
     owner_email: owner,
     created_by: owner,
     updated_by: owner,
-    scope,
+    visibility,
     theme: 'default',
     lang: 'nl',
     revision: 1,
@@ -153,37 +153,37 @@ async function loadDeck(id) {
 }
 
 // ---------------------------------------------------------------------------
-// The workspace grant is unchanged
+// The organization grant is unchanged
 // ---------------------------------------------------------------------------
 
-test('a workspace deck someone else owns is still readable', async () => {
+test('an organization deck someone else owns is still readable', async () => {
   seedDb();
   const user = await sessionUser();
-  const pres = await loadDeck('deck-workspace');
+  const pres = await loadDeck('deck-organization');
 
   assert.equal(canReadPresentation({ user, pres }), true);
 });
 
-test('a workspace deck someone else owns is still writable', async () => {
+test('an organization deck someone else owns is still writable', async () => {
   seedDb();
   const user = await sessionUser();
-  const pres = await loadDeck('deck-workspace');
+  const pres = await loadDeck('deck-organization');
 
   assert.equal(canWritePresentation({ user, pres }), true);
 });
 
-test('a workspace deck someone else owns still accepts comments', async () => {
+test('an organization deck someone else owns still accepts comments', async () => {
   seedDb();
   const user = await sessionUser();
-  const pres = await loadDeck('deck-workspace');
+  const pres = await loadDeck('deck-organization');
 
   assert.equal(canCommentOnPresentation({ user, pres }), true);
 });
 
-test('the effective permission on a workspace deck is still edit', async () => {
+test('the effective permission on an organization deck is still edit', async () => {
   seedDb();
   const user = await sessionUser();
-  const pres = await loadDeck('deck-workspace');
+  const pres = await loadDeck('deck-organization');
 
   assert.equal(getEffectivePermission({ user, pres }), 'edit');
 });
@@ -197,13 +197,13 @@ test("someone else's private deck is still refused", async () => {
   assert.equal(getEffectivePermission({ user, pres }), 'view');
 });
 
-test('machine clients keep their workspace access', async () => {
+test('machine clients keep their organization access', async () => {
   seedDb();
-  const pres = await loadDeck('deck-workspace');
+  const pres = await loadDeck('deck-organization');
 
-  // A single-workspace install has nothing to compare, so a machine client that
+  // A single-organization install has nothing to compare, so a machine client that
   // states no organization is unaffected by the L10 rewiring — the point of
-  // that change is that in multi-workspace mode the workspace grant is decided
+  // that change is that in multi-organization mode the organization grant is decided
   // against the *key's* organization instead of the deck's.
   const actor = { email: 'alice@example.com' };
   assert.equal(checkActorAccess({ pres, actor }), true);
@@ -214,11 +214,11 @@ test('machine clients keep their workspace access', async () => {
 // Shapes that carry no organization at all
 // ---------------------------------------------------------------------------
 
-test('a presentation without an organization is still a workspace deck', () => {
-  // The file backend has no organization dimension (multi-workspace is refused
+test('a presentation without an organization is still an organization deck', () => {
+  // The file backend has no organization dimension (multi-organization is refused
   // on it at boot, server/server.js), so its decks arrive without one. In
-  // single-workspace mode that must not cost anyone access.
-  const pres = { id: 'deck-file', scope: 'workspace', ownerEmail: 'bob@example.com' };
+  // single-organization mode that must not cost anyone access.
+  const pres = { id: 'deck-file', visibility: 'organization', ownerEmail: 'bob@example.com' };
   const user = { email: 'alice@example.com' };
 
   assert.equal(canReadPresentation({ user, pres }), true);
@@ -226,8 +226,8 @@ test('a presentation without an organization is still a workspace deck', () => {
   assert.equal(getEffectivePermission({ user, pres }), 'edit');
 });
 
-test('a user without an organization keeps workspace access', () => {
-  const pres = { id: 'deck-1', scope: 'workspace', organizationId: DEFAULT_ORG };
+test('a user without an organization keeps organization access', () => {
+  const pres = { id: 'deck-1', visibility: 'organization', organizationId: DEFAULT_ORG };
 
   assert.equal(isSameOrganization({ email: 'alice@example.com' }, pres), true);
 });
@@ -239,7 +239,7 @@ test('a user without an organization keeps workspace access', () => {
 test('the organization check issues no queries', async () => {
   const db = seedDb();
   const user = await sessionUser();
-  const pres = await loadDeck('deck-workspace');
+  const pres = await loadDeck('deck-organization');
 
   db.__queryLog.length = 0;
   canReadPresentation({ user, pres });
@@ -253,7 +253,7 @@ test('the organization check issues no queries', async () => {
 test('reading a deck still costs exactly one presentations query', async () => {
   const db = seedDb();
   db.__queryLog.length = 0;
-  await loadDeck('deck-workspace');
+  await loadDeck('deck-organization');
 
   assert.deepEqual(
     db.__queryLog,
@@ -264,7 +264,7 @@ test('reading a deck still costs exactly one presentations query', async () => {
 
 test('the mapper exposes the owning organization', async () => {
   seedDb();
-  const pres = await loadDeck('deck-workspace');
+  const pres = await loadDeck('deck-organization');
 
   assert.equal(
     pres.organizationId,

@@ -148,7 +148,7 @@ returns `{ jobId, queued }`:
   forces this branch even when Redis is up.
 
 The payload always carries what the worker cannot look up for itself:
-`repoRoot`, `ownerEmail` (the requester) and `organizationId` (the workspace the
+`repoRoot`, `ownerEmail` (the requester) and `organizationId` (the organization the
 request acted in).
 
 ### 3. Consuming a job
@@ -165,8 +165,8 @@ Concurrency is set per worker and is the only throttle: export 2, translate 1
 A worker runs detached from the request that queued it, so it has no session and
 no storage scope. It builds one from the payload: `jobScope(job.data, '<reason>')`
 returns the stated `organizationId` when there is one, and otherwise
-`singleWorkspaceScope()`, which answers with the configured organization on a
-single-workspace install and **throws** under `MULTI_WORKSPACE_ENABLED` — where
+`singleOrganizationScope()`, which answers with the configured organization on a
+single-organization install and **throws** under `MULTI_ORG_ENABLED` — where
 "the default one" has stopped being an answer. See
 [`tenant-isolation.md`](tenant-isolation.md).
 
@@ -238,7 +238,7 @@ overridable only by the caller that schedules them.
   cannot download someone else's export of it.
 - **Queue stats** require the instance `isAdmin` flag.
 - **Interval jobs** are instance-global maintenance and take no organization at
-  all — R3 in `tenant-isolation.md`. They sweep every workspace's rows in one
+  all — R3 in `tenant-isolation.md`. They sweep every organization's rows in one
   pass, which is correct for a cleanup and would be wrong for anything a user
   reads.
 

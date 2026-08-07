@@ -25,7 +25,7 @@ async function handleThemes(ctx) {
 
   // A key acts in the organization it belongs to. Building this from the owner
   // email alone resolved every key against the default organization, which is
-  // wrong for any key issued to a second workspace.
+  // wrong for any key issued to a second organization.
   const routeCtx = createRouteContext({
     email: apiKey.ownerEmail,
     organizationId: apiKey.organizationId,

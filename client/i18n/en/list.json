@@ -215,7 +215,7 @@
   "list.presentations.scope.all": "All",
   "list.presentations.scope.mine": "Mine",
   "list.presentations.scope.shared": "Shared",
-  "list.presentations.scope.workspace": "Workspace",
+  "list.presentations.scope.organization": "Workspace",
   "list.presentations.scopeLabel": "Filter presentations by source",
   "list.presentations.sort.recent": "Last updated",
   "list.presentations.sort.title": "Title A–Z",

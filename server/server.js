@@ -216,7 +216,7 @@ await initializeStorage();
 
 // Data check: an empty database next to a populated file-storage data
 // directory means this install predates the Postgres default and has not been
-// imported yet. Serving an empty workspace over it is indistinguishable from
+// imported yet. Serving an empty organization over it is indistinguishable from
 // data loss, so stop with the commands that fix it.
 {
   const strandedErr = await strandedFileDataError(repoRoot);

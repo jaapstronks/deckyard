@@ -23,7 +23,7 @@ import {
  * Load a presentation by id and enforce the owner's access to it.
  *
  * The session's own organization comes off the storage scope — an SSE session
- * acts in the workspace its API key belongs to — so the workspace grant is
+ * acts in the organization its API key belongs to — so the organization-wide grant is
  * decided against the session, not against the deck being checked (L10).
  *
  * @param {Object} storageScope - Storage scope (see server/storage/scope.js)

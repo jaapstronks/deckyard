@@ -34,7 +34,7 @@ import {
   recordSlideLibraryUsage,
 } from '../../server/storage/slide-library-usage/index.js';
 
-const scope = testScope();
+const storageScope = testScope();
 const ALICE = 'alice@example.com';
 const BOB = 'bob@example.com';
 
@@ -45,7 +45,7 @@ pgDescribe('slide-library usage (real PostgreSQL, via facade)', () => {
   let db;
 
   const usedSet = async (email) => {
-    const { items } = await listSlideLibraryUsage(scope, email);
+    const { items } = await listSlideLibraryUsage(storageScope, email);
     return new Set(items.map(keyOf));
   };
 
@@ -62,7 +62,7 @@ pgDescribe('slide-library usage (real PostgreSQL, via facade)', () => {
   });
 
   it('records slide + collection usage and reads back the used set', async () => {
-    const r = await recordSlideLibraryUsage(scope, ALICE, [
+    const r = await recordSlideLibraryUsage(storageScope, ALICE, [
       { type: 'slide', id: 's1' },
       { type: 'collection', id: 'c1' },
     ]);
@@ -76,25 +76,25 @@ pgDescribe('slide-library usage (real PostgreSQL, via facade)', () => {
   });
 
   it('de-duplicates a repeated ref within one call', async () => {
-    await recordSlideLibraryUsage(scope, ALICE, [
+    await recordSlideLibraryUsage(storageScope, ALICE, [
       { type: 'slide', id: 'dup' },
       { type: 'slide', id: 'dup' },
     ]);
-    const { items } = await listSlideLibraryUsage(scope, ALICE);
+    const { items } = await listSlideLibraryUsage(storageScope, ALICE);
     const rows = items.filter((u) => keyOf(u) === 'slide:dup');
     assert.strictEqual(rows.length, 1, 'one row for the deduped ref');
     assert.strictEqual(rows[0].useCount, 1);
   });
 
   it('increments useCount and keeps firstUsedAt on repeat use', async () => {
-    await recordSlideLibraryUsage(scope, ALICE, [{ type: 'slide', id: 'repeat' }]);
-    const first = (await listSlideLibraryUsage(scope, ALICE)).items.find(
+    await recordSlideLibraryUsage(storageScope, ALICE, [{ type: 'slide', id: 'repeat' }]);
+    const first = (await listSlideLibraryUsage(storageScope, ALICE)).items.find(
       (u) => keyOf(u) === 'slide:repeat'
     );
     assert.strictEqual(first.useCount, 1);
 
-    await recordSlideLibraryUsage(scope, ALICE, [{ type: 'slide', id: 'repeat' }]);
-    const second = (await listSlideLibraryUsage(scope, ALICE)).items.find(
+    await recordSlideLibraryUsage(storageScope, ALICE, [{ type: 'slide', id: 'repeat' }]);
+    const second = (await listSlideLibraryUsage(storageScope, ALICE)).items.find(
       (u) => keyOf(u) === 'slide:repeat'
     );
     assert.strictEqual(second.useCount, 2);
@@ -102,7 +102,7 @@ pgDescribe('slide-library usage (real PostgreSQL, via facade)', () => {
   });
 
   it('isolates usage between users', async () => {
-    await recordSlideLibraryUsage(scope, BOB, [{ type: 'slide', id: 'bob-only' }]);
+    await recordSlideLibraryUsage(storageScope, BOB, [{ type: 'slide', id: 'bob-only' }]);
     const aliceUsed = await usedSet(ALICE);
     const bobUsed = await usedSet(BOB);
     assert.ok(bobUsed.has('slide:bob-only'));
@@ -111,7 +111,7 @@ pgDescribe('slide-library usage (real PostgreSQL, via facade)', () => {
 
   it('ignores invalid types, blank ids, and non-array input', async () => {
     const before = (await usedSet(ALICE)).size;
-    const r = await recordSlideLibraryUsage(scope, ALICE, [
+    const r = await recordSlideLibraryUsage(storageScope, ALICE, [
       { type: 'bogus', id: 'x' },
       { type: 'slide', id: '   ' },
       { type: 'slide' },
@@ -119,14 +119,14 @@ pgDescribe('slide-library usage (real PostgreSQL, via facade)', () => {
     ]);
     assert.strictEqual(r.recorded, 0);
 
-    const r2 = await recordSlideLibraryUsage(scope, ALICE, 'not-an-array');
+    const r2 = await recordSlideLibraryUsage(storageScope, ALICE, 'not-an-array');
     assert.strictEqual(r2.recorded, 0);
 
     assert.strictEqual((await usedSet(ALICE)).size, before, 'nothing recorded');
   });
 
   it('returns an empty set for a user with no usage', async () => {
-    const { items } = await listSlideLibraryUsage(scope, 'nobody@example.com');
+    const { items } = await listSlideLibraryUsage(storageScope, 'nobody@example.com');
     assert.deepStrictEqual(items, []);
   });
 });

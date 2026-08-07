@@ -23,7 +23,7 @@ import { parseIfMatchRevision, diffAddedSlideIds } from './helpers.js';
 import {
   recordPresentationUpdated,
   recordPresentationDeleted,
-  recordPresentationMovedToWorkspace,
+  recordPresentationMovedToOrganization,
   recordSlidesAdded,
 } from '../../../services/activity-events.js';
 import { notifyDeckActivity } from '../../../services/deck-activity-notifications.js';
@@ -209,17 +209,17 @@ export async function handlePresentationItem(
       const submittedSlides = Array.isArray(body?.slides) ? body.slides : updated.slides;
       const addedSlideIds = diffAddedSlideIds(existing.slides, submittedSlides, updated.slides);
 
-      // Check if scope changed to workspace
-      if (existing.scope !== updated.scope && updated.scope === 'workspace') {
-        void recordPresentationMovedToWorkspace({
+      // Check if visibility changed to organization
+      if (existing.visibility !== updated.visibility && updated.visibility === 'organization') {
+        void recordPresentationMovedToOrganization({
           presentation: updated,
           actor: authedUser,
-          previousScope: existing.scope,
+          previousVisibility: existing.visibility,
           ctx,
         });
       } else if (addedSlideIds.length > 0) {
         // A slide-add is more specific than a generic update, so emit it
-        // instead of `presentation.updated` — and for decks of any scope, since
+        // instead of `presentation.updated` — and for decks of any visibility, since
         // this is the collaborator-awareness signal. The feed enrichment
         // filters by read access, so it never leaks to non-readers.
         void recordSlidesAdded({
@@ -237,8 +237,8 @@ export async function handlePresentationItem(
           slideCount: addedSlideIds.length,
           ctx,
         });
-      } else if (updated.scope === 'workspace') {
-        // Record general update (only for workspace presentations to reduce noise)
+      } else if (updated.visibility === 'organization') {
+        // Record general update (only for organization-visible presentations to reduce noise)
         void recordPresentationUpdated({
           presentation: updated,
           actor: authedUser,
@@ -290,8 +290,8 @@ export async function handlePresentationItem(
     });
     if (!deleted) return notFound(res);
 
-    // Record activity event (non-blocking, only for workspace presentations)
-    if (authedUser?.email && existing.scope === 'workspace') {
+    // Record activity event (non-blocking, only for organization-visible presentations)
+    if (authedUser?.email && existing.visibility === 'organization') {
       void recordPresentationDeleted({
         presentation: existing,
         actor: authedUser,

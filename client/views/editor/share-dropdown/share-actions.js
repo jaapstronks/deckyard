@@ -2,7 +2,7 @@
  * Share actions — handler for adding a published deck's embed to Notion.
  *
  * Workspace scope changes (share-to-workspace / move-to-private) now live inline
- * in the Share dialog's Workspace tab (`modals/share-modal/workspace-visibility-section.js`).
+ * in the Share dialog's Workspace tab (`modals/share-modal/visibility-section.js`).
  */
 
 import { h } from '../../../lib/dom.js';

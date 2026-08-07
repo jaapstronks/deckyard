@@ -193,7 +193,7 @@
   color: hsl(150 60% 40%);
 }
 
-.presentation-visibility-indicator.is-workspace {
+.presentation-visibility-indicator.is-organization {
   opacity: 0.85;
   color: hsl(var(--app-accent-text));
 }

@@ -161,13 +161,13 @@
   "share.revoke.modalTitle.trash": "Naar prullenbak verplaatsen",
   "share.tab.link": "Link",
   "share.tab.publish": "Publiceren",
-  "share.tab.workspace": "Workspace",
+  "share.tab.organization": "Workspace",
   "share.unlock": "Ontgrendelen",
   "share.verifying": "Verifiëren...",
-  "share.workspace.everyoneDesc": "Verschijnt in de gedeelde workspace voor alle leden.",
-  "share.workspace.everyoneTitle": "Iedereen in je workspace",
-  "share.workspace.privateDesc": "Blijft privé; alleen jij en de mensen die je hieronder uitnodigt kunnen het zien.",
-  "share.workspace.privateLocked": "Alleen een beheerder kan dit uit de workspace halen.",
-  "share.workspace.privateTitle": "Alleen mensen die je uitnodigt",
-  "share.workspace.title": "Wie kan dit vinden in je workspace?"
+  "share.visibility.everyoneDesc": "Verschijnt in de gedeelde workspace voor alle leden.",
+  "share.visibility.everyoneTitle": "Iedereen in je workspace",
+  "share.visibility.privateDesc": "Blijft privé; alleen jij en de mensen die je hieronder uitnodigt kunnen het zien.",
+  "share.visibility.privateLocked": "Alleen een beheerder kan dit uit de workspace halen.",
+  "share.visibility.privateTitle": "Alleen mensen die je uitnodigt",
+  "share.visibility.title": "Wie kan dit vinden in je workspace?"
 }

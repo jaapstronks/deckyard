@@ -49,9 +49,9 @@ one file. English is what the rest of the product already falls back to: every
 direction degrades a tier-2 locale to English rather than to Dutch.
 
 **This is not the default language of a new deck.** That is a stored, editable
-property of the presentation, seeded from the workspace by
+property of the presentation, seeded from the organization by
 `resolveInitialDeckLang()` (stored preference > UI locale > first supported
-language), and it still starts at `nl` for a Dutch workspace. The constant above
+language), and it still starts at `nl` for a Dutch organization. The constant above
 only decides what happens when there is genuinely no language information to go
 on — which, now that the deck language reaches the renderer, is rare.
 

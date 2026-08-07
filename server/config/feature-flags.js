@@ -2,7 +2,7 @@ import { getLlmStatus } from '../utils/llm/config.js';
 import { getImageKitConfigFromEnv } from '../media/imagekit.js';
 import { sandboxEnabled } from './sandbox.js';
 import {
-  isMultiWorkspaceEnabled,
+  isMultiOrgEnabled,
   isLiveDataEnabled,
   isRssFeedEnabled,
   isCollabEnabled,
@@ -47,7 +47,7 @@ export function getFeatureFlags() {
     enableNotion,
     llm,
     aiAltText,
-    multiWorkspace: isMultiWorkspaceEnabled(),
+    multiOrganization: isMultiOrgEnabled(),
     enableLiveData: isLiveDataEnabled(),
     enableRssFeed: isRssFeedEnabled(),
     collab: isCollabEnabled(),

@@ -18,11 +18,11 @@ export {
 
 // Core presentation permissions
 export {
-  normalizePresentationScope,
+  normalizePresentationVisibility,
   canReadPresentation,
   canWritePresentation,
   canDeletePresentation,
-  canChangePresentationScope,
+  canChangePresentationVisibility,
   canForceLockRelease,
   canTransferOwnership,
   canManageCollaborators,

@@ -23,7 +23,7 @@
  *      way PostgreSQL does, so a code path that wrongly tries to insert a
  *      second row for an existing person fails loudly in tests.
  *   2. Every table touched is recorded in `db.__queryLog`, so a test can assert
- *      that single-workspace mode issues no membership lookups at all.
+ *      that single-organization mode issues no membership lookups at all.
  *   3. Kysely leaves `undefined` values out of the SET/VALUES clause it
  *      compiles, so such a column keeps its stored value. The difference
  *      between that and an explicit `null` is the whole subject of the

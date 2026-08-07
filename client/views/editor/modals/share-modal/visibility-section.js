@@ -4,8 +4,8 @@
  * Merges what used to be three separate menu items ("Share to workspace",
  * "Move to private", and the workspace-share options modal) into one control:
  * a two-way visibility radio (only invited ↔ everyone in the workspace) with a
- * view/full access sub-choice. Changing the radio applies the scope change
- * immediately via the same `/scope` PATCH the old handlers used.
+ * view/full access sub-choice. Changing the radio applies the visibility change
+ * immediately via the same `/visibility` PATCH the old handlers used.
  */
 
 import { t } from '../../../../lib/ui-i18n.js';
@@ -13,7 +13,7 @@ import { confirmModal } from '../../../../lib/dom/modal.js';
 import { ifMatchRevision } from '../../if-match-revision.js';
 
 /**
- * Create the workspace visibility section.
+ * Create the visibility section (private vs organization-wide; the UI says "Workspace").
  * @param {Object} options
  * @param {Function} options.h - Hyperscript function
  * @param {Function} options.api - API call function
@@ -30,7 +30,7 @@ import { ifMatchRevision } from '../../if-match-revision.js';
  * @param {Set} [options.openOverlayClosers] - Overlay closers set
  * @returns {{ element: HTMLElement, refresh: Function }}
  */
-export function createWorkspaceVisibilitySection({
+export function createVisibilitySection({
   h,
   api,
   pres,
@@ -48,14 +48,14 @@ export function createWorkspaceVisibilitySection({
   const section = h('div', { class: 'share-visibility-section' });
   const title = h('div', {
     class: 'share-section-title',
-    text: t('share.workspace.title', 'Who can find this in your workspace?'),
+    text: t('share.visibility.title', 'Who can find this in your workspace?'),
   });
   const optionsWrap = h('div', { class: 'share-options' });
   section.append(title, optionsWrap);
 
   let busy = false;
 
-  /** Persist pending edits before a scope change; returns false if save failed. */
+  /** Persist pending edits before a visibility change; returns false if save failed. */
   async function ensureSaved(toastId) {
     if (!isDirty?.()) return true;
     toast?.info?.(t('common.savingFirst', 'Saving first...'), { id: toastId, durationMs: 5200 });
@@ -67,34 +67,34 @@ export function createWorkspaceVisibilitySection({
     return true;
   }
 
-  /** Apply a scope change and refresh. */
-  async function applyScope({ scope, isViewOnly }) {
+  /** Apply a visibility change and refresh. */
+  async function applyVisibility({ visibility, isViewOnly }) {
     if (busy) return;
     busy = true;
     try {
-      const updated = await api(`/api/presentations/${id}/scope`, {
+      const updated = await api(`/api/presentations/${id}/visibility`, {
         method: 'PATCH',
         headers: { 'If-Match': await ifMatchRevision({ api, id, pres }) },
         body: JSON.stringify(
-          scope === 'workspace' ? { scope, isViewOnly } : { scope }
+          visibility === 'organization' ? { visibility, isViewOnly } : { visibility }
         ),
       });
       if (updated && typeof updated === 'object') {
-        if (typeof updated.scope === 'string') pres.scope = updated.scope;
+        if (typeof updated.visibility === 'string') pres.visibility = updated.visibility;
         if (typeof updated.isViewOnly === 'boolean') pres.isViewOnly = updated.isViewOnly;
         if (typeof updated.revision === 'number') pres.revision = updated.revision;
         if (typeof updated.updatedBy === 'string') pres.updatedBy = updated.updatedBy;
-      } else if (scope === 'workspace') {
+      } else if (visibility === 'organization') {
         // Fallback for an unexpectedly empty response: reflect the requested
-        // value so the pills stay in sync until the next refresh. The /scope
+        // value so the pills stay in sync until the next refresh. The /visibility
         // endpoint and the presentation GET now both echo isViewOnly, so the
         // branch above is normally what keeps the state correct across reloads.
         pres.isViewOnly = isViewOnly;
       }
       let msg;
-      if (scope === 'private') msg = t('editor.share.private.done', 'Moved to private.');
-      else if (isViewOnly) msg = t('editor.share.workspace.doneViewOnly', 'Shared as view only.');
-      else msg = t('editor.share.workspace.done', 'Shared to workspace.');
+      if (visibility === 'private') msg = t('editor.share.private.done', 'Moved to private.');
+      else if (isViewOnly) msg = t('editor.share.visibility.doneViewOnly', 'Shared as view only.');
+      else msg = t('editor.share.visibility.done', 'Shared to workspace.');
       toast?.success?.(msg, { id: 'share-visibility', durationMs: 2200 });
       syncShareUi?.();
       editorState?.refreshAll?.();
@@ -106,8 +106,8 @@ export function createWorkspaceVisibilitySection({
     }
   }
 
-  /** Switch to workspace scope (requires a description first). */
-  async function shareToWorkspace(isViewOnly) {
+  /** Switch to organization visibility (requires a description first). */
+  async function shareToOrganization(isViewOnly) {
     if (!(await ensureSaved('share-visibility'))) {
       render();
       return;
@@ -130,10 +130,10 @@ export function createWorkspaceVisibilitySection({
         return;
       }
     }
-    await applyScope({ scope: 'workspace', isViewOnly });
+    await applyVisibility({ visibility: 'organization', isViewOnly });
   }
 
-  /** Switch back to private scope (with confirmation). */
+  /** Switch back to private (with confirmation). */
   async function moveToPrivate() {
     if (!(await ensureSaved('share-visibility'))) {
       render();
@@ -157,7 +157,7 @@ export function createWorkspaceVisibilitySection({
       render();
       return;
     }
-    await applyScope({ scope: 'private' });
+    await applyVisibility({ visibility: 'private' });
   }
 
   /** Build one visibility radio row. */
@@ -185,36 +185,36 @@ export function createWorkspaceVisibilitySection({
 
   function render() {
     optionsWrap.innerHTML = '';
-    const scope = String(pres?.scope || 'private');
-    const isWorkspace = scope === 'workspace';
+    const visibility = String(pres?.visibility || 'private');
+    const isOrganization = visibility === 'organization';
     const isViewOnly = pres?.isViewOnly !== false; // default to view-only when unset
-    // Preserve the old gating: only admins could move a workspace deck back to private.
-    const lockPrivate = isWorkspace && !isAdmin;
+    // Preserve the old gating: only admins could move an organization-visible deck back to private.
+    const lockPrivate = isOrganization && !isAdmin;
 
     optionsWrap.append(
       radioRow({
         value: 'private',
-        checked: !isWorkspace,
+        checked: !isOrganization,
         disabled: lockPrivate,
-        titleText: t('share.workspace.privateTitle', 'Only people you invite'),
+        titleText: t('share.visibility.privateTitle', 'Only people you invite'),
         descText: lockPrivate
-          ? t('share.workspace.privateLocked', 'Only an admin can move this out of the workspace.')
-          : t('share.workspace.privateDesc', 'Stays private; only you and the people you invite below can see it.'),
+          ? t('share.visibility.privateLocked', 'Only an admin can move this out of the workspace.')
+          : t('share.visibility.privateDesc', 'Stays private; only you and the people you invite below can see it.'),
         onSelect: moveToPrivate,
       })
     );
 
-    const workspaceRow = radioRow({
-      value: 'workspace',
-      checked: isWorkspace,
-      titleText: t('share.workspace.everyoneTitle', 'Everyone in your workspace'),
-      descText: t('share.workspace.everyoneDesc', 'Appears in the shared workspace for all members.'),
-      onSelect: () => shareToWorkspace(isViewOnly),
+    const organizationRow = radioRow({
+      value: 'organization',
+      checked: isOrganization,
+      titleText: t('share.visibility.everyoneTitle', 'Everyone in your workspace'),
+      descText: t('share.visibility.everyoneDesc', 'Appears in the shared workspace for all members.'),
+      onSelect: () => shareToOrganization(isViewOnly),
     });
-    optionsWrap.append(workspaceRow);
+    optionsWrap.append(organizationRow);
 
-    // Access sub-choice, only meaningful once the deck is in workspace scope.
-    if (isWorkspace) {
+    // Access sub-choice, only meaningful once the deck is organization-visible.
+    if (isOrganization) {
       const sub = h('div', { class: 'share-visibility-access' });
       const mkPill = (viewOnly, labelText) => {
         const active = isViewOnly === viewOnly;
@@ -225,13 +225,13 @@ export function createWorkspaceVisibilitySection({
           text: labelText,
           onclick: () => {
             if (active || busy) return;
-            applyScope({ scope: 'workspace', isViewOnly: viewOnly });
+            applyVisibility({ visibility: 'organization', isViewOnly: viewOnly });
           },
         });
       };
       sub.append(
-        mkPill(true, t('editor.share.workspace.viewOnly', 'View & comment')),
-        mkPill(false, t('editor.share.workspace.regular', 'Full access'))
+        mkPill(true, t('editor.share.visibility.viewOnly', 'View & comment')),
+        mkPill(false, t('editor.share.visibility.regular', 'Full access'))
       );
       optionsWrap.append(sub);
     }

@@ -120,7 +120,7 @@ Table `view_sessions` (`server/db/migrations/014_presentation_analytics.js`;
 | `user_agent` | text | truncated to `MAX_USER_AGENT_LENGTH` |
 | `attribution_allowed` | boolean | viewer opted into having their name shown |
 
-The session row carries **no `organization_id`**: it inherits the workspace from
+The session row carries **no `organization_id`**: it inherits the organization from
 its presentation (tenant-isolation rule R2, migration 065 dropped the column).
 
 Table `slide_views` — one row per slide *visit*: `view_session_id` and

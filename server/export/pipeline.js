@@ -282,7 +282,7 @@ export function createAsyncExportRoute(config) {
         repoRoot,
         // Stamp the requester so the download/status routes can enforce
         // ownership (job IDs are enumerable ints — see security-audit H3), and the
-        // organization so the worker acts in the workspace the export came from.
+        // organization so the worker acts in the organization the export came from.
         ownerEmail: authedUser?.email || null,
         organizationId: authedUser?.organizationId || undefined,
       });

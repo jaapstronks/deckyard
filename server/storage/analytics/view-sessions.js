@@ -68,7 +68,7 @@ export async function createViewSession(data) {
     const row = await db
       .insertInto('view_sessions')
       .values({
-        // No organization column: a view session inherits its workspace from
+        // No organization column: a view session inherits its organization from
         // the presentation it belongs to (tenant-isolation.md rule R2). The
         // column that used to sit here held a viewer-claimed organization and
         // was dropped in migration 065.

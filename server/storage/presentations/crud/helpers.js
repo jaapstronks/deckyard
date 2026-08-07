@@ -2,7 +2,7 @@
  * CRUD helper functions - validation, error creation, and merge utilities.
  */
 
-import { normalizePresentationScope } from '../../../utils/presentation-authz.js';
+import { normalizePresentationVisibility } from '../../../utils/presentation-authz.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { ConflictError, LockedError } from '../../../utils/errors.js';
 import { slideFingerprint } from '../../../../shared/slide-fingerprint.js';
@@ -12,7 +12,7 @@ import { slideFingerprint } from '../../../../shared/slide-fingerprint.js';
  */
 export function normalizeMeta(pres) {
   if (!pres || typeof pres !== 'object') return pres;
-  pres.scope = normalizePresentationScope(pres.scope);
+  pres.visibility = normalizePresentationVisibility(pres.visibility);
   const rev = Number(pres.revision);
   pres.revision = Number.isFinite(rev) && rev > 0 ? Math.floor(rev) : 1;
 

@@ -40,7 +40,7 @@ import {
   deleteTeamCollection,
 } from '../../server/storage/collections/index.js';
 
-const scope = testScope();
+const storageScope = testScope();
 const ALICE = 'alice@example.com';
 const BOB = 'bob@example.com';
 
@@ -71,7 +71,7 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
 
   it('creates, lists and gets a collection with an ordered membership', async () => {
     const created = await createPersonalCollection(
-      scope,
+      storageScope,
       ALICE,
       { name: 'Intro deck', description: 'Onboarding', slideIds: [sA, sB, sC] },
       { actorEmail: ALICE }
@@ -82,30 +82,30 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
     assert.strictEqual(created.item.slideCount, 3);
     assert.deepStrictEqual(created.item.slideIds, [sA, sB, sC]);
 
-    const { items } = await listPersonalCollections(scope, ALICE);
+    const { items } = await listPersonalCollections(storageScope, ALICE);
     assert.strictEqual(items.length, 1);
     assert.strictEqual(items[0].id, created.item.id);
 
-    const fetched = await getPersonalCollection(scope, ALICE, created.item.id);
+    const fetched = await getPersonalCollection(storageScope, ALICE, created.item.id);
     assert.ok(fetched, 'fetched by id');
     assert.strictEqual(fetched.name, 'Intro deck');
   });
 
   it('rejects a collection with no name', async () => {
-    const r = await createPersonalCollection(scope, ALICE, { name: '  ' }, { actorEmail: ALICE });
+    const r = await createPersonalCollection(storageScope, ALICE, { name: '  ' }, { actorEmail: ALICE });
     assert.strictEqual(r.ok, false);
     assert.strictEqual(r.reason, 'name_required');
   });
 
   it('replaces the ordered membership on update and dedupes', async () => {
     const created = await createPersonalCollection(
-      scope,
+      storageScope,
       ALICE,
       { name: 'Reorder me', slideIds: [sA, sB] },
       { actorEmail: ALICE }
     );
     const updated = await updatePersonalCollection(
-      scope,
+      storageScope,
       ALICE,
       created.item.id,
       { slideIds: [sC, sA, sA, sB], name: 'Reordered' },
@@ -121,7 +121,7 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
   it('drops membership ids that reference no slide-library row (FK guard)', async () => {
     const ghost = crypto.randomUUID(); // valid uuid, no slide_library row
     const created = await createPersonalCollection(
-      scope,
+      storageScope,
       ALICE,
       { name: 'Partly real', slideIds: [sA, ghost, sB] },
       { actorEmail: ALICE }
@@ -134,20 +134,20 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
 
   it('isolates personal collections between users', async () => {
     const aliceCol = await createPersonalCollection(
-      scope,
+      storageScope,
       ALICE,
       { name: 'Private to Alice' },
       { actorEmail: ALICE }
     );
 
     // Bob cannot see Alice's collection in his list.
-    const bobList = await listPersonalCollections(scope, BOB);
+    const bobList = await listPersonalCollections(storageScope, BOB);
     assert.ok(!bobList.items.some((c) => c.id === aliceCol.item.id), 'not in Bob list');
 
     // Bob cannot fetch, update, or delete it.
-    assert.strictEqual(await getPersonalCollection(scope, BOB, aliceCol.item.id), null);
+    assert.strictEqual(await getPersonalCollection(storageScope, BOB, aliceCol.item.id), null);
     const bobUpdate = await updatePersonalCollection(
-      scope,
+      storageScope,
       BOB,
       aliceCol.item.id,
       { name: 'hijacked' },
@@ -155,27 +155,27 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
     );
     assert.strictEqual(bobUpdate.ok, false);
     assert.strictEqual(bobUpdate.reason, 'not_found');
-    const bobDelete = await deletePersonalCollection(scope, BOB, aliceCol.item.id);
+    const bobDelete = await deletePersonalCollection(storageScope, BOB, aliceCol.item.id);
     assert.strictEqual(bobDelete.ok, false);
   });
 
   it('deletes a collection', async () => {
     const created = await createPersonalCollection(
-      scope,
+      storageScope,
       ALICE,
       { name: 'Temp' },
       { actorEmail: ALICE }
     );
-    const del = await deletePersonalCollection(scope, ALICE, created.item.id);
+    const del = await deletePersonalCollection(storageScope, ALICE, created.item.id);
     assert.ok(del.ok, 'delete ok');
-    assert.strictEqual(await getPersonalCollection(scope, ALICE, created.item.id), null);
+    assert.strictEqual(await getPersonalCollection(storageScope, ALICE, created.item.id), null);
   });
 
   // --- team collections ---
 
   it('creates and lists a team collection', async () => {
     const created = await createTeamCollection(
-      scope,
+      storageScope,
       { name: 'Team starter', slideIds: [sA] },
       { actorEmail: ALICE }
     );
@@ -183,18 +183,18 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
     assert.strictEqual(created.item.scope, 'team');
     assert.strictEqual(created.item.createdBy, ALICE);
 
-    const { items } = await listTeamCollections(scope, { userEmail: BOB });
+    const { items } = await listTeamCollections(storageScope, { userEmail: BOB });
     assert.ok(items.some((c) => c.id === created.item.id), 'visible to any user');
   });
 
   it('enforces the mutate guard: only creator or admin', async () => {
-    const created = await createTeamCollection(scope, { name: 'Guarded' }, { actorEmail: ALICE });
+    const created = await createTeamCollection(storageScope, { name: 'Guarded' }, { actorEmail: ALICE });
     const allowMutate = (collection, { actorEmail }) =>
       String(collection?.createdBy || '').toLowerCase() === String(actorEmail || '').toLowerCase();
 
     // Bob (non-creator, non-admin) is blocked.
     const blocked = await updateTeamCollection(
-      scope,
+      storageScope,
       created.item.id,
       { name: 'nope' },
       { actorEmail: BOB, allowMutate }
@@ -204,7 +204,7 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
 
     // Alice (creator) may mutate and delete.
     const ok = await updateTeamCollection(
-      scope,
+      storageScope,
       created.item.id,
       { name: 'Renamed' },
       { actorEmail: ALICE, allowMutate }
@@ -212,7 +212,7 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
     assert.ok(ok.ok);
     assert.strictEqual(ok.item.name, 'Renamed');
 
-    const del = await deleteTeamCollection(scope, created.item.id, { actorEmail: ALICE, allowMutate });
+    const del = await deleteTeamCollection(storageScope, created.item.id, { actorEmail: ALICE, allowMutate });
     assert.ok(del.ok);
   });
 });

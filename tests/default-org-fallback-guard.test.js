@@ -1,10 +1,10 @@
 /**
  * Guard: `getDefaultOrganizationId()` is only called from a fixed allowlist.
  *
- * The default organization is the single-workspace answer to "which workspace
+ * The default organization is the single-organization answer to "which organization
  * does this act in". Reaching for it on the request path — as a `|| getDefault…`
  * tail on a value that should already carry the organization — hands an
- * unfiltered query the default organization on a multi-workspace instance, which
+ * unfiltered query the default organization on a multi-organization instance, which
  * is the tenant-isolation leak `server/storage/scope.js` exists to prevent. The
  * org-scoping decision (docs/reference/tenant-isolation.md § *Which domains
  * partition on the organization*; brief `org-scoping-decision.md`
@@ -13,7 +13,7 @@
  *
  * Every remaining caller is here on purpose:
  *   - the definition itself, and the two doctrine forms that answer only in
- *     single-workspace mode and throw otherwise (`singleWorkspaceScope`, and the
+ *     single-organization mode and throw otherwise (`singleOrganizationScope`, and the
  *     `isDefaultOrganization` comparison);
  *   - boot/no-request paths that have no session to resolve an org from
  *     (auth disabled + dev bypass, identity fallback, sandbox cleanup);
@@ -21,7 +21,7 @@
  *     resolved org yet);
  *   - the RSS feed + its autodiscovery links, which are per-organization but
  *     have no session, so they use the default org *and 404 / omit the links
- *     under multi-workspace* rather than serve one workspace instance-globally.
+ *     under multi-organization* rather than serve one organization instance-globally.
  *
  * A file that is NOT on the list but calls the function fails this test — add the
  * organization to the call site instead. A file that IS on the list but no longer
@@ -46,7 +46,7 @@ const ALLOWLIST = [
   { file: 'server/config/database.js', reason: 'the definition itself' },
   {
     file: 'server/storage/scope.js',
-    reason: 'singleWorkspaceScope() — the doctrine form, throws under multi-workspace',
+    reason: 'singleOrganizationScope() — the doctrine form, throws under multi-organization',
   },
   {
     file: 'server/storage/user-organizations/organizations.js',
@@ -54,7 +54,7 @@ const ALLOWLIST = [
   },
   {
     file: 'server/storage/identity.js',
-    reason: 'single-workspace identity fallback (no membership row to read)',
+    reason: 'single-organization identity fallback (no membership row to read)',
   },
   {
     file: 'server/utils/sandbox-cleanup.js',
@@ -70,11 +70,11 @@ const ALLOWLIST = [
   },
   {
     file: 'server/routes/feed.js',
-    reason: 'per-org feed with no session; 404s under multi-workspace (see handleFeed)',
+    reason: 'per-org feed with no session; 404s under multi-organization (see handleFeed)',
   },
   {
     file: 'server/routes/static/app-shell.js',
-    reason: 'feed autodiscovery links; omitted under multi-workspace (see injectFeedDiscovery)',
+    reason: 'feed autodiscovery links; omitted under multi-organization (see injectFeedDiscovery)',
   },
 ];
 

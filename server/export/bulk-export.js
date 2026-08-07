@@ -19,7 +19,7 @@ import fs from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { singleWorkspaceScope } from '../storage/scope.js';
+import { singleOrganizationScope } from '../storage/scope.js';
 import { resolveIdentityByEmail } from '../storage/identity-resolver.js';
 import { isOwnerOrCreator } from '../utils/presentation-authz.js';
 
@@ -234,11 +234,11 @@ export async function buildBulkExport(opts) {
   } = opts;
 
   // A bulk export runs detached from any request, so the organization it exports
-  // has to come from the caller. Falls back to the single workspace, and refuses
+  // has to come from the caller. Falls back to the single organization, and refuses
   // to guess once an instance holds several.
   const storageScope = organizationId
     ? { repoRoot, organizationId, actorEmail: userEmail || null }
-    : singleWorkspaceScope(repoRoot, 'bulk export', { actorEmail: userEmail || null });
+    : singleOrganizationScope(repoRoot, 'bulk export', { actorEmail: userEmail || null });
 
   const {
     includeVersions = false,
@@ -369,8 +369,8 @@ export async function buildBulkExport(opts) {
   if (includeThemes) {
     try {
       // Reuse the scope resolved above rather than rebuilding one: it already
-      // carries the caller's organization (or the single-workspace default via
-      // singleWorkspaceScope, which refuses to guess on a multi-workspace
+      // carries the caller's organization (or the single-organization default via
+      // singleOrganizationScope, which refuses to guess on a multi-organization
       // instance) instead of silently falling back to the default organization.
       const ctx = { organizationId: storageScope.organizationId, actorEmail: userEmail };
       const themes = await listThemes(ctx);

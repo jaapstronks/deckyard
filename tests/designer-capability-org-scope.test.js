@@ -1,16 +1,16 @@
 /**
- * Designer capability on a single-workspace instance — the half of
+ * Designer capability on a single-organization instance — the half of
  * measurement 4 that must *not* change.
  *
  * Scoping the `isAdmin` short-circuit in `resolveDesignerCapability()` to
- * single-workspace mode is only safe if single-workspace mode keeps behaving
+ * single-organization mode is only safe if single-organization mode keeps behaving
  * exactly as it did. That covers more than the ordinary install: with auth
  * disabled, under the dev bypass, and in sandbox mode there is no membership
  * row to read at all, so `isAdmin` standing in for one is the only thing
  * holding those modes' designer surfaces up.
  *
- * The multi-workspace side lives in
- * tests/designer-capability-org-scope-multi-org.test.js; MULTI_WORKSPACE_ENABLED
+ * The multi-organization side lives in
+ * tests/designer-capability-org-scope-multi-org.test.js; MULTI_ORG_ENABLED
  * is read at module scope, so the two cases need separate files.
  *
  * Run with: node --test tests/designer-capability-org-scope.test.js
@@ -19,19 +19,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-delete process.env.MULTI_WORKSPACE_ENABLED;
+delete process.env.MULTI_ORG_ENABLED;
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { isMultiWorkspaceEnabled } = await import('../server/config/features.js');
+const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const { resolveDesignerCapability } = await import('../server/utils/designer.js');
 const { canManage } = await import('../server/utils/route-middleware.js');
 
 test.before(() => {
-  assert.equal(isMultiWorkspaceEnabled(), false, 'multi-workspace flag is off for this file');
+  assert.equal(isMultiOrgEnabled(), false, 'multi-organization flag is off for this file');
 });
 
 /**
@@ -103,7 +103,7 @@ test('the admin short-circuit costs no database work', async () => {
   assert.deepEqual(
     db.__queryLog,
     [],
-    'single-workspace answers this from the instance flag alone'
+    'single-organization answers this from the instance flag alone'
   );
 });
 
@@ -152,9 +152,9 @@ test('a non-admin with no membership gets nothing', async () => {
 });
 
 test('the organization settings route keeps letting the instance admin in', async () => {
-  // The mirror of the multi-workspace case: routing settings.js through
+  // The mirror of the multi-organization case: routing settings.js through
   // canManage() must not take `disabledSlideTypes` away from the one admin a
-  // single-workspace instance has — including in the modes where capability
+  // single-organization instance has — including in the modes where capability
   // resolution never ran and `isDesigner` is unset.
   seed();
   const { handleSettings } = await import('../server/routes/api/settings.js');
@@ -187,7 +187,7 @@ test('the organization settings route keeps letting the instance admin in', asyn
 
 test('canManage keeps its admin fallback here', () => {
   // Redundant in the ordinary case — `isDesigner` is already true for an admin
-  // on a single-workspace instance — but it is what keeps the only admin in
+  // on a single-organization instance — but it is what keeps the only admin in
   // when capability resolution fails open (routes/api/index.js swallows the
   // error and leaves `isDesigner` unset).
   assert.equal(canManage({ isAdmin: true, isDesigner: false }), true);

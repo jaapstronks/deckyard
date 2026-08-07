@@ -8,7 +8,7 @@
  * Covers four tables the analytics cleanup does not:
  *  - api_usage_daily   — rate-limit accounting, kept 90 days (in the query).
  *  - presentation_share_links — expired links flipped to revoked every run.
- *  - activity_events   — workspace feed, kept ACTIVITY_RETENTION_DAYS (180).
+ *  - activity_events   — organization feed, kept ACTIVITY_RETENTION_DAYS (180).
  *  - slide_locks       — expired collaboration locks, deleted every run.
  */
 

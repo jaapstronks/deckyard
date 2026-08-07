@@ -16,7 +16,7 @@ import {
   duplicatePresentation,
 } from '../storage/presentations/index.js';
 import { loadPresentationChecked } from './presentation-access.js';
-import { singleWorkspaceScope } from '../storage/scope.js';
+import { singleOrganizationScope } from '../storage/scope.js';
 import {
   listComments,
   listRecentCommentsForOwner,
@@ -136,7 +136,7 @@ export function registerTools(
    * The storage scope for this MCP call. An SSE session acts in the
    * organization its API key belongs to. A stdio session has no key and no
    * organization — it is a trusted local process bound to the instance — so it
-   * takes the single workspace, and refuses to guess once there are several.
+   * takes the single organization, and refuses to guess once there are several.
    * @param {Object} [context] - Per-request context (SSE session)
    * @returns {Object} storage scope
    */
@@ -144,16 +144,16 @@ export function registerTools(
     const organizationId = context?.organizationId || null;
     return organizationId
       ? { repoRoot, organizationId, actorEmail: getOwner(context) }
-      : singleWorkspaceScope(repoRoot, 'MCP stdio session', {
+      : singleOrganizationScope(repoRoot, 'MCP stdio session', {
           actorEmail: getOwner(context),
         });
   }
 
   /**
    * The acting machine client for a per-deck authorization check: who is acting
-   * and in which workspace. The organization comes off the session's own scope
-   * (an SSE session acts in its API key's workspace; a stdio session in the
-   * single workspace it is bound to), never off the deck being checked — see
+   * and in which organization. That comes off the session's own storage scope
+   * (an SSE session acts in its API key's organization; a stdio session in the
+   * single organization it is bound to), never off the deck being checked — see
    * utils/presentation-authz/actor-access.js.
    * @param {Object} [context] - Per-request context (SSE session)
    * @returns {{email: string|null, organizationId: string|null}}

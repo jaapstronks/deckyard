@@ -14,12 +14,12 @@
  *   - **the owner** may `DELETE` it → the danger zone exists
  */
 
-import { hasWorkspaceRole, getWorkspaceRole } from '../../../lib/user/workspace-role.js';
+import { hasOrganizationRole, getOrganizationRole } from '../../../lib/user/organization-role.js';
 
 /**
  * Whether the viewer may change the organization's profile fields.
  *
- * Mirrors `hasWorkspaceRole(membership.role, 'admin')` on `PATCH
+ * Mirrors `hasOrganizationRole(membership.role, 'admin')` on `PATCH
  * /api/organizations/:id`. A plain member gets the same card with its fields
  * read-only rather than a screen that refuses on save.
  *
@@ -27,7 +27,7 @@ import { hasWorkspaceRole, getWorkspaceRole } from '../../../lib/user/workspace-
  * @returns {boolean}
  */
 export function canEditProfile(currentUser) {
-  return hasWorkspaceRole(getWorkspaceRole(currentUser), 'admin');
+  return hasOrganizationRole(getOrganizationRole(currentUser), 'admin');
 }
 
 /**
@@ -41,7 +41,7 @@ export function canEditProfile(currentUser) {
  * @returns {boolean}
  */
 export function isOrganizationOwner(currentUser) {
-  return getWorkspaceRole(currentUser) === 'owner';
+  return getOrganizationRole(currentUser) === 'owner';
 }
 
 /**

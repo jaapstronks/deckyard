@@ -10,12 +10,12 @@ import { t } from '../../../lib/ui-i18n.js';
  */
 const WEBHOOK_CONFIGS = [
   {
-    key: 'movedToWorkspace',
-    settingsKey: 'presentationMovedToWorkspaceUrl',
-    titleKey: 'settings.admin.webhooks.movedToWorkspace.title',
+    key: 'movedToOrganization',
+    settingsKey: 'presentationMovedToOrganizationUrl',
+    titleKey: 'settings.admin.webhooks.movedToOrganization.title',
     titleDefault: 'When a presentation is shared to the workspace',
-    hintKey: 'settings.admin.webhooks.movedToWorkspace.hint',
-    hintDefault: 'Event: presentation.moved_to_workspace',
+    hintKey: 'settings.admin.webhooks.movedToOrganization.hint',
+    hintDefault: 'Event: presentation.moved_to_organization',
   },
   {
     key: 'slideAddedToTeamLibrary',

@@ -33,7 +33,7 @@ function presentation() {
     description: 'A deck',
     theme: 'midnight',
     lang: 'nl',
-    scope: 'private',
+    visibility: 'private',
     revision: 7,
     owner_user_id: 'user-owner',
     owner_email: 'owner@example.com',

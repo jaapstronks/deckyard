@@ -93,7 +93,7 @@ bytes have to be brought in-house.
 
 ## Implementation status
 
-- The set is derived from `themes/*.json` only. Database and per-workspace
+- The set is derived from `themes/*.json` only. Database and per-organization
   custom themes contribute nothing, because the bundled set has to match
   committed files.
 - Alt seeds are English. A pick into a Dutch deck therefore seeds an English

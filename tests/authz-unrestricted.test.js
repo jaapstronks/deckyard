@@ -25,7 +25,7 @@ import { belongsInCollection } from '../server/routes/api/presentations/list.js'
 const OPERATOR = { email: 'anonymous', role: 'admin', isAdmin: true, unrestricted: true };
 const OTHER = { email: 'someone@else.com' };
 // A private deck owned by a different email (as MCP would stamp it).
-const foreignDeck = { id: 'd1', scope: 'private', ownerEmail: 'owner@example.com' };
+const foreignDeck = { id: 'd1', visibility: 'private', ownerEmail: 'owner@example.com' };
 
 describe('unrestricted auth-off operator', () => {
   it('isUnrestricted only trips on the explicit flag', () => {

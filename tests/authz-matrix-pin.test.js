@@ -20,8 +20,8 @@
  *     same functions) is pinned against real PostgreSQL in
  *     tests/pg/collaborator-authz-resolution.pgtest.js.
  *
- * Scope: the **default single-workspace install** (multi-workspace off, sandbox
- * off), which is the shape the epic touches. Multi-workspace org isolation is
+ * Scope: the **default single-organization install** (multi-organization off, sandbox
+ * off), which is the shape the epic touches. Multi-organization org isolation is
  * already pinned in authz-organization-scope{,-multi-org}.test.js and is not
  * re-derived here. A small sandbox-on section pins the two sandbox overrides,
  * since `sandboxEnabled()` is read per call.
@@ -32,18 +32,18 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-// Default install: single-workspace, sandbox off. isMultiWorkspaceEnabled() is
+// Default install: single-organization, sandbox off. isMultiOrgEnabled() is
 // read at module load (config/features.js), so the env must be cleared before
 // the module is evaluated. A static `import` would not guarantee that — static
 // imports hoist above this statement — hence the dynamic import below it.
-delete process.env.MULTI_WORKSPACE_ENABLED;
+delete process.env.MULTI_ORG_ENABLED;
 delete process.env.SANDBOX_MODE;
 
 const {
   canReadPresentation,
   canWritePresentation,
   canDeletePresentation,
-  canChangePresentationScope,
+  canChangePresentationVisibility,
   canForceLockRelease,
   canManageCollaborators,
   canCommentOnPresentation,
@@ -66,17 +66,17 @@ const OPERATOR = { email: 'anonymous', unrestricted: true, isAdmin: true };
 // --- Decks ------------------------------------------------------------------
 const privateDeck = {
   id: 'p1',
-  scope: 'private',
+  visibility: 'private',
   ownerEmail: 'owner@example.com',
   createdBy: 'creator@example.com',
 };
-const workspaceDeck = {
+const organizationDeck = {
   id: 'w1',
-  scope: 'workspace',
+  visibility: 'organization',
   ownerEmail: 'owner@example.com',
   createdBy: 'creator@example.com',
 };
-const viewOnlyWorkspaceDeck = { ...workspaceDeck, id: 'wv1', isViewOnly: true };
+const viewOnlyOrganizationDeck = { ...organizationDeck, id: 'wv1', isViewOnly: true };
 
 // Permission levels a collaborator row can carry (server/constants/permissions).
 const VIEW = 'view';
@@ -109,9 +109,9 @@ describe('canReadPresentation — private deck', () => {
   });
 });
 
-describe('canReadPresentation — workspace deck', () => {
-  it('any workspace member can read, even without an explicit relation', () => {
-    assert.equal(canReadPresentation({ user: OTHER, pres: workspaceDeck }), true);
+describe('canReadPresentation — organization deck', () => {
+  it('any organization member can read, even without an explicit relation', () => {
+    assert.equal(canReadPresentation({ user: OTHER, pres: organizationDeck }), true);
   });
 });
 
@@ -144,7 +144,7 @@ describe('canWritePresentation — private deck', () => {
   });
 });
 
-describe('canWritePresentation — view-only and workspace', () => {
+describe('canWritePresentation — view-only and organization', () => {
   const viewOnlyPrivate = { ...privateDeck, isViewOnly: true };
   it('the owner can still write a view-only deck (owner check precedes the view-only gate)', () => {
     assert.equal(canWritePresentation({ user: OWNER, pres: viewOnlyPrivate }), true);
@@ -155,23 +155,23 @@ describe('canWritePresentation — view-only and workspace', () => {
       false
     );
   });
-  it('any workspace member can write a normal workspace deck', () => {
-    assert.equal(canWritePresentation({ user: OTHER, pres: workspaceDeck }), true);
+  it('any organization member can write a normal organization deck', () => {
+    assert.equal(canWritePresentation({ user: OTHER, pres: organizationDeck }), true);
   });
-  it('a workspace member cannot write a view-only workspace deck', () => {
-    assert.equal(canWritePresentation({ user: OTHER, pres: viewOnlyWorkspaceDeck }), false);
+  it('an organization member cannot write a view-only organization deck', () => {
+    assert.equal(canWritePresentation({ user: OTHER, pres: viewOnlyOrganizationDeck }), false);
   });
 });
 
 describe('canDeletePresentation', () => {
-  it('only owner and creator can delete — not collaborators, workspace members, or admins', () => {
+  it('only owner and creator can delete — not collaborators, organization members, or admins', () => {
     assert.equal(canDeletePresentation({ user: OWNER, pres: privateDeck }), true);
     assert.equal(canDeletePresentation({ user: CREATOR, pres: privateDeck }), true);
     assert.equal(
       canDeletePresentation({ user: OTHER, pres: privateDeck, collaboratorPermission: ADMIN_PERM }),
       false
     );
-    assert.equal(canDeletePresentation({ user: OTHER, pres: workspaceDeck }), false);
+    assert.equal(canDeletePresentation({ user: OTHER, pres: organizationDeck }), false);
     assert.equal(canDeletePresentation({ user: ADMIN, pres: privateDeck }), false);
   });
   it('the unrestricted operator can delete', () => {
@@ -179,51 +179,51 @@ describe('canDeletePresentation', () => {
   });
 });
 
-describe('canChangePresentationScope', () => {
+describe('canChangePresentationVisibility', () => {
   it('a no-op scope change is allowed for any authenticated user', () => {
     assert.equal(
-      canChangePresentationScope({ user: OTHER, pres: privateDeck, nextScope: 'private' }),
+      canChangePresentationVisibility({ user: OTHER, pres: privateDeck, nextVisibility: 'private' }),
       true
     );
   });
-  it('private → workspace: owner and creator yes, unrelated user no', () => {
+  it('private → organization: owner and creator yes, unrelated user no', () => {
     assert.equal(
-      canChangePresentationScope({ user: OWNER, pres: privateDeck, nextScope: 'workspace' }),
+      canChangePresentationVisibility({ user: OWNER, pres: privateDeck, nextVisibility: 'organization' }),
       true
     );
     assert.equal(
-      canChangePresentationScope({ user: CREATOR, pres: privateDeck, nextScope: 'workspace' }),
+      canChangePresentationVisibility({ user: CREATOR, pres: privateDeck, nextVisibility: 'organization' }),
       true
     );
     assert.equal(
-      canChangePresentationScope({ user: OTHER, pres: privateDeck, nextScope: 'workspace' }),
+      canChangePresentationVisibility({ user: OTHER, pres: privateDeck, nextVisibility: 'organization' }),
       false
     );
   });
-  it('workspace → private is admin-only', () => {
+  it('organization → private is admin-only', () => {
     assert.equal(
-      canChangePresentationScope({ user: OWNER, pres: workspaceDeck, nextScope: 'private' }),
+      canChangePresentationVisibility({ user: OWNER, pres: organizationDeck, nextVisibility: 'private' }),
       false
     );
     assert.equal(
-      canChangePresentationScope({ user: ADMIN, pres: workspaceDeck, nextScope: 'private' }),
+      canChangePresentationVisibility({ user: ADMIN, pres: organizationDeck, nextVisibility: 'private' }),
       true
     );
   });
   it('an actor with no email cannot change scope', () => {
     assert.equal(
-      canChangePresentationScope({ user: ANON, pres: privateDeck, nextScope: 'workspace' }),
+      canChangePresentationVisibility({ user: ANON, pres: privateDeck, nextVisibility: 'organization' }),
       false
     );
   });
   it('this decider is NOT short-circuited by the unrestricted flag (email still required)', () => {
-    // Pins current behaviour: canChangePresentationScope has no isUnrestricted()
+    // Pins current behaviour: canChangePresentationVisibility has no isUnrestricted()
     // fast-path. The operator wins here only via its isAdmin flag, not unrestricted.
     assert.equal(
-      canChangePresentationScope({
+      canChangePresentationVisibility({
         user: { email: 'anonymous', unrestricted: true },
         pres: privateDeck,
-        nextScope: 'workspace',
+        nextVisibility: 'organization',
       }),
       false
     );
@@ -285,8 +285,8 @@ describe('canCommentOnPresentation', () => {
       false
     );
   });
-  it('any workspace member can comment on a workspace deck', () => {
-    assert.equal(canCommentOnPresentation({ user: OTHER, pres: workspaceDeck }), true);
+  it('any organization member can comment on an organization deck', () => {
+    assert.equal(canCommentOnPresentation({ user: OTHER, pres: organizationDeck }), true);
   });
   it('an unrelated user cannot comment on a private deck', () => {
     assert.equal(canCommentOnPresentation({ user: OTHER, pres: privateDeck }), false);
@@ -334,9 +334,9 @@ describe('getEffectivePermission', () => {
     assert.equal(getEffectivePermission({ user: OTHER, pres: privateDeck }), 'view');
     assert.equal(getEffectivePermission({ user: ANON, pres: privateDeck }), 'view');
   });
-  it('workspace member gets edit; view-only workspace deck gives comment', () => {
-    assert.equal(getEffectivePermission({ user: OTHER, pres: workspaceDeck }), 'edit');
-    assert.equal(getEffectivePermission({ user: OTHER, pres: viewOnlyWorkspaceDeck }), 'comment');
+  it('organization member gets edit; view-only organization deck gives comment', () => {
+    assert.equal(getEffectivePermission({ user: OTHER, pres: organizationDeck }), 'edit');
+    assert.equal(getEffectivePermission({ user: OTHER, pres: viewOnlyOrganizationDeck }), 'comment');
   });
   it('the unrestricted operator always gets edit', () => {
     assert.equal(getEffectivePermission({ user: OPERATOR, pres: privateDeck }), 'edit');
@@ -377,10 +377,10 @@ describe('sandbox overrides (SANDBOX_MODE on)', () => {
     }
   }
 
-  it('workspace decks are read-only in sandbox mode — even for the owner', () => {
+  it('organization decks are read-only in sandbox mode — even for the owner', () => {
     withSandbox(() => {
-      assert.equal(canWritePresentation({ user: OWNER, pres: workspaceDeck }), false);
-      assert.equal(canWritePresentation({ user: OTHER, pres: workspaceDeck }), false);
+      assert.equal(canWritePresentation({ user: OWNER, pres: organizationDeck }), false);
+      assert.equal(canWritePresentation({ user: OTHER, pres: organizationDeck }), false);
     });
   });
 
@@ -393,12 +393,12 @@ describe('sandbox overrides (SANDBOX_MODE on)', () => {
   it('scope changes are refused in sandbox mode for non-admins', () => {
     withSandbox(() => {
       assert.equal(
-        canChangePresentationScope({ user: OWNER, pres: privateDeck, nextScope: 'workspace' }),
+        canChangePresentationVisibility({ user: OWNER, pres: privateDeck, nextVisibility: 'organization' }),
         false
       );
       // Admins still bypass (the isAdmin check precedes the sandbox gate).
       assert.equal(
-        canChangePresentationScope({ user: ADMIN, pres: privateDeck, nextScope: 'workspace' }),
+        canChangePresentationVisibility({ user: ADMIN, pres: privateDeck, nextVisibility: 'organization' }),
         true
       );
     });

@@ -13,17 +13,17 @@
  *      is deliberately no "wrong role" negative test: the endpoint has no role
  *      dimension — identity *is* the scope, so there is no privileged vs.
  *      unprivileged caller to distinguish, only "you" vs. "not authenticated".
- *   2. **The data subject is the scope; the workspace plays no part.** An
+ *   2. **The data subject is the scope; the organization plays no part.** An
  *      export or erasure covers this person's sessions across the whole
- *      instance, whatever workspace the caller happens to be acting in and
- *      whatever workspace the viewed deck belongs to. This is the form chosen
+ *      instance, whatever organization the caller happens to be acting in and
+ *      whatever organization the viewed deck belongs to. This is the form chosen
  *      in the A1(a) defects PR: the previous organization filter matched
  *      `view_sessions.organization_id` — a column the *viewer's browser* filled
  *      in — against the *authenticated caller's* organization, so under
- *      multi-workspace an erasure deleted nothing and reported success anyway.
+ *      multi-organization an erasure deleted nothing and reported success anyway.
  *      The column is gone (migration 065); rule R2 in
  *      `docs/reference/tenant-isolation.md` says a view session inherits its
- *      workspace from its presentation and carries no copy of it.
+ *      organization from its presentation and carries no copy of it.
  *   3. **Erasure hard-deletes, and identifies nobody by device.** A delete
  *      removes the matched `view_sessions` and their `slide_views` and reports
  *      how many; it does not anonymize (the IP-anonymization retention job
@@ -65,8 +65,8 @@ const { exportUserAnalyticsData, deleteUserAnalyticsData } = await import(
 
 const ORG_A = 'org-aaaa';
 const ORG_B = 'org-bbbb';
-// Two decks that live in different workspaces. Nothing on the row says so any
-// more — the workspace is a property of the presentation — which is exactly
+// Two decks that live in different organizations. Nothing on the row says so any
+// more — the organization is a property of the presentation — which is exactly
 // the point these tests pin.
 const DECK_IN_A = 'deck-in-org-a';
 const DECK_IN_B = 'deck-in-org-b';
@@ -211,11 +211,11 @@ test('export refuses an unauthenticated caller and reads nothing', async () => {
   );
 });
 
-test('export covers the caller’s rows in every workspace, and no one else’s', async () => {
+test('export covers the caller’s rows in every organization, and no one else’s', async () => {
   seed({
     sessions: [
       sessionRow({ id: 'mine-a', deck: DECK_IN_A, email: ALICE }),
-      sessionRow({ id: 'mine-b', deck: DECK_IN_B, email: ALICE }), // her view of another workspace's deck
+      sessionRow({ id: 'mine-b', deck: DECK_IN_B, email: ALICE }), // her view of another organization's deck
       sessionRow({ id: 'bob', deck: DECK_IN_A, email: BOB }), // someone else — never hers
       sessionRow({ id: 'anon', deck: DECK_IN_A, device: 'dev-1' }), // no email — not addressable here
     ],
@@ -236,7 +236,7 @@ test('export covers the caller’s rows in every workspace, and no one else’s'
   );
 });
 
-test('export ignores which workspace the caller is acting in', async () => {
+test('export ignores which organization the caller is acting in', async () => {
   const rows = [
     sessionRow({ id: 'mine-a', deck: DECK_IN_A, email: ALICE }),
     sessionRow({ id: 'mine-b', deck: DECK_IN_B, email: ALICE }),
@@ -263,7 +263,7 @@ test('export ignores which workspace the caller is acting in', async () => {
 // DELETE /api/analytics/my-data — erasure (right to be forgotten)
 // ---------------------------------------------------------------------------
 
-test('delete erases the caller’s rows in every workspace, and their slide views', async () => {
+test('delete erases the caller’s rows in every organization, and their slide views', async () => {
   const db = seed({
     sessions: [
       sessionRow({ id: 'mine-a', deck: DECK_IN_A, email: ALICE }),

@@ -20,7 +20,7 @@ import {
   buildForm,
 } from './builders.js';
 import { createActions } from './actions.js';
-import { isWorkspaceAdmin } from '../../../lib/user/workspace-role.js';
+import { isOrganizationAdmin } from '../../../lib/user/organization-role.js';
 
 /**
  * Create the email templates panel.
@@ -29,7 +29,7 @@ import { isWorkspaceAdmin } from '../../../lib/user/workspace-role.js';
  * @returns {HTMLElement} Panel element
  */
 export function createEmailTemplatesPanel({ user }) {
-  if (!isWorkspaceAdmin(user)) {
+  if (!isOrganizationAdmin(user)) {
     return h('div');
   }
 

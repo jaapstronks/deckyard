@@ -256,7 +256,7 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
     }
 
     // There is no internal/external split on this route: it is deliberately
-    // unauthenticated, so the viewer's workspace is not knowable server-side,
+    // unauthenticated, so the viewer's organization is not knowable server-side,
     // and the old second "external analytics" switch has been removed —
     // `analytics.enabled` (gated above) is the only tracking toggle. Rationale
     // and the revive path: done/decisions.md § analytics-privacy-naden.

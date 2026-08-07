@@ -6,13 +6,13 @@
  * `users.organization_id` — their *home* organization, which since phase 0 is
  * explicitly no longer the authority on where someone works — and enriches them
  * with designer status against a hard-coded `getDefaultOrganizationId()`. On a
- * single-workspace instance both are invisibly right; the moment there is a
+ * single-organization instance both are invisibly right; the moment there is a
  * second organization the tab shows the wrong population with the wrong
- * designer flag. So in multi-workspace mode the tab asks the organization
+ * designer flag. So in multi-organization mode the tab asks the organization
  * instead, via `GET /api/organizations/:id/members`.
  *
  * The load-bearing pair is the first two tests: which endpoint each mode asks,
- * and — just as much — which one it does *not*. A single-workspace instance
+ * and — just as much — which one it does *not*. A single-organization instance
  * must keep hitting `/api/admin/users` and must never touch the organization
  * surface, which is behind the feature flag on the server and answers 403.
  *
@@ -118,15 +118,15 @@ test.beforeEach(() => {
 // Which endpoint each mode asks
 // ---------------------------------------------------------------------------
 
-test('single-workspace keeps the instance user list and never asks the organization', async () => {
-  setFeatures({ multiWorkspace: false });
+test('single-organization keeps the instance user list and never asks the organization', async () => {
+  setFeatures({ multiOrganization: false });
   const tab = createUsersTab({ user: USER });
   tab.load();
   await settle();
 
   assert.ok(
     requested.some((r) => r.includes('/api/admin/users')),
-    'the instance-wide list is still what a single-workspace instance shows'
+    'the instance-wide list is still what a single-organization instance shows'
   );
   assert.equal(
     requested.filter((r) => r.includes('/api/organizations/')).length,
@@ -135,8 +135,8 @@ test('single-workspace keeps the instance user list and never asks the organizat
   );
 });
 
-test('multi-workspace asks the active organization for its members', async () => {
-  setFeatures({ multiWorkspace: true });
+test('multi-organization asks the active organization for its members', async () => {
+  setFeatures({ multiOrganization: true });
   const tab = createUsersTab({ user: USER });
   tab.load();
   await settle();
@@ -155,7 +155,7 @@ test('multi-workspace asks the active organization for its members', async () =>
 });
 
 test('the organization on the request is the session’s, not the default one', async () => {
-  setFeatures({ multiWorkspace: true });
+  setFeatures({ multiOrganization: true });
   const panel = renderOrganizationMembersPanel({
     user: { ...USER, organizationId: 'org-switched-into' },
   });
@@ -167,7 +167,7 @@ test('the organization on the request is the session’s, not the default one', 
 });
 
 test('a session with no active organization asks nothing and says so', async () => {
-  setFeatures({ multiWorkspace: true });
+  setFeatures({ multiOrganization: true });
   const panel = renderOrganizationMembersPanel({ user: { email: 'a@example.com' } });
   await panel.ready;
 
@@ -176,7 +176,7 @@ test('a session with no active organization asks nothing and says so', async () 
 });
 
 test('a failed load leaves a message, not a permanently loading list', async () => {
-  setFeatures({ multiWorkspace: true });
+  setFeatures({ multiOrganization: true });
   const panel = renderOrganizationMembersPanel({
     user: USER,
     load: async () => {
@@ -263,15 +263,15 @@ function usersTabLabel() {
 }
 
 test('the tab is called Users on an instance, Members inside an organization', async () => {
-  setFeatures({ multiWorkspace: false });
+  setFeatures({ multiOrganization: false });
   assert.equal(usersTabLabel(), 'Users');
 
-  setFeatures({ multiWorkspace: true });
+  setFeatures({ multiOrganization: true });
   assert.equal(usersTabLabel(), 'Members');
 });
 
 test('the tab key is unchanged, so deep links and the gate still work', async () => {
-  setFeatures({ multiWorkspace: true });
+  setFeatures({ multiOrganization: true });
   const tab = createUsersTab({ user: USER });
   assert.equal(tab.el.dataset.tab, 'users');
   assert.equal(tab.el.id, 'settings-tab-users');

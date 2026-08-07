@@ -404,13 +404,13 @@ test('the read funnel migrates a stored legacy deck in memory', async () => {
     const { getPresentation } = await import(
       '../server/storage/presentations/index.js'
     );
-    const scope = { repoRoot: null, organizationId: ORG };
-    const read = await getPresentation(scope, legacy.id);
+    const storageScope = { repoRoot: null, organizationId: ORG };
+    const read = await getPresentation(storageScope, legacy.id);
     assert.equal(read.schemaVersion, CURRENT_SCHEMA_VERSION);
     assert.equal(read.id, legacy.id);
     assert.equal(read.slides[0].content.title, 'Hi');
 
-    const missing = await getPresentation(scope, randomUUID());
+    const missing = await getPresentation(storageScope, randomUUID());
     assert.equal(missing, null);
   } finally {
     __resetStorageForTests();

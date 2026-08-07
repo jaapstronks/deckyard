@@ -54,7 +54,7 @@ test('falls back to the first supported language when neither source helps', () 
   assert.equal(resolveInitialDeckLang(), defaultLang());
 });
 
-test('the fallback follows the workspace, not a hardcoded nl', () => {
+test('the fallback follows the organization, not a hardcoded nl', () => {
   setSupportedLangs(['en-GB']);
   assert.equal(resolveInitialDeckLang({ storedLang: null, uiLocale: 'de' }), 'en-GB');
   // A stored 'nl' is no longer supported here, so it cannot win either.
@@ -69,7 +69,7 @@ test('locale mapping matches the full tag, then the primary subtag', () => {
   assert.equal(langFromUiLocale('EN'), 'en-GB'); // tags are case-insensitive
 });
 
-test('locale mapping returns null for a language the workspace lacks', () => {
+test('locale mapping returns null for a language the organization lacks', () => {
   assert.equal(langFromUiLocale('de'), null);
   assert.equal(langFromUiLocale('pt-BR'), null);
   assert.equal(langFromUiLocale(''), null);

@@ -197,7 +197,7 @@
   margin: var(--ps-space-3) var(--ps-space-3);
 }
 
-/* Sidebar footer (e.g., for workspace info) */
+/* Sidebar footer (e.g., for organization info) */
 .sidebar-footer {
   margin-top: auto;
   padding: var(--ps-space-4) var(--ps-space-3);

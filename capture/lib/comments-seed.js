@@ -39,7 +39,7 @@ let initialized = false;
  * Context every seeded write runs in: the default organization, which is the
  * one `AUTH_DEV_BYPASS` pins requests to (`getUserFromRequest` →
  * `getDefaultOrganizationId()`), so a seeded comment lands in the same
- * workspace the browser is looking at.
+ * organization the browser is looking at.
  * @returns {Promise<{repoRoot: string, actorEmail: string}>}
  */
 async function ensureStorage() {

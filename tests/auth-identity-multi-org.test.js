@@ -1,5 +1,5 @@
 /**
- * Identity resolution with MULTI_WORKSPACE_ENABLED, i.e. several organizations
+ * Identity resolution with MULTI_ORG_ENABLED, i.e. several organizations
  * on one managed instance (A1 phase 0).
  *
  * What this pins down:
@@ -7,19 +7,19 @@
  *   - A person is resolved by their globally unique email, never by
  *     `users.organization_id`. Before this change, anyone whose home
  *     organization was not the default one resolved to null on every request
- *     and got a 401, which is why multi-workspace was never wired up.
- *   - The workspace a session may act in comes from the session token but is
+ *     and got a 401, which is why multi-organization was never wired up.
+ *   - The organization a session may act in comes from the session token but is
  *     re-verified against `user_organizations` on every request, because the
  *     token outlives a membership revocation (14 days by default).
- *   - A revoked or unknown workspace falls back to the person's oldest
+ *   - A revoked or unknown organization falls back to the person's oldest
  *     remaining membership rather than logging them out or silently dropping
  *     them into the default organization. No membership at all is refused.
  *   - Write paths that key on email reuse the existing row instead of
  *     attempting a second one, which the unique constraint would reject.
  *
- * MULTI_WORKSPACE_ENABLED is read at module scope, so this file sets it before
+ * MULTI_ORG_ENABLED is read at module scope, so this file sets it before
  * importing anything and relies on node --test giving each file its own
- * process. The single-workspace half lives in auth-identity-resolution.test.js.
+ * process. The single-organization half lives in auth-identity-resolution.test.js.
  *
  * Run with: node --test tests/auth-identity-multi-org.test.js
  */
@@ -32,7 +32,7 @@ import assert from 'node:assert/strict';
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
-process.env.MULTI_WORKSPACE_ENABLED = 'true';
+process.env.MULTI_ORG_ENABLED = 'true';
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const ORG_A = process.env.DEFAULT_ORGANIZATION_ID;
@@ -42,7 +42,7 @@ const ORG_GONE = '00000000-0000-0000-0000-0000000000cc';
 const { createFakeDb, touchedTables } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { hashPassword } = await import('../server/utils/password-hash.js');
-const { isMultiWorkspaceEnabled } = await import('../server/config/features.js');
+const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const auth = await import('../server/auth/auth.js');
 const identity = await import('../server/storage/identity.js');
 const passwordReset = await import('../server/storage/password-reset.js');
@@ -57,7 +57,7 @@ let passwordHash;
 
 test.before(async () => {
   passwordHash = await hashPassword('correct horse battery');
-  assert.equal(isMultiWorkspaceEnabled(), true, 'multi-workspace flag is on for this file');
+  assert.equal(isMultiOrgEnabled(), true, 'multi-organization flag is on for this file');
 });
 
 test.afterEach(() => {
@@ -197,7 +197,7 @@ test('a revoked membership falls back to the oldest remaining one', async () => 
   // The token still says ORG_A; the membership behind it is gone.
   const resolved = await auth.getUserFromRequestAsync(requestWithSession(login, ORG_A), {});
   assert.ok(resolved, 'the person stays logged in');
-  assert.equal(resolved.organizationId, ORG_B, 'falls back to a workspace they do belong to');
+  assert.equal(resolved.organizationId, ORG_B, 'falls back to an organization they do belong to');
 });
 
 test('an organization the user never belonged to is not honoured', async () => {
@@ -236,7 +236,7 @@ test('a user with no memberships at all is refused', async () => {
   );
 
   const resolved = await auth.getUserFromRequestAsync(requestWithSession(login, ORG_A), {});
-  assert.equal(resolved, null, 'no membership means no workspace to act in');
+  assert.equal(resolved, null, 'no membership means no organization to act in');
 });
 
 test('resolveActiveOrganization is the single decision point', async () => {
@@ -382,7 +382,7 @@ test('inviting someone who already exists elsewhere reports already_exists', asy
   assert.equal(db.__tables.users.length, 1);
 });
 
-test('inviting a genuinely new person still creates them in the current workspace', async () => {
+test('inviting a genuinely new person still creates them in the current organization', async () => {
   const db = seedMultiOrg();
   const result = await usersStore.createUser({ email: 'newcomer@example.com' }, ctxIn(ORG_A));
 

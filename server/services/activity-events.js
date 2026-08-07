@@ -32,7 +32,7 @@ export async function recordPresentationCreated({
     actorType: ACTOR_TYPES.USER,
     data: {
       title: presentation.title,
-      scope: presentation.scope,
+      visibility: presentation.visibility,
     },
   }, context);
 }
@@ -64,7 +64,7 @@ export async function recordPresentationUpdated({
 }
 
 /**
- * Record slides added to a deck during a save. Emitted for decks of any scope
+ * Record slides added to a deck during a save. Emitted for decks of any visibility
  * (the feed enrichment filters by read access, so private/shared decks only
  * surface this to people who can already open them) — the whole point is
  * collaborators seeing "someone added slides to a deck I'm on". One bundled
@@ -157,18 +157,18 @@ export async function recordPresentationDeleted({
 }
 
 /**
- * Record a presentation moved to workspace event.
+ * Record a presentation moved-to-organization event.
  */
-export async function recordPresentationMovedToWorkspace({
+export async function recordPresentationMovedToOrganization({
   presentation,
   actor,
-  previousScope,
+  previousVisibility,
   ctx,
 }) {
   const context = ctx || createRouteContext(actor);
 
   return createActivityEvent({
-    eventType: EVENT_TYPES.PRESENTATION_MOVED_TO_WORKSPACE,
+    eventType: EVENT_TYPES.PRESENTATION_MOVED_TO_ORGANIZATION,
     entityType: ENTITY_TYPES.PRESENTATION,
     entityId: presentation.id,
     presentationId: presentation.id,
@@ -177,8 +177,8 @@ export async function recordPresentationMovedToWorkspace({
     actorType: ACTOR_TYPES.USER,
     data: {
       title: presentation.title,
-      previousScope,
-      newScope: presentation.scope,
+      previousVisibility,
+      newVisibility: presentation.visibility,
     },
   }, context);
 }

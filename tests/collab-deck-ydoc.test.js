@@ -42,7 +42,7 @@ function singleLangDeck() {
     title: 'Enkel Nederlands',
     lang: 'nl',
     theme: 'default',
-    scope: 'private',
+    visibility: 'private',
     ownerEmail: 'owner@example.com',
     revision: 3,
     settings: { transitions: { preset: 'fade' } },
@@ -78,7 +78,7 @@ function twoLangDeck() {
     title: 'Tweetalig deck',
     lang: 'nl',
     theme: 'default',
-    scope: 'workspace',
+    visibility: 'organization',
     revision: 12,
     slides: [], // filled from dominant below, mirrors normalizeI18n
     i18n: {

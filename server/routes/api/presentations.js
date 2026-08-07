@@ -6,7 +6,7 @@ import { handlePresentationsCreate } from './presentations/create.js';
 import { handlePresentationsImportJson } from './presentations/import-json.js';
 import { handlePresentationsImportDeck } from './presentations/import-deck.js';
 import { handlePresentationsImportMarkdown } from './presentations/import-markdown.js';
-import { handlePresentationScope } from './presentations/scope.js';
+import { handlePresentationVisibility } from './presentations/visibility.js';
 import { handlePresentationItem, handlePresentationRevision } from './presentations/presentation.js';
 import { handlePresentationDuplicate } from './presentations/duplicate.js';
 import { handlePresentationDescriptionGenerate } from './presentations/description.js';
@@ -179,7 +179,7 @@ const ROUTES = [
   // Import (markdown deck format — deterministic, no AI)
   { method: 'POST', pattern: '/api/presentations/import/markdown', handler: handlePresentationsImportMarkdown },
 
-  { pattern: /^\/api\/presentations\/([^/]+)\/scope$/, handler: handlePresentationScope },
+  { pattern: /^\/api\/presentations\/([^/]+)\/visibility$/, handler: handlePresentationVisibility },
   { pattern: /^\/api\/presentations\/([^/]+)\/duplicate$/, handler: handlePresentationDuplicate },
 
   // Lightweight revision probe (staleness check for waking editor tabs)

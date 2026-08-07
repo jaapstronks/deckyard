@@ -94,7 +94,7 @@ function deckRow(id) {
     owner_email: 'author@example.com',
     created_by: 'author@example.com',
     updated_by: 'author@example.com',
-    scope: 'private',
+    visibility: 'private',
     theme: 'default',
     lang: 'nl',
     revision: 1,

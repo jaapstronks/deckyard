@@ -94,7 +94,7 @@ For remote agents, CI/CD pipelines, or platforms like [OpenClaw](https://opencla
 
 ```bash
 # Create an API key
-node scripts/create-api-key.js --email you@example.com --name "Agent" --scopes read,write,ai
+node scripts/create-api-key.js --email you@example.com --name "Agent" --permissions read,write,ai
 
 # Connect to SSE endpoint
 POST https://your-deckyard.com/mcp
