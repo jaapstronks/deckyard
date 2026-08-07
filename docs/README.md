@@ -89,6 +89,7 @@ nothing is discoverable only by `ls`.
 | [`export-smoke-test.md`](developer/export-smoke-test.md) | Export smoke test |
 | [`migration-smoke-test.md`](developer/migration-smoke-test.md) | The `migrations` CI job — every migration up/down/up, and the test double held against the resulting schema |
 | [`pg-test-suite.md`](developer/pg-test-suite.md) | The `test-postgres` CI job — the storage layer's `onConflict` paths against a real PostgreSQL |
+| [`test-runner-ipc-flake.md`](developer/test-runner-ipc-flake.md) | The `npm test` "Unable to deserialize cloned data" flake (B50) — Node-core root cause and the keep-tests-quiet rule |
 | [`live-data-sources-testing.md`](developer/live-data-sources-testing.md) | Live data sources testing checklist |
 
 **Slide types**

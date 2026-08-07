@@ -29,7 +29,22 @@ import {
 const ORG = '00000000-0000-0000-0000-000000000001';
 let dataPath;
 
+// The migrate* functions under test print emoji-laden progress banners via
+// console.log (they double as a CLI). Under `node --test` with the default
+// process isolation, a child's captured stdout is forwarded to the parent over
+// the same v8-serialized IPC channel as the test results. A burst of that
+// forwarded output can trip a Node core framing bug in the runner's IPC reader
+// (`#processRawBuffer`, "Unable to deserialize cloned data ..."), which then
+// surfaces as an intermittent failure of *this* file under parallelism. We
+// don't assert on the banners, so we silence them for the duration of the run;
+// this removes the trigger and keeps the suite green in parallel. See
+// docs/developer/test-runner-ipc-flake.md for the full diagnosis (B50).
+const __restoreConsole = [];
 before(async () => {
+  for (const method of ['log', 'error', 'info', 'warn']) {
+    __restoreConsole.push([method, console[method]]);
+    console[method] = () => {};
+  }
   dataPath = path.join(os.tmpdir(), `deckyard-import-${crypto.randomUUID()}`);
   await fs.mkdir(dataPath, { recursive: true });
 
@@ -113,6 +128,7 @@ before(async () => {
 });
 
 after(async () => {
+  for (const [method, fn] of __restoreConsole) console[method] = fn;
   await fs.rm(dataPath, { recursive: true, force: true });
 });
 
