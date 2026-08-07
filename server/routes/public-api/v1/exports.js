@@ -15,7 +15,7 @@ import { normalizeLang, projectPresentationForLang } from '../../../utils/i18n.j
 import { loadTheme } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
-  requireScope,
+  requirePermission,
   checkExportLimit,
   trackExportRequest,
   apiError,
@@ -99,7 +99,7 @@ async function sendExportResponse(ctx, { contentType, filename, extension, data 
  * GET /api/v1/presentations/:id/export/json - Export as JSON.
  */
 async function handleJsonExport(ctx, id) {
-  if (!requireScope(ctx, 'export')) return true;
+  if (!requirePermission(ctx, 'export')) return true;
 
   // Check export limit
   if (!(await checkExportLimit(ctx))) return true;
@@ -130,7 +130,7 @@ async function handleJsonExport(ctx, id) {
  * GET /api/v1/presentations/:id/export/html - Export as standalone HTML.
  */
 async function handleHtmlExport(ctx, id) {
-  if (!requireScope(ctx, 'export')) return true;
+  if (!requirePermission(ctx, 'export')) return true;
 
   if (!(await checkExportLimit(ctx))) return true;
 
@@ -167,7 +167,7 @@ async function handleHtmlExport(ctx, id) {
  * Note: Returns HTML that can be printed to PDF client-side.
  */
 async function handlePdfExport(ctx, id) {
-  if (!requireScope(ctx, 'export')) return true;
+  if (!requirePermission(ctx, 'export')) return true;
 
   if (!(await checkExportLimit(ctx))) return true;
 
@@ -203,7 +203,7 @@ async function handlePdfExport(ctx, id) {
  * GET /api/v1/presentations/:id/export/pptx - Export as PowerPoint.
  */
 async function handlePptxExport(ctx, id) {
-  if (!requireScope(ctx, 'export')) return true;
+  if (!requirePermission(ctx, 'export')) return true;
 
   if (!(await checkExportLimit(ctx))) return true;
 

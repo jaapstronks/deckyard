@@ -154,7 +154,7 @@ operator can open every deck regardless of owner, so you can drop it or leave it
 For a remote instance, create an API key and use the SSE transport instead:
 
 ```bash
-node scripts/create-api-key.js --email you@example.com --name "Agent" --scopes read,write,ai
+node scripts/create-api-key.js --email you@example.com --name "Agent" --permissions read,write,ai
 # then POST https://your-deckyard.com/mcp  with  Authorization: Bearer dk_live_...
 ```
 

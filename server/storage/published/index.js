@@ -21,12 +21,12 @@ export function newPublishId() {
 }
 
 /**
- * The publish index of the scope's organization, keyed by publish id.
- * @param {import('../scope.js').StorageScope} scope
+ * The publish index of the storageScope's organization, keyed by publish id.
+ * @param {import('../scope.js').StorageScope} storageScope
  * @returns {Promise<Object>}
  */
-export async function getPublishedIndex(scope) {
-  const ctx = resolveScope(scope, 'getPublishedIndex');
+export async function getPublishedIndex(storageScope) {
+  const ctx = resolveScope(storageScope, 'getPublishedIndex');
   const storage = getStorage();
   const list = await storage.listPublished(ctx);
   // Convert array to index object for backwards compatibility
@@ -52,13 +52,13 @@ export async function getPublishedIndex(scope) {
  * authorization, and public viewer/embed routes have no session to take an
  * organization from.
  *
- * @param {import('../scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} publishId
  * @returns {Promise<Object|null>}
  */
-export async function getPublishedById(scope, publishId) {
+export async function getPublishedById(storageScope, publishId) {
   const allowCross = { allowCrossOrganization: true };
-  const ctx = resolveScope(scope, 'getPublishedById', allowCross);
+  const ctx = resolveScope(storageScope, 'getPublishedById', allowCross);
   const id = String(publishId || '').trim();
   if (!id) return null;
 
@@ -76,16 +76,16 @@ export async function getPublishedById(scope, publishId) {
 }
 
 /**
- * Create or update the publish entry of a deck in the scope's organization.
- * @param {import('../scope.js').StorageScope} scope
+ * Create or update the publish entry of a deck in the storageScope's organization.
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {{publishId: string, presentationId: string, title?: string, ogImageUrl?: string}} entry
  * @returns {Promise<Object>}
  */
 export async function upsertPublishedEntry(
-  scope,
+  storageScope,
   { publishId, presentationId, title, ogImageUrl }
 ) {
-  const ctx = resolveScope(scope, 'upsertPublishedEntry');
+  const ctx = resolveScope(storageScope, 'upsertPublishedEntry');
   const id = String(publishId || '').trim();
   const pid = String(presentationId || '').trim();
   if (!id) throw new Error('publishId is required');
@@ -112,13 +112,13 @@ export async function upsertPublishedEntry(
 }
 
 /**
- * Unpublish: drop the publish entry within the scope's organization.
- * @param {import('../scope.js').StorageScope} scope
+ * Unpublish: drop the publish entry within the storageScope's organization.
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} publishId
  * @returns {Promise<boolean>}
  */
-export async function removePublishedEntry(scope, publishId) {
-  const ctx = resolveScope(scope, 'removePublishedEntry');
+export async function removePublishedEntry(storageScope, publishId) {
+  const ctx = resolveScope(storageScope, 'removePublishedEntry');
   const id = String(publishId || '').trim();
   if (!id) return false;
 
@@ -127,14 +127,14 @@ export async function removePublishedEntry(scope, publishId) {
 }
 
 /**
- * Rename the public slug of a publish entry in the scope's organization.
- * @param {import('../scope.js').StorageScope} scope
+ * Rename the public slug of a publish entry in the storageScope's organization.
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} publishId
  * @param {string} nextSlug
  * @returns {Promise<Object>}
  */
-export async function updatePublishedSlug(scope, publishId, nextSlug) {
-  const ctx = resolveScope(scope, 'updatePublishedSlug');
+export async function updatePublishedSlug(storageScope, publishId, nextSlug) {
+  const ctx = resolveScope(storageScope, 'updatePublishedSlug');
   const id = String(publishId || '').trim();
   if (!id) throw new Error('publishId is required');
 
@@ -166,17 +166,17 @@ export async function updatePublishedSlug(scope, publishId, nextSlug) {
  * one; the per-deck read is then addressed by publish id and deliberately
  * unscoped (see {@link getPublishedById}).
  *
- * @param {import('../scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {Object} [opts]
  * @param {number} [opts.limit=50] - Maximum items to return
  * @returns {Array} Enriched published presentation records
  */
-export async function listPublishedForFeed(scope, opts = {}) {
-  resolveScope(scope, 'listPublishedForFeed');
+export async function listPublishedForFeed(storageScope, opts = {}) {
+  resolveScope(storageScope, 'listPublishedForFeed');
   const { limit = 50 } = opts;
-  const repoRoot = repoRootOf(scope);
+  const repoRoot = repoRootOf(storageScope);
 
-  const index = await getPublishedIndex(scope);
+  const index = await getPublishedIndex(storageScope);
   const entries = Object.values(index);
 
   // Sort by modified date descending

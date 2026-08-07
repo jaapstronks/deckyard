@@ -15,7 +15,7 @@ import { methodNotAllowed } from '../../../utils/http.js';
 import { loadTheme } from '../../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../../render/preview-image.js';
 import { isMediaProviderInitialized } from '../../../media/index.js';
-import { requireScope, getPresentationWithAccess, apiSuccess } from './middleware.js';
+import { requirePermission, getPresentationWithAccess, apiSuccess } from './middleware.js';
 
 // ============================================================
 // ROUTE HANDLERS
@@ -27,7 +27,7 @@ import { requireScope, getPresentationWithAccess, apiSuccess } from './middlewar
 async function handlePublish(ctx, id) {
   const { repoRoot, storageScope, apiKey } = ctx;
 
-  if (!requireScope(ctx, 'write')) return true;
+  if (!requirePermission(ctx, 'write')) return true;
 
   const { ok, pres } = await getPresentationWithAccess(ctx, id, { access: 'write' });
   if (!ok) return true;
@@ -118,7 +118,7 @@ async function handlePublish(ctx, id) {
  * GET /api/v1/presentations/:id/publish - Get publish status.
  */
 async function handleGetPublishStatus(ctx, id) {
-  if (!requireScope(ctx, 'read')) return true;
+  if (!requirePermission(ctx, 'read')) return true;
 
   const { ok, pres } = await getPresentationWithAccess(ctx, id);
   if (!ok) return true;
@@ -148,7 +148,7 @@ async function handleGetPublishStatus(ctx, id) {
 async function handleUnpublish(ctx, id) {
   const { storageScope, apiKey } = ctx;
 
-  if (!requireScope(ctx, 'write')) return true;
+  if (!requirePermission(ctx, 'write')) return true;
 
   const { ok, pres } = await getPresentationWithAccess(ctx, id, { access: 'write' });
   if (!ok) return true;

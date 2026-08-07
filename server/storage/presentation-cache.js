@@ -18,18 +18,18 @@ const MAX_ENTRIES = 200;
 const cache = new Map();
 
 /**
- * Key an entry by the scope it was read under, not just by repo root.
+ * Key an entry by the storageScope it was read under, not just by repo root.
  *
  * Two organizations can hold decks with the same id, so an entry read in one
  * must not be served to the other — that would reintroduce, in the cache, the
- * cross-organization read the scope contract exists to prevent. Entries read
+ * cross-organization read the storageScope contract exists to prevent. Entries read
  * cross-organization (a published deck, a live follow code) share one bucket:
  * there the id came out of a globally unique token, so it addresses exactly one
  * deck by construction.
  */
-function cacheKey(scope, id) {
-  const org = scope?.organizationId || `cross:${scope?.crossOrganization || ''}`;
-  return `${org}\n${String(repoRootOf(scope) || '')}\n${String(id || '')}`;
+function cacheKey(storageScope, id) {
+  const org = storageScope?.organizationId || `cross:${storageScope?.crossOrganization || ''}`;
+  return `${org}\n${String(repoRootOf(storageScope) || '')}\n${String(id || '')}`;
 }
 
 function sweep(nowTs) {
@@ -48,19 +48,19 @@ function sweep(nowTs) {
  * `getPresentation`, so it must state which organization it reads in for the
  * same reason the facade does.
  *
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} id
  * @returns {Promise<any>}
  */
-export async function getPresentationCached(scope, id) {
-  const key = cacheKey(scope, id);
+export async function getPresentationCached(storageScope, id) {
+  const key = cacheKey(storageScope, id);
   const nowTs = Date.now();
   const hit = cache.get(key);
   if (hit && nowTs - hit.at < TTL_MS) return hit.promise;
   // Dynamic import keeps this module free of a static cycle with the facade,
   // which imports invalidatePresentationCache from here.
   const promise = import('./presentations/index.js')
-    .then((mod) => mod.getPresentation(scope, id))
+    .then((mod) => mod.getPresentation(storageScope, id))
     .catch((err) => {
       cache.delete(key);
       throw err;

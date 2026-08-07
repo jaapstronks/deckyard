@@ -15,7 +15,7 @@ import { getTagsForPresentations, getTagsForPresentation } from '../../../storag
 import { methodNotAllowed } from '../../../utils/http.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { canonicalSlideType } from '../../../../shared/slide-types.js';
-import { requireScope, canAccessPresentation, getPresentationWithAccess, readApiV1Body, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
+import { requirePermission, canAccessPresentation, getPresentationWithAccess, readApiV1Body, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -108,7 +108,7 @@ function sanitizeForList(pres, tags = [], requesterEmail = null) {
 async function handleList(ctx) {
   const { storageScope, apiKey, authedUser, url } = ctx;
 
-  if (!requireScope(ctx, 'read')) return true;
+  if (!requirePermission(ctx, 'read')) return true;
 
   const list = await listPresentations(storageScope);
   let filtered = filterByOwner(list, authedUser);
@@ -153,7 +153,7 @@ async function handleList(ctx) {
 async function handleCreate(ctx) {
   const { storageScope, apiKey } = ctx;
 
-  if (!requireScope(ctx, 'write')) return true;
+  if (!requirePermission(ctx, 'write')) return true;
 
   const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req);
   if (!bodyOk) return true;
@@ -180,7 +180,7 @@ async function handleCreate(ctx) {
  * GET /api/v1/presentations/:id - Get a single presentation.
  */
 async function handleGet(ctx, id) {
-  if (!requireScope(ctx, 'read')) return true;
+  if (!requirePermission(ctx, 'read')) return true;
 
   const { ok, pres } = await getPresentationWithAccess(ctx, id);
   if (!ok) return true;
@@ -198,7 +198,7 @@ async function handleGet(ctx, id) {
 async function handleUpdate(ctx, id) {
   const { storageScope, apiKey } = ctx;
 
-  if (!requireScope(ctx, 'write')) return true;
+  if (!requirePermission(ctx, 'write')) return true;
 
   const { ok } = await getPresentationWithAccess(ctx, id, { access: 'write' });
   if (!ok) return true;
@@ -246,7 +246,7 @@ async function handleUpdate(ctx, id) {
 async function handleDelete(ctx, id) {
   const { storageScope, apiKey } = ctx;
 
-  if (!requireScope(ctx, 'write')) return true;
+  if (!requirePermission(ctx, 'write')) return true;
 
   const existing = await getPresentation(storageScope, id);
   if (!existing) {
@@ -281,7 +281,7 @@ async function handleDelete(ctx, id) {
 async function handleDuplicate(ctx, id) {
   const { storageScope, apiKey } = ctx;
 
-  if (!requireScope(ctx, 'write')) return true;
+  if (!requirePermission(ctx, 'write')) return true;
 
   const { ok } = await getPresentationWithAccess(ctx, id);
   if (!ok) return true;

@@ -32,7 +32,7 @@ const sessions = new Map();
  * @property {string} id
  * @property {string} ownerEmail
  * @property {string} keyId - API key ID for rate limiting
- * @property {string[]} scopes
+ * @property {string[]} permissions
  * @property {string} tier
  * @property {number} createdAt
  * @property {number} lastActiveAt
@@ -47,7 +47,7 @@ function createSession(apiKey) {
     // A machine client acts in the organization its key belongs to.
     organizationId: apiKey.organizationId ?? null,
     keyId: apiKey.id,
-    scopes: apiKey.scopes,
+    permissions: apiKey.permissions,
     tier: apiKey.tier || 'free',
     createdAt: Date.now(),
     lastActiveAt: Date.now(),
@@ -108,7 +108,7 @@ async function authenticate(req) {
   const result = await validateApiKey(token);
   if (!result.ok) return { ok: false, reason: result.reason };
 
-  // Check for 'read' scope minimum (all MCP requests need at least read)
+  // Check for the 'read' permission minimum (all MCP requests need at least read)
   return { ok: true, apiKey: result };
 }
 
@@ -289,7 +289,7 @@ async function handlePost(server, req, res, basePath) {
   // Build per-request context for tool handlers
   const context = {
     ownerEmail: session?.ownerEmail || auth.apiKey.ownerEmail,
-    scopes: session?.scopes || auth.apiKey.scopes,
+    permissions: session?.permissions || auth.apiKey.permissions,
     tier: session?.tier || auth.apiKey.tier || 'free',
     transport: 'sse',
   };

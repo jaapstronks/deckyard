@@ -140,7 +140,7 @@ export function registerTools(
    * @param {Object} [context] - Per-request context (SSE session)
    * @returns {Object} storage scope
    */
-  function scopeOf(context) {
+  function storageScopeOf(context) {
     const organizationId = context?.organizationId || null;
     return organizationId
       ? { repoRoot, organizationId, actorEmail: getOwner(context) }
@@ -161,7 +161,7 @@ export function registerTools(
   function actorOf(context) {
     return {
       email: getOwner(context),
-      organizationId: scopeOf(context)?.organizationId || null,
+      organizationId: storageScopeOf(context)?.organizationId || null,
     };
   }
 
@@ -176,7 +176,7 @@ export function registerTools(
    * @returns {Promise<Object>}
    */
   function getCheckedPresentation(presentationId, context, options) {
-    return loadPresentationChecked(scopeOf(context), presentationId, getOwner(context), options);
+    return loadPresentationChecked(storageScopeOf(context), presentationId, getOwner(context), options);
   }
 
   /**
@@ -275,7 +275,7 @@ export function registerTools(
       const seen = new Set();
 
       if (validScope === 'owned' || validScope === 'all') {
-        const all = await listPresentations(scopeOf(context));
+        const all = await listPresentations(storageScopeOf(context));
         const owned = owner ? all.filter((p) => p.ownerEmail === owner) : all;
         for (const p of owned) {
           if (!seen.has(p.id)) {
@@ -419,14 +419,14 @@ export function registerTools(
       const parts = deckToPresentationParts(deck);
       if (title) parts.title = title;
 
-      const created = await createPresentation(scopeOf(context), {
+      const created = await createPresentation(storageScopeOf(context), {
         title: parts.title,
         theme,
         lang: lang || undefined,
         ownerEmail: effectiveOwner,
       });
 
-      const updated = await updatePresentation(scopeOf(context), created.id, {
+      const updated = await updatePresentation(storageScopeOf(context), created.id, {
         ...created,
         slides: parts.slides,
         title: parts.title,
@@ -571,7 +571,7 @@ export function registerTools(
       }
 
       // Create stub row, then write the slide payload in one update.
-      const created = await createPresentation(scopeOf(context), {
+      const created = await createPresentation(storageScopeOf(context), {
         title,
         theme,
         lang,
@@ -581,7 +581,7 @@ export function registerTools(
         throw new Error(`createPresentation failed: ${created.reason || 'unknown'}`);
       }
 
-      const updated = await updatePresentation(scopeOf(context), created.id, {
+      const updated = await updatePresentation(storageScopeOf(context), created.id, {
         ...created,
         title,
         slides: validatedSlides.map((s) => ({
@@ -653,7 +653,7 @@ export function registerTools(
       }]);
       slide.content = validated.content;
 
-      await updatePresentation(scopeOf(context), presentationId, pres, writeOpts(context));
+      await updatePresentation(storageScopeOf(context), presentationId, pres, writeOpts(context));
 
       return {
         updated: true,
@@ -703,7 +703,7 @@ export function registerTools(
         : pres.slides.length;
 
       pres.slides.splice(insertAt, 0, newSlide);
-      await updatePresentation(scopeOf(context), presentationId, pres, writeOpts(context));
+      await updatePresentation(storageScopeOf(context), presentationId, pres, writeOpts(context));
 
       return {
         added: true,
@@ -752,7 +752,7 @@ export function registerTools(
       const fromType = slide.type;
       slide.type = result.type || targetType;
       slide.content = result.content;
-      await updatePresentation(scopeOf(context), presentationId, pres, writeOpts(context));
+      await updatePresentation(storageScopeOf(context), presentationId, pres, writeOpts(context));
 
       return {
         converted: true,
@@ -796,7 +796,7 @@ export function registerTools(
 
       // Save the modified deck
       pres.slides = newDeck.slides;
-      await updatePresentation(scopeOf(context), presentationId, pres, writeOpts(context));
+      await updatePresentation(storageScopeOf(context), presentationId, pres, writeOpts(context));
 
       return {
         applied: true,
@@ -912,7 +912,7 @@ export function registerTools(
         };
       }
       await getCheckedPresentation(presentationId, context, { access: 'delete' });
-      await deletePresentation(scopeOf(context), presentationId, { actorEmail: getOwner(context) });
+      await deletePresentation(storageScopeOf(context), presentationId, { actorEmail: getOwner(context) });
       return { deleted: true, id: presentationId };
     }
   );
@@ -937,7 +937,7 @@ export function registerTools(
       }
 
       const removed = pres.slides.splice(slideIndex, 1)[0];
-      await updatePresentation(scopeOf(context), presentationId, pres, writeOpts(context));
+      await updatePresentation(storageScopeOf(context), presentationId, pres, writeOpts(context));
 
       return {
         removed: true,
@@ -971,7 +971,7 @@ export function registerTools(
 
       const [slide] = pres.slides.splice(fromIndex, 1);
       pres.slides.splice(toIndex, 0, slide);
-      await updatePresentation(scopeOf(context), presentationId, pres, writeOpts(context));
+      await updatePresentation(storageScopeOf(context), presentationId, pres, writeOpts(context));
 
       return {
         moved: true,
@@ -1034,7 +1034,7 @@ export function registerTools(
 
       pres.slides.splice(insertAt, 0, ...slidesToInsert);
 
-      await updatePresentation(scopeOf(context), presentationId, pres, writeOpts(context));
+      await updatePresentation(storageScopeOf(context), presentationId, pres, writeOpts(context));
 
       return {
         appended: newSlides.length,
@@ -1083,7 +1083,7 @@ export function registerTools(
       if (apply && (recommendations.merges.length > 0 || recommendations.removals.length > 0)) {
         const compressed = applyCompression(pres, recommendations);
         pres.slides = compressed.slides;
-        await updatePresentation(scopeOf(context), presentationId, pres, writeOpts(context));
+        await updatePresentation(storageScopeOf(context), presentationId, pres, writeOpts(context));
       }
 
       return {
@@ -1153,7 +1153,7 @@ export function registerTools(
     },
     async ({ presentationId }, context) => {
       await getCheckedPresentation(presentationId, context);
-      const dup = await duplicatePresentation(scopeOf(context), presentationId, {
+      const dup = await duplicatePresentation(storageScopeOf(context), presentationId, {
         ownerEmail: getOwner(context),
         actorEmail: getOwner(context),
       });
@@ -1401,7 +1401,7 @@ export function registerTools(
 
       // Slide context reflects the deck as it is now; the stored
       // slideSnapshot on each comment shows the slide at create time.
-      const pres = await getPresentation(scopeOf(context), presentationId);
+      const pres = await getPresentation(storageScopeOf(context), presentationId);
       const enriched = enrichCommentsWithSlideContext(comments, pres || { slides: [] }).map((c) => ({
         ...c,
         editUrl: presentationUrl(presentationId, 'edit', { slideId: c.slideId }),
@@ -1464,7 +1464,7 @@ export function registerTools(
       const presCache = new Map();
       const presFor = async (id) => {
         if (!presCache.has(id)) {
-          presCache.set(id, await getPresentation(scopeOf(context), id).catch(() => null));
+          presCache.set(id, await getPresentation(storageScopeOf(context), id).catch(() => null));
         }
         return presCache.get(id);
       };

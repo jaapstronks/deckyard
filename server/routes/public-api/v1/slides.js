@@ -7,7 +7,7 @@ import { updatePresentation } from '../../../storage/presentations/index.js';
 import { methodNotAllowed } from '../../../utils/http.js';
 import { newSlide, validateSlide, resolveSlideTypeName, canonicalSlideType } from '../../../../shared/slide-types.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
-import { requireScope, getPresentationWithAccess, readApiV1Body, apiSuccess, apiCreated, apiError } from './middleware.js';
+import { requirePermission, getPresentationWithAccess, readApiV1Body, apiSuccess, apiCreated, apiError } from './middleware.js';
 import { emailCanEditCustomHtml, customHtmlEditViolation } from '../../../utils/route-middleware.js';
 
 /**
@@ -34,7 +34,7 @@ function sanitizeSlide(slide) {
  * GET /api/v1/presentations/:presentationId/slides/:slideId - Get a single slide.
  */
 async function handleGetSlide(ctx, presentationId, slideId) {
-  if (!requireScope(ctx, 'read')) return true;
+  if (!requirePermission(ctx, 'read')) return true;
 
   const { ok, pres } = await getPresentationWithAccess(ctx, presentationId);
   if (!ok) return true;
@@ -60,7 +60,7 @@ async function handleGetSlide(ctx, presentationId, slideId) {
 async function handleUpdateSlide(ctx, presentationId, slideId) {
   const { storageScope, req, apiKey } = ctx;
 
-  if (!requireScope(ctx, 'write')) return true;
+  if (!requirePermission(ctx, 'write')) return true;
 
   const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
@@ -153,7 +153,7 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
 async function handleCreateSlide(ctx, presentationId) {
   const { repoRoot, storageScope, req, apiKey } = ctx;
 
-  if (!requireScope(ctx, 'write')) return true;
+  if (!requirePermission(ctx, 'write')) return true;
 
   const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
@@ -267,7 +267,7 @@ async function handleCreateSlide(ctx, presentationId) {
 async function handleDeleteSlide(ctx, presentationId, slideId) {
   const { storageScope, apiKey } = ctx;
 
-  if (!requireScope(ctx, 'write')) return true;
+  if (!requirePermission(ctx, 'write')) return true;
 
   const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, { access: 'write' });
   if (!ok) return true;
@@ -320,7 +320,7 @@ async function handleDeleteSlide(ctx, presentationId, slideId) {
 async function handleReorderSlides(ctx, presentationId) {
   const { storageScope, req, apiKey } = ctx;
 
-  if (!requireScope(ctx, 'write')) return true;
+  if (!requirePermission(ctx, 'write')) return true;
 
   const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;

@@ -12,7 +12,7 @@ import {
 import { updatePresentation } from '../../../storage/presentations/index.js';
 import { methodNotAllowed } from '../../../utils/http.js';
 import { newSlide } from '../../../../shared/slide-types.js';
-import { requireScope, getPresentationWithAccess, readApiV1Body, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
+import { requirePermission, getPresentationWithAccess, readApiV1Body, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
 
 /**
  * Sanitize a library item for API response.
@@ -41,7 +41,7 @@ function sanitizeLibraryItem(item, tags = []) {
 async function handleList(ctx) {
   const { storageScope, apiKey, url } = ctx;
 
-  if (!requireScope(ctx, 'read')) return true;
+  if (!requirePermission(ctx, 'read')) return true;
 
   const themeId = url.searchParams.get('themeId') || '';
   const { limit, offset } = parsePaginationParams(url);
@@ -86,7 +86,7 @@ async function handleList(ctx) {
 async function handleGet(ctx, itemId) {
   const { storageScope, apiKey } = ctx;
 
-  if (!requireScope(ctx, 'read')) return true;
+  if (!requirePermission(ctx, 'read')) return true;
 
   const item = await getTeamLibraryItem(storageScope, itemId, {
     userEmail: apiKey.ownerEmail,
@@ -113,7 +113,7 @@ async function handleGet(ctx, itemId) {
 async function handleAddFromLibrary(ctx, presentationId) {
   const { storageScope, apiKey } = ctx;
 
-  if (!requireScope(ctx, 'write')) return true;
+  if (!requirePermission(ctx, 'write')) return true;
 
   const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req);
   if (!bodyOk) return true;

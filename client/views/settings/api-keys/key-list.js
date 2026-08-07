@@ -30,31 +30,31 @@ function formatRelativeDate(date) {
 }
 
 /**
- * Create a scope badge element.
- * @param {string} scope - Scope name
+ * Create a permission badge element.
+ * @param {string} permission - Permission name
  * @returns {HTMLElement}
  */
-function createScopeBadge(scope) {
+function createPermissionBadge(permission) {
   return h('span', {
-    class: 'api-key-scope-badge',
-    text: scope,
-    title: getScopeDescription(scope),
+    class: 'api-key-permission-badge',
+    text: permission,
+    title: getPermissionDescription(permission),
   });
 }
 
 /**
- * Get description for a scope.
- * @param {string} scope - Scope name
+ * Get description for a permission.
+ * @param {string} permission - Permission name
  * @returns {string}
  */
-function getScopeDescription(scope) {
+function getPermissionDescription(permission) {
   const descriptions = {
-    read: t('settings.apiKeys.scopeDesc.read', 'Read presentations, themes, and slide types'),
-    write: t('settings.apiKeys.scopeDesc.write', 'Create, update, and delete presentations'),
-    ai: t('settings.apiKeys.scopeDesc.ai', 'Use AI generation and refinement features'),
-    export: t('settings.apiKeys.scopeDesc.export', 'Export presentations to HTML, JSON, or PDF'),
+    read: t('settings.apiKeys.permissionDesc.read', 'Read presentations, themes, and slide types'),
+    write: t('settings.apiKeys.permissionDesc.write', 'Create, update, and delete presentations'),
+    ai: t('settings.apiKeys.permissionDesc.ai', 'Use AI generation and refinement features'),
+    export: t('settings.apiKeys.permissionDesc.export', 'Export presentations to HTML, JSON, or PDF'),
   };
-  return descriptions[scope] || scope;
+  return descriptions[permission] || permission;
 }
 
 /**
@@ -121,10 +121,10 @@ function renderKeyRow(key, onRevoke, onViewUsage) {
 
   infoCol.append(nameRow, prefixRow);
 
-  // Scopes column
-  const scopesCol = h('div', { class: 'api-key-scopes' });
-  for (const scope of key.scopes || []) {
-    scopesCol.append(createScopeBadge(scope));
+  // Permissions column
+  const permissionsCol = h('div', { class: 'api-key-permissions' });
+  for (const permission of key.permissions || []) {
+    permissionsCol.append(createPermissionBadge(permission));
   }
 
   // Dates column
@@ -161,7 +161,7 @@ function renderKeyRow(key, onRevoke, onViewUsage) {
     actionsCol.append(usageBtn, revokeBtn);
   }
 
-  row.append(infoCol, scopesCol, datesCol, actionsCol);
+  row.append(infoCol, permissionsCol, datesCol, actionsCol);
   return row;
 }
 
@@ -185,7 +185,7 @@ export function renderKeyList(container, keys, { onRevoke, onViewUsage }) {
   const header = h('div', { class: 'api-key-row api-key-header' });
   header.append(
     h('div', { class: 'api-key-info', text: t('settings.apiKeys.headerName', 'Name & Key') }),
-    h('div', { class: 'api-key-scopes', text: t('settings.apiKeys.headerScopes', 'Scopes') }),
+    h('div', { class: 'api-key-permissions', text: t('settings.apiKeys.headerPermissions', 'Permissions') }),
     h('div', { class: 'api-key-dates', text: t('settings.apiKeys.headerDates', 'Dates') }),
     h('div', { class: 'api-key-actions', text: t('settings.apiKeys.headerActions', 'Actions') })
   );

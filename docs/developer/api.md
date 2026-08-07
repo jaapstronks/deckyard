@@ -14,7 +14,7 @@ server/routes/public-api/
 │   ├── presentations.js # CRUD operations
 │   ├── slides.js       # Slide-level operations
 │   ├── translate.js    # Translation endpoints
-│   ├── comments.js     # Comments (comments:read / comments:write scopes)
+│   ├── comments.js     # Comments (comments:read / comments:write permissions)
 │   ├── publishing.js   # Publish/unpublish
 │   ├── slide-library.js # Slide library
 │   ├── exports.js      # Export handlers (JSON, HTML, PPTX, PDF)
@@ -86,11 +86,11 @@ export const TIER_LIMITS = {
 
 Value of `-1` means unlimited.
 
-## Scopes
+## Permissions
 
 API keys can have granular permissions:
 
-| Scope | Access |
+| Permission | Access |
 |-------|--------|
 | `read` | List/get presentations, themes, slide types |
 | `write` | Create, update, delete presentations |
@@ -99,10 +99,10 @@ API keys can have granular permissions:
 | `comments:read` | Read comments on accessible presentations |
 | `comments:write` | Create comments/replies and change comment status |
 
-Check scopes with:
+Check permissions with:
 
 ```js
-if (!requireScope(ctx, 'write')) return true;
+if (!requirePermission(ctx, 'write')) return true;
 ```
 
 ## Adding New Endpoints
@@ -110,7 +110,7 @@ if (!requireScope(ctx, 'write')) return true;
 1. **Create handler** in appropriate file (presentations.js, exports.js, etc.)
 2. **Add route** in the handler's main function
 3. **Use middleware helpers**:
-   - `requireScope(ctx, 'scope')` - Check permissions
+   - `requirePermission(ctx, 'read')` - Check the key's permissions
    - `apiSuccess(ctx, data)` - 200 response with rate limit headers
    - `apiCreated(ctx, data)` - 201 response
    - `apiError(ctx, status, message)` - Error response
@@ -126,8 +126,8 @@ if (!requireScope(ctx, 'write')) return true;
 async function handleMyEndpoint(ctx) {
   const { repoRoot, apiKey, url } = ctx;
 
-  // Check scope
-  if (!requireScope(ctx, 'read')) return true;
+  // Check the key's permissions
+  if (!requirePermission(ctx, 'read')) return true;
 
   // Do work
   const data = await myOperation(repoRoot);
@@ -151,7 +151,7 @@ CREATE TABLE api_keys (
   key_prefix VARCHAR(12) NOT NULL,      -- First 8 chars for display
   key_hash VARCHAR(64) NOT NULL,        -- SHA-256 hash for validation
   tier VARCHAR(20) DEFAULT 'free',
-  scopes JSONB DEFAULT '["read", "write"]',
+  permissions JSONB DEFAULT '["read", "write"]',
   last_used_at TIMESTAMPTZ,
   revoked_at TIMESTAMPTZ,               -- NULL = active
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -182,7 +182,7 @@ import('./server/storage/api-keys.js').then(async ({ createApiKey }) => {
   const result = await createApiKey({
     name: 'Test Key',
     ownerEmail: 'test@example.com',
-    scopes: ['read', 'write', 'export', 'ai'],
+    permissions: ['read', 'write', 'export', 'ai'],
   });
   console.log(result);
 });
@@ -233,5 +233,5 @@ await apiError(ctx, 400, 'Validation failed', { details: errors });
 - API keys are never stored in plaintext (only SHA-256 hash)
 - Keys can be revoked instantly via soft delete (`revoked_at` timestamp)
 - Rate limiting prevents abuse
-- Scope-based permissions limit access
+- Per-key permissions limit access
 - Presentations are filtered by ownership (API key owner email)

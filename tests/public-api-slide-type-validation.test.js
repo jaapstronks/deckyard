@@ -98,7 +98,7 @@ function makeCtx(method, pathname, body = null) {
     url: new URL(`http://localhost${pathname}`),
     repoRoot: process.cwd(),
     storageScope: { repoRoot: process.cwd(), organizationId: ORG, actorEmail: OWNER },
-    apiKey: { id: 'key-1', tier: 'free', ownerEmail: OWNER, scopes: ['read', 'write'], organizationId: ORG },
+    apiKey: { id: 'key-1', tier: 'free', ownerEmail: OWNER, permissions: ['read', 'write'], organizationId: ORG },
     // What authenticateApiKey puts on the context: who is acting and in which
     // workspace. Per-deck checks read the actor from here, not off the deck.
     authedUser: { id: null, email: OWNER, role: 'user', organizationId: ORG },

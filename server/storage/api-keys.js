@@ -46,8 +46,8 @@ export const TIER_LIMITS = {
   },
 };
 
-// Available scopes
-export const AVAILABLE_SCOPES = [
+// Available permissions
+export const AVAILABLE_PERMISSIONS = [
   'read',           // Read presentations, themes, slide types
   'write',          // Create, update, delete presentations
   'export',         // Export presentations
@@ -94,11 +94,11 @@ export function getKeyPrefix(key) {
  * @param {Object} params - Key parameters
  * @param {string} params.name - Display name for the key
  * @param {string} params.ownerEmail - Email of the key owner
- * @param {string[]} [params.scopes] - Scopes for the key (defaults to read, write)
+ * @param {string[]} [params.permissions] - Permissions for the key (defaults to read, write)
  * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result with the raw key (only returned once)
  */
-export async function createApiKey({ name, ownerEmail, scopes }, ctx) {
+export async function createApiKey({ name, ownerEmail, permissions }, ctx) {
   const normalizedEmail = normalizeEmail(ownerEmail);
   if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
     return { ok: false, reason: 'invalid_email' };
@@ -108,11 +108,11 @@ export async function createApiKey({ name, ownerEmail, scopes }, ctx) {
     return { ok: false, reason: 'name_required' };
   }
 
-  // Validate scopes if provided
-  const keyScopes = scopes || ['read', 'write'];
-  const invalidScopes = keyScopes.filter(s => !AVAILABLE_SCOPES.includes(s));
-  if (invalidScopes.length > 0) {
-    return { ok: false, reason: 'invalid_scopes', invalidScopes };
+  // Validate permissions if provided
+  const keyPermissions = permissions || ['read', 'write'];
+  const invalidPermissions = keyPermissions.filter(s => !AVAILABLE_PERMISSIONS.includes(s));
+  if (invalidPermissions.length > 0) {
+    return { ok: false, reason: 'invalid_permissions', invalidPermissions };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -127,7 +127,7 @@ export async function createApiKey({ name, ownerEmail, scopes }, ctx) {
         name: name.trim(),
         key_prefix: prefix,
         key_hash: hash,
-        scopes: JSON.stringify(keyScopes),
+        permissions: JSON.stringify(keyPermissions),
       })
       .returningAll()
       .executeTakeFirst();
@@ -138,7 +138,7 @@ export async function createApiKey({ name, ownerEmail, scopes }, ctx) {
       id: row.id,
       name: row.name,
       prefix: row.key_prefix,
-      scopes: keyScopes,
+      permissions: keyPermissions,
       createdAt: row.created_at,
     };
   });
@@ -174,16 +174,16 @@ export async function validateApiKey(rawKey) {
       return { ok: false, reason: 'invalid_or_revoked' };
     }
 
-    // Parse scopes
-    let scopes = ['read', 'write'];
+    // Parse permissions
+    let permissions = ['read', 'write'];
     try {
-      if (row.scopes) {
-        scopes = typeof row.scopes === 'string'
-          ? JSON.parse(row.scopes)
-          : row.scopes;
+      if (row.permissions) {
+        permissions = typeof row.permissions === 'string'
+          ? JSON.parse(row.permissions)
+          : row.permissions;
       }
     } catch {
-      // Use default scopes on parse error
+      // Use default permissions on parse error
     }
 
     return {
@@ -194,7 +194,7 @@ export async function validateApiKey(rawKey) {
       name: row.name,
       prefix: row.key_prefix,
       tier: row.tier || 'free',
-      scopes,
+      permissions,
       createdAt: row.created_at,
     };
   });
@@ -255,7 +255,7 @@ export async function listApiKeys(options = {}, ctx) {
         'name',
         'key_prefix',
         'tier',
-        'scopes',
+        'permissions',
         'last_used_at',
         'revoked_at',
         'created_at',
@@ -271,15 +271,15 @@ export async function listApiKeys(options = {}, ctx) {
     const rows = await query.execute();
 
     const keys = rows.map(row => {
-      let scopes = ['read', 'write'];
+      let permissions = ['read', 'write'];
       try {
-        if (row.scopes) {
-          scopes = typeof row.scopes === 'string'
-            ? JSON.parse(row.scopes)
-            : row.scopes;
+        if (row.permissions) {
+          permissions = typeof row.permissions === 'string'
+            ? JSON.parse(row.permissions)
+            : row.permissions;
         }
       } catch {
-        // Use default scopes on parse error
+        // Use default permissions on parse error
       }
 
       return {
@@ -288,7 +288,7 @@ export async function listApiKeys(options = {}, ctx) {
         name: row.name,
         prefix: row.key_prefix,
         tier: row.tier || 'free',
-        scopes,
+        permissions,
         lastUsedAt: row.last_used_at,
         revokedAt: row.revoked_at,
         createdAt: row.created_at,
@@ -325,15 +325,15 @@ export async function getApiKeyById(keyId, ctx) {
       return { ok: false, reason: 'not_found' };
     }
 
-    let scopes = ['read', 'write'];
+    let permissions = ['read', 'write'];
     try {
-      if (row.scopes) {
-        scopes = typeof row.scopes === 'string'
-          ? JSON.parse(row.scopes)
-          : row.scopes;
+      if (row.permissions) {
+        permissions = typeof row.permissions === 'string'
+          ? JSON.parse(row.permissions)
+          : row.permissions;
       }
     } catch {
-      // Use default scopes on parse error
+      // Use default permissions on parse error
     }
 
     return {
@@ -343,7 +343,7 @@ export async function getApiKeyById(keyId, ctx) {
       name: row.name,
       prefix: row.key_prefix,
       tier: row.tier || 'free',
-      scopes,
+      permissions,
       lastUsedAt: row.last_used_at,
       revokedAt: row.revoked_at,
       createdAt: row.created_at,
@@ -356,11 +356,11 @@ export async function getApiKeyById(keyId, ctx) {
 // ============================================================
 
 /**
- * Check if an API key has a specific scope.
- * @param {string[]} keyScopes - The key's scopes
- * @param {string} requiredScope - The required scope
+ * Check if an API key has a specific permission.
+ * @param {string[]} keyPermissions - The key's permissions
+ * @param {string} requiredPermission - The required permission
  * @returns {boolean}
  */
-export function hasScope(keyScopes, requiredScope) {
-  return Array.isArray(keyScopes) && keyScopes.includes(requiredScope);
+export function hasPermission(keyPermissions, requiredPermission) {
+  return Array.isArray(keyPermissions) && keyPermissions.includes(requiredPermission);
 }

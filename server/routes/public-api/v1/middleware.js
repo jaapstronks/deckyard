@@ -3,7 +3,7 @@
  * Handles API key authentication, rate limiting, and usage tracking.
  */
 
-import { validateApiKey, TIER_LIMITS, hasScope } from '../../../storage/api-keys.js';
+import { validateApiKey, TIER_LIMITS, hasPermission } from '../../../storage/api-keys.js';
 import {
   normalizePresentationScope,
   canActorAccessPresentation,
@@ -93,16 +93,16 @@ export async function authenticateApiKey(ctx) {
 }
 
 // ============================================================
-// SCOPE CHECKING
+// PERMISSION CHECKING
 // ============================================================
 
 /**
- * Check if the API key has the required scope.
+ * Check if the API key has the required permission.
  * @param {Object} ctx - Request context with apiKey
- * @param {string} scope - Required scope
+ * @param {string} permission - Required permission
  * @returns {boolean}
  */
-export function requireScope(ctx, scope) {
+export function requirePermission(ctx, permission) {
   const { res, apiKey } = ctx;
 
   if (!apiKey) {
@@ -110,8 +110,8 @@ export function requireScope(ctx, scope) {
     return false;
   }
 
-  if (!hasScope(apiKey.scopes, scope)) {
-    forbidden(res, `API key lacks required scope: ${scope}`);
+  if (!hasPermission(apiKey.permissions, permission)) {
+    forbidden(res, `API key lacks required permission: ${permission}`);
     return false;
   }
 

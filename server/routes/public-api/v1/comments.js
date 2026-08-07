@@ -40,7 +40,7 @@ import {
 import { notifyCommentCreated } from '../../../services/comment-notifications.js';
 import { broadcastCommentCounts, MAX_COMMENT_LENGTH } from '../../api/presentations/comments-shared.js';
 import {
-  requireScope,
+  requirePermission,
   getPresentationWithAccess,
   readApiV1Body,
   apiSuccess,
@@ -108,7 +108,7 @@ function parseSinceParam(url) {
 async function handleListComments(ctx, presentationId) {
   const { url } = ctx;
 
-  if (!requireScope(ctx, 'comments:read')) return true;
+  if (!requirePermission(ctx, 'comments:read')) return true;
 
   const { ok, pres } = await getPresentationWithAccess(ctx, presentationId);
   if (!ok) return true;
@@ -148,7 +148,7 @@ async function handleListComments(ctx, presentationId) {
 async function handleCreateComment(ctx, presentationId) {
   const { repoRoot, req, apiKey, authedUser } = ctx;
 
-  if (!requireScope(ctx, 'comments:write')) return true;
+  if (!requirePermission(ctx, 'comments:write')) return true;
 
   const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
@@ -250,7 +250,7 @@ async function handleCreateComment(ctx, presentationId) {
 async function handleCommentStatus(ctx, commentId) {
   const { req, apiKey, authedUser } = ctx;
 
-  if (!requireScope(ctx, 'comments:write')) return true;
+  if (!requirePermission(ctx, 'comments:write')) return true;
 
   const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
