@@ -205,5 +205,6 @@ nothing is discoverable only by `ls`.
 | [`maintenance-mode.md`](reference/maintenance-mode.md) | Deploying without failing saves in open editors |
 | [`sso-oidc.md`](reference/sso-oidc.md) | SSO via OIDC (single IdP) |
 | [`versioning.md`](reference/versioning.md) | Versioning & releases |
+| [`vocabulary.md`](reference/vocabulary.md) | One word per meaning: the vocabulary register (organization, visibility, permissions, storage scope) and the UI-label rule |
 | [`html-escaping.md`](reference/html-escaping.md) | Escaping and `innerHTML` in the client |
 | [`dynamic-imports.md`](reference/dynamic-imports.md) | When a dynamic `import()` is justified, and where they survive |
