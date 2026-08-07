@@ -87,10 +87,13 @@
   margin: 0 0 var(--slide-space-3);
 }
 
-/* Markdown subheading: ## renders as h3 (since slide title is h2) */
+/* Markdown subheading: ## renders as h3 (since slide title is h2). It sits one
+   scale step above the column prose so a `##` reads as a heading, not a bold
+   line: body is `md` here, so the subheading is `lg` (the 1024px tier drops
+   both a step to keep the same one-step relationship). */
 .slide-comparison .body .md-subheading {
   font-family: var(--font-heading);
-  font-size: var(--slide-text-md);
+  font-size: var(--slide-text-lg);
   line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -196,6 +199,12 @@
 
   .slide-comparison .body {
     font-size: var(--slide-font-size-body);
+  }
+
+  /* Body drops to the `body` role (base) here, so the subheading drops with it
+     to `md` — one step above the prose, same relationship as the base tier. */
+  .slide-comparison .body .md-subheading {
+    font-size: var(--slide-text-md);
   }
 
   .slide-comparison .comparison-verdict .badge {
