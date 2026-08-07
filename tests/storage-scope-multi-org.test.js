@@ -309,6 +309,11 @@ test('the team slide library is per organization', async () => {
   assert.deepEqual(alpha.map((i) => i.id), ['lib-alpha']);
   assert.deepEqual(beta.map((i) => i.id), ['lib-beta']);
   assert.equal(
+    (await getTeamLibraryItem({ organizationId: ORG_A }, 'lib-alpha'))?.id,
+    'lib-alpha',
+    'a team item resolves on its own shelf (the shelf axis is item.scope)'
+  );
+  assert.equal(
     await getTeamLibraryItem({ organizationId: ORG_B }, 'lib-alpha'),
     null,
     "a team shelf is a workspace's own shelf"

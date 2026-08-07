@@ -75,7 +75,7 @@ export async function getTeamLibraryItem(storageScope, id, { userEmail = '' } = 
   const ctx = toStorageContext(storageScope, 'getTeamLibraryItem', { userEmail });
   const storage = getStorage();
   const item = await storage.getSlideLibraryItem(id, ctx);
-  if (!item || item.storageScope !== 'team') return null;
+  if (!item || item.scope !== 'team') return null;
   return item;
 }
 

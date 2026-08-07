@@ -16,7 +16,7 @@ import { resolveScope } from './scope.js';
  * Reduce a caller's storageScope to the context the storage adapters take.
  *
  * The organization is never invented — it comes from the storageScope or the call
- * throws (see {@link module:server/storage/storageScope.resolveScope}). Only the actor
+ * throws (see {@link module:server/storage/scope.resolveScope}). Only the actor
  * may be sharpened per call: a personal-collection op names its `userEmail`, a
  * create attributes to `ownerEmail`, a write to `actorEmail`. At most one of
  * those is ever set on a given call, so the precedence below is a pick, not a
