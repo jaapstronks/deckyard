@@ -26,8 +26,8 @@ import { handleAdminAiLogs } from './admin-ai-logs.js';
 import { handleEmailTemplates } from './email-templates.js';
 import { handleFollowPublic } from './follow.js';
 import { handleFollowCodes } from './follow-codes.js';
-import { handlePresentSessions } from './present-sessions.js';
-import { handlePresentSessionsPublic } from './present-session-audience.js';
+import { handleLiveSessions } from './live-sessions.js';
+import { handleLiveSessionsPublic } from './live-session-audience.js';
 import { handleAssets } from './assets.js';
 import { handleSlideTypes } from './slide-types.js';
 import { handleThemes } from './themes.js';
@@ -128,9 +128,9 @@ export async function handleApi({ repoRoot, req, res, url }) {
   }
   // Present-session companion: the session id in the join link is the
   // authorization, so these sit in front of the login gate (see
-  // present-session-audience.js). Presenter actions on the same session stay
+  // live-session-audience.js). Presenter actions on the same session stay
   // behind deck-write, below.
-  if (await handlePresentSessionsPublic({ repoRoot, req, res, url })) return;
+  if (await handleLiveSessionsPublic({ repoRoot, req, res, url })) return;
   if (await handleSharePublic({ repoRoot, req, res, url })) return;
   if (await handleAnalyticsTrack({ repoRoot, req, res, url })) return;
   if (await handleAnalyticsReportPublic({ repoRoot, req, res, url })) return;
@@ -169,7 +169,7 @@ export async function handleApi({ repoRoot, req, res, url }) {
   const ctx = { repoRoot, storageScope, req, res, url, authedUser };
   const flags = getFeatureFlags();
 
-  if (await handlePresentSessions(ctx)) return;
+  if (await handleLiveSessions(ctx)) return;
   if (await handleAssets(ctx)) return;
   if (await handleSlideTypes(ctx)) return;
   if (await handleThemes(ctx)) return;

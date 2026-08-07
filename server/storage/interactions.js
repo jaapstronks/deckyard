@@ -25,7 +25,7 @@
 
 import { sql } from 'kysely';
 
-import { notifyPresentSessionInteractionState } from './present-sessions/index.js';
+import { notifyLiveSessionInteractionState } from './live-sessions/index.js';
 import { maybeFireInteractionWebhook } from '../utils/webhooks.js';
 import { withDbGuard } from './utils/db-guard.js';
 import {
@@ -151,7 +151,7 @@ async function aggregateForDevice(slide, deviceId) {
 async function maybeBroadcast(repoRoot, sessionId, agg) {
   // Fire and forget; this goes to presenter + follow (via attachSessionSseClient).
   try {
-    await notifyPresentSessionInteractionState(repoRoot, sessionId, agg);
+    await notifyLiveSessionInteractionState(repoRoot, sessionId, agg);
   } catch {
     // ignore
   }

@@ -6,7 +6,7 @@ import { t } from '../../lib/ui-i18n.js';
  * the notes companion drive navigation.
  *
  * The toggle owns nothing beyond its own `checked` / `is-active` — the gate
- * itself lives on the server (`server/storage/present-sessions/control.js`),
+ * itself lives on the server (`server/storage/live-sessions/control.js`),
  * and the presenter view has no state to keep in sync with it.
  *
  * @param {object} opts
@@ -33,7 +33,7 @@ export function createPresenterControlToggle({ h, api, getSessionId } = {}) {
     const on = !!input.checked;
     try {
       await api(
-        `/api/present-sessions/${sessionId}/control/${on ? 'enable' : 'disable'}`,
+        `/api/live-sessions/${sessionId}/control/${on ? 'enable' : 'disable'}`,
         { method: 'POST', body: '{}' }
       );
       label.classList.toggle('is-active', on);

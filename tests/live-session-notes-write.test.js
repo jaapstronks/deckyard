@@ -1,8 +1,8 @@
 /**
- * The notes companion is authorized by the present-session id and nothing else.
+ * The notes companion is authorized by the live-session id and nothing else.
  *
- * `GET /api/present-sessions/:sessionId/deck` and
- * `PUT /api/present-sessions/:sessionId/notes/:slideId` are capability-based:
+ * `GET /api/live-sessions/:sessionId/deck` and
+ * `PUT /api/live-sessions/:sessionId/notes/:slideId` are capability-based:
  * whoever holds the join link may read this session's deck and edit its speaker
  * notes, logged in or not. These tests drive the real handlers against the
  * Postgres adapter on the in-memory database double and pin the boundary:
@@ -14,7 +14,7 @@
  * - an author-locked slide is refused (423);
  * - a successful write broadcasts `deckUpdated` to the session's SSE clients.
  *
- * Run with: node --test tests/present-session-notes-write.test.js
+ * Run with: node --test tests/live-session-notes-write.test.js
  */
 
 import test from 'node:test';
@@ -32,11 +32,11 @@ const { initializeStorage, __resetStorageForTests } = await import(
 const { createPresentation, getPresentation, updatePresentation } = await import(
   '../server/storage/presentations/index.js'
 );
-const { createPresentSession, getPresentSession } = await import(
-  '../server/storage/present-sessions/sessions.js'
+const { createLiveSession, getLiveSession } = await import(
+  '../server/storage/live-sessions/sessions.js'
 );
-const { handlePresentSessionsPublic } = await import(
-  '../server/routes/api/present-session-audience.js'
+const { handleLiveSessionsPublic } = await import(
+  '../server/routes/api/live-session-audience.js'
 );
 const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
 
@@ -110,7 +110,7 @@ function jsonBody(res) {
 /** Drive the public dispatcher for one request. */
 async function call({ method, path, body }) {
   const res = fakeRes();
-  const handled = await handlePresentSessionsPublic({
+  const handled = await handleLiveSessionsPublic({
     repoRoot: REPO_ROOT,
     req: fakeReq({ method, body }),
     res,
@@ -134,7 +134,7 @@ async function seedSessionDeck({ slides } = {}) {
       { type: 'content-slide', content: { title: 'B' }, notes: '' },
     ],
   });
-  const session = await createPresentSession(REPO_ROOT, { presentationId: pres.id });
+  const session = await createLiveSession(REPO_ROOT, { presentationId: pres.id });
   return { pres, sessionId: session.sessionId, slideIds: pres.slides.map((s) => s.id) };
 }
 
@@ -142,7 +142,7 @@ test('GET /deck answers the session deck without any login', async () => {
   const { pres, sessionId } = await seedSessionDeck();
   const { res, handled } = await call({
     method: 'GET',
-    path: `/api/present-sessions/${sessionId}/deck`,
+    path: `/api/live-sessions/${sessionId}/deck`,
   });
   assert.equal(handled, true);
   assert.equal(res.statusCode, 200);
@@ -159,7 +159,7 @@ test('GET /deck answers the session deck without any login', async () => {
 test('GET /deck for an unknown session is a 404', async () => {
   const { res } = await call({
     method: 'GET',
-    path: '/api/present-sessions/00000000-0000-0000-0000-00000000dead/deck',
+    path: '/api/live-sessions/00000000-0000-0000-0000-00000000dead/deck',
   });
   assert.equal(res.statusCode, 404);
 });
@@ -168,7 +168,7 @@ test('PUT /notes/:slideId writes exactly that slide\'s notes', async () => {
   const { pres, sessionId, slideIds } = await seedSessionDeck();
   const { res } = await call({
     method: 'PUT',
-    path: `/api/present-sessions/${sessionId}/notes/${slideIds[1]}`,
+    path: `/api/live-sessions/${sessionId}/notes/${slideIds[1]}`,
     body: { notes: 'Remember the demo.' },
   });
   assert.equal(res.statusCode, 200);
@@ -185,7 +185,7 @@ test('PUT /notes for an unknown session is a 404 and writes nothing', async () =
   const { pres, slideIds } = await seedSessionDeck();
   const { res } = await call({
     method: 'PUT',
-    path: `/api/present-sessions/00000000-0000-0000-0000-00000000dead/notes/${slideIds[0]}`,
+    path: `/api/live-sessions/00000000-0000-0000-0000-00000000dead/notes/${slideIds[0]}`,
     body: { notes: 'should not land' },
   });
   assert.equal(res.statusCode, 404);
@@ -197,7 +197,7 @@ test('PUT /notes for a slide this deck does not have is a 404', async () => {
   const { sessionId } = await seedSessionDeck();
   const { res } = await call({
     method: 'PUT',
-    path: `/api/present-sessions/${sessionId}/notes/not-a-slide`,
+    path: `/api/live-sessions/${sessionId}/notes/not-a-slide`,
     body: { notes: 'nowhere' },
   });
   assert.equal(res.statusCode, 404);
@@ -207,7 +207,7 @@ test('PUT /notes rejects a non-string body', async () => {
   const { sessionId, slideIds } = await seedSessionDeck();
   const { res } = await call({
     method: 'PUT',
-    path: `/api/present-sessions/${sessionId}/notes/${slideIds[0]}`,
+    path: `/api/live-sessions/${sessionId}/notes/${slideIds[0]}`,
     body: { notes: 42 },
   });
   assert.equal(res.statusCode, 400);
@@ -228,7 +228,7 @@ test('PUT /notes refuses an author-locked slide (423)', async () => {
 
   const { res } = await call({
     method: 'PUT',
-    path: `/api/present-sessions/${sessionId}/notes/${slideIds[0]}`,
+    path: `/api/live-sessions/${sessionId}/notes/${slideIds[0]}`,
     body: { notes: 'trying anyway' },
   });
   assert.equal(res.statusCode, 423, 'the companion is never the author');
@@ -238,13 +238,13 @@ test('PUT /notes refuses an author-locked slide (423)', async () => {
 
 test('a successful write broadcasts deckUpdated to the session', async () => {
   const { sessionId, slideIds } = await seedSessionDeck();
-  const session = await getPresentSession(REPO_ROOT, sessionId);
+  const session = await getLiveSession(REPO_ROOT, sessionId);
   const client = fakeSseClient();
   session.clients.add(client);
 
   const { res } = await call({
     method: 'PUT',
-    path: `/api/present-sessions/${sessionId}/notes/${slideIds[0]}`,
+    path: `/api/live-sessions/${sessionId}/notes/${slideIds[0]}`,
     body: { notes: 'now the editor should hear about it' },
   });
   assert.equal(res.statusCode, 200);
@@ -259,7 +259,7 @@ test('re-writing the same notes is a no-op that does not bump the revision', asy
   const before = await getPresentation(testScope(), pres.id);
   const { res } = await call({
     method: 'PUT',
-    path: `/api/present-sessions/${sessionId}/notes/${slideIds[0]}`,
+    path: `/api/live-sessions/${sessionId}/notes/${slideIds[0]}`,
     body: { notes: 'first' },
   });
   assert.equal(res.statusCode, 200);

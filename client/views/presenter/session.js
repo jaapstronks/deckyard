@@ -16,7 +16,7 @@ export async function startPresenterSession({
   onInteractionState,
   onBranch,
 } = {}) {
-  const created = await api('/api/present-sessions', {
+  const created = await api('/api/live-sessions', {
     method: 'POST',
     body: JSON.stringify({ presentationId }),
   });
@@ -24,7 +24,7 @@ export async function startPresenterSession({
   let es = null;
 
   if (sessionId) {
-    es = new EventSource(`/api/present-sessions/${sessionId}/events`);
+    es = new EventSource(`/api/live-sessions/${sessionId}/events`);
     es.addEventListener('control', (ev) => {
       try {
         const data = JSON.parse(ev.data || '{}');

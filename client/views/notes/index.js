@@ -22,7 +22,7 @@ import { attachSwipeNavigation } from '../../lib/dom/swipe-nav.js';
  * (when the session enables it) remote deck control.
  *
  * @param {HTMLElement} root - mount point.
- * @param {string} sessionId - present-session id to follow.
+ * @param {string} sessionId - live-session id to follow.
  * @param {{ user?: object }} [opts]
  * @returns {Promise<() => void>} cleanup function.
  */
@@ -64,14 +64,14 @@ export async function renderNotes(
   });
 
   const sess = await api(
-    `/api/present-sessions/${sessionId}/state`
+    `/api/live-sessions/${sessionId}/state`
   );
   // The deck comes from the session-scoped endpoint, not
   // `GET /api/presentations/:id`: the companion is authorized by the session id
   // in its join link and may have no account at all, so it must never depend on
-  // deck read-auth. See routes/api/present-session-audience.js.
+  // deck read-auth. See routes/api/live-session-audience.js.
   const fetchDeck = () =>
-    api(`/api/present-sessions/${encodeURIComponent(sessionId)}/deck`);
+    api(`/api/live-sessions/${encodeURIComponent(sessionId)}/deck`);
   let pres = normalizePresentation(await fetchDeck());
   let theme = await loadThemeById(pres?.theme);
 

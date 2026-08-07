@@ -71,7 +71,7 @@ function ensureCleanupTimer() {
   }, 60 * 1000).unref?.();
 }
 
-export async function createPresentSession(repoRoot, { presentationId }) {
+export async function createLiveSession(repoRoot, { presentationId }) {
   ensureCleanupTimer();
   const presId = String(presentationId || '').trim();
   if (!presId) return null;
@@ -140,7 +140,7 @@ export async function createPresentSession(repoRoot, { presentationId }) {
   };
 }
 
-export async function getPresentSession(repoRoot, sessionId) {
+export async function getLiveSession(repoRoot, sessionId) {
   return hydrateSession(sessionId);
 }
 
@@ -161,8 +161,8 @@ export async function findMostRecentSessionForPresentation(repoRoot, presentatio
   return best;
 }
 
-export async function touchPresentSession(repoRoot, sessionId) {
-  const s = await getPresentSession(repoRoot, sessionId);
+export async function touchLiveSession(repoRoot, sessionId) {
+  const s = await getLiveSession(repoRoot, sessionId);
   if (!s) return null;
   s.lastActivityAt = Date.now();
   schedulePersist(s);

@@ -38,7 +38,7 @@ import {
   transitionToSlide,
   endAllSlideViewsForSession,
 } from '../../storage/analytics/slide-views.js';
-import { getFollowStateForPresentation } from '../../storage/present-sessions/follow-state.js';
+import { getFollowStateForPresentation } from '../../storage/live-sessions/follow-state.js';
 import { createLogger } from '../../utils/logger.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 const log = createLogger('analytics-track');

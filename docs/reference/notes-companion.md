@@ -7,14 +7,14 @@ reached by scanning the QR code the editor shows (`/notes-join/:sessionId`).
 
 This page describes the **authorization model** the companion runs on, because
 it is different from the rest of the app: the companion is authorized by the
-present-session id in its link, not by a login.
+live-session id in its link, not by a login.
 
 ## The capability
 
-A present-session id is a UUID minted behind deck-write
-(`POST /api/present-sessions`, `server/routes/api/present-sessions.js`) and
+A live-session id is a UUID minted behind deck-write
+(`POST /api/live-sessions`, `server/routes/api/live-sessions.js`) and
 handed out as a join link. It has a 24-hour idle TTL
-(`server/storage/present-sessions/constants.js`).
+(`server/storage/live-sessions/constants.js`).
 
 Handing someone that link is the deck owner's own act. So whoever holds it may:
 
@@ -33,8 +33,8 @@ guest, who may write comments on exactly the deck their token addressed.
 
 | Surface | File |
 |---------|------|
-| The four capability-based routes | `server/routes/api/present-session-audience.js` |
-| Presenter-only routes (state push, interactions, feedback export, control) | `server/routes/api/present-sessions.js` |
+| The four capability-based routes | `server/routes/api/live-session-audience.js` |
+| Presenter-only routes (state push, interactions, feedback export, control) | `server/routes/api/live-sessions.js` |
 | The targeted notes write | `server/storage/presentations/slide-notes.js` |
 | The companion view | `client/views/notes/` (edit UI in `notes-editor.js`) |
 
@@ -47,7 +47,7 @@ anonymous visitor is never bounced to `/login`.
 ## The boundary
 
 Three properties, and each has a test in
-`tests/present-session-notes-write.test.js`:
+`tests/live-session-notes-write.test.js`:
 
 1. **The scope is one session.** Every handler resolves the session first and
    then acts only on `session.presentationId`. No handler accepts a presentation

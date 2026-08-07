@@ -160,7 +160,7 @@ export async function updatePresentation(scope, id, body, opts) {
   // Any successful mutation (editor save, public API, MCP tool) refreshes
   // live presenting clients. Fire-and-forget: a no-op without a live session.
   if (result && result.ok !== false) {
-    import('../present-sessions/sse.js')
+    import('../live-sessions/sse.js')
       .then((m) => m.notifyDeckUpdatedForPresentation(repoRoot, id))
       .catch(() => {});
     // Collab live edits, server-as-collaborator seam (ADR 001 §6): when the

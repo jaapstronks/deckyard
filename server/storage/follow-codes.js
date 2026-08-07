@@ -28,8 +28,8 @@ const CODE_LENGTH = 5;
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPRTUVWXY';
 
 /**
- * How long a minted code stays resolvable. Present sessions use the same
- * window (`present-sessions/constants.js` TTL_MS), so a code outlives the
+ * How long a minted code stays resolvable. Live sessions use the same
+ * window (`live-sessions/constants.js` TTL_MS), so a code outlives the
  * session it was minted for by no more than the session's own idle grace.
  */
 export const FOLLOW_CODE_TTL_MS = 24 * 60 * 60 * 1000;

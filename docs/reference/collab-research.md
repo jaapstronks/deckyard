@@ -49,7 +49,7 @@ embedded JSON — **there is no per-slide row storage** (the
   wins for slides it touched, server's for the rest, additions from both kept.
 - Every mutation funnels through the facade `updatePresentation`
   (`server/storage/presentations.js:78-93`), which invalidates the 2s read
-  cache and notifies live present-sessions over SSE.
+  cache and notifies live live-sessions over SSE.
 - Versions/snapshots are full-document copies with tiered retention
   (`server/storage/presentations/versions.js`), auto-snapshot throttled to one
   per 30 min per deck.
@@ -154,7 +154,7 @@ subtly wrong today, and fundamentally incompatible with concurrent editing.
 - **Plain `node:http`, no framework**, single process, manual routing
   (`server/server.js:41-104`). Port 4177, one `server.listen`.
 - **All realtime today is SSE** (five separate in-process subsystems:
-  comments/locks/presentation-updated, notifications, present-sessions,
+  comments/locks/presentation-updated, notifications, live-sessions,
   follow ticker, MCP). **No WebSocket anywhere**; `ws` is not a dependency;
   there is no `server.on('upgrade')` handler.
 - **Same-port precedent**: the MCP Streamable-HTTP transport is mounted on the
@@ -170,7 +170,7 @@ subtly wrong today, and fundamentally incompatible with concurrent editing.
   to the client (`client/lib/features.js`). A `collab` flag slots straight in.
 - **Tests**: `node --test`; best templates are `tests/mcp/mcp-sse.test.js`
   (transport mounted on the HTTP server) and
-  `tests/present-sessions-deck-updated.test.js` (broadcast path).
+  `tests/live-sessions-deck-updated.test.js` (broadcast path).
 
 ---
 

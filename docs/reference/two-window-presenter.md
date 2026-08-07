@@ -11,7 +11,7 @@ deck there" possible.
 
 - **Master** — the normal presenter view (`/present/:id`, `client/views/presenter.js`).
   Owns keyboard nav, the console rail, the elapsed timer, the highlighter, and
-  the SSE present-session. It is the single source of truth.
+  the SSE live-session. It is the single source of truth.
 - **Projector** — a lightweight follower view (`/present/:id/window`,
   `client/views/present-window.js`). No keys, no session, no console. It reuses
   the **deck-controller** as its render engine and mirrors the master's state.
@@ -26,7 +26,7 @@ its own console so the laptop keeps notes/next/timer.
 `client/lib/net/present-channel.js` wraps a `BroadcastChannel` named
 `deckyard:present:<id>`. It is **local** (same-origin, same-browser) and instant
 — no server round-trip. This deliberately complements, rather than duplicates,
-the SSE present-session, which handles cross-*device* follow/companion. A no-op
+the SSE live-session, which handles cross-*device* follow/companion. A no-op
 fallback keeps things working where `BroadcastChannel` is unavailable.
 
 Message kinds (`{ kind, state? }`):

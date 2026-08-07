@@ -4,7 +4,7 @@
  * Notes are a single markdown string per slide, carried in the deck document
  * (`slides[].notes`). The editor writes them as part of a whole-deck PUT with
  * `If-Match`; the notes companion cannot, because the visitor holding a
- * present-session link has no revision to match against and no business
+ * live-session link has no revision to match against and no business
  * replacing the rest of the deck. So this seam exists: read, replace exactly
  * one field on exactly one slide, write the slides column and nothing else.
  *

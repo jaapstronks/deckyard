@@ -180,7 +180,7 @@ export function createNotesSessionEnsurer({ api, presentationId } = {}) {
     if (notesSessionId) return notesSessionId;
     if (notesSessionInFlight) return notesSessionInFlight;
     notesSessionInFlight = (async () => {
-      const created = await api('/api/present-sessions', {
+      const created = await api('/api/live-sessions', {
         method: 'POST',
         body: JSON.stringify({ presentationId }),
       });

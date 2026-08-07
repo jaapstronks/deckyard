@@ -86,7 +86,7 @@ that module now only reduces a caller's scope to an adapter context
 Three sites, all in the presentations facade's orbit:
 
 - `server/storage/presentation-cache.js` → `./presentations/index.js`
-- `server/storage/presentations/index.js` → `../present-sessions/sse.js`
+- `server/storage/presentations/index.js` → `../live-sessions/sse.js`
 - `server/storage/presentations/index.js` → `../../collab/live-apply.js`
 
 Converting any of these to a static import creates a genuine cycle. They are

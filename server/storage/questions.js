@@ -10,7 +10,7 @@
  *
  * What stays in this process is the SSE registry: the response streams attached
  * here and their heartbeat timers. Those are sockets, so they cannot be shared
- * by a table. As with present sessions, that means fan-out is process-local — a
+ * by a table. As with live sessions, that means fan-out is process-local — a
  * question asked on worker A does not push to a follower attached to worker B
  * until that client re-reads. The list itself is correct everywhere, which the
  * file version could not manage: it only ever showed the questions the process
@@ -520,7 +520,7 @@ export async function attachQuestionsSseClient(repoRoot, sessionId, res) {
 /**
  * Close every question stream this process holds for a session.
  *
- * Called from `present-sessions/close.js`: the question rows go with the
+ * Called from `live-sessions/close.js`: the question rows go with the
  * session through the foreign key, and the sockets have to go with them or
  * followers sit on a feed whose data no longer exists.
  *

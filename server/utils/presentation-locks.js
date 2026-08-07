@@ -1,5 +1,5 @@
 import { isDatabaseAvailable } from '../db/client.js';
-import * as dbLocks from '../storage/presentation-locks-db.js';
+import * as dbLocks from '../storage/presentation-locks.js';
 import { matchesIdentity } from '../../shared/identity-match.js';
 import { norm } from './normalize.js';
 

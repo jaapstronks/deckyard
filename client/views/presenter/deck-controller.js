@@ -239,7 +239,7 @@ export function createPresenterDeckController({
 
   // Local (session-independent) notification that navigation/step state changed.
   // Unlike post() this always fires, so the two-window projector stays in sync
-  // even when there's no SSE present-session.
+  // even when there's no SSE live-session.
   const notifyStateChange = () => {
     onStateChange?.({
       slideIndex: idx,

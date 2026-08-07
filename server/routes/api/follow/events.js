@@ -1,4 +1,4 @@
-import { attachSessionSseClient } from '../../../storage/present-sessions/index.js';
+import { attachSessionSseClient } from '../../../storage/live-sessions/index.js';
 import { sseWrite } from '../../../utils/sse.js';
 import { guardSseConnection } from '../../../utils/sse-limiter.js';
 import { writeSseHeaders } from './helpers.js';

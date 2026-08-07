@@ -19,7 +19,7 @@
  * ## No backfill, and no index — deliberately
  *
  * Unlike 062/063/070, there is **no backfill**. Lock rows are ephemeral: a 2-minute
- * TTL (server/storage/slide-locks.js, presentation-locks-db.js) and a background
+ * TTL (server/storage/slide-locks.js, presentation-locks.js) and a background
  * sweep mean any row present when this migration runs is gone minutes later, and
  * every row written afterwards carries its id from the stamp. Backfilling a table
  * whose contents evaporate would be pure motion. For the same reason these columns

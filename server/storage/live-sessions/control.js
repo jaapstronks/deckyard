@@ -1,4 +1,4 @@
-import { broadcast, getSessionSync, touchSessionSync, updatePresentSessionState } from './sse.js';
+import { broadcast, getSessionSync, touchSessionSync, updateLiveSessionState } from './sse.js';
 import { getPresentation } from '../presentations/index.js';
 import { getOptionCountForSlide } from '../../utils/interaction-helpers.js';
 import { liveInteractionKind } from '../../../shared/slide-types/runtime.js';
@@ -47,7 +47,7 @@ function calculateNewSlideIndex(currentIndex, action, slideCount, gotoIndex) {
   return currentIndex;
 }
 
-export function setPresentSessionControlEnabled(repoRoot, sessionId, enabled) {
+export function setLiveSessionControlEnabled(repoRoot, sessionId, enabled) {
   // Keep sync API surface (called on user interaction)
   const s = getSessionSync(sessionId);
   if (!s) return null;
@@ -60,7 +60,7 @@ export function setPresentSessionControlEnabled(repoRoot, sessionId, enabled) {
   return { controlEnabled: !!s.controlEnabled };
 }
 
-export async function sendPresentSessionControlCommand(repoRoot, sessionId, cmd) {
+export async function sendLiveSessionControlCommand(repoRoot, sessionId, cmd) {
   const s = getSessionSync(sessionId);
   if (!s) return { ok: false, reason: 'not_found' };
   touchSessionSync(s);
@@ -86,7 +86,7 @@ export async function sendPresentSessionControlCommand(repoRoot, sessionId, cmd)
   try {
     const presentationId = s.presentationId;
     const pres = await getPresentation(
-      crossOrganizationScope(repoRoot, 'present session control: the session id is the authorization'),
+      crossOrganizationScope(repoRoot, 'live session control: the session id is the authorization'),
       presentationId
     );
     if (pres) {
@@ -106,7 +106,7 @@ export async function sendPresentSessionControlCommand(repoRoot, sessionId, cmd)
           const slideType = String(slide.type || '');
 
           // Update state and broadcast to all clients (including followers)
-          await updatePresentSessionState(repoRoot, sessionId, {
+          await updateLiveSessionState(repoRoot, sessionId, {
             slideId,
             slideIndex: newIndex,
             slideType,
@@ -117,7 +117,7 @@ export async function sendPresentSessionControlCommand(repoRoot, sessionId, cmd)
           });
 
           // If this is a live slide, eagerly ensure interaction state exists
-          // (same logic as in present-sessions.js POST /state handler)
+          // (same logic as in live-sessions.js POST /state handler)
           const kind = liveInteractionKind(slideType);
           if (kind && slideId) {
             try {

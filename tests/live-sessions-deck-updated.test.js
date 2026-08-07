@@ -5,10 +5,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
-  createPresentSession,
-  getPresentSession,
-} from '../server/storage/present-sessions/sessions.js';
-import { notifyDeckUpdatedForPresentation } from '../server/storage/present-sessions/sse.js';
+  createLiveSession,
+  getLiveSession,
+} from '../server/storage/live-sessions/sessions.js';
+import { notifyDeckUpdatedForPresentation } from '../server/storage/live-sessions/sse.js';
 
 function fakeSseClient() {
   const chunks = [];
@@ -28,10 +28,10 @@ test('notifyDeckUpdatedForPresentation broadcasts deckUpdated to session clients
   const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-deck-updated-'));
   const presentationId = 'pres-deck-updated-test';
 
-  const created = await createPresentSession(repoRoot, { presentationId });
+  const created = await createLiveSession(repoRoot, { presentationId });
   assert.ok(created?.sessionId, 'session should be created');
 
-  const session = await getPresentSession(repoRoot, created.sessionId);
+  const session = await getLiveSession(repoRoot, created.sessionId);
   const client = fakeSseClient();
   session.clients.add(client);
 
@@ -59,7 +59,7 @@ test('notifyDeckUpdatedForPresentation is a no-op without a live session', async
 test('notifyDeckUpdatedForPresentation ignores sessions without clients', async () => {
   const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-deck-updated-'));
   const presentationId = 'pres-no-clients-test';
-  await createPresentSession(repoRoot, { presentationId });
+  await createLiveSession(repoRoot, { presentationId });
 
   const result = await notifyDeckUpdatedForPresentation(repoRoot, presentationId);
   assert.equal(result.ok, false);

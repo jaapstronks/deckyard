@@ -6,7 +6,7 @@ import {
   unauthorized,
   requireJsonBody,
 } from '../../utils/http.js';
-import { getFollowStateForPresentation } from '../../storage/present-sessions/index.js';
+import { getFollowStateForPresentation } from '../../storage/live-sessions/index.js';
 import crypto from 'node:crypto';
 import {
   getQuestion,
@@ -19,7 +19,7 @@ import {
 } from '../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
 import { normalizeLang } from '../../utils/translation-status.js';
-import { notifyPresentSessionDeckUpdated } from '../../storage/present-sessions/index.js';
+import { notifyLiveSessionDeckUpdated } from '../../storage/live-sessions/index.js';
 import { canWritePresentation } from '../../utils/presentation-authz.js';
 
 export async function handleQuestions({ repoRoot, storageScope, req, res, url, authedUser }) {
@@ -172,7 +172,7 @@ export async function handleQuestions({ repoRoot, storageScope, req, res, url, a
       slideId,
       promotedBy: authedUser.email || 'moderator',
     });
-    notifyPresentSessionDeckUpdated(repoRoot, state.sessionId, {
+    notifyLiveSessionDeckUpdated(repoRoot, state.sessionId, {
       presentationId,
       slideId,
       reason: 'question_promoted',

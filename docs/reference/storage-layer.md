@@ -47,7 +47,7 @@ each path resolves.
   one deliberately cross-org read.
 - `server/storage/share-links/` — token share links (`crud.js`, `guests.js`,
   `access-log.js`).
-- `server/storage/present-sessions/` — live present/follow sessions (`sessions.js`,
+- `server/storage/live-sessions/` — live present/follow sessions (`sessions.js`,
   `sse.js`, `control.js`, `state.js`, `close.js`, `db.js`). See
   [`live-sessions.md`](live-sessions.md).
 - `server/storage/slide-library/`, `server/storage/slide-library-usage/`,

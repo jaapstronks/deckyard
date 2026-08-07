@@ -2,10 +2,10 @@ import { sseComment, sseWrite } from '../../utils/sse.js';
 import { HEARTBEAT_MS } from './constants.js';
 import { schedulePersist } from './db.js';
 import { sessions } from './state.js';
-import { touchPresentSession, findMostRecentSessionForPresentation } from './sessions.js';
+import { touchLiveSession, findMostRecentSessionForPresentation } from './sessions.js';
 
 export async function attachSessionSseClient(repoRoot, sessionId, res) {
-  const s = await touchPresentSession(repoRoot, sessionId);
+  const s = await touchLiveSession(repoRoot, sessionId);
   if (!s) return null;
 
   s.clients.add(res);
@@ -70,7 +70,7 @@ export async function broadcast(repoRoot, sessionId, event, data) {
   return true;
 }
 
-export async function notifyPresentSessionInteractionState(repoRoot, sessionId, interactionState) {
+export async function notifyLiveSessionInteractionState(repoRoot, sessionId, interactionState) {
   const sid = String(sessionId || '').trim();
   if (!sid) return false;
   return broadcast(repoRoot, sid, 'interactionState', {
@@ -79,7 +79,7 @@ export async function notifyPresentSessionInteractionState(repoRoot, sessionId, 
   });
 }
 
-export function notifyPresentSessionDeckUpdated(
+export function notifyLiveSessionDeckUpdated(
   repoRoot,
   sessionId,
   { presentationId = '', slideId = '', reason = 'deck_updated' } = {}
@@ -110,7 +110,7 @@ export async function notifyDeckUpdatedForPresentation(
   if (!pid) return { ok: false, reason: 'missing_presentationId' };
   const s = await findMostRecentSessionForPresentation(repoRoot, pid);
   if (!s?.sessionId || !s.clients?.size) return { ok: false, reason: 'no_live_session' };
-  return notifyPresentSessionDeckUpdated(repoRoot, s.sessionId, {
+  return notifyLiveSessionDeckUpdated(repoRoot, s.sessionId, {
     presentationId: pid,
     slideId,
     reason,
@@ -134,8 +134,8 @@ export function broadcastBranch(
   return { ok: true };
 }
 
-export async function updatePresentSessionState(repoRoot, sessionId, nextState) {
-  const s = await touchPresentSession(repoRoot, sessionId);
+export async function updateLiveSessionState(repoRoot, sessionId, nextState) {
+  const s = await touchLiveSession(repoRoot, sessionId);
   if (!s) return null;
   const slideId = typeof nextState?.slideId === 'string' ? nextState.slideId : '';
   const slideIndex = Number(nextState?.slideIndex || 0) || 0;

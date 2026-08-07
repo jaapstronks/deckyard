@@ -229,7 +229,7 @@ await initializeStorage();
 await initializeMediaProvider(repoRoot);
 await initSanitizer(); // Enable sync HTML sanitization for markdown rendering
 startSandboxCleanupLoop();
-startLiveSessionCleanupLoop(); // TTL sweep for present sessions + follow codes
+startLiveSessionCleanupLoop(); // TTL sweep for live sessions + follow codes
 startHeartbeat(); // SSE heartbeat for real-time comment updates
 const authCleanupJob = scheduleAuthCleanup(); // Clean expired tokens hourly
 const digestEmailJob = scheduleDigestEmailJob({ repoRoot }); // Weekly digest emails
