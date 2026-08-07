@@ -49,7 +49,7 @@ embedded JSON — **there is no per-slide row storage** (the
   wins for slides it touched, server's for the rest, additions from both kept.
 - Every mutation funnels through the facade `updatePresentation`
   (`server/storage/presentations.js:78-93`), which invalidates the 2s read
-  cache and notifies live live-sessions over SSE.
+  cache and notifies live sessions over SSE.
 - Versions/snapshots are full-document copies with tiered retention
   (`server/storage/presentations/versions.js`), auto-snapshot throttled to one
   per 30 min per deck.

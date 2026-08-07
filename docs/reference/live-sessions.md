@@ -1,8 +1,8 @@
-# Live (present) sessions & SSE
+# Live sessions & SSE
 
 ## Purpose & scope
 
-A **present session** is the server-side machinery behind live presenting: a
+A **live session** is the server-side machinery behind live presenting: a
 presenter starts a session for a deck, an audience joins on their own devices,
 and the presenter's current slide (plus poll/Q&A/feedback state) is pushed to
 everyone over Server-Sent Events. This document covers that session and SSE
@@ -10,11 +10,13 @@ layer. The presenter's own two-window UI is described in
 [`two-window-presenter.md`](two-window-presenter.md); this doc is the layer
 underneath it.
 
-**Naming.** The code and database call the entity a **present session**
-(`present_sessions` table, `session_id`, `/api/live-sessions/…`). "Live" is
-only ever an adjective — a `follow-state` status value of `'live'` means a
-session whose presenter pushed state recently. This doc uses "present session"
-for the entity and "live" for an active one, matching the code.
+**Naming.** The code calls the entity a **live session** everywhere
+(`server/storage/live-sessions/`, `LiveSession*` identifiers,
+`/api/live-sessions/…`) since the B41-b sweep. The one exception is the
+**physical table `present_sessions`** (and its columns/indexes), kept until a
+rename migration is worth doing. Distinguish the entity from the adjective: a
+`follow-state` status value of `'live'` means a session whose presenter pushed
+state recently — a live session can be `ended` or `not_started`.
 
 ## Module map
 
@@ -28,17 +30,17 @@ Storage (`server/storage/live-sessions/`, 10 modules):
   `Map<sessionId, session>` of hot session objects (sockets, timers).
 - `server/storage/live-sessions/ids.js` — `newSessionId()`, `nowState()`.
 - `server/storage/live-sessions/sessions.js` — lifecycle
-  (`createPresentSession` create-or-reuse per deck, `getPresentSession`,
-  `touchPresentSession`), follow-code minting, in-memory TTL cleanup.
+  (`createLiveSession` create-or-reuse per deck, `getLiveSession`,
+  `touchLiveSession`), follow-code minting, in-memory TTL cleanup.
 - `server/storage/live-sessions/db.js` — Postgres persistence of the *cold*
   half (`present_sessions` row): `persistSession`, `schedulePersist` (600 ms
   debounce), `hydrateSession`, `sweepExpiredSessions`.
 - `server/storage/live-sessions/sse.js` — the SSE fan-out
-  (`attachSessionSseClient`, `broadcast`, `updatePresentSessionState`,
-  `notifyPresentSessionInteractionState`, `notifyPresentSessionDeckUpdated`,
+  (`attachSessionSseClient`, `broadcast`, `updateLiveSessionState`,
+  `notifyLiveSessionInteractionState`, `notifyLiveSessionDeckUpdated`,
   `broadcastBranch`). **Process-local only** (see *Implementation status*).
 - `server/storage/live-sessions/control.js` — follower remote-control
-  (`setPresentSessionControlEnabled`, `sendPresentSessionControlCommand`).
+  (`setLiveSessionControlEnabled`, `sendLiveSessionControlCommand`).
 - `server/storage/live-sessions/follow-state.js` — `getFollowStateForPresentation`,
   the read model resolving a deck's most-recent session to
   `live` / `ended` / `not_started` / `not_found`.
@@ -64,9 +66,9 @@ SSE helpers:
   streams (`guardSseConnection`): global cap, per-IP cap, absolute-lifetime
   force-close.
 
-## What a present session is
+## What a live session is
 
-A present session is **two halves** (documented in `db.js`):
+A live session is **two halves** (documented in `db.js`):
 
 1. a **hot object** in `state.js`'s `Map` — the SSE client sockets and
    heartbeat timers, necessarily process-local; and
@@ -101,13 +103,13 @@ ON DELETE CASCADE`, so closing a session cascades them away.
 ## Flows
 
 - **Create** — presenter (deck-write) `POST /api/live-sessions
-  {presentationId}`. `createPresentSession` reuses a non-expired session for that
+  {presentationId}`. `createLiveSession` reuses a non-expired session for that
   deck (idempotent per deck) or mints a new UUID, mints per-language follow
   codes, and returns `{sessionId, joinPath, followCodes}`.
 - **Join** — audience connects with only the session id (companion) or the
   presentation id via a follow code (follow-along). No login.
 - **Advance** — presenter `POST /api/live-sessions/:id/state` pushes the
-  slide position; `updatePresentSessionState` stores it and `broadcast`s a
+  slide position; `updateLiveSessionState` stores it and `broadcast`s a
   `state` event to all local clients. A follower with control enabled can
   `POST /api/live-sessions/:id/control` (next/prev/goto), and `control.js`
   computes the target slide and pushes state.
@@ -152,7 +154,7 @@ ON DELETE CASCADE`, so closing a session cascades them away.
 
 Internal constants (not env): `TTL_MS` (24 h idle session), `HEARTBEAT_MS`
 (15 s), follow-code TTL (24 h, `server/storage/follow-codes.js`), status tick
-(2 s), persist debounce (600 ms). **No feature flag** gates present sessions,
+(2 s), persist debounce (600 ms). **No feature flag** gates live sessions,
 and there is **no max-audience** cap beyond the SSE connection caps.
 
 ## Authz & tenancy
@@ -165,7 +167,7 @@ and there is **no max-audience** cap beyond the SSE connection caps.
   id** authorizes follow routes. A join link is explicitly not a login — the
   companion deck read is narrowed (slides/notes/title/theme/lang only, no
   owner/collaborators/settings/history).
-- **Org-scoping**: present sessions are **not** org-scoped (migration 060 dropped
+- **Org-scoping**: live sessions are **not** org-scoped (migration 060 dropped
   the column). Cross-org reads go through `crossOrganizationScope(reason, …)`;
   org deletion still cascades sessions away via `presentation_id`. The anonymous
   speaker-notes write (`PUT /api/live-sessions/:id/notes/:slideId`,
