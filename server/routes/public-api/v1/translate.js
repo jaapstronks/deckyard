@@ -12,7 +12,7 @@ import {
   normalizeLang,
   TRANSLATION_LANGS,
 } from '../../../storage/presentations/i18n.js';
-import { requireScope, getPresentationWithAccess, readApiV1Body, checkAiLimit, trackAiRequest, apiSuccess, apiError } from './middleware.js';
+import { requirePermission, getPresentationWithAccess, readApiV1Body, checkAiLimit, trackAiRequest, apiSuccess, apiError } from './middleware.js';
 
 // ============================================================
 // ROUTE HANDLERS
@@ -31,8 +31,8 @@ import { requireScope, getPresentationWithAccess, readApiV1Body, checkAiLimit, t
 async function handleTranslate(ctx, presentationId) {
   const { storageScope, req, apiKey } = ctx;
 
-  // Require 'ai' scope for translation
-  if (!requireScope(ctx, 'ai')) return true;
+  // Require the 'ai' permission for translation
+  if (!requirePermission(ctx, 'ai')) return true;
 
   // Check daily AI rate limit
   if (!(await checkAiLimit(ctx))) return true;
@@ -180,7 +180,7 @@ async function handleTranslate(ctx, presentationId) {
  * GET /api/v1/presentations/:id/translate/languages - List supported languages.
  */
 async function handleListLanguages(ctx) {
-  if (!requireScope(ctx, 'read')) return true;
+  if (!requirePermission(ctx, 'read')) return true;
 
   await apiSuccess(ctx, {
     languages: TRANSLATION_LANGS.map((code) => ({

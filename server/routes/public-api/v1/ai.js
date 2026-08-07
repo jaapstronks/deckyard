@@ -19,7 +19,7 @@ import { loadDisabledSlideTypes, loadCustomSlideTypes } from '../../../utils/org
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('ai');
 import {
-  requireScope,
+  requirePermission,
   readApiV1Body,
   checkAiLimit,
   trackAiRequest,
@@ -52,8 +52,8 @@ function getAiParams(body) {
  * GET /api/v1/ai/vendors - Get available LLM vendors.
  */
 async function handleVendors(ctx) {
-  // Read scope is sufficient for checking vendors
-  if (!requireScope(ctx, 'read')) return true;
+  // The 'read' permission is sufficient for checking vendors
+  if (!requirePermission(ctx, 'read')) return true;
 
   const status = getLlmStatus();
   await apiSuccess(ctx, {
@@ -68,7 +68,7 @@ async function handleVendors(ctx) {
 async function handleWizard(ctx) {
   const { storageScope, apiKey } = ctx;
 
-  if (!requireScope(ctx, 'ai')) return true;
+  if (!requirePermission(ctx, 'ai')) return true;
 
   // Check AI limit
   if (!(await checkAiLimit(ctx))) return true;
@@ -160,7 +160,7 @@ async function handleWizard(ctx) {
 async function handleAppendSlides(ctx) {
   const { apiKey } = ctx;
 
-  if (!requireScope(ctx, 'ai')) return true;
+  if (!requirePermission(ctx, 'ai')) return true;
 
   if (!(await checkAiLimit(ctx))) return true;
 

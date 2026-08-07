@@ -14,11 +14,11 @@ info:
 
     You can create and manage API keys in your Deckyard settings.
 
-    ## Scopes
+    ## Permissions
 
-    Each API key carries a set of scopes that gate what it may do:
+    Each API key carries a set of permissions that gate what it may do:
 
-    | Scope | Grants |
+    | Permission | Grants |
     |-------|--------|
     | `read` | Read presentations, themes, slide types |
     | `write` | Create, update, delete presentations |
@@ -73,7 +73,7 @@ tags:
   - name: Slides
     description: Slide-level operations within presentations
   - name: Comments
-    description: Read and respond to reviewer comments (scopes comments:read / comments:write)
+    description: Read and respond to reviewer comments (permissions comments:read / comments:write)
   - name: Publishing
     description: Publish and unpublish presentations
   - name: Translation
@@ -965,7 +965,7 @@ paths:
       summary: Translate presentation
       description: |
         Uses AI to translate the presentation to a target language.
-        Requires the 'ai' scope on your API key.
+        Requires the 'ai' permission on your API key.
       parameters:
         - name: id
           in: path
@@ -1593,7 +1593,7 @@ paths:
         slide snapshot captured when the comment was created
         (`slideSnapshot`, `null` for comments that predate snapshots) and an
         `editUrl` deep link anchored to the commented slide.
-        Requires the `comments:read` scope and the database storage backend.
+        Requires the `comments:read` permission and the database storage backend.
       parameters:
         - name: id
           in: path
@@ -1658,7 +1658,7 @@ paths:
       description: |
         Creates a comment (or a reply when `parentId` is given) authored by
         the API key owner. When `slideId` is given, a snapshot of that slide
-        is stored with the comment. Requires the `comments:write` scope and
+        is stored with the comment. Requires the `comments:write` permission and
         comment permission on the presentation (owner/creator, workspace
         member, or collaborator with comment rights).
       parameters:
@@ -1716,7 +1716,7 @@ paths:
       description: |
         Resolve, reopen or dismiss a comment. Allowed transitions follow the
         app: open→resolved, open→dismissed, resolved→open (409 otherwise).
-        Requires the `comments:write` scope; only the presentation
+        Requires the `comments:write` permission; only the presentation
         owner/creator may change status.
       parameters:
         - name: commentId

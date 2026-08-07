@@ -25,14 +25,14 @@ export async function fetchApiKeys({ includeRevoked = false } = {}) {
  * Create a new API key.
  * @param {Object} options
  * @param {string} options.name - Key name
- * @param {string[]} options.scopes - Key scopes
+ * @param {string[]} options.permissions - Key permissions
  * @returns {Promise<{key: Object}|{error: string}>}
  */
-export async function createApiKey({ name, scopes }) {
+export async function createApiKey({ name, permissions }) {
   try {
     const data = await api('/api/api-keys', {
       method: 'POST',
-      body: { name, scopes },
+      body: { name, permissions },
     });
     return { key: data };
   } catch (e) {

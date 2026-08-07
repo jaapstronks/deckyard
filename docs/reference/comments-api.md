@@ -8,17 +8,17 @@ fixed in slide 7' → resolve"*.
 Comments live in PostgreSQL, like all deck storage; without a reachable
 database the endpoints/tools return empty results or a clear error.
 
-## Key scopes
+## Key permissions
 
-Two dedicated scopes gate comment access (Settings → API Keys):
+Two dedicated permissions gate comment access (Settings → API Keys):
 
-| Scope | Grants |
+| Permission | Grants |
 |-------|--------|
 | `comments:read` | Read comments on presentations the key owner can read |
 | `comments:write` | Create comments/replies, resolve/reopen/dismiss |
 
-Existing keys don't have these scopes and get a `403 API key lacks required
-scope` until recreated (or granted the scope).
+Existing keys don't have these permissions and get a `403 API key lacks
+required permission` until recreated (or granted the permission).
 
 ## Payload: slide context and snapshots
 

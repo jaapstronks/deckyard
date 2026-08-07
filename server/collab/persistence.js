@@ -63,7 +63,7 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
    * back to the single workspace there is exact, and throws if there ever is
    * more than one.
    */
-  function scopeFor(documentName) {
+  function storageScopeFor(documentName) {
     const base = documentScope ? documentScope(documentName) : {};
     const organizationId =
       base.organizationId || documentOrganizations.get(documentName) || null;
@@ -94,7 +94,7 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
     const id = presentationIdFromDocumentName(documentName);
     if (!id) return document;
 
-    const stored = await getYDocState(scopeFor(documentName), id);
+    const stored = await getYDocState(storageScopeFor(documentName), id);
     if (stored instanceof Uint8Array && stored.length > 0) {
       Y.applyUpdate(document, stored, 'collab-load');
       customHtmlSnapshots.set(documentName, extractCustomHtml(document, Y));
@@ -104,7 +104,7 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
     // The connection was authorized in onConnect, which is where a deck the user
     // may not read is rejected; this read is addressed by that authorization.
     const pres = await getPresentation(
-      { ...scopeFor(documentName), crossOrganization: 'collab document load: the connection was authorized in onConnect' },
+      { ...storageScopeFor(documentName), crossOrganization: 'collab document load: the connection was authorized in onConnect' },
       id
     );
     if (!pres) return document; // authz already rejected unknown decks
@@ -121,7 +121,7 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
     // Persist the bootstrap immediately so later opens load the doc binary
     // instead of re-bootstrapping (and re-normalizing) from JSON.
     try {
-      await setYDocState(scopeFor(documentName), id, Y.encodeStateAsUpdate(document));
+      await setYDocState(storageScopeFor(documentName), id, Y.encodeStateAsUpdate(document));
     } catch (err) {
       log.error(`[collab] failed to store bootstrap state for ${id}:`, err?.message || err);
     }
@@ -170,7 +170,7 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
     }
 
     try {
-      await setYDocState(scopeFor(documentName), id, Y.encodeStateAsUpdate(document));
+      await setYDocState(storageScopeFor(documentName), id, Y.encodeStateAsUpdate(document));
     } catch (err) {
       // Do NOT fall through to the JSON write. If the binary store failed but
       // the JSON write then succeeded, the stored binary would be OLDER than
@@ -197,10 +197,10 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
       // server save to the doc (live-apply.js flushes this hook on
       // disconnect). Storing anyway would bump the revision and fire SSE
       // for a byte-identical deck.
-      const scope = scopeFor(documentName);
-      const current = await getPresentation(scope, id);
+      const storageScope = storageScopeFor(documentName);
+      const current = await getPresentation(storageScope, id);
       if (current && isDeepStrictEqual(projected, current)) return;
-      const result = await updatePresentation(scope, id, projected, {
+      const result = await updatePresentation(storageScope, id, projected, {
         bypassLockCheck: true,
         reason: 'collab',
       });

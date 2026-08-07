@@ -110,43 +110,43 @@ export function showCreateModal(onSuccess) {
   });
   nameLabel.append(nameLabelText, nameInput);
 
-  // Scopes
-  const scopesLabel = h('div', { class: 'stack', style: 'gap: 8px;' });
-  const scopesLabelText = h('span', {
+  // Permissions
+  const permissionsLabel = h('div', { class: 'stack', style: 'gap: 8px;' });
+  const permissionsLabelText = h('span', {
     class: 'field-label',
-    text: t('settings.apiKeys.createModal.scopesLabel', 'Permissions'),
+    text: t('settings.apiKeys.createModal.permissionsLabel', 'Permissions'),
   });
 
-  const scopeCheckboxes = h('div', { class: 'stack', style: 'gap: 8px;' });
+  const permissionCheckboxes = h('div', { class: 'stack', style: 'gap: 8px;' });
 
-  const scopes = [
-    { value: 'read', label: t('settings.apiKeys.scopes.read', 'Read'), desc: t('settings.apiKeys.scopeDesc.read', 'Read presentations, themes, and slide types'), defaultChecked: true },
-    { value: 'write', label: t('settings.apiKeys.scopes.write', 'Write'), desc: t('settings.apiKeys.scopeDesc.write', 'Create, update, and delete presentations'), defaultChecked: true },
-    { value: 'ai', label: t('settings.apiKeys.scopes.ai', 'AI'), desc: t('settings.apiKeys.scopeDesc.ai', 'Use AI generation and refinement features'), defaultChecked: false },
-    { value: 'export', label: t('settings.apiKeys.scopes.export', 'Export'), desc: t('settings.apiKeys.scopeDesc.export', 'Export presentations to HTML, JSON, or PDF'), defaultChecked: false },
-    { value: 'comments:read', label: t('settings.apiKeys.scopes.commentsRead', 'Comments: read'), desc: t('settings.apiKeys.scopeDesc.commentsRead', 'Read comments on accessible presentations'), defaultChecked: false },
-    { value: 'comments:write', label: t('settings.apiKeys.scopes.commentsWrite', 'Comments: write'), desc: t('settings.apiKeys.scopeDesc.commentsWrite', 'Add comments and replies, resolve or reopen them'), defaultChecked: false },
+  const permissions = [
+    { value: 'read', label: t('settings.apiKeys.permissions.read', 'Read'), desc: t('settings.apiKeys.permissionDesc.read', 'Read presentations, themes, and slide types'), defaultChecked: true },
+    { value: 'write', label: t('settings.apiKeys.permissions.write', 'Write'), desc: t('settings.apiKeys.permissionDesc.write', 'Create, update, and delete presentations'), defaultChecked: true },
+    { value: 'ai', label: t('settings.apiKeys.permissions.ai', 'AI'), desc: t('settings.apiKeys.permissionDesc.ai', 'Use AI generation and refinement features'), defaultChecked: false },
+    { value: 'export', label: t('settings.apiKeys.permissions.export', 'Export'), desc: t('settings.apiKeys.permissionDesc.export', 'Export presentations to HTML, JSON, or PDF'), defaultChecked: false },
+    { value: 'comments:read', label: t('settings.apiKeys.permissions.commentsRead', 'Comments: read'), desc: t('settings.apiKeys.permissionDesc.commentsRead', 'Read comments on accessible presentations'), defaultChecked: false },
+    { value: 'comments:write', label: t('settings.apiKeys.permissions.commentsWrite', 'Comments: write'), desc: t('settings.apiKeys.permissionDesc.commentsWrite', 'Add comments and replies, resolve or reopen them'), defaultChecked: false },
   ];
 
-  for (const scope of scopes) {
+  for (const permission of permissions) {
     const checkbox = h('input', {
       type: 'checkbox',
-      value: scope.value,
-      'data-scope': scope.value,
+      value: permission.value,
+      'data-permission': permission.value,
     });
-    if (scope.defaultChecked) checkbox.checked = true;
+    if (permission.defaultChecked) checkbox.checked = true;
 
-    const checkRow = h('label', { class: 'api-key-scope-checkbox' }, [
+    const checkRow = h('label', { class: 'api-key-permission-checkbox' }, [
       checkbox,
-      h('div', { class: 'api-key-scope-text' }, [
-        h('span', { class: 'api-key-scope-label', text: scope.label }),
-        h('span', { class: 'api-key-scope-desc', text: scope.desc }),
+      h('div', { class: 'api-key-permission-text' }, [
+        h('span', { class: 'api-key-permission-label', text: permission.label }),
+        h('span', { class: 'api-key-permission-desc', text: permission.desc }),
       ]),
     ]);
-    scopeCheckboxes.append(checkRow);
+    permissionCheckboxes.append(checkRow);
   }
 
-  scopesLabel.append(scopesLabelText, scopeCheckboxes);
+  permissionsLabel.append(permissionsLabelText, permissionCheckboxes);
 
   // Status message
   const status = h('div', { class: 'help modal-status' });
@@ -169,7 +169,7 @@ export function showCreateModal(onSuccess) {
     if (busy) return;
 
     const name = nameInput.value.trim();
-    const selectedScopes = Array.from(scopeCheckboxes.querySelectorAll('input[type="checkbox"]:checked'))
+    const selectedPermissions = Array.from(permissionCheckboxes.querySelectorAll('input[type="checkbox"]:checked'))
       .map(cb => cb.value);
 
     if (!name) {
@@ -177,18 +177,18 @@ export function showCreateModal(onSuccess) {
       return;
     }
 
-    if (selectedScopes.length === 0) {
-      status.textContent = t('settings.apiKeys.createModal.scopeRequired', 'Please select at least one permission.');
+    if (selectedPermissions.length === 0) {
+      status.textContent = t('settings.apiKeys.createModal.permissionRequired', 'Please select at least one permission.');
       return;
     }
 
     busy = true;
     btnSubmit.disabled = true;
     nameInput.disabled = true;
-    scopeCheckboxes.querySelectorAll('input').forEach(cb => cb.disabled = true);
+    permissionCheckboxes.querySelectorAll('input').forEach(cb => cb.disabled = true);
     status.textContent = t('settings.apiKeys.createModal.creating', 'Creating...');
 
-    const result = await createApiKey({ name, scopes: selectedScopes });
+    const result = await createApiKey({ name, permissions: selectedPermissions });
 
     if (result.key) {
       // Show the key display modal
@@ -202,7 +202,7 @@ export function showCreateModal(onSuccess) {
       busy = false;
       btnSubmit.disabled = false;
       nameInput.disabled = false;
-      scopeCheckboxes.querySelectorAll('input').forEach(cb => cb.disabled = false);
+      permissionCheckboxes.querySelectorAll('input').forEach(cb => cb.disabled = false);
     }
   };
 
@@ -214,7 +214,7 @@ export function showCreateModal(onSuccess) {
   const btnRow = h('div', { class: 'api-key-modal-buttons' });
   btnRow.append(btnCancel, btnSubmit);
 
-  form.append(nameLabel, scopesLabel, status, btnRow);
+  form.append(nameLabel, permissionsLabel, status, btnRow);
   modal.append(modalTitle, form);
   overlay.append(modal);
   document.body.append(overlay);

@@ -34,43 +34,43 @@ const log = createLogger('presentations');
 const ALLOW_CROSS_ORG = { allowCrossOrganization: true };
 
 /**
- * List the presentations of the scope's organization.
- * @param {import('../scope.js').StorageScope} scope
+ * List the presentations of the storageScope's organization.
+ * @param {import('../scope.js').StorageScope} storageScope
  * @returns {Promise<Array>}
  */
-export async function listPresentations(scope) {
-  const ctx = toStorageContext(scope, 'listPresentations');
+export async function listPresentations(storageScope) {
+  const ctx = toStorageContext(storageScope, 'listPresentations');
   const storage = getStorage();
   return storage.listPresentations(ctx);
 }
 
 /**
- * Fetch one presentation by id, within the scope's organization.
- * @param {import('../scope.js').StorageScope} scope
+ * Fetch one presentation by id, within the storageScope's organization.
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} id
  * @returns {Promise<Object|null>}
  */
-export async function getPresentation(scope, id) {
+export async function getPresentation(storageScope, id) {
   // The single durable read funnel: every stored deck is migrated up to the
   // current schema version in memory here, so callers (editor, exports, the
   // semantic projection) never see a legacy shape. Reads don't write; the
   // upgraded deck is persisted on the next write.
-  const ctx = toStorageContext(scope, 'getPresentation', {}, ALLOW_CROSS_ORG);
+  const ctx = toStorageContext(storageScope, 'getPresentation', {}, ALLOW_CROSS_ORG);
   const storage = getStorage();
   return migratePresentation(await storage.getPresentation(id, ctx));
 }
 
 /**
- * Create a presentation in the scope's organization.
- * @param {import('../scope.js').StorageScope} scope
+ * Create a presentation in the storageScope's organization.
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {Object} body
  * @returns {Promise<Object>}
  */
-export async function createPresentation(scope, body) {
-  // Validate the scope before doing any work: a caller that gave none must fail
+export async function createPresentation(storageScope, body) {
+  // Validate the storageScope before doing any work: a caller that gave none must fail
   // here, not after preparing a deck it has nowhere to put.
-  const ctx = toStorageContext(scope, 'createPresentation', { actorEmail: body?.ownerEmail });
-  const repoRoot = repoRootOf(scope);
+  const ctx = toStorageContext(storageScope, 'createPresentation', { actorEmail: body?.ownerEmail });
+  const repoRoot = repoRootOf(storageScope);
   // Sandbox: refuse the mint (typed 4xx) once the guest is at their storage
   // quota, before preparing anything. Enforced here in the facade; no-op
   // outside sandbox mode.
@@ -100,25 +100,25 @@ export async function createPresentation(scope, body) {
 }
 
 /**
- * Update a presentation within the scope's organization.
- * @param {import('../scope.js').StorageScope} scope
+ * Update a presentation within the storageScope's organization.
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} id
  * @param {Object} body
  * @param {Object} [opts]
  * @returns {Promise<Object>}
  */
-export async function updatePresentation(scope, id, body, opts) {
+export async function updatePresentation(storageScope, id, body, opts) {
   // Validate up front: the pre-save reads below would otherwise be the first
   // thing to notice a caller that stated no organization.
-  toStorageContext(scope, 'updatePresentation', { actorEmail: opts?.actorEmail });
-  const repoRoot = repoRootOf(scope);
+  toStorageContext(storageScope, 'updatePresentation', { actorEmail: opts?.actorEmail });
+  const repoRoot = repoRootOf(storageScope);
   // Server-as-collaborator seam: capture the pre-save state first. It is
   // the base the caller's write was computed against, and live-apply's
   // three-way diff needs it to leave concurrent client edits alone.
   const collabEligible = opts?.reason !== 'collab' && isCollabLiveEditsEnabled();
   let collabBase = null;
   if (collabEligible) {
-    collabBase = await getPresentation(scope, id).catch(() => null);
+    collabBase = await getPresentation(storageScope, id).catch(() => null);
   }
 
   // Merge-capable save (editor autosave with If-Match + modified-slide ids)
@@ -128,13 +128,13 @@ export async function updatePresentation(scope, id, body, opts) {
   const expectedRevision = Number(opts?.expectedRevision);
   if (Number.isFinite(expectedRevision) && Array.isArray(opts?.modifiedSlideIds)) {
     try {
-      const current = collabBase || (await getPresentation(scope, id));
+      const current = collabBase || (await getPresentation(storageScope, id));
       if (current && Number(current.revision) - expectedRevision > 1) {
-        await createPresentationVersion(scope, id, current, {
+        await createPresentationVersion(storageScope, id, current, {
           actorEmail: opts?.actorEmail || null,
           reason: 'pre_merge',
         });
-        await prunePresentationVersions(scope, id);
+        await prunePresentationVersions(storageScope, id);
       }
     } catch {
       // snapshots are best-effort
@@ -143,7 +143,7 @@ export async function updatePresentation(scope, id, body, opts) {
 
   let result;
   try {
-    result = await updatePresentationUncached(scope, id, body, opts);
+    result = await updatePresentationUncached(storageScope, id, body, opts);
   } finally {
     invalidatePresentationCache(id);
   }
@@ -192,14 +192,14 @@ export async function updatePresentation(scope, id, body, opts) {
     // off, or re-enabling the flag would resurrect stale state. No-op when
     // no binary exists.
     if (opts?.reason !== 'collab' && !appliedToLiveDoc) {
-      deleteYDocState(scope, id).catch(() => {});
+      deleteYDocState(storageScope, id).catch(() => {});
     }
   }
   return result;
 }
 
-async function updatePresentationUncached(scope, id, body, opts) {
-  const ctx = toStorageContext(scope, 'updatePresentation', {
+async function updatePresentationUncached(storageScope, id, body, opts) {
+  const ctx = toStorageContext(storageScope, 'updatePresentation', {
     actorEmail: opts?.actorEmail,
   });
   const storage = getStorage();
@@ -250,12 +250,12 @@ async function updatePresentationUncached(scope, id, body, opts) {
 
 /**
  * Move a presentation to the trash.
- * @param {import('../scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} id
  * @param {Object} [opts]
  */
-export async function deletePresentation(scope, id, opts) {
-  const ctx = toStorageContext(scope, 'deletePresentation', { actorEmail: opts?.actorEmail });
+export async function deletePresentation(storageScope, id, opts) {
+  const ctx = toStorageContext(storageScope, 'deletePresentation', { actorEmail: opts?.actorEmail });
   const storage = getStorage();
   try {
     return await storage.deletePresentation(id, ctx);
@@ -263,28 +263,28 @@ export async function deletePresentation(scope, id, opts) {
     invalidatePresentationCache(id);
     // Trash/restore round-trips must not resurrect a stale collab doc.
     // Unconditional for the same reason as in updatePresentation.
-    deleteYDocState(scope, id).catch(() => {});
+    deleteYDocState(storageScope, id).catch(() => {});
   }
 }
 
 /**
- * List trashed presentations of the scope's organization.
- * @param {import('../scope.js').StorageScope} scope
+ * List trashed presentations of the storageScope's organization.
+ * @param {import('../scope.js').StorageScope} storageScope
  */
-export async function listTrashedPresentations(scope) {
-  const ctx = toStorageContext(scope, 'listTrashedPresentations');
+export async function listTrashedPresentations(storageScope) {
+  const ctx = toStorageContext(storageScope, 'listTrashedPresentations');
   const storage = getStorage();
   return storage.listTrashedPresentations(ctx);
 }
 
 /**
  * Restore a presentation out of the trash.
- * @param {import('../scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} id
  */
-export async function restorePresentation(scope, id) {
+export async function restorePresentation(storageScope, id) {
   try {
-    const ctx = toStorageContext(scope, 'restorePresentation');
+    const ctx = toStorageContext(storageScope, 'restorePresentation');
     const storage = getStorage();
     return await storage.restorePresentation(id, ctx);
   } finally {
@@ -294,12 +294,12 @@ export async function restorePresentation(scope, id) {
 
 /**
  * Permanently delete a trashed presentation.
- * @param {import('../scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} id
  */
-export async function permanentlyDeletePresentation(scope, id) {
+export async function permanentlyDeletePresentation(storageScope, id) {
   try {
-    const ctx = toStorageContext(scope, 'permanentlyDeletePresentation');
+    const ctx = toStorageContext(storageScope, 'permanentlyDeletePresentation');
     const storage = getStorage();
     return await storage.permanentlyDeletePresentation(id, ctx);
   } finally {
@@ -308,13 +308,13 @@ export async function permanentlyDeletePresentation(scope, id) {
 }
 
 /**
- * Duplicate a presentation within the scope's organization.
- * @param {import('../scope.js').StorageScope} scope
+ * Duplicate a presentation within the storageScope's organization.
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} id
  * @param {Object} [opts]
  */
-export async function duplicatePresentation(scope, id, opts) {
-  const ctx = toStorageContext(scope, 'duplicatePresentation', {
+export async function duplicatePresentation(storageScope, id, opts) {
+  const ctx = toStorageContext(storageScope, 'duplicatePresentation', {
     actorEmail: opts?.actorEmail,
   });
   // A duplicate mints a new deck, so it counts against the guest's sandbox
@@ -328,16 +328,16 @@ export async function duplicatePresentation(scope, id, opts) {
  * Batch-fetch first slides for multiple presentations.
  * Returns a Map of presentationId -> firstSlide object.
  * This avoids N+1 queries when loading shared presentations.
- * @param {import('../scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string[]} ids - Array of presentation IDs
  * @returns {Promise<Map<string, Object>>} Map of id -> firstSlide
  */
-export async function getFirstSlidesForIds(scope, ids) {
+export async function getFirstSlidesForIds(storageScope, ids) {
   if (!Array.isArray(ids) || ids.length === 0) {
     return new Map();
   }
 
-  const ctx = toStorageContext(scope, 'getFirstSlidesForIds');
+  const ctx = toStorageContext(storageScope, 'getFirstSlidesForIds');
   const storage = getStorage();
   // If storage adapter supports batch first slides, use it
   if (typeof storage.getFirstSlidesForIds === 'function') {
@@ -367,38 +367,38 @@ export async function getFirstSlidesForIds(scope, ids) {
 // version history rides along with the regular DB backups instead of living on
 // a disk that a redeploy wipes.
 //
-// The (scope, presentationId, ...) signature matches the CRUD helpers above:
+// The (storageScope, presentationId, ...) signature matches the CRUD helpers above:
 // snapshots live in the same organization as the deck they snapshot, so they
-// take the same scope.
+// take the same storageScope.
 
 /**
  * List version snapshots for a presentation (newest first).
- * @param {import('../scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} presentationId
  * @returns {Promise<Array>}
  */
-export async function listPresentationVersions(scope, presentationId) {
-  const ctx = toStorageContext(scope, 'listPresentationVersions');
+export async function listPresentationVersions(storageScope, presentationId) {
+  const ctx = toStorageContext(storageScope, 'listPresentationVersions');
   const storage = getStorage();
   return storage.listPresentationVersions(presentationId, ctx);
 }
 
 /**
  * Get a single version snapshot (full presentation data included).
- * @param {import('../scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} presentationId
  * @param {string} versionId
  * @returns {Promise<Object|null>}
  */
-export async function getPresentationVersion(scope, presentationId, versionId) {
-  const ctx = toStorageContext(scope, 'getPresentationVersion');
+export async function getPresentationVersion(storageScope, presentationId, versionId) {
+  const ctx = toStorageContext(storageScope, 'getPresentationVersion');
   const storage = getStorage();
   return storage.getPresentationVersion(presentationId, versionId, ctx);
 }
 
 /**
  * Create a version snapshot of a presentation.
- * @param {import('../scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} presentationId
  * @param {Object} pres - Full presentation object to snapshot
  * @param {Object} [opts]
@@ -407,8 +407,8 @@ export async function getPresentationVersion(scope, presentationId, versionId) {
  * @param {string} [opts.label]
  * @returns {Promise<Object|null>}
  */
-export async function createPresentationVersion(scope, presentationId, pres, opts = {}) {
-  const ctx = toStorageContext(scope, 'createPresentationVersion', {
+export async function createPresentationVersion(storageScope, presentationId, pres, opts = {}) {
+  const ctx = toStorageContext(storageScope, 'createPresentationVersion', {
     actorEmail: opts?.actorEmail,
   });
   const storage = getStorage();
@@ -425,14 +425,14 @@ export async function createPresentationVersion(scope, presentationId, pres, opt
 
 /**
  * Prune old version snapshots per the retention policy.
- * @param {import('../scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} presentationId
  * @param {Object} [opts]
  * @param {number} [opts.keep]
  * @returns {Promise<*>}
  */
-export async function prunePresentationVersions(scope, presentationId, opts = {}) {
-  const ctx = toStorageContext(scope, 'prunePresentationVersions');
+export async function prunePresentationVersions(storageScope, presentationId, opts = {}) {
+  const ctx = toStorageContext(storageScope, 'prunePresentationVersions');
   const storage = getStorage();
   return storage.prunePresentationVersions(presentationId, ctx, {
     keep: opts?.keep,

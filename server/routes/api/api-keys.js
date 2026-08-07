@@ -14,7 +14,7 @@ import {
   listApiKeys,
   getApiKeyById,
   revokeApiKey,
-  AVAILABLE_SCOPES,
+  AVAILABLE_PERMISSIONS,
 } from '../../storage/api-keys.js';
 import { getUsageHistory, getTodayUsage } from '../../storage/api-usage.js';
 import { serveJson, methodNotAllowed, notFound, badRequest, requireJsonBody } from '../../utils/http.js';
@@ -46,7 +46,7 @@ export async function handleApiKeys({ req, res, url, authedUser }) {
 
     serveJson(res, 200, {
       keys: result.keys,
-      availableScopes: AVAILABLE_SCOPES,
+      availablePermissions: AVAILABLE_PERMISSIONS,
     });
     return true;
   }
@@ -59,19 +59,19 @@ export async function handleApiKeys({ req, res, url, authedUser }) {
     const parsed = await requireJsonBody(req, res, { allowEmpty: true });
     if (!parsed.ok) return true;
 
-    const { name, scopes } = parsed.body || {};
+    const { name, permissions } = parsed.body || {};
 
     const result = await createApiKey({
       name: name || 'API Key',
       ownerEmail: authedUser.email,
-      scopes: scopes || ['read', 'write'],
+      permissions: permissions || ['read', 'write'],
     }, ctx);
 
     if (!result.ok) {
       const messages = {
         invalid_email: 'Invalid email',
         name_required: 'Name is required',
-        invalid_scopes: `Invalid scopes. Available: ${AVAILABLE_SCOPES.join(', ')}`,
+        invalid_permissions: `Invalid permissions. Available: ${AVAILABLE_PERMISSIONS.join(', ')}`,
         unavailable: 'Database unavailable',
       };
       return badRequest(res, messages[result.reason] || 'Failed to create API key');
@@ -83,7 +83,7 @@ export async function handleApiKeys({ req, res, url, authedUser }) {
       id: result.id,
       name: result.name,
       prefix: result.prefix,
-      scopes: result.scopes,
+      permissions: result.permissions,
       createdAt: result.createdAt,
       message: 'Store this API key securely - it will not be shown again.',
     });
@@ -149,7 +149,7 @@ export async function handleApiKeys({ req, res, url, authedUser }) {
       prefix: result.prefix,
       ownerEmail: result.ownerEmail,
       tier: result.tier,
-      scopes: result.scopes,
+      permissions: result.permissions,
       lastUsedAt: result.lastUsedAt,
       revokedAt: result.revokedAt,
       createdAt: result.createdAt,

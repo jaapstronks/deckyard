@@ -9,7 +9,7 @@ import { sandboxEnabled } from '../../../config/sandbox.js';
 import { createRouteContext } from '../../../utils/context.js';
 import { listThemes } from '../../../storage/themes.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
-import { requireScope, parsePaginationParams, apiSuccess, apiError } from './middleware.js';
+import { requirePermission, parsePaginationParams, apiSuccess, apiError } from './middleware.js';
 
 // ============================================================
 // ROUTE HANDLERS
@@ -21,7 +21,7 @@ import { requireScope, parsePaginationParams, apiSuccess, apiError } from './mid
 async function handleThemes(ctx) {
   const { repoRoot, apiKey } = ctx;
 
-  if (!requireScope(ctx, 'read')) return true;
+  if (!requirePermission(ctx, 'read')) return true;
 
   // A key acts in the organization it belongs to. Building this from the owner
   // email alone resolved every key against the default organization, which is
@@ -82,7 +82,7 @@ async function handleThemes(ctx) {
  * GET /api/v1/slide-types - List available slide types.
  */
 async function handleSlideTypes(ctx) {
-  if (!requireScope(ctx, 'read')) return true;
+  if (!requirePermission(ctx, 'read')) return true;
 
   const slideTypes = {};
   for (const [key, def] of Object.entries(SLIDE_TYPES)) {
@@ -113,7 +113,7 @@ async function handleSlideTypes(ctx) {
  * Returns fields with full metadata, defaults, and an example slide structure.
  */
 async function handleSlideTypeSchema(ctx, slideType) {
-  if (!requireScope(ctx, 'read')) return true;
+  if (!requirePermission(ctx, 'read')) return true;
 
   const def = SLIDE_TYPES[slideType];
   if (!def) {
@@ -186,7 +186,7 @@ async function handleSlideTypeSchema(ctx, slideType) {
 async function handleImageLibrary(ctx) {
   const { storageScope, url } = ctx;
 
-  if (!requireScope(ctx, 'read')) return true;
+  if (!requirePermission(ctx, 'read')) return true;
 
   // Dynamic import to avoid circular dependencies
   const { listImageLibrary } = await import('../../../storage/image-library/index.js');

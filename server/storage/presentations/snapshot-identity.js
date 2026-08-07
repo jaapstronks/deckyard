@@ -18,7 +18,7 @@
  * ## Restore re-derives identity from the living deck, it does not carry it
  *
  * The reason stripping is safe is that restore *already* ignores these fields.
- * Restoring a version is `updatePresentation(scope, id, snapshot, …)`, and that
+ * Restoring a version is `updatePresentation(storageScope, id, snapshot, …)`, and that
  * write path consumes only `title`, `description`, `settings`, `i18n`,
  * `slides` and `published`; ownership moves solely through the transfer route's
  * `allowOwnerChange` opt-in, and `updated_by` comes from the acting user, not
@@ -35,7 +35,7 @@
  *    it ("Alice, 3 days ago"). It is dual-keyed in its own right (T10 PR F1)
  *    and stays put; only the embedded copy is stripped here.
  *  - **`organizationId`** — tenancy, not identity, and the restore write is
- *    org-scoped through the caller's own scope rather than through the body.
+ *    org-scoped through the caller's own storageScope rather than through the body.
  *
  * @module storage/presentations/snapshot-identity
  */

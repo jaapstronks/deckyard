@@ -189,7 +189,7 @@ subtly wrong today, and fundamentally incompatible with concurrent editing.
 - **Share-link guests can never edit** (comment/view only,
   `server/utils/presentation-authz/guests.js`) → guests connect read-only,
   presence-visible but without document write.
-- **API keys** (`dk_live_*`, scopes `read/write/export/ai`) authenticate the
+- **API keys** (`dk_live_*`, permissions `read/write/export/ai`) authenticate the
   public API and the MCP SSE transport.
 
 ### ⚠ Pre-existing authz gaps surfaced by this research

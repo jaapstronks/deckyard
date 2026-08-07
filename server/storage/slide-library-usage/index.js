@@ -16,13 +16,13 @@ import { toStorageContext } from '../backend-dispatch.js';
 
 /**
  * List the current user's usage records (set of used {itemType, itemId}).
- * @param {import('../scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} userEmail
  * @returns {Promise<{ items: Array<object> }>}
  */
-export async function listSlideLibraryUsage(scope, userEmail) {
+export async function listSlideLibraryUsage(storageScope, userEmail) {
   const email = String(userEmail || '').trim().toLowerCase();
-  const ctx = toStorageContext(scope, 'listSlideLibraryUsage', { userEmail: email });
+  const ctx = toStorageContext(storageScope, 'listSlideLibraryUsage', { userEmail: email });
   const storage = getStorage();
   const items = await storage.listSlideLibraryUsage(email, ctx);
   return { items: Array.isArray(items) ? items : [] };
@@ -30,15 +30,15 @@ export async function listSlideLibraryUsage(scope, userEmail) {
 
 /**
  * Record usage of one or more library items for a user.
- * @param {import('../scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} userEmail
  * @param {Array<{ type: 'slide'|'collection', id: string }>} items
  * @returns {Promise<{ ok: boolean, recorded: number }>}
  */
-export async function recordSlideLibraryUsage(scope, userEmail, items) {
+export async function recordSlideLibraryUsage(storageScope, userEmail, items) {
   const email = String(userEmail || '').trim().toLowerCase();
   if (!email) return { ok: true, recorded: 0 };
-  const ctx = toStorageContext(scope, 'recordSlideLibraryUsage', { userEmail: email });
+  const ctx = toStorageContext(storageScope, 'recordSlideLibraryUsage', { userEmail: email });
   const storage = getStorage();
   const recorded = await storage.recordSlideLibraryUsage(email, items, ctx);
   return { ok: true, recorded: Number(recorded) || 0 };

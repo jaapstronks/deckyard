@@ -50,7 +50,7 @@ import { isMultiWorkspaceEnabled } from '../config/features.js';
 /**
  * Validate a scope and reduce it to the context the storage adapters take.
  *
- * @param {StorageScope} scope - The caller's scope.
+ * @param {StorageScope} storageScope - The caller's scope.
  * @param {string} operation - Facade function name, for the error message.
  * @param {Object} [options]
  * @param {boolean} [options.allowCrossOrganization=false] - Whether this operation
@@ -60,8 +60,8 @@ import { isMultiWorkspaceEnabled } from '../config/features.js';
  * @returns {{organizationId: string|undefined, actorEmail: string|null, crossOrganization: string|undefined}}
  * @throws {TypeError} If the scope states no organization and declares no reason.
  */
-export function resolveScope(scope, operation, { allowCrossOrganization = false } = {}) {
-  if (typeof scope === 'string') {
+export function resolveScope(storageScope, operation, { allowCrossOrganization = false } = {}) {
+  if (typeof storageScope === 'string') {
     throw new TypeError(
       `${operation}() takes a storage scope, not a repoRoot string. ` +
         'Pass createRouteContext(authedUser, { repoRoot }) on session paths, or ' +
@@ -69,20 +69,20 @@ export function resolveScope(scope, operation, { allowCrossOrganization = false 
         'See server/storage/scope.js.'
     );
   }
-  if (!scope || typeof scope !== 'object') {
+  if (!storageScope || typeof storageScope !== 'object') {
     throw new TypeError(
-      `${operation}() requires a storage scope; received ${scope === null ? 'null' : typeof scope}. ` +
+      `${operation}() requires a storage scope; received ${storageScope === null ? 'null' : typeof storageScope}. ` +
         'See server/storage/scope.js.'
     );
   }
 
   const crossOrganization =
-    typeof scope.crossOrganization === 'string' && scope.crossOrganization.trim()
-      ? scope.crossOrganization.trim()
+    typeof storageScope.crossOrganization === 'string' && storageScope.crossOrganization.trim()
+      ? storageScope.crossOrganization.trim()
       : undefined;
   const organizationId =
-    typeof scope.organizationId === 'string' && scope.organizationId
-      ? scope.organizationId
+    typeof storageScope.organizationId === 'string' && storageScope.organizationId
+      ? storageScope.organizationId
       : undefined;
 
   if (!organizationId && !crossOrganization) {
@@ -105,7 +105,7 @@ export function resolveScope(scope, operation, { allowCrossOrganization = false 
 
   return {
     organizationId,
-    actorEmail: scope.actorEmail ?? null,
+    actorEmail: storageScope.actorEmail ?? null,
     crossOrganization,
   };
 }
@@ -117,11 +117,11 @@ export function resolveScope(scope, operation, { allowCrossOrganization = false 
  * run against an initialized adapter (analytics ingest, for one) have no repo
  * root to give, and the file modules are never reached from there.
  *
- * @param {StorageScope} scope
+ * @param {StorageScope} storageScope
  * @returns {string|null}
  */
-export function repoRootOf(scope) {
-  return scope && typeof scope === 'object' ? (scope.repoRoot ?? null) : null;
+export function repoRootOf(storageScope) {
+  return storageScope && typeof storageScope === 'object' ? (storageScope.repoRoot ?? null) : null;
 }
 
 /**

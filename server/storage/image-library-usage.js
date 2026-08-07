@@ -37,18 +37,18 @@ function pickTitle(pres) {
 }
 
 /**
- * Where an image library URL is used across the scope's organization.
+ * Where an image library URL is used across the storageScope's organization.
  *
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} url - The image URL to look for.
  * @returns {Promise<Array<Object>>} Newest-modified first.
  */
-export async function getImageLibraryUsage(scope, url) {
-  const ctx = toStorageContext(scope, 'getImageLibraryUsage');
+export async function getImageLibraryUsage(storageScope, url) {
+  const ctx = toStorageContext(storageScope, 'getImageLibraryUsage');
   const u = String(url || '').trim();
   if (!u) return [];
 
-  const idx = await getPublishedIndex(scope);
+  const idx = await getPublishedIndex(storageScope);
   const publishedByPresId = new Map();
   for (const [publishId, entry] of Object.entries(idx || {})) {
     const pid = String(entry?.presentationId || '').trim();

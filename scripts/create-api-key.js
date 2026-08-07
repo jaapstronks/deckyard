@@ -5,7 +5,7 @@
  *
  * Usage:
  *   node scripts/create-api-key.js --email you@example.com --name "My MCP Key"
- *   node scripts/create-api-key.js --email you@example.com --name "My MCP Key" --scopes read,write,ai
+ *   node scripts/create-api-key.js --email you@example.com --name "My MCP Key" --permissions read,write,ai
  *
  * The full API key is printed once — save it, it cannot be retrieved later.
  */
@@ -26,18 +26,18 @@ function getArg(name) {
 async function main() {
   const email = getArg('email');
   const name = getArg('name') || 'MCP Key';
-  const scopesStr = getArg('scopes') || 'read,write,ai';
-  const scopes = scopesStr.split(',').map(s => s.trim());
+  const permissionsStr = getArg('permissions') || 'read,write,ai';
+  const permissions = permissionsStr.split(',').map(s => s.trim());
 
   if (!email) {
-    console.error('Usage: node scripts/create-api-key.js --email you@example.com [--name "Key name"] [--scopes read,write,ai]');
+    console.error('Usage: node scripts/create-api-key.js --email you@example.com [--name "Key name"] [--permissions read,write,ai]');
     process.exit(1);
   }
 
   await loadDotEnv(repoRoot);
   await initializeStorage();
 
-  const result = await createApiKey({ name, ownerEmail: email, scopes }, { repoRoot });
+  const result = await createApiKey({ name, ownerEmail: email, permissions }, { repoRoot });
 
   if (!result.ok) {
     console.error('Failed to create API key:', result.reason);
@@ -49,7 +49,7 @@ async function main() {
   console.log('');
   console.log(`  Name:   ${result.name}`);
   console.log(`  Email:  ${email}`);
-  console.log(`  Scopes: ${scopes.join(', ')}`);
+  console.log(`  Permissions: ${permissions.join(', ')}`);
   console.log(`  Prefix: ${result.prefix}`);
   console.log('');
   console.log(`  🔑 Key: ${result.key}`);
