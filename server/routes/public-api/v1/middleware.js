@@ -13,7 +13,7 @@ import {
 import { resolveIdentityByEmail } from '../../../storage/identity-resolver.js';
 import { incrementUsage, getRateLimitHeaders, checkAiRateLimit, checkExportRateLimit } from '../../../storage/api-usage.js';
 import { allowRequest } from '../../../utils/rate-limit.js';
-import { serveJson, forbidden, rateLimited as sendRateLimited, readRequestBody } from '../../../utils/http.js';
+import { serveJson, forbidden, rateLimited as sendRateLimited, readRequestBody, isJsonObject } from '../../../utils/http.js';
 import { getPresentation } from '../../../storage/presentations/index.js';
 
 // ============================================================
@@ -195,9 +195,15 @@ export async function getPresentationWithAccess(ctx, presentationId, { access = 
  *
  * @param {Object} ctx - Request context
  * @param {Object} req - HTTP request object
+ * @param {Object} [opts]
+ * @param {boolean} [opts.requireObject] Reject an absent or non-object body
+ *   with a 400 instead of returning `null`. The opt-in mirrors the internal
+ *   `requireJsonBody`'s object guarantee for the endpoints that need it, while
+ *   the default stays null-tolerant — `/api/v1` is a published contract and
+ *   endpoints that accept a missing payload today must keep doing so.
  * @returns {Promise<{ok: boolean, body?: Object}>} - Result with parsed body if successful
  */
-export async function readApiV1Body(ctx, req) {
+export async function readApiV1Body(ctx, req, { requireObject = false } = {}) {
   let raw;
   try {
     raw = (await readRequestBody(req)).toString('utf8');
@@ -209,13 +215,25 @@ export async function readApiV1Body(ctx, req) {
   // An absent body stays `null` here, unlike the internal `requireJsonBody`:
   // `/api/v1` is a published contract, and endpoints that tolerate a missing
   // payload today must keep doing so.
-  if (!raw) return { ok: true, body: null };
+  if (!raw) {
+    if (requireObject) {
+      await apiError(ctx, 400, 'Request body must be a JSON object');
+      return { ok: false };
+    }
+    return { ok: true, body: null };
+  }
+  let body;
   try {
-    return { ok: true, body: JSON.parse(raw) };
+    body = JSON.parse(raw);
   } catch {
     await apiError(ctx, 400, 'Invalid JSON body');
     return { ok: false };
   }
+  if (requireObject && !isJsonObject(body)) {
+    await apiError(ctx, 400, 'Request body must be a JSON object');
+    return { ok: false };
+  }
+  return { ok: true, body };
 }
 
 /**

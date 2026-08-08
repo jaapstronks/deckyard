@@ -155,13 +155,8 @@ async function handleCreate(ctx) {
 
   if (!requirePermission(ctx, 'write')) return true;
 
-  const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req);
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req, { requireObject: true });
   if (!bodyOk) return true;
-
-  if (!body || typeof body !== 'object') {
-    await apiError(ctx, 400, 'Request body must be a JSON object');
-    return true;
-  }
 
   // Create presentation with API key owner as the owner
   const created = await createPresentation(storageScope, {
@@ -203,13 +198,8 @@ async function handleUpdate(ctx, id) {
   const { ok } = await getPresentationWithAccess(ctx, id, { access: 'write' });
   if (!ok) return true;
 
-  const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req);
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req, { requireObject: true });
   if (!bodyOk) return true;
-
-  if (!body || typeof body !== 'object') {
-    await apiError(ctx, 400, 'Request body must be a JSON object');
-    return true;
-  }
 
   // Don't allow changing ownership via API
   delete body.ownerEmail;

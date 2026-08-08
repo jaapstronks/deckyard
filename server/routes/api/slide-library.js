@@ -184,7 +184,7 @@ export async function handleSlideLibrary({ repoRoot, storageScope, req, res, url
       // Permission model:
       // - Favorites are per-user and always allowed for authed users.
       // - Trashing (soft delete) is restricted to admins or the creator.
-      if (body && typeof body === 'object' && 'trashed' in body) {
+      if ('trashed' in body) {
         const r = await setTeamLibraryItemTrashed(storageScope, id, {
           trashed: !!body.trashed,
           actorEmail: email,
@@ -244,7 +244,9 @@ export async function handleSlideLibrary({ repoRoot, storageScope, req, res, url
       return true;
     }
     if (req.method === 'PUT') {
-      const parsed = await requireJsonBody(req, res);
+      // Accepts either a bare `["a","b"]` array or `{ tags: [...] }`, so it
+      // opts out of the entry's object guarantee.
+      const parsed = await requireJsonBody(req, res, { allowNonObject: true });
       if (!parsed.ok) return true;
       const body = parsed.body;
       const tagNames = Array.isArray(body) ? body : (body?.tags || []);
@@ -265,7 +267,9 @@ export async function handleSlideLibrary({ repoRoot, storageScope, req, res, url
       return true;
     }
     if (req.method === 'PUT') {
-      const parsed = await requireJsonBody(req, res);
+      // Accepts either a bare `["a","b"]` array or `{ tags: [...] }`, so it
+      // opts out of the entry's object guarantee.
+      const parsed = await requireJsonBody(req, res, { allowNonObject: true });
       if (!parsed.ok) return true;
       const body = parsed.body;
       const tagNames = Array.isArray(body) ? body : (body?.tags || []);
