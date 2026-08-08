@@ -1,4 +1,5 @@
 import { badRequest } from '../../utils/http.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import { handlePresentationsList } from './presentations/list.js';
 import { handlePopularPresentations } from './presentations/popular.js';
 import { handlePresentationsSearch } from './presentations/search.js';
@@ -67,24 +68,12 @@ import {
 } from './presentations/change-theme.js';
 
 /**
- * A dispatch context, forwarded verbatim to every route handler.
+ * This module is mounted after the auth gate, so every handler here receives an
+ * {@link AuthedContext} and the routes are declared in the shared {@link Route}
+ * form dispatched by {@link dispatchRoutes}.
  *
- * @typedef {object} PresentationsContext
- * @property {string} repoRoot
- * @property {import('http').IncomingMessage} req
- * @property {import('http').ServerResponse} res
- * @property {URL} url
- * @property {object|null} authedUser
- */
-
-/**
- * A single declarative route.
- *
- * @typedef {object} PresentationRoute
- * @property {string} [method] - HTTP method to require; omit to match any method.
- * @property {string|RegExp} pattern - Exact pathname (string) or a pattern whose
- *   capture groups become positional handler args.
- * @property {(ctx: PresentationsContext, ...params: string[]) => unknown} handler
+ * @typedef {import('../../utils/context.js').AuthedContext} AuthedContext
+ * @typedef {import('../../utils/router.js').Route} Route
  */
 
 // ── Adapters for the few handlers whose call shape differs from
@@ -93,7 +82,7 @@ import {
 /**
  * Bare `/api/presentations/:id`. Skips ids that belong to sibling modules so
  * this generic route never swallows their (possibly method-mismatched) requests.
- * @param {PresentationsContext} ctx
+ * @param {AuthedContext} ctx
  * @param {string} id
  */
 function handlePresentationItemRoute(ctx, id) {
@@ -107,7 +96,7 @@ function handlePresentationItemRoute(ctx, id) {
 
 /**
  * Tags handler takes a bespoke context shape (`presentationId`, no `repoRoot`).
- * @param {PresentationsContext} ctx
+ * @param {AuthedContext} ctx
  * @param {string} id
  */
 function handlePresentationTagsRoute({ storageScope, req, res, url }, id) {
@@ -116,7 +105,7 @@ function handlePresentationTagsRoute({ storageScope, req, res, url }, id) {
 
 /**
  * Render-slide is deliberately called without `url` in its context.
- * @param {PresentationsContext} ctx
+ * @param {AuthedContext} ctx
  * @param {string} id
  */
 function handleRenderSlideRoute({ repoRoot, storageScope, req, res, authedUser }, id) {
@@ -126,7 +115,7 @@ function handleRenderSlideRoute({ repoRoot, storageScope, req, res, authedUser }
 /**
  * Legacy `/api/presentations/import` placeholder kept for early "bad import"
  * debugging — points callers at the real endpoint.
- * @param {PresentationsContext} ctx
+ * @param {AuthedContext} ctx
  */
 function handleLegacyImportBadRequest({ res }) {
   return badRequest(res, 'Use /api/presentations/import/json');
@@ -145,7 +134,7 @@ function handleLegacyImportBadRequest({ res }) {
  * a request whose method doesn't match falls through to the next route rather
  * than being rejected here.
  *
- * @type {PresentationRoute[]}
+ * @type {Route[]}
  */
 const ROUTES = [
   { method: 'GET', pattern: '/api/presentations', handler: handlePresentationsList },
@@ -302,35 +291,13 @@ const ROUTES = [
 /**
  * Dispatch a `/api/presentations/*` request through the first matching route.
  *
- * Signature and return contract are unchanged from the original hand-written
- * `if`-chain: returns the matched handler's result (truthy = handled), or
- * `false` when no route matches (letting the caller fall through).
+ * Return contract is unchanged from the original hand-written `if`-chain:
+ * returns the matched handler's result (truthy = handled), or `false` when no
+ * route matches (letting the caller fall through).
  *
- * @param {PresentationsContext} ctx
+ * @param {AuthedContext} ctx
  * @returns {Promise<unknown>|unknown}
  */
-export async function handlePresentations({
-  repoRoot,
-  storageScope,
-  req,
-  res,
-  url,
-  authedUser,
-}) {
-  const ctx = { repoRoot, storageScope, req, res, url, authedUser };
-
-  for (const route of ROUTES) {
-    if (route.method && req.method !== route.method) continue;
-
-    if (typeof route.pattern === 'string') {
-      if (url.pathname !== route.pattern) continue;
-      return route.handler(ctx);
-    }
-
-    const match = route.pattern.exec(url.pathname);
-    if (!match) continue;
-    return route.handler(ctx, ...match.slice(1));
-  }
-
-  return false;
+export async function handlePresentations(ctx) {
+  return dispatchRoutes(ROUTES, ctx);
 }
