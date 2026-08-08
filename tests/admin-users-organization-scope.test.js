@@ -42,6 +42,7 @@ const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const { sessionVersion } = await import('../server/utils/session-version.js');
 const auth = await import('../server/auth/auth.js');
 const { handleAdminUsers } = await import('../server/routes/api/admin-users.js');
+const { authedRouteContext } = await import('./helpers/authed-route-context.js');
 
 const UPDATED_AT = '2026-02-01T00:00:00.000Z';
 
@@ -174,12 +175,15 @@ function fakeResponse() {
  */
 async function callAdminUsers(method, path, organizationId, body) {
   const res = fakeResponse();
-  await handleAdminUsers({
+  // Resolve the user and build the storage scope up front, exactly as
+  // routes/api/index.js does before mounting the admin routes.
+  const ctx = await authedRouteContext({
     repoRoot: process.cwd(),
     req: requestWithSession(method, organizationId, body),
     res,
     url: new URL(`http://localhost${path}`),
   });
+  await handleAdminUsers(ctx);
   return { status: res.statusCode, body: res.body() };
 }
 
