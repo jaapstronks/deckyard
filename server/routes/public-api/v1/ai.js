@@ -16,6 +16,7 @@ import { getLlmStatus } from '../../../utils/llm/config.js';
 import { deckToPresentationParts, presentationToDeck } from '../../../../shared/slide-types.js';
 import { sandboxDefaultThemeId, sandboxEnabled } from '../../../config/sandbox.js';
 import { loadDisabledSlideTypes, loadCustomSlideTypes } from '../../../utils/org-slide-types.js';
+import { getOptionalObject } from '../../../utils/request-validators.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('ai');
 import {
@@ -177,12 +178,13 @@ async function handleAppendSlides(ctx) {
   const lang = ['en-GB', 'nl'].includes(body?.lang) ? body.lang : null;
 
   // Optional existing deck/presentation for context
-  const existingDeck =
-    body?.deck && typeof body.deck === 'object'
-      ? body.deck
-      : body?.presentation && typeof body.presentation === 'object'
-        ? presentationToDeck(body.presentation)
-        : null;
+  const deckInput = getOptionalObject(body, 'deck');
+  const presInput = getOptionalObject(body, 'presentation');
+  const existingDeck = deckInput
+    ? deckInput
+    : presInput
+      ? presentationToDeck(presInput)
+      : null;
 
   // Track AI request
   await trackAiRequest(ctx);

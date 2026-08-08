@@ -12,6 +12,7 @@ import { errorToResponse } from '../../../utils/errors.js';
 import { canChangePresentationVisibility, isPresentationAuthor } from '../../../utils/presentation-authz.js';
 import { maybeFireWebhook } from '../../../utils/webhooks.js';
 import { parseIfMatchRevision } from './helpers.js';
+import { getOptionalBoolean } from '../../../utils/request-validators.js';
 
 export async function handlePresentationVisibility(
   { repoRoot, storageScope, req, res, authedUser } = {},
@@ -37,16 +38,17 @@ export async function handlePresentationVisibility(
 
   // Handle isViewOnly flag (only when sharing to the organization)
   let nextIsViewOnly = existing.isViewOnly || false;
-  if (typeof body?.isViewOnly === 'boolean') {
+  const isViewOnly = getOptionalBoolean(body, 'isViewOnly');
+  if (isViewOnly !== null) {
     // Only owner/creator can toggle view-only status
     if (!isPresentationAuthor({ user: authedUser, pres: existing })) {
       return unauthorized(res, 'Only the owner can set view-only status');
     }
     // View-only requires organization visibility
-    if (body.isViewOnly && nextVisibility !== 'organization') {
+    if (isViewOnly && nextVisibility !== 'organization') {
       return badRequest(res, 'View-only presentations must be visible to the organization');
     }
-    nextIsViewOnly = body.isViewOnly;
+    nextIsViewOnly = isViewOnly;
   }
 
   // If moving to private, automatically remove view-only status

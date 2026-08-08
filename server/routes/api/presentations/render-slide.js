@@ -28,6 +28,7 @@ import {
   requireJsonBody,
   serverError,
 } from '../../../utils/http.js';
+import { getOptionalObject, getString } from '../../../utils/request-validators.js';
 
 export async function handleRenderSlide(
   { repoRoot, storageScope, req, res, authedUser } = {},
@@ -52,11 +53,11 @@ export async function handleRenderSlide(
   if (!jsonResult.ok) return true;
   const body = jsonResult.body;
 
-  const slide = body?.slide;
-  if (!slide || typeof slide !== 'object') {
+  const slide = getOptionalObject(body, 'slide');
+  if (!slide) {
     return badRequest(res, 'slide object is required');
   }
-  if (!slide.type || typeof slide.type !== 'string') {
+  if (!getString(slide, 'type')) {
     return badRequest(res, 'slide.type is required');
   }
 

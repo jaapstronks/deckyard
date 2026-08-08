@@ -20,6 +20,7 @@ import {
 import { getFeatureFlags } from '../../config/feature-flags.js';
 import { generateImageAltTexts } from '../../utils/llm/alt-text.js';
 import { listSandboxMedia } from '../../sandbox/media.js';
+import { getDataUrl } from '../../utils/request-validators.js';
 
 export async function handleImageLibrary({ repoRoot, storageScope, req, res, url, authedUser }) {
   const flags = getFeatureFlags();
@@ -154,8 +155,8 @@ export async function handleImageLibrary({ repoRoot, storageScope, req, res, url
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
-    const { dataUrl } = body || {};
-    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) {
+    const dataUrl = getDataUrl(body, 'dataUrl');
+    if (!dataUrl) {
       return badRequest(res, 'Expected { dataUrl: "data:<mime>;base64,..." }');
     }
 

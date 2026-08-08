@@ -34,7 +34,7 @@ import {
 } from '../../utils/interaction-helpers.js';
 import { liveInteractionKind } from '../../../shared/slide-types/runtime.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
-import { getString } from '../../utils/request-validators.js';
+import { getString, getOptionalBoolean } from '../../utils/request-validators.js';
 
 /**
  * Presenter-only live-session routes.
@@ -133,10 +133,7 @@ export async function handleLiveSessions({ repoRoot, req, res, url, authedUser }
         stepIdxRaw == null ? undefined : Number(stepIdxRaw ?? NaN);
       if (stepIdx != null && !Number.isFinite(stepIdx))
         return badRequest(res, 'stepIdx must be a number');
-      const stepParagraphs =
-        typeof body?.stepParagraphs === 'boolean'
-          ? body.stepParagraphs
-          : undefined;
+      const stepParagraphs = getOptionalBoolean(body, 'stepParagraphs') ?? undefined;
       const updatedAt =
         body?.updatedAt != null ? Number(body.updatedAt) : Date.now();
       const next = await updateLiveSessionState(repoRoot, sessionId, {

@@ -37,6 +37,7 @@ import {
   requireJsonBody,
 } from '../../utils/http.js';
 import { errorToResponse } from '../../utils/errors.js';
+import { getOptionalString } from '../../utils/request-validators.js';
 import { allowCompanionNotesWrite, getClientIp } from '../../utils/rate-limit.js';
 import { guardSseConnection } from '../../utils/sse-limiter.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
@@ -185,9 +186,10 @@ async function handleSessionNotesWrite({ repoRoot, req, res }, sessionId, slideI
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  if (typeof body?.notes !== 'string')
+  const notes = getOptionalString(body, 'notes');
+  if (notes === null)
     return badRequest(res, 'Expected { notes: string }');
-  if (body.notes.length > MAX_NOTES_LENGTH)
+  if (notes.length > MAX_NOTES_LENGTH)
     return badRequest(res, `Notes must be ${MAX_NOTES_LENGTH} characters or less`);
 
   // A write must state its organization (see storage/scope.js). The deck the
@@ -203,7 +205,7 @@ async function handleSessionNotesWrite({ repoRoot, req, res }, sessionId, slideI
   try {
     result = await updateSlideNotes(writeScope, pres, {
       slideId,
-      notes: body.notes,
+      notes,
     });
   } catch (e) {
     // A locked slide is the refusal the companion can act on: somebody is

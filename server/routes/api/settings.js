@@ -1,4 +1,5 @@
 import { badRequest, methodNotAllowed, serveJson, unauthorized, serverError, requireJsonBody } from '../../utils/http.js';
+import { getStringArray } from '../../utils/request-validators.js';
 import {
   getAppSettings,
   getUserSettings,
@@ -131,9 +132,7 @@ export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
             if (key === 'adminsAreDesigners') {
               merged[key] = body[key] === true;
             } else if (key === 'disabledSlideTypes') {
-              merged[key] = Array.isArray(body[key])
-                ? body[key].filter(v => typeof v === 'string').map(v => v.trim()).filter(Boolean)
-                : [];
+              merged[key] = getStringArray(body, key, { trim: true });
             } else if (key === 'rss') {
               const rss = body[key];
               if (rss && typeof rss === 'object') {

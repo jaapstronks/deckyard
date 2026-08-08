@@ -1,6 +1,7 @@
 import { badRequest, jsonError, serveJson, serverError, unauthorized, requireJsonBody } from '../../utils/http.js';
 import { getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
+import { getDataUrl } from '../../utils/request-validators.js';
 
 export async function handleUploads({ repoRoot, req, res, url, authedUser }) {
   // Uploads (server-side, for local provider or fallback)
@@ -15,8 +16,9 @@ export async function handleUploads({ repoRoot, req, res, url, authedUser }) {
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
-    const { dataUrl, originalName } = body || {};
-    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) {
+    const { originalName } = body || {};
+    const dataUrl = getDataUrl(body, 'dataUrl');
+    if (!dataUrl) {
       return badRequest(
         res,
         'Expected { dataUrl: "data:<mime>;base64,..." }'

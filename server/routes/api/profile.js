@@ -13,6 +13,7 @@ import { badRequest, methodNotAllowed, serveJson, unauthorized, forbidden, jsonE
 import { writeUserSettings } from '../../storage/settings.js';
 import { getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
+import { getDataUrl } from '../../utils/request-validators.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('profile');
 
@@ -43,9 +44,9 @@ export async function handleProfile({ repoRoot, req, res, url, authedUser }) {
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
-    const { dataUrl } = body || {};
+    const dataUrl = getDataUrl(body, 'dataUrl');
 
-    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) {
+    if (!dataUrl) {
       return badRequest(res, 'Expected { dataUrl: "data:<mime>;base64,..." }');
     }
 
@@ -152,9 +153,9 @@ export async function handleProfile({ repoRoot, req, res, url, authedUser }) {
       const parsed = await requireJsonBody(req, res);
       if (!parsed.ok) return true;
       const body = parsed.body;
-      const { dataUrl } = body || {};
+      const dataUrl = getDataUrl(body, 'dataUrl');
 
-      if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) {
+      if (!dataUrl) {
         return badRequest(res, 'Expected { dataUrl: "data:<mime>;base64,..." }');
       }
 

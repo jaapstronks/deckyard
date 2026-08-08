@@ -16,6 +16,7 @@ import {
   requireJsonBody,
 } from '../../../utils/http.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
+import { getString } from '../../../utils/request-validators.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
 import { getConvertibleSlideTypes, convertSlideToType } from '../../../../shared/slide-types/convert.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
@@ -116,8 +117,8 @@ export async function handleAnalyzeThemeChange(
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
 
-  const { newThemeId } = parsed.body || {};
-  if (!newThemeId || typeof newThemeId !== 'string') {
+  const newThemeId = getString(parsed.body, 'newThemeId');
+  if (!newThemeId) {
     return badRequest(res, 'newThemeId is required');
   }
 
@@ -200,8 +201,9 @@ export async function handleChangeTheme(
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
 
-  const { newThemeId, convertSlides } = parsed.body || {};
-  if (!newThemeId || typeof newThemeId !== 'string') {
+  const { convertSlides } = parsed.body || {};
+  const newThemeId = getString(parsed.body, 'newThemeId');
+  if (!newThemeId) {
     return badRequest(res, 'newThemeId is required');
   }
 
