@@ -13,6 +13,7 @@ import { updatePresentation } from '../../../storage/presentations/index.js';
 import { methodNotAllowed } from '../../../utils/http.js';
 import { newSlide } from '../../../../shared/slide-types.js';
 import { requirePermission, getPresentationWithAccess, readApiV1Body, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
+import { getNonNegativeNumber } from '../../../utils/request-validators.js';
 
 /**
  * Sanitize a library item for API response.
@@ -153,8 +154,9 @@ async function handleAddFromLibrary(ctx, presentationId) {
   const slides = Array.isArray(pres.slides) ? [...pres.slides] : [];
   let insertIndex = slides.length; // Default: append at end
 
-  if (typeof body.atIndex === 'number' && body.atIndex >= 0) {
-    insertIndex = Math.min(body.atIndex, slides.length);
+  const atIndex = getNonNegativeNumber(body, 'atIndex');
+  if (atIndex !== null) {
+    insertIndex = Math.min(atIndex, slides.length);
   } else if (body.afterSlideId) {
     const afterIdx = slides.findIndex((s) => s.id === body.afterSlideId);
     if (afterIdx >= 0) {

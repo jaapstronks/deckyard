@@ -2,6 +2,7 @@ import { createFollowCode, resolveFollowCode } from '../../storage/follow-codes.
 import { badRequest, methodNotAllowed, requireJsonBody, serveJson, serverError, unauthorized, rateLimited } from '../../utils/http.js';
 import { getClientIp } from '../../utils/context.js';
 import { createLogger } from '../../utils/logger.js';
+import { getString } from '../../utils/request-validators.js';
 const log = createLogger('follow-codes');
 
 // ============================================================
@@ -75,9 +76,9 @@ export async function handleFollowCodes({ repoRoot, req, res, url, authedUser })
 
     try {
       const body = parsed.body || {};
-      const { followUrl } = body;
+      const followUrl = getString(body, 'followUrl');
 
-      if (typeof followUrl !== 'string' || !followUrl.trim()) {
+      if (!followUrl.trim()) {
         badRequest(res, 'followUrl is required');
         return true;
       }

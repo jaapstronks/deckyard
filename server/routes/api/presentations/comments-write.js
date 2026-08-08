@@ -36,6 +36,7 @@ import {
 import { getGuestFromRequest, withPresentationCommentAuth } from '../../../utils/route-middleware.js';
 import { notifyCommentCreated, notifyMentionsAdded } from '../../../services/comment-notifications.js';
 import { getCtx, MAX_COMMENT_LENGTH, broadcastCommentCounts } from './comments-shared.js';
+import { getString } from '../../../utils/request-validators.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('comments-write');
 
@@ -113,7 +114,7 @@ export async function handlePresentationCommentsCreate(
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  if (!body?.body || typeof body.body !== 'string' || !body.body.trim()) {
+  if (!getString(body, 'body').trim()) {
     return badRequest(res, 'Comment body is required');
   }
 
@@ -209,7 +210,7 @@ export async function handlePresentationCommentUpdate(
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  if (!body?.body || typeof body.body !== 'string' || !body.body.trim()) {
+  if (!getString(body, 'body').trim()) {
     return badRequest(res, 'Comment body is required');
   }
 

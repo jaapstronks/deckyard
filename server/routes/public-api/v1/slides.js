@@ -9,6 +9,7 @@ import { newSlide, validateSlide, resolveSlideTypeName, canonicalSlideType } fro
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
 import { requirePermission, getPresentationWithAccess, readApiV1Body, apiSuccess, apiCreated, apiError } from './middleware.js';
 import { emailCanEditCustomHtml, customHtmlEditViolation } from '../../../utils/route-middleware.js';
+import { getOptionalString, getOptionalObject, getNonNegativeNumber } from '../../../utils/request-validators.js';
 
 /**
  * Sanitize a slide for API response.
@@ -92,7 +93,7 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
     type: slideType,
     parentId: existingSlide.parentId || null,
     content: body.content || existingSlide.content || {},
-    notes: typeof body.notes === 'string' ? body.notes : (existingSlide.notes || ''),
+    notes: getOptionalString(body, 'notes') ?? (existingSlide.notes || ''),
     visibility: body.visibility || existingSlide.visibility || {},
   };
   // Preserve the author-lock flag: the public API cannot toggle it, and
@@ -187,18 +188,21 @@ async function handleCreateSlide(ctx, presentationId) {
   }
 
   // Override content if provided
-  if (body.content && typeof body.content === 'object') {
-    newSlideObj.content = { ...newSlideObj.content, ...body.content };
+  const contentPatch = getOptionalObject(body, 'content');
+  if (contentPatch) {
+    newSlideObj.content = { ...newSlideObj.content, ...contentPatch };
   }
 
   // Set notes if provided
-  if (typeof body.notes === 'string') {
-    newSlideObj.notes = body.notes;
+  const notes = getOptionalString(body, 'notes');
+  if (notes !== null) {
+    newSlideObj.notes = notes;
   }
 
   // Set visibility if provided
-  if (body.visibility && typeof body.visibility === 'object') {
-    newSlideObj.visibility = body.visibility;
+  const visibilityPatch = getOptionalObject(body, 'visibility');
+  if (visibilityPatch) {
+    newSlideObj.visibility = visibilityPatch;
   }
 
   // Validate the new slide
@@ -223,8 +227,9 @@ async function handleCreateSlide(ctx, presentationId) {
   const slides = Array.isArray(pres.slides) ? [...pres.slides] : [];
   let insertIndex = slides.length; // Default: append at end
 
-  if (typeof body.atIndex === 'number' && body.atIndex >= 0) {
-    insertIndex = Math.min(body.atIndex, slides.length);
+  const atIndex = getNonNegativeNumber(body, 'atIndex');
+  if (atIndex !== null) {
+    insertIndex = Math.min(atIndex, slides.length);
   } else if (body.afterSlideId) {
     const afterIdx = slides.findIndex((s) => s.id === body.afterSlideId);
     if (afterIdx >= 0) {

@@ -8,6 +8,7 @@ import {
   patchImageKitFileDetails,
 } from '../../media/imagekit.js';
 import { getMediaStatus, getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
+import { getString } from '../../utils/request-validators.js';
 
 export async function handleMedia({ repoRoot, req, res, url, authedUser }) {
   if (!url.pathname.startsWith('/api/media/')) return false;
@@ -41,12 +42,14 @@ export async function handleMedia({ repoRoot, req, res, url, authedUser }) {
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
-    const { filename, contentType, size } = body || {};
+    const { size } = body || {};
+    const filename = getString(body, 'filename');
+    const contentType = getString(body, 'contentType');
 
-    if (!filename || typeof filename !== 'string') {
+    if (!filename) {
       return badRequest(res, 'filename is required');
     }
-    if (!contentType || typeof contentType !== 'string') {
+    if (!contentType) {
       return badRequest(res, 'contentType is required');
     }
 
@@ -73,9 +76,9 @@ export async function handleMedia({ repoRoot, req, res, url, authedUser }) {
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
-    const { key } = body || {};
+    const key = getString(body, 'key');
 
-    if (!key || typeof key !== 'string') {
+    if (!key) {
       return badRequest(res, 'key is required');
     }
 

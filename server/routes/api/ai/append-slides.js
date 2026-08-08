@@ -4,6 +4,7 @@ import {
   getOptionalString,
   getLang,
   getBoolean,
+  getOptionalObject,
 } from '../../../utils/request-validators.js';
 import {
   deckToPresentationParts,
@@ -32,11 +33,12 @@ export async function handleAiAppendSlides({ req, res, authedUser }) {
   const priorSlides = Array.isArray(body?.priorSlides) ? body.priorSlides : null;
   const feedback = getOptionalString(body, 'feedback');
 
-  const existingDeck =
-    body?.deck && typeof body.deck === 'object'
-      ? body.deck
-      : body?.presentation && typeof body.presentation === 'object'
-      ? presentationToDeck(body.presentation)
+  const deckInput = getOptionalObject(body, 'deck');
+  const presInput = getOptionalObject(body, 'presentation');
+  const existingDeck = deckInput
+    ? deckInput
+    : presInput
+      ? presentationToDeck(presInput)
       : null;
 
   const slideTypeCtx = await loadSlideTypeContext(authedUser);

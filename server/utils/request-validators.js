@@ -93,6 +93,67 @@ export function getBoolean(body, key, defaultValue = false) {
 }
 
 /**
+ * Extract an optional boolean field, distinguishing "present" from "absent".
+ * Returns null when the field is missing or not a boolean, so a caller can
+ * branch on whether the client sent it at all (which `getBoolean`'s default
+ * hides).
+ * @param {object} body - Request body
+ * @param {string} key - Field name
+ * @returns {boolean|null}
+ */
+export function getOptionalBoolean(body, key) {
+  const val = body?.[key];
+  return typeof val === 'boolean' ? val : null;
+}
+
+/**
+ * Extract an optional non-negative number field.
+ * Returns null unless the field is a number `>= 0` (e.g. an insertion index).
+ * @param {object} body - Request body
+ * @param {string} key - Field name
+ * @returns {number|null}
+ */
+export function getNonNegativeNumber(body, key) {
+  const val = body?.[key];
+  return typeof val === 'number' && val >= 0 ? val : null;
+}
+
+/**
+ * Extract an optional data-URL string field.
+ * Returns the value only when it is a string beginning with `data:`, else null;
+ * the caller decides the 400. Does not validate the media type or base64 body.
+ * @param {object} body - Request body
+ * @param {string} key - Field name
+ * @returns {string|null}
+ */
+export function getDataUrl(body, key) {
+  const val = body?.[key];
+  return typeof val === 'string' && val.startsWith('data:') ? val : null;
+}
+
+/**
+ * Extract an array-of-strings field, dropping every non-string and empty entry.
+ * With `{ trim: true }` each entry is trimmed before the emptiness test. Returns
+ * `[]` when the field is missing or not an array.
+ * @param {object} body - Request body
+ * @param {string} key - Field name
+ * @param {object} [options]
+ * @param {boolean} [options.trim=false] - Trim entries before dropping empties
+ * @returns {string[]}
+ */
+export function getStringArray(body, key, { trim = false } = {}) {
+  const val = body?.[key];
+  if (!Array.isArray(val)) return [];
+  const out = [];
+  for (const entry of val) {
+    if (typeof entry !== 'string') continue;
+    const s = trim ? entry.trim() : entry;
+    if (s) out.push(s);
+  }
+  return out;
+}
+
+/**
  * Extract common AI endpoint parameters.
  * @param {object} body - Request body
  * @returns {{ raw: string, vendor: string|null, lang: 'nl'|'en-GB'|null, theme: string|null, settings: object|null }}

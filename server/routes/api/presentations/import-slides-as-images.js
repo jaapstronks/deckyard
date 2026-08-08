@@ -11,6 +11,7 @@ import {
 } from '../../../utils/http.js';
 import { sseWrite, sseError } from '../../../utils/sse.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
+import { getString } from '../../../utils/request-validators.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('import-slides-as-images');
 
@@ -93,9 +94,10 @@ export async function handlePresentationImportSlidesAsImages(
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const { dataUrl, filename, insertAfterSlideId } = body || {};
+  const { filename, insertAfterSlideId } = body || {};
+  const dataUrl = getString(body, 'dataUrl');
 
-  if (!dataUrl || typeof dataUrl !== 'string') {
+  if (!dataUrl) {
     return badRequest(res, 'dataUrl is required');
   }
 

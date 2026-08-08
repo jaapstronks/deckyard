@@ -13,6 +13,7 @@ import {
   badRequest,
   requireJsonBody,
 } from '../../../utils/http.js';
+import { getString, getTrimmedString } from '../../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { convertMarkdownText } from '../../../utils/markdown-import/index.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
@@ -32,14 +33,14 @@ export async function handlePresentationsImportMarkdown({
     if (!parsed.ok) return true;
     const body = parsed.body;
 
-    const markdown = body?.markdown;
-    if (!markdown || typeof markdown !== 'string') {
+    const markdown = getString(body, 'markdown');
+    if (!markdown) {
       badRequest(res, 'Missing required field: markdown (string)');
       return true;
     }
 
     const lang = body?.lang === 'nl' || body?.lang === 'en-GB' ? body.lang : 'nl';
-    const theme = typeof body?.theme === 'string' ? body.theme.trim() : undefined;
+    const theme = getTrimmedString(body, 'theme') || undefined;
 
     log.info('[import-markdown] Language:', lang);
     log.info('[import-markdown] Markdown length:', markdown.length);

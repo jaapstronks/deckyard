@@ -9,7 +9,7 @@ import {
   unauthorized,
   requireJsonBody,
 } from '../../../utils/http.js';
-import { getOptionalString } from '../../../utils/request-validators.js';
+import { getOptionalString, getOptionalObject } from '../../../utils/request-validators.js';
 import {
   normalizeLang,
   otherLang,
@@ -45,7 +45,7 @@ export async function handlePresentationTranslateFields(
     normalizeLang(pres?.i18n?.dominant) ||
     'nl';
   const to = normalizeLang(body?.to) || otherLang(from);
-  const fields = body?.fields && typeof body.fields === 'object' ? body.fields : {};
+  const fields = getOptionalObject(body, 'fields') || {};
 
   const translations = await translateFieldMap(fields, { from, to, vendor });
   serveJson(res, 200, { ok: true, from, to, translations });

@@ -4,6 +4,7 @@ import {
   getOptionalString,
   getTrimmedString,
   getLang,
+  getStringArray,
 } from '../../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides.js';
@@ -26,9 +27,7 @@ export const handleAiRefineSection = withErrorHandler('ai-refine-section', async
       'Expected { presentation: { slides: [...] }, slideIds: [...], feedback: "..." }'
     );
   }
-  const slideIds = Array.isArray(body?.slideIds)
-    ? body.slideIds.filter((x) => typeof x === 'string' && x)
-    : [];
+  const slideIds = getStringArray(body, 'slideIds');
   if (!slideIds.length) return badRequest(res, 'Expected non-empty slideIds array.');
   const feedback = getTrimmedString(body, 'feedback');
   if (!feedback) return badRequest(res, 'Expected { feedback: "..." }');

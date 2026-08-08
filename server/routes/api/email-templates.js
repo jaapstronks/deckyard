@@ -5,7 +5,7 @@
 
 import { getUserFromRequestAsync } from '../../auth/auth.js';
 import { serveJson, badRequest, unauthorized, requireJsonBody } from '../../utils/http.js';
-import { getTrimmedString } from '../../utils/request-validators.js';
+import { getTrimmedString, getOptionalString } from '../../utils/request-validators.js';
 import { createRouteContext } from '../../utils/context.js';
 import {
   writeEmailTemplate,
@@ -127,8 +127,9 @@ export async function handleEmailTemplates({ repoRoot, req, res, url }) {
 
     // Extract allowed fields
     for (const field of TEMPLATE_METADATA[type].fields) {
-      if (typeof body[field] === 'string') {
-        fields[field] = body[field];
+      const value = getOptionalString(body, field);
+      if (value !== null) {
+        fields[field] = value;
       }
     }
 

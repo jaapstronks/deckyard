@@ -38,6 +38,7 @@ import {
   CommentEventTypes,
 } from '../../../services/comment-events.js';
 import { notifyCommentCreated } from '../../../services/comment-notifications.js';
+import { getTrimmedString } from '../../../utils/request-validators.js';
 import { broadcastCommentCounts, MAX_COMMENT_LENGTH } from '../../api/presentations/comments-shared.js';
 import {
   requirePermission,
@@ -163,7 +164,7 @@ async function handleCreateComment(ctx, presentationId) {
     return true;
   }
 
-  const text = typeof body?.body === 'string' ? body.body.trim() : '';
+  const text = getTrimmedString(body, 'body');
   if (!text) {
     await apiError(ctx, 400, 'Comment body is required');
     return true;

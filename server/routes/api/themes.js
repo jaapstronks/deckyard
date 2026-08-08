@@ -35,6 +35,7 @@ import { CURATED_FONTS, getFontsByCategory } from '../../../shared/theme-fonts.j
 import { buildThemeConfig } from '../../utils/theme-builder.js';
 import { listAllFontFamiliesWithVariants } from '../../storage/font-families.js';
 import { getAppSettings, getDefaultThemeId } from '../../storage/settings.js';
+import { getOptionalString, getOptionalObject } from '../../utils/request-validators.js';
 
 /**
  * Check if user can manage themes.
@@ -174,7 +175,7 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
 
     // Managed fonts, when the draft references one by id.
     let managedFonts;
-    const fonts = draft.fonts && typeof draft.fonts === 'object' ? draft.fonts : {};
+    const fonts = getOptionalObject(draft, 'fonts') || {};
     if (fonts.headingFamilyId || fonts.bodyFamilyId) {
       try {
         managedFonts = await listAllFontFamiliesWithVariants(
@@ -191,7 +192,7 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
       {
         id: 'preview',
         slug: 'preview',
-        label: typeof draft.label === 'string' ? draft.label : 'Preview',
+        label: getOptionalString(draft, 'label') ?? 'Preview',
         logoUrl: draft.logoUrl || null,
         logoSmallUrl: draft.logoSmallUrl || null,
         colors: draft.colors,
