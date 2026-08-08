@@ -209,9 +209,9 @@ export async function handleApi({ repoRoot, req, res, url }) {
   if (await handleOrganizationMembers(ctx)) return;
   // Follow code creation (POST) requires auth
   if (await handleFollowCodes(ctx)) return;
-  if (await handleAdminUsers({ repoRoot, req, res, url })) return;
-  if (await handleAdminAiLogs({ repoRoot, req, res, url })) return;
-  if (await handleEmailTemplates({ repoRoot, req, res, url })) return;
+  if (await handleAdminUsers(ctx)) return;
+  if (await handleAdminAiLogs(ctx)) return;
+  if (await handleEmailTemplates(ctx)) return;
 
   return notFound(res);
 }
