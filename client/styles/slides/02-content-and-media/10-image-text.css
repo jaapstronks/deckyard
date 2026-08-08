@@ -5,7 +5,12 @@
    The is-compact variant (forced via the density field, or set by the
    auto-fit runtime when the copy overflows) drops back to a denser size. */
 /* Each width/density step multiplies by --tf-size-scale (per-field S/M/L,
-   default 1) so the field scale composes on top of the active base size. */
+   default 1) so the field scale composes on top of the active base size.
+   allowlist: auto-fit body ladder rung — the base sizes below (half 28 → compact
+   22, narrow 32 → compact 24) track the text-column width and are stepped to
+   compact by content-slide-autofit.js when the copy overflows. They are a
+   continuous fit ladder finer than the display scale; snapping 32 → 34 or 22 → md
+   changes which deck lands where. See slide-roles.md § The allowlist. */
 .slide-image-text .copy .body {
   font-family: var(--font-body);
   font-size: calc(28px * var(--tf-size-scale, 1));
