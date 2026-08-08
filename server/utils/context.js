@@ -18,6 +18,36 @@ import { getClientIp } from './rate-limit.js';
 export { getClientIp };
 
 /**
+ * The request context handed to a route handler mounted **before** the
+ * authentication gate in `routes/api/index.js` (login, password reset, magic
+ * link, SSO, and the public follow/share/analytics endpoints). There is no
+ * resolved user and no storage scope yet: the gate has not run.
+ *
+ * @typedef {object} PublicContext
+ * @property {string} repoRoot
+ * @property {import('http').IncomingMessage} req
+ * @property {import('http').ServerResponse} res
+ * @property {URL} url
+ */
+
+/**
+ * The request context handed to a route handler mounted **after** the
+ * authentication gate. It adds the two things the gate produces once, in
+ * `routes/api/index.js`: the storage scope every query runs under, and the
+ * resolved, capability-enriched user.
+ *
+ * The rule that goes with this shape (A7.19 C8, decision B3b): **a handler
+ * mounted after the auth gate receives an `AuthedContext` and never calls
+ * `getUserFromRequestAsync` itself** — the user and scope are already resolved,
+ * and re-resolving them drops the enrichment and costs an extra round-trip.
+ *
+ * @typedef {PublicContext & {
+ *   storageScope: object,
+ *   authedUser: object|null,
+ * }} AuthedContext
+ */
+
+/**
  * Get the organization ID a context acts in.
  *
  * There is no fallback: a context without an organization is a bug at the
