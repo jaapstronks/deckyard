@@ -32,17 +32,24 @@ const ONE_COLUMN_PREFERRED_MAX = 5;
  * How many items fit at a given text size and column count.
  *
  * Every number here was MEASURED, not estimated: the real renderer plus the
- * real slide CSS in headless Chrome at 1600x900 on the default theme, sweeping
- * item count x title length x text length x subheading x columns x text size,
- * and reading back whether the last item still ends above the slide's bottom
- * padding edge. A cap is the largest count that cleared it for every content
- * shape in its bucket.
+ * real slide CSS in headless Chrome at 1600x900 on the default theme (Bricolage
+ * Grotesque headings, Inter body), sweeping item count x title length x text
+ * length x subheading x columns x text size, and reading back whether the last
+ * item still ends above the slide's bottom padding edge. A cap is the largest
+ * count that cleared it for every content shape in its bucket.
  *
  * Character counts stand in for line counts because `renderHtml` is a pure
- * string function that cannot measure anything. The conversions the buckets
- * encode, at "large": an item title fits one line up to ~60 characters in one
- * column and ~40 in two; body text fits one line up to ~45 characters in two
- * columns. A wrapped line costs roughly one item's worth of capacity.
+ * string function that cannot measure anything. The wrap points below were
+ * re-measured on the current sizes (A7.9 batch 2.5 nudged the comfortable
+ * item-text a step, so the older "~60 chars = one line" conversion was stale
+ * and the comfortable caps were one to two items too high on wrapping content).
+ * The conversions, at "large" (comfortable):
+ *   - full-width column: a title wraps to a 2nd line past ~55 chars, body text
+ *     past ~60;
+ *   - half-width column: a title wraps past ~40 chars (3rd line past ~79), body
+ *     text past ~45 (3rd line past ~89).
+ * Each wrapped line, and each intro subheading, costs roughly one item's worth
+ * of capacity.
  *
  * @param {string} size - 'comfortable' | 'normal' | 'compact'
  * @param {boolean} twoCol - Whether the list renders in two columns
@@ -57,19 +64,32 @@ function itemCapacity(size, twoCol, shape) {
     // Two columns at the default or small size never overflowed anywhere in
     // the sweep, up to the schema maximum of 8 items.
     if (size !== 'comfortable') return 8;
-    if (longestTitle <= 40 && longestText <= 45) return 8;
-    // Both a wrapping title and a multi-line description in a half-width
-    // column: only four of these fit.
-    if (longestTitle >= 50 && longestText >= 110) return 4;
+    // Half-width wrap points (measured, current sizes): title → 2 lines past 40
+    // and → 3 past 79; body text → 2 lines past 45 and → 3 past 89.
+    const titleLines = longestTitle > 79 ? 3 : longestTitle > 40 ? 2 : 1;
+    const textLines =
+      longestText > 89 ? 3 : longestText > 45 ? 2 : hasText ? 1 : 0;
+    if (titleLines === 1 && textLines <= 1) return 8;
+    // A tall pair — two wrapped title lines with a ≥2-line body, or a 3-line
+    // title with any wrapped body — only fits four across the two columns.
+    if (titleLines + textLines >= 5) return 4;
     return 6;
   }
 
+  // Full-width wrap points (measured, current sizes): title → 2 lines past 55,
+  // body text → 2 lines past 60.
+  const titleWraps = longestTitle > 55;
+  const textWraps = longestText > 60;
+
   if (size === 'comfortable') {
-    if (longestTitle > 60) return 3; // title wraps to a second line
+    // A 2-line title already halves the room; a 2-line body AND a subheading on
+    // top of that drop one more (three such items clear, but not with a sub).
+    if (titleWraps) return hasText && textWraps && hasSubheading ? 2 : 3;
     if (!hasText) return 5;
-    // Measured at 1600x900: four title+text items clear the bottom edge by
-    // 56px, but a subheading eats 62px of that and pushes the fourth over.
-    return hasSubheading ? 3 : 4;
+    // A 2-line body, or an intro subheading, each cost one item's worth: the
+    // fourth single-line item clears by ~56px, but either eats that room.
+    if (textWraps || hasSubheading) return 3;
+    return 4;
   }
   if (size === 'normal') {
     if (!hasText) return 7;
@@ -164,15 +184,17 @@ export function resolveListLayout(content) {
 /**
  * Whether every item is one line of title and at most one line of text.
  *
- * Same measured wrap points as {@link itemCapacity}: a full-width column fits
- * ~60 title characters and does not wrap body text within the 120-character
- * field limit at all; a half-width column fits ~40 and ~45.
+ * Same measured wrap points as {@link itemCapacity}: a full-width column keeps
+ * a title on one line up to ~55 characters and body text up to ~60; a
+ * half-width column, ~40 and ~45.
  *
  * @param {{twoCol: boolean, longestTitle: number, longestText: number}} resolved
  * @returns {boolean}
  */
 function isSingleLine({ twoCol, longestTitle, longestText }) {
-  return twoCol ? longestTitle <= 40 && longestText <= 45 : longestTitle <= 60;
+  return twoCol
+    ? longestTitle <= 40 && longestText <= 45
+    : longestTitle <= 55 && longestText <= 60;
 }
 
 export default {

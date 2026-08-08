@@ -100,6 +100,51 @@ describe('list-slide: measured capacity boundaries', () => {
   });
 });
 
+describe('list-slide: capacity re-measured on the current sizes (A7.9 batch 2.5 tail)', () => {
+  // Batch 2.5 nudged the comfortable item-text up a step; re-measuring the wrap
+  // points in headless Chrome on the default theme showed a full-width body now
+  // wraps past ~60 chars (not "never") and a title past ~55, so the comfortable
+  // caps were one to two items too high on wrapping content and overflowed.
+  // ~68 chars: wraps to a second line in a full-width column.
+  const BODY_2LINE =
+    'A line of body copy just long enough to wrap onto a second line here.';
+
+  it('a two-line body drops one-column Large from 4 items to 3', () => {
+    // Three such items still fit one column at Large; the fourth no longer does,
+    // so it moves to two columns instead of spilling off the slide.
+    assert.equal(
+      resolve({ n: 3, density: 'comfortable', layout: 'one-column', text: BODY_2LINE }).twoCol,
+      false
+    );
+    assert.equal(
+      resolve({ n: 4, density: 'comfortable', layout: 'one-column', text: BODY_2LINE }).twoCol,
+      true
+    );
+  });
+
+  it('a wrapping title with a wrapping body and a subheading drops it to 2', () => {
+    const opts = {
+      n: 3, density: 'comfortable', layout: 'one-column',
+      title: LONG_TITLE, text: BODY_2LINE, subheading: 'Intro',
+    };
+    assert.equal(resolve(opts).twoCol, true, 'three no longer fit one column at Large');
+    assert.equal(resolve({ ...opts, n: 2 }).twoCol, false);
+  });
+
+  it('a wrapping title plus a three-line body drops two-column Large from 6 to 4', () => {
+    // A half-width column with both a wrapped title and a 3-line body: six of
+    // those overflow at Large, four clear the bottom edge.
+    assert.equal(
+      resolve({ n: 6, density: 'comfortable', layout: 'two-column', title: LONG_TITLE, text: LONG_TEXT }).size,
+      'normal'
+    );
+    assert.equal(
+      resolve({ n: 4, density: 'comfortable', layout: 'two-column', title: LONG_TITLE, text: LONG_TEXT }).size,
+      'comfortable'
+    );
+  });
+});
+
 describe('list-slide: an explicit text size is not thrown away', () => {
   // The regression this suite was rewritten for: `density: 'comfortable'` used
   // to be dropped outright past 6 items, so a 7-item table of contents of short
@@ -196,9 +241,13 @@ describe('list-slide: fill', () => {
 
   it('leaves wrapped items alone, where centring would detach the marker', () => {
     assert.ok(!isFill(render({ n: 6, density: 'auto', layout: 'auto', title: LONG_TITLE })));
-    // Text long enough to wrap in a half-width column, but not in a full one.
+    // ~95-char body text wraps to a second line in BOTH a half-width and a
+    // full-width column at the current sizes (the wrap point was re-measured in
+    // A7.9 batch 2.5's tail — a full column keeps body text on one line only up
+    // to ~60 chars, not "never" as the older heuristic assumed). Neither shape
+    // fills: a grown, centred row detaches the marker from the wrapped line.
     assert.ok(!isFill(render({ n: 8, density: 'auto', layout: 'two-column', text: LONG_TEXT })));
-    assert.ok(isFill(render({ n: 4, density: 'auto', layout: 'one-column', text: LONG_TEXT })));
+    assert.ok(!isFill(render({ n: 4, density: 'auto', layout: 'one-column', text: LONG_TEXT })));
   });
 });
 
