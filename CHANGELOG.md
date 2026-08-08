@@ -4,6 +4,31 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.18.0](https://github.com/jaapstronks/deckyard/compare/v1.17.0...v1.18.0) (2026-08-08)
+
+
+### Added
+
+* **collaborators:** make the access log symmetric — log revoke + permission change, deliver revocation message ([#664](https://github.com/jaapstronks/deckyard/issues/664)) ([7d65e0d](https://github.com/jaapstronks/deckyard/commit/7d65e0d8d51e8b3668fe303bda42c58f23628a7b))
+* dual-key presentation_versions.created_by on users.id ([#647](https://github.com/jaapstronks/deckyard/issues/647)) ([9ec1ddf](https://github.com/jaapstronks/deckyard/commit/9ec1ddf79587e2b49935d6426644054b8e5f470d))
+* key slide/presentation locks and live SSE on users.id (T10 F3) ([#650](https://github.com/jaapstronks/deckyard/issues/650)) ([32dce87](https://github.com/jaapstronks/deckyard/commit/32dce873cb9a5d71d945455d6d7076d177a463ba))
+* route trash and slide-library authz through identity-match ([#648](https://github.com/jaapstronks/deckyard/issues/648)) ([7c24965](https://github.com/jaapstronks/deckyard/commit/7c24965918f36b9b3c21a9a517e78136966f9683))
+* **server:** make requireJsonBody the single JSON body entry point ([#657](https://github.com/jaapstronks/deckyard/issues/657)) ([8d6505d](https://github.com/jaapstronks/deckyard/commit/8d6505df93c951591c51642a8d04caa11a04caed))
+* **vocab:** scope becomes visibility, the tenant entity is organization everywhere ([#668](https://github.com/jaapstronks/deckyard/issues/668)) ([d03f2fb](https://github.com/jaapstronks/deckyard/commit/d03f2fbbfdb338171daced8ab2da5b5f638e57cc))
+
+
+### Fixed
+
+* **analytics:** derive device labels with an ephemeral key in secretless boot modes ([#662](https://github.com/jaapstronks/deckyard/issues/662)) ([27e5921](https://github.com/jaapstronks/deckyard/commit/27e5921b2f72bed8acd751e0b8bd84ab60bed8d2))
+* **analytics:** honour settings retention, drop dead analytics tables ([#660](https://github.com/jaapstronks/deckyard/issues/660)) ([4ad5b70](https://github.com/jaapstronks/deckyard/commit/4ad5b7007b02c12f51b17ca60148e3b8376035bb))
+* **comparison:** subheading sits one scale step above the column prose ([#669](https://github.com/jaapstronks/deckyard/issues/669)) ([76b62ff](https://github.com/jaapstronks/deckyard/commit/76b62ff0eb4b688153d92a6824b828dc8053ac34))
+* **email:** one canonical template-type list; drop dead exportReady path ([#659](https://github.com/jaapstronks/deckyard/issues/659)) ([7859ca8](https://github.com/jaapstronks/deckyard/commit/7859ca85bbc987b11583f630863ad8c8e9ee697a))
+* **lint:** restore dead-exports detection with a Node scanner (B47) ([#661](https://github.com/jaapstronks/deckyard/issues/661)) ([3c80b81](https://github.com/jaapstronks/deckyard/commit/3c80b81a2bbea46551915dffafd9e701e1063330))
+* **list-slide:** re-measure itemCapacity on the current sizes ([#670](https://github.com/jaapstronks/deckyard/issues/670)) ([6aebc9c](https://github.com/jaapstronks/deckyard/commit/6aebc9cad0577d69a8880adaee0a783b4002d936))
+* **schema:** fold away every remaining inert per-field align key (v5-&gt;v6) ([#663](https://github.com/jaapstronks/deckyard/issues/663)) ([212c82a](https://github.com/jaapstronks/deckyard/commit/212c82ac7e93a513ecf82287f33eac63afdbe614))
+* **server:** the JSON body entry rejects non-object bodies itself ([#673](https://github.com/jaapstronks/deckyard/issues/673)) ([9f878c4](https://github.com/jaapstronks/deckyard/commit/9f878c45f7ea8afda3973ce28d85f9dbd19c1ba7))
+* **tests:** silence migrate-import stdout to stop node --test IPC deserialize flake ([#666](https://github.com/jaapstronks/deckyard/issues/666)) ([1e73a6d](https://github.com/jaapstronks/deckyard/commit/1e73a6d177c80dcc4e4636a978550303371c2323))
+
 ## [1.17.0](https://github.com/jaapstronks/deckyard/compare/v1.16.0...v1.17.0) (2026-08-05)
 
 
