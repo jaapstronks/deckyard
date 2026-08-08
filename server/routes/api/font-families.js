@@ -69,7 +69,6 @@ export async function handleFontFamilies({ req, res, url, authedUser }) {
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
-    if (!body || typeof body !== 'object') return badRequest(res, 'Missing JSON body.');
 
     const ctx = createRouteContext(authedUser);
     const result = await createFontFamily(body, ctx);
@@ -305,7 +304,6 @@ export async function handleFontFamilies({ req, res, url, authedUser }) {
       const parsed = await requireJsonBody(req, res);
       if (!parsed.ok) return true;
       const body = parsed.body;
-      if (!body || typeof body !== 'object') return badRequest(res, 'Missing JSON body.');
 
       const result = await updateFontFamily(familyId, body, ctx);
       if (!result.ok) {

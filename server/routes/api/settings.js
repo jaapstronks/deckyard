@@ -1,4 +1,4 @@
-import { badRequest, methodNotAllowed, serveJson, unauthorized, serverError, requireJsonBody } from '../../utils/http.js';
+import { methodNotAllowed, serveJson, unauthorized, serverError, requireJsonBody } from '../../utils/http.js';
 import { getStringArray } from '../../utils/request-validators.js';
 import {
   getAppSettings,
@@ -63,8 +63,6 @@ export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
       const parsed = await requireJsonBody(req, res);
       if (!parsed.ok) return true;
       const body = parsed.body;
-      if (!body || typeof body !== 'object')
-        return badRequest(res, 'Missing JSON body');
       const settings = await writeAppSettings(repoRoot, body);
       serveJson(res, 200, { settings });
       return true;
@@ -96,9 +94,6 @@ export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
       const parsed = await requireJsonBody(req, res);
       if (!parsed.ok) return true;
       const body = parsed.body;
-      if (!body || typeof body !== 'object') {
-        return badRequest(res, 'Missing JSON body');
-      }
 
       const hasDesignerKeys = 'disabledSlideTypes' in body;
       const hasAdminKeys = Object.keys(body).some(k => k !== 'disabledSlideTypes');
@@ -180,8 +175,6 @@ export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
       const parsed = await requireJsonBody(req, res);
       if (!parsed.ok) return true;
       const body = parsed.body;
-      if (!body || typeof body !== 'object')
-        return badRequest(res, 'Missing JSON body');
       const settings = await writeUserSettings(repoRoot, email, body);
       serveJson(res, 200, { settings });
       return true;

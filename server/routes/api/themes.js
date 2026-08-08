@@ -171,7 +171,8 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
     const parsed = await requireJsonBody(req, res, { allowEmpty: true });
     if (!parsed.ok) return true;
 
-    const draft = parsed.body && typeof parsed.body === 'object' ? parsed.body : {};
+    // requireJsonBody guarantees a plain object (empty body → {}).
+    const draft = parsed.body;
 
     // Managed fonts, when the draft references one by id.
     let managedFonts;
