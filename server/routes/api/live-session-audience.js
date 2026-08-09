@@ -37,6 +37,7 @@ import {
   requireJsonBody,
 } from '../../utils/http.js';
 import { errorToResponse } from '../../utils/errors.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import { getOptionalString } from '../../utils/request-validators.js';
 import { allowCompanionNotesWrite, getClientIp } from '../../utils/rate-limit.js';
 import { guardSseConnection } from '../../utils/sse-limiter.js';
@@ -172,7 +173,8 @@ async function handleSessionDeck({ repoRoot, res }, sessionId) {
  * field and inherits the shared slide-lock policy (423) and the `deckUpdated`
  * broadcast that refreshes the editor and any other companion.
  */
-async function handleSessionNotesWrite({ repoRoot, req, res }, sessionId, slideId) {
+async function handleSessionNotesWrite({ repoRoot, req, res }, sessionId, rawSlideId) {
+  const slideId = decodeURIComponent(rawSlideId);
   // Anonymous write path: throttle per IP so a leaked join link cannot be used
   // to hammer the deck's slides column.
   const ip = getClientIp(req);
@@ -233,38 +235,32 @@ async function handleSessionNotesWrite({ repoRoot, req, res }, sessionId, slideI
 }
 
 /**
+ * Declarative route table for the capability-based live-session routes
+ * (A7.19 C8). Order matches the previous chain. `/state` and `/events` fall
+ * through on a method mismatch (Form A) **on purpose**: their POST
+ * counterparts are presenter actions that live behind deck-write in
+ * `live-sessions.js`, mounted after the login gate — a 405 here would shadow
+ * them. `/deck` and `/notes/:slideId` sent an explicit 405, preserved as
+ * trailing catch-all rows.
+ *
+ * @type {import('../../utils/router.js').Route[]}
+ */
+export const ROUTES = [
+  { method: 'GET', pattern: /^\/api\/live-sessions\/([^/]+)\/state$/, handler: handleSessionState },
+  { method: 'GET', pattern: /^\/api\/live-sessions\/([^/]+)\/events$/, handler: handleSessionEvents },
+  { method: 'GET', pattern: /^\/api\/live-sessions\/([^/]+)\/deck$/, handler: handleSessionDeck },
+  { pattern: /^\/api\/live-sessions\/([^/]+)\/deck$/, handler: ({ res }) => methodNotAllowed(res, ['GET']) },
+  { method: 'PUT', pattern: /^\/api\/live-sessions\/([^/]+)\/notes\/([^/]+)$/, handler: handleSessionNotesWrite },
+  { pattern: /^\/api\/live-sessions\/([^/]+)\/notes\/([^/]+)$/, handler: ({ res }) => methodNotAllowed(res, ['PUT']) },
+];
+
+/**
  * Dispatch the capability-based live-session routes. Registered in the
  * public block of `routes/api/index.js`, before the login gate.
  *
- * @param {{repoRoot: string, req: Object, res: Object, url: URL}} ctx
- * @returns {Promise<boolean>} Whether a route handled the request.
+ * @param {import('../../utils/context.js').PublicContext} ctx
+ * @returns {Promise<boolean>|boolean} Whether a route handled the request.
  */
-export async function handleLiveSessionsPublic({ repoRoot, req, res, url }) {
-  const stateMatch = url.pathname.match(/^\/api\/live-sessions\/([^/]+)\/state$/);
-  if (stateMatch && req.method === 'GET')
-    return handleSessionState({ repoRoot, req, res }, stateMatch[1]);
-
-  const eventsMatch = url.pathname.match(/^\/api\/live-sessions\/([^/]+)\/events$/);
-  if (eventsMatch && req.method === 'GET')
-    return handleSessionEvents({ repoRoot, req, res }, eventsMatch[1]);
-
-  const deckMatch = url.pathname.match(/^\/api\/live-sessions\/([^/]+)\/deck$/);
-  if (deckMatch) {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-    return handleSessionDeck({ repoRoot, req, res }, deckMatch[1]);
-  }
-
-  const notesMatch = url.pathname.match(
-    /^\/api\/live-sessions\/([^/]+)\/notes\/([^/]+)$/
-  );
-  if (notesMatch) {
-    if (req.method !== 'PUT') return methodNotAllowed(res, ['PUT']);
-    return handleSessionNotesWrite(
-      { repoRoot, req, res },
-      notesMatch[1],
-      decodeURIComponent(notesMatch[2])
-    );
-  }
-
-  return false;
+export function handleLiveSessionsPublic(ctx) {
+  return dispatchRoutes(ROUTES, ctx);
 }
