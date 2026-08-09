@@ -47,6 +47,7 @@ const { handleOrganizationMembers } = await import(
   '../server/routes/api/organization-members.js'
 );
 const { handleAdminUsers } = await import('../server/routes/api/admin-users.js');
+const { authedRouteContext } = await import('./helpers/authed-route-context.js');
 
 const UPDATED_AT = '2026-02-01T00:00:00.000Z';
 const OWNER = 'zoe@example.com';
@@ -237,12 +238,13 @@ async function invite(email) {
  */
 async function createInstanceUser(email) {
   const res = fakeResponse();
-  await handleAdminUsers({
+  const ctx = await authedRouteContext({
     repoRoot: null,
     req: withSession('POST', { email, name: 'nina', role: 'user' }),
     res,
     url: new URL('http://localhost/api/admin/users'),
   });
+  await handleAdminUsers(ctx);
   return { status: res.statusCode, body: res.body() };
 }
 
@@ -338,12 +340,13 @@ test('creating an instance user reports a mail that did go out', async () => {
  */
 async function resend(userId) {
   const res = fakeResponse();
-  await handleAdminUsers({
+  const ctx = await authedRouteContext({
     repoRoot: null,
     req: withSession('POST', {}),
     res,
     url: new URL(`http://localhost/api/admin/users/${userId}/resend-invitation`),
   });
+  await handleAdminUsers(ctx);
   return { status: res.statusCode, body: res.body() };
 }
 

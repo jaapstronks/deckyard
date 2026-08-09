@@ -137,9 +137,9 @@ export function createRouteContext(authedUser, options = {}) {
  * same answer for a request with a person behind it and one without.
  *
  * **Nobody authenticated → the default organization.** These are the pre-auth
- * and system routes (login, password reset, magic link, SSO, email templates),
- * which run before there is a session to resolve an organization from. They
- * pass `null` explicitly, so this is a stated absence, not a lost value.
+ * and system routes (login, password reset, magic link, SSO), which run before
+ * there is a session to resolve an organization from. They pass `null`
+ * explicitly, so this is a stated absence, not a lost value.
  *
  * **Someone authenticated but with no verified organization → nothing, once an
  * instance holds more than one organization.** The only user shape that reaches
