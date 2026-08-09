@@ -22,6 +22,7 @@ import { listUsers } from '../../storage/users.js';
 import { sendCollaboratorInviteEmail } from '../../integrations/brevo.js';
 import { canManageCollaborators } from '../../utils/presentation-authz.js';
 import { createRouteContext } from '../../utils/context.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, jsonError, serverError, getErrorStatus } from '../../utils/http.js';
 import { validatePermission } from '../../utils/request-validators.js';
 import { createNotification } from '../../storage/notifications.js';
@@ -51,420 +52,438 @@ const INVITE_FAILURE_MESSAGES = {
   unavailable: 'Collaborator storage is unavailable',
 };
 
-/**
- * Handle collaborator management endpoints.
- */
-export async function handleCollaborators({ repoRoot, storageScope, req, res, url, authedUser }) {
+// GET /api/presentations/shared-with-me - List presentations shared with current user
+async function handleSharedWithMe({ storageScope, res, authedUser }) {
   const ctx = createRouteContext(authedUser);
 
-  // GET /api/presentations/shared-with-me - List presentations shared with current user
-  const sharedWithMeMatch = url.pathname === '/api/presentations/shared-with-me';
-  if (sharedWithMeMatch && req.method === 'GET') {
-    if (!authedUser?.email) {
-      return unauthorized(res);
-    }
-
-    try {
-      const presentations = await listPresentationsSharedWithUser(authedUser.email, ctx);
-
-      // Batch-fetch first slides for all presentations (avoids N+1 queries).
-      // The grid only needs the presence signal — the thumbnail is a
-      // server-rasterized PNG — so this collapses to a boolean.
-      const ids = presentations.map((p) => p.id);
-      const firstSlidesMap = await getFirstSlidesForIds(storageScope, ids);
-
-      const presentationsWithSlides = presentations.map((p) => ({
-        ...p,
-        hasSlides: !!firstSlidesMap.get(p.id),
-      }));
-
-      serveJson(res, 200, { presentations: presentationsWithSlides });
-    } catch (err) {
-      log.error('[collaborators] Failed to list shared presentations:', err);
-      return serverError(res, 'Failed to load shared presentations');
-    }
-    return true;
+  if (!authedUser?.email) {
+    return unauthorized(res);
   }
 
-  // POST /api/presentations/:id/collaborators - Add collaborator(s)
-  const baseMatch = url.pathname.match(/^\/api\/presentations\/([^/]+)\/collaborators$/);
-  if (baseMatch && req.method === 'POST') {
-    const presentationId = baseMatch[1];
-    const pres = await getPresentation(storageScope, presentationId);
-    if (!pres) return notFound(res);
-    const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email);
-    if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
-      return unauthorized(res);
+  try {
+    const presentations = await listPresentationsSharedWithUser(authedUser.email, ctx);
+
+    // Batch-fetch first slides for all presentations (avoids N+1 queries).
+    // The grid only needs the presence signal — the thumbnail is a
+    // server-rasterized PNG — so this collapses to a boolean.
+    const ids = presentations.map((p) => p.id);
+    const firstSlidesMap = await getFirstSlidesForIds(storageScope, ids);
+
+    const presentationsWithSlides = presentations.map((p) => ({
+      ...p,
+      hasSlides: !!firstSlidesMap.get(p.id),
+    }));
+
+    serveJson(res, 200, { presentations: presentationsWithSlides });
+  } catch (err) {
+    log.error('[collaborators] Failed to list shared presentations:', err);
+    return serverError(res, 'Failed to load shared presentations');
+  }
+  return true;
+}
+
+// POST /api/presentations/:id/collaborators - Add collaborator(s)
+async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedUser }, presentationId) {
+  const ctx = createRouteContext(authedUser);
+
+  const pres = await getPresentation(storageScope, presentationId);
+  if (!pres) return notFound(res);
+  const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email);
+  if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
+    return unauthorized(res);
+  }
+
+  const jsonResult = await requireJsonBody(req, res);
+  if (!jsonResult.ok) return true;
+  const body = jsonResult.body;
+
+  const permission = body?.permission;
+  if (!validatePermission(permission, res)) return true;
+
+  // Support both single email and batch emails
+  let emailsToInvite = [];
+  if (Array.isArray(body?.userEmails) && body.userEmails.length > 0) {
+    // Batch mode
+    emailsToInvite = body.userEmails
+      .map((e) => normalizeEmail(e))
+      .filter((e) => e && e.includes('@'));
+  } else if (body?.userEmail) {
+    // Single mode (backward compatible)
+    const singleEmail = normalizeEmail(body.userEmail);
+    if (singleEmail && singleEmail.includes('@')) {
+      emailsToInvite = [singleEmail];
     }
+  }
 
-    const jsonResult = await requireJsonBody(req, res);
-    if (!jsonResult.ok) return true;
-    const body = jsonResult.body;
+  if (emailsToInvite.length === 0) {
+    return badRequest(res, 'Valid userEmail or userEmails array is required');
+  }
 
-    const permission = body?.permission;
-    if (!validatePermission(permission, res)) return true;
+  // Limit batch size
+  if (emailsToInvite.length > 20) {
+    return badRequest(res, 'Maximum 20 users can be invited at once');
+  }
 
-    // Support both single email and batch emails
-    let emailsToInvite = [];
-    if (Array.isArray(body?.userEmails) && body.userEmails.length > 0) {
-      // Batch mode
-      emailsToInvite = body.userEmails
-        .map((e) => normalizeEmail(e))
-        .filter((e) => e && e.includes('@'));
-    } else if (body?.userEmail) {
-      // Single mode (backward compatible)
-      const singleEmail = normalizeEmail(body.userEmail);
-      if (singleEmail && singleEmail.includes('@')) {
-        emailsToInvite = [singleEmail];
-      }
-    }
+  // Prevent adding self as collaborator
+  const selfEmail = authedUser?.email?.toLowerCase();
+  emailsToInvite = emailsToInvite.filter((e) => e !== selfEmail);
+  if (emailsToInvite.length === 0) {
+    return badRequest(res, 'Cannot add yourself as a collaborator');
+  }
 
-    if (emailsToInvite.length === 0) {
-      return badRequest(res, 'Valid userEmail or userEmails array is required');
-    }
+  // Get all users in the organization
+  let users;
+  try {
+    users = await listUsers(ctx);
+  } catch (err) {
+    log.error('[collaborators] Failed to list users:', err);
+    return serverError(res, 'Failed to load users');
+  }
+  const userMap = new Map(users.map((u) => [u.email?.toLowerCase(), u]));
 
-    // Limit batch size
-    if (emailsToInvite.length > 20) {
-      return badRequest(res, 'Maximum 20 users can be invited at once');
-    }
+  // Process invites
+  const results = [];
+  const host = req.headers.host || 'localhost';
+  const protocol = req.headers['x-forwarded-proto'] || 'http';
+  const baseEditUrl = `${protocol}://${host}/app/${presentationId}`;
+  const presentationTitle = pres.title || 'Untitled presentation';
+  const inviterName = authedUser?.name || authedUser?.email;
 
-    // Prevent adding self as collaborator
-    const selfEmail = authedUser?.email?.toLowerCase();
-    emailsToInvite = emailsToInvite.filter((e) => e !== selfEmail);
-    if (emailsToInvite.length === 0) {
-      return badRequest(res, 'Cannot add yourself as a collaborator');
-    }
-
-    // Get all users in the organization
-    let users;
-    try {
-      users = await listUsers(ctx);
-    } catch (err) {
-      log.error('[collaborators] Failed to list users:', err);
-      return serverError(res, 'Failed to load users');
-    }
-    const userMap = new Map(users.map((u) => [u.email?.toLowerCase(), u]));
-
-    // Process invites
-    const results = [];
-    const host = req.headers.host || 'localhost';
-    const protocol = req.headers['x-forwarded-proto'] || 'http';
-    const baseEditUrl = `${protocol}://${host}/app/${presentationId}`;
-    const presentationTitle = pres.title || 'Untitled presentation';
-    const inviterName = authedUser?.name || authedUser?.email;
-
-    for (const userEmail of emailsToInvite) {
-      const targetUser = userMap.get(userEmail);
-      if (!targetUser) {
-        results.push({
-          email: userEmail,
-          ok: false,
-          reason: 'user_not_found',
-        });
-        continue;
-      }
-
-      let result;
-      try {
-        result = await addCollaborator(presentationId, {
-          userEmail,
-          permission,
-          invitedBy: authedUser?.email,
-        });
-      } catch (err) {
-        log.error(`[collaborators] Failed to add collaborator ${userEmail}:`, err);
-        results.push({
-          email: userEmail,
-          ok: false,
-          reason: 'database_error',
-        });
-        continue;
-      }
-
-      if (!result.ok) {
-        results.push({
-          email: userEmail,
-          ok: false,
-          reason: result.reason,
-        });
-        continue;
-      }
-
+  for (const userEmail of emailsToInvite) {
+    const targetUser = userMap.get(userEmail);
+    if (!targetUser) {
       results.push({
         email: userEmail,
-        ok: true,
-        collaborator: result.collaborator,
-        isNew: result.isNew,
-        reactivated: result.reactivated || false,
+        ok: false,
+        reason: 'user_not_found',
       });
-
-      // Include recipient email in URL for login pre-fill
-      const editUrl = `${baseEditUrl}?email=${encodeURIComponent(userEmail)}`;
-
-      // Create in-app notification for the invited user (non-blocking)
-      try {
-        const notifResult = await createNotification(
-          {
-            userEmail,
-            notificationType: 'share_received',
-            title: `${inviterName} shared a presentation with you`,
-            body: `You have been invited to "${presentationTitle}" with ${permission} access.`,
-            presentationId,
-            actorEmail: authedUser?.email,
-            actorName: authedUser?.name,
-            actionUrl: editUrl,
-            data: { permission, presentationTitle },
-          },
-          ctx
-        );
-
-        // Broadcast notification via SSE
-        if (notifResult.ok) {
-          broadcastToUser(userEmail, NotificationEventTypes.NEW, notifResult.notification);
-        }
-      } catch (err) {
-        // Log but don't fail the invite if notification fails
-        log.error(`[collaborators] Failed to create notification for ${userEmail}:`, err);
-      }
-
-      // Create activity event for the activity feed (non-blocking)
-      try {
-        await createActivityEvent(
-          {
-            eventType: EVENT_TYPES.COLLABORATOR_ADDED,
-            entityType: ENTITY_TYPES.COLLABORATOR,
-            entityId: result.collaborator?.id || presentationId,
-            presentationId,
-            actorEmail: authedUser?.email,
-            actorName: authedUser?.name,
-            data: {
-              collaboratorEmail: userEmail,
-              permission,
-              presentationTitle,
-            },
-          },
-          ctx
-        );
-      } catch (err) {
-        // Log but don't fail the invite if activity event fails
-        log.error(`[collaborators] Failed to create activity event for ${userEmail}:`, err);
-      }
-
-      // Send invitation email (non-blocking)
-      if (body?.sendInvitation !== false) {
-        fireAndForget(
-          sendCollaboratorInviteEmail({
-            recipientEmail: userEmail,
-            recipientName: targetUser.name || null,
-            presentationTitle,
-            inviterName,
-            permission,
-            editUrl,
-            repoRoot,
-          }).then((emailResult) => {
-            if (!emailResult.ok) {
-              // eslint-disable-next-line no-console
-              log.warn(
-                `[brevo] collaborator invite email failed to=${userEmail} error=${emailResult.error || ''}`.trim()
-              );
-            }
-          }),
-          `collaborator invite email to=${userEmail}`
-        );
-      }
+      continue;
     }
 
-    // Return appropriate response based on single or batch mode
-    if (emailsToInvite.length === 1 && !Array.isArray(body?.userEmails)) {
-      // Single mode response (backward compatible)
-      const singleResult = results[0];
-      if (!singleResult.ok) {
-        // The reason decides the status, and an unmapped reason defaults to
-        // 500 rather than 400: the reasons on this path are a mix of "your
-        // request" (`user_not_found`, `invalid_permission`) and "our side"
-        // (`database_error`, `unavailable`), so a 400 fallthrough silently
-        // blames the caller for a failed insert. The batch branch below has
-        // always reported the reason factually per address; single mode did
-        // not.
-        return jsonError(
-          res,
-          getErrorStatus(singleResult.reason, 500),
-          singleResult.reason,
-          INVITE_FAILURE_MESSAGES[singleResult.reason]
-        );
-      }
-      serveJson(res, 201, {
-        collaborator: singleResult.collaborator,
-        isNew: singleResult.isNew,
-        reactivated: singleResult.reactivated || false,
+    let result;
+    try {
+      result = await addCollaborator(presentationId, {
+        userEmail,
+        permission,
+        invitedBy: authedUser?.email,
       });
-    } else {
-      // Batch mode response
-      const successful = results.filter((r) => r.ok);
-      const failed = results.filter((r) => !r.ok);
-      serveJson(res, 201, {
-        results,
-        summary: {
-          total: results.length,
-          successful: successful.length,
-          failed: failed.length,
+    } catch (err) {
+      log.error(`[collaborators] Failed to add collaborator ${userEmail}:`, err);
+      results.push({
+        email: userEmail,
+        ok: false,
+        reason: 'database_error',
+      });
+      continue;
+    }
+
+    if (!result.ok) {
+      results.push({
+        email: userEmail,
+        ok: false,
+        reason: result.reason,
+      });
+      continue;
+    }
+
+    results.push({
+      email: userEmail,
+      ok: true,
+      collaborator: result.collaborator,
+      isNew: result.isNew,
+      reactivated: result.reactivated || false,
+    });
+
+    // Include recipient email in URL for login pre-fill
+    const editUrl = `${baseEditUrl}?email=${encodeURIComponent(userEmail)}`;
+
+    // Create in-app notification for the invited user (non-blocking)
+    try {
+      const notifResult = await createNotification(
+        {
+          userEmail,
+          notificationType: 'share_received',
+          title: `${inviterName} shared a presentation with you`,
+          body: `You have been invited to "${presentationTitle}" with ${permission} access.`,
+          presentationId,
+          actorEmail: authedUser?.email,
+          actorName: authedUser?.name,
+          actionUrl: editUrl,
+          data: { permission, presentationTitle },
         },
-      });
-    }
-    return true;
-  }
+        ctx
+      );
 
-  // GET /api/presentations/:id/collaborators - List collaborators
-  if (baseMatch && req.method === 'GET') {
-    const presentationId = baseMatch[1];
-    const pres = await getPresentation(storageScope, presentationId);
-    if (!pres) return notFound(res);
-    const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email);
-    if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
-      return unauthorized(res);
-    }
-
-    try {
-      const collaborators = await listCollaborators(presentationId);
-
-      // Enrich with user names if available
-      const users = await listUsers(ctx);
-      const userMap = new Map(users.map((u) => [u.email?.toLowerCase(), u]));
-
-      const enrichedCollaborators = collaborators.map((c) => {
-        const user = userMap.get(c.userEmail?.toLowerCase());
-        return {
-          ...c,
-          userName: user?.name || null,
-        };
-      });
-
-      serveJson(res, 200, { collaborators: enrichedCollaborators });
-    } catch (err) {
-      log.error('[collaborators] Failed to list collaborators:', err);
-      return serverError(res, 'Failed to load collaborators');
-    }
-    return true;
-  }
-
-  // DELETE /api/presentations/:id/collaborators/:email - Remove collaborator
-  const deleteMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/collaborators\/([^/]+)$/
-  );
-  if (deleteMatch && req.method === 'DELETE') {
-    const presentationId = deleteMatch[1];
-    const email = decodeURIComponent(deleteMatch[2]);
-    const pres = await getPresentation(storageScope, presentationId);
-    if (!pres) return notFound(res);
-    const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email);
-    if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
-      return unauthorized(res);
-    }
-
-    // Parse optional message from request body
-    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
-    if (!parsed.ok) return true;
-    const message = parsed.body?.message || null;
-
-    try {
-      const result = await removeCollaborator(presentationId, email, authedUser?.email, {
-        message,
-      });
-
-      if (!result.ok) {
-        if (result.reason === 'not_found') return notFound(res);
-        return badRequest(res, result.reason);
+      // Broadcast notification via SSE
+      if (notifResult.ok) {
+        broadcastToUser(userEmail, NotificationEventTypes.NEW, notifResult.notification);
       }
+    } catch (err) {
+      // Log but don't fail the invite if notification fails
+      log.error(`[collaborators] Failed to create notification for ${userEmail}:`, err);
+    }
 
-      // Log the revocation the way a grant is logged (non-blocking): a grant
-      // writes collaborator.added, so a revoke writes collaborator.removed —
-      // without it the security-relevant half of the model is nowhere in the
-      // feed.
-      try {
-        await createActivityEvent(
-          {
-            eventType: EVENT_TYPES.COLLABORATOR_REMOVED,
-            entityType: ENTITY_TYPES.COLLABORATOR,
-            entityId: result.collaborator?.id || presentationId,
-            presentationId,
-            actorEmail: authedUser?.email,
-            actorName: authedUser?.name,
-            data: {
-              collaboratorEmail: result.collaborator?.userEmail || email,
-              presentationTitle: pres.title || 'Untitled presentation',
-              revocationMessage: result.collaborator?.revocationMessage || null,
-            },
+    // Create activity event for the activity feed (non-blocking)
+    try {
+      await createActivityEvent(
+        {
+          eventType: EVENT_TYPES.COLLABORATOR_ADDED,
+          entityType: ENTITY_TYPES.COLLABORATOR,
+          entityId: result.collaborator?.id || presentationId,
+          presentationId,
+          actorEmail: authedUser?.email,
+          actorName: authedUser?.name,
+          data: {
+            collaboratorEmail: userEmail,
+            permission,
+            presentationTitle,
           },
-          ctx
-        );
-      } catch (err) {
-        log.error(`[collaborators] Failed to record revoke event for ${email}:`, err);
-      }
-
-      serveJson(res, 200, { ok: true, collaborator: result.collaborator });
+        },
+        ctx
+      );
     } catch (err) {
-      log.error('[collaborators] Failed to remove collaborator:', err);
-      return serverError(res, 'Failed to remove collaborator');
+      // Log but don't fail the invite if activity event fails
+      log.error(`[collaborators] Failed to create activity event for ${userEmail}:`, err);
     }
-    return true;
+
+    // Send invitation email (non-blocking)
+    if (body?.sendInvitation !== false) {
+      fireAndForget(
+        sendCollaboratorInviteEmail({
+          recipientEmail: userEmail,
+          recipientName: targetUser.name || null,
+          presentationTitle,
+          inviterName,
+          permission,
+          editUrl,
+          repoRoot,
+        }).then((emailResult) => {
+          if (!emailResult.ok) {
+            // eslint-disable-next-line no-console
+            log.warn(
+              `[brevo] collaborator invite email failed to=${userEmail} error=${emailResult.error || ''}`.trim()
+            );
+          }
+        }),
+        `collaborator invite email to=${userEmail}`
+      );
+    }
   }
 
-  // PATCH /api/presentations/:id/collaborators/:email - Update permission
-  if (deleteMatch && req.method === 'PATCH') {
-    const presentationId = deleteMatch[1];
-    const email = decodeURIComponent(deleteMatch[2]);
-    const pres = await getPresentation(storageScope, presentationId);
-    if (!pres) return notFound(res);
-    const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email);
-    if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
-      return unauthorized(res);
+  // Return appropriate response based on single or batch mode
+  if (emailsToInvite.length === 1 && !Array.isArray(body?.userEmails)) {
+    // Single mode response (backward compatible)
+    const singleResult = results[0];
+    if (!singleResult.ok) {
+      // The reason decides the status, and an unmapped reason defaults to
+      // 500 rather than 400: the reasons on this path are a mix of "your
+      // request" (`user_not_found`, `invalid_permission`) and "our side"
+      // (`database_error`, `unavailable`), so a 400 fallthrough silently
+      // blames the caller for a failed insert. The batch branch below has
+      // always reported the reason factually per address; single mode did
+      // not.
+      return jsonError(
+        res,
+        getErrorStatus(singleResult.reason, 500),
+        singleResult.reason,
+        INVITE_FAILURE_MESSAGES[singleResult.reason]
+      );
+    }
+    serveJson(res, 201, {
+      collaborator: singleResult.collaborator,
+      isNew: singleResult.isNew,
+      reactivated: singleResult.reactivated || false,
+    });
+  } else {
+    // Batch mode response
+    const successful = results.filter((r) => r.ok);
+    const failed = results.filter((r) => !r.ok);
+    serveJson(res, 201, {
+      results,
+      summary: {
+        total: results.length,
+        successful: successful.length,
+        failed: failed.length,
+      },
+    });
+  }
+  return true;
+}
+
+// GET /api/presentations/:id/collaborators - List collaborators
+async function handleCollaboratorList({ storageScope, res, authedUser }, presentationId) {
+  const ctx = createRouteContext(authedUser);
+
+  const pres = await getPresentation(storageScope, presentationId);
+  if (!pres) return notFound(res);
+  const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email);
+  if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
+    return unauthorized(res);
+  }
+
+  try {
+    const collaborators = await listCollaborators(presentationId);
+
+    // Enrich with user names if available
+    const users = await listUsers(ctx);
+    const userMap = new Map(users.map((u) => [u.email?.toLowerCase(), u]));
+
+    const enrichedCollaborators = collaborators.map((c) => {
+      const user = userMap.get(c.userEmail?.toLowerCase());
+      return {
+        ...c,
+        userName: user?.name || null,
+      };
+    });
+
+    serveJson(res, 200, { collaborators: enrichedCollaborators });
+  } catch (err) {
+    log.error('[collaborators] Failed to list collaborators:', err);
+    return serverError(res, 'Failed to load collaborators');
+  }
+  return true;
+}
+
+// DELETE /api/presentations/:id/collaborators/:email - Remove collaborator
+async function handleCollaboratorRemove({ storageScope, req, res, authedUser }, presentationId, rawEmail) {
+  const ctx = createRouteContext(authedUser);
+  const email = decodeURIComponent(rawEmail);
+
+  const pres = await getPresentation(storageScope, presentationId);
+  if (!pres) return notFound(res);
+  const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email);
+  if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
+    return unauthorized(res);
+  }
+
+  // Parse optional message from request body
+  const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+  if (!parsed.ok) return true;
+  const message = parsed.body?.message || null;
+
+  try {
+    const result = await removeCollaborator(presentationId, email, authedUser?.email, {
+      message,
+    });
+
+    if (!result.ok) {
+      if (result.reason === 'not_found') return notFound(res);
+      return badRequest(res, result.reason);
     }
 
-    const jsonResult = await requireJsonBody(req, res);
-    if (!jsonResult.ok) return true;
-    const body = jsonResult.body;
-
-    const permission = body?.permission;
-    if (!validatePermission(permission, res)) return true;
-
+    // Log the revocation the way a grant is logged (non-blocking): a grant
+    // writes collaborator.added, so a revoke writes collaborator.removed —
+    // without it the security-relevant half of the model is nowhere in the
+    // feed.
     try {
-      const result = await updateCollaboratorPermission(presentationId, email, permission);
-
-      if (!result.ok) {
-        if (result.reason === 'not_found') return notFound(res);
-        return badRequest(res, result.reason);
-      }
-
-      // Log the permission change symmetrically with grant and revoke
-      // (non-blocking): a promotion or demotion is an access-model event too.
-      try {
-        await createActivityEvent(
-          {
-            eventType: EVENT_TYPES.COLLABORATOR_PERMISSION_CHANGED,
-            entityType: ENTITY_TYPES.COLLABORATOR,
-            entityId: result.collaborator?.id || presentationId,
-            presentationId,
-            actorEmail: authedUser?.email,
-            actorName: authedUser?.name,
-            data: {
-              collaboratorEmail: result.collaborator?.userEmail || email,
-              permission,
-              presentationTitle: pres.title || 'Untitled presentation',
-            },
+      await createActivityEvent(
+        {
+          eventType: EVENT_TYPES.COLLABORATOR_REMOVED,
+          entityType: ENTITY_TYPES.COLLABORATOR,
+          entityId: result.collaborator?.id || presentationId,
+          presentationId,
+          actorEmail: authedUser?.email,
+          actorName: authedUser?.name,
+          data: {
+            collaboratorEmail: result.collaborator?.userEmail || email,
+            presentationTitle: pres.title || 'Untitled presentation',
+            revocationMessage: result.collaborator?.revocationMessage || null,
           },
-          ctx
-        );
-      } catch (err) {
-        log.error(`[collaborators] Failed to record permission-change event for ${email}:`, err);
-      }
-
-      serveJson(res, 200, { collaborator: result.collaborator });
+        },
+        ctx
+      );
     } catch (err) {
-      log.error('[collaborators] Failed to update collaborator permission:', err);
-      return serverError(res, 'Failed to update permission');
+      log.error(`[collaborators] Failed to record revoke event for ${email}:`, err);
     }
-    return true;
+
+    serveJson(res, 200, { ok: true, collaborator: result.collaborator });
+  } catch (err) {
+    log.error('[collaborators] Failed to remove collaborator:', err);
+    return serverError(res, 'Failed to remove collaborator');
+  }
+  return true;
+}
+
+// PATCH /api/presentations/:id/collaborators/:email - Update permission
+async function handleCollaboratorUpdate({ storageScope, req, res, authedUser }, presentationId, rawEmail) {
+  const ctx = createRouteContext(authedUser);
+  const email = decodeURIComponent(rawEmail);
+
+  const pres = await getPresentation(storageScope, presentationId);
+  if (!pres) return notFound(res);
+  const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email);
+  if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
+    return unauthorized(res);
   }
 
-  return false;
+  const jsonResult = await requireJsonBody(req, res);
+  if (!jsonResult.ok) return true;
+  const body = jsonResult.body;
+
+  const permission = body?.permission;
+  if (!validatePermission(permission, res)) return true;
+
+  try {
+    const result = await updateCollaboratorPermission(presentationId, email, permission);
+
+    if (!result.ok) {
+      if (result.reason === 'not_found') return notFound(res);
+      return badRequest(res, result.reason);
+    }
+
+    // Log the permission change symmetrically with grant and revoke
+    // (non-blocking): a promotion or demotion is an access-model event too.
+    try {
+      await createActivityEvent(
+        {
+          eventType: EVENT_TYPES.COLLABORATOR_PERMISSION_CHANGED,
+          entityType: ENTITY_TYPES.COLLABORATOR,
+          entityId: result.collaborator?.id || presentationId,
+          presentationId,
+          actorEmail: authedUser?.email,
+          actorName: authedUser?.name,
+          data: {
+            collaboratorEmail: result.collaborator?.userEmail || email,
+            permission,
+            presentationTitle: pres.title || 'Untitled presentation',
+          },
+        },
+        ctx
+      );
+    } catch (err) {
+      log.error(`[collaborators] Failed to record permission-change event for ${email}:`, err);
+    }
+
+    serveJson(res, 200, { collaborator: result.collaborator });
+  } catch (err) {
+    log.error('[collaborators] Failed to update collaborator permission:', err);
+    return serverError(res, 'Failed to update permission');
+  }
+  return true;
+}
+
+/**
+ * Declarative route table for collaborator management (A7.19 C8). Order matches
+ * the previous if-chain: `shared-with-me` first, then the base-collection routes
+ * split on method, then the `/:email` item routes. Method mismatch falls through
+ * (the chain had no 405). The `([^/]+)` email capture is url-encoded and decoded
+ * inside the handler.
+ *
+ * @type {import('../../utils/router.js').Route[]}
+ */
+export const ROUTES = [
+  { method: 'GET', pattern: '/api/presentations/shared-with-me', handler: handleSharedWithMe },
+  { method: 'POST', pattern: /^\/api\/presentations\/([^/]+)\/collaborators$/, handler: handleCollaboratorAdd },
+  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/collaborators$/, handler: handleCollaboratorList },
+  { method: 'DELETE', pattern: /^\/api\/presentations\/([^/]+)\/collaborators\/([^/]+)$/, handler: handleCollaboratorRemove },
+  { method: 'PATCH', pattern: /^\/api\/presentations\/([^/]+)\/collaborators\/([^/]+)$/, handler: handleCollaboratorUpdate },
+];
+
+/**
+ * Handle collaborator management endpoints.
+ * @param {import('../../utils/context.js').AuthedContext} ctx
+ * @returns {Promise<boolean>|boolean} true if a route handled the request.
+ */
+export function handleCollaborators(ctx) {
+  return dispatchRoutes(ROUTES, ctx);
 }
