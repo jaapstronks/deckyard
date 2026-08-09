@@ -37,7 +37,13 @@ function select(routes, method, pathname) {
 }
 
 function mockRes() {
-  return { statusCode: null, writeHead(c) { this.statusCode = c; }, end() {}, setHeader() {} };
+  return {
+    statusCode: null,
+    headers: {},
+    writeHead(c, headers) { this.statusCode = c; Object.assign(this.headers, headers); },
+    end() {},
+    setHeader(k, v) { this.headers[k] = v; },
+  };
 }
 
 function ctx(method, pathname, authedUser = { email: 'a@b.test' }) {
@@ -72,14 +78,15 @@ test('settings: routes resolve to their named handlers in order', () => {
 });
 
 test('settings: a wrong method still 405s (Form B + /me guard)', async () => {
-  for (const [method, path] of [
-    ['DELETE', '/api/settings/app'],
-    ['POST', '/api/settings/organization'],
-    ['DELETE', '/api/settings/me'],
+  for (const [method, path, allow] of [
+    ['DELETE', '/api/settings/app', 'GET, PUT'],
+    ['POST', '/api/settings/organization', 'GET, PATCH'],
+    ['DELETE', '/api/settings/me', 'GET, PUT'],
   ]) {
     const { ctx: c, res } = ctx(method, path);
     await handleSettings(c);
     assert.equal(res.statusCode, 405, `${method} ${path} → 405`);
+    assert.equal(res.headers.Allow, allow, `${method} ${path} → Allow: ${allow}`);
   }
 });
 
@@ -109,6 +116,7 @@ test('users: /profiles keeps auth-before-method (401 unauth, 405 wrong method)',
   const wrongMethod = ctx('POST', '/api/users/profiles');
   await handleUsers(wrongMethod.ctx);
   assert.equal(wrongMethod.res.statusCode, 405, 'authed + wrong method → 405');
+  assert.equal(wrongMethod.res.headers.Allow, 'GET');
 });
 
 // ─── data-sources (module feature guard; Form A /providers, Form B rest) ───
@@ -126,12 +134,19 @@ test('data-sources: the preview/refresh 405 catch-alls emit 405', () => {
     const res = mockRes();
     route.handler({ res });
     assert.equal(res.statusCode, 405, `GET ${path} → 405 catch-all`);
+    assert.equal(res.headers.Allow, 'POST', `GET ${path} → Allow: POST`);
   }
 });
 
 test('data-sources: the module prefix guard falls through for foreign paths', () => {
   const { ctx: c } = ctx('GET', '/api/not-data-sources');
   assert.equal(handleDataSources(c), false);
+});
+
+test('data-sources: the module auth guard 401s before the feature gate', () => {
+  const { ctx: c, res } = ctx('GET', '/api/data-sources/providers', null);
+  handleDataSources(c);
+  assert.equal(res.statusCode, 401, 'no user → 401 for any data-sources path');
 });
 
 // ─── activity (module email guard; all three Form B) ───
@@ -149,14 +164,15 @@ test('activity: the module auth guard 401s before dispatch', () => {
 });
 
 test('activity: a wrong method 405s on each path (authed)', async () => {
-  for (const [method, path] of [
-    ['POST', '/api/activity'],
-    ['DELETE', '/api/activity/unread-count'],
-    ['GET', '/api/activity/mark-read'],
+  for (const [method, path, allow] of [
+    ['POST', '/api/activity', 'GET'],
+    ['DELETE', '/api/activity/unread-count', 'GET'],
+    ['GET', '/api/activity/mark-read', 'POST'],
   ]) {
     const { ctx: c, res } = ctx(method, path);
     await handleActivity(c);
     assert.equal(res.statusCode, 405, `${method} ${path} → 405`);
+    assert.equal(res.headers.Allow, allow, `${method} ${path} → Allow: ${allow}`);
   }
 });
 
