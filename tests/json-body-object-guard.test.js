@@ -75,12 +75,30 @@ test('requireJsonBody answers 400 on a top-level primitive', async () => {
   }
 });
 
-test('allowNonObject lets a top-level array through', async () => {
+test('the object guarantee has no opt-out (B55): even the old flag rejects an array', async () => {
+  // `allowNonObject` was removed when the slide-library tag PUTs moved to
+  // `{ tags: [...] }`. Passing the old flag must change nothing.
   const res = fakeRes();
   const result = await requireJsonBody(reqFrom('["a","b"]'), res, { allowNonObject: true });
-  assert.equal(result.ok, true);
-  assert.deepEqual(result.body, ['a', 'b']);
-  assert.equal(res.statusCode, null);
+  assert.equal(result.ok, false);
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.body.message, 'Request body must be a JSON object');
+});
+
+test('no server code reintroduces an allowNonObject opt-out', async () => {
+  const files = await walk(path.join(REPO_ROOT, 'server'));
+  const offenders = [];
+  for (const file of files) {
+    const src = await fs.readFile(file, 'utf8');
+    if (src.includes('allowNonObject')) {
+      offenders.push(path.relative(REPO_ROOT, file));
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `The JSON body object guarantee is invariant — no opt-out (B55):\n${offenders.join('\n')}`
+  );
 });
 
 test('allowEmpty still yields a plain object, not the parsed primitive', async () => {
