@@ -3,7 +3,6 @@
  * Allows admins to view, download, and analyze AI validation events.
  */
 
-import { getUserFromRequestAsync } from '../../auth/auth.js';
 import { serveJson, unauthorized, notFound, badRequest } from '../../utils/http.js';
 import {
   getValidationLogs,
@@ -13,14 +12,14 @@ import {
   cleanupOldLogs,
 } from '../../utils/ai/validation-logging.js';
 
-export async function handleAdminAiLogs({ repoRoot, req, res, url }) {
+export async function handleAdminAiLogs({ req, res, url, authedUser: user }) {
   // Only handle /api/admin/ai-logs routes
   if (!url.pathname.startsWith('/api/admin/ai-logs')) {
     return false;
   }
 
-  // All admin routes require authentication
-  const user = await getUserFromRequestAsync(req, { repoRoot, req });
+  // Mounted after the auth gate in routes/api/index.js, so the user is already
+  // resolved and enriched on the context — do not re-resolve it here.
   if (!user) {
     return unauthorized(res, 'Authentication required');
   }

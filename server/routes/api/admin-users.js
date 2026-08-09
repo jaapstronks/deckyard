@@ -3,10 +3,9 @@
  * Allows admins to list, create, update, and delete users.
  */
 
-import { getUserFromRequestAsync } from '../../auth/auth.js';
 import { serveJson, badRequest, unauthorized, notFound, serverError, rateLimited, requireJsonBody } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
-import { createRouteContext, getClientIp, getOrgId } from '../../utils/context.js';
+import { getClientIp, getOrgId } from '../../utils/context.js';
 import { sendUserInvitationEmail, sendActivationReminderEmail } from '../../integrations/brevo.js';
 import {
   listUsers,
@@ -83,14 +82,14 @@ function buildSetupUrl(req, token) {
   return `${protocol}://${host}/reset-password?token=${encodeURIComponent(token)}`;
 }
 
-export async function handleAdminUsers({ repoRoot, req, res, url }) {
+export async function handleAdminUsers({ repoRoot, storageScope, req, res, url, authedUser: user }) {
   // Only handle /api/admin/users routes
   if (!url.pathname.startsWith('/api/admin/users')) {
     return false;
   }
 
-  // All admin routes require authentication
-  const user = await getUserFromRequestAsync(req, { repoRoot });
+  // Mounted after the auth gate in routes/api/index.js, so the user is already
+  // resolved and enriched on the context — do not re-resolve it here.
   if (!user) {
     return unauthorized(res, 'Authentication required');
   }
@@ -103,13 +102,12 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
   }
 
   // Which organization those accounts belong to *is* per-organization, so the
-  // context comes from the session rather than from the instance default.
-  // Built from `user` rather than from `null`: an admin who switched
-  // organizations used to list, create and enrich users against the default
-  // organization no matter which one they were looking at. Single-organization
-  // installations are unaffected — there the session's organization is the
-  // default one.
-  const ctx = createRouteContext(user, { repoRoot });
+  // storage scope comes from the session rather than from the instance default.
+  // It is built once, from the enriched session user, in index.js — an admin who
+  // switched organizations lists, creates and enriches users against that
+  // organization. Single-organization installations are unaffected — there the
+  // session's organization is the default one.
+  const ctx = storageScope;
 
   // ============================================================
   // GET /api/admin/users - List all users

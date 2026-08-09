@@ -3,10 +3,8 @@
  * Allows admins to customize email templates per locale.
  */
 
-import { getUserFromRequestAsync } from '../../auth/auth.js';
 import { serveJson, badRequest, unauthorized, requireJsonBody } from '../../utils/http.js';
 import { getTrimmedString, getOptionalString } from '../../utils/request-validators.js';
-import { createRouteContext } from '../../utils/context.js';
 import {
   writeEmailTemplate,
   deleteEmailTemplate,
@@ -42,17 +40,16 @@ function buildPreviewHtml(preview) {
   });
 }
 
-export async function handleEmailTemplates({ repoRoot, req, res, url }) {
-  const ctx = createRouteContext(null);
-  ctx.repoRoot = repoRoot;
-
+export async function handleEmailTemplates({ repoRoot, req, res, url, authedUser: user }) {
   // Only handle /api/admin/email-templates routes
   if (!url.pathname.startsWith('/api/admin/email-templates')) {
     return false;
   }
 
-  // All admin routes require authentication
-  const user = await getUserFromRequestAsync(req, ctx);
+  // Mounted after the auth gate in routes/api/index.js, so the user is already
+  // resolved and enriched on the context — do not re-resolve it here. Email
+  // templates are stored per-instance (file-backed, not organization-scoped), so
+  // this route needs the caller's identity but no storage scope.
   if (!user) {
     return unauthorized(res, 'Authentication required');
   }
@@ -61,8 +58,6 @@ export async function handleEmailTemplates({ repoRoot, req, res, url }) {
   if (!user.isAdmin) {
     return unauthorized(res, 'Admin access required');
   }
-
-  ctx.actorEmail = user.email;
 
   // ============================================================
   // GET /api/admin/email-templates - Get all templates with defaults + overrides
