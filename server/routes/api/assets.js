@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { serveJson } from '../../utils/http.js';
+import { dispatchRoutes } from '../../utils/router.js';
 
 async function listAssetDir(repoRoot, subdir, allowedExts) {
   // Core assets ship with the OSS repo; forks add their own under
@@ -28,35 +29,50 @@ async function listAssetDir(repoRoot, subdir, allowedExts) {
   return urls;
 }
 
-export async function handleAssets({ repoRoot, req, res, url }) {
-  // List partner logos stored in /assets/images/partnerlogos (for editor checkbox UI)
-  if (url.pathname === '/api/assets/partnerlogos' && req.method === 'GET') {
-    const urls = await listAssetDir(repoRoot, 'partnerlogos', [
-      '.svg',
-      '.png',
-      '.jpg',
-      '.jpeg',
-      '.webp',
-      '.gif',
-    ]);
-    serveJson(res, 200, { logos: urls });
-    return true;
-  }
+// List partner logos stored in /assets/images/partnerlogos (for editor checkbox UI)
+async function handlePartnerLogos({ repoRoot, res }) {
+  const urls = await listAssetDir(repoRoot, 'partnerlogos', [
+    '.svg',
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.webp',
+    '.gif',
+  ]);
+  serveJson(res, 200, { logos: urls });
+  return true;
+}
 
-  // List background images stored in /assets/images/backgrounds (for title slide presets)
-  if (url.pathname === '/api/assets/backgrounds' && req.method === 'GET') {
-    const urls = await listAssetDir(repoRoot, 'backgrounds', [
-      '.svg',
-      '.png',
-      '.jpg',
-      '.jpeg',
-      '.webp',
-      '.gif',
-      '.avif',
-    ]);
-    serveJson(res, 200, { backgrounds: urls });
-    return true;
-  }
+// List background images stored in /assets/images/backgrounds (for title slide presets)
+async function handleBackgrounds({ repoRoot, res }) {
+  const urls = await listAssetDir(repoRoot, 'backgrounds', [
+    '.svg',
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.webp',
+    '.gif',
+    '.avif',
+  ]);
+  serveJson(res, 200, { backgrounds: urls });
+  return true;
+}
 
-  return false;
+/**
+ * Declarative route table for `/api/assets/*` (A7.19 C8). Both routes are
+ * GET-only; a method mismatch falls through (the original chain had no 405).
+ *
+ * @type {import('../../utils/router.js').Route[]}
+ */
+export const ROUTES = [
+  { method: 'GET', pattern: '/api/assets/partnerlogos', handler: handlePartnerLogos },
+  { method: 'GET', pattern: '/api/assets/backgrounds', handler: handleBackgrounds },
+];
+
+/**
+ * @param {import('../../utils/context.js').AuthedContext} ctx
+ * @returns {Promise<boolean>|boolean} true if a route handled the request.
+ */
+export function handleAssets(ctx) {
+  return dispatchRoutes(ROUTES, ctx);
 }
