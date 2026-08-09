@@ -129,6 +129,18 @@ test('profile: a wrong method on the own-image path 405s', async () => {
   assert.equal(res.statusCode, 405);
 });
 
+test('profile: the admin path keeps guard-before-method (403 non-admin, 405 admin)', async () => {
+  // Non-admin with a wrong method: the admin guard answers first → 403, not 405.
+  const nonAdmin = ctx('PATCH', '/api/profile/image/x%40y.test');
+  await handleProfile(nonAdmin.ctx);
+  assert.equal(nonAdmin.res.statusCode, 403, 'non-admin PATCH → 403');
+
+  // Admin with a wrong method: guards pass, the internal method dispatch 405s.
+  const admin = ctx('PATCH', '/api/profile/image/x%40y.test', { email: 'a@b.test', isAdmin: true });
+  await handleProfile(admin.ctx);
+  assert.equal(admin.res.statusCode, 405, 'admin PATCH → 405');
+});
+
 test('profile: an unknown profile sub-path falls through', async () => {
   const { ctx: c } = ctx('GET', '/api/profile/nope');
   assert.equal(await handleProfile(c), false);
