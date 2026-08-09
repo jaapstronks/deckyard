@@ -16,92 +16,114 @@ import {
   updateUserEventRead,
 } from '../../storage/activity-events.js';
 import { createRouteContext } from '../../utils/context.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { canReadPresentation } from '../../utils/presentation-authz.js';
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
 
 const getCtx = createRouteContext;
 
-/**
- * Handle activity API routes.
- */
-export async function handleActivity({ repoRoot, storageScope, req, res, url, authedUser }) {
+// GET /api/activity - List activity events
+async function handleActivityList({ storageScope, res, url, authedUser }) {
   const email = String(authedUser?.email || '').trim();
-  if (!email) return unauthorized(res);
-
   const ctx = getCtx(authedUser);
 
-  // GET /api/activity - List activity events
-  if (url.pathname === '/api/activity') {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+  // Parse query params
+  const { limit, offset } = parsePaginationParams(url.searchParams);
+  const presentationId = url.searchParams.get('presentationId') || null;
+  const eventType = url.searchParams.get('eventType') || null;
+  const excludeSelf = url.searchParams.get('excludeSelf') === 'true';
 
-    // Parse query params
-    const { limit, offset } = parsePaginationParams(url.searchParams);
-    const presentationId = url.searchParams.get('presentationId') || null;
-    const eventType = url.searchParams.get('eventType') || null;
-    const excludeSelf = url.searchParams.get('excludeSelf') === 'true';
+  const opts = {
+    limit,
+    offset,
+    presentationId,
+    eventType,
+  };
 
-    const opts = {
-      limit,
-      offset,
-      presentationId,
-      eventType,
-    };
+  // Optionally exclude the user's own events
+  if (excludeSelf) {
+    opts.excludeActorEmail = email;
+  }
 
-    // Optionally exclude the user's own events
-    if (excludeSelf) {
-      opts.excludeActorEmail = email;
+  const payload = await getEnrichedActivity({ storageScope, authedUser, ctx, opts });
+
+  serveJson(res, 200, {
+    ok: true,
+    ...payload,
+  });
+  return true;
+}
+
+// GET /api/activity/unread-count - Get unread event count
+async function handleUnreadCount({ storageScope, res, authedUser }) {
+  const email = String(authedUser?.email || '').trim();
+  const ctx = getCtx(authedUser);
+
+  // Same invariant as the feed itself: only count events on presentations
+  // the user can read (a raw org-wide count leaks activity on private decks).
+  const grouped = await getUnreadEventCountsByPresentation(email, ctx);
+  let count = 0;
+  for (const entry of grouped) {
+    if (!entry.presentationId) {
+      count += entry.count;
+      continue;
     }
-
-    const payload = await getEnrichedActivity({ storageScope, authedUser, ctx, opts });
-
-    serveJson(res, 200, {
-      ok: true,
-      ...payload,
-    });
-    return true;
+    const pres = await getReadablePresentation(entry.presentationId, storageScope, authedUser);
+    if (pres) count += entry.count;
   }
 
-  // GET /api/activity/unread-count - Get unread event count
-  if (url.pathname === '/api/activity/unread-count') {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+  serveJson(res, 200, {
+    ok: true,
+    count,
+  });
+  return true;
+}
 
-    // Same invariant as the feed itself: only count events on presentations
-    // the user can read (a raw org-wide count leaks activity on private decks).
-    const grouped = await getUnreadEventCountsByPresentation(email, ctx);
-    let count = 0;
-    for (const entry of grouped) {
-      if (!entry.presentationId) {
-        count += entry.count;
-        continue;
-      }
-      const pres = await getReadablePresentation(entry.presentationId, storageScope, authedUser);
-      if (pres) count += entry.count;
-    }
+// POST /api/activity/mark-read - Mark events as read
+async function handleMarkRead({ req, res, authedUser }) {
+  const email = String(authedUser?.email || '').trim();
+  const ctx = getCtx(authedUser);
 
-    serveJson(res, 200, {
-      ok: true,
-      count,
-    });
-    return true;
-  }
+  const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  const eventId = body?.eventId || null; // Can be null to mark "all read"
 
-  // POST /api/activity/mark-read - Mark events as read
-  if (url.pathname === '/api/activity/mark-read') {
-    if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+  const result = await updateUserEventRead(email, eventId, ctx);
 
-    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
-    if (!parsed.ok) return true;
-    const body = parsed.body;
-    const eventId = body?.eventId || null; // Can be null to mark "all read"
+  serveJson(res, 200, result);
+  return true;
+}
 
-    const result = await updateUserEventRead(email, eventId, ctx);
+/**
+ * Declarative route table for `/api/activity*` (A7.19 C8). Order matches the
+ * previous if-chain; each path sent an explicit 405 for the wrong method,
+ * preserved here as trailing catch-all rows.
+ *
+ * @type {import('../../utils/router.js').Route[]}
+ */
+export const ROUTES = [
+  { method: 'GET', pattern: '/api/activity', handler: handleActivityList },
+  { pattern: '/api/activity', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
+  { method: 'GET', pattern: '/api/activity/unread-count', handler: handleUnreadCount },
+  { pattern: '/api/activity/unread-count', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
+  { method: 'POST', pattern: '/api/activity/mark-read', handler: handleMarkRead },
+  { pattern: '/api/activity/mark-read', handler: ({ res }) => methodNotAllowed(res, ['POST']) },
+];
 
-    serveJson(res, 200, result);
-    return true;
-  }
-
-  return false;
+/**
+ * Handle activity API routes. The module-wide auth guard (a valid email) runs
+ * before dispatch, exactly as the original chain did — an unauthenticated
+ * request gets a 401 for any of these paths, not a fall-through.
+ *
+ * @param {import('../../utils/context.js').AuthedContext} ctx
+ * @returns {Promise<boolean>|boolean} true if a route handled the request.
+ */
+export function handleActivity(ctx) {
+  const email = String(ctx.authedUser?.email || '').trim();
+  if (!email) return unauthorized(ctx.res);
+  return dispatchRoutes(ROUTES, ctx);
 }
 
 /**
