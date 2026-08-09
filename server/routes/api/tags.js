@@ -19,62 +19,76 @@ import {
 } from '../../storage/tags/index.js';
 import { serveJson, badRequest, notFound, requireJsonBody, methodNotAllowed } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
+import { dispatchRoutes } from '../../utils/router.js';
+
+// GET /api/tags - List all tags
+async function handleTagList({ storageScope, res }) {
+  const tags = await listTags(storageScope);
+  serveJson(res, 200, tags);
+  return true;
+}
+
+// GET /api/tags/search?q=prefix - Search tags by prefix (for autocomplete)
+async function handleTagSearch({ storageScope, res, url }) {
+  const query = url.searchParams.get('q') || '';
+  const { limit } = parsePaginationParams(url.searchParams, { defaultLimit: 10, maxLimit: 50 });
+  const tags = await searchTags(storageScope, query, limit);
+  serveJson(res, 200, tags);
+  return true;
+}
+
+// POST /api/tags - Create a new tag
+async function handleTagCreate({ storageScope, req, res }) {
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  if (!body?.name) {
+    return badRequest(res, 'Tag name is required');
+  }
+  try {
+    const tag = await createTag(storageScope, body.name);
+    serveJson(res, 201, tag);
+  } catch (err) {
+    if (err.statusCode === 400) {
+      return badRequest(res, err.message);
+    }
+    throw err;
+  }
+  return true;
+}
+
+// DELETE /api/tags/:tagId - Delete a tag
+async function handleTagDelete({ storageScope, res }, tagId) {
+  const deleted = await deleteTag(storageScope, tagId);
+  if (!deleted) {
+    return notFound(res, 'Tag not found');
+  }
+  serveJson(res, 200, { success: true });
+  return true;
+}
 
 /**
- * Handle tags API requests
+ * Declarative route table for the top-level `/api/tags*` endpoints (A7.19 C8).
+ * Order matches the previous if-chain; method mismatch falls through (the chain
+ * had no 405). The per-presentation tag routes live in `handlePresentationTags`
+ * below, mounted from the presentations dispatcher.
+ *
+ * @type {import('../../utils/router.js').Route[]}
  */
-export async function handleTags({ storageScope, req, res, url }) {
-  const pathname = url.pathname;
+export const ROUTES = [
+  { method: 'GET', pattern: '/api/tags', handler: handleTagList },
+  { method: 'GET', pattern: '/api/tags/search', handler: handleTagSearch },
+  { method: 'POST', pattern: '/api/tags', handler: handleTagCreate },
+  { method: 'DELETE', pattern: /^\/api\/tags\/([a-f0-9-]+)$/, handler: handleTagDelete },
+];
 
-  // GET /api/tags - List all tags
-  if (pathname === '/api/tags' && req.method === 'GET') {
-    const tags = await listTags(storageScope);
-    serveJson(res, 200, tags);
-    return true;
-  }
-
-  // GET /api/tags/search?q=prefix - Search tags by prefix (for autocomplete)
-  if (pathname === '/api/tags/search' && req.method === 'GET') {
-    const query = url.searchParams.get('q') || '';
-    const { limit } = parsePaginationParams(url.searchParams, { defaultLimit: 10, maxLimit: 50 });
-    const tags = await searchTags(storageScope, query, limit);
-    serveJson(res, 200, tags);
-    return true;
-  }
-
-  // POST /api/tags - Create a new tag
-  if (pathname === '/api/tags' && req.method === 'POST') {
-    const parsed = await requireJsonBody(req, res);
-    if (!parsed.ok) return true;
-    const body = parsed.body;
-    if (!body?.name) {
-      return badRequest(res, 'Tag name is required');
-    }
-    try {
-      const tag = await createTag(storageScope, body.name);
-      serveJson(res, 201, tag);
-    } catch (err) {
-      if (err.statusCode === 400) {
-        return badRequest(res, err.message);
-      }
-      throw err;
-    }
-    return true;
-  }
-
-  // DELETE /api/tags/:tagId - Delete a tag
-  const deleteMatch = pathname.match(/^\/api\/tags\/([a-f0-9-]+)$/);
-  if (deleteMatch && req.method === 'DELETE') {
-    const tagId = deleteMatch[1];
-    const deleted = await deleteTag(storageScope, tagId);
-    if (!deleted) {
-      return notFound(res, 'Tag not found');
-    }
-    serveJson(res, 200, { success: true });
-    return true;
-  }
-
-  return false;
+/**
+ * Handle tags API requests.
+ * @param {import('../../utils/context.js').AuthedContext} ctx
+ * @returns {Promise<boolean>|boolean} true if a route handled the request.
+ */
+export function handleTags(ctx) {
+  return dispatchRoutes(ROUTES, ctx);
 }
 
 /**
