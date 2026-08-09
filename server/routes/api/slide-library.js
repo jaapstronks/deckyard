@@ -28,6 +28,7 @@ import { maybeFireWebhook } from '../../utils/webhooks.js';
 import { loadTheme } from '../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../render/preview-image.js';
 import { isMediaProviderInitialized } from '../../media/index.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import { createLogger } from '../../utils/logger.js';
 import { matchesIdentity } from '../../../shared/identity-match.js';
 const log = createLogger('slide-library');
@@ -37,248 +38,265 @@ function cleanThemeId(v) {
   return s.slice(0, 80);
 }
 
-export async function handleSlideLibrary({ repoRoot, storageScope, req, res, url, authedUser }) {
-  if (!url.pathname.startsWith('/api/slide-library')) return false;
-  if (!authedUser) return unauthorized(res);
+function actorEmail(authedUser) {
+  return String(authedUser?.email || '').trim().toLowerCase();
+}
 
+// GET /api/slide-library/usage - Per-user usage ("new to you" tracking):
+// the current user's set of used {itemType, itemId}
+async function handleUsageList({ storageScope, res, authedUser }) {
+  const out = await listSlideLibraryUsage(storageScope, actorEmail(authedUser));
+  serveJson(res, 200, out);
+  return true;
+}
+
+// POST /api/slide-library/usage - Record usage from the insert-into-existing
+// path (compose records server-side in the create handler instead)
+async function handleUsageRecord({ storageScope, req, res, authedUser }) {
+  const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  const r = await recordSlideLibraryUsage(storageScope, actorEmail(authedUser), body?.items);
+  serveJson(res, 200, { ok: true, recorded: r?.recorded || 0 });
+  return true;
+}
+
+// GET /api/slide-library/personal - List the personal library
+async function handlePersonalList({ storageScope, res, url, authedUser }) {
+  const email = actorEmail(authedUser);
   const themeId = cleanThemeId(url.searchParams.get('theme') || '');
-  const email = String(authedUser?.email || '').trim().toLowerCase();
+  const out = await listPersonalLibrary(storageScope, email, { themeId });
+  // Attach tags to each item
+  if (Array.isArray(out?.items) && out.items.length > 0) {
+    const ids = out.items.map((it) => it.id);
+    const tagsMap = await getTagsForSlideLibraryItems(storageScope, ids, { userEmail: email });
+    for (const item of out.items) {
+      item.tags = tagsMap.get(item.id) || [];
+    }
+  }
+  serveJson(res, 200, out);
+  return true;
+}
 
-  // Per-user usage ("new to you" tracking). GET returns the current user's set
-  // of used {itemType, itemId}; POST records usage from the insert-into-existing
-  // path (compose records server-side in the create handler instead).
-  if (url.pathname === '/api/slide-library/usage') {
-    if (req.method === 'GET') {
-      const out = await listSlideLibraryUsage(storageScope, email);
-      serveJson(res, 200, out);
-      return true;
+// POST /api/slide-library/personal - Save a slide to the personal library
+async function handlePersonalCreate({ storageScope, req, res, authedUser }) {
+  const email = actorEmail(authedUser);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  const r = await createPersonalLibraryItem(storageScope, email, body, {
+    actorEmail: email,
+  });
+  if (!r.ok) return badRequest(res, r.reason);
+  serveJson(res, 201, r.item);
+  return true;
+}
+
+// PATCH /api/slide-library/personal/:id - Update a personal item
+async function handlePersonalUpdate({ storageScope, req, res, authedUser }, id) {
+  const email = actorEmail(authedUser);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  const r = await updatePersonalLibraryItem(storageScope, email, id, body, {
+    actorEmail: email,
+  });
+  if (!r.ok) return r.reason === 'not_found' ? notFound(res) : badRequest(res, r.reason);
+  serveJson(res, 200, r.item);
+  return true;
+}
+
+// DELETE /api/slide-library/personal/:id - Delete a personal item
+async function handlePersonalDelete({ storageScope, res, authedUser }, id) {
+  const r = await deletePersonalLibraryItem(storageScope, actorEmail(authedUser), id);
+  if (!r.ok) return notFound(res);
+  serveJson(res, 200, { ok: true });
+  return true;
+}
+
+// GET /api/slide-library/team - List the team (organization-wide) library
+async function handleTeamList({ storageScope, res, url, authedUser }) {
+  const email = actorEmail(authedUser);
+  const themeId = cleanThemeId(url.searchParams.get('theme') || '');
+  const out = await listTeamLibrary(storageScope, { themeId, userEmail: email });
+  // Attach tags to each item
+  if (Array.isArray(out?.items) && out.items.length > 0) {
+    const ids = out.items.map((it) => it.id);
+    const tagsMap = await getTagsForSlideLibraryItems(storageScope, ids, { userEmail: email });
+    for (const item of out.items) {
+      item.tags = tagsMap.get(item.id) || [];
     }
-    if (req.method === 'POST') {
-      const parsed = await requireJsonBody(req, res, { allowEmpty: true });
-      if (!parsed.ok) return true;
-      const body = parsed.body;
-      const r = await recordSlideLibraryUsage(storageScope, email, body?.items);
-      serveJson(res, 200, { ok: true, recorded: r?.recorded || 0 });
-      return true;
+  }
+  serveJson(res, 200, out);
+  return true;
+}
+
+// POST /api/slide-library/team - Save a slide to the team library
+async function handleTeamCreate({ repoRoot, storageScope, req, res, authedUser }) {
+  const email = actorEmail(authedUser);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  const r = await createTeamLibraryItem(storageScope, body, { actorEmail: email });
+  if (!r.ok) return badRequest(res, r.reason);
+
+  // Generate preview image for the slide library item
+  let previewUrl = null;
+  try {
+    if (isMediaProviderInitialized()) {
+      // Create a mock slide object from the library item
+      const mockSlide = {
+        id: r.item.id,
+        type: r.item.slideType,
+        content: r.item.content,
+      };
+      const theme = await loadTheme(repoRoot, r.item.themeId);
+      previewUrl = await generateAndSaveOgPreview(
+        repoRoot,
+        mockSlide,
+        theme,
+        `lib-${r.item.id}`
+      );
     }
-    return methodNotAllowed(res);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    log.warn('[slide-library] Preview generation failed:', err.message);
   }
 
-  // Personal library
-  if (url.pathname === '/api/slide-library/personal') {
-    if (req.method === 'GET') {
-      const out = await listPersonalLibrary(storageScope, email, { themeId });
-      // Attach tags to each item
-      if (Array.isArray(out?.items) && out.items.length > 0) {
-        const ids = out.items.map((it) => it.id);
-        const tagsMap = await getTagsForSlideLibraryItems(storageScope, ids, { userEmail: email });
-        for (const item of out.items) {
-          item.tags = tagsMap.get(item.id) || [];
-        }
-      }
-      serveJson(res, 200, out);
-      return true;
+  // Fire webhook for team library addition (reuses organization share webhook URL)
+  void maybeFireWebhook(repoRoot, req, {
+    event: 'slide.added_to_team_library',
+    slideItem: { ...r.item, previewUrl },
+    authedUser,
+  });
+
+  serveJson(res, 201, { ...r.item, previewUrl });
+  return true;
+}
+
+// PATCH /api/slide-library/team/:id - Update a team item.
+// Permission model:
+// - Favorites are per-user and always allowed for authed users.
+// - Trashing (soft delete) is restricted to admins or the creator.
+async function handleTeamUpdate({ storageScope, req, res, authedUser }, id) {
+  const email = actorEmail(authedUser);
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  if ('trashed' in body) {
+    const r = await setTeamLibraryItemTrashed(storageScope, id, {
+      trashed: !!body.trashed,
+      actorEmail: email,
+      allowTrash: (item) => {
+        // Id-first identity match (T10 PR F2): the creator keeps their
+        // trash right across a rename. Falls back to the e-mail for items
+        // whose creator has no users row.
+        if (authedUser?.isAdmin) return true;
+        return matchesIdentity(authedUser, { userId: item?.createdById, email: item?.createdBy });
+      },
+    });
+    if (!r.ok) {
+      if (r.reason === 'not_found') return notFound(res);
+      if (r.reason === 'forbidden') return unauthorized(res, 'Not allowed');
+      return badRequest(res, r.reason);
     }
-    if (req.method === 'POST') {
-      const parsed = await requireJsonBody(req, res);
-      if (!parsed.ok) return true;
-      const body = parsed.body;
-      const r = await createPersonalLibraryItem(storageScope, email, body, {
-        actorEmail: email,
-      });
-      if (!r.ok) return badRequest(res, r.reason);
-      serveJson(res, 201, r.item);
-      return true;
-    }
-    return methodNotAllowed(res, ['GET', 'POST']);
+    serveJson(res, 200, r.item);
+    return true;
   }
 
-  const personalIdMatch = url.pathname.match(/^\/api\/slide-library\/personal\/([^/]+)$/);
-  if (personalIdMatch) {
-    const id = personalIdMatch[1];
-    if (req.method === 'PATCH') {
-      const parsed = await requireJsonBody(req, res);
-      if (!parsed.ok) return true;
-      const body = parsed.body;
-      const r = await updatePersonalLibraryItem(storageScope, email, id, body, {
-        actorEmail: email,
-      });
-      if (!r.ok) return r.reason === 'not_found' ? notFound(res) : badRequest(res, r.reason);
-      serveJson(res, 200, r.item);
-      return true;
-    }
-    if (req.method === 'DELETE') {
-      const r = await deletePersonalLibraryItem(storageScope, email, id);
-      if (!r.ok) return notFound(res);
-      serveJson(res, 200, { ok: true });
-      return true;
-    }
-    return methodNotAllowed(res, ['PATCH', 'DELETE']);
+  const r = await updateTeamLibraryItem(storageScope, id, body, { actorEmail: email });
+  if (!r.ok) return r.reason === 'not_found' ? notFound(res) : badRequest(res, r.reason);
+  serveJson(res, 200, r.item);
+  return true;
+}
+
+// DELETE /api/slide-library/team/:id - Delete a team item.
+// Conservative policy: admins can delete, otherwise only the creator.
+async function handleTeamDelete({ storageScope, res, authedUser }, id) {
+  const r = await deleteTeamLibraryItem(storageScope, id, {
+    actorEmail: actorEmail(authedUser),
+    allowDelete: (item) => {
+      // Id-first identity match (T10 PR F2), e-mail fallback for a creator
+      // with no users row.
+      if (authedUser?.isAdmin) return true;
+      return matchesIdentity(authedUser, { userId: item?.createdById, email: item?.createdBy });
+    },
+  });
+  if (!r.ok) {
+    if (r.reason === 'not_found') return notFound(res);
+    if (r.reason === 'forbidden') return unauthorized(res, 'Not allowed');
+    return badRequest(res, r.reason);
   }
+  serveJson(res, 200, { ok: true });
+  return true;
+}
 
-  // Team library (organization-wide)
-  if (url.pathname === '/api/slide-library/team') {
-    if (req.method === 'GET') {
-      const out = await listTeamLibrary(storageScope, { themeId, userEmail: email });
-      // Attach tags to each item
-      if (Array.isArray(out?.items) && out.items.length > 0) {
-        const ids = out.items.map((it) => it.id);
-        const tagsMap = await getTagsForSlideLibraryItems(storageScope, ids, { userEmail: email });
-        for (const item of out.items) {
-          item.tags = tagsMap.get(item.id) || [];
-        }
-      }
-      serveJson(res, 200, out);
-      return true;
-    }
-    if (req.method === 'POST') {
-      const parsed = await requireJsonBody(req, res);
-      if (!parsed.ok) return true;
-      const body = parsed.body;
-      const r = await createTeamLibraryItem(storageScope, body, { actorEmail: email });
-      if (!r.ok) return badRequest(res, r.reason);
+// GET /api/slide-library/personal/:id/tags | /api/slide-library/team/:id/tags
+async function handleItemTagsGet({ storageScope, res, authedUser }, id) {
+  const tags = await getTagsForSlideLibraryItem(storageScope, id, { userEmail: actorEmail(authedUser) });
+  serveJson(res, 200, tags);
+  return true;
+}
 
-      // Generate preview image for the slide library item
-      let previewUrl = null;
-      try {
-        if (isMediaProviderInitialized()) {
-          // Create a mock slide object from the library item
-          const mockSlide = {
-            id: r.item.id,
-            type: r.item.slideType,
-            content: r.item.content,
-          };
-          const theme = await loadTheme(repoRoot, r.item.themeId);
-          previewUrl = await generateAndSaveOgPreview(
-            repoRoot,
-            mockSlide,
-            theme,
-            `lib-${r.item.id}`
-          );
-        }
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        log.warn('[slide-library] Preview generation failed:', err.message);
-      }
+// PUT /api/slide-library/personal/:id/tags | /api/slide-library/team/:id/tags
+async function handleItemTagsPut({ storageScope, req, res, authedUser }, id) {
+  // Accepts either a bare `["a","b"]` array or `{ tags: [...] }`, so it
+  // opts out of the entry's object guarantee.
+  const parsed = await requireJsonBody(req, res, { allowNonObject: true });
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  const tagNames = Array.isArray(body) ? body : (body?.tags || []);
+  const tags = await setTagsForSlideLibraryItem(storageScope, id, tagNames, { userEmail: actorEmail(authedUser) });
+  serveJson(res, 200, tags);
+  return true;
+}
 
-      // Fire webhook for team library addition (reuses organization share webhook URL)
-      void maybeFireWebhook(repoRoot, req, {
-        event: 'slide.added_to_team_library',
-        slideItem: { ...r.item, previewUrl },
-        authedUser,
-      });
+/**
+ * Declarative route table for `/api/slide-library*` (A7.19 C8). Order matches
+ * the previous if-chain; each path group sent an explicit 405, preserved as
+ * trailing catch-all rows (Form B). The two tags groups share one GET and one
+ * PUT handler, exactly as their bodies were identical in the chain.
+ *
+ * The `/usage` catch-all previously called `methodNotAllowed(res)` without an
+ * Allow list, which crashed on `allowed.join` — a wrong method there got a 500
+ * from the error handler instead of a 405. The row carries the obvious
+ * `['GET', 'POST']` now (flagged in the migration PR).
+ *
+ * @type {import('../../utils/router.js').Route[]}
+ */
+export const ROUTES = [
+  { method: 'GET', pattern: '/api/slide-library/usage', handler: handleUsageList },
+  { method: 'POST', pattern: '/api/slide-library/usage', handler: handleUsageRecord },
+  { pattern: '/api/slide-library/usage', handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']) },
+  { method: 'GET', pattern: '/api/slide-library/personal', handler: handlePersonalList },
+  { method: 'POST', pattern: '/api/slide-library/personal', handler: handlePersonalCreate },
+  { pattern: '/api/slide-library/personal', handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']) },
+  { method: 'PATCH', pattern: /^\/api\/slide-library\/personal\/([^/]+)$/, handler: handlePersonalUpdate },
+  { method: 'DELETE', pattern: /^\/api\/slide-library\/personal\/([^/]+)$/, handler: handlePersonalDelete },
+  { pattern: /^\/api\/slide-library\/personal\/([^/]+)$/, handler: ({ res }) => methodNotAllowed(res, ['PATCH', 'DELETE']) },
+  { method: 'GET', pattern: '/api/slide-library/team', handler: handleTeamList },
+  { method: 'POST', pattern: '/api/slide-library/team', handler: handleTeamCreate },
+  { pattern: '/api/slide-library/team', handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']) },
+  { method: 'PATCH', pattern: /^\/api\/slide-library\/team\/([^/]+)$/, handler: handleTeamUpdate },
+  { method: 'DELETE', pattern: /^\/api\/slide-library\/team\/([^/]+)$/, handler: handleTeamDelete },
+  { pattern: /^\/api\/slide-library\/team\/([^/]+)$/, handler: ({ res }) => methodNotAllowed(res, ['PATCH', 'DELETE']) },
+  { method: 'GET', pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/, handler: handleItemTagsGet },
+  { method: 'PUT', pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/, handler: handleItemTagsPut },
+  { pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/, handler: ({ res }) => methodNotAllowed(res, ['GET', 'PUT']) },
+  { method: 'GET', pattern: /^\/api\/slide-library\/team\/([^/]+)\/tags$/, handler: handleItemTagsGet },
+  { method: 'PUT', pattern: /^\/api\/slide-library\/team\/([^/]+)\/tags$/, handler: handleItemTagsPut },
+  { pattern: /^\/api\/slide-library\/team\/([^/]+)\/tags$/, handler: ({ res }) => methodNotAllowed(res, ['GET', 'PUT']) },
+];
 
-      serveJson(res, 201, { ...r.item, previewUrl });
-      return true;
-    }
-    return methodNotAllowed(res, ['GET', 'POST']);
-  }
-
-  const teamIdMatch = url.pathname.match(/^\/api\/slide-library\/team\/([^/]+)$/);
-  if (teamIdMatch) {
-    const id = teamIdMatch[1];
-    if (req.method === 'PATCH') {
-      const parsed = await requireJsonBody(req, res);
-      if (!parsed.ok) return true;
-      const body = parsed.body;
-      // Permission model:
-      // - Favorites are per-user and always allowed for authed users.
-      // - Trashing (soft delete) is restricted to admins or the creator.
-      if ('trashed' in body) {
-        const r = await setTeamLibraryItemTrashed(storageScope, id, {
-          trashed: !!body.trashed,
-          actorEmail: email,
-          allowTrash: (item) => {
-            // Id-first identity match (T10 PR F2): the creator keeps their
-            // trash right across a rename. Falls back to the e-mail for items
-            // whose creator has no users row.
-            if (authedUser?.isAdmin) return true;
-            return matchesIdentity(authedUser, { userId: item?.createdById, email: item?.createdBy });
-          },
-        });
-        if (!r.ok) {
-          if (r.reason === 'not_found') return notFound(res);
-          if (r.reason === 'forbidden') return unauthorized(res, 'Not allowed');
-          return badRequest(res, r.reason);
-        }
-        serveJson(res, 200, r.item);
-        return true;
-      }
-
-      const r = await updateTeamLibraryItem(storageScope, id, body, { actorEmail: email });
-      if (!r.ok) return r.reason === 'not_found' ? notFound(res) : badRequest(res, r.reason);
-      serveJson(res, 200, r.item);
-      return true;
-    }
-    if (req.method === 'DELETE') {
-      const r = await deleteTeamLibraryItem(storageScope, id, {
-        actorEmail: email,
-        allowDelete: (item) => {
-          // Conservative policy:
-          // - admins can delete
-          // - otherwise only the creator can delete
-          // Id-first identity match (T10 PR F2), e-mail fallback for a creator
-          // with no users row.
-          if (authedUser?.isAdmin) return true;
-          return matchesIdentity(authedUser, { userId: item?.createdById, email: item?.createdBy });
-        },
-      });
-      if (!r.ok) {
-        if (r.reason === 'not_found') return notFound(res);
-        if (r.reason === 'forbidden') return unauthorized(res, 'Not allowed');
-        return badRequest(res, r.reason);
-      }
-      serveJson(res, 200, { ok: true });
-      return true;
-    }
-    return methodNotAllowed(res, ['PATCH', 'DELETE']);
-  }
-
-  // Personal library item tags
-  const personalTagsMatch = url.pathname.match(/^\/api\/slide-library\/personal\/([^/]+)\/tags$/);
-  if (personalTagsMatch) {
-    const id = personalTagsMatch[1];
-    if (req.method === 'GET') {
-      const tags = await getTagsForSlideLibraryItem(storageScope, id, { userEmail: email });
-      serveJson(res, 200, tags);
-      return true;
-    }
-    if (req.method === 'PUT') {
-      // Accepts either a bare `["a","b"]` array or `{ tags: [...] }`, so it
-      // opts out of the entry's object guarantee.
-      const parsed = await requireJsonBody(req, res, { allowNonObject: true });
-      if (!parsed.ok) return true;
-      const body = parsed.body;
-      const tagNames = Array.isArray(body) ? body : (body?.tags || []);
-      const tags = await setTagsForSlideLibraryItem(storageScope, id, tagNames, { userEmail: email });
-      serveJson(res, 200, tags);
-      return true;
-    }
-    return methodNotAllowed(res, ['GET', 'PUT']);
-  }
-
-  // Team library item tags
-  const teamTagsMatch = url.pathname.match(/^\/api\/slide-library\/team\/([^/]+)\/tags$/);
-  if (teamTagsMatch) {
-    const id = teamTagsMatch[1];
-    if (req.method === 'GET') {
-      const tags = await getTagsForSlideLibraryItem(storageScope, id, { userEmail: email });
-      serveJson(res, 200, tags);
-      return true;
-    }
-    if (req.method === 'PUT') {
-      // Accepts either a bare `["a","b"]` array or `{ tags: [...] }`, so it
-      // opts out of the entry's object guarantee.
-      const parsed = await requireJsonBody(req, res, { allowNonObject: true });
-      if (!parsed.ok) return true;
-      const body = parsed.body;
-      const tagNames = Array.isArray(body) ? body : (body?.tags || []);
-      const tags = await setTagsForSlideLibraryItem(storageScope, id, tagNames, { userEmail: email });
-      serveJson(res, 200, tags);
-      return true;
-    }
-    return methodNotAllowed(res, ['GET', 'PUT']);
-  }
-
-  return false;
+/**
+ * Handle slide-library API routes. The module-wide guards (path prefix,
+ * authentication) run before dispatch, exactly as the original chain did.
+ *
+ * @param {import('../../utils/context.js').AuthedContext} ctx
+ * @returns {Promise<boolean>|boolean} true if a route handled the request.
+ */
+export function handleSlideLibrary(ctx) {
+  if (!ctx.url.pathname.startsWith('/api/slide-library')) return false;
+  if (!ctx.authedUser) return unauthorized(ctx.res);
+  return dispatchRoutes(ROUTES, ctx);
 }
