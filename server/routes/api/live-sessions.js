@@ -34,6 +34,7 @@ import {
 } from '../../utils/interaction-helpers.js';
 import { liveInteractionKind } from '../../../shared/slide-types/runtime.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import { getString, getOptionalBoolean } from '../../utils/request-validators.js';
 
 /**
@@ -73,347 +74,358 @@ function csvEscapeCell(v) {
   return s;
 }
 
-export async function handleLiveSessions({ repoRoot, req, res, url, authedUser }) {
-  if (url.pathname === '/api/live-sessions' && req.method === 'POST') {
+// POST /api/live-sessions - Create/resume a live session (deck-write only)
+async function handleLiveSessionCreate({ repoRoot, req, res, authedUser }) {
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  const presentationId = getString(body, 'presentationId');
+  if (!presentationId.trim())
+    return badRequest(res, 'Expected { presentationId: string }');
+  // Only someone who can write the deck may create/resume its live session.
+  // Otherwise the returned sessionId hands live control to a non-owner.
+  const pres = await requirePresentationControl({
+    repoRoot,
+    presentationId: presentationId.trim(),
+    authedUser,
+    res,
+  });
+  if (!pres) return true;
+  const created = await createLiveSession(repoRoot, {
+    presentationId: presentationId.trim(),
+  });
+  if (!created)
+    return badRequest(res, 'Expected { presentationId: string }');
+  serveJson(res, 201, created);
+  return true;
+}
+
+// /api/live-sessions/:id/state - Push live state (presenter only). The
+// session-existence check answers 404 before the method decision (an unknown
+// session must not learn which methods exist), so the whole path stays one
+// no-method handler (route-dispatch.md, guard-before-method exception).
+async function handleLiveSessionStatePush({ repoRoot, req, res, authedUser }, sessionId) {
+  const s = await getLiveSession(repoRoot, sessionId);
+  if (!s) return notFound(res);
+  // GET is capability-based (the session id is the authorization) and is
+  // served from the public block — see routes/api/live-session-audience.js.
+  if (req.method === 'POST') {
+    // Pushing live state is a presenter action → require deck-write.
+    const pres = await requirePresentationControl({
+      repoRoot,
+      presentationId: s.presentationId,
+      authedUser,
+      res,
+    });
+    if (!pres) return true;
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
     const presentationId = getString(body, 'presentationId');
-    if (!presentationId.trim())
-      return badRequest(res, 'Expected { presentationId: string }');
-    // Only someone who can write the deck may create/resume its live session.
-    // Otherwise the returned sessionId hands live control to a non-owner.
-    const pres = await requirePresentationControl({
-      repoRoot,
-      presentationId: presentationId.trim(),
-      authedUser,
-      res,
+    if (!presentationId.trim() || presentationId.trim() !== s.presentationId)
+      return badRequest(res, 'presentationId mismatch');
+    const slideId = getString(body, 'slideId');
+    const slideType = getString(body, 'slideType');
+    const slideIndex = Number(body?.slideIndex ?? NaN);
+    if (!Number.isFinite(slideIndex))
+      return badRequest(res, 'slideIndex must be a number');
+    const stepIdxRaw = body?.stepIdx;
+    const stepIdx =
+      stepIdxRaw == null ? undefined : Number(stepIdxRaw ?? NaN);
+    if (stepIdx != null && !Number.isFinite(stepIdx))
+      return badRequest(res, 'stepIdx must be a number');
+    const stepParagraphs = getOptionalBoolean(body, 'stepParagraphs') ?? undefined;
+    const updatedAt =
+      body?.updatedAt != null ? Number(body.updatedAt) : Date.now();
+    const next = await updateLiveSessionState(repoRoot, sessionId, {
+      slideId,
+      slideIndex,
+      slideType,
+      stepIdx: stepIdx != null ? Math.max(0, stepIdx) : undefined,
+      stepParagraphs,
+      updatedAt,
     });
-    if (!pres) return true;
-    const created = await createLiveSession(repoRoot, {
-      presentationId: presentationId.trim(),
-    });
-    if (!created)
-      return badRequest(res, 'Expected { presentationId: string }');
-    serveJson(res, 201, created);
-    return true;
-  }
 
-  const sessStateMatch = url.pathname.match(
-    /^\/api\/live-sessions\/([^/]+)\/state$/
-  );
-  if (sessStateMatch) {
-    const sessionId = sessStateMatch[1];
-    const s = await getLiveSession(repoRoot, sessionId);
-    if (!s) return notFound(res);
-    // GET is capability-based (the session id is the authorization) and is
-    // served from the public block — see routes/api/live-session-audience.js.
-    if (req.method === 'POST') {
-      // Pushing live state is a presenter action → require deck-write.
-      const pres = await requirePresentationControl({
-        repoRoot,
-        presentationId: s.presentationId,
-        authedUser,
-        res,
-      });
-      if (!pres) return true;
-      const parsed = await requireJsonBody(req, res);
-      if (!parsed.ok) return true;
-      const body = parsed.body;
-      const presentationId = getString(body, 'presentationId');
-      if (!presentationId.trim() || presentationId.trim() !== s.presentationId)
-        return badRequest(res, 'presentationId mismatch');
-      const slideId = getString(body, 'slideId');
-      const slideType = getString(body, 'slideType');
-      const slideIndex = Number(body?.slideIndex ?? NaN);
-      if (!Number.isFinite(slideIndex))
-        return badRequest(res, 'slideIndex must be a number');
-      const stepIdxRaw = body?.stepIdx;
-      const stepIdx =
-        stepIdxRaw == null ? undefined : Number(stepIdxRaw ?? NaN);
-      if (stepIdx != null && !Number.isFinite(stepIdx))
-        return badRequest(res, 'stepIdx must be a number');
-      const stepParagraphs = getOptionalBoolean(body, 'stepParagraphs') ?? undefined;
-      const updatedAt =
-        body?.updatedAt != null ? Number(body.updatedAt) : Date.now();
-      const next = await updateLiveSessionState(repoRoot, sessionId, {
-        slideId,
-        slideIndex,
-        slideType,
-        stepIdx: stepIdx != null ? Math.max(0, stepIdx) : undefined,
-        stepParagraphs,
-        updatedAt,
-      });
-
-      // If this is a live slide, eagerly ensure interaction state exists so the
-      // presenter can show live results immediately (even before the first vote).
-      try {
-        const kind = liveInteractionKind(slideType);
-        if (kind && slideId) {
-          // Reuse the authorized presentation loaded above (presentationId is
-          // validated to equal s.presentationId), avoiding a second read.
-          const slide = pres ? findSlideById(pres, slideId) : null;
-          if (kind === 'feedback') {
-            await ensureFeedbackForSlide(repoRoot, sessionId, {
-              slideId,
-            });
-          } else {
-            const optionCount = getOptionCountForSlide(slideType, slide);
-            if (optionCount > 0) {
-              if (kind === 'likert') {
-                await ensureLikertInteractionForSlide(repoRoot, sessionId, {
-                  slideId,
-                  optionCount,
-                });
-              } else {
-                await ensurePollInteractionForSlide(repoRoot, sessionId, {
-                  slideId,
-                  optionCount,
-                });
-              }
-            }
-          }
-        }
-      } catch {
-        // ignore
-      }
-
-      serveJson(res, 200, next);
-      return true;
-    }
-    return methodNotAllowed(res, ['GET', 'POST']);
-  }
-
-  const sessInteractionMatch = url.pathname.match(
-    /^\/api\/live-sessions\/([^/]+)\/interactions\/([^/]+)\/(open|close|reset)$/
-  );
-  if (sessInteractionMatch && req.method === 'POST') {
-    const sessionId = sessInteractionMatch[1];
-    const slideId = sessInteractionMatch[2];
-    const action = sessInteractionMatch[3];
-    const s = await getLiveSession(repoRoot, sessionId);
-    if (!s) return notFound(res);
-    // Opening/closing/resetting an interaction is a presenter action.
-    const pres = await requirePresentationControl({
-      repoRoot,
-      presentationId: s.presentationId,
-      authedUser,
-      res,
-    });
-    if (!pres) return true;
-    const slide = findSlideById(pres, slideId);
-    if (!slide) return badRequest(res, 'slide not found');
-    const slideType = String(slide?.type || '');
-    // Opening, closing and resetting is the same action for every live type;
-    // only the store it reaches differs, which is what the kind selects.
-    const kind = liveInteractionKind(slideType);
-    if (!kind) return badRequest(res, 'slide is not interactive');
-    const optionCount = getOptionCountForSlide(slideType, slide);
-    if (kind !== 'feedback' && !optionCount)
-      return badRequest(
-        res,
-        kind === 'likert' ? 'likert has no options' : 'poll has no options'
-      );
-
-    // Ensure interaction exists first.
-    if (kind === 'feedback') {
-      await ensureFeedbackForSlide(repoRoot, sessionId, {
-        slideId,
-      });
-    } else if (kind === 'likert') {
-      await ensureLikertInteractionForSlide(repoRoot, sessionId, {
-        slideId,
-        optionCount,
-      });
-    } else {
-      await ensurePollInteractionForSlide(repoRoot, sessionId, {
-        slideId,
-        optionCount,
-      });
-    }
-
-    if (action === 'reset') {
-      const agg =
-        kind === 'feedback'
-          ? await resetFeedback(repoRoot, sessionId, { slideId })
-          : kind === 'likert'
-            ? await resetLikertInteraction(repoRoot, sessionId, {
-                slideId,
-                optionCount,
-              })
-            : await resetPollInteraction(repoRoot, sessionId, {
+    // If this is a live slide, eagerly ensure interaction state exists so the
+    // presenter can show live results immediately (even before the first vote).
+    try {
+      const kind = liveInteractionKind(slideType);
+      if (kind && slideId) {
+        // Reuse the authorized presentation loaded above (presentationId is
+        // validated to equal s.presentationId), avoiding a second read.
+        const slide = pres ? findSlideById(pres, slideId) : null;
+        if (kind === 'feedback') {
+          await ensureFeedbackForSlide(repoRoot, sessionId, {
+            slideId,
+          });
+        } else {
+          const optionCount = getOptionCountForSlide(slideType, slide);
+          if (optionCount > 0) {
+            if (kind === 'likert') {
+              await ensureLikertInteractionForSlide(repoRoot, sessionId, {
                 slideId,
                 optionCount,
               });
-      serveJson(res, 200, { ok: true, interactionState: agg });
-      return true;
+            } else {
+              await ensurePollInteractionForSlide(repoRoot, sessionId, {
+                slideId,
+                optionCount,
+              });
+            }
+          }
+        }
+      }
+    } catch {
+      // ignore
     }
 
+    serveJson(res, 200, next);
+    return true;
+  }
+  return methodNotAllowed(res, ['GET', 'POST']);
+}
+
+// POST /api/live-sessions/:id/interactions/:slideId/(open|close|reset)
+async function handleLiveSessionInteractionAction({ repoRoot, res, authedUser }, sessionId, slideId, action) {
+  const s = await getLiveSession(repoRoot, sessionId);
+  if (!s) return notFound(res);
+  // Opening/closing/resetting an interaction is a presenter action.
+  const pres = await requirePresentationControl({
+    repoRoot,
+    presentationId: s.presentationId,
+    authedUser,
+    res,
+  });
+  if (!pres) return true;
+  const slide = findSlideById(pres, slideId);
+  if (!slide) return badRequest(res, 'slide not found');
+  const slideType = String(slide?.type || '');
+  // Opening, closing and resetting is the same action for every live type;
+  // only the store it reaches differs, which is what the kind selects.
+  const kind = liveInteractionKind(slideType);
+  if (!kind) return badRequest(res, 'slide is not interactive');
+  const optionCount = getOptionCountForSlide(slideType, slide);
+  if (kind !== 'feedback' && !optionCount)
+    return badRequest(
+      res,
+      kind === 'likert' ? 'likert has no options' : 'poll has no options'
+    );
+
+  // Ensure interaction exists first.
+  if (kind === 'feedback') {
+    await ensureFeedbackForSlide(repoRoot, sessionId, {
+      slideId,
+    });
+  } else if (kind === 'likert') {
+    await ensureLikertInteractionForSlide(repoRoot, sessionId, {
+      slideId,
+      optionCount,
+    });
+  } else {
+    await ensurePollInteractionForSlide(repoRoot, sessionId, {
+      slideId,
+      optionCount,
+    });
+  }
+
+  if (action === 'reset') {
     const agg =
       kind === 'feedback'
-        ? await setFeedbackStatus(repoRoot, sessionId, {
-            slideId,
-            status: action === 'close' ? 'closed' : 'open',
-          })
+        ? await resetFeedback(repoRoot, sessionId, { slideId })
         : kind === 'likert'
-          ? await setLikertInteractionStatus(repoRoot, sessionId, {
+          ? await resetLikertInteraction(repoRoot, sessionId, {
               slideId,
-              status: action === 'close' ? 'closed' : 'open',
               optionCount,
             })
-          : await setPollInteractionStatus(repoRoot, sessionId, {
+          : await resetPollInteraction(repoRoot, sessionId, {
               slideId,
-              status: action === 'close' ? 'closed' : 'open',
               optionCount,
             });
-
-    // Broadcast branch event when closing an interaction with onClose configured
-    if (action === 'close' && kind !== 'feedback') {
-      const content = slide?.content || slide?.contentNl || slide?.contentEn || {};
-      const onClose = String(content?.onClose || 'stay').trim();
-      const onCloseTarget = String(content?.onCloseTarget || '').trim();
-      if (onClose !== 'stay') {
-        broadcastBranch(repoRoot, sessionId, {
-          slideId,
-          onClose,
-          onCloseTarget,
-        });
-      }
-    }
-
     serveJson(res, 200, { ok: true, interactionState: agg });
     return true;
   }
 
-  const feedbackExportMatch = url.pathname.match(
-    /^\/api\/live-sessions\/([^/]+)\/feedback\/([^/]+)\.(csv|json)$/
-  );
-  if (feedbackExportMatch && req.method === 'GET') {
-    const sessionId = feedbackExportMatch[1];
-    const slideId = feedbackExportMatch[2];
-    const fmt = feedbackExportMatch[3];
-    const s = await getLiveSession(repoRoot, sessionId);
-    if (!s) return notFound(res);
-    // Feedback entries are audience PII (free text + deviceId) → deck-write only.
-    const pres = await requirePresentationControl({
-      repoRoot,
-      presentationId: s.presentationId,
-      authedUser,
-      res,
-    });
-    if (!pres) return true;
-    const slide = findSlideById(pres, slideId);
-    if (!slide) return badRequest(res, 'slide not found');
-    if (liveInteractionKind(String(slide?.type || '')) !== 'feedback')
-      return badRequest(res, 'slide is not a feedback slide');
+  const agg =
+    kind === 'feedback'
+      ? await setFeedbackStatus(repoRoot, sessionId, {
+          slideId,
+          status: action === 'close' ? 'closed' : 'open',
+        })
+      : kind === 'likert'
+        ? await setLikertInteractionStatus(repoRoot, sessionId, {
+            slideId,
+            status: action === 'close' ? 'closed' : 'open',
+            optionCount,
+          })
+        : await setPollInteractionStatus(repoRoot, sessionId, {
+            slideId,
+            status: action === 'close' ? 'closed' : 'open',
+            optionCount,
+          });
 
-    const entries = await listFeedbackEntries(repoRoot, sessionId, { slideId });
-    if (fmt === 'json') {
-      serveJson(res, 200, {
-        ok: true,
-        sessionId,
-        presentationId: s.presentationId,
+  // Broadcast branch event when closing an interaction with onClose configured
+  if (action === 'close' && kind !== 'feedback') {
+    const content = slide?.content || slide?.contentNl || slide?.contentEn || {};
+    const onClose = String(content?.onClose || 'stay').trim();
+    const onCloseTarget = String(content?.onCloseTarget || '').trim();
+    if (onClose !== 'stay') {
+      broadcastBranch(repoRoot, sessionId, {
         slideId,
-        count: entries.length,
-        entries,
+        onClose,
+        onCloseTarget,
       });
-      return true;
     }
-
-    const header = [
-      'slideId',
-      'deviceId',
-      'createdAt',
-      'updatedAt',
-      'text',
-    ].join(',');
-    const lines = entries.map((e) =>
-      [
-        csvEscapeCell(e.slideId),
-        csvEscapeCell(e.deviceId),
-        csvEscapeCell(new Date(Number(e.createdAt || 0) || 0).toISOString()),
-        csvEscapeCell(new Date(Number(e.updatedAt || 0) || 0).toISOString()),
-        csvEscapeCell(e.text),
-      ].join(',')
-    );
-    const body = `${header}\n${lines.join('\n')}\n`;
-    const filename = `feedback-${slideId}.csv`;
-    res.writeHead(200, {
-      'Content-Type': 'text/csv; charset=utf-8',
-      'Cache-Control': 'no-store',
-      'Content-Disposition': `attachment; filename="${filename}"`,
-    });
-    res.end(body);
-    return true;
   }
 
-  const sessEnableMatch = url.pathname.match(
-    /^\/api\/live-sessions\/([^/]+)\/control\/enable$/
-  );
-  if (sessEnableMatch && req.method === 'POST') {
-    const sessionId = sessEnableMatch[1];
-    const s = await getLiveSession(repoRoot, sessionId);
-    if (!s) return notFound(res);
-    const pres = await requirePresentationControl({
-      repoRoot,
+  serveJson(res, 200, { ok: true, interactionState: agg });
+  return true;
+}
+
+// GET /api/live-sessions/:id/feedback/:slideId.(csv|json) - Export feedback
+// (audience PII, deck-write only)
+async function handleLiveSessionFeedbackExport({ repoRoot, res, authedUser }, sessionId, slideId, fmt) {
+  const s = await getLiveSession(repoRoot, sessionId);
+  if (!s) return notFound(res);
+  // Feedback entries are audience PII (free text + deviceId) → deck-write only.
+  const pres = await requirePresentationControl({
+    repoRoot,
+    presentationId: s.presentationId,
+    authedUser,
+    res,
+  });
+  if (!pres) return true;
+  const slide = findSlideById(pres, slideId);
+  if (!slide) return badRequest(res, 'slide not found');
+  if (liveInteractionKind(String(slide?.type || '')) !== 'feedback')
+    return badRequest(res, 'slide is not a feedback slide');
+
+  const entries = await listFeedbackEntries(repoRoot, sessionId, { slideId });
+  if (fmt === 'json') {
+    serveJson(res, 200, {
+      ok: true,
+      sessionId,
       presentationId: s.presentationId,
-      authedUser,
-      res,
+      slideId,
+      count: entries.length,
+      entries,
     });
-    if (!pres) return true;
-    const next = setLiveSessionControlEnabled(repoRoot, sessionId, true);
-    serveJson(res, 200, next);
     return true;
   }
 
-  const sessDisableMatch = url.pathname.match(
-    /^\/api\/live-sessions\/([^/]+)\/control\/disable$/
+  const header = [
+    'slideId',
+    'deviceId',
+    'createdAt',
+    'updatedAt',
+    'text',
+  ].join(',');
+  const lines = entries.map((e) =>
+    [
+      csvEscapeCell(e.slideId),
+      csvEscapeCell(e.deviceId),
+      csvEscapeCell(new Date(Number(e.createdAt || 0) || 0).toISOString()),
+      csvEscapeCell(new Date(Number(e.updatedAt || 0) || 0).toISOString()),
+      csvEscapeCell(e.text),
+    ].join(',')
   );
-  if (sessDisableMatch && req.method === 'POST') {
-    const sessionId = sessDisableMatch[1];
-    const s = await getLiveSession(repoRoot, sessionId);
-    if (!s) return notFound(res);
-    const pres = await requirePresentationControl({
-      repoRoot,
-      presentationId: s.presentationId,
-      authedUser,
-      res,
-    });
-    if (!pres) return true;
-    const next = setLiveSessionControlEnabled(repoRoot, sessionId, false);
-    serveJson(res, 200, next);
-    return true;
-  }
+  const body = `${header}\n${lines.join('\n')}\n`;
+  const filename = `feedback-${slideId}.csv`;
+  res.writeHead(200, {
+    'Content-Type': 'text/csv; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'Content-Disposition': `attachment; filename="${filename}"`,
+  });
+  res.end(body);
+  return true;
+}
 
-  const sessControlMatch = url.pathname.match(
-    /^\/api\/live-sessions\/([^/]+)\/control$/
-  );
-  if (sessControlMatch && req.method === 'POST') {
-    const sessionId = sessControlMatch[1];
-    const s = await getLiveSession(repoRoot, sessionId);
-    if (!s) return notFound(res);
-    const pres = await requirePresentationControl({
-      repoRoot,
-      presentationId: s.presentationId,
-      authedUser,
-      res,
-    });
-    if (!pres) return true;
-    const parsed = await requireJsonBody(req, res);
-    if (!parsed.ok) return true;
-    const body = parsed.body;
-    const result = await sendLiveSessionControlCommand(repoRoot, sessionId, body);
-    if (!result.ok) {
-      if (result.reason === 'disabled')
-        return unauthorized(
-          res,
-          'Remote control is disabled for this session'
-        );
-      return badRequest(res, `Control failed: ${result.reason}`);
-    }
-    serveJson(res, 200, { ok: true });
-    return true;
-  }
+// POST /api/live-sessions/:id/control/enable - Enable remote control
+async function handleLiveSessionControlEnable({ repoRoot, res, authedUser }, sessionId) {
+  const s = await getLiveSession(repoRoot, sessionId);
+  if (!s) return notFound(res);
+  const pres = await requirePresentationControl({
+    repoRoot,
+    presentationId: s.presentationId,
+    authedUser,
+    res,
+  });
+  if (!pres) return true;
+  const next = setLiveSessionControlEnabled(repoRoot, sessionId, true);
+  serveJson(res, 200, next);
+  return true;
+}
 
-  return false;
+// POST /api/live-sessions/:id/control/disable - Disable remote control
+async function handleLiveSessionControlDisable({ repoRoot, res, authedUser }, sessionId) {
+  const s = await getLiveSession(repoRoot, sessionId);
+  if (!s) return notFound(res);
+  const pres = await requirePresentationControl({
+    repoRoot,
+    presentationId: s.presentationId,
+    authedUser,
+    res,
+  });
+  if (!pres) return true;
+  const next = setLiveSessionControlEnabled(repoRoot, sessionId, false);
+  serveJson(res, 200, next);
+  return true;
+}
+
+// POST /api/live-sessions/:id/control - Send a remote-control command
+async function handleLiveSessionControlCommand({ repoRoot, req, res, authedUser }, sessionId) {
+  const s = await getLiveSession(repoRoot, sessionId);
+  if (!s) return notFound(res);
+  const pres = await requirePresentationControl({
+    repoRoot,
+    presentationId: s.presentationId,
+    authedUser,
+    res,
+  });
+  if (!pres) return true;
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  const result = await sendLiveSessionControlCommand(repoRoot, sessionId, body);
+  if (!result.ok) {
+    if (result.reason === 'disabled')
+      return unauthorized(
+        res,
+        'Remote control is disabled for this session'
+      );
+    return badRequest(res, `Control failed: ${result.reason}`);
+  }
+  serveJson(res, 200, { ok: true });
+  return true;
+}
+
+/**
+ * Declarative route table for the presenter-only `/api/live-sessions*` routes
+ * (A7.19 C8). Order matches the previous if-chain. Every row is method-bearing
+ * and falls through on a mismatch (Form A) — deliberately: the GET
+ * counterparts of `/state` and the SSE stream are capability-based audience
+ * routes served from the public block (`live-session-audience.js`), before
+ * the login gate, so a 405 here can never shadow them. The one exception is
+ * `/state`, whose session-existence check precedes the method decision — it
+ * stays a single no-method handler (guard-before-method).
+ *
+ * @type {import('../../utils/router.js').Route[]}
+ */
+export const ROUTES = [
+  { method: 'POST', pattern: '/api/live-sessions', handler: handleLiveSessionCreate },
+  { pattern: /^\/api\/live-sessions\/([^/]+)\/state$/, handler: handleLiveSessionStatePush },
+  { method: 'POST', pattern: /^\/api\/live-sessions\/([^/]+)\/interactions\/([^/]+)\/(open|close|reset)$/, handler: handleLiveSessionInteractionAction },
+  { method: 'GET', pattern: /^\/api\/live-sessions\/([^/]+)\/feedback\/([^/]+)\.(csv|json)$/, handler: handleLiveSessionFeedbackExport },
+  { method: 'POST', pattern: /^\/api\/live-sessions\/([^/]+)\/control\/enable$/, handler: handleLiveSessionControlEnable },
+  { method: 'POST', pattern: /^\/api\/live-sessions\/([^/]+)\/control\/disable$/, handler: handleLiveSessionControlDisable },
+  { method: 'POST', pattern: /^\/api\/live-sessions\/([^/]+)\/control$/, handler: handleLiveSessionControlCommand },
+];
+
+/**
+ * Handle the presenter-only live-session routes.
+ *
+ * @param {import('../../utils/context.js').AuthedContext} ctx
+ * @returns {Promise<boolean>|boolean} true if a route handled the request.
+ */
+export function handleLiveSessions(ctx) {
+  return dispatchRoutes(ROUTES, ctx);
 }

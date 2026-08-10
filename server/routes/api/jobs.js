@@ -14,6 +14,7 @@ import { getStoredResult } from '../../jobs/queue/workers/export-worker.js';
 import { getStoredTranslationResult } from '../../jobs/queue/workers/translate-worker.js';
 import { getStoredBulkResult } from '../../jobs/queue/workers/bulk-export-worker.js';
 import { serveJson, notFound, badRequest, forbidden } from '../../utils/http.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 
 /**
@@ -75,21 +76,18 @@ export function ownsStoredResult(result, authedUser) {
  * Handle job status request.
  * GET /api/jobs/:id
  */
-async function handleGetJobStatus({ res, url, authedUser }) {
-  const match = url.pathname.match(/^\/api\/jobs\/([^/]+)$/);
-  if (!match) return false;
-
-  const fullJobId = match[1];
+async function handleGetJobStatus({ res, authedUser }, fullJobId) {
   const { queueName, id } = parseJobId(fullJobId);
 
   // Check if this is a sync job (executed synchronously, no queue)
   if (id.startsWith('sync-')) {
-    return serveJson(res, 200, {
+    serveJson(res, 200, {
       id: fullJobId,
       state: 'completed',
       progress: 100,
       message: 'Job completed synchronously (queue unavailable)',
     });
+    return true;
   }
 
   const status = await getJobStatus(queueName, id);
@@ -128,18 +126,15 @@ async function handleGetJobStatus({ res, url, authedUser }) {
     response.error = status.failedReason;
   }
 
-  return serveJson(res, 200, response);
+  serveJson(res, 200, response);
+  return true;
 }
 
 /**
  * Handle job result download.
  * GET /api/jobs/:id/download
  */
-async function handleJobDownload({ res, url, authedUser }) {
-  const match = url.pathname.match(/^\/api\/jobs\/([^/]+)\/download$/);
-  if (!match) return false;
-
-  const fullJobId = match[1];
+async function handleJobDownload({ res, authedUser }, fullJobId) {
   const { queueName, id } = parseJobId(fullJobId);
 
   // Get stored result based on queue type
@@ -166,7 +161,8 @@ async function handleJobDownload({ res, url, authedUser }) {
 
   // For translation jobs, just return the result as JSON
   if (queueName === QUEUE_NAMES.TRANSLATE) {
-    return serveJson(res, 200, result);
+    serveJson(res, 200, result);
+    return true;
   }
 
   // Build filename
@@ -212,16 +208,11 @@ async function handleJobDownload({ res, url, authedUser }) {
  * Handle queue statistics request (admin).
  * GET /api/jobs/queue/:name/stats
  */
-async function handleQueueStats({ res, url, authedUser }) {
-  const match = url.pathname.match(/^\/api\/jobs\/queue\/([^/]+)\/stats$/);
-  if (!match) return false;
-
+async function handleQueueStats({ res, authedUser }, queueName) {
   // Require admin
   if (!authedUser?.isAdmin) {
     return forbidden(res, 'Admin access required');
   }
-
-  const queueName = match[1];
 
   if (!Object.values(QUEUE_NAMES).includes(queueName)) {
     return badRequest(res, `Unknown queue: ${queueName}`);
@@ -230,41 +221,45 @@ async function handleQueueStats({ res, url, authedUser }) {
   const stats = await getQueueStats(queueName);
 
   if (!stats) {
-    return serveJson(res, 200, {
+    serveJson(res, 200, {
       queueName,
       available: false,
       message: 'Queue not available (Redis not configured)',
     });
+    return true;
   }
 
-  return serveJson(res, 200, {
+  serveJson(res, 200, {
     queueName,
     available: true,
     ...stats,
   });
+  return true;
 }
 
 /**
- * Main job routes handler.
+ * Declarative route table for `/api/jobs*` (A7.19 C8). Order matches the
+ * previous chain: `/download` and `/queue/:name/stats` before the bare `/:id`
+ * row. Every route is GET-only; a non-GET request matches no row and falls
+ * through (Form A), exactly as the chain's module-wide `req.method !== 'GET'`
+ * guard did.
+ *
+ * @type {import('../../utils/router.js').Route[]}
  */
-export async function handleJobs(context) {
-  const { req, url } = context;
+export const ROUTES = [
+  { method: 'GET', pattern: /^\/api\/jobs\/([^/]+)\/download$/, handler: handleJobDownload },
+  { method: 'GET', pattern: /^\/api\/jobs\/queue\/([^/]+)\/stats$/, handler: handleQueueStats },
+  { method: 'GET', pattern: /^\/api\/jobs\/([^/]+)$/, handler: handleGetJobStatus },
+];
 
-  if (req.method !== 'GET') return false;
-  if (!url.pathname.startsWith('/api/jobs')) return false;
-
-  // Route to specific handler
-  if (url.pathname.match(/^\/api\/jobs\/[^/]+\/download$/)) {
-    return handleJobDownload(context);
-  }
-
-  if (url.pathname.match(/^\/api\/jobs\/queue\/[^/]+\/stats$/)) {
-    return handleQueueStats(context);
-  }
-
-  if (url.pathname.match(/^\/api\/jobs\/[^/]+$/)) {
-    return handleGetJobStatus(context);
-  }
-
-  return false;
+/**
+ * Main job routes handler. The path-prefix guard runs before dispatch, as the
+ * original chain's did.
+ *
+ * @param {import('../../utils/context.js').AuthedContext} ctx
+ * @returns {Promise<boolean>|boolean} true if a route handled the request.
+ */
+export function handleJobs(ctx) {
+  if (!ctx.url.pathname.startsWith('/api/jobs')) return false;
+  return dispatchRoutes(ROUTES, ctx);
 }
