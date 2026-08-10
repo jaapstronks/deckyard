@@ -26,6 +26,7 @@ import {
   unauthorized,
   methodNotAllowed,
 } from '../../utils/http.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import { createRouteContext } from '../../utils/context.js';
 import { getPopularPresentations } from './presentations/popular.js';
@@ -84,13 +85,10 @@ export function buildActivityOpts(searchParams, email) {
 
 /**
  * Handle `GET /api/home`.
- * @param {object} ctx - { storageScope, req, res, url, authedUser }
+ * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>} true if handled
  */
-export async function handleHome({ storageScope, req, res, url, authedUser }) {
-  if (url.pathname !== '/api/home') return false;
-  if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-
+async function handleHomeGet({ storageScope, res, url, authedUser }) {
   const email = String(authedUser?.email || '').trim().toLowerCase();
   if (!email) return unauthorized(res);
 
@@ -130,4 +128,26 @@ export async function handleHome({ storageScope, req, res, url, authedUser }) {
     usage: { items: asItems(usage) },
   });
   return true;
+}
+
+/**
+ * Declarative route table for `/api/home` (A7.19 C8). Form B: the original ran
+ * its method check *before* the auth check (a wrong method 405'd, no user 401'd),
+ * so the explicit 405 catch-all sits after the GET row and a non-GET request
+ * reaches it before `handleHomeGet` ever runs its auth guard.
+ *
+ * @type {import('../../utils/router.js').Route[]}
+ */
+export const ROUTES = [
+  { method: 'GET', pattern: '/api/home', handler: handleHomeGet },
+  { pattern: '/api/home', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
+];
+
+/**
+ * Handle `/api/home` requests.
+ * @param {import('../../utils/context.js').AuthedContext} ctx
+ * @returns {Promise<boolean>|boolean} true if a route handled the request.
+ */
+export function handleHome(ctx) {
+  return dispatchRoutes(ROUTES, ctx);
 }
