@@ -85,8 +85,10 @@ export function isJsonObject(value) {
  * returns.
  *
  * A successful result guarantees `body` is a plain object, so handlers read
- * `body.field` without re-checking `typeof body`. Endpoints that genuinely take
- * a top-level array or primitive opt out with `allowNonObject`.
+ * `body.field` without re-checking `typeof body`. There is no opt-out: an
+ * internal `/api/*` body is a `{...}` object, always (B55 removed the last
+ * bare-array endpoints, the slide-library tag PUTs, which now take
+ * `{ tags: [...] }`).
  *
  * @param {import('node:http').IncomingMessage} req
  * @param {import('node:http').ServerResponse} res
@@ -95,14 +97,9 @@ export function isJsonObject(value) {
  *   400. For endpoints where "no payload" is a legitimate request (a toggle, a
  *   DELETE with optional options). Invalid JSON is still a 400 — an empty body
  *   is an absent payload, a broken one is a broken request.
- * @param {boolean} [opts.allowNonObject] Accept a top-level array or primitive
- *   body instead of answering 400. Off by default: a JSON body is a `{...}`
- *   object, and rejecting non-objects at the entry is why handlers no longer
- *   each guard `typeof body`. The few endpoints that take a bare array (the
- *   slide-library tag PUTs) opt in.
  * @returns {Promise<{ok: true, body: *}|{ok: false}>}
  */
-export async function requireJsonBody(req, res, { allowEmpty = false, allowNonObject = false } = {}) {
+export async function requireJsonBody(req, res, { allowEmpty = false } = {}) {
   let raw;
   try {
     raw = (await readRequestBody(req)).toString('utf8');
@@ -129,7 +126,7 @@ export async function requireJsonBody(req, res, { allowEmpty = false, allowNonOb
     return { ok: false };
   }
 
-  if (!allowNonObject && !isJsonObject(body)) {
+  if (!isJsonObject(body)) {
     badRequest(res, 'Request body must be a JSON object');
     return { ok: false };
   }

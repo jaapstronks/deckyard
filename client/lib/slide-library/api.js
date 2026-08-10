@@ -138,7 +138,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     try {
       const result = await api(`/api/slide-library/${s}/${encodeURIComponent(item.id)}/tags`, {
         method: 'PUT',
-        body: JSON.stringify(newTags),
+        body: JSON.stringify({ tags: newTags }),
       });
       item.tags = result;
       return { ok: true, tags: result };

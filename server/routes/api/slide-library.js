@@ -239,13 +239,16 @@ async function handleItemTagsGet({ storageScope, res, authedUser }, id) {
 }
 
 // PUT /api/slide-library/personal/:id/tags | /api/slide-library/team/:id/tags
+// Body: `{ tags: [...] }` — the one canonical shape (B55). A bare array is a
+// 400 from the entry's object guarantee; a missing/non-array `tags` is a 400
+// here.
 async function handleItemTagsPut({ storageScope, req, res, authedUser }, id) {
-  // Accepts either a bare `["a","b"]` array or `{ tags: [...] }`, so it
-  // opts out of the entry's object guarantee.
-  const parsed = await requireJsonBody(req, res, { allowNonObject: true });
+  const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
-  const body = parsed.body;
-  const tagNames = Array.isArray(body) ? body : (body?.tags || []);
+  const tagNames = parsed.body.tags;
+  if (!Array.isArray(tagNames)) {
+    return badRequest(res, 'Expected { tags: [...] }');
+  }
   const tags = await setTagsForSlideLibraryItem(storageScope, id, tagNames, { userEmail: actorEmail(authedUser) });
   serveJson(res, 200, tags);
   return true;

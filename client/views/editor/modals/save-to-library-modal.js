@@ -278,7 +278,7 @@ export function openSaveToLibraryModal({
         try {
           await api(`${endpoint}/${encodeURIComponent(result.id)}/tags`, {
             method: 'PUT',
-            body: JSON.stringify(tags),
+            body: JSON.stringify({ tags }),
           });
         } catch (tagErr) {
           console.warn('Failed to save tags:', tagErr);
