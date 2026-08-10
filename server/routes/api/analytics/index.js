@@ -3,6 +3,7 @@
  */
 
 import { getClientIp, allowRequest } from '../../../utils/rate-limit.js';
+import { dispatchRoutes } from '../../../utils/router.js';
 import {
   AUTH_RATE_LIMITS,
   sendRateLimitResponse,
@@ -23,128 +24,71 @@ import {
 import { handleExportMyData, handleDeleteMyData } from './gdpr.js';
 
 /**
+ * Declarative route table for the authenticated analytics surface (A7.19 C8).
+ *
+ * Two path prefixes live here — `/api/analytics/*` (dashboard + GDPR) and the
+ * per-presentation `/api/presentations/:id/analytics/*` sub-tree — so the module
+ * has no single prefix guard; the entry function applies the module-wide rate
+ * limit before dispatch instead (route-dispatch.md § module-wide guards).
+ *
+ * Form A throughout: every route is method-bearing and a method mismatch falls
+ * through (the original if-chain sent no 405, it fell to `false` → 404). Order
+ * mirrors the previous chain line for line — `/reports` before `/reports/:id`,
+ * `/reports/:id` before `/reports/:id/regenerate-token` (the `([^/]+)` captures
+ * never span a slash, so these do not overlap, but the order is preserved
+ * regardless). `handleCreateReport` re-derives its rate-limit key from the
+ * context rather than receiving it as a positional argument.
+ *
+ * @type {import('../../../utils/router.js').Route[]}
+ */
+export const ROUTES = [
+  // Combined dashboard endpoints
+  { method: 'GET', pattern: '/api/analytics/dashboard', handler: handleDashboard },
+  { method: 'GET', pattern: '/api/analytics/presentations', handler: handlePresentationsList },
+
+  // Presentation-specific analytics endpoints
+  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/analytics$/, handler: handleOverview },
+  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/slides$/, handler: handleSlides },
+  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/heatmap$/, handler: handleHeatmap },
+  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/journey$/, handler: handleJourney },
+  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/sessions$/, handler: handleSessions },
+  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/realtime$/, handler: handleRealtime },
+
+  // Report CRUD endpoints
+  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports$/, handler: handleListReports },
+  { method: 'POST', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports$/, handler: handleCreateReport },
+  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)$/, handler: handleGetReport },
+  { method: 'PATCH', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)$/, handler: handleUpdateReport },
+  { method: 'DELETE', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)$/, handler: handleDeleteReport },
+  { method: 'POST', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)\/regenerate-token$/, handler: handleRegenerateToken },
+
+  // GDPR data access endpoints
+  { method: 'GET', pattern: '/api/analytics/my-data', handler: handleExportMyData },
+  { method: 'DELETE', pattern: '/api/analytics/my-data', handler: handleDeleteMyData },
+];
+
+/**
  * Handle authenticated analytics routes.
- * @param {Object} ctx - Request context with authedUser
+ * @param {import('../../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>} True if handled
  */
 export async function handleAnalytics(ctx) {
   const { req, res, url, authedUser } = ctx;
-  const path = url.pathname;
 
-  // Apply user-based rate limiting for authenticated endpoints
+  // Apply user-based rate limiting for authenticated endpoints. This runs for
+  // every request that reaches the module (there is no prefix guard), exactly
+  // as the original chain did before its first path compare.
   const rateLimitKey = authedUser?.email || authedUser?.id || getClientIp(req);
   if (!(await allowRequest(`analytics:auth:${rateLimitKey}`, AUTH_RATE_LIMITS.standard))) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
-      endpoint: path,
+      endpoint: url.pathname,
       user: authedUser?.email,
       limitType: 'authenticated',
     });
     return sendRateLimitResponse(res, 'Rate limit exceeded', 1), true;
   }
 
-  // ============================================================
-  // COMBINED DASHBOARD ENDPOINTS
-  // ============================================================
-
-  if (req.method === 'GET' && path === '/api/analytics/dashboard') {
-    return handleDashboard(ctx);
-  }
-
-  if (req.method === 'GET' && path === '/api/analytics/presentations') {
-    return handlePresentationsList(ctx);
-  }
-
-  // ============================================================
-  // PRESENTATION-SPECIFIC ANALYTICS ENDPOINTS
-  // ============================================================
-
-  // GET /api/presentations/:id/analytics
-  const overviewMatch = path.match(/^\/api\/presentations\/([^/]+)\/analytics$/);
-  if (req.method === 'GET' && overviewMatch) {
-    return handleOverview(ctx, overviewMatch[1]);
-  }
-
-  // GET /api/presentations/:id/analytics/slides
-  const slidesMatch = path.match(/^\/api\/presentations\/([^/]+)\/analytics\/slides$/);
-  if (req.method === 'GET' && slidesMatch) {
-    return handleSlides(ctx, slidesMatch[1]);
-  }
-
-  // GET /api/presentations/:id/analytics/heatmap
-  const heatmapMatch = path.match(/^\/api\/presentations\/([^/]+)\/analytics\/heatmap$/);
-  if (req.method === 'GET' && heatmapMatch) {
-    return handleHeatmap(ctx, heatmapMatch[1]);
-  }
-
-  // GET /api/presentations/:id/analytics/journey
-  const journeyMatch = path.match(/^\/api\/presentations\/([^/]+)\/analytics\/journey$/);
-  if (req.method === 'GET' && journeyMatch) {
-    return handleJourney(ctx, journeyMatch[1]);
-  }
-
-  // GET /api/presentations/:id/analytics/sessions
-  const sessionsMatch = path.match(/^\/api\/presentations\/([^/]+)\/analytics\/sessions$/);
-  if (req.method === 'GET' && sessionsMatch) {
-    return handleSessions(ctx, sessionsMatch[1]);
-  }
-
-  // GET /api/presentations/:id/analytics/realtime (SSE)
-  const realtimeMatch = path.match(/^\/api\/presentations\/([^/]+)\/analytics\/realtime$/);
-  if (req.method === 'GET' && realtimeMatch) {
-    return handleRealtime(ctx, realtimeMatch[1]);
-  }
-
-  // ============================================================
-  // REPORT CRUD ENDPOINTS
-  // ============================================================
-
-  // GET/POST /api/presentations/:id/analytics/reports
-  const listReportsMatch = path.match(/^\/api\/presentations\/([^/]+)\/analytics\/reports$/);
-  if (listReportsMatch) {
-    const presentationId = listReportsMatch[1];
-    if (req.method === 'GET') {
-      return handleListReports(ctx, presentationId);
-    }
-    if (req.method === 'POST') {
-      return handleCreateReport(ctx, presentationId, rateLimitKey);
-    }
-  }
-
-  // GET/PATCH/DELETE /api/presentations/:id/analytics/reports/:reportId
-  const reportMatch = path.match(/^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)$/);
-  if (reportMatch) {
-    const presentationId = reportMatch[1];
-    const reportId = reportMatch[2];
-    if (req.method === 'GET') {
-      return handleGetReport(ctx, presentationId, reportId);
-    }
-    if (req.method === 'PATCH') {
-      return handleUpdateReport(ctx, presentationId, reportId);
-    }
-    if (req.method === 'DELETE') {
-      return handleDeleteReport(ctx, presentationId, reportId);
-    }
-  }
-
-  // POST /api/presentations/:id/analytics/reports/:reportId/regenerate-token
-  const regenerateMatch = path.match(/^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)\/regenerate-token$/);
-  if (req.method === 'POST' && regenerateMatch) {
-    return handleRegenerateToken(ctx, regenerateMatch[1], regenerateMatch[2]);
-  }
-
-  // ============================================================
-  // GDPR DATA ACCESS ENDPOINTS
-  // ============================================================
-
-  if (req.method === 'GET' && path === '/api/analytics/my-data') {
-    return handleExportMyData(ctx);
-  }
-
-  if (req.method === 'DELETE' && path === '/api/analytics/my-data') {
-    return handleDeleteMyData(ctx);
-  }
-
-  return false;
+  return dispatchRoutes(ROUTES, ctx);
 }
 
 // Re-export public handler

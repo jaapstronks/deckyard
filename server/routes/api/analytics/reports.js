@@ -5,7 +5,7 @@
 import { requireJsonBody } from '../../../utils/http.js';
 import { norm, validateDateRange } from '../../../utils/normalize.js';
 import { parsePaginationParams } from '../../../utils/request-validators.js';
-import { allowRequest } from '../../../utils/rate-limit.js';
+import { allowRequest, getClientIp } from '../../../utils/rate-limit.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import {
   AUTH_RATE_LIMITS,
@@ -95,9 +95,14 @@ export async function handleListReports(ctx, presentationId) {
 /**
  * POST /api/presentations/:id/analytics/reports - Create report.
  */
-export async function handleCreateReport(ctx, presentationId, rateLimitKey) {
+export async function handleCreateReport(ctx, presentationId) {
   const { req, res, url, authedUser } = ctx;
   const path = url.pathname;
+
+  // Re-derive the same rate-limit key the module entry function uses, rather
+  // than threading it through the ROUTES table as a positional argument
+  // (A7.19 C8). Identical to `analytics/index.js`'s derivation.
+  const rateLimitKey = authedUser?.email || authedUser?.id || getClientIp(req);
 
   // Stricter rate limit for report creation (expensive operation)
   if (!(await allowRequest(`analytics:report:create:${rateLimitKey}`, AUTH_RATE_LIMITS.expensive))) {
