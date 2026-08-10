@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@hocuspocus/provider": "^4.4.0",
-    "dompurify": "^3.2.2",
+    "dompurify": "^3.4.13",
     "feed": "^6.0.0",
     "jsdom": "^30.0.1",
     "jszip": "^3.10.1",
