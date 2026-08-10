@@ -5,9 +5,11 @@
  * form for `/api/*` route modules. This test fails on any hand-written path
  * compare in `server/routes/**` outside a ROUTES table:
  *
- *   - `…pathname === '…'`
+ *   - `…pathname === '…'` / `…pathname !== '…'`
  *   - `…pathname.match(…)`
  *   - `….exec(url.pathname)` / `….test(url.pathname)`
+ *   - the same four through a local alias (`const path = url.pathname;`
+ *     then `path === '…'`) — aliases are resolved per file
  *   - `…pathname.startsWith(…)` — EXCEPT the one sanctioned idiom, the
  *     module prefix guard in an entry function:
  *       `if (!<x>.pathname.startsWith('/api/…')) return false;`
@@ -15,6 +17,11 @@
  *     guard is part of the canonical form — without it every module's table
  *     would be walked on every request (route-dispatch.md § the prefix guard
  *     stays).
+ *
+ * This is a drift gate, not a sandbox: reversed operands
+ * (`'/x' === url.pathname`), `switch (url.pathname)` and segment dispatch via
+ * `pathname.split('/')` would still slip through — none occur in the tree
+ * today. Extend BANNED if one ever shows up.
  *
  * Files that still dispatch by hand are listed in ALLOWLIST below, each with
  * the reason it is allowed to. The goal is an empty list: an entry disappears
@@ -73,6 +80,22 @@ const ALLOWLIST = new Map([
     'pre-auth OIDC login/callback module; same reasoning as auth.js'],
   ['api/leads.js',
     'public (pre-gate) lead capture + authed listing; small pre-auth module, fase-2 tail'],
+  ['api/home.js',
+    'single-path module with a `pathname !==` entry guard + manual method split; trivial one-table migration, fase-2 tail'],
+  ['api/analytics/index.js',
+    'analytics family dispatcher (~15 routes on a `const path = url.pathname` alias); migrates as one family PR, fase-2 tail'],
+  ['api/analytics-track.js',
+    'analytics family: public tracking ingest, five routes on the `path` alias; migrates with analytics/index.js'],
+  ['api/analytics/public.js',
+    'analytics family: public share-token route on the `path` alias; migrates with analytics/index.js'],
+  ['api/notion/status.js',
+    'notion family: five files, each a `pathname !== X || method !== Y` entry guard per endpoint; migrates as one family PR, fase-2 tail'],
+  ['api/notion/suggest.js', 'notion family (see status.js entry)'],
+  ['api/notion/fetch.js', 'notion family (see status.js entry)'],
+  ['api/notion/import.js', 'notion family (see status.js entry)'],
+  ['api/notion/subjects.js', 'notion family (see status.js entry)'],
+  ['api/tags.js',
+    'redundant exact `pathname !==` recheck inside a handler already dispatched via the presentations ROUTES table; drop the recheck in cleanup, not a migration'],
   ['api/share-links/guests.js',
     'share-links family: one module across four files with an internal handler split; migrates as one PR (fase-2 tail)'],
   ['api/share-links/management.js', 'share-links family (see guests.js entry)'],
@@ -81,14 +104,29 @@ const ALLOWLIST = new Map([
     'top-level static dispatcher (viewers, uploads, client files) — not the /api dispatch surface'],
 ]);
 
-const BANNED = [
-  { name: 'pathname ===', re: /\bpathname\s*===/ },
-  { name: 'pathname.match(', re: /\bpathname\s*\.match\(/ },
-  { name: '.exec(…pathname)', re: /\.exec\(\s*[\w.]*pathname\s*\)/ },
-  { name: '.test(…pathname)', re: /\.test\(\s*[\w.]*pathname\s*\)/ },
-];
+/** `const path = url.pathname;` — a local alias every rule must see through. */
+const ALIAS_DEF = /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*[\w$.]+\.pathname\s*;?\s*$/;
 
-const PREFIX_GUARD = /if\s*\(\s*!\s*[\w$.]*\.pathname\.startsWith\(\s*['"][^'"]+['"]\s*\)\s*\)/;
+/** Alternation of `pathname` plus the file's aliases, regex-escaped. */
+function tokenAlt(aliases) {
+  const names = ['pathname', ...aliases].map((n) => n.replace(/\$/g, '\\$'));
+  return `(?:${names.join('|')})`;
+}
+
+function bannedRules(alt) {
+  return [
+    { name: 'pathname ===/!==', re: new RegExp(`\\b${alt}\\s*[!=]==`) },
+    { name: 'pathname.match(', re: new RegExp(`\\b${alt}\\s*\\.match\\(`) },
+    { name: '.exec(…pathname)', re: new RegExp(`\\.exec\\(\\s*[\\w$.]*\\b${alt}\\s*\\)`) },
+    { name: '.test(…pathname)', re: new RegExp(`\\.test\\(\\s*[\\w$.]*\\b${alt}\\s*\\)`) },
+  ];
+}
+
+function prefixGuardRe(alt) {
+  return new RegExp(
+    `if\\s*\\(\\s*!\\s*[\\w$.]*\\b${alt}\\.startsWith\\(\\s*['"][^'"]+['"]\\s*\\)\\s*\\)`
+  );
+}
 
 function* walk(dir) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -103,21 +141,31 @@ function isComment(line) {
   return t.startsWith('//') || t.startsWith('*') || t.startsWith('/*');
 }
 
-/** Collect rule violations in one file. */
+/** Collect rule violations in one file, seeing through pathname aliases. */
 function scanFile(path) {
   const lines = readFileSync(path, 'utf8').split('\n');
+  const aliases = [];
+  for (const line of lines) {
+    if (isComment(line)) continue;
+    const m = ALIAS_DEF.exec(line);
+    if (m && m[1] !== 'pathname') aliases.push(m[1]);
+  }
+  const alt = tokenAlt(aliases);
+  const banned = bannedRules(alt);
+  const startsWithRe = new RegExp(`\\b${alt}\\.startsWith\\(`);
+  const prefixGuard = prefixGuardRe(alt);
   const violations = [];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (isComment(line)) continue;
 
-    for (const { name, re } of BANNED) {
+    for (const { name, re } of banned) {
       if (re.test(line)) violations.push({ line: i + 1, rule: name, text: line.trim() });
     }
 
-    if (/\.pathname\.startsWith\(/.test(line)) {
-      const guardShaped = PREFIX_GUARD.test(line);
+    if (startsWithRe.test(line)) {
+      const guardShaped = prefixGuard.test(line);
       const sameLineReturn = /return false;?\s*$/.test(line);
       const next = (lines[i + 1] || '').trim();
       const nextNext = (lines[i + 2] || '').trim();
@@ -179,10 +227,22 @@ test('the allowlist carries no stale entries', () => {
 test('the sanctioned prefix-guard idiom itself stays accepted', () => {
   // Regression pin for the idiom matcher: both spellings used by migrated
   // modules must pass, and a positive startsWith dispatch must not.
+  const guard = prefixGuardRe(tokenAlt([]));
   const ok1 = "  if (!ctx.url.pathname.startsWith('/api/media/')) return false;";
   const ok2 = "  if (!url.pathname.startsWith('/api/admin/users')) {";
   const bad = "  if (url.pathname.startsWith('/api/follow-codes')) {";
-  assert.ok(PREFIX_GUARD.test(ok1));
-  assert.ok(PREFIX_GUARD.test(ok2));
-  assert.ok(!PREFIX_GUARD.test(bad));
+  assert.ok(guard.test(ok1));
+  assert.ok(guard.test(ok2));
+  assert.ok(!guard.test(bad));
+});
+
+test('the detector sees through a pathname alias and catches !==', () => {
+  // Regression pins for the two holes the first cut shipped with:
+  // an aliased dispatcher (analytics style) and a `!==` entry guard.
+  const aliased = new RegExp(`\\b${tokenAlt(['path'])}\\s*[!=]==`);
+  assert.ok(aliased.test("  if (path === '/api/analytics/summary') {"));
+  assert.ok(aliased.test("  if (url.pathname !== '/api/home') return false;"));
+  assert.ok(!aliased.test('  if (status === 200) {'));
+  assert.ok(ALIAS_DEF.test('  const path = url.pathname;'));
+  assert.ok(!ALIAS_DEF.test('  const name = url.searchParams;'));
 });
