@@ -12,6 +12,7 @@ import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { renderSlidesToPdfBuffer } from '../../render/pdf.js';
 import { presentationToDeck } from '../../../shared/slide-types.js';
 import { badRequest } from '../../utils/http.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import {
   createExportRoute,
   createHtmlPreviewRoute,
@@ -157,13 +158,10 @@ const exportRoutes = [
   }),
 ];
 
-// Special handler for individual PNG slide (has extra URL param)
-async function handlePngSlideExport({ repoRoot, req, res, url, authedUser }) {
-  const match = url.pathname.match(/^\/api\/presentations\/([^/]+)\/export\/png\/(\d+)\.png$/);
-  if (!match || req.method !== 'GET') return false;
-
-  const presentationId = match[1];
-  const slideNum = Number(match[2] || 0) || 0; // 1-based
+// GET /api/presentations/:id/export/png/:n.png - Special handler for an
+// individual PNG slide (has extra URL param)
+async function handlePngSlideExport({ repoRoot, res, url, authedUser }, presentationId, slideNumRaw) {
+  const slideNum = Number(slideNumRaw || 0) || 0; // 1-based
 
   const ctx = await prepareExportContext({
     repoRoot,
@@ -206,9 +204,25 @@ async function handlePngSlideExport({ repoRoot, req, res, url, authedUser }) {
   }
 }
 
+/**
+ * Declarative route table for the export routes this module dispatches itself
+ * (A7.19 C8): the PNG-slide route, which needs the extra slide-number capture.
+ * It stays first, before the factory-built routes, exactly as the original
+ * "more specific pattern first" comment ordered it. GET-only, Form A.
+ *
+ * The factory-built routes in `exportRoutes` carry their own patterns and are
+ * matched inside `server/export/pipeline.js` — they are handlers with
+ * self-contained matching, tried in order after this table.
+ *
+ * @type {import('../../utils/router.js').Route[]}
+ */
+export const ROUTES = [
+  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/export\/png\/(\d+)\.png$/, handler: handlePngSlideExport },
+];
+
 export async function handleExports(context) {
-  // Try PNG slide export first (more specific pattern)
-  if (await handlePngSlideExport(context)) return true;
+  // PNG slide export first (more specific pattern)
+  if (await dispatchRoutes(ROUTES, context)) return true;
 
   // Try each registered export route
   for (const handler of exportRoutes) {

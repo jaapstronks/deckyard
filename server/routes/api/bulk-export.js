@@ -7,6 +7,7 @@
  */
 
 import { jsonError, requireJsonBody, serveJson, unauthorized, serverError } from '../../utils/http.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import { addJob, QUEUE_NAMES } from '../../jobs/queue/connection.js';
 import {
   hasActiveBulkExport,
@@ -20,19 +21,8 @@ import { buildBulkExport } from '../../export/bulk-export.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('bulk-export');
 
-/**
- * Handle bulk export requests.
- * POST /api/bulk-export
- * GET  /api/bulk-export/status
- */
-export async function handleBulkExport({ req, res, url, repoRoot, authedUser }) {
-  if (url.pathname === '/api/bulk-export/status' && req.method === 'GET') {
-    return handleBulkExportStatus({ res, authedUser });
-  }
-
-  if (req.method !== 'POST') return false;
-  if (url.pathname !== '/api/bulk-export') return false;
-
+// POST /api/bulk-export - Kick off a bulk backup job
+async function handleBulkExportStart({ res, req, repoRoot, authedUser }) {
   const userEmail = authedUser?.email;
   if (!userEmail) {
     unauthorized(res, 'Authentication required');
@@ -97,13 +87,14 @@ export async function handleBulkExport({ req, res, url, repoRoot, authedUser }) 
 
       const fullJobId = `heavy-${jobId}`;
 
-      return serveJson(res, 200, {
+      serveJson(res, 200, {
         ok: true,
         jobId: fullJobId,
         statusUrl: `/api/jobs/${fullJobId}`,
         downloadUrl: `/api/jobs/${fullJobId}/download`,
         sync: true,
       });
+      return true;
     } catch (err) {
       log.error('[bulk-export] Sync export failed:', err.message);
       serverError(res, 'Export failed');
@@ -117,12 +108,13 @@ export async function handleBulkExport({ req, res, url, repoRoot, authedUser }) 
   trackActiveBulkExport(userEmail, jobId);
   const fullJobId = `heavy-${jobId}`;
 
-  return serveJson(res, 202, {
+  serveJson(res, 202, {
     ok: true,
     jobId: fullJobId,
     statusUrl: `/api/jobs/${fullJobId}`,
     downloadUrl: `/api/jobs/${fullJobId}/download`,
   });
+  return true;
 }
 
 /**
@@ -141,19 +133,20 @@ function handleBulkExportStatus({ res, authedUser }) {
   const activeJobId = getActiveExportJobId(userEmail);
   if (activeJobId) {
     const fullJobId = `heavy-${activeJobId}`;
-    return serveJson(res, 200, {
+    serveJson(res, 200, {
       active: true,
       jobId: fullJobId,
       statusUrl: `/api/jobs/${fullJobId}`,
       downloadUrl: `/api/jobs/${fullJobId}/download`,
     });
+    return true;
   }
 
   // Check for last completed export (still downloadable)
   const lastExport = getLastCompletedExport(userEmail);
   if (lastExport) {
     const fullJobId = `heavy-${lastExport.jobId}`;
-    return serveJson(res, 200, {
+    serveJson(res, 200, {
       active: false,
       lastExport: {
         jobId: fullJobId,
@@ -161,10 +154,34 @@ function handleBulkExportStatus({ res, authedUser }) {
         completedAt: lastExport.completedAt,
       },
     });
+    return true;
   }
 
-  return serveJson(res, 200, {
+  serveJson(res, 200, {
     active: false,
     lastExport: null,
   });
+  return true;
+}
+
+/**
+ * Declarative route table for `/api/bulk-export*` (A7.19 C8): two
+ * method-bearing rows that fall through on any other method (Form A), exactly
+ * as the original chain did.
+ *
+ * @type {import('../../utils/router.js').Route[]}
+ */
+export const ROUTES = [
+  { method: 'GET', pattern: '/api/bulk-export/status', handler: handleBulkExportStatus },
+  { method: 'POST', pattern: '/api/bulk-export', handler: handleBulkExportStart },
+];
+
+/**
+ * Handle bulk export requests.
+ *
+ * @param {import('../../utils/context.js').AuthedContext} ctx
+ * @returns {Promise<boolean>|boolean} true if a route handled the request.
+ */
+export function handleBulkExport(ctx) {
+  return dispatchRoutes(ROUTES, ctx);
 }
