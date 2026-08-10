@@ -18,11 +18,7 @@ import { handleNotionError } from './utils.js';
  * Fetch a single Notion page by URL or ID.
  * Available even if the feature flag is off, as long as Notion is configured.
  */
-export async function handleNotionFetch({ req, res, url }) {
-  if (url.pathname !== '/api/notion/fetch' || req.method !== 'POST') {
-    return false;
-  }
-
+export async function handleNotionFetch({ req, res }) {
   if (!notionEnabled()) {
     jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
       details: 'Set NOTION_SECRET on the server to enable this feature.',
@@ -61,11 +57,7 @@ export async function handleNotionFetch({ req, res, url }) {
  * Publish to Notion: append embed blocks to the source page.
  * Expects { pageId, embedUrl, title?, lang? }
  */
-export async function handleNotionPublish({ req, res, url }) {
-  if (url.pathname !== '/api/notion/publish' || req.method !== 'POST') {
-    return false;
-  }
-
+export async function handleNotionPublish({ req, res }) {
   if (!notionEnabled()) {
     jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
       details: 'Set NOTION_SECRET on the server to enable this feature.',
