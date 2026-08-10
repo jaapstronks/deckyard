@@ -109,7 +109,9 @@ const ALIAS_DEF = /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*[\w$.]+\.pathnam
 
 /** Alternation of `pathname` plus the file's aliases, regex-escaped. */
 function tokenAlt(aliases) {
-  const names = ['pathname', ...aliases].map((n) => n.replace(/\$/g, '\\$'));
+  const names = ['pathname', ...aliases].map((n) =>
+    n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  );
   return `(?:${names.join('|')})`;
 }
 
