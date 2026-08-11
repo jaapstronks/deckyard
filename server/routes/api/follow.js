@@ -1,3 +1,15 @@
+/**
+ * Public follow (audience) routes (A7.19 C8 — ROUTES table).
+ *
+ * Mounted **before** the auth gate: the follow code in the URL is the
+ * authorization, so every handler receives a `PublicContext`. The old chain
+ * carried no method checks at this level — each sub-handler decides its own
+ * methods (and rate/connection limits) internally, so every row is
+ * method-less and forwards to the sub-handler unchanged. Table order mirrors
+ * the old branch order exactly.
+ */
+
+import { dispatchRoutes } from '../../utils/router.js';
 import { handleFollowState } from './follow/state.js';
 import {
   handleFollowCancel,
@@ -14,95 +26,25 @@ import {
   handleFollowInteractionFeedback,
 } from './follow/interactions.js';
 
-export async function handleFollowPublic({ repoRoot, req, res, url }) {
-  const stateMatch = url.pathname.match(/^\/api\/follow\/([^/]+)\/state$/);
-  if (stateMatch) return handleFollowState({ repoRoot, req, res, url }, stateMatch[1]);
+/** @type {import('../../utils/router.js').Route[]} */
+export const ROUTES = [
+  { pattern: /^\/api\/follow\/([^/]+)\/state$/, handler: handleFollowState },
+  { pattern: /^\/api\/follow\/([^/]+)\/interactions\/current$/, handler: handleFollowInteractionsCurrent },
+  { pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/state$/, handler: handleFollowInteractionState },
+  { pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/vote$/, handler: handleFollowInteractionVote },
+  { pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/feedback$/, handler: handleFollowInteractionFeedback },
+  { pattern: /^\/api\/follow\/([^/]+)\/questions$/, handler: handleFollowQuestions },
+  { pattern: /^\/api\/follow\/([^/]+)\/questions\/events$/, handler: handleFollowQuestionsEvents },
+  { pattern: /^\/api\/follow\/([^/]+)\/questions\/([^/]+)\/upvote$/, handler: handleFollowUpvote },
+  { pattern: /^\/api\/follow\/([^/]+)\/questions\/([^/]+)\/cancel$/, handler: handleFollowCancel },
+  { pattern: /^\/api\/follow\/([^/]+)\/presentation$/, handler: handleFollowPresentation },
+  { pattern: /^\/api\/follow\/([^/]+)\/events$/, handler: handleFollowEvents },
+];
 
-  const interactionsCurrentMatch = url.pathname.match(
-    /^\/api\/follow\/([^/]+)\/interactions\/current$/
-  );
-  if (interactionsCurrentMatch)
-    return handleFollowInteractionsCurrent(
-      { repoRoot, req, res, url },
-      interactionsCurrentMatch[1]
-    );
-
-  const interactionStateMatch = url.pathname.match(
-    /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/state$/
-  );
-  if (interactionStateMatch)
-    return handleFollowInteractionState(
-      { repoRoot, req, res, url },
-      interactionStateMatch[1],
-      interactionStateMatch[2]
-    );
-
-  const interactionVoteMatch = url.pathname.match(
-    /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/vote$/
-  );
-  if (interactionVoteMatch)
-    return handleFollowInteractionVote(
-      { repoRoot, req, res, url },
-      interactionVoteMatch[1],
-      interactionVoteMatch[2]
-    );
-
-  const interactionFeedbackMatch = url.pathname.match(
-    /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/feedback$/
-  );
-  if (interactionFeedbackMatch)
-    return handleFollowInteractionFeedback(
-      { repoRoot, req, res, url },
-      interactionFeedbackMatch[1],
-      interactionFeedbackMatch[2]
-    );
-
-  const questionsMatch = url.pathname.match(
-    /^\/api\/follow\/([^/]+)\/questions$/
-  );
-  if (questionsMatch)
-    return handleFollowQuestions({ repoRoot, req, res, url }, questionsMatch[1]);
-
-  const questionsEventsMatch = url.pathname.match(
-    /^\/api\/follow\/([^/]+)\/questions\/events$/
-  );
-  if (questionsEventsMatch)
-    return handleFollowQuestionsEvents(
-      { repoRoot, req, res, url },
-      questionsEventsMatch[1]
-    );
-
-  const upvoteMatch = url.pathname.match(
-    /^\/api\/follow\/([^/]+)\/questions\/([^/]+)\/upvote$/
-  );
-  if (upvoteMatch)
-    return handleFollowUpvote(
-      { repoRoot, req, res, url },
-      upvoteMatch[1],
-      upvoteMatch[2]
-    );
-
-  const cancelMatch = url.pathname.match(
-    /^\/api\/follow\/([^/]+)\/questions\/([^/]+)\/cancel$/
-  );
-  if (cancelMatch)
-    return handleFollowCancel(
-      { repoRoot, req, res, url },
-      cancelMatch[1],
-      cancelMatch[2]
-    );
-
-  const presMatch = url.pathname.match(
-    /^\/api\/follow\/([^/]+)\/presentation$/
-  );
-  if (presMatch)
-    return handleFollowPresentation({ repoRoot, req, res, url }, presMatch[1]);
-
-  const eventsMatch = url.pathname.match(
-    /^\/api\/follow\/([^/]+)\/events$/
-  );
-  if (eventsMatch)
-    return handleFollowEvents({ repoRoot, req, res, url }, eventsMatch[1]);
-
-  return false;
+/**
+ * Handle public follow endpoints.
+ * @param {import('../../utils/context.js').PublicContext} ctx
+ */
+export async function handleFollowPublic(ctx) {
+  return dispatchRoutes(ROUTES, ctx);
 }
