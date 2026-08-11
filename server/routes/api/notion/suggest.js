@@ -16,11 +16,7 @@ import {
  * Backwards-compatible: old endpoint returns the first subject's composed raw.
  * Feature-gated endpoint.
  */
-export async function handleNotionSuggest({ req, res, url }) {
-  if (url.pathname !== '/api/notion/suggest' || req.method !== 'POST') {
-    return false;
-  }
-
+export async function handleNotionSuggest({ res }) {
   if (!notionEnabled()) {
     jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
       details: 'Set NOTION_SECRET on the server to enable this feature.',

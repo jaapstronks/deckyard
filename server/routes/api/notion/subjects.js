@@ -20,11 +20,7 @@ import { looksLikeUsableDoc, pickKeywordForPage } from './utils.js';
  * Subject picker for AI wizard: return 3 recent "subjects" for this creator.
  * Feature-gated endpoint.
  */
-export async function handleNotionSubjects({ req, res, url }) {
-  if (url.pathname !== '/api/notion/subjects' || req.method !== 'POST') {
-    return false;
-  }
-
+export async function handleNotionSubjects({ req, res }) {
   if (!notionEnabled()) {
     jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
       details: 'Set NOTION_SECRET on the server to enable this feature.',
@@ -91,11 +87,7 @@ export async function handleNotionSubjects({ req, res, url }) {
  * Compose raw input for the existing AI wizard (no attribution).
  * Feature-gated endpoint.
  */
-export async function handleNotionCompose({ req, res, url }) {
-  if (url.pathname !== '/api/notion/compose' || req.method !== 'POST') {
-    return false;
-  }
-
+export async function handleNotionCompose({ req, res }) {
   if (!notionEnabled()) {
     jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
       details: 'Set NOTION_SECRET on the server to enable this feature.',

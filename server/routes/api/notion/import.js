@@ -25,11 +25,7 @@ const log = createLogger('import');
  * Import from Notion: convert a Notion page to a full presentation.
  * Uses the same AI pipeline as file conversion.
  */
-export async function handleNotionImport({ req, res, url, authedUser, repoRoot, storageScope }) {
-  if (url.pathname !== '/api/notion/import' || req.method !== 'POST') {
-    return false;
-  }
-
+export async function handleNotionImport({ req, res, authedUser, storageScope }) {
   if (!notionEnabled()) {
     jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
       details: 'Set NOTION_SECRET on the server to enable this feature.',
@@ -123,11 +119,7 @@ export async function handleNotionImport({ req, res, url, authedUser, repoRoot, 
  * Handle POST /api/notion/import/stream
  * Streaming import from Notion: provides real-time status updates via SSE.
  */
-export async function handleNotionImportStream({ req, res, url, authedUser, repoRoot, storageScope }) {
-  if (url.pathname !== '/api/notion/import/stream' || req.method !== 'POST') {
-    return false;
-  }
-
+export async function handleNotionImportStream({ req, res, authedUser, storageScope }) {
   if (!notionEnabled()) {
     jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
       details: 'Set NOTION_SECRET on the server to enable this feature.',
