@@ -7,14 +7,14 @@ answers, and the shared dispatcher walks the table top to bottom. This replaces
 the hand-rolled `if (url.pathname === … && req.method === …)` chains that grew
 one per module.
 
-> **Implementation status (2026-08).** The shared dispatcher and the two named
-> context typedefs exist and are the norm (A7.19 C8, #674/#675). The per-module
-> migration off the if-chains is in progress: `presentations.js` and `ai.js` are
-> converted, the small modules are being migrated batch by batch, and a guard
-> test that fails a hand-written path compare outside a `ROUTES` table is the
-> closing gate (fase 3, not yet landed). Until that gate lands, both forms exist
-> in the tree — the table is the target every touched module moves to, not a
-> promise that every module already uses it.
+> **Implementation status (2026-08).** Complete. The shared dispatcher and the
+> two named context typedefs are the norm (A7.19 C8, #674/#675), every `/api/*`
+> route module dispatches through a `ROUTES` table (fase 2, #677–#691), and the
+> guard test `tests/c8-route-dispatch-guard.test.js` fails any hand-written
+> path compare in `server/routes/**` outside the exempt trees (the separately
+> versioned `public-api/` and the non-API `static` viewers) — with **no
+> per-file allowlist**. The table is not a target anymore; it is the single
+> dispatch form.
 
 ## The `Route` shape
 
@@ -174,10 +174,21 @@ with the right method and a wrong one**, without invoking storage. The pattern
 
 ## The closing gate (fase 3)
 
-Once the modules are migrated, a guard test fails on any
+The guard test (`tests/c8-route-dispatch-guard.test.js`) fails on any
 `url.pathname === …` / `.match(…)` / `.startsWith(…)` in `server/routes/**`
-outside a `ROUTES` table (with an allowlist for the deliberate exceptions —
-notably the public follow-code check in `routes/api/index.js`, which is
-security-sensitive and migrates under its own review). That gate is what keeps
-the table the single dispatch form instead of one canonical form beside 232
+outside a `ROUTES` table. The burndown allowlist it shipped with is gone:
+outside the exempt trees there are no exceptions. That gate is what keeps the
+table the single dispatch form instead of one canonical form beside 232
 hand-written compares.
+
+Two once-allowlisted spots deserve a note because they were security-reviewed
+on their way out:
+
+- **The public follow-code read.** Which `/api/follow-codes` reads skip the
+  login gate used to be an inline regex in `routes/api/index.js`; it is now
+  the `PUBLIC_ROUTES` table in `follow-codes.js` — an explicit, reviewable
+  row (exactly the GET resolve), mounted before the gate with
+  `authedUser: null`. Minting and the 405 catch-all stay behind the gate.
+- **The root dispatcher itself.** `/api/maintenance` is a two-row Form B
+  table in `index.js`; the `/api/v1` prefix probe is gone because
+  `handlePublicApiV1` carries its own prefix guard.

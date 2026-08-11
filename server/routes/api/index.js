@@ -25,7 +25,8 @@ import { handleAdminUsers } from './admin-users.js';
 import { handleAdminAiLogs } from './admin-ai-logs.js';
 import { handleEmailTemplates } from './email-templates.js';
 import { handleFollowPublic } from './follow.js';
-import { handleFollowCodes } from './follow-codes.js';
+import { handleFollowCodes, handleFollowCodesPublic } from './follow-codes.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import { handleLiveSessions } from './live-sessions.js';
 import { handleLiveSessionsPublic } from './live-session-audience.js';
 import { handleAssets } from './assets.js';
@@ -66,6 +67,23 @@ import { handleOrganizations } from './organizations.js';
 import { handleOrganizationMembers } from './organization-members.js';
 import { handleDataSources } from './data-sources.js';
 
+/** GET /api/maintenance — see the mount below for why it is public. */
+function handleMaintenanceState({ res }) {
+  serveJson(res, 200, getMaintenanceState());
+  return true;
+}
+
+/**
+ * The one endpoint the root dispatcher answers itself. Form B
+ * (route-dispatch.md): the old branch sent a 405 for any other method on
+ * the path.
+ * @type {import('../../utils/router.js').Route[]}
+ */
+export const MAINTENANCE_ROUTES = [
+  { method: 'GET', pattern: '/api/maintenance', handler: handleMaintenanceState },
+  { pattern: '/api/maintenance', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
+];
+
 export async function handleApi({ repoRoot, req, res, url }) {
   // CSRF defense: reject cookie-authenticated, cross-origin state-changing
   // requests. No-ops for safe methods, non-cookie auth (API key / MCP), and
@@ -78,11 +96,7 @@ export async function handleApi({ repoRoot, req, res, url }) {
   // Maintenance state. Public and unauthenticated on purpose: a client that
   // reconnects after a restart has to be able to ask "are you back?" before it
   // knows whether its session survived, and the answer leaks nothing.
-  if (url.pathname === '/api/maintenance') {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-    serveJson(res, 200, getMaintenanceState());
-    return;
-  }
+  if (await dispatchRoutes(MAINTENANCE_ROUTES, { repoRoot, req, res, url })) return;
 
   // Maintenance mode refuses writes with a 503 that says when to come back,
   // instead of letting them hit a database that is mid-migration or a process
@@ -102,10 +116,10 @@ export async function handleApi({ repoRoot, req, res, url }) {
     );
   }
 
-  // Public API v1 routes (API key authentication, separate from session-based auth)
-  if (url.pathname.startsWith('/api/v1')) {
-    if (await handlePublicApiV1({ repoRoot, req, res, url })) return;
-  }
+  // Public API v1 routes (API key authentication, separate from session-based
+  // auth). The module carries its own /api/v1 prefix guard and declines
+  // everything else.
+  if (await handlePublicApiV1({ repoRoot, req, res, url })) return;
 
   // Auth routes are special: some of them are allowed without a prior session.
   if (await handleAuth({ repoRoot, req, res, url })) return;
@@ -121,11 +135,10 @@ export async function handleApi({ repoRoot, req, res, url }) {
 
   // Public endpoints (must be accessible without auth; used by audience devices).
   if (await handleFollowPublic({ repoRoot, req, res, url })) return;
-  // Note: Follow code resolution (GET) is handled here as public
-  // Follow code creation (POST) requires auth and is handled below
-  if (url.pathname.match(/^\/api\/follow-codes\/[A-Z]{4,6}$/i) && req.method === 'GET') {
-    if (await handleFollowCodes({ repoRoot, req, res, url, authedUser: null })) return;
-  }
+  // Follow code resolution (GET) is public; which reads skip the gate is the
+  // PUBLIC_ROUTES table in follow-codes.js, an explicit reviewable row.
+  // Follow code creation (POST) requires auth and is handled below.
+  if (await handleFollowCodesPublic({ repoRoot, req, res, url, authedUser: null })) return;
   // Present-session companion: the session id in the join link is the
   // authorization, so these sit in front of the login gate (see
   // live-session-audience.js). Presenter actions on the same session stay
