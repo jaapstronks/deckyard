@@ -23,17 +23,18 @@
  * `pathname.split('/')` would still slip through — none occur in the tree
  * today. Extend BANNED if one ever shows up.
  *
- * Files that still dispatch by hand are listed in ALLOWLIST below, each with
- * the reason it is allowed to. The goal is an empty list: an entry disappears
- * when its module migrates, and this test also fails when an entry goes stale
- * (file gone or clean), so the list can only shrink.
+ * The fase-2 migration is complete: the per-file allowlist this gate shipped
+ * with is gone. Outside EXEMPT_TREES there are no exceptions — a hand-written
+ * path compare anywhere under `server/routes/**` is a failure, full stop. If
+ * a genuinely deliberate exception ever becomes necessary, reintroduce a
+ * reasoned allowlist entry in this file and defend it in review.
  *
  * Run with: node --test tests/c8-route-dispatch-guard.test.js
  */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync, existsSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -51,21 +52,11 @@ const EXEMPT_TREES = [
   // fase-2 migration.
   'public-api/',
   // Static/published/embed viewers serve HTML and files; they are not part of
-  // the /api dispatch surface the norm covers.
+  // the /api dispatch surface the norm covers. `static.js` is that tree's
+  // top-level dispatcher (its one compare is the /feed/ mount prefix).
   'static/',
+  'static.js',
 ];
-
-/**
- * Individual files still dispatching by hand, each with the reason. Remove
- * the entry when the module migrates — the staleness check below enforces
- * that this list only shrinks.
- */
-const ALLOWLIST = new Map([
-  ['api/index.js',
-    'root dispatcher: the maintenance endpoint, the /api/v1 prefix probe, and the public follow-code regex — the latter is security-sensitive (it decides which follow-code reads skip the login gate) and migrates under its own review (route-dispatch.md § the closing gate)'],
-  ['static.js',
-    'top-level static dispatcher (viewers, uploads, client files) — not the /api dispatch surface'],
-]);
 
 /** `const path = url.pathname;` — a local alias every rule must see through. */
 const ALIAS_DEF = /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*[\w$.]+\.pathname\s*;?\s*$/;
@@ -154,7 +145,6 @@ test('no hand-written path compares in server/routes/** outside a ROUTES table',
   for (const abs of walk(ROUTES_ROOT)) {
     const rel = relative(ROUTES_ROOT, abs).split('\\').join('/');
     if (EXEMPT_TREES.some((prefix) => rel.startsWith(prefix))) continue;
-    if (ALLOWLIST.has(rel)) continue;
 
     for (const v of scanFile(abs)) {
       offenders.push(`server/routes/${rel}:${v.line} [${v.rule}] ${v.text}`);
@@ -165,28 +155,9 @@ test('no hand-written path compares in server/routes/** outside a ROUTES table',
     offenders,
     [],
     'Hand-written path compares outside a ROUTES table.\n' +
-      'Migrate the module to a ROUTES table (docs/reference/route-dispatch.md) — ' +
-      'or, for a deliberate exception, add an ALLOWLIST entry WITH a reason:\n' +
+      'Migrate the module to a ROUTES table (docs/reference/route-dispatch.md):\n' +
       offenders.join('\n')
   );
-});
-
-test('the allowlist carries no stale entries', () => {
-  const stale = [];
-
-  for (const [rel, reason] of ALLOWLIST) {
-    const abs = join(ROUTES_ROOT, rel);
-    assert.ok(reason && reason.length > 10, `${rel}: an allowlist entry needs a real reason`);
-    if (!existsSync(abs)) {
-      stale.push(`${rel}: file no longer exists — drop the entry`);
-      continue;
-    }
-    if (scanFile(abs).length === 0) {
-      stale.push(`${rel}: no hand-written path compares left — drop the entry`);
-    }
-  }
-
-  assert.deepEqual(stale, [], `Stale allowlist entries:\n${stale.join('\n')}`);
 });
 
 test('the sanctioned prefix-guard idiom itself stays accepted', () => {

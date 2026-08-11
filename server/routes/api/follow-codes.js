@@ -149,21 +149,46 @@ async function handleFollowCodeResolve({ repoRoot, req, res }, codeParam) {
 }
 
 /**
+ * The code-resolve pattern. The length range stays tolerant ({4,6}) so codes
+ * minted before a length change still resolve during rollout; the exact
+ * length is set in storage/follow-codes.js.
+ */
+const RESOLVE_PATTERN = /^\/api\/follow-codes\/([A-Z]{4,6})$/i;
+
+/**
  * Follow-code routes in the old chain's exact order, closed by the Form B
  * catch-all: any other path or method under the prefix answers 405 with
  * `Allow: GET, POST`, exactly as the old trailing `startsWith` branch did.
- *
- * The resolve pattern's length range stays tolerant ({4,6}) so codes minted
- * before a length change still resolve during rollout; the exact length is
- * set in storage/follow-codes.js.
  *
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
   { method: 'POST', pattern: '/api/follow-codes', handler: handleFollowCodeCreate },
-  { method: 'GET', pattern: /^\/api\/follow-codes\/([A-Z]{4,6})$/i, handler: handleFollowCodeResolve },
+  { method: 'GET', pattern: RESOLVE_PATTERN, handler: handleFollowCodeResolve },
   { pattern: /^\/api\/follow-codes(?:\/.*)?$/, handler: (ctx) => methodNotAllowed(ctx.res, ['GET', 'POST']) },
 ];
+
+/**
+ * The pre-gate surface: exactly the anonymous code-resolve read, nothing
+ * else. Which follow-code reads skip the login gate is decided by this
+ * table — an explicit, reviewable row — not by a regex inside the root
+ * dispatcher (route-dispatch.md § the closing gate). `routes/api/index.js`
+ * mounts this before the auth gate with `authedUser: null`; minting and the
+ * 405 surface stay behind the gate in {@link ROUTES}.
+ *
+ * @type {import('../../utils/router.js').Route[]}
+ */
+export const PUBLIC_ROUTES = [
+  { method: 'GET', pattern: RESOLVE_PATTERN, handler: handleFollowCodeResolve },
+];
+
+/**
+ * Handle the anonymous (pre-gate) follow-code reads.
+ * @param {import('../../utils/context.js').PublicContext & { authedUser: null }} ctx
+ */
+export async function handleFollowCodesPublic(ctx) {
+  return dispatchRoutes(PUBLIC_ROUTES, ctx);
+}
 
 /**
  * Handle follow-code endpoints.
