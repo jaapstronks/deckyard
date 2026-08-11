@@ -95,13 +95,12 @@ export function handleTags(ctx) {
  * Handle presentation tags API requests
  * These are called from the presentations handler.
  */
-export async function handlePresentationTags({ storageScope, req, res, url, presentationId }) {
-  const pathname = url.pathname;
-  const tagsPath = `/api/presentations/${presentationId}/tags`;
-
-  if (pathname !== tagsPath) {
-    return false;
-  }
+export async function handlePresentationTags({ storageScope, req, res, presentationId }) {
+  // The path is already matched by the presentations ROUTES table
+  // (`/^\/api\/presentations\/([^/]+)\/tags$/`), which passes the captured id as
+  // `presentationId` — so the pathname always equals
+  // `/api/presentations/${presentationId}/tags`. The old exact-path recheck here
+  // was therefore dead; dropped in C8 cleanup (A7.19).
 
   // GET /api/presentations/:id/tags - Get tags for a presentation
   if (req.method === 'GET') {
