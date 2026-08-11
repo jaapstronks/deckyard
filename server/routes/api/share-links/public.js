@@ -1,11 +1,14 @@
 /**
- * Public share link endpoints (no auth required).
+ * Public share link endpoints (no auth required) (A7.19 C8 — ROUTES table).
  *
  * GET    /api/share/:token                            - Validate token
  * POST   /api/share/:token/verify                     - Verify password & get access
  * POST   /api/share/:token/guest/request              - Request guest email verification
  * GET    /api/share/:token/guest/verify/:vtoken       - Verify guest email & create session
  * GET    /api/share/:token/guest/me                   - Get current guest session info
+ *
+ * Form A throughout (route-dispatch.md): the old chain fell through on a
+ * method mismatch, no 405. Table order mirrors the old branch order exactly.
  */
 
 import { getPresentation } from '../../../storage/presentations/index.js';
@@ -20,6 +23,7 @@ import {
 import { sendGuestVerificationEmail } from '../../../integrations/brevo.js';
 import { notifyAuthorOfAccessAttempt, ACCESS_TYPES } from '../../../services/access-notifications.js';
 import { parseCookies } from '../../../utils/cookies.js';
+import { dispatchRoutes } from '../../../utils/router.js';
 import { serveJson, badRequest, getErrorStatus, jsonError, rateLimited, requireJsonBody } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import { buildRequestUrl, shouldUseSecureCookies } from '../../../utils/request-url.js';
@@ -30,293 +34,294 @@ import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
 const log = createLogger('public');
 
-/**
- * Handle public share link endpoints.
- */
-export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
-  // No request context here on purpose: these endpoints are anonymous, and
-  // every storage call on this path is token-authorized — the share token (or
-  // a token resolved from it) is globally unique and carries its own
-  // organization. See tenant-isolation.md.
+// No request context on this surface on purpose: these endpoints are
+// anonymous, and every storage call on this path is token-authorized — the
+// share token (or a token resolved from it) is globally unique and carries
+// its own organization. See tenant-isolation.md.
 
-  // GET /api/share/:token - Validate share token
-  const validateMatch = url.pathname.match(/^\/api\/share\/([^/]+)$/);
-  if (validateMatch && req.method === 'GET') {
-    const token = validateMatch[1];
-    const result = await validateShareLink(token);
+/** GET /api/share/:token - Validate share token */
+async function handleShareValidate({ repoRoot, req, res }, token) {
+  const result = await validateShareLink(token);
 
-    if (!result.ok) {
-      const status = getErrorStatus(result.reason);
+  if (!result.ok) {
+    const status = getErrorStatus(result.reason);
 
-      // For revoked links, include additional info and trigger notification
-      if (result.reason === 'revoked' && result.presentationId) {
-        const pres = await getPresentation(
-          crossOrganizationScope(repoRoot, 'share link: the share token is the authorization'),
-          result.presentationId
+    // For revoked links, include additional info and trigger notification
+    if (result.reason === 'revoked' && result.presentationId) {
+      const pres = await getPresentation(
+        crossOrganizationScope(repoRoot, 'share link: the share token is the authorization'),
+        result.presentationId
+      );
+      const responseData = {
+        ok: false,
+        error: result.reason,
+        message: result.revocationMessage || null,
+        presentationTitle: pres?.title || null,
+      };
+
+      // Get accessor info for notification
+      const ipAddress = getClientIp(req);
+
+      // Notify author of access attempt (non-blocking)
+      if (pres?.ownerEmail) {
+        fireAndForget(
+          notifyAuthorOfAccessAttempt({
+            presentationId: result.presentationId,
+            presentationTitle: pres.title || 'Untitled',
+            authorEmail: pres.ownerEmail,
+            accessType: ACCESS_TYPES.SHARE_LINK,
+            accessReferenceId: result.shareLinkId,
+            accessorIp: ipAddress,
+            // The deck was resolved from the link, so its organization is
+            // the one this access belongs to.
+            ctx: { organizationId: pres.organizationId },
+          }),
+          'notify author of share-link access attempt'
         );
-        const responseData = {
-          ok: false,
-          error: result.reason,
-          message: result.revocationMessage || null,
-          presentationTitle: pres?.title || null,
-        };
-
-        // Get accessor info for notification
-        const ipAddress = getClientIp(req);
-
-        // Notify author of access attempt (non-blocking)
-        if (pres?.ownerEmail) {
-          fireAndForget(
-            notifyAuthorOfAccessAttempt({
-              presentationId: result.presentationId,
-              presentationTitle: pres.title || 'Untitled',
-              authorEmail: pres.ownerEmail,
-              accessType: ACCESS_TYPES.SHARE_LINK,
-              accessReferenceId: result.shareLinkId,
-              accessorIp: ipAddress,
-              // The deck was resolved from the link, so its organization is
-              // the one this access belongs to.
-              ctx: { organizationId: pres.organizationId },
-            }),
-            'notify author of share-link access attempt'
-          );
-        }
-
-        serveJson(res, status, responseData);
-        return true;
       }
 
-      jsonError(res, status, result.reason);
+      serveJson(res, status, responseData);
       return true;
     }
 
-    serveJson(res, 200, {
-      presentationId: result.shareLink.presentationId,
-      permission: result.shareLink.permission,
-      requiresPassword: result.requiresPassword,
-      label: result.shareLink.label,
-    });
+    jsonError(res, status, result.reason);
     return true;
   }
 
-  // POST /api/share/:token/verify - Verify password and get access
-  const verifyMatch = url.pathname.match(/^\/api\/share\/([^/]+)\/verify$/);
-  if (verifyMatch && req.method === 'POST') {
-    const token = verifyMatch[1];
+  serveJson(res, 200, {
+    presentationId: result.shareLink.presentationId,
+    permission: result.shareLink.permission,
+    requiresPassword: result.requiresPassword,
+    label: result.shareLink.label,
+  });
+  return true;
+}
 
-    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
-    if (!parsed.ok) return true;
-    const body = parsed.body;
+/** POST /api/share/:token/verify - Verify password and get access */
+async function handleShareVerify({ req, res }, token) {
+  const parsed = await requireJsonBody(req, res, { allowEmpty: true });
+  if (!parsed.ok) return true;
+  const body = parsed.body;
 
-    const ipAddress = getClientIp(req);
+  const ipAddress = getClientIp(req);
 
-    // Brute-force throttle. Resolve the link first (cheap, no hashing) so the
-    // limit applies only to password-protected links — the only guessing
-    // surface here; a no-password link must stay freely re-openable. Guessing
-    // is capped per IP at 3/hour, the same shape and `rate_limited`/429 as the
-    // guest-verification limit next door (storage/share-links/guests.js).
-    const validation = await validateShareLink(token);
-    if (!validation.ok) {
-      jsonError(res, getErrorStatus(validation.reason), validation.reason);
+  // Brute-force throttle. Resolve the link first (cheap, no hashing) so the
+  // limit applies only to password-protected links — the only guessing
+  // surface here; a no-password link must stay freely re-openable. Guessing
+  // is capped per IP at 3/hour, the same shape and `rate_limited`/429 as the
+  // guest-verification limit next door (storage/share-links/guests.js).
+  const validation = await validateShareLink(token);
+  if (!validation.ok) {
+    jsonError(res, getErrorStatus(validation.reason), validation.reason);
+    return true;
+  }
+  if (validation.requiresPassword) {
+    const allowed = await allowShareVerifyAttempt({ ip: ipAddress });
+    if (!allowed) {
+      rateLimited(res, 3600, 'Too many attempts. Please try again later.');
       return true;
     }
-    if (validation.requiresPassword) {
-      const allowed = await allowShareVerifyAttempt({ ip: ipAddress });
-      if (!allowed) {
-        rateLimited(res, 3600, 'Too many attempts. Please try again later.');
-        return true;
+  }
+
+  const result = await verifyShareLinkAccess(token, body?.password);
+
+  if (!result.ok) {
+    jsonError(res, getErrorStatus(result.reason), result.reason);
+    return true;
+  }
+
+  // Log the access against the link the token just resolved to. The link id
+  // is the scope — the access log takes no context (see access-log.js).
+  const userAgent = req.headers['user-agent'];
+  await logShareLinkAccess(result.shareLink.id, { ipAddress, userAgent });
+
+  serveJson(res, 200, {
+    presentationId: result.shareLink.presentationId,
+    permission: result.shareLink.permission,
+    token: result.shareLink.token,
+  });
+  return true;
+}
+
+/** POST /api/share/:token/guest/request - Request guest email verification */
+async function handleShareGuestRequest({ repoRoot, req, res }, token) {
+  // Validate share link first
+  const validation = await validateShareLink(token);
+  if (!validation.ok) {
+    jsonError(res, getErrorStatus(validation.reason), validation.reason);
+    return true;
+  }
+
+  // Check permission allows commenting
+  if (!['comment', 'edit'].includes(validation.shareLink.permission)) {
+    jsonError(res, 403, 'permission_denied');
+    return true;
+  }
+
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+
+  const email = normalizeEmail(body?.email);
+  const name = getTrimmedString(body, 'name') || '';
+
+  if (!email || !email.includes('@')) {
+    return badRequest(res, 'Valid email is required');
+  }
+
+  // Request verification
+  const result = await requestGuestVerification(
+    validation.shareLink.id,
+    email,
+    name || null
+  );
+
+  if (!result.ok) {
+    jsonError(res, getErrorStatus(result.reason), result.reason);
+    return true;
+  }
+
+  // Build verification URL
+  const verificationUrl = buildRequestUrl(
+    req,
+    `/api/share/${encodeURIComponent(token)}/guest/verify/${encodeURIComponent(result.verificationToken)}`
+  );
+
+  if (!verificationUrl) {
+    return badRequest(res, 'Invalid host header');
+  }
+
+  // Get presentation title for email
+  const pres = await getPresentation(
+    crossOrganizationScope(repoRoot, 'share link: the share token is the authorization'),
+    validation.shareLink.presentationId
+  );
+  const presentationTitle = pres?.title || 'Presentation';
+
+  // Send verification email
+  fireAndForget(
+    sendGuestVerificationEmail({
+      recipientEmail: email,
+      recipientName: name || null,
+      presentationTitle,
+      verificationUrl,
+      expiresAt: result.expiresAt,
+      repoRoot,
+    }).then((emailResult) => {
+      if (!emailResult.ok) {
+        // eslint-disable-next-line no-console
+        log.warn(
+          `[brevo] guest verification email failed to=${email} error=${emailResult.error || ''}`.trim()
+        );
       }
-    }
+    }),
+    `guest verification email to=${email}`
+  );
 
-    const result = await verifyShareLinkAccess(token, body?.password);
+  serveJson(res, 200, { ok: true, message: 'Verification email sent' });
+  return true;
+}
 
-    if (!result.ok) {
-      jsonError(res, getErrorStatus(result.reason), result.reason);
-      return true;
-    }
+/** GET /api/share/:token/guest/verify/:verificationToken - Verify email and create session */
+async function handleShareGuestVerify({ req, res }, shareToken, verificationToken) {
+  const result = await verifyGuestEmail(verificationToken);
 
-    // Log the access against the link the token just resolved to. The link id
-    // is the scope — the access log takes no context (see access-log.js).
-    const userAgent = req.headers['user-agent'];
-    await logShareLinkAccess(result.shareLink.id, { ipAddress, userAgent });
-
-    serveJson(res, 200, {
-      presentationId: result.shareLink.presentationId,
-      permission: result.shareLink.permission,
-      token: result.shareLink.token,
-    });
-    return true;
+  const redirectBase = buildRequestUrl(req, `/s/${encodeURIComponent(shareToken)}`);
+  if (!redirectBase) {
+    return badRequest(res, 'Invalid host header');
   }
 
-  // POST /api/share/:token/guest/request - Request guest email verification
-  const guestRequestMatch = url.pathname.match(/^\/api\/share\/([^/]+)\/guest\/request$/);
-  if (guestRequestMatch && req.method === 'POST') {
-    const token = guestRequestMatch[1];
-
-    // Validate share link first
-    const validation = await validateShareLink(token);
-    if (!validation.ok) {
-      jsonError(res, getErrorStatus(validation.reason), validation.reason);
-      return true;
-    }
-
-    // Check permission allows commenting
-    if (!['comment', 'edit'].includes(validation.shareLink.permission)) {
-      jsonError(res, 403, 'permission_denied');
-      return true;
-    }
-
-    const parsed = await requireJsonBody(req, res);
-    if (!parsed.ok) return true;
-    const body = parsed.body;
-
-    const email = normalizeEmail(body?.email);
-    const name = getTrimmedString(body, 'name') || '';
-
-    if (!email || !email.includes('@')) {
-      return badRequest(res, 'Valid email is required');
-    }
-
-    // Request verification
-    const result = await requestGuestVerification(
-      validation.shareLink.id,
-      email,
-      name || null
-    );
-
-    if (!result.ok) {
-      jsonError(res, getErrorStatus(result.reason), result.reason);
-      return true;
-    }
-
-    // Build verification URL
-    const verificationUrl = buildRequestUrl(
-      req,
-      `/api/share/${encodeURIComponent(token)}/guest/verify/${encodeURIComponent(result.verificationToken)}`
-    );
-
-    if (!verificationUrl) {
-      return badRequest(res, 'Invalid host header');
-    }
-
-    // Get presentation title for email
-    const pres = await getPresentation(
-      crossOrganizationScope(repoRoot, 'share link: the share token is the authorization'),
-      validation.shareLink.presentationId
-    );
-    const presentationTitle = pres?.title || 'Presentation';
-
-    // Send verification email
-    fireAndForget(
-      sendGuestVerificationEmail({
-        recipientEmail: email,
-        recipientName: name || null,
-        presentationTitle,
-        verificationUrl,
-        expiresAt: result.expiresAt,
-        repoRoot,
-      }).then((emailResult) => {
-        if (!emailResult.ok) {
-          // eslint-disable-next-line no-console
-          log.warn(
-            `[brevo] guest verification email failed to=${email} error=${emailResult.error || ''}`.trim()
-          );
-        }
-      }),
-      `guest verification email to=${email}`
-    );
-
-    serveJson(res, 200, { ok: true, message: 'Verification email sent' });
-    return true;
-  }
-
-  // GET /api/share/:token/guest/verify/:verificationToken - Verify email and create session
-  const guestVerifyMatch = url.pathname.match(/^\/api\/share\/([^/]+)\/guest\/verify\/([^/]+)$/);
-  if (guestVerifyMatch && req.method === 'GET') {
-    const shareToken = guestVerifyMatch[1];
-    const verificationToken = guestVerifyMatch[2];
-
-    const result = await verifyGuestEmail(verificationToken);
-
-    const redirectBase = buildRequestUrl(req, `/s/${encodeURIComponent(shareToken)}`);
-    if (!redirectBase) {
-      return badRequest(res, 'Invalid host header');
-    }
-
-    if (!result.ok) {
-      // Redirect to share link with error
-      const errorUrl = `${redirectBase}?guest_error=${encodeURIComponent(result.reason)}`;
-      res.writeHead(302, { Location: errorUrl });
-      res.end();
-      return true;
-    }
-
-    // Set guest session cookie
-    const isHttps = shouldUseSecureCookies(req);
-
-    const cookieParts = [
-      `share_guest_session=${encodeURIComponent(result.sessionToken)}`,
-      'Path=/',
-      'HttpOnly',
-      'SameSite=Strict',
-      `Max-Age=${7 * 24 * 60 * 60}`, // 7 days
-    ];
-    if (isHttps) cookieParts.push('Secure');
-
-    // Redirect to share link with success
-    const successUrl = `${redirectBase}?guest_verified=true`;
-    res.writeHead(302, {
-      Location: successUrl,
-      'Set-Cookie': cookieParts.join('; '),
-    });
+  if (!result.ok) {
+    // Redirect to share link with error
+    const errorUrl = `${redirectBase}?guest_error=${encodeURIComponent(result.reason)}`;
+    res.writeHead(302, { Location: errorUrl });
     res.end();
     return true;
   }
 
-  // GET /api/share/:token/guest/me - Get current guest session info
-  const guestMeMatch = url.pathname.match(/^\/api\/share\/([^/]+)\/guest\/me$/);
-  if (guestMeMatch && req.method === 'GET') {
-    const shareToken = guestMeMatch[1];
+  // Set guest session cookie
+  const isHttps = shouldUseSecureCookies(req);
 
-    // Validate share link first
-    const validation = await validateShareLink(shareToken);
-    if (!validation.ok) {
-      serveJson(res, 200, { authenticated: false });
-      return true;
-    }
+  const cookieParts = [
+    `share_guest_session=${encodeURIComponent(result.sessionToken)}`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Strict',
+    `Max-Age=${7 * 24 * 60 * 60}`, // 7 days
+  ];
+  if (isHttps) cookieParts.push('Secure');
 
-    // Check for guest session cookie
-    const cookies = parseCookies(req.headers?.cookie);
-    const sessionToken = cookies.share_guest_session;
+  // Redirect to share link with success
+  const successUrl = `${redirectBase}?guest_verified=true`;
+  res.writeHead(302, {
+    Location: successUrl,
+    'Set-Cookie': cookieParts.join('; '),
+  });
+  res.end();
+  return true;
+}
 
-    if (!sessionToken) {
-      serveJson(res, 200, { authenticated: false, permission: validation.shareLink.permission });
-      return true;
-    }
-
-    // Get guest by session token
-    const guestInfo = await getGuestBySessionToken(sessionToken);
-
-    if (!guestInfo) {
-      serveJson(res, 200, { authenticated: false, permission: validation.shareLink.permission });
-      return true;
-    }
-
-    // Verify this guest session is for this share link
-    if (guestInfo.shareLink.token !== shareToken) {
-      serveJson(res, 200, { authenticated: false, permission: validation.shareLink.permission });
-      return true;
-    }
-
-    serveJson(res, 200, {
-      authenticated: true,
-      email: guestInfo.guest.email,
-      name: guestInfo.guest.name,
-      permission: guestInfo.shareLink.permission,
-      canComment: ['comment', 'edit'].includes(guestInfo.shareLink.permission),
-    });
+/** GET /api/share/:token/guest/me - Get current guest session info */
+async function handleShareGuestMe({ req, res }, shareToken) {
+  // Validate share link first
+  const validation = await validateShareLink(shareToken);
+  if (!validation.ok) {
+    serveJson(res, 200, { authenticated: false });
     return true;
   }
 
-  return false;
+  // Check for guest session cookie
+  const cookies = parseCookies(req.headers?.cookie);
+  const sessionToken = cookies.share_guest_session;
+
+  if (!sessionToken) {
+    serveJson(res, 200, { authenticated: false, permission: validation.shareLink.permission });
+    return true;
+  }
+
+  // Get guest by session token
+  const guestInfo = await getGuestBySessionToken(sessionToken);
+
+  if (!guestInfo) {
+    serveJson(res, 200, { authenticated: false, permission: validation.shareLink.permission });
+    return true;
+  }
+
+  // Verify this guest session is for this share link
+  if (guestInfo.shareLink.token !== shareToken) {
+    serveJson(res, 200, { authenticated: false, permission: validation.shareLink.permission });
+    return true;
+  }
+
+  serveJson(res, 200, {
+    authenticated: true,
+    email: guestInfo.guest.email,
+    name: guestInfo.guest.name,
+    permission: guestInfo.shareLink.permission,
+    canComment: ['comment', 'edit'].includes(guestInfo.shareLink.permission),
+  });
+  return true;
+}
+
+/**
+ * Public routes in the old chain's exact order. `/api/share/:token` is a
+ * single-segment match (`[^/]+`), so it cannot swallow the deeper
+ * `/verify`, `/guest/*` paths regardless of order — the order is still
+ * kept verbatim per route-dispatch.md.
+ * @type {import('../../../utils/router.js').Route[]}
+ */
+export const PUBLIC_ROUTES = [
+  { method: 'GET', pattern: /^\/api\/share\/([^/]+)$/, handler: handleShareValidate },
+  { method: 'POST', pattern: /^\/api\/share\/([^/]+)\/verify$/, handler: handleShareVerify },
+  { method: 'POST', pattern: /^\/api\/share\/([^/]+)\/guest\/request$/, handler: handleShareGuestRequest },
+  { method: 'GET', pattern: /^\/api\/share\/([^/]+)\/guest\/verify\/([^/]+)$/, handler: handleShareGuestVerify },
+  { method: 'GET', pattern: /^\/api\/share\/([^/]+)\/guest\/me$/, handler: handleShareGuestMe },
+];
+
+/**
+ * Handle public share link endpoints.
+ * @param {import('../../../utils/context.js').PublicContext} ctx
+ */
+export async function handleSharePublicEndpoints(ctx) {
+  return dispatchRoutes(PUBLIC_ROUTES, ctx);
 }
