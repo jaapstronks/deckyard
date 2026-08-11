@@ -4,6 +4,7 @@
  */
 
 import { badRequest, notFound, serveJson, unauthorized, jsonError, requireJsonBody } from '../../utils/http.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';
 import { getPresentation } from '../../storage/presentations/index.js';
@@ -40,174 +41,143 @@ const gdprTokens = new Map();
 const GDPR_TOKEN_EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
 
 /**
- * Handle public lead submission (no auth required).
- * POST /api/leads
- * @param {Object} ctx - Request context
- * @returns {Promise<boolean>} True if handled
+ * POST /api/leads - Submit a lead (public).
  */
-export async function handleLeadsPublic({ repoRoot, req, res, url }) {
-  // POST /api/leads - Submit a lead (public)
-  if (req.method === 'POST' && url.pathname === '/api/leads') {
-    // Rate limit by IP
-    const ip = getClientIp(req);
-    if (!(await allowRequest(`leads:ip:${ip}`, LEAD_RATE_LIMITS.perIp))) {
-      jsonError(res, 429, 'rate_limited');
-      return true;
-    }
-    if (!(await allowRequest('leads:global', LEAD_RATE_LIMITS.global))) {
-      jsonError(res, 429, 'rate_limited');
-      return true;
-    }
-
-    const parsed = await requireJsonBody(req, res);
-    if (!parsed.ok) return true;
-    const body = parsed.body;
-    if (!body) {
-      return badRequest(res, 'Invalid request body'), true;
-    }
-
-    const presentationId = getTrimmedString(body, 'presentationId') || '';
-    const slideId = getTrimmedString(body, 'slideId') || '';
-    const name = getTrimmedString(body, 'name') || '';
-    const email = (getTrimmedString(body, 'email') || '').toLowerCase();
-    const consentGiven = body.consentGiven === true;
-    const consentText = getTrimmedString(body, 'consentText') || '';
-    const privacyUrl = getTrimmedString(body, 'privacyUrl') || '';
-
-    if (!presentationId || !slideId) {
-      return badRequest(res, 'Missing presentationId or slideId'), true;
-    }
-    if (!name || !email) {
-      return badRequest(res, 'Name and email are required'), true;
-    }
-    if (!consentGiven || !consentText) {
-      return badRequest(res, 'Consent is required'), true;
-    }
-
-    // Verify presentation exists. Lead capture happens on a published deck, so
-    // the viewer has no session and the deck must not be organization-filtered.
-    const pres = await getPresentation(
-      crossOrganizationScope(repoRoot, 'lead capture from a published deck'),
-      presentationId
-    );
-    if (!pres) {
-      return notFound(res), true;
-    }
-
-    // Get app settings for retention period
-    const settings = await getAppSettings(repoRoot);
-    const retentionDays = settings?.leads?.retentionDays || 365;
-
-    // Create the lead
-    const result = await createLead({
-      presentationId,
-      slideId,
-      name,
-      email,
-      consentText,
-      privacyUrl: privacyUrl || null,
-      ipAddress: ip,
-      userAgent: req.headers['user-agent'] || null,
-      organizationId: pres.organizationId || null,
-      retentionDays,
-    });
-
-    if (!result.ok) {
-      if (result.reason === 'invalid_email') {
-        return badRequest(res, 'Invalid email address'), true;
-      }
-      return badRequest(res, result.reason || 'Failed to save lead'), true;
-    }
-
-    // Fire webhook (async, don't wait)
-    maybeFireLeadWebhook(repoRoot, req, {
-      presentation: pres,
-      slideId,
-      lead: result.lead,
-    });
-
-    // Send email notification to presentation owner (async, don't wait)
-    maybeSendLeadNotification(repoRoot, {
-      presentation: pres,
-      lead: result.lead,
-    });
-
-    serveJson(res, 200, { ok: true });
+async function handleLeadSubmit({ repoRoot, req, res }) {
+  // Rate limit by IP
+  const ip = getClientIp(req);
+  if (!(await allowRequest(`leads:ip:${ip}`, LEAD_RATE_LIMITS.perIp))) {
+    jsonError(res, 429, 'rate_limited');
+    return true;
+  }
+  if (!(await allowRequest('leads:global', LEAD_RATE_LIMITS.global))) {
+    jsonError(res, 429, 'rate_limited');
     return true;
   }
 
-  return false;
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  if (!body) {
+    return badRequest(res, 'Invalid request body'), true;
+  }
+
+  const presentationId = getTrimmedString(body, 'presentationId') || '';
+  const slideId = getTrimmedString(body, 'slideId') || '';
+  const name = getTrimmedString(body, 'name') || '';
+  const email = (getTrimmedString(body, 'email') || '').toLowerCase();
+  const consentGiven = body.consentGiven === true;
+  const consentText = getTrimmedString(body, 'consentText') || '';
+  const privacyUrl = getTrimmedString(body, 'privacyUrl') || '';
+
+  if (!presentationId || !slideId) {
+    return badRequest(res, 'Missing presentationId or slideId'), true;
+  }
+  if (!name || !email) {
+    return badRequest(res, 'Name and email are required'), true;
+  }
+  if (!consentGiven || !consentText) {
+    return badRequest(res, 'Consent is required'), true;
+  }
+
+  // Verify presentation exists. Lead capture happens on a published deck, so
+  // the viewer has no session and the deck must not be organization-filtered.
+  const pres = await getPresentation(
+    crossOrganizationScope(repoRoot, 'lead capture from a published deck'),
+    presentationId
+  );
+  if (!pres) {
+    return notFound(res), true;
+  }
+
+  // Get app settings for retention period
+  const settings = await getAppSettings(repoRoot);
+  const retentionDays = settings?.leads?.retentionDays || 365;
+
+  // Create the lead
+  const result = await createLead({
+    presentationId,
+    slideId,
+    name,
+    email,
+    consentText,
+    privacyUrl: privacyUrl || null,
+    ipAddress: ip,
+    userAgent: req.headers['user-agent'] || null,
+    organizationId: pres.organizationId || null,
+    retentionDays,
+  });
+
+  if (!result.ok) {
+    if (result.reason === 'invalid_email') {
+      return badRequest(res, 'Invalid email address'), true;
+    }
+    return badRequest(res, result.reason || 'Failed to save lead'), true;
+  }
+
+  // Fire webhook (async, don't wait)
+  maybeFireLeadWebhook(repoRoot, req, {
+    presentation: pres,
+    slideId,
+    lead: result.lead,
+  });
+
+  // Send email notification to presentation owner (async, don't wait)
+  maybeSendLeadNotification(repoRoot, {
+    presentation: pres,
+    lead: result.lead,
+  });
+
+  serveJson(res, 200, { ok: true });
+  return true;
 }
 
 /**
+ * Public lead-capture routes (mounted before the auth gate).
+ * @type {import('../../utils/router.js').Route[]}
+ */
+export const PUBLIC_ROUTES = [
+  { method: 'POST', pattern: '/api/leads', handler: handleLeadSubmit },
+];
+
+/**
+ * Handle public lead submission (no auth required).
+ * @param {import('../../utils/context.js').PublicContext} ctx
+ * @returns {Promise<boolean>} True if handled
+ */
+export async function handleLeadsPublic(ctx) {
+  return dispatchRoutes(PUBLIC_ROUTES, ctx);
+}
+
+/**
+ * Authenticated lead routes in the old chain's exact order: the three
+ * presentation-scoped reads, then `DELETE /api/leads/:id`, then the GDPR
+ * self-service paths. NOTE (pre-existing, preserved): the `:id` DELETE row
+ * precedes — and therefore shadows — `DELETE /api/leads/my-data`, exactly as
+ * the old chain did; that request deletes nothing and answers 404 via
+ * `handleDeleteLead('my-data')`.
+ * @type {import('../../utils/router.js').Route[]}
+ */
+export const ROUTES = [
+  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/leads$/, handler: handleGetLeads },
+  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/leads\/count$/, handler: handleGetLeadCount },
+  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/leads\/export$/, handler: handleExportLeads },
+  { method: 'DELETE', pattern: /^\/api\/leads\/([^/]+)$/, handler: handleDeleteLead },
+  { method: 'POST', pattern: '/api/leads/my-data/request', handler: handleRequestMyData },
+  { method: 'GET', pattern: '/api/leads/my-data', handler: handleGetMyData },
+  { method: 'DELETE', pattern: '/api/leads/my-data', handler: handleDeleteMyData },
+];
+
+/**
  * Handle authenticated leads routes.
- * @param {Object} ctx - Request context with authedUser
+ * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>} True if handled
  */
 export async function handleLeads(ctx) {
-  const { req, url, authedUser } = ctx;
-  const path = url.pathname;
-
-  if (!authedUser) {
+  if (!ctx.authedUser) {
     return false; // Let api/index.js handle unauthorized
   }
-
-  // ============================================================
-  // PRESENTATION LEADS ENDPOINTS
-  // ============================================================
-
-  // GET /api/presentations/:id/leads
-  const leadsMatch = path.match(/^\/api\/presentations\/([^/]+)\/leads$/);
-  if (req.method === 'GET' && leadsMatch) {
-    const presentationId = leadsMatch[1];
-    return handleGetLeads(ctx, presentationId);
-  }
-
-  // GET /api/presentations/:id/leads/count
-  const countMatch = path.match(/^\/api\/presentations\/([^/]+)\/leads\/count$/);
-  if (req.method === 'GET' && countMatch) {
-    const presentationId = countMatch[1];
-    return handleGetLeadCount(ctx, presentationId);
-  }
-
-  // GET /api/presentations/:id/leads/export
-  const exportMatch = path.match(/^\/api\/presentations\/([^/]+)\/leads\/export$/);
-  if (req.method === 'GET' && exportMatch) {
-    const presentationId = exportMatch[1];
-    return handleExportLeads(ctx, presentationId);
-  }
-
-  // ============================================================
-  // INDIVIDUAL LEAD ENDPOINTS
-  // ============================================================
-
-  // DELETE /api/leads/:id
-  const deleteMatch = path.match(/^\/api\/leads\/([^/]+)$/);
-  if (req.method === 'DELETE' && deleteMatch) {
-    const leadId = deleteMatch[1];
-    return handleDeleteLead(ctx, leadId);
-  }
-
-  // ============================================================
-  // GDPR SELF-SERVICE ENDPOINTS
-  // ============================================================
-
-  // POST /api/leads/my-data/request - Request verification email
-  if (req.method === 'POST' && path === '/api/leads/my-data/request') {
-    return handleRequestMyData(ctx);
-  }
-
-  // GET /api/leads/my-data?email=xxx&token=xxx - Get my leads
-  if (req.method === 'GET' && path === '/api/leads/my-data') {
-    return handleGetMyData(ctx);
-  }
-
-  // DELETE /api/leads/my-data?email=xxx&token=xxx - Delete my leads
-  if (req.method === 'DELETE' && path === '/api/leads/my-data') {
-    return handleDeleteMyData(ctx);
-  }
-
-  return false;
+  return dispatchRoutes(ROUTES, ctx);
 }
 
 // ============================================================
