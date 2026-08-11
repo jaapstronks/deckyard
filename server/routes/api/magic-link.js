@@ -1,6 +1,12 @@
 /**
- * API routes for magic link (passwordless login) functionality.
+ * API routes for magic link (passwordless login) functionality
+ * (A7.19 C8 — ROUTES table).
  * Handles sending magic link emails and verifying tokens.
+ *
+ * Mounted **before** the auth gate (`PublicContext`). Form A throughout
+ * (route-dispatch.md): both old branches were an exact path plus method with
+ * fall-through on a mismatch, no 405. Table order mirrors the old branch
+ * order exactly.
  */
 
 import {
@@ -11,6 +17,7 @@ import { serveJson, badRequest, requireJsonBody } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
 import { getClientIp, createRouteContext } from '../../utils/context.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import { sendMagicLinkEmail } from '../../integrations/brevo.js';
 import { validateEmail } from '../../utils/secure-tokens.js';
 import { normalizeEmail } from '../../utils/normalize.js';
@@ -62,91 +69,43 @@ function buildLoginUrl(req) {
   return `${protocol}://${host}/login`;
 }
 
-export async function handleMagicLink({ repoRoot, req, res, url }) {
-  const ctx = createRouteContext(null);
-  ctx.repoRoot = repoRoot;
+// ============================================================
+// POST /api/auth/magic-link
+// Request a magic link email
+// ============================================================
+async function handleMagicLinkRequest({ repoRoot, req, res }) {
+  if (!authEnabled()) {
+    return badRequest(res, t('api.error.authNotEnabled', 'Authentication is not enabled'));
+  }
 
-  // ============================================================
-  // POST /api/auth/magic-link
-  // Request a magic link email
-  // ============================================================
-  if (url.pathname === '/api/auth/magic-link' && req.method === 'POST') {
-    if (!authEnabled()) {
-      return badRequest(res, t('api.error.authNotEnabled', 'Authentication is not enabled'));
-    }
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  const email = normalizeEmail(body?.email);
 
-    const parsed = await requireJsonBody(req, res);
-    if (!parsed.ok) return true;
-    const body = parsed.body;
-    const email = normalizeEmail(body?.email);
+  const emailValidation = validateEmail(email);
+  if (!emailValidation.valid) {
+    return badRequest(res, t('api.error.validEmailRequired', 'Valid email is required'));
+  }
 
-    const emailValidation = validateEmail(email);
-    if (!emailValidation.valid) {
-      return badRequest(res, t('api.error.validEmailRequired', 'Valid email is required'));
-    }
+  const ipAddress = getClientIp(req);
+  const userAgent = req.headers?.['user-agent'] || '';
 
-    const ipAddress = getClientIp(req);
-    const userAgent = req.headers?.['user-agent'] || '';
+  // Rate limiting
+  const rateLimitedByEmail = await isRateLimitedByEmail(email);
+  const rateLimitedByIp = await isRateLimitedByIp(ipAddress);
 
-    // Rate limiting
-    const rateLimitedByEmail = await isRateLimitedByEmail(email);
-    const rateLimitedByIp = await isRateLimitedByIp(ipAddress);
-
-    if (rateLimitedByEmail || rateLimitedByIp) {
-      await logAuthEvent({
-        type: 'magic_link_rate_limited',
-        email,
-        success: false,
-        ipAddress,
-        userAgent,
-        metadata: { rateLimitedByEmail, rateLimitedByIp },
-      });
-
-      // Still return success to prevent enumeration
-      serveJson(res, 200, {
-        ok: true,
-        message: t('api.success.magicLinkSent', 'If your email is registered, a magic link has been sent. Check your inbox.'),
-      });
-      return true;
-    }
-
-    // Check if user exists and has a password
-    const userInfo = await getUserInfo(email);
-
-    // Log the request attempt
+  if (rateLimitedByEmail || rateLimitedByIp) {
     await logAuthEvent({
-      type: 'magic_link_request',
+      type: 'magic_link_rate_limited',
       email,
-      success: true,
+      success: false,
       ipAddress,
       userAgent,
-      metadata: { userExists: userInfo.exists, hasPassword: userInfo.hasPassword },
+      metadata: { rateLimitedByEmail, rateLimitedByIp },
     });
 
-    // Only send magic link if user exists (prevents sending to non-existent accounts)
-    if (userInfo.exists) {
-      const result = await createMagicToken(email, { ipAddress, userAgent });
-
-      if (result.ok) {
-        const magicLinkUrl = buildMagicLinkUrl(req, result.token);
-        const loginUrl = buildLoginUrl(req);
-
-        // Send email with password setup hint if user doesn't have a password
-        sendMagicLinkEmail({
-          recipientEmail: email,
-          magicLinkUrl,
-          expiresAt: result.expiresAt,
-          hasPassword: userInfo.hasPassword,
-          loginUrl,
-          repoRoot,
-        }).catch((err) => {
-          // eslint-disable-next-line no-console
-          log.error('[magic-link] Failed to send email:', err);
-        });
-      }
-    }
-
-    // Always return success to prevent email enumeration
+    // Still return success to prevent enumeration
     serveJson(res, 200, {
       ok: true,
       message: t('api.success.magicLinkSent', 'If your email is registered, a magic link has been sent. Check your inbox.'),
@@ -154,92 +113,150 @@ export async function handleMagicLink({ repoRoot, req, res, url }) {
     return true;
   }
 
-  // ============================================================
-  // POST /api/auth/magic-link/verify
-  // Verify a magic link token and create session
-  // ============================================================
-  if (url.pathname === '/api/auth/magic-link/verify' && req.method === 'POST') {
-    if (!authEnabled()) {
-      return badRequest(res, t('api.error.authNotEnabled', 'Authentication is not enabled'));
-    }
+  // Check if user exists and has a password
+  const userInfo = await getUserInfo(email);
 
-    const parsed = await requireJsonBody(req, res);
-    if (!parsed.ok) return true;
-    const body = parsed.body;
-    const token = getTrimmedString(body, 'token') || '';
+  // Log the request attempt
+  await logAuthEvent({
+    type: 'magic_link_request',
+    email,
+    success: true,
+    ipAddress,
+    userAgent,
+    metadata: { userExists: userInfo.exists, hasPassword: userInfo.hasPassword },
+  });
 
-    if (!token) {
-      return badRequest(res, t('api.error.tokenRequired', 'Token is required'));
-    }
+  // Only send magic link if user exists (prevents sending to non-existent accounts)
+  if (userInfo.exists) {
+    const result = await createMagicToken(email, { ipAddress, userAgent });
 
-    const ipAddress = getClientIp(req);
-    const userAgent = req.headers?.['user-agent'] || '';
+    if (result.ok) {
+      const magicLinkUrl = buildMagicLinkUrl(req, result.token);
+      const loginUrl = buildLoginUrl(req);
 
-    // Consume the token (atomic operation)
-    const consumeResult = await consumeMagicToken(token);
-
-    if (!consumeResult.ok) {
-      await logAuthEvent({
-        type: 'magic_link_failed',
-        email: null,
-        success: false,
-        ipAddress,
-        userAgent,
-        metadata: { reason: consumeResult.reason },
+      // Send email with password setup hint if user doesn't have a password
+      sendMagicLinkEmail({
+        recipientEmail: email,
+        magicLinkUrl,
+        expiresAt: result.expiresAt,
+        hasPassword: userInfo.hasPassword,
+        loginUrl,
+        repoRoot,
+      }).catch((err) => {
+        // eslint-disable-next-line no-console
+        log.error('[magic-link] Failed to send email:', err);
       });
-
-      serveJson(res, 200, {
-        ok: false,
-        reason: consumeResult.reason === 'invalid_or_expired'
-          ? 'expired'
-          : 'invalid',
-      });
-      return true;
     }
+  }
 
-    const email = consumeResult.email;
+  // Always return success to prevent email enumeration
+  serveJson(res, 200, {
+    ok: true,
+    message: t('api.success.magicLinkSent', 'If your email is registered, a magic link has been sent. Check your inbox.'),
+  });
+  return true;
+}
 
-    // Get or create the user
-    const userResult = await getOrCreateMagicLinkUser(email, ctx);
+// ============================================================
+// POST /api/auth/magic-link/verify
+// Verify a magic link token and create session
+// ============================================================
+async function handleMagicLinkVerify({ repoRoot, req, res }) {
+  const ctx = createRouteContext(null);
+  ctx.repoRoot = repoRoot;
 
-    if (!userResult.ok) {
-      await logAuthEvent({
-        type: 'magic_link_failed',
-        email,
-        success: false,
-        ipAddress,
-        userAgent,
-        metadata: { reason: userResult.reason },
-      });
+  if (!authEnabled()) {
+    return badRequest(res, t('api.error.authNotEnabled', 'Authentication is not enabled'));
+  }
 
-      return badRequest(res, t('api.error.failedToCreateSession', 'Failed to create session'));
-    }
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  const token = getTrimmedString(body, 'token') || '';
 
-    // Log successful login
+  if (!token) {
+    return badRequest(res, t('api.error.tokenRequired', 'Token is required'));
+  }
+
+  const ipAddress = getClientIp(req);
+  const userAgent = req.headers?.['user-agent'] || '';
+
+  // Consume the token (atomic operation)
+  const consumeResult = await consumeMagicToken(token);
+
+  if (!consumeResult.ok) {
     await logAuthEvent({
-      type: 'magic_link_login',
-      email,
-      success: true,
+      type: 'magic_link_failed',
+      email: null,
+      success: false,
       ipAddress,
       userAgent,
+      metadata: { reason: consumeResult.reason },
     });
 
-    // Set session cookie
-    setSessionCookie(req, res, userResult.user);
-
     serveJson(res, 200, {
-      ok: true,
-      user: {
-        // Same shape as the password login and /api/auth/me: the id is the
-        // identity, the email beside it is display/contact.
-        id: userResult.user.id ?? null,
-        email: userResult.user.email,
-        name: userResult.user.name,
-        role: userResult.user.role,
-      },
+      ok: false,
+      reason: consumeResult.reason === 'invalid_or_expired'
+        ? 'expired'
+        : 'invalid',
     });
     return true;
   }
 
-  return false;
+  const email = consumeResult.email;
+
+  // Get or create the user
+  const userResult = await getOrCreateMagicLinkUser(email, ctx);
+
+  if (!userResult.ok) {
+    await logAuthEvent({
+      type: 'magic_link_failed',
+      email,
+      success: false,
+      ipAddress,
+      userAgent,
+      metadata: { reason: userResult.reason },
+    });
+
+    return badRequest(res, t('api.error.failedToCreateSession', 'Failed to create session'));
+  }
+
+  // Log successful login
+  await logAuthEvent({
+    type: 'magic_link_login',
+    email,
+    success: true,
+    ipAddress,
+    userAgent,
+  });
+
+  // Set session cookie
+  setSessionCookie(req, res, userResult.user);
+
+  serveJson(res, 200, {
+    ok: true,
+    user: {
+      // Same shape as the password login and /api/auth/me: the id is the
+      // identity, the email beside it is display/contact.
+      id: userResult.user.id ?? null,
+      email: userResult.user.email,
+      name: userResult.user.name,
+      role: userResult.user.role,
+    },
+  });
+  return true;
+}
+
+/** @type {import('../../utils/router.js').Route[]} */
+export const ROUTES = [
+  { method: 'POST', pattern: '/api/auth/magic-link', handler: handleMagicLinkRequest },
+  { method: 'POST', pattern: '/api/auth/magic-link/verify', handler: handleMagicLinkVerify },
+];
+
+/**
+ * Handle the magic-link endpoints.
+ * @param {import('../../utils/context.js').PublicContext} ctx
+ */
+export async function handleMagicLink(ctx) {
+  return dispatchRoutes(ROUTES, ctx);
 }

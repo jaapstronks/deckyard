@@ -64,17 +64,6 @@ const ALLOWLIST = new Map([
   // ── deliberate, migrate under dedicated review ──
   ['api/index.js',
     'root dispatcher: the maintenance endpoint, the /api/v1 prefix probe, and the public follow-code regex — the latter is security-sensitive (it decides which follow-code reads skip the login gate) and migrates under its own review (route-dispatch.md § the closing gate)'],
-  // ── fase-2 tail, not yet migrated ──
-  ['api/auth.js',
-    'pre-auth login/session module; deliberately outside the unattended fase-2 batches — auth flows migrate with eyes on them'],
-  ['api/password-reset.js',
-    'pre-auth password-reset module; same reasoning as auth.js'],
-  ['api/magic-link.js',
-    'pre-auth magic-link module; same reasoning as auth.js'],
-  ['api/sso.js',
-    'pre-auth OIDC login/callback module; same reasoning as auth.js'],
-  ['api/leads.js',
-    'public (pre-gate) lead capture + authed listing; small pre-auth module, fase-2 tail'],
   ['static.js',
     'top-level static dispatcher (viewers, uploads, client files) — not the /api dispatch surface'],
 ]);

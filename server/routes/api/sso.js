@@ -1,5 +1,7 @@
 /**
- * API routes for OIDC single sign-on (Track 1: self-hosted, single IdP).
+ * API routes for OIDC single sign-on (Track 1: self-hosted, single IdP)
+ * (A7.19 C8 — ROUTES table; Form A, the old chain fell through on a method
+ * mismatch and on unknown sub-paths under the prefix).
  *
  *   GET /api/auth/oidc/login    -> build PKCE authz URL, stash state, redirect
  *   GET /api/auth/oidc/callback -> verify state/nonce, exchange code, verify
@@ -23,6 +25,7 @@ import {
 import { getOrCreateSsoUser } from '../../storage/sso.js';
 import { logAuthEvent } from '../../storage/password-reset.js';
 import { getClientIp, createRouteContext } from '../../utils/context.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import { shouldUseSecureCookies } from '../../utils/request-url.js';
 import { parseCookies } from '../../utils/cookies.js';
 import { createLogger } from '../../utils/logger.js';
@@ -116,117 +119,126 @@ function redirect(res, location) {
   res.end();
 }
 
-export async function handleSso({ repoRoot, req, res, url }) {
-  if (!url.pathname.startsWith('/api/auth/oidc/')) return false;
+// ============================================================
+// GET /api/auth/oidc/login
+// ============================================================
+async function handleOidcLogin({ req, res, url }) {
+  if (!isSsoEnabled()) {
+    return redirect(res, '/login?error=sso_disabled'), true;
+  }
+  const oidc = getOidcConfig();
+  const { buildLoginRequest, logDiscoveryFailure } = await loadOidc();
+  try {
+    const { url: authUrl, state, nonce, codeVerifier } = await buildLoginRequest(oidc);
+    const returnTo = safeReturnTo(url.searchParams.get('returnTo'));
+    const cookie = signState({
+      state,
+      nonce,
+      codeVerifier,
+      returnTo,
+      exp: Date.now() + STATE_TTL_MS,
+    });
+    res.setHeader('Set-Cookie', stateCookieHeader(req, cookie, Math.floor(STATE_TTL_MS / 1000)));
+    return redirect(res, authUrl), true;
+  } catch (err) {
+    logDiscoveryFailure(err);
+    return redirect(res, '/login?error=sso_unavailable'), true;
+  }
+}
 
+// ============================================================
+// GET /api/auth/oidc/callback
+// ============================================================
+async function handleOidcCallback({ repoRoot, req, res, url }) {
   const ctx = createRouteContext(null);
   ctx.repoRoot = repoRoot;
 
-  // ============================================================
-  // GET /api/auth/oidc/login
-  // ============================================================
-  if (url.pathname === '/api/auth/oidc/login' && req.method === 'GET') {
-    if (!isSsoEnabled()) {
-      return redirect(res, '/login?error=sso_disabled'), true;
-    }
-    const oidc = getOidcConfig();
-    const { buildLoginRequest, logDiscoveryFailure } = await loadOidc();
-    try {
-      const { url: authUrl, state, nonce, codeVerifier } = await buildLoginRequest(oidc);
-      const returnTo = safeReturnTo(url.searchParams.get('returnTo'));
-      const cookie = signState({
-        state,
-        nonce,
-        codeVerifier,
-        returnTo,
-        exp: Date.now() + STATE_TTL_MS,
-      });
-      res.setHeader('Set-Cookie', stateCookieHeader(req, cookie, Math.floor(STATE_TTL_MS / 1000)));
-      return redirect(res, authUrl), true;
-    } catch (err) {
-      logDiscoveryFailure(err);
-      return redirect(res, '/login?error=sso_unavailable'), true;
-    }
+  if (!isSsoEnabled()) {
+    return redirect(res, '/login?error=sso_disabled'), true;
   }
 
-  // ============================================================
-  // GET /api/auth/oidc/callback
-  // ============================================================
-  if (url.pathname === '/api/auth/oidc/callback' && req.method === 'GET') {
-    if (!isSsoEnabled()) {
-      return redirect(res, '/login?error=sso_disabled'), true;
-    }
+  const { completeLogin, mapClaimsToIdentity, OidcError, logDiscoveryFailure } =
+    await loadOidc();
 
-    const { completeLogin, mapClaimsToIdentity, OidcError, logDiscoveryFailure } =
-      await loadOidc();
+  const ipAddress = getClientIp(req);
+  const userAgent = req.headers?.['user-agent'] || '';
 
-    const ipAddress = getClientIp(req);
-    const userAgent = req.headers?.['user-agent'] || '';
+  // Recover + immediately clear the one-time state cookie.
+  const cookies = parseCookies(req.headers?.cookie);
+  const stateData = verifyState(cookies[STATE_COOKIE]);
+  res.setHeader('Set-Cookie', stateCookieHeader(req, '', 0));
 
-    // Recover + immediately clear the one-time state cookie.
-    const cookies = parseCookies(req.headers?.cookie);
-    const stateData = verifyState(cookies[STATE_COOKIE]);
-    res.setHeader('Set-Cookie', stateCookieHeader(req, '', 0));
-
-    if (!stateData) {
-      await logAuthEvent({
-        type: 'sso_login', email: null, success: false, ipAddress, userAgent,
-        metadata: { reason: 'missing_state' },
-      });
-      return redirect(res, '/login?error=sso_state'), true;
-    }
-
-    const oidc = getOidcConfig();
-
-    // Rebuild the callback URL from the configured redirect_uri origin + the
-    // actual query params, so a proxy host mismatch can't break verification.
-    const currentUrl = new URL(oidc.redirectUri);
-    for (const [k, v] of url.searchParams) currentUrl.searchParams.set(k, v);
-
-    let identity;
-    try {
-      const claims = await completeLogin(currentUrl, {
-        codeVerifier: stateData.codeVerifier,
-        expectedState: stateData.state,
-        expectedNonce: stateData.nonce,
-      }, oidc);
-      identity = mapClaimsToIdentity(claims, oidc);
-    } catch (err) {
-      const reason = err instanceof OidcError ? err.reason : 'token_exchange_failed';
-      if (!(err instanceof OidcError)) logDiscoveryFailure(err);
-      await logAuthEvent({
-        type: 'sso_login', email: null, success: false, ipAddress, userAgent,
-        metadata: { reason },
-      });
-      log.warn('OIDC callback rejected:', reason);
-      return redirect(res, `/login?error=sso_${reason}`), true;
-    }
-
-    const result = await getOrCreateSsoUser(
-      identity,
-      { autoProvision: oidc.autoProvision, defaultRole: oidc.defaultRole },
-      ctx
-    );
-
-    if (!result.ok) {
-      await logAuthEvent({
-        type: 'sso_login', email: identity.email, success: false, ipAddress, userAgent,
-        metadata: { reason: result.reason },
-      });
-      return redirect(res, `/login?error=sso_${result.reason}`), true;
-    }
-
-    setSessionCookie(req, res, result.user);
-    // setSessionCookie replaces the Set-Cookie header, so re-clear the
-    // one-time state cookie alongside the new session cookie.
-    res.appendHeader('Set-Cookie', stateCookieHeader(req, '', 0));
+  if (!stateData) {
     await logAuthEvent({
-      type: 'sso_login', email: identity.email, success: true, ipAddress, userAgent,
-      metadata: { provisioned: result.provisioned, provider: 'oidc' },
+      type: 'sso_login', email: null, success: false, ipAddress, userAgent,
+      metadata: { reason: 'missing_state' },
     });
-
-    return redirect(res, safeReturnTo(stateData.returnTo)), true;
+    return redirect(res, '/login?error=sso_state'), true;
   }
 
-  return false;
+  const oidc = getOidcConfig();
+
+  // Rebuild the callback URL from the configured redirect_uri origin + the
+  // actual query params, so a proxy host mismatch can't break verification.
+  const currentUrl = new URL(oidc.redirectUri);
+  for (const [k, v] of url.searchParams) currentUrl.searchParams.set(k, v);
+
+  let identity;
+  try {
+    const claims = await completeLogin(currentUrl, {
+      codeVerifier: stateData.codeVerifier,
+      expectedState: stateData.state,
+      expectedNonce: stateData.nonce,
+    }, oidc);
+    identity = mapClaimsToIdentity(claims, oidc);
+  } catch (err) {
+    const reason = err instanceof OidcError ? err.reason : 'token_exchange_failed';
+    if (!(err instanceof OidcError)) logDiscoveryFailure(err);
+    await logAuthEvent({
+      type: 'sso_login', email: null, success: false, ipAddress, userAgent,
+      metadata: { reason },
+    });
+    log.warn('OIDC callback rejected:', reason);
+    return redirect(res, `/login?error=sso_${reason}`), true;
+  }
+
+  const result = await getOrCreateSsoUser(
+    identity,
+    { autoProvision: oidc.autoProvision, defaultRole: oidc.defaultRole },
+    ctx
+  );
+
+  if (!result.ok) {
+    await logAuthEvent({
+      type: 'sso_login', email: identity.email, success: false, ipAddress, userAgent,
+      metadata: { reason: result.reason },
+    });
+    return redirect(res, `/login?error=sso_${result.reason}`), true;
+  }
+
+  setSessionCookie(req, res, result.user);
+  // setSessionCookie replaces the Set-Cookie header, so re-clear the
+  // one-time state cookie alongside the new session cookie.
+  res.appendHeader('Set-Cookie', stateCookieHeader(req, '', 0));
+  await logAuthEvent({
+    type: 'sso_login', email: identity.email, success: true, ipAddress, userAgent,
+    metadata: { provisioned: result.provisioned, provider: 'oidc' },
+  });
+
+  return redirect(res, safeReturnTo(stateData.returnTo)), true;
+}
+
+/** @type {import('../../utils/router.js').Route[]} */
+export const ROUTES = [
+  { method: 'GET', pattern: '/api/auth/oidc/login', handler: handleOidcLogin },
+  { method: 'GET', pattern: '/api/auth/oidc/callback', handler: handleOidcCallback },
+];
+
+/**
+ * Handle the OIDC SSO endpoints.
+ * @param {import('../../utils/context.js').PublicContext} ctx
+ */
+export async function handleSso(ctx) {
+  if (!ctx.url.pathname.startsWith('/api/auth/oidc/')) return false;
+  return dispatchRoutes(ROUTES, ctx);
 }
