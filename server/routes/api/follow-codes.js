@@ -157,8 +157,12 @@ const RESOLVE_PATTERN = /^\/api\/follow-codes\/([A-Z]{4,6})$/i;
 
 /**
  * Follow-code routes in the old chain's exact order, closed by the Form B
- * catch-all: any other path or method under the prefix answers 405 with
- * `Allow: GET, POST`, exactly as the old trailing `startsWith` branch did.
+ * catch-all: any other method on the bare path or anything under
+ * `/api/follow-codes/` answers 405 with `Allow: GET, POST`, as the old
+ * trailing `startsWith` branch did. One deliberate narrowing: the old branch
+ * also caught prefix-typo paths like `/api/follow-codesfoo` (an accidental
+ * 405); those now fall through and 404 at the root, like every other module
+ * whose entry guard is a bare `startsWith` prefilter.
  *
  * @type {import('../../utils/router.js').Route[]}
  */

@@ -160,3 +160,14 @@ test('follow-codes: outside the prefix the module declines', async () => {
   assert.equal(await handleFollowCodes(c), false);
   assert.equal(res.statusCode, null);
 });
+
+test('follow-codes: a prefix-typo path is declined, not 405ed', async () => {
+  // The entry guard (bare startsWith) admits /api/follow-codesfoo, but no
+  // row matches — the catch-all covers the bare path and /api/follow-codes/*
+  // only. Deliberate narrowing vs the old chain, which answered an
+  // accidental 405 here; the root dispatcher turns the decline into a 404
+  // like every other module's unmatched garbage.
+  const { ctx: c, res } = ctx('GET', '/api/follow-codesfoo');
+  assert.equal(await handleFollowCodes(c), false);
+  assert.equal(res.statusCode, null);
+});
