@@ -11,6 +11,7 @@
  * - notion/utils.js - Shared utility functions
  */
 
+import { dispatchRoutes } from '../../utils/router.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
 import {
   handleNotionStatus,
@@ -23,43 +24,49 @@ import {
   handleNotionSuggest,
 } from './notion/index.js';
 
-export async function handleNotion({ req, res, url, authedUser, repoRoot } = {}) {
-  // Status endpoint (always available)
-  const statusHandled = await handleNotionStatus({ req, res, url });
-  if (statusHandled) return true;
+/**
+ * Always-available Notion routes (A7.19 C8). Status is unconditional; the
+ * fetch/publish/import handlers each self-gate on `notionEnabled()` (Notion is
+ * *configured*) and 501 when it is not. Order mirrors the previous delegating
+ * chain exactly; method mismatch falls through (the chain had no 405).
+ *
+ * @type {import('../../utils/router.js').Route[]}
+ */
+export const ROUTES = [
+  { method: 'GET', pattern: '/api/notion/status', handler: handleNotionStatus },
+  { method: 'POST', pattern: '/api/notion/fetch', handler: handleNotionFetch },
+  { method: 'POST', pattern: '/api/notion/publish', handler: handleNotionPublish },
+  { method: 'POST', pattern: '/api/notion/import', handler: handleNotionImport },
+  { method: 'POST', pattern: '/api/notion/import/stream', handler: handleNotionImportStream },
+];
 
-  // Fetch endpoint (available if Notion is configured)
-  const fetchHandled = await handleNotionFetch({ req, res, url });
-  if (fetchHandled) return true;
+/**
+ * Feature-gated Notion routes: reached only when the `enableNotion` feature
+ * flag is on. Kept in a second table so the flag check stays a single
+ * module-wide guard in the entry function (route-dispatch.md § module-wide
+ * guards belong in the entry function), exactly where the old chain returned
+ * early before trying subjects/compose/suggest.
+ *
+ * @type {import('../../utils/router.js').Route[]}
+ */
+export const GATED_ROUTES = [
+  { method: 'POST', pattern: '/api/notion/subjects', handler: handleNotionSubjects },
+  { method: 'POST', pattern: '/api/notion/compose', handler: handleNotionCompose },
+  { method: 'POST', pattern: '/api/notion/suggest', handler: handleNotionSuggest },
+];
 
-  // Publish endpoint (available if Notion is configured)
-  const publishHandled = await handleNotionPublish({ req, res, url });
-  if (publishHandled) return true;
+/**
+ * Handle Notion API requests.
+ * @param {import('../../utils/context.js').AuthedContext} ctx
+ * @returns {Promise<boolean>} true if a route handled the request.
+ */
+export async function handleNotion(ctx) {
+  const handled = await dispatchRoutes(ROUTES, ctx);
+  if (handled) return true;
 
-  // Import endpoint (available if Notion is configured)
-  const importHandled = await handleNotionImport({ req, res, url, authedUser, repoRoot });
-  if (importHandled) return true;
-
-  // Stream import endpoint (available if Notion is configured)
-  const streamHandled = await handleNotionImportStream({ req, res, url, authedUser, repoRoot });
-  if (streamHandled) return true;
-
-  // Feature gated endpoints: keep code shipped, but disabled unless explicitly enabled.
+  // Feature-gated endpoints: keep code shipped, but disabled unless explicitly enabled.
   const flags = getFeatureFlags();
-  const featureOn = !!flags?.enableNotion;
-  if (!featureOn) return false;
+  if (!flags?.enableNotion) return false;
 
-  // Subjects endpoint (feature-gated)
-  const subjectsHandled = await handleNotionSubjects({ req, res, url });
-  if (subjectsHandled) return true;
-
-  // Compose endpoint (feature-gated)
-  const composeHandled = await handleNotionCompose({ req, res, url });
-  if (composeHandled) return true;
-
-  // Suggest endpoint (feature-gated)
-  const suggestHandled = await handleNotionSuggest({ req, res, url });
-  if (suggestHandled) return true;
-
-  return false;
+  return dispatchRoutes(GATED_ROUTES, ctx);
 }

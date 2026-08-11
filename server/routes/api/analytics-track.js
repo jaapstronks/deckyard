@@ -485,14 +485,14 @@ async function handleTrackSlideView({ req, res, url, repoRoot }) {
 }
 
 // POST /api/track/my-data/erase - Anonymous viewer erases their own data.
-  //
-  // The public, device-only counterpart of DELETE /api/analytics/my-data (which
-  // identifies a logged-in person by email). Here the proof of identity is the
-  // live session_token the viewer's own browser holds: possession of it means
-  // the browser that opened the session is asking to be forgotten. A raw device
-  // id is deliberately NOT an accepted input — it is browser-generated and every
-  // deck reader can see a per-deck label of it, so it proves nothing (see
-  // view-sessions-gdpr.js header, and done/decisions.md § analytics-privacy-naden).
+//
+// The public, device-only counterpart of DELETE /api/analytics/my-data (which
+// identifies a logged-in person by email). Here the proof of identity is the
+// live session_token the viewer's own browser holds: possession of it means
+// the browser that opened the session is asking to be forgotten. A raw device
+// id is deliberately NOT an accepted input — it is browser-generated and every
+// deck reader can see a per-deck label of it, so it proves nothing (see
+// view-sessions-gdpr.js header, and done/decisions.md § analytics-privacy-naden).
 async function handleTrackMyDataErase({ req, res, url, repoRoot }) {
   const path = url.pathname;
   const clientIp = getClientIp(req);
