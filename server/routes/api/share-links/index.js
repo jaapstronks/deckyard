@@ -1,7 +1,7 @@
 /**
- * API routes for token-based share links.
+ * API routes for token-based share links (A7.19 C8 — ROUTES tables).
  *
- * This module re-exports handlers from sub-modules and provides combined handler functions.
+ * The handlers live in sub-modules; this file combines their route tables.
  *
  * Authenticated endpoints (require login):
  *   POST   /api/presentations/:id/share-links     - Create share link
@@ -18,29 +18,32 @@
  *   GET    /api/share/:token/guest/me             - Get current guest session info
  */
 
-import { handleShareLinkManagement } from './management.js';
-import { handleGuestManagement } from './guests.js';
-import { handleSharePublicEndpoints } from './public.js';
+import { dispatchRoutes } from '../../../utils/router.js';
+import { MANAGEMENT_ROUTES } from './management.js';
+import { GUEST_ROUTES } from './guests.js';
+import { PUBLIC_ROUTES } from './public.js';
+
+export { PUBLIC_ROUTES };
+
+/**
+ * Authenticated share-link routes: management first, then guest management —
+ * the same order the old combined handler tried them in.
+ * @type {import('../../../utils/router.js').Route[]}
+ */
+export const AUTHED_ROUTES = [...MANAGEMENT_ROUTES, ...GUEST_ROUTES];
 
 /**
  * Handle authenticated share link management endpoints.
- * Combines management and guest handlers.
+ * @param {import('../../../utils/context.js').AuthedContext} ctx
  */
-export async function handleShareLinks(params) {
-  // Try management endpoints first
-  const managementResult = await handleShareLinkManagement(params);
-  if (managementResult) return true;
-
-  // Then try guest management endpoints
-  const guestResult = await handleGuestManagement(params);
-  if (guestResult) return true;
-
-  return false;
+export async function handleShareLinks(ctx) {
+  return dispatchRoutes(AUTHED_ROUTES, ctx);
 }
 
 /**
  * Handle public share link endpoints (no auth required).
+ * @param {import('../../../utils/context.js').PublicContext} ctx
  */
-export async function handleSharePublic(params) {
-  return handleSharePublicEndpoints(params);
+export async function handleSharePublic(ctx) {
+  return dispatchRoutes(PUBLIC_ROUTES, ctx);
 }

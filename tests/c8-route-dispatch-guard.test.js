@@ -64,16 +64,6 @@ const ALLOWLIST = new Map([
   // ── deliberate, migrate under dedicated review ──
   ['api/index.js',
     'root dispatcher: the maintenance endpoint, the /api/v1 prefix probe, and the public follow-code regex — the latter is security-sensitive (it decides which follow-code reads skip the login gate) and migrates under its own review (route-dispatch.md § the closing gate)'],
-  ['api/follow.js',
-    'follow surface: public audience routes; migrates in its own PR with security review (brief C8 fase 2)'],
-  ['api/follow-codes.js',
-    'follow-code surface: split public/authed around the login gate via the index.js regex; migrates together with that regex under security review'],
-
-  // ── fase-2 tail, not yet migrated ──
-  ['api/share-links/guests.js',
-    'share-links family: one module across four files with an internal handler split; migrates as one PR (fase-2 tail)'],
-  ['api/share-links/management.js', 'share-links family (see guests.js entry)'],
-  ['api/share-links/public.js', 'share-links family (see guests.js entry)'],
   ['static.js',
     'top-level static dispatcher (viewers, uploads, client files) — not the /api dispatch surface'],
 ]);

@@ -19,4 +19,9 @@
  *   GET    /api/share/:token/guest/me             - Get current guest session info
  */
 
-export { handleShareLinks, handleSharePublic } from './share-links/index.js';
+export {
+  handleShareLinks,
+  handleSharePublic,
+  AUTHED_ROUTES,
+  PUBLIC_ROUTES,
+} from './share-links/index.js';
