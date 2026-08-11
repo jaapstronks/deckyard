@@ -3,6 +3,7 @@
  */
 
 import { getClientIp, allowRequest } from '../../../utils/rate-limit.js';
+import { dispatchRoutes } from '../../../utils/router.js';
 import {
   AUTH_RATE_LIMITS,
   sendRateLimitResponse,
@@ -17,68 +18,80 @@ import { normalizePresentationVisibility } from '../../../utils/presentation-aut
 import { crossOrganizationScope } from '../../../storage/scope.js';
 
 /**
- * Handle public analytics report access (no auth required).
- * @param {Object} ctx - Request context
- * @returns {Promise<boolean>} True if handled
+ * GET /api/analytics/reports/:token - Public report access (no auth required).
+ * The report token is the authorization.
+ * @param {import('../../../utils/context.js').PublicContext} ctx
+ * @param {string} token - The report share token from the path.
+ * @returns {Promise<boolean>} True (always handled once matched).
  */
-export async function handleAnalyticsReportPublic({ req, res, url }) {
+async function handlePublicReport({ req, res, url }, token) {
   const path = url.pathname;
+  const clientIp = getClientIp(req);
 
-  // GET /api/analytics/reports/:token - Public report access
-  const tokenMatch = path.match(/^\/api\/analytics\/reports\/([^/]+)$/);
-  if (req.method === 'GET' && tokenMatch) {
-    const clientIp = getClientIp(req);
-
-    // Rate limit to prevent token enumeration attacks
-    if (!(await allowRequest(`report:public:${clientIp}`, AUTH_RATE_LIMITS.publicReport))) {
-      logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
-        ip: clientIp,
-        endpoint: path,
-        limitType: 'publicReport',
-      });
-      return sendRateLimitResponse(res, 'Rate limit exceeded', 5), true;
-    }
-
-    const token = tokenMatch[1];
-
-    // Validate token format (64 hex chars)
-    if (!isValidSessionToken(token)) {
-      logSecurityEvent(SECURITY_EVENTS.INVALID_TOKEN, {
-        ip: clientIp,
-        endpoint: path,
-        tokenPrefix: token?.slice(0, 8) + '...',
-      });
-      return sendErrorResponse(res, 400, 'Invalid token format'), true;
-    }
-
-    const report = await getAnalyticsReportByToken(token);
-
-    if (!report) {
-      return sendErrorResponse(res, 404, 'Report not found or expired'), true;
-    }
-
-    // Verify the associated presentation still exists and is accessible
-    // This prevents sharing reports for deleted/private presentations
-    const { getPresentation } = await import('../../../storage/presentations/index.js');
-    const presentation = await getPresentation(
-      crossOrganizationScope(null, 'public analytics report: the report token is the authorization'),
-      report.presentationId
-    );
-    if (!presentation) {
-      return sendErrorResponse(res, 404, 'Report not available - presentation no longer exists'), true;
-    }
-
-    // Check if the presentation has been set to private. Decks carry
-    // `visibility` (private/organization); the pre-B41 `settings.visibility`
-    // field never exists, so
-    // this branch used to be dead — a report share-link stayed live after the
-    // deck went private.
-    if (normalizePresentationVisibility(presentation.visibility) === 'private') {
-      return sendErrorResponse(res, 403, 'Report not available - presentation is private'), true;
-    }
-
-    return sendSuccessResponse(res, report), true;
+  // Rate limit to prevent token enumeration attacks
+  if (!(await allowRequest(`report:public:${clientIp}`, AUTH_RATE_LIMITS.publicReport))) {
+    logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
+      ip: clientIp,
+      endpoint: path,
+      limitType: 'publicReport',
+    });
+    return sendRateLimitResponse(res, 'Rate limit exceeded', 5), true;
   }
 
-  return false;
+  // Validate token format (64 hex chars)
+  if (!isValidSessionToken(token)) {
+    logSecurityEvent(SECURITY_EVENTS.INVALID_TOKEN, {
+      ip: clientIp,
+      endpoint: path,
+      tokenPrefix: token?.slice(0, 8) + '...',
+    });
+    return sendErrorResponse(res, 400, 'Invalid token format'), true;
+  }
+
+  const report = await getAnalyticsReportByToken(token);
+
+  if (!report) {
+    return sendErrorResponse(res, 404, 'Report not found or expired'), true;
+  }
+
+  // Verify the associated presentation still exists and is accessible
+  // This prevents sharing reports for deleted/private presentations
+  const { getPresentation } = await import('../../../storage/presentations/index.js');
+  const presentation = await getPresentation(
+    crossOrganizationScope(null, 'public analytics report: the report token is the authorization'),
+    report.presentationId
+  );
+  if (!presentation) {
+    return sendErrorResponse(res, 404, 'Report not available - presentation no longer exists'), true;
+  }
+
+  // Check if the presentation has been set to private. Decks carry
+  // `visibility` (private/organization); the pre-B41 `settings.visibility`
+  // field never exists, so
+  // this branch used to be dead — a report share-link stayed live after the
+  // deck went private.
+  if (normalizePresentationVisibility(presentation.visibility) === 'private') {
+    return sendErrorResponse(res, 403, 'Report not available - presentation is private'), true;
+  }
+
+  return sendSuccessResponse(res, report), true;
+}
+
+/**
+ * Declarative route table for the public analytics surface (A7.19 C8). A single
+ * GET route; any other method falls through (the original chain sent no 405).
+ *
+ * @type {import('../../../utils/router.js').Route[]}
+ */
+export const ROUTES = [
+  { method: 'GET', pattern: /^\/api\/analytics\/reports\/([^/]+)$/, handler: handlePublicReport },
+];
+
+/**
+ * Handle public analytics report access (no auth required).
+ * @param {import('../../../utils/context.js').PublicContext} ctx
+ * @returns {Promise<boolean>} True if handled
+ */
+export function handleAnalyticsReportPublic(ctx) {
+  return dispatchRoutes(ROUTES, ctx);
 }
