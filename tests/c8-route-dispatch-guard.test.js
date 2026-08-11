@@ -70,16 +70,6 @@ const ALLOWLIST = new Map([
     'follow-code surface: split public/authed around the login gate via the index.js regex; migrates together with that regex under security review'],
 
   // ── fase-2 tail, not yet migrated ──
-  ['api/auth.js',
-    'pre-auth login/session module; deliberately outside the unattended fase-2 batches — auth flows migrate with eyes on them'],
-  ['api/password-reset.js',
-    'pre-auth password-reset module; same reasoning as auth.js'],
-  ['api/magic-link.js',
-    'pre-auth magic-link module; same reasoning as auth.js'],
-  ['api/sso.js',
-    'pre-auth OIDC login/callback module; same reasoning as auth.js'],
-  ['api/leads.js',
-    'public (pre-gate) lead capture + authed listing; small pre-auth module, fase-2 tail'],
   ['api/share-links/guests.js',
     'share-links family: one module across four files with an internal handler split; migrates as one PR (fase-2 tail)'],
   ['api/share-links/management.js', 'share-links family (see guests.js entry)'],
