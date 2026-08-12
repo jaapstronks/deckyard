@@ -34,7 +34,7 @@ async function handleQuestionRemove({ repoRoot, storageScope, res, authedUser },
   // as long as we can resolve a sessionId for the presentation.
   if (!state.sessionId) return badRequest(res, 'No session found for presentation');
 
-  const result = await removeQuestion(repoRoot, state.sessionId, {
+  const result = await removeQuestion(storageScope, state.sessionId, {
     questionId,
     removedBy: authedUser.email || 'moderator',
   });
@@ -72,7 +72,7 @@ async function handleQuestionPromote({ repoRoot, storageScope, req, res, authedU
   // Allow promotion even if session isn't "live" anymore, as long as we have a sessionId.
   if (!state.sessionId) return badRequest(res, 'No session found for presentation');
 
-  const q = await getQuestion(repoRoot, state.sessionId, questionId);
+  const q = await getQuestion(storageScope, state.sessionId, questionId);
   if (!q) return notFound(res);
 
   const dominant =
@@ -156,7 +156,7 @@ async function handleQuestionPromote({ repoRoot, storageScope, req, res, authedU
     actorEmail: authedUser?.email || null,
   });
   // Lock / mark promoted so audience sees it will be addressed (and voting/removal stops).
-  await promoteQuestion(repoRoot, state.sessionId, {
+  await promoteQuestion(storageScope, state.sessionId, {
     questionId,
     slideId,
     promotedBy: authedUser.email || 'moderator',

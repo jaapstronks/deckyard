@@ -44,7 +44,7 @@ export async function handleFollowQuestions({ repoRoot, req, res }, presentation
       );
       return true;
     }
-    const questions = (await listQuestions(repoRoot, state.sessionId)) || [];
+    const questions = (await listQuestions(followAudienceScope(repoRoot), state.sessionId)) || [];
     const dev = ensureQaDeviceCookie(req);
     serveJson(
       res,
@@ -71,7 +71,7 @@ export async function handleFollowQuestions({ repoRoot, req, res }, presentation
     const authorName = getString(body, 'authorName');
     const originalLang = normalizeLang(body?.lang) || null;
     const text = getString(body, 'text');
-    const result = await createQuestion(repoRoot, state.sessionId, {
+    const result = await createQuestion(followAudienceScope(repoRoot), state.sessionId, {
       authorId,
       authorName,
       originalLang,
@@ -113,7 +113,7 @@ export async function handleFollowUpvote({ repoRoot, req, res }, presentationId,
     return badRequest(res, 'Q&A is disabled for this presentation');
   const dev = ensureQaDeviceCookie(req);
   const voterId = dev.id;
-  const result = await upvoteQuestion(repoRoot, state.sessionId, {
+  const result = await upvoteQuestion(followAudienceScope(repoRoot), state.sessionId, {
     questionId,
     voterId,
   });
@@ -151,7 +151,7 @@ export async function handleFollowCancel({ repoRoot, req, res }, presentationId,
     return badRequest(res, 'Q&A is disabled for this presentation');
   const dev = ensureQaDeviceCookie(req);
   const authorId = dev.id;
-  const result = await cancelQuestion(repoRoot, state.sessionId, {
+  const result = await cancelQuestion(followAudienceScope(repoRoot), state.sessionId, {
     questionId,
     authorId,
   });

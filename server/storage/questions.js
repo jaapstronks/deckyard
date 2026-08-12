@@ -26,6 +26,7 @@ import { sql } from 'kysely';
 
 import { normalizeLang } from '../utils/i18n.js';
 import { sseComment, sseWrite } from '../utils/sse.js';
+import { toStorageContext } from './backend-dispatch.js';
 import { withDbGuard } from './utils/db-guard.js';
 
 const HEARTBEAT_MS = 15 * 1000;
@@ -197,13 +198,13 @@ function broadcast(sessionId, event, data) {
  * Push the current list to every attached client. Fire-and-forget: a failed
  * broadcast must never fail the mutation that triggered it.
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @returns {void}
  */
-function broadcastQuestions(repoRoot, sessionId) {
+function broadcastQuestions(scope, sessionId) {
   if (!sseSessions.has(String(sessionId || ''))) return;
-  listQuestions(repoRoot, sessionId)
+  listQuestions(scope, sessionId)
     .then((questions) => broadcast(sessionId, 'questions', { questions: questions || [] }))
     .catch(() => {});
 }
@@ -211,12 +212,19 @@ function broadcastQuestions(repoRoot, sessionId) {
 /**
  * Read one question, by session and id.
  *
- * @param {string} repoRoot
+ * Q&A is session-capability data: the audience asks and votes without a
+ * session login, so the audience-reachable functions here accept a
+ * cross-organization scope (see routes/api/follow/helpers.js). The moderator
+ * actions (`removeQuestion`, `promoteQuestion`) require an organization-scoped
+ * scope.
+ *
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {string} questionId
  * @returns {Promise<QuestionRecord|null>}
  */
-export async function getQuestion(repoRoot, sessionId, questionId) {
+export async function getQuestion(scope, sessionId, questionId) {
+  toStorageContext(scope, 'getQuestion', {}, { allowCrossOrganization: true });
   const sid = String(sessionId || '').trim();
   const qid = String(questionId || '').trim();
   if (!sid || !UUID_RE.test(qid)) return null;
@@ -236,11 +244,12 @@ export async function getQuestion(repoRoot, sessionId, questionId) {
  * The visible, ranked question list for a session: promoted first, then by
  * upvotes, then oldest first.
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @returns {Promise<Array<object>|null>} Null when the session id is empty.
  */
-export async function listQuestions(repoRoot, sessionId) {
+export async function listQuestions(scope, sessionId) {
+  toStorageContext(scope, 'listQuestions', {}, { allowCrossOrganization: true });
   const sid = String(sessionId || '').trim();
   if (!sid) return null;
 
@@ -261,13 +270,13 @@ export async function listQuestions(repoRoot, sessionId) {
 /**
  * Ask a question.
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
  * @returns {Promise<{ok: true, question: object}|{ok: false, reason: string}>}
  */
 export async function createQuestion(
-  repoRoot,
+  scope,
   sessionId,
   { authorId, authorName, text, originalLang } = {}
 ) {
@@ -275,6 +284,7 @@ export async function createQuestion(
   const a = normalizeActorId(authorId);
   const n = normalizeName(authorName);
   const t = normalizeText(text);
+  toStorageContext(scope, 'createQuestion', {}, { allowCrossOrganization: true });
   const from = normalizeLang(originalLang) || null;
   if (!sid) return { ok: false, reason: 'not_found' };
   if (!a) return { ok: false, reason: 'missing_author' };
@@ -305,7 +315,7 @@ export async function createQuestion(
   });
   if (!row) return { ok: false, reason: 'not_found' };
 
-  broadcastQuestions(repoRoot, sid);
+  broadcastQuestions(scope, sid);
   return { ok: true, question: publicQuestion(rowToQuestion(row)) };
 }
 
@@ -315,19 +325,20 @@ export async function createQuestion(
  * The append is guarded in SQL rather than by a read-then-write, so two devices
  * (or two processes) racing cannot both append and neither can double-count.
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
  * @returns {Promise<{ok: true, upvotes: number}|{ok: false, reason: string}>}
  */
-export async function upvoteQuestion(repoRoot, sessionId, { questionId, voterId } = {}) {
+export async function upvoteQuestion(scope, sessionId, { questionId, voterId } = {}) {
+  toStorageContext(scope, 'upvoteQuestion', {}, { allowCrossOrganization: true });
   const sid = String(sessionId || '').trim();
   const qid = String(questionId || '').trim();
   const vid = normalizeActorId(voterId);
   if (!qid) return { ok: false, reason: 'missing_questionId' };
   if (!vid) return { ok: false, reason: 'missing_voter' };
 
-  const q = await getQuestion(repoRoot, sid, qid);
+  const q = await getQuestion(scope, sid, qid);
   if (!q) return { ok: false, reason: 'not_found' };
   if (q.status === 'promoted') return { ok: false, reason: 'locked' };
   if (!ACTIVE_STATUSES.includes(q.status)) return { ok: false, reason: 'inactive' };
@@ -347,7 +358,7 @@ export async function upvoteQuestion(repoRoot, sessionId, { questionId, voterId 
   });
   if (upvotes == null) return { ok: false, reason: 'already_voted' };
 
-  broadcastQuestions(repoRoot, sid);
+  broadcastQuestions(scope, sid);
   return { ok: true, upvotes };
 }
 
@@ -377,19 +388,20 @@ async function transitionQuestion(sessionId, questionId, set) {
 /**
  * Withdraw your own question.
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
  * @returns {Promise<{ok: boolean, reason?: string}>}
  */
-export async function cancelQuestion(repoRoot, sessionId, { questionId, authorId } = {}) {
+export async function cancelQuestion(scope, sessionId, { questionId, authorId } = {}) {
+  toStorageContext(scope, 'cancelQuestion', {}, { allowCrossOrganization: true });
   const sid = String(sessionId || '').trim();
   const qid = String(questionId || '').trim();
   const aid = normalizeActorId(authorId);
   if (!qid) return { ok: false, reason: 'missing_questionId' };
   if (!aid) return { ok: false, reason: 'missing_author' };
 
-  const q = await getQuestion(repoRoot, sid, qid);
+  const q = await getQuestion(scope, sid, qid);
   if (!q) return { ok: false, reason: 'not_found' };
   if (q.status === 'promoted') return { ok: false, reason: 'locked' };
   if (q.authorId !== aid) return { ok: false, reason: 'forbidden' };
@@ -401,24 +413,25 @@ export async function cancelQuestion(repoRoot, sessionId, { questionId, authorId
   });
   if (!changed) return { ok: false, reason: 'inactive' };
 
-  broadcastQuestions(repoRoot, sid);
+  broadcastQuestions(scope, sid);
   return { ok: true };
 }
 
 /**
  * Moderator removal.
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
  * @returns {Promise<{ok: boolean, reason?: string}>}
  */
-export async function removeQuestion(repoRoot, sessionId, { questionId, removedBy } = {}) {
+export async function removeQuestion(scope, sessionId, { questionId, removedBy } = {}) {
+  toStorageContext(scope, 'removeQuestion');
   const sid = String(sessionId || '').trim();
   const qid = String(questionId || '').trim();
   if (!qid) return { ok: false, reason: 'missing_questionId' };
 
-  const q = await getQuestion(repoRoot, sid, qid);
+  const q = await getQuestion(scope, sid, qid);
   if (!q) return { ok: false, reason: 'not_found' };
   if (q.status === 'promoted') return { ok: false, reason: 'locked' };
   if (!ACTIVE_STATUSES.includes(q.status)) return { ok: false, reason: 'inactive' };
@@ -430,7 +443,7 @@ export async function removeQuestion(repoRoot, sessionId, { questionId, removedB
   });
   if (!changed) return { ok: false, reason: 'inactive' };
 
-  broadcastQuestions(repoRoot, sid);
+  broadcastQuestions(scope, sid);
   return { ok: true };
 }
 
@@ -438,21 +451,22 @@ export async function removeQuestion(repoRoot, sessionId, { questionId, removedB
  * Promote a question onto a slide. Promoting locks it: no more votes, no
  * cancellation, no removal.
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
  * @returns {Promise<{ok: boolean, already?: boolean, reason?: string}>}
  */
 export async function promoteQuestion(
-  repoRoot,
+  scope,
   sessionId,
   { questionId, slideId, promotedBy } = {}
 ) {
+  toStorageContext(scope, 'promoteQuestion');
   const sid = String(sessionId || '').trim();
   const qid = String(questionId || '').trim();
   if (!qid) return { ok: false, reason: 'missing_questionId' };
 
-  const q = await getQuestion(repoRoot, sid, qid);
+  const q = await getQuestion(scope, sid, qid);
   if (!q) return { ok: false, reason: 'not_found' };
   if (q.status === 'promoted') return { ok: true, already: true };
   if (!ACTIVE_STATUSES.includes(q.status)) return { ok: false, reason: 'inactive' };
@@ -465,7 +479,7 @@ export async function promoteQuestion(
   });
   if (!changed) return { ok: false, reason: 'inactive' };
 
-  broadcastQuestions(repoRoot, sid);
+  broadcastQuestions(scope, sid);
   return { ok: true };
 }
 
@@ -473,12 +487,13 @@ export async function promoteQuestion(
  * Attach an SSE stream to a session's question feed, send the current list and
  * start heartbeats.
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {import('node:http').ServerResponse} res
  * @returns {Promise<(() => void)|null>} A detach function, or null for an empty id.
  */
-export async function attachQuestionsSseClient(repoRoot, sessionId, res) {
+export async function attachQuestionsSseClient(scope, sessionId, res) {
+  toStorageContext(scope, 'attachQuestionsSseClient', {}, { allowCrossOrganization: true });
   const sid = String(sessionId || '').trim();
   if (!sid) return null;
 
@@ -490,7 +505,7 @@ export async function attachQuestionsSseClient(repoRoot, sessionId, res) {
   reg.clients.add(res);
 
   // Initial snapshot
-  const questions = await listQuestions(repoRoot, sid);
+  const questions = await listQuestions(scope, sid);
   sseWrite(res, { event: 'questions', data: { questions: questions || [] } });
 
   // Heartbeats
