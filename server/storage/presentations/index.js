@@ -111,7 +111,6 @@ export async function updatePresentation(storageScope, id, body, opts) {
   // Validate up front: the pre-save reads below would otherwise be the first
   // thing to notice a caller that stated no organization.
   toStorageContext(storageScope, 'updatePresentation', { actorEmail: opts?.actorEmail });
-  const repoRoot = repoRootOf(storageScope);
   // Server-as-collaborator seam: capture the pre-save state first. It is
   // the base the caller's write was computed against, and live-apply's
   // three-way diff needs it to leave concurrent client edits alone.
