@@ -165,9 +165,9 @@ test('a link id from another organization does not resolve, so the log is unreac
   // This is what `loadLinkForPresentation` calls before the route reads the
   // log. Acting in organization A, the organization-B link is simply absent — the
   // route turns that into a 404 (MH2) and never asks for the log.
-  assert.equal(await getShareLinkById(LINK_IN_B, { organizationId: ORG_A }), null);
+  assert.equal(await getShareLinkById({ organizationId: ORG_A }, LINK_IN_B), null);
 
-  const own = await getShareLinkById(LINK_IN_A, { organizationId: ORG_A });
+  const own = await getShareLinkById({ organizationId: ORG_A }, LINK_IN_A);
   assert.equal(own?.id, LINK_IN_A, 'its own organization’s link resolves normally');
 });
 
@@ -175,7 +175,7 @@ test('resolving a link with no organization to act in refuses rather than guessi
   seed();
 
   await assert.rejects(
-    () => getShareLinkById(LINK_IN_A, {}),
+    () => getShareLinkById({}, LINK_IN_A),
     /no organization/i,
     'getOrgId throws instead of falling back to the default organization'
   );

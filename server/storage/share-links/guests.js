@@ -3,6 +3,7 @@
  */
 
 import { getOrgId } from '../../utils/context.js';
+import { toStorageContext } from '../backend-dispatch.js';
 import { norm, nowIso, isoAfter, isoBefore, normalizeEmail } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
 import { generateGuestToken } from './index.js';
@@ -290,12 +291,13 @@ export async function getGuestBySessionToken(sessionToken) {
 
 /**
  * Get a guest by share link and email.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} shareLinkId - The share link ID
  * @param {string} email - The guest email
- * @param {Object} ctx - Context object
  * @returns {Promise<Object|null>} - Guest info or null
  */
-export async function getGuestByEmail(shareLinkId, email, ctx) {
+export async function getGuestByEmail(scope, shareLinkId, email) {
+  toStorageContext(scope, 'getGuestByEmail');
   const id = norm(shareLinkId);
   const normalized = normalizeEmail(email);
   if (!id || !normalized) return null;
@@ -314,11 +316,12 @@ export async function getGuestByEmail(shareLinkId, email, ctx) {
 
 /**
  * Extend a guest's session (called on each access).
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} guestId - The guest ID
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Updated session info
  */
-export async function extendGuestSession(guestId, ctx) {
+export async function extendGuestSession(scope, guestId) {
+  toStorageContext(scope, 'extendGuestSession');
   const id = norm(guestId);
   if (!id) {
     return { ok: false, reason: 'invalid' };
@@ -352,11 +355,12 @@ export async function extendGuestSession(guestId, ctx) {
 /**
  * Invalidate all guest sessions for a share link.
  * Called when a share link is revoked.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} shareLinkId - The share link ID
- * @param {Object} ctx - Context object
  * @returns {Promise<number>} - Number of sessions invalidated
  */
-export async function invalidateGuestSessions(shareLinkId, ctx) {
+export async function invalidateGuestSessions(scope, shareLinkId) {
+  toStorageContext(scope, 'invalidateGuestSessions');
   const id = norm(shareLinkId);
   if (!id) return 0;
 
@@ -377,15 +381,16 @@ export async function invalidateGuestSessions(shareLinkId, ctx) {
 
 /**
  * Pre-register a guest for a share link (invite-only mode).
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} shareLinkId - The share link ID
  * @param {Object} guestData - Guest data
  * @param {string} guestData.email - Guest email
  * @param {string} [guestData.name] - Guest name
  * @param {string} invitedBy - Email of the inviter
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result with guest info
  */
-export async function preRegisterGuest(shareLinkId, guestData, invitedBy, ctx) {
+export async function preRegisterGuest(scope, shareLinkId, guestData, invitedBy) {
+  toStorageContext(scope, 'preRegisterGuest');
   const id = norm(shareLinkId);
   if (!id) {
     return { ok: false, reason: 'invalid' };
@@ -397,7 +402,7 @@ export async function preRegisterGuest(shareLinkId, guestData, invitedBy, ctx) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Verify share link exists and belongs to this org
     const validation = await getValidShareLinkById(db, id, orgId);
@@ -463,16 +468,17 @@ export async function preRegisterGuest(shareLinkId, guestData, invitedBy, ctx) {
 
 /**
  * List all guests for a share link.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} shareLinkId - The share link ID
- * @param {Object} ctx - Context object
  * @returns {Promise<Array>} - List of guests
  */
-export async function listGuestsForShareLink(shareLinkId, ctx) {
+export async function listGuestsForShareLink(scope, shareLinkId) {
+  toStorageContext(scope, 'listGuestsForShareLink');
   const id = norm(shareLinkId);
   if (!id) return [];
 
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const rows = await db
       .selectFrom('share_link_guests')
@@ -488,18 +494,19 @@ export async function listGuestsForShareLink(shareLinkId, ctx) {
 
 /**
  * Remove a guest from a share link.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} guestId - The guest ID
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result
  */
-export async function removeGuest(guestId, ctx) {
+export async function removeGuest(scope, guestId) {
+  toStorageContext(scope, 'removeGuest');
   const id = norm(guestId);
   if (!id) {
     return { ok: false, reason: 'invalid' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const result = await db
       .deleteFrom('share_link_guests')
@@ -516,18 +523,19 @@ export async function removeGuest(guestId, ctx) {
 
 /**
  * Update invitation sent timestamp for a guest.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} guestId - The guest ID
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result
  */
-export async function markInvitationSent(guestId, ctx) {
+export async function markInvitationSent(scope, guestId) {
+  toStorageContext(scope, 'markInvitationSent');
   const id = norm(guestId);
   if (!id) {
     return { ok: false, reason: 'invalid' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const updated = await db
       .updateTable('share_link_guests')

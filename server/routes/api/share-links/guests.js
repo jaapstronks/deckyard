@@ -59,10 +59,10 @@ async function handleGuestPreRegister(
   const body = jsonResult.body;
 
   const result = await preRegisterGuest(
+    ctx,
     linkId,
     { email: body?.email, name: body?.name },
-    authedUser?.email,
-    ctx
+    authedUser?.email
   );
 
   if (!result.ok) {
@@ -78,7 +78,7 @@ async function handleGuestPreRegister(
 
   // Send invitation email if requested
   if (body?.sendInvitation !== false) {
-    const shareLinks = await listShareLinks(presentationId, {}, ctx);
+    const shareLinks = await listShareLinks(ctx, presentationId, {});
     const shareLink = shareLinks.find((l) => l.id === linkId);
     if (shareLink) {
       const baseShareUrl = buildShareUrl(req, shareLink.token);
@@ -97,7 +97,7 @@ async function handleGuestPreRegister(
             repoRoot,
           }).then((emailResult) => {
             if (emailResult.ok) {
-              markInvitationSent(result.guest.id, ctx);
+              markInvitationSent(ctx, result.guest.id);
             } else {
               // eslint-disable-next-line no-console
               log.warn(
@@ -125,7 +125,7 @@ async function handleGuestList({ storageScope, res, authedUser }, presentationId
     return unauthorized(res);
   }
 
-  const guests = await listGuestsForShareLink(linkId, ctx);
+  const guests = await listGuestsForShareLink(ctx, linkId);
   serveJson(res, 200, { guests });
   return true;
 }
@@ -145,7 +145,7 @@ async function handleGuestRemove(
     return unauthorized(res);
   }
 
-  const result = await removeGuest(guestId, ctx);
+  const result = await removeGuest(ctx, guestId);
   if (!result.ok) {
     return badRequest(res, result.reason);
   }
@@ -170,14 +170,14 @@ async function handleGuestResend(
   }
 
   // Get the guest
-  const guests = await listGuestsForShareLink(linkId, ctx);
+  const guests = await listGuestsForShareLink(ctx, linkId);
   const guest = guests.find((g) => g.id === guestId);
   if (!guest) {
     return notFound(res);
   }
 
   // Get the share link
-  const shareLinks = await listShareLinks(presentationId, {}, ctx);
+  const shareLinks = await listShareLinks(ctx, presentationId, {});
   const shareLink = shareLinks.find((l) => l.id === linkId);
   if (!shareLink) {
     return notFound(res);
@@ -200,7 +200,7 @@ async function handleGuestResend(
   });
 
   if (emailResult.ok) {
-    await markInvitationSent(guestId, ctx);
+    await markInvitationSent(ctx, guestId);
     serveJson(res, 200, { ok: true, message: 'Invitation resent' });
   } else {
     jsonError(res, 500, 'email_failed');
