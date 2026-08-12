@@ -88,7 +88,7 @@ export async function handleListReports(ctx, presentationId) {
 
   const { limit, offset } = parsePaginationParams(url.searchParams, { defaultLimit: 20 });
 
-  const result = await listAnalyticsReports(presentationId, ctx, { limit, offset });
+  const result = await listAnalyticsReports(ctx.storageScope, presentationId, { limit, offset });
   return sendSuccessResponse(res, result), true;
 }
 
@@ -151,7 +151,7 @@ export async function handleCreateReport(ctx, presentationId) {
   // Generate report data
   const reportData = await generateReportData(presentationId, reportType, { since: startDate, until: endDate });
 
-  const result = await createAnalyticsReport({
+  const result = await createAnalyticsReport(ctx.storageScope, {
     presentationId,
     title,
     reportType,
@@ -161,7 +161,7 @@ export async function handleCreateReport(ctx, presentationId) {
     isPublic: body?.isPublic ?? false,
     expiresInDays: body?.expiresInDays ?? null,
     createdBy: authedUser?.email ?? 'unknown',
-  }, ctx);
+  });
 
   if (!result.ok) {
     return sendErrorResponse(res, 500, result.reason || 'Failed to create report'), true;
@@ -185,7 +185,7 @@ export async function handleGetReport(ctx, presentationId, reportId) {
   });
   if (!pres) return true;
 
-  const report = await getAnalyticsReport(reportId, ctx);
+  const report = await getAnalyticsReport(ctx.storageScope, reportId);
 
   if (!report) {
     return sendErrorResponse(res, 404, 'Report not found'), true;
@@ -218,7 +218,7 @@ export async function handleUpdateReport(ctx, presentationId, reportId) {
   if (!parsed.ok) return true;
   const body = parsed.body;
 
-  const result = await updateAnalyticsReport(reportId, body, ctx);
+  const result = await updateAnalyticsReport(ctx.storageScope, reportId, body);
 
   if (!result.ok) {
     const statusCode = result.reason === 'not_found' ? 404 : 500;
@@ -243,7 +243,7 @@ export async function handleDeleteReport(ctx, presentationId, reportId) {
   });
   if (!pres) return true;
 
-  const result = await deleteAnalyticsReport(reportId, ctx);
+  const result = await deleteAnalyticsReport(ctx.storageScope, reportId);
 
   if (!result.ok) {
     const statusCode = result.reason === 'not_found' ? 404 : 500;
@@ -268,7 +268,7 @@ export async function handleRegenerateToken(ctx, presentationId, reportId) {
   });
   if (!pres) return true;
 
-  const result = await regenerateShareToken(reportId, ctx);
+  const result = await regenerateShareToken(ctx.storageScope, reportId);
 
   if (!result.ok) {
     const statusCode = result.reason === 'not_found' ? 404 : 500;

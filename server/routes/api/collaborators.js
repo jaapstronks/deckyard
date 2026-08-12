@@ -61,7 +61,7 @@ async function handleSharedWithMe({ storageScope, res, authedUser }) {
   }
 
   try {
-    const presentations = await listPresentationsSharedWithUser(authedUser.email, ctx);
+    const presentations = await listPresentationsSharedWithUser(ctx, authedUser.email);
 
     // Batch-fetch first slides for all presentations (avoids N+1 queries).
     // The grid only needs the presence signal — the thumbnail is a

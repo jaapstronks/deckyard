@@ -285,7 +285,7 @@ export async function listAccessiblePresentationRefs(scope, visibility = 'all') 
   }
 
   if (wantShared) {
-    const shared = await listPresentationsSharedWithUser(owner, scope);
+    const shared = await listPresentationsSharedWithUser(scope, owner);
     for (const p of shared) {
       if (!titleById.has(p.id)) titleById.set(p.id, p.title || 'Untitled');
     }

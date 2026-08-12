@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
 import { getTheme as getCustomTheme } from '../storage/themes.js';
+import { crossOrganizationScope } from '../storage/scope.js';
 import { listAllFontFamiliesWithVariants } from '../storage/font-families.js';
 import { buildThemeConfig } from './theme-builder.js';
 import { slideBackgroundsCssText } from '../../shared/theme-slide-backgrounds.js';
@@ -117,7 +118,13 @@ async function loadCustomTheme(themeId, ctx, repoRoot) {
   }
 
   try {
-    const dbTheme = await getCustomTheme(themeId, ctx || {});
+    // A session ctx keeps the organization filter; render and export paths
+    // have none — there the theme UUID came out of the deck being rendered
+    // and is the authorization (cross-organization category 1).
+    const scope = ctx?.organizationId
+      ? ctx
+      : crossOrganizationScope(repoRoot ?? null, 'theme UUID resolved from the deck being rendered; render/export paths carry no session');
+    const dbTheme = await getCustomTheme(scope, themeId);
     if (dbTheme) {
       // Fetch managed fonts if the theme references any familyId
       let managedFonts;

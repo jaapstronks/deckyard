@@ -4,6 +4,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
+import { toStorageContext } from './backend-dispatch.js';
 import { nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { isValidSlug } from './utils/helpers.js';
@@ -73,13 +74,19 @@ export async function listThemes(ctx) {
 
 /**
  * Get a theme by ID.
- * When ctx is provided with an organizationId, filters by org for security.
- * When ctx is empty/null (e.g., during rendering), loads by UUID directly.
+ *
+ * A session scope keeps the organization filter. Render and export paths have
+ * no session — there the theme UUID came out of the deck being rendered, is
+ * globally unique, and is the authorization (cross-organization category 1),
+ * so they pass a crossOrganizationScope and skip the filter.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} themeId - The theme ID (UUID)
- * @param {Object} ctx - Context object (optional for UUID lookup)
  * @returns {Promise<Object|null>} - Theme object or null
  */
-export async function getTheme(themeId, ctx) {
+export async function getTheme(scope, themeId) {
+  const context = toStorageContext(scope, 'getTheme', {}, {
+    allowCrossOrganization: true,
+  });
   if (!themeId || typeof themeId !== 'string') return null;
 
   return withDbGuard(null, async (db) => {
@@ -102,11 +109,11 @@ export async function getTheme(themeId, ctx) {
       ])
       .where('id', '=', themeId);
 
-    // If org context is explicitly provided, filter by it for security
-    // Otherwise, load by UUID directly (for rendering contexts)
-    // UUIDs are globally unique, so this is safe for read-only operations
-    if (ctx?.organizationId) {
-      query = query.where('organization_id', '=', ctx.organizationId);
+    // A cross-organization scope is the token-authorized read (the UUID is
+    // globally unique and came out of the deck being rendered); a session
+    // scope keeps the organization filter.
+    if (!context.crossOrganization) {
+      query = query.where('organization_id', '=', getOrgId(scope));
     }
 
     const row = await query.executeTakeFirst();
@@ -117,16 +124,17 @@ export async function getTheme(themeId, ctx) {
 
 /**
  * Create a new theme.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {Object} data - Theme data
  * @param {string} data.label - Display name
  * @param {string} [data.slug] - URL-safe identifier (auto-generated if not provided)
  * @param {string} [data.logoUrl] - Logo URL
  * @param {Object} [data.colors] - Color configuration
  * @param {Object} [data.fonts] - Font configuration
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result with ok flag and theme or reason
  */
-export async function createTheme(data, ctx) {
+export async function createTheme(scope, data) {
+  toStorageContext(scope, 'createTheme');
   const label = String(data?.label || '').trim();
   if (!label || label.length > 255) {
     return { ok: false, reason: 'invalid_label' };
@@ -155,7 +163,7 @@ export async function createTheme(data, ctx) {
   const config = validateThemeConfig(data?.config);
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Check if slug already exists
     const existing = await db
@@ -190,7 +198,7 @@ export async function createTheme(data, ctx) {
         is_default: false,
         created_at: now,
         updated_at: now,
-        created_by: ctx?.actorEmail ? await getUserIdByEmail(db, orgId, ctx.actorEmail) : null,
+        created_by: scope?.actorEmail ? await getUserIdByEmail(db, orgId, scope.actorEmail) : null,
       })
       .returningAll()
       .executeTakeFirst();
@@ -204,18 +212,19 @@ export async function createTheme(data, ctx) {
 
 /**
  * Update a theme.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} themeId - The theme ID
  * @param {Object} updates - Fields to update
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result with ok flag and theme or reason
  */
-export async function updateTheme(themeId, updates, ctx) {
+export async function updateTheme(scope, themeId, updates) {
+  toStorageContext(scope, 'updateTheme');
   if (!themeId || typeof themeId !== 'string') {
     return { ok: false, reason: 'invalid_id' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Build update data
     const updateData = {
@@ -305,17 +314,18 @@ export async function updateTheme(themeId, updates, ctx) {
 
 /**
  * Delete a theme.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} themeId - The theme ID
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result with ok flag or reason
  */
-export async function deleteTheme(themeId, ctx) {
+export async function deleteTheme(scope, themeId) {
+  toStorageContext(scope, 'deleteTheme');
   if (!themeId || typeof themeId !== 'string') {
     return { ok: false, reason: 'invalid_id' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const result = await db
       .deleteFrom('themes')
@@ -333,13 +343,14 @@ export async function deleteTheme(themeId, ctx) {
 
 /**
  * Set a theme as the default for the organization.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} themeId - The theme ID (or null to clear default)
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result with ok flag or reason
  */
-export async function setDefaultTheme(themeId, ctx) {
+export async function setDefaultTheme(scope, themeId) {
+  toStorageContext(scope, 'setDefaultTheme');
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Clear existing default
     await db
