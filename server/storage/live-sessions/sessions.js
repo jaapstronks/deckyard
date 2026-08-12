@@ -1,9 +1,5 @@
 import { createFollowCode, FOLLOW_CODE_TTL_MS } from '../follow-codes.js';
 import { toStorageContext } from '../backend-dispatch.js';
-<<<<<<< HEAD
-=======
-import { repoRootOf } from '../scope.js';
->>>>>>> origin/main
 import { TTL_MS } from './constants.js';
 import { sessions } from './state.js';
 import {
@@ -30,11 +26,7 @@ function areFollowCodesExpired(session) {
  * has to follow the link instead of typing a code. A code is only omitted when
  * minting returned nothing (the database is unavailable), never faked.
  *
-<<<<<<< HEAD
  * @param {import('../scope.js').StorageScope} scope
-=======
- * @param {string|null} repoRoot - Disk path for the follow-code store (not a scope).
->>>>>>> origin/main
  * @param {string} presentationId
  * @returns {Promise<Object<string, string>>} Codes by language key.
  */
@@ -111,11 +103,7 @@ export async function createLiveSession(scope, { presentationId }) {
     let followCodes = s.followCodes || {};
     if (areFollowCodesExpired(s)) {
       log.info(`[Follow Codes] Codes expired for session ${s.sessionId}, refreshing...`);
-<<<<<<< HEAD
       followCodes = await mintFollowCodes(scope, presId);
-=======
-      followCodes = await mintFollowCodes(repoRootOf(scope), presId);
->>>>>>> origin/main
       s.followCodes = followCodes;
       s.followCodesCreatedAt = Date.now();
     }
@@ -130,11 +118,7 @@ export async function createLiveSession(scope, { presentationId }) {
   }
 
   const sessionId = newSessionId();
-<<<<<<< HEAD
   const followCodes = await mintFollowCodes(scope, presId);
-=======
-  const followCodes = await mintFollowCodes(repoRootOf(scope), presId);
->>>>>>> origin/main
   const now = Date.now();
 
   const s = {
