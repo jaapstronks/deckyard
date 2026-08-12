@@ -21,6 +21,7 @@ import assert from 'node:assert/strict';
 
 import { closeTestDb, openTestDb, pgDescribe, truncate } from './helpers/harness.js';
 import { seedDefaultOrganization, seedPresentation } from './helpers/seed.js';
+import { testScope } from '../helpers/storage-scope.js';
 import { sessions } from '../../server/storage/live-sessions/state.js';
 import {
   createLiveSession,
@@ -65,7 +66,7 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
   });
 
   it('writes a row on create, with the deck, state and follow codes', async () => {
-    const created = await createLiveSession(null, { presentationId });
+    const created = await createLiveSession(testScope(), { presentationId });
     assert.ok(created?.sessionId);
 
     const row = await db
@@ -85,18 +86,18 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
   });
 
   it('finds a session created by another process', async () => {
-    const created = await createLiveSession(null, { presentationId });
+    const created = await createLiveSession(testScope(), { presentationId });
     coldStart();
 
-    const session = await getLiveSession(null, created.sessionId);
+    const session = await getLiveSession(testScope(), created.sessionId);
     assert.ok(session, 'a cold process resolves the session from the table');
     assert.equal(session.presentationId, presentationId);
     assert.equal(session.clients.size, 0, 'its SSE clients stay process-local');
   });
 
   it('carries live slide state across a restart', async () => {
-    const created = await createLiveSession(null, { presentationId });
-    await updateLiveSessionState(null, created.sessionId, {
+    const created = await createLiveSession(testScope(), { presentationId });
+    await updateLiveSessionState(testScope(), created.sessionId, {
       slideId: 's3',
       slideIndex: 2,
       slideType: 'poll-slide',
@@ -108,7 +109,7 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
     await persistSession(sessions.get(created.sessionId));
     coldStart();
 
-    const session = await getLiveSession(null, created.sessionId);
+    const session = await getLiveSession(testScope(), created.sessionId);
     assert.equal(session.state.slideId, 's3');
     assert.equal(session.state.slideIndex, 2);
     assert.equal(session.state.slideType, 'poll-slide');
@@ -117,18 +118,18 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
   });
 
   it('carries the remote-control flag across a restart', async () => {
-    const created = await createLiveSession(null, { presentationId });
-    setLiveSessionControlEnabled(null, created.sessionId, true);
+    const created = await createLiveSession(testScope(), { presentationId });
+    setLiveSessionControlEnabled(testScope(), created.sessionId, true);
     await persistSession(sessions.get(created.sessionId));
     coldStart();
 
-    const session = await getLiveSession(null, created.sessionId);
+    const session = await getLiveSession(testScope(), created.sessionId);
     assert.equal(session.controlEnabled, true);
   });
 
   it('reports the follow state to a process that never saw the session', async () => {
-    const created = await createLiveSession(null, { presentationId });
-    await updateLiveSessionState(null, created.sessionId, {
+    const created = await createLiveSession(testScope(), { presentationId });
+    await updateLiveSessionState(testScope(), created.sessionId, {
       slideId: 's2',
       slideIndex: 1,
       updatedAt: Date.now(),
@@ -136,21 +137,21 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
     await persistSession(sessions.get(created.sessionId));
     coldStart();
 
-    const state = await getFollowStateForPresentation(null, presentationId);
+    const state = await getFollowStateForPresentation(testScope(), presentationId);
     assert.equal(state.status, 'live');
     assert.equal(state.sessionId, created.sessionId);
     assert.equal(state.slideId, 's2');
     assert.equal(state.slideIndex, 1);
 
-    const best = await findMostRecentSessionForPresentation(null, presentationId);
+    const best = await findMostRecentSessionForPresentation(testScope(), presentationId);
     assert.equal(best?.sessionId, created.sessionId);
   });
 
   it('resumes the stored session instead of minting a second one', async () => {
-    const first = await createLiveSession(null, { presentationId });
+    const first = await createLiveSession(testScope(), { presentationId });
     coldStart();
 
-    const second = await createLiveSession(null, { presentationId });
+    const second = await createLiveSession(testScope(), { presentationId });
     assert.equal(second.sessionId, first.sessionId, 'a cold process resumes, not duplicates');
 
     const rows = await db.selectFrom('present_sessions').select('session_id').execute();
@@ -158,7 +159,7 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
   });
 
   it('keeps the newer copy when memory and table disagree', async () => {
-    const created = await createLiveSession(null, { presentationId });
+    const created = await createLiveSession(testScope(), { presentationId });
     // A stale row: the table lags the live object between debounced writes.
     await db
       .updateTable('present_sessions')
@@ -169,7 +170,7 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
       .where('session_id', '=', created.sessionId)
       .execute();
 
-    const session = await getLiveSession(null, created.sessionId);
+    const session = await getLiveSession(testScope(), created.sessionId);
     assert.equal(session.state.slideId, '', 'the fresher in-memory state wins');
 
     // And the other way round: a row written by another process, later.
@@ -182,36 +183,36 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
       .where('session_id', '=', created.sessionId)
       .execute();
 
-    const refreshed = await getLiveSession(null, created.sessionId);
+    const refreshed = await getLiveSession(testScope(), created.sessionId);
     assert.equal(refreshed.state.slideId, 'from-other-worker');
     assert.equal(refreshed.state.slideIndex, 4);
   });
 
   it('deletes the row when the session closes', async () => {
-    const created = await createLiveSession(null, { presentationId });
+    const created = await createLiveSession(testScope(), { presentationId });
     assert.equal(closeSession(created.sessionId, 'closed'), true);
     // The delete is fire-and-forget; give it the event-loop turn it needs.
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     const rows = await db.selectFrom('present_sessions').selectAll().execute();
     assert.equal(rows.length, 0);
-    assert.equal(await getLiveSession(null, created.sessionId), null);
+    assert.equal(await getLiveSession(testScope(), created.sessionId), null);
   });
 
   it('deletes the session with its deck', async () => {
-    const created = await createLiveSession(null, { presentationId });
+    const created = await createLiveSession(testScope(), { presentationId });
     await db.deleteFrom('presentations').where('id', '=', presentationId).execute();
 
     const rows = await db.selectFrom('present_sessions').selectAll().execute();
     assert.equal(rows.length, 0, 'presentation_id cascades — no deckless sessions survive');
     coldStart();
-    assert.equal(await getLiveSession(null, created.sessionId), null);
+    assert.equal(await getLiveSession(testScope(), created.sessionId), null);
   });
 
   it('sweeps sessions past the idle TTL and leaves live ones alone', async () => {
-    const live = await createLiveSession(null, { presentationId });
+    const live = await createLiveSession(testScope(), { presentationId });
     const otherDeck = await seedPresentation(db, { title: 'Yesterday' });
-    const stale = await createLiveSession(null, { presentationId: otherDeck });
+    const stale = await createLiveSession(testScope(), { presentationId: otherDeck });
     await db
       .updateTable('present_sessions')
       .set({ last_activity_at: new Date(Date.now() - TTL_MS - 60_000) })
@@ -228,7 +229,7 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
   });
 
   it('ignores an expired row rather than adopting it', async () => {
-    const created = await createLiveSession(null, { presentationId });
+    const created = await createLiveSession(testScope(), { presentationId });
     await db
       .updateTable('present_sessions')
       .set({ last_activity_at: new Date(Date.now() - TTL_MS - 60_000) })
@@ -236,8 +237,8 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
       .execute();
     coldStart();
 
-    assert.equal(await getLiveSession(null, created.sessionId), null);
-    const state = await getFollowStateForPresentation(null, presentationId);
+    assert.equal(await getLiveSession(testScope(), created.sessionId), null);
+    const state = await getFollowStateForPresentation(testScope(), presentationId);
     assert.equal(state.status, 'not_started');
   });
 });

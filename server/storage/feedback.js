@@ -24,6 +24,8 @@ import { sql } from 'kysely';
 
 import { notifyLiveSessionInteractionState } from './live-sessions/index.js';
 import { maybeFireInteractionWebhook } from '../utils/webhooks.js';
+import { toStorageContext } from './backend-dispatch.js';
+import { repoRootOf } from './scope.js';
 import { withDbGuard } from './utils/db-guard.js';
 import {
   ensureInteractionSlide,
@@ -106,9 +108,9 @@ async function aggregateForDevice(slide, deviceId) {
   };
 }
 
-async function maybeBroadcast(repoRoot, sessionId, agg) {
+async function maybeBroadcast(scope, sessionId, agg) {
   try {
-    await notifyLiveSessionInteractionState(repoRoot, sessionId, agg);
+    await notifyLiveSessionInteractionState(scope, sessionId, agg);
   } catch {
     // ignore
   }
@@ -117,7 +119,11 @@ async function maybeBroadcast(repoRoot, sessionId, agg) {
 /**
  * Create the feedback interaction for a slide if it has none.
  *
- * @param {string} repoRoot
+ * Capability-based: reachable from the sessionless follow surface, where the
+ * live session id is the authorization, so an audience scope may act
+ * cross-organization (see routes/api/follow/helpers.js).
+ *
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
  * @param {string} [opts.slideId]
@@ -125,10 +131,11 @@ async function maybeBroadcast(repoRoot, sessionId, agg) {
  * @returns {Promise<object|null>} The aggregate, or null when there is no such session.
  */
 export async function ensureFeedbackForSlide(
-  repoRoot,
+  scope,
   sessionId,
   { slideId = '', defaultStatus = 'open' } = {}
 ) {
+  toStorageContext(scope, 'ensureFeedbackForSlide', {}, { allowCrossOrganization: true });
   const slide = await ensureInteractionSlide({
     sessionId,
     slideId,
@@ -139,12 +146,12 @@ export async function ensureFeedbackForSlide(
   if (!slide) return null;
 
   const agg = await aggregateForDevice(slide, null);
-  await maybeBroadcast(repoRoot, sessionId, agg);
+  await maybeBroadcast(scope, sessionId, agg);
   return agg;
 }
 
 /**
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
  * @param {string} [opts.slideId]
@@ -152,10 +159,11 @@ export async function ensureFeedbackForSlide(
  * @returns {Promise<object|null>}
  */
 export async function getFeedbackAggregate(
-  repoRoot,
+  scope,
   sessionId,
   { slideId = '', deviceId = null } = {}
 ) {
+  toStorageContext(scope, 'getFeedbackAggregate', {}, { allowCrossOrganization: true });
   const slide = await getInteractionSlide({ sessionId, slideId });
   if (!slide) return null;
   return aggregateForDevice(slide, deviceId);
@@ -164,16 +172,21 @@ export async function getFeedbackAggregate(
 /**
  * Submit (or replace) one device's feedback on a slide.
  *
- * @param {string} repoRoot
+ * Capability-based audience write: the row is keyed on the session the public
+ * follow code resolved, so the scope may be cross-organization (the A1
+ * org-scoping decision owns whether this domain ever becomes org-filtered).
+ *
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
  * @returns {Promise<{ok: true, aggregate: object}|{ok: false, reason: string}>}
  */
 export async function submitFeedback(
-  repoRoot,
+  scope,
   sessionId,
   { slideId = '', deviceId = '', text = '' } = {}
 ) {
+  toStorageContext(scope, 'submitFeedback', {}, { allowCrossOrganization: true });
   const sid = String(slideId || '').trim();
   const did = normalizeDeviceId(deviceId);
   if (!sid || !did) return { ok: false, reason: 'bad_request' };
@@ -215,9 +228,9 @@ export async function submitFeedback(
 
   const aggForDevice = await aggregateForDevice(touched, did);
   const aggForBroadcast = await aggregateForDevice(touched, null);
-  await maybeBroadcast(repoRoot, sessionId, aggForBroadcast);
+  await maybeBroadcast(scope, sessionId, aggForBroadcast);
 
-  maybeFireInteractionWebhook(repoRoot, {
+  maybeFireInteractionWebhook(repoRootOf(scope), {
     event: 'interaction.feedback_submitted',
     sessionId,
     interaction: aggForBroadcast,
@@ -229,32 +242,34 @@ export async function submitFeedback(
 /**
  * Open or close feedback collection on a slide (presenter action).
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
  * @returns {Promise<object|null>}
  */
 export async function setFeedbackStatus(
-  repoRoot,
+  scope,
   sessionId,
   { slideId = '', status = 'open' } = {}
 ) {
+  toStorageContext(scope, 'setFeedbackStatus');
   const slide = await updateInteractionSlide({ sessionId, slideId, status });
   if (!slide) return null;
   const agg = await aggregateForDevice(slide, null);
-  await maybeBroadcast(repoRoot, sessionId, agg);
+  await maybeBroadcast(scope, sessionId, agg);
   return agg;
 }
 
 /**
  * Discard every entry on a slide (presenter action).
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
  * @returns {Promise<object|null>}
  */
-export async function resetFeedback(repoRoot, sessionId, { slideId = '' } = {}) {
+export async function resetFeedback(scope, sessionId, { slideId = '' } = {}) {
+  toStorageContext(scope, 'resetFeedback');
   const slide = await updateInteractionSlide({ sessionId, slideId });
   if (!slide) return null;
 
@@ -267,7 +282,7 @@ export async function resetFeedback(repoRoot, sessionId, { slideId = '' } = {}) 
   });
 
   const agg = await aggregateForDevice(slide, null);
-  await maybeBroadcast(repoRoot, sessionId, agg);
+  await maybeBroadcast(scope, sessionId, agg);
   return agg;
 }
 
@@ -277,13 +292,14 @@ export async function resetFeedback(repoRoot, sessionId, { slideId = '' } = {}) 
  * Ordered in SQL by the same key the file version sorted on in JavaScript, so
  * two exports of the same data are byte-identical.
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
  * @param {string} [opts.slideId]
  * @returns {Promise<Array<{slideId: string, deviceId: string, text: string, createdAt: number, updatedAt: number}>>}
  */
-export async function listFeedbackEntries(repoRoot, sessionId, { slideId = '' } = {}) {
+export async function listFeedbackEntries(scope, sessionId, { slideId = '' } = {}) {
+  toStorageContext(scope, 'listFeedbackEntries');
   const sid = String(sessionId || '').trim();
   const slide = String(slideId || '').trim();
   if (!sid || !slide) return [];

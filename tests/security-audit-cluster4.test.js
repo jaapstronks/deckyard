@@ -46,6 +46,7 @@ const { initializeStorage, __resetStorageForTests } = await import(
   '../server/storage/adapters/index.js'
 );
 const { handleLiveSessions } = await import('../server/routes/api/live-sessions.js');
+const { createRouteContext } = await import('../server/utils/context.js');
 const { handleLiveSessionsPublic } = await import(
   '../server/routes/api/live-session-audience.js'
 );
@@ -186,6 +187,9 @@ async function callLiveSessions({ root, method, pathname, body, authedUser }) {
   const url = new URL(`http://localhost${pathname}`);
   const handled = await handleLiveSessions({
     repoRoot: root,
+    // Mirror the dispatcher (routes/api/index.js): every authed route carries
+    // the request's storage scope.
+    storageScope: createRouteContext(authedUser, { repoRoot: root }),
     req: mockReq(method, body),
     res,
     url,

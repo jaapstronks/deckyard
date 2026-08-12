@@ -10,7 +10,7 @@ const log = createLogger('state');
 export async function handleFollowState({ repoRoot, req, res }, presentationId) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
   try {
-    const state = await getFollowStateForPresentation(repoRoot, presentationId);
+    const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
     const pres = await getPresentationCached(followAudienceScope(repoRoot), presentationId);
     if (!pres) {
       return notFound(res, 'Presentation not found');

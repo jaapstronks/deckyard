@@ -106,7 +106,13 @@ async function validatePresentationAccess(data, ctx) {
 
     case SOURCE_TYPES.FOLLOW: {
       // Follow mode: validate that there's an active follow session for this presentation
-      const followState = await getFollowStateForPresentation(ctx?.repoRoot, presentationId);
+      const followState = await getFollowStateForPresentation(
+        crossOrganizationScope(
+          ctx?.repoRoot ?? null,
+          'analytics track: the viewer is a follow-along audience member'
+        ),
+        presentationId
+      );
 
       // Allow if there's a live or recently ended follow session
       // We're lenient here because viewers might join slightly after the session ends

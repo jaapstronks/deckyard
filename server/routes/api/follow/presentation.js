@@ -10,6 +10,7 @@ import {
 import { crossOrganizationScope } from '../../../storage/scope.js';
 import {
   computeAudienceCapabilitiesFromState,
+  followAudienceScope,
   followMetaFromPresentation,
   pickPresentationForLang,
 } from './helpers.js';
@@ -20,7 +21,7 @@ export async function handleFollowPresentation(
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
   const lang = normalizeLang(url.searchParams.get('lang'));
-  const state = await getFollowStateForPresentation(repoRoot, presentationId);
+  const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
   if (state.status !== 'live') {
     serveJson(res, 200, {
       ...state,

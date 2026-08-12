@@ -24,12 +24,12 @@ import { canWritePresentation } from '../../utils/presentation-authz.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 // POST /api/moderate/:presentationId/questions/:questionId/remove — moderator removes a question
-async function handleQuestionRemove({ repoRoot, res, authedUser }, presentationId, questionId) {
+async function handleQuestionRemove({ repoRoot, storageScope, res, authedUser }, presentationId, questionId) {
   if (!authedUser) return unauthorized(res);
   // "Moderator path" is intended for coworkers; require admin to avoid accidental abuse.
   if (!authedUser.isAdmin) return unauthorized(res, 'Admin required');
 
-  const state = await getFollowStateForPresentation(repoRoot, presentationId);
+  const state = await getFollowStateForPresentation(storageScope, presentationId);
   // Allow moderation even if the session is no longer considered "live" (talk breaks, tab sleep, etc),
   // as long as we can resolve a sessionId for the presentation.
   if (!state.sessionId) return badRequest(res, 'No session found for presentation');
@@ -68,7 +68,7 @@ async function handleQuestionPromote({ repoRoot, storageScope, req, res, authedU
   const position = body?.position === 'next' ? 'next' : 'end';
   const afterSlideIndex = Number(body?.afterSlideIndex ?? NaN);
 
-  const state = await getFollowStateForPresentation(repoRoot, presentationId);
+  const state = await getFollowStateForPresentation(storageScope, presentationId);
   // Allow promotion even if session isn't "live" anymore, as long as we have a sessionId.
   if (!state.sessionId) return badRequest(res, 'No session found for presentation');
 
@@ -161,7 +161,7 @@ async function handleQuestionPromote({ repoRoot, storageScope, req, res, authedU
     slideId,
     promotedBy: authedUser.email || 'moderator',
   });
-  notifyLiveSessionDeckUpdated(repoRoot, state.sessionId, {
+  notifyLiveSessionDeckUpdated(storageScope, state.sessionId, {
     presentationId,
     slideId,
     reason: 'question_promoted',

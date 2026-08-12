@@ -1,11 +1,22 @@
 import { sseComment, sseWrite } from '../../utils/sse.js';
+import { toStorageContext } from '../backend-dispatch.js';
 import { HEARTBEAT_MS } from './constants.js';
 import { schedulePersist } from './db.js';
 import { sessions } from './state.js';
 import { touchLiveSession, findMostRecentSessionForPresentation } from './sessions.js';
 
-export async function attachSessionSseClient(repoRoot, sessionId, res) {
-  const s = await touchLiveSession(repoRoot, sessionId);
+/**
+ * Attach one SSE client to a session's stream. Capability-based: the session
+ * id (or follow code) is the authorization, so an audience scope may attach
+ * cross-organization.
+ *
+ * @param {import('../scope.js').StorageScope} scope
+ * @param {string} sessionId
+ * @param {import('node:http').ServerResponse} res
+ */
+export async function attachSessionSseClient(scope, sessionId, res) {
+  toStorageContext(scope, 'attachSessionSseClient', {}, { allowCrossOrganization: true });
+  const s = await touchLiveSession(scope, sessionId);
   if (!s) return null;
 
   s.clients.add(res);
@@ -48,9 +59,11 @@ export async function attachSessionSseClient(repoRoot, sessionId, res) {
  * table has nothing to add. (Reaching followers attached to another worker
  * needs a pub/sub substrate — see the note in `db.js`.)
  *
+ * @param {import('../scope.js').StorageScope} scope
  * @returns {Promise<boolean>} Whether a local session was found to broadcast to.
  */
-export async function broadcast(repoRoot, sessionId, event, data) {
+export async function broadcast(scope, sessionId, event, data) {
+  toStorageContext(scope, 'broadcast', {}, { allowCrossOrganization: true });
   const s = getSessionSync(sessionId);
   if (!s) return false;
   touchSessionSync(s);
@@ -70,20 +83,22 @@ export async function broadcast(repoRoot, sessionId, event, data) {
   return true;
 }
 
-export async function notifyLiveSessionInteractionState(repoRoot, sessionId, interactionState) {
+export async function notifyLiveSessionInteractionState(scope, sessionId, interactionState) {
+  toStorageContext(scope, 'notifyLiveSessionInteractionState', {}, { allowCrossOrganization: true });
   const sid = String(sessionId || '').trim();
   if (!sid) return false;
-  return broadcast(repoRoot, sid, 'interactionState', {
+  return broadcast(scope, sid, 'interactionState', {
     ...(interactionState && typeof interactionState === 'object' ? interactionState : {}),
     updatedAt: Date.now(),
   });
 }
 
 export function notifyLiveSessionDeckUpdated(
-  repoRoot,
+  scope,
   sessionId,
   { presentationId = '', slideId = '', reason = 'deck_updated' } = {}
 ) {
+  toStorageContext(scope, 'notifyLiveSessionDeckUpdated', {}, { allowCrossOrganization: true });
   const sid = String(sessionId || '').trim();
   if (!sid) return { ok: false, reason: 'missing_sessionId' };
   const payload = {
@@ -92,7 +107,7 @@ export function notifyLiveSessionDeckUpdated(
     reason: String(reason || 'deck_updated'),
     updatedAt: Date.now(),
   };
-  broadcast(repoRoot, sid, 'deckUpdated', payload).catch(() => {});
+  broadcast(scope, sid, 'deckUpdated', payload).catch(() => {});
   return { ok: true };
 }
 
@@ -102,15 +117,16 @@ export function notifyLiveSessionDeckUpdated(
  * `deckUpdated` to its clients; a no-op when nothing is being presented.
  */
 export async function notifyDeckUpdatedForPresentation(
-  repoRoot,
+  scope,
   presentationId,
   { slideId = '', reason = 'deck_updated' } = {}
 ) {
+  toStorageContext(scope, 'notifyDeckUpdatedForPresentation', {}, { allowCrossOrganization: true });
   const pid = String(presentationId || '').trim();
   if (!pid) return { ok: false, reason: 'missing_presentationId' };
-  const s = await findMostRecentSessionForPresentation(repoRoot, pid);
+  const s = await findMostRecentSessionForPresentation(scope, pid);
   if (!s?.sessionId || !s.clients?.size) return { ok: false, reason: 'no_live_session' };
-  return notifyLiveSessionDeckUpdated(repoRoot, s.sessionId, {
+  return notifyLiveSessionDeckUpdated(scope, s.sessionId, {
     presentationId: pid,
     slideId,
     reason,
@@ -118,10 +134,12 @@ export async function notifyDeckUpdatedForPresentation(
 }
 
 export function broadcastBranch(
-  repoRoot,
+  scope,
   sessionId,
   { slideId = '', onClose = 'stay', onCloseTarget = '' } = {}
 ) {
+  // Presenter action (fired on interaction close): the scope states its organization.
+  toStorageContext(scope, 'broadcastBranch');
   const sid = String(sessionId || '').trim();
   if (!sid) return { ok: false, reason: 'missing_sessionId' };
   const payload = {
@@ -130,12 +148,14 @@ export function broadcastBranch(
     onCloseTarget: String(onCloseTarget || '').trim(),
     updatedAt: Date.now(),
   };
-  broadcast(repoRoot, sid, 'branch', payload).catch(() => {});
+  broadcast(scope, sid, 'branch', payload).catch(() => {});
   return { ok: true };
 }
 
-export async function updateLiveSessionState(repoRoot, sessionId, nextState) {
-  const s = await touchLiveSession(repoRoot, sessionId);
+export async function updateLiveSessionState(scope, sessionId, nextState) {
+  // Presenter action (state push): the scope states its organization.
+  toStorageContext(scope, 'updateLiveSessionState');
+  const s = await touchLiveSession(scope, sessionId);
   if (!s) return null;
   const slideId = typeof nextState?.slideId === 'string' ? nextState.slideId : '';
   const slideIndex = Number(nextState?.slideIndex || 0) || 0;
@@ -155,7 +175,7 @@ export async function updateLiveSessionState(repoRoot, sessionId, nextState) {
     updatedAt,
   };
   schedulePersist(s);
-  broadcast(repoRoot, sessionId, 'state', s.state).catch(() => {});
+  broadcast(scope, sessionId, 'state', s.state).catch(() => {});
   return s.state;
 }
 

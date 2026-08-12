@@ -134,7 +134,7 @@ async function seedSessionDeck({ slides } = {}) {
       { type: 'content-slide', content: { title: 'B' }, notes: '' },
     ],
   });
-  const session = await createLiveSession(REPO_ROOT, { presentationId: pres.id });
+  const session = await createLiveSession({ repoRoot: REPO_ROOT, organizationId: ORG, actorEmail: null }, { presentationId: pres.id });
   return { pres, sessionId: session.sessionId, slideIds: pres.slides.map((s) => s.id) };
 }
 
@@ -238,7 +238,7 @@ test('PUT /notes refuses an author-locked slide (423)', async () => {
 
 test('a successful write broadcasts deckUpdated to the session', async () => {
   const { sessionId, slideIds } = await seedSessionDeck();
-  const session = await getLiveSession(REPO_ROOT, sessionId);
+  const session = await getLiveSession({ repoRoot: REPO_ROOT, organizationId: ORG, actorEmail: null }, sessionId);
   const client = fakeSseClient();
   session.clients.add(client);
 
