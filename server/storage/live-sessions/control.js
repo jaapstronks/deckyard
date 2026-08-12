@@ -7,7 +7,8 @@ import {
   ensureLikertInteractionForSlide,
 } from '../interactions.js';
 import { ensureFeedbackForSlide } from '../feedback.js';
-import { crossOrganizationScope } from '../scope.js';
+import { crossOrganizationScope, repoRootOf } from '../scope.js';
+import { toStorageContext } from '../backend-dispatch.js';
 
 /**
  * Get slides array from presentation, respecting i18n active language
@@ -47,20 +48,24 @@ function calculateNewSlideIndex(currentIndex, action, slideCount, gotoIndex) {
   return currentIndex;
 }
 
-export function setLiveSessionControlEnabled(repoRoot, sessionId, enabled) {
+export function setLiveSessionControlEnabled(scope, sessionId, enabled) {
+  // Presenter action: the scope states its organization.
+  toStorageContext(scope, 'setLiveSessionControlEnabled');
   // Keep sync API surface (called on user interaction)
   const s = getSessionSync(sessionId);
   if (!s) return null;
   s.controlEnabled = !!enabled;
   touchSessionSync(s);
-  broadcast(repoRoot, sessionId, 'controlEnabled', {
+  broadcast(scope, sessionId, 'controlEnabled', {
     controlEnabled: !!s.controlEnabled,
     updatedAt: Date.now(),
   }).catch(() => {});
   return { controlEnabled: !!s.controlEnabled };
 }
 
-export async function sendLiveSessionControlCommand(repoRoot, sessionId, cmd) {
+export async function sendLiveSessionControlCommand(scope, sessionId, cmd) {
+  // Presenter action: the scope states its organization.
+  toStorageContext(scope, 'sendLiveSessionControlCommand');
   const s = getSessionSync(sessionId);
   if (!s) return { ok: false, reason: 'not_found' };
   touchSessionSync(s);
@@ -79,14 +84,14 @@ export async function sendLiveSessionControlCommand(repoRoot, sessionId, cmd) {
     return { ok: false, reason: 'bad_slideIndex' };
 
   // Send control event to presenter so their UI updates
-  broadcast(repoRoot, sessionId, 'control', payload).catch(() => {});
+  broadcast(scope, sessionId, 'control', payload).catch(() => {});
 
   // OPTIMIZATION: Directly update session state so followers get immediate updates
   // instead of waiting for presenter window to process control event and post state.
   try {
     const presentationId = s.presentationId;
     const pres = await getPresentation(
-      crossOrganizationScope(repoRoot, 'live session control: the session id is the authorization'),
+      crossOrganizationScope(repoRootOf(scope), 'live session control: the session id is the authorization'),
       presentationId
     );
     if (pres) {
@@ -106,7 +111,7 @@ export async function sendLiveSessionControlCommand(repoRoot, sessionId, cmd) {
           const slideType = String(slide.type || '');
 
           // Update state and broadcast to all clients (including followers)
-          await updateLiveSessionState(repoRoot, sessionId, {
+          await updateLiveSessionState(scope, sessionId, {
             slideId,
             slideIndex: newIndex,
             slideType,
@@ -122,7 +127,7 @@ export async function sendLiveSessionControlCommand(repoRoot, sessionId, cmd) {
           if (kind && slideId) {
             try {
               if (kind === 'feedback') {
-                await ensureFeedbackForSlide(repoRoot, sessionId, {
+                await ensureFeedbackForSlide(scope, sessionId, {
                   presentationId,
                   slideId,
                 });
@@ -130,13 +135,13 @@ export async function sendLiveSessionControlCommand(repoRoot, sessionId, cmd) {
                 const optionCount = getOptionCountForSlide(slideType, slide);
                 if (optionCount > 0) {
                   if (kind === 'likert') {
-                    await ensureLikertInteractionForSlide(repoRoot, sessionId, {
+                    await ensureLikertInteractionForSlide(scope, sessionId, {
                       presentationId,
                       slideId,
                       optionCount,
                     });
                   } else {
-                    await ensurePollInteractionForSlide(repoRoot, sessionId, {
+                    await ensurePollInteractionForSlide(scope, sessionId, {
                       presentationId,
                       slideId,
                       optionCount,

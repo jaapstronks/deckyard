@@ -24,7 +24,7 @@ const TICK_MS = 2000;
 const groups = new Map();
 
 async function computeShared(g) {
-  const state = await getFollowStateForPresentation(g.repoRoot, g.presentationId);
+  const state = await getFollowStateForPresentation(followAudienceScope(g.repoRoot), g.presentationId);
   const pres = await getPresentationCached(followAudienceScope(g.repoRoot), g.presentationId);
   const capabilities = computeAudienceCapabilitiesFromState(state, pres);
   return {

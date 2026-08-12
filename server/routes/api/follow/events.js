@@ -1,7 +1,7 @@
 import { attachSessionSseClient } from '../../../storage/live-sessions/index.js';
 import { sseWrite } from '../../../utils/sse.js';
 import { guardSseConnection } from '../../../utils/sse-limiter.js';
-import { writeSseHeaders } from './helpers.js';
+import { followAudienceScope, writeSseHeaders } from './helpers.js';
 import { subscribeFollowStatus } from './status-ticker.js';
 
 export async function handleFollowEvents({ repoRoot, req, res }, presentationId) {
@@ -38,7 +38,7 @@ export async function handleFollowEvents({ repoRoot, req, res }, presentationId)
         detachSession();
         currentSessionId = state.sessionId;
         // This will also emit an initial `state` event.
-        detach = await attachSessionSseClient(repoRoot, state.sessionId, res);
+        detach = await attachSessionSseClient(followAudienceScope(repoRoot), state.sessionId, res);
       }
     } else {
       detachSession();

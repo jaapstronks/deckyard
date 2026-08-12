@@ -1,12 +1,22 @@
+import { toStorageContext } from '../backend-dispatch.js';
 import { LIVE_WINDOW_MS } from './constants.js';
 import { hydrateSessionsForPresentation } from './db.js';
 import { sessions } from './state.js';
 
+/**
+ * Capability-based read: the follow code resolved the presentation id, which
+ * makes it the authorization, so an audience scope may read cross-organization.
+ *
+ * @param {import('../scope.js').StorageScope} scope
+ * @param {string} presentationId
+ * @param {{liveWindowMs?: number}} [opts]
+ */
 export async function getFollowStateForPresentation(
-  repoRoot,
+  scope,
   presentationId,
   { liveWindowMs = LIVE_WINDOW_MS } = {}
 ) {
+  toStorageContext(scope, 'getFollowStateForPresentation', {}, { allowCrossOrganization: true });
   const pid = String(presentationId || '').trim();
   if (!pid)
     return {

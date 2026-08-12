@@ -1,4 +1,6 @@
 import { createFollowCode, FOLLOW_CODE_TTL_MS } from '../follow-codes.js';
+import { toStorageContext } from '../backend-dispatch.js';
+import { repoRootOf } from '../scope.js';
 import { TTL_MS } from './constants.js';
 import { sessions } from './state.js';
 import {
@@ -25,7 +27,7 @@ function areFollowCodesExpired(session) {
  * has to follow the link instead of typing a code. A code is only omitted when
  * minting returned nothing (the database is unavailable), never faked.
  *
- * @param {string} repoRoot
+ * @param {string|null} repoRoot - Disk path for the follow-code store (not a scope).
  * @param {string} presentationId
  * @returns {Promise<Object<string, string>>} Codes by language key.
  */
@@ -71,7 +73,15 @@ function ensureCleanupTimer() {
   }, 60 * 1000).unref?.();
 }
 
-export async function createLiveSession(repoRoot, { presentationId }) {
+/**
+ * Create (or resume) the live session for a deck. Presenter action: the scope
+ * must state its organization.
+ *
+ * @param {import('../scope.js').StorageScope} scope
+ * @param {{presentationId: string}} opts
+ */
+export async function createLiveSession(scope, { presentationId }) {
+  toStorageContext(scope, 'createLiveSession');
   ensureCleanupTimer();
   const presId = String(presentationId || '').trim();
   if (!presId) return null;
@@ -94,7 +104,7 @@ export async function createLiveSession(repoRoot, { presentationId }) {
     let followCodes = s.followCodes || {};
     if (areFollowCodesExpired(s)) {
       log.info(`[Follow Codes] Codes expired for session ${s.sessionId}, refreshing...`);
-      followCodes = await mintFollowCodes(repoRoot, presId);
+      followCodes = await mintFollowCodes(repoRootOf(scope), presId);
       s.followCodes = followCodes;
       s.followCodesCreatedAt = Date.now();
     }
@@ -109,7 +119,7 @@ export async function createLiveSession(repoRoot, { presentationId }) {
   }
 
   const sessionId = newSessionId();
-  const followCodes = await mintFollowCodes(repoRoot, presId);
+  const followCodes = await mintFollowCodes(repoRootOf(scope), presId);
   const now = Date.now();
 
   const s = {
@@ -140,11 +150,25 @@ export async function createLiveSession(repoRoot, { presentationId }) {
   };
 }
 
-export async function getLiveSession(repoRoot, sessionId) {
+/**
+ * Capability-based read: the session id is the authorization (see
+ * routes/api/live-session-audience.js), so an audience scope may read
+ * cross-organization.
+ *
+ * @param {import('../scope.js').StorageScope} scope
+ * @param {string} sessionId
+ */
+export async function getLiveSession(scope, sessionId) {
+  toStorageContext(scope, 'getLiveSession', {}, { allowCrossOrganization: true });
   return hydrateSession(sessionId);
 }
 
-export async function findMostRecentSessionForPresentation(repoRoot, presentationId) {
+/**
+ * @param {import('../scope.js').StorageScope} scope
+ * @param {string} presentationId
+ */
+export async function findMostRecentSessionForPresentation(scope, presentationId) {
+  toStorageContext(scope, 'findMostRecentSessionForPresentation', {}, { allowCrossOrganization: true });
   const pid = String(presentationId || '').trim();
   if (!pid) return null;
   await hydrateSessionsForPresentation(pid);
@@ -161,8 +185,13 @@ export async function findMostRecentSessionForPresentation(repoRoot, presentatio
   return best;
 }
 
-export async function touchLiveSession(repoRoot, sessionId) {
-  const s = await getLiveSession(repoRoot, sessionId);
+/**
+ * @param {import('../scope.js').StorageScope} scope
+ * @param {string} sessionId
+ */
+export async function touchLiveSession(scope, sessionId) {
+  toStorageContext(scope, 'touchLiveSession', {}, { allowCrossOrganization: true });
+  const s = await getLiveSession(scope, sessionId);
   if (!s) return null;
   s.lastActivityAt = Date.now();
   schedulePersist(s);

@@ -50,6 +50,11 @@ import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 const COMPANION_READ_REASON =
   'notes companion: the live-session id is the authorization';
 
+/** The scope every capability-based read in this module acts under. */
+function companionScope(repoRoot) {
+  return crossOrganizationScope(repoRoot, COMPANION_READ_REASON);
+}
+
 /**
  * Upper bound on one slide's notes from the companion. Well above any real
  * speaker note, well below the deck-size limit — so an oversized paste gets a
@@ -69,10 +74,10 @@ export const MAX_NOTES_LENGTH = 20000;
  * @returns {Promise<{session: Object, pres: Object}|null>}
  */
 async function resolveSessionDeck(repoRoot, sessionId) {
-  const session = await getLiveSession(repoRoot, sessionId);
+  const session = await getLiveSession(companionScope(repoRoot), sessionId);
   if (!session?.presentationId) return null;
   const pres = await getPresentation(
-    crossOrganizationScope(repoRoot, COMPANION_READ_REASON),
+    companionScope(repoRoot),
     session.presentationId
   );
   if (!pres) return null;
@@ -87,7 +92,7 @@ async function resolveSessionDeck(repoRoot, sessionId) {
  * in `live-sessions.js`.
  */
 async function handleSessionState({ repoRoot, res }, sessionId) {
-  const s = await getLiveSession(repoRoot, sessionId);
+  const s = await getLiveSession(companionScope(repoRoot), sessionId);
   if (!s) return notFound(res);
   serveJson(res, 200, {
     sessionId,
@@ -108,7 +113,7 @@ async function handleSessionState({ repoRoot, res }, sessionId) {
  * The session's SSE stream (state, controlEnabled, deckUpdated, branch).
  */
 async function handleSessionEvents({ repoRoot, req, res }, sessionId) {
-  const s = await getLiveSession(repoRoot, sessionId);
+  const s = await getLiveSession(companionScope(repoRoot), sessionId);
   if (!s) return notFound(res);
   // Cap unauthenticated, long-lived streams before opening one (DoS guard).
   if (!guardSseConnection(req, res)) return true;
@@ -119,7 +124,7 @@ async function handleSessionEvents({ repoRoot, req, res }, sessionId) {
     'X-Accel-Buffering': 'no',
   });
   res.write('\n');
-  await attachSessionSseClient(repoRoot, sessionId, res);
+  await attachSessionSseClient(companionScope(repoRoot), sessionId, res);
   return true;
 }
 

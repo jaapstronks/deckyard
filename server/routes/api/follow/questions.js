@@ -9,7 +9,7 @@ import {
   upvoteQuestion,
 } from '../../../storage/questions.js';
 import { normalizeLang } from '../../../utils/translation-status.js';
-import { computeAudienceCapabilitiesFromState, ensureQaDeviceCookie } from './helpers.js';
+import { computeAudienceCapabilitiesFromState, ensureQaDeviceCookie, followAudienceScope } from './helpers.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
 
 export async function handleFollowQuestions({ repoRoot, req, res }, presentationId) {
@@ -20,7 +20,7 @@ export async function handleFollowQuestions({ repoRoot, req, res }, presentation
     'follow-along audience: the live follow code is the authorization'
   );
   if (req.method === 'GET') {
-    const state = await getFollowStateForPresentation(repoRoot, presentationId);
+    const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
     const pres = await getPresentation(followScope, presentationId);
     const caps = computeAudienceCapabilitiesFromState(state, pres);
     if (state.status !== 'live' || !state.sessionId) {
@@ -56,7 +56,7 @@ export async function handleFollowQuestions({ repoRoot, req, res }, presentation
   }
 
   if (req.method === 'POST') {
-    const state = await getFollowStateForPresentation(repoRoot, presentationId);
+    const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
     if (state.status !== 'live' || !state.sessionId)
       return badRequest(res, 'Presentation is not live');
     const pres = await getPresentation(followScope, presentationId);
@@ -104,7 +104,7 @@ export async function handleFollowUpvote({ repoRoot, req, res }, presentationId,
     'follow-along audience: the live follow code is the authorization'
   );
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const state = await getFollowStateForPresentation(repoRoot, presentationId);
+  const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
   if (state.status !== 'live' || !state.sessionId)
     return badRequest(res, 'Presentation is not live');
   const pres = await getPresentation(followScope, presentationId);
@@ -142,7 +142,7 @@ export async function handleFollowCancel({ repoRoot, req, res }, presentationId,
     'follow-along audience: the live follow code is the authorization'
   );
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const state = await getFollowStateForPresentation(repoRoot, presentationId);
+  const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
   if (state.status !== 'live' || !state.sessionId)
     return badRequest(res, 'Presentation is not live');
   const pres = await getPresentation(followScope, presentationId);

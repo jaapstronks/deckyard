@@ -27,6 +27,8 @@ import { sql } from 'kysely';
 
 import { notifyLiveSessionInteractionState } from './live-sessions/index.js';
 import { maybeFireInteractionWebhook } from '../utils/webhooks.js';
+import { toStorageContext } from './backend-dispatch.js';
+import { repoRootOf } from './scope.js';
 import { withDbGuard } from './utils/db-guard.js';
 import {
   MAX_OPTIONS,
@@ -148,10 +150,10 @@ async function aggregateForDevice(slide, deviceId) {
   };
 }
 
-async function maybeBroadcast(repoRoot, sessionId, agg) {
+async function maybeBroadcast(scope, sessionId, agg) {
   // Fire and forget; this goes to presenter + follow (via attachSessionSseClient).
   try {
-    await notifyLiveSessionInteractionState(repoRoot, sessionId, agg);
+    await notifyLiveSessionInteractionState(scope, sessionId, agg);
   } catch {
     // ignore
   }
@@ -183,14 +185,14 @@ function sweepBroadcastStates() {
  * The aggregate is re-read at send time, so a coalesced broadcast always
  * carries the latest totals — including votes cast by another process.
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {string} slideId
  * @param {object} [opts]
  * @param {boolean} [opts.immediate]
  * @returns {void}
  */
-function scheduleInteractionBroadcast(repoRoot, sessionId, slideId, { immediate = false } = {}) {
+function scheduleInteractionBroadcast(scope, sessionId, slideId, { immediate = false } = {}) {
   const key = `${sessionId}\n${slideId}`;
   let b = broadcastStates.get(key);
   if (!b) {
@@ -203,7 +205,7 @@ function scheduleInteractionBroadcast(repoRoot, sessionId, slideId, { immediate 
     (async () => {
       const slide = await getInteractionSlide({ sessionId, slideId });
       if (!slide) return;
-      await maybeBroadcast(repoRoot, sessionId, await aggregateForDevice(slide, null));
+      await maybeBroadcast(scope, sessionId, await aggregateForDevice(slide, null));
     })().catch(() => {});
   };
   if (immediate) {
@@ -231,7 +233,7 @@ function scheduleInteractionBroadcast(repoRoot, sessionId, slideId, { immediate 
  * Create the interaction for a slide if it has none, and bring its kind and
  * option count up to date.
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
  * @param {'poll'|'likert'} [opts.type]
@@ -241,7 +243,7 @@ function scheduleInteractionBroadcast(repoRoot, sessionId, slideId, { immediate 
  * @returns {Promise<object|null>} The aggregate, or null when there is no such session.
  */
 async function ensureInteractionForSlide(
-  repoRoot,
+  scope,
   sessionId,
   { type = 'poll', slideId = '', optionCount = 0, defaultStatus = 'open' } = {}
 ) {
@@ -256,7 +258,7 @@ async function ensureInteractionForSlide(
   await pruneOutOfRangeVotes(slide.id, slide.optionCount);
 
   const agg = await aggregateForDevice(slide, null);
-  scheduleInteractionBroadcast(repoRoot, sessionId, slide.slideId);
+  scheduleInteractionBroadcast(scope, sessionId, slide.slideId);
   return agg;
 }
 
@@ -264,7 +266,7 @@ async function ensureInteractionForSlide(
  * Read the aggregate for a slide, optionally reconciling the option count with
  * what the deck says today.
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
  * @param {string} [opts.slideId]
@@ -273,7 +275,7 @@ async function ensureInteractionForSlide(
  * @returns {Promise<object|null>}
  */
 async function getInteractionAggregate(
-  repoRoot,
+  scope,
   sessionId,
   { slideId = '', deviceId = null, optionCount = null } = {}
 ) {
@@ -292,13 +294,13 @@ async function getInteractionAggregate(
  * The interaction is created on the fly when a voter arrives before the
  * presenter's ensure call, so the first voter never needs a presenter action.
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
  * @returns {Promise<{ok: true, aggregate: object}|{ok: false, reason: string}>}
  */
 async function voteInteraction(
-  repoRoot,
+  scope,
   sessionId,
   { type = 'poll', slideId = '', deviceId = '', optionIndex = 0, optionCount = 0 } = {}
 ) {
@@ -339,20 +341,20 @@ async function voteInteraction(
   const touched = (await updateInteractionSlide({ sessionId, slideId: sid })) || slide;
 
   const agg = await aggregateForDevice(touched, did);
-  scheduleInteractionBroadcast(repoRoot, sessionId, sid);
+  scheduleInteractionBroadcast(scope, sessionId, sid);
   return { ok: true, aggregate: agg };
 }
 
 /**
  * Open or close an interaction (presenter action), firing the close webhook.
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
  * @returns {Promise<object|null>}
  */
 async function setInteractionStatus(
-  repoRoot,
+  scope,
   sessionId,
   { slideId = '', status = 'open', optionCount = null } = {}
 ) {
@@ -369,14 +371,14 @@ async function setInteractionStatus(
   if (optionCount != null) await pruneOutOfRangeVotes(slide.id, slide.optionCount);
 
   const agg = await aggregateForDevice(slide, null);
-  scheduleInteractionBroadcast(repoRoot, sessionId, slide.slideId, { immediate: true });
+  scheduleInteractionBroadcast(scope, sessionId, slide.slideId, { immediate: true });
 
   if (existing.status !== 'closed' && slide.status === 'closed') {
     const webhookEvent =
       slide.type === 'likert'
         ? 'interaction.likert_closed'
         : 'interaction.poll_closed';
-    maybeFireInteractionWebhook(repoRoot, {
+    maybeFireInteractionWebhook(repoRootOf(scope), {
       event: webhookEvent,
       sessionId,
       interaction: agg,
@@ -389,12 +391,12 @@ async function setInteractionStatus(
 /**
  * Clear every vote on an interaction (presenter action).
  *
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
  * @returns {Promise<object|null>}
  */
-async function resetInteraction(repoRoot, sessionId, { slideId = '', optionCount = null } = {}) {
+async function resetInteraction(scope, sessionId, { slideId = '', optionCount = null } = {}) {
   const slide = await updateInteractionSlide({
     sessionId,
     slideId,
@@ -407,50 +409,65 @@ async function resetInteraction(repoRoot, sessionId, { slideId = '', optionCount
   });
 
   const agg = await aggregateForDevice(slide, null);
-  scheduleInteractionBroadcast(repoRoot, sessionId, slide.slideId, { immediate: true });
+  scheduleInteractionBroadcast(scope, sessionId, slide.slideId, { immediate: true });
   return agg;
 }
 
 // ---- Poll wrappers (back-compat) ----
+//
+// The audience half (ensure/get/vote) is capability-based — the live session
+// id resolved from a public follow code is the authorization, so an audience
+// scope may act cross-organization (see routes/api/follow/helpers.js). The
+// presenter half (set status/reset) requires an organization-scoped scope.
 
-export async function ensurePollInteractionForSlide(repoRoot, sessionId, opts = {}) {
-  return ensureInteractionForSlide(repoRoot, sessionId, { ...opts, type: 'poll' });
+export async function ensurePollInteractionForSlide(scope, sessionId, opts = {}) {
+  toStorageContext(scope, 'ensurePollInteractionForSlide', {}, { allowCrossOrganization: true });
+  return ensureInteractionForSlide(scope, sessionId, { ...opts, type: 'poll' });
 }
 
-export async function getPollInteractionAggregate(repoRoot, sessionId, opts = {}) {
-  return getInteractionAggregate(repoRoot, sessionId, opts);
+export async function getPollInteractionAggregate(scope, sessionId, opts = {}) {
+  toStorageContext(scope, 'getPollInteractionAggregate', {}, { allowCrossOrganization: true });
+  return getInteractionAggregate(scope, sessionId, opts);
 }
 
-export async function votePollInteraction(repoRoot, sessionId, opts = {}) {
-  return voteInteraction(repoRoot, sessionId, { ...opts, type: 'poll' });
+export async function votePollInteraction(scope, sessionId, opts = {}) {
+  toStorageContext(scope, 'votePollInteraction', {}, { allowCrossOrganization: true });
+  return voteInteraction(scope, sessionId, { ...opts, type: 'poll' });
 }
 
-export async function setPollInteractionStatus(repoRoot, sessionId, opts = {}) {
-  return setInteractionStatus(repoRoot, sessionId, opts);
+export async function setPollInteractionStatus(scope, sessionId, opts = {}) {
+  toStorageContext(scope, 'setPollInteractionStatus');
+  return setInteractionStatus(scope, sessionId, opts);
 }
 
-export async function resetPollInteraction(repoRoot, sessionId, opts = {}) {
-  return resetInteraction(repoRoot, sessionId, opts);
+export async function resetPollInteraction(scope, sessionId, opts = {}) {
+  toStorageContext(scope, 'resetPollInteraction');
+  return resetInteraction(scope, sessionId, opts);
 }
 
 // ---- Likert (new) ----
 
-export async function ensureLikertInteractionForSlide(repoRoot, sessionId, opts = {}) {
-  return ensureInteractionForSlide(repoRoot, sessionId, { ...opts, type: 'likert' });
+export async function ensureLikertInteractionForSlide(scope, sessionId, opts = {}) {
+  toStorageContext(scope, 'ensureLikertInteractionForSlide', {}, { allowCrossOrganization: true });
+  return ensureInteractionForSlide(scope, sessionId, { ...opts, type: 'likert' });
 }
 
-export async function getLikertInteractionAggregate(repoRoot, sessionId, opts = {}) {
-  return getInteractionAggregate(repoRoot, sessionId, opts);
+export async function getLikertInteractionAggregate(scope, sessionId, opts = {}) {
+  toStorageContext(scope, 'getLikertInteractionAggregate', {}, { allowCrossOrganization: true });
+  return getInteractionAggregate(scope, sessionId, opts);
 }
 
-export async function voteLikertInteraction(repoRoot, sessionId, opts = {}) {
-  return voteInteraction(repoRoot, sessionId, { ...opts, type: 'likert' });
+export async function voteLikertInteraction(scope, sessionId, opts = {}) {
+  toStorageContext(scope, 'voteLikertInteraction', {}, { allowCrossOrganization: true });
+  return voteInteraction(scope, sessionId, { ...opts, type: 'likert' });
 }
 
-export async function setLikertInteractionStatus(repoRoot, sessionId, opts = {}) {
-  return setInteractionStatus(repoRoot, sessionId, opts);
+export async function setLikertInteractionStatus(scope, sessionId, opts = {}) {
+  toStorageContext(scope, 'setLikertInteractionStatus');
+  return setInteractionStatus(scope, sessionId, opts);
 }
 
-export async function resetLikertInteraction(repoRoot, sessionId, opts = {}) {
-  return resetInteraction(repoRoot, sessionId, opts);
+export async function resetLikertInteraction(scope, sessionId, opts = {}) {
+  toStorageContext(scope, 'resetLikertInteraction');
+  return resetInteraction(scope, sessionId, opts);
 }
