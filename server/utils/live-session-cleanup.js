@@ -27,6 +27,7 @@
  */
 
 import { cleanupExpiredCodes } from '../storage/follow-codes.js';
+import { crossOrganizationScope } from '../storage/scope.js';
 import { sweepExpiredSessions } from '../storage/live-sessions/db.js';
 import { createLogger } from './logger.js';
 
@@ -43,7 +44,9 @@ const log = createLogger('live-session-cleanup');
  */
 export async function sweepExpiredLiveSessions() {
   const sessions = await sweepExpiredSessions();
-  const followCodes = await cleanupExpiredCodes();
+  const followCodes = await cleanupExpiredCodes(
+    crossOrganizationScope(null, 'live-session sweep: expired follow codes are instance-wide maintenance')
+  );
   return { sessions, followCodes };
 }
 

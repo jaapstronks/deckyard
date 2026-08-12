@@ -75,7 +75,7 @@ function csvEscapeCell(v) {
 }
 
 // POST /api/live-sessions - Create/resume a live session (deck-write only)
-async function handleLiveSessionCreate({ repoRoot, req, res, authedUser }) {
+async function handleLiveSessionCreate({ repoRoot, storageScope, req, res, authedUser }) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -91,7 +91,7 @@ async function handleLiveSessionCreate({ repoRoot, req, res, authedUser }) {
     res,
   });
   if (!pres) return true;
-  const created = await createLiveSession(repoRoot, {
+  const created = await createLiveSession(storageScope, {
     presentationId: presentationId.trim(),
   });
   if (!created)
@@ -104,8 +104,8 @@ async function handleLiveSessionCreate({ repoRoot, req, res, authedUser }) {
 // session-existence check answers 404 before the method decision (an unknown
 // session must not learn which methods exist), so the whole path stays one
 // no-method handler (route-dispatch.md, guard-before-method exception).
-async function handleLiveSessionStatePush({ repoRoot, req, res, authedUser }, sessionId) {
-  const s = await getLiveSession(repoRoot, sessionId);
+async function handleLiveSessionStatePush({ repoRoot, storageScope, req, res, authedUser }, sessionId) {
+  const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   // GET is capability-based (the session id is the authorization) and is
   // served from the public block — see routes/api/live-session-audience.js.
@@ -137,7 +137,7 @@ async function handleLiveSessionStatePush({ repoRoot, req, res, authedUser }, se
     const stepParagraphs = getOptionalBoolean(body, 'stepParagraphs') ?? undefined;
     const updatedAt =
       body?.updatedAt != null ? Number(body.updatedAt) : Date.now();
-    const next = await updateLiveSessionState(repoRoot, sessionId, {
+    const next = await updateLiveSessionState(storageScope, sessionId, {
       slideId,
       slideIndex,
       slideType,
@@ -155,19 +155,19 @@ async function handleLiveSessionStatePush({ repoRoot, req, res, authedUser }, se
         // validated to equal s.presentationId), avoiding a second read.
         const slide = pres ? findSlideById(pres, slideId) : null;
         if (kind === 'feedback') {
-          await ensureFeedbackForSlide(repoRoot, sessionId, {
+          await ensureFeedbackForSlide(storageScope, sessionId, {
             slideId,
           });
         } else {
           const optionCount = getOptionCountForSlide(slideType, slide);
           if (optionCount > 0) {
             if (kind === 'likert') {
-              await ensureLikertInteractionForSlide(repoRoot, sessionId, {
+              await ensureLikertInteractionForSlide(storageScope, sessionId, {
                 slideId,
                 optionCount,
               });
             } else {
-              await ensurePollInteractionForSlide(repoRoot, sessionId, {
+              await ensurePollInteractionForSlide(storageScope, sessionId, {
                 slideId,
                 optionCount,
               });
@@ -186,8 +186,8 @@ async function handleLiveSessionStatePush({ repoRoot, req, res, authedUser }, se
 }
 
 // POST /api/live-sessions/:id/interactions/:slideId/(open|close|reset)
-async function handleLiveSessionInteractionAction({ repoRoot, res, authedUser }, sessionId, slideId, action) {
-  const s = await getLiveSession(repoRoot, sessionId);
+async function handleLiveSessionInteractionAction({ repoRoot, storageScope, res, authedUser }, sessionId, slideId, action) {
+  const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   // Opening/closing/resetting an interaction is a presenter action.
   const pres = await requirePresentationControl({
@@ -213,16 +213,16 @@ async function handleLiveSessionInteractionAction({ repoRoot, res, authedUser },
 
   // Ensure interaction exists first.
   if (kind === 'feedback') {
-    await ensureFeedbackForSlide(repoRoot, sessionId, {
+    await ensureFeedbackForSlide(storageScope, sessionId, {
       slideId,
     });
   } else if (kind === 'likert') {
-    await ensureLikertInteractionForSlide(repoRoot, sessionId, {
+    await ensureLikertInteractionForSlide(storageScope, sessionId, {
       slideId,
       optionCount,
     });
   } else {
-    await ensurePollInteractionForSlide(repoRoot, sessionId, {
+    await ensurePollInteractionForSlide(storageScope, sessionId, {
       slideId,
       optionCount,
     });
@@ -231,13 +231,13 @@ async function handleLiveSessionInteractionAction({ repoRoot, res, authedUser },
   if (action === 'reset') {
     const agg =
       kind === 'feedback'
-        ? await resetFeedback(repoRoot, sessionId, { slideId })
+        ? await resetFeedback(storageScope, sessionId, { slideId })
         : kind === 'likert'
-          ? await resetLikertInteraction(repoRoot, sessionId, {
+          ? await resetLikertInteraction(storageScope, sessionId, {
               slideId,
               optionCount,
             })
-          : await resetPollInteraction(repoRoot, sessionId, {
+          : await resetPollInteraction(storageScope, sessionId, {
               slideId,
               optionCount,
             });
@@ -247,17 +247,17 @@ async function handleLiveSessionInteractionAction({ repoRoot, res, authedUser },
 
   const agg =
     kind === 'feedback'
-      ? await setFeedbackStatus(repoRoot, sessionId, {
+      ? await setFeedbackStatus(storageScope, sessionId, {
           slideId,
           status: action === 'close' ? 'closed' : 'open',
         })
       : kind === 'likert'
-        ? await setLikertInteractionStatus(repoRoot, sessionId, {
+        ? await setLikertInteractionStatus(storageScope, sessionId, {
             slideId,
             status: action === 'close' ? 'closed' : 'open',
             optionCount,
           })
-        : await setPollInteractionStatus(repoRoot, sessionId, {
+        : await setPollInteractionStatus(storageScope, sessionId, {
             slideId,
             status: action === 'close' ? 'closed' : 'open',
             optionCount,
@@ -269,7 +269,7 @@ async function handleLiveSessionInteractionAction({ repoRoot, res, authedUser },
     const onClose = String(content?.onClose || 'stay').trim();
     const onCloseTarget = String(content?.onCloseTarget || '').trim();
     if (onClose !== 'stay') {
-      broadcastBranch(repoRoot, sessionId, {
+      broadcastBranch(storageScope, sessionId, {
         slideId,
         onClose,
         onCloseTarget,
@@ -283,8 +283,8 @@ async function handleLiveSessionInteractionAction({ repoRoot, res, authedUser },
 
 // GET /api/live-sessions/:id/feedback/:slideId.(csv|json) - Export feedback
 // (audience PII, deck-write only)
-async function handleLiveSessionFeedbackExport({ repoRoot, res, authedUser }, sessionId, slideId, fmt) {
-  const s = await getLiveSession(repoRoot, sessionId);
+async function handleLiveSessionFeedbackExport({ repoRoot, storageScope, res, authedUser }, sessionId, slideId, fmt) {
+  const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   // Feedback entries are audience PII (free text + deviceId) → deck-write only.
   const pres = await requirePresentationControl({
@@ -299,7 +299,7 @@ async function handleLiveSessionFeedbackExport({ repoRoot, res, authedUser }, se
   if (liveInteractionKind(String(slide?.type || '')) !== 'feedback')
     return badRequest(res, 'slide is not a feedback slide');
 
-  const entries = await listFeedbackEntries(repoRoot, sessionId, { slideId });
+  const entries = await listFeedbackEntries(storageScope, sessionId, { slideId });
   if (fmt === 'json') {
     serveJson(res, 200, {
       ok: true,
@@ -340,8 +340,8 @@ async function handleLiveSessionFeedbackExport({ repoRoot, res, authedUser }, se
 }
 
 // POST /api/live-sessions/:id/control/enable - Enable remote control
-async function handleLiveSessionControlEnable({ repoRoot, res, authedUser }, sessionId) {
-  const s = await getLiveSession(repoRoot, sessionId);
+async function handleLiveSessionControlEnable({ repoRoot, storageScope, res, authedUser }, sessionId) {
+  const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   const pres = await requirePresentationControl({
     repoRoot,
@@ -350,14 +350,14 @@ async function handleLiveSessionControlEnable({ repoRoot, res, authedUser }, ses
     res,
   });
   if (!pres) return true;
-  const next = setLiveSessionControlEnabled(repoRoot, sessionId, true);
+  const next = setLiveSessionControlEnabled(storageScope, sessionId, true);
   serveJson(res, 200, next);
   return true;
 }
 
 // POST /api/live-sessions/:id/control/disable - Disable remote control
-async function handleLiveSessionControlDisable({ repoRoot, res, authedUser }, sessionId) {
-  const s = await getLiveSession(repoRoot, sessionId);
+async function handleLiveSessionControlDisable({ repoRoot, storageScope, res, authedUser }, sessionId) {
+  const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   const pres = await requirePresentationControl({
     repoRoot,
@@ -366,14 +366,14 @@ async function handleLiveSessionControlDisable({ repoRoot, res, authedUser }, se
     res,
   });
   if (!pres) return true;
-  const next = setLiveSessionControlEnabled(repoRoot, sessionId, false);
+  const next = setLiveSessionControlEnabled(storageScope, sessionId, false);
   serveJson(res, 200, next);
   return true;
 }
 
 // POST /api/live-sessions/:id/control - Send a remote-control command
-async function handleLiveSessionControlCommand({ repoRoot, req, res, authedUser }, sessionId) {
-  const s = await getLiveSession(repoRoot, sessionId);
+async function handleLiveSessionControlCommand({ repoRoot, storageScope, req, res, authedUser }, sessionId) {
+  const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   const pres = await requirePresentationControl({
     repoRoot,
@@ -385,7 +385,7 @@ async function handleLiveSessionControlCommand({ repoRoot, req, res, authedUser 
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const result = await sendLiveSessionControlCommand(repoRoot, sessionId, body);
+  const result = await sendLiveSessionControlCommand(storageScope, sessionId, body);
   if (!result.ok) {
     if (result.reason === 'disabled')
       return unauthorized(

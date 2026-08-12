@@ -85,7 +85,7 @@ export async function handlePresentationAnalyze(
   const ctx = getCtx(authedUser);
 
   // Get AI identity from settings (custom name/email if configured)
-  const aiIdentity = await getAiIdentity(repoRoot);
+  const aiIdentity = await getAiIdentity(storageScope);
 
   try {
     // Run analysis

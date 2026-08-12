@@ -1,7 +1,7 @@
 import { attachQuestionsSseClient } from '../../../storage/questions.js';
 import { sseWrite } from '../../../utils/sse.js';
 import { guardSseConnection } from '../../../utils/sse-limiter.js';
-import { ensureQaDeviceCookie, writeSseHeaders } from './helpers.js';
+import { ensureQaDeviceCookie, followAudienceScope, writeSseHeaders } from './helpers.js';
 import { subscribeFollowStatus } from './status-ticker.js';
 
 export async function handleFollowQuestionsEvents(
@@ -47,7 +47,7 @@ export async function handleFollowQuestionsEvents(
       if (state.sessionId !== currentSessionId) {
         detachSession();
         currentSessionId = state.sessionId;
-        detach = await attachQuestionsSseClient(repoRoot, currentSessionId, res);
+        detach = await attachQuestionsSseClient(followAudienceScope(repoRoot), currentSessionId, res);
       }
     } else {
       detachSession();

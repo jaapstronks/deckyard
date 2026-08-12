@@ -111,7 +111,6 @@ export async function updatePresentation(storageScope, id, body, opts) {
   // Validate up front: the pre-save reads below would otherwise be the first
   // thing to notice a caller that stated no organization.
   toStorageContext(storageScope, 'updatePresentation', { actorEmail: opts?.actorEmail });
-  const repoRoot = repoRootOf(storageScope);
   // Server-as-collaborator seam: capture the pre-save state first. It is
   // the base the caller's write was computed against, and live-apply's
   // three-way diff needs it to leave concurrent client edits alone.
@@ -161,7 +160,7 @@ export async function updatePresentation(storageScope, id, body, opts) {
   // live presenting clients. Fire-and-forget: a no-op without a live session.
   if (result && result.ok !== false) {
     import('../live-sessions/sse.js')
-      .then((m) => m.notifyDeckUpdatedForPresentation(repoRoot, id))
+      .then((m) => m.notifyDeckUpdatedForPresentation(storageScope, id))
       .catch(() => {});
     // Collab live edits, server-as-collaborator seam (ADR 001 §6): when the
     // deck's collab doc is actively loaded, apply this just-stored save to

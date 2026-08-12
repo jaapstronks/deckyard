@@ -163,7 +163,7 @@ async function handleAdminUserCreate({ repoRoot, storageScope: ctx, req, res, au
       const setupUrl = buildSetupUrl(req, result.invitationToken);
 
       // Get default locale for invitations
-      const locale = await getEmailDefaultLocale(repoRoot).catch(() => 'en');
+      const locale = await getEmailDefaultLocale(ctx).catch(() => 'en');
 
       const sendResult = await sendUserInvitationEmail({
         recipientEmail: email,
@@ -345,7 +345,7 @@ async function handleAdminUserResendInvitation({ repoRoot, storageScope: ctx, re
       const setupUrl = buildSetupUrl(req, result.invitationToken);
 
       // Get default locale for invitations
-      const locale = await getEmailDefaultLocale(repoRoot).catch(() => 'en');
+      const locale = await getEmailDefaultLocale(ctx).catch(() => 'en');
 
       // Use activation reminder template since this is a resend
       const sendResult = await sendActivationReminderEmail({

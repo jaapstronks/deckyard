@@ -27,7 +27,7 @@ import { getUserSettings } from '../../../storage/settings.js';
 import { getCtx } from './comments-shared.js';
 
 export async function handlePresentationSubscription(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'GET' && req.method !== 'PUT') {
@@ -45,7 +45,7 @@ export async function handlePresentationSubscription(
 
   if (req.method === 'GET') {
     const sub = await getSubscription(id, authedUser.email, ctx);
-    const settings = await getUserSettings(repoRoot, authedUser.email);
+    const settings = await getUserSettings(storageScope, authedUser.email);
     serveJson(res, 200, {
       ok: true,
       level: sub?.level || null,

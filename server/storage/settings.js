@@ -3,10 +3,12 @@
  *
  * Both persist in PostgreSQL (see migration 059): the whole instance settings
  * object lives as one jsonb bag in the singleton `app_settings` row, and each
- * user's preferences as one jsonb bag in `user_settings`. The facade is
- * unchanged from the file-backed version —
- * every function still takes `repoRoot` first for call-site stability — but
- * that argument is now unused: persistence no longer touches disk. Storage is
+ * user's preferences as one jsonb bag in `user_settings`. Every function takes
+ * a `StorageScope` first (docs/reference/storage-scope.md). Both tables are
+ * instance-level rather than organization-scoped, so the reads accept a
+ * cross-organization scope — public pages, pre-auth flows and background jobs
+ * legitimately read instance configuration. The writes come from
+ * authenticated routes and validate strictly. Storage is
  * store-raw / normalize-on-read, so all the normalization below is the single
  * source of truth for shape regardless of what a migrate-imported row holds.
  *
@@ -36,6 +38,7 @@
  */
 
 import { sql } from 'kysely';
+import { toStorageContext } from './backend-dispatch.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
 import { DEFAULT_AI_NAME, DEFAULT_AI_EMAIL } from '../../shared/constants/ai.js';
@@ -298,7 +301,8 @@ function normalizeDayOfWeek(v) {
   return n;
 }
 
-export async function getAppSettings(repoRoot) {
+export async function getAppSettings(scope) {
+  toStorageContext(scope, 'getAppSettings', {}, { allowCrossOrganization: true });
   const raw = await withDbGuard(null, async (db) => {
     const row = await db.selectFrom('app_settings').select('settings').executeTakeFirst();
     // jsonb reads back parsed; guard against a null column.
@@ -414,8 +418,10 @@ export async function getAppSettings(repoRoot) {
   };
 }
 
-export async function writeAppSettings(repoRoot, next) {
-  const prev = await getAppSettings(repoRoot);
+export async function writeAppSettings(scope, next) {
+  // Admin action: the scope states its organization.
+  toStorageContext(scope, 'writeAppSettings');
+  const prev = await getAppSettings(scope);
   const defaults = defaultAppSettings();
 
   const supportedSlideLangs = normalizeSupportedLangList(
@@ -662,7 +668,8 @@ function normalizeThickness(v, fallback = 4) {
   return Math.min(n, 10);
 }
 
-export async function getUserSettings(repoRoot, email) {
+export async function getUserSettings(scope, email) {
+  toStorageContext(scope, 'getUserSettings', {}, { allowCrossOrganization: true });
   const key = userEmailKey(email);
   return loadUserSettings(key, await resolveSettingsUserId(key));
 }
@@ -757,7 +764,9 @@ async function loadUserSettings(key, userId) {
   };
 }
 
-export async function writeUserSettings(repoRoot, email, next) {
+export async function writeUserSettings(scope, email, next) {
+  // Written from authenticated routes only: the scope states its organization.
+  toStorageContext(scope, 'writeUserSettings');
   const key = userEmailKey(email);
   const userId = await resolveSettingsUserId(key);
   const prev = await loadUserSettings(key, userId);
@@ -919,11 +928,12 @@ export async function writeUserSettings(repoRoot, email, next) {
 /**
  * Get AI assistant identity from app settings.
  * Returns { name, email } with fallbacks to defaults.
- * @param {string} repoRoot - Repository root path
+ * @param {import('./scope.js').StorageScope} scope
  * @returns {Promise<{ name: string, email: string }>}
  */
-export async function getAiIdentity(repoRoot) {
-  const settings = await getAppSettings(repoRoot);
+export async function getAiIdentity(scope) {
+  toStorageContext(scope, 'getAiIdentity', {}, { allowCrossOrganization: true });
+  const settings = await getAppSettings(scope);
   return {
     name: settings.aiAssistant?.name || DEFAULT_AI_NAME,
     email: settings.aiAssistant?.email || DEFAULT_AI_EMAIL,
@@ -933,11 +943,12 @@ export async function getAiIdentity(repoRoot) {
 /**
  * Get email sender identity from app settings.
  * Returns { email, name } with fallbacks to env vars then defaults.
- * @param {string} repoRoot - Repository root path
+ * @param {import('./scope.js').StorageScope} scope
  * @returns {Promise<{ email: string, name: string }>}
  */
-export async function getEmailSender(repoRoot) {
-  const settings = await getAppSettings(repoRoot);
+export async function getEmailSender(scope) {
+  toStorageContext(scope, 'getEmailSender', {}, { allowCrossOrganization: true });
+  const settings = await getAppSettings(scope);
   return {
     email:
       settings.emailSender?.email ||
@@ -955,11 +966,12 @@ export async function getEmailSender(repoRoot) {
  *
  * Precedence: the admin-configured `defaultThemeId` app setting, then the
  * `DEFAULT_THEME` env var (fork seam, e.g. CIIIC), then the built-in default.
- * @param {string} repoRoot - Repository root path
+ * @param {import('./scope.js').StorageScope} scope
  * @returns {Promise<string>}
  */
-export async function getDefaultThemeId(repoRoot) {
-  const settings = await getAppSettings(repoRoot);
+export async function getDefaultThemeId(scope) {
+  toStorageContext(scope, 'getDefaultThemeId', {}, { allowCrossOrganization: true });
+  const settings = await getAppSettings(scope);
   return (
     settings.defaultThemeId ||
     normalizeThemeId(process.env.DEFAULT_THEME) ||
@@ -969,11 +981,12 @@ export async function getDefaultThemeId(repoRoot) {
 
 /**
  * Get session duration in days from app settings.
- * @param {string} repoRoot - Repository root path
+ * @param {import('./scope.js').StorageScope} scope
  * @returns {Promise<number>}
  */
-export async function getSessionDurationDays(repoRoot) {
-  const settings = await getAppSettings(repoRoot);
+export async function getSessionDurationDays(scope) {
+  toStorageContext(scope, 'getSessionDurationDays', {}, { allowCrossOrganization: true });
+  const settings = await getAppSettings(scope);
   return settings.sessionDurationDays || 30;
 }
 
@@ -985,11 +998,12 @@ export async function getSessionDurationDays(repoRoot) {
  * (see {@link seedRetentionDefaults}). `getAppSettings` already normalizes the
  * stored bag to defined, in-range values, so this is a thin accessor that keeps
  * the retention job from reaching into the settings shape directly.
- * @param {string} repoRoot - Repository root path
+ * @param {import('./scope.js').StorageScope} scope
  * @returns {Promise<{ sessionDataDays: number, ipAnonymizationDays: number }>}
  */
-export async function getAnalyticsRetention(repoRoot) {
-  const settings = await getAppSettings(repoRoot);
+export async function getAnalyticsRetention(scope) {
+  toStorageContext(scope, 'getAnalyticsRetention', {}, { allowCrossOrganization: true });
+  const settings = await getAppSettings(scope);
   const seed = seedRetentionDefaults();
   return {
     sessionDataDays: settings.analytics?.retention?.sessionDataDays ?? seed.sessionDataDays,

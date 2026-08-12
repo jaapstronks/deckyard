@@ -13,6 +13,7 @@ import { deleteOldViewSessions, anonymizeOldIpAddresses } from '../storage/analy
 import { deleteOldSlideViews } from '../storage/analytics/slide-views.js';
 import { anonymizeExpiredLeads, anonymizeOldLeadIpAddresses } from '../storage/leads.js';
 import { getAnalyticsRetention } from '../storage/settings.js';
+import { crossOrganizationScope } from '../storage/scope.js';
 
 /**
  * Run the analytics cleanup job.
@@ -25,7 +26,9 @@ import { getAnalyticsRetention } from '../storage/settings.js';
  * @returns {Promise<{deletedSessions: number, deletedSlideViews: number, anonymizedIps: number, anonymizedLeads: number, anonymizedLeadIps: number}>}
  */
 async function runAnalyticsCleanup(overrides = {}) {
-  const retention = await getAnalyticsRetention(null);
+  const retention = await getAnalyticsRetention(
+    crossOrganizationScope(null, 'analytics retention job: instance-wide cleanup')
+  );
   const retentionDays = overrides.retentionDays ?? retention.sessionDataDays;
   const ipAnonymizationDays = overrides.ipAnonymizationDays ?? retention.ipAnonymizationDays;
 

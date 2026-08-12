@@ -51,7 +51,7 @@ export async function handleFollowInteractionsCurrent(
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
   try {
     const lang = normalizeLang(url.searchParams.get('lang'));
-    const state = await getFollowStateForPresentation(repoRoot, presentationId);
+    const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
     const pres0 = await getPresentationCached(followAudienceScope(repoRoot), presentationId);
     const caps = computeAudienceCapabilitiesFromState(state, pres0);
 
@@ -110,16 +110,16 @@ export async function handleFollowInteractionsCurrent(
 
     // Ensure a session-scoped interaction exists even before the first vote.
     if (type === 'feedback') {
-      await ensureFeedbackForSlide(repoRoot, state.sessionId, {
+      await ensureFeedbackForSlide(followAudienceScope(repoRoot), state.sessionId, {
         slideId,
       });
     } else if (type === 'likert') {
-      await ensureLikertInteractionForSlide(repoRoot, state.sessionId, {
+      await ensureLikertInteractionForSlide(followAudienceScope(repoRoot), state.sessionId, {
         slideId,
         optionCount,
       });
     } else {
-      await ensurePollInteractionForSlide(repoRoot, state.sessionId, {
+      await ensurePollInteractionForSlide(followAudienceScope(repoRoot), state.sessionId, {
         slideId,
         optionCount,
       });
@@ -127,17 +127,17 @@ export async function handleFollowInteractionsCurrent(
 
     const agg =
       type === 'feedback'
-        ? await getFeedbackAggregate(repoRoot, state.sessionId, {
+        ? await getFeedbackAggregate(followAudienceScope(repoRoot), state.sessionId, {
             slideId,
             deviceId: dev.id,
           })
         : type === 'likert'
-          ? await getLikertInteractionAggregate(repoRoot, state.sessionId, {
+          ? await getLikertInteractionAggregate(followAudienceScope(repoRoot), state.sessionId, {
               slideId,
               deviceId: dev.id,
               optionCount,
             })
-          : await getPollInteractionAggregate(repoRoot, state.sessionId, {
+          : await getPollInteractionAggregate(followAudienceScope(repoRoot), state.sessionId, {
               slideId,
               deviceId: dev.id,
               optionCount,
@@ -188,7 +188,7 @@ export async function handleFollowInteractionState(
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
   try {
-    const state = await getFollowStateForPresentation(repoRoot, presentationId);
+    const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
     const pres = await getPresentationCached(followAudienceScope(repoRoot), presentationId);
     const caps = computeAudienceCapabilitiesFromState(state, pres);
     const dev = ensureInteractionDeviceCookie(req);
@@ -214,17 +214,17 @@ export async function handleFollowInteractionState(
     const optionCount = getOptionCountForSlide(slideType, slide);
     const agg =
       type === 'feedback'
-        ? await getFeedbackAggregate(repoRoot, state.sessionId, {
+        ? await getFeedbackAggregate(followAudienceScope(repoRoot), state.sessionId, {
             slideId: requested,
             deviceId: dev.id,
           })
         : type === 'likert'
-          ? await getLikertInteractionAggregate(repoRoot, state.sessionId, {
+          ? await getLikertInteractionAggregate(followAudienceScope(repoRoot), state.sessionId, {
               slideId: requested,
               deviceId: dev.id,
               optionCount,
             })
-          : await getPollInteractionAggregate(repoRoot, state.sessionId, {
+          : await getPollInteractionAggregate(followAudienceScope(repoRoot), state.sessionId, {
               slideId: requested,
               deviceId: dev.id,
               optionCount,
@@ -250,7 +250,7 @@ export async function handleFollowInteractionVote(
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   try {
-    const state = await getFollowStateForPresentation(repoRoot, presentationId);
+    const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
     if (state.status !== 'live' || !state.sessionId)
       return badRequest(res, 'Presentation is not live');
 
@@ -290,13 +290,13 @@ export async function handleFollowInteractionVote(
 
     const result =
       type === 'likert'
-        ? await voteLikertInteraction(repoRoot, state.sessionId, {
+        ? await voteLikertInteraction(followAudienceScope(repoRoot), state.sessionId, {
             slideId: requested,
             deviceId: dev.id,
             optionIndex,
             optionCount,
           })
-        : await votePollInteraction(repoRoot, state.sessionId, {
+        : await votePollInteraction(followAudienceScope(repoRoot), state.sessionId, {
             slideId: requested,
             deviceId: dev.id,
             optionIndex,
@@ -332,7 +332,7 @@ export async function handleFollowInteractionFeedback(
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   try {
-    const state = await getFollowStateForPresentation(repoRoot, presentationId);
+    const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
     if (state.status !== 'live' || !state.sessionId)
       return badRequest(res, 'Presentation is not live');
 
@@ -356,7 +356,7 @@ export async function handleFollowInteractionFeedback(
     if (!parsed.ok) return true;
     const body = parsed.body;
     const text = getString(body, 'text');
-    const result = await submitFeedback(repoRoot, state.sessionId, {
+    const result = await submitFeedback(followAudienceScope(repoRoot), state.sessionId, {
       slideId: requested,
       deviceId: dev.id,
       text,

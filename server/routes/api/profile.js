@@ -24,7 +24,7 @@ const ALLOWED_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 
 
 // POST /api/profile/image - Upload own profile image
-async function handleProfileImageUpload({ repoRoot, req, res, authedUser }) {
+async function handleProfileImageUpload({ repoRoot, storageScope, req, res, authedUser }) {
   const email = String(authedUser?.email || '').trim();
 
   const flags = getFeatureFlags();
@@ -87,7 +87,7 @@ async function handleProfileImageUpload({ repoRoot, req, res, authedUser }) {
     });
 
     // Update user settings with new image URL
-    await writeUserSettings(repoRoot, email, {
+    await writeUserSettings(storageScope, email, {
       profile: { imageUrl: result.publicUrl },
     });
 
@@ -101,12 +101,12 @@ async function handleProfileImageUpload({ repoRoot, req, res, authedUser }) {
 }
 
 // DELETE /api/profile/image - Remove own profile image
-async function handleProfileImageDelete({ repoRoot, res, authedUser }) {
+async function handleProfileImageDelete({ repoRoot, storageScope, res, authedUser }) {
   const email = String(authedUser?.email || '').trim();
 
   try {
     // Clear the image URL from user settings
-    await writeUserSettings(repoRoot, email, {
+    await writeUserSettings(storageScope, email, {
       profile: { imageUrl: '' },
     });
 
@@ -121,7 +121,7 @@ async function handleProfileImageDelete({ repoRoot, res, authedUser }) {
 // POST or DELETE /api/profile/image/:email - Admin manages another account image.
 // Email validation and the admin check run before the method dispatch, so this
 // stays a single no-method handler (see route-dispatch.md, the Form B guard note).
-async function handleProfileImageAdmin({ repoRoot, req, res, authedUser }, rawTargetEmail) {
+async function handleProfileImageAdmin({ repoRoot, storageScope, req, res, authedUser }, rawTargetEmail) {
   const targetEmail = decodeURIComponent(rawTargetEmail).toLowerCase().trim();
   if (!targetEmail || !targetEmail.includes('@')) {
     return badRequest(res, 'Invalid email address');
@@ -188,7 +188,7 @@ async function handleProfileImageAdmin({ repoRoot, req, res, authedUser }, rawTa
         contentType: 'image/png',
       });
 
-      await writeUserSettings(repoRoot, targetEmail, {
+      await writeUserSettings(storageScope, targetEmail, {
         profile: { imageUrl: result.publicUrl },
       });
 
@@ -203,7 +203,7 @@ async function handleProfileImageAdmin({ repoRoot, req, res, authedUser }, rawTa
   // DELETE /api/profile/image/:email - Admin remove profile image for user
   if (req.method === 'DELETE') {
     try {
-      await writeUserSettings(repoRoot, targetEmail, {
+      await writeUserSettings(storageScope, targetEmail, {
         profile: { imageUrl: '' },
       });
       serveJson(res, 200, { ok: true });

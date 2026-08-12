@@ -9,7 +9,7 @@ import {
   upvoteQuestion,
 } from '../../../storage/questions.js';
 import { normalizeLang } from '../../../utils/translation-status.js';
-import { computeAudienceCapabilitiesFromState, ensureQaDeviceCookie } from './helpers.js';
+import { computeAudienceCapabilitiesFromState, ensureQaDeviceCookie, followAudienceScope } from './helpers.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
 
 export async function handleFollowQuestions({ repoRoot, req, res }, presentationId) {
@@ -20,7 +20,7 @@ export async function handleFollowQuestions({ repoRoot, req, res }, presentation
     'follow-along audience: the live follow code is the authorization'
   );
   if (req.method === 'GET') {
-    const state = await getFollowStateForPresentation(repoRoot, presentationId);
+    const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
     const pres = await getPresentation(followScope, presentationId);
     const caps = computeAudienceCapabilitiesFromState(state, pres);
     if (state.status !== 'live' || !state.sessionId) {
@@ -44,7 +44,7 @@ export async function handleFollowQuestions({ repoRoot, req, res }, presentation
       );
       return true;
     }
-    const questions = (await listQuestions(repoRoot, state.sessionId)) || [];
+    const questions = (await listQuestions(followAudienceScope(repoRoot), state.sessionId)) || [];
     const dev = ensureQaDeviceCookie(req);
     serveJson(
       res,
@@ -56,7 +56,7 @@ export async function handleFollowQuestions({ repoRoot, req, res }, presentation
   }
 
   if (req.method === 'POST') {
-    const state = await getFollowStateForPresentation(repoRoot, presentationId);
+    const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
     if (state.status !== 'live' || !state.sessionId)
       return badRequest(res, 'Presentation is not live');
     const pres = await getPresentation(followScope, presentationId);
@@ -71,7 +71,7 @@ export async function handleFollowQuestions({ repoRoot, req, res }, presentation
     const authorName = getString(body, 'authorName');
     const originalLang = normalizeLang(body?.lang) || null;
     const text = getString(body, 'text');
-    const result = await createQuestion(repoRoot, state.sessionId, {
+    const result = await createQuestion(followAudienceScope(repoRoot), state.sessionId, {
       authorId,
       authorName,
       originalLang,
@@ -104,7 +104,7 @@ export async function handleFollowUpvote({ repoRoot, req, res }, presentationId,
     'follow-along audience: the live follow code is the authorization'
   );
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const state = await getFollowStateForPresentation(repoRoot, presentationId);
+  const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
   if (state.status !== 'live' || !state.sessionId)
     return badRequest(res, 'Presentation is not live');
   const pres = await getPresentation(followScope, presentationId);
@@ -113,7 +113,7 @@ export async function handleFollowUpvote({ repoRoot, req, res }, presentationId,
     return badRequest(res, 'Q&A is disabled for this presentation');
   const dev = ensureQaDeviceCookie(req);
   const voterId = dev.id;
-  const result = await upvoteQuestion(repoRoot, state.sessionId, {
+  const result = await upvoteQuestion(followAudienceScope(repoRoot), state.sessionId, {
     questionId,
     voterId,
   });
@@ -142,7 +142,7 @@ export async function handleFollowCancel({ repoRoot, req, res }, presentationId,
     'follow-along audience: the live follow code is the authorization'
   );
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const state = await getFollowStateForPresentation(repoRoot, presentationId);
+  const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
   if (state.status !== 'live' || !state.sessionId)
     return badRequest(res, 'Presentation is not live');
   const pres = await getPresentation(followScope, presentationId);
@@ -151,7 +151,7 @@ export async function handleFollowCancel({ repoRoot, req, res }, presentationId,
     return badRequest(res, 'Q&A is disabled for this presentation');
   const dev = ensureQaDeviceCookie(req);
   const authorId = dev.id;
-  const result = await cancelQuestion(repoRoot, state.sessionId, {
+  const result = await cancelQuestion(followAudienceScope(repoRoot), state.sessionId, {
     questionId,
     authorId,
   });

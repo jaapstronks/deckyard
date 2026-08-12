@@ -28,6 +28,7 @@ import {
   defaultUserSettings,
 } from '../../server/storage/settings.js';
 import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
+import { testScope } from '../helpers/storage-scope.js';
 
 pgDescribe('settings storage (real PostgreSQL)', () => {
   /** @type {import('kysely').Kysely<any>} */
@@ -46,16 +47,16 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
   });
 
   it('reads code defaults from an empty app_settings', async () => {
-    assert.deepEqual(await getAppSettings(), defaultAppSettings());
+    assert.deepEqual(await getAppSettings(testScope()), defaultAppSettings());
   });
 
   it('round-trips app settings and persists as a single row', async () => {
-    await writeAppSettings(null, { sessionDurationDays: 45 });
-    assert.equal((await getAppSettings()).sessionDurationDays, 45);
+    await writeAppSettings(testScope(), { sessionDurationDays: 45 });
+    assert.equal((await getAppSettings(testScope())).sessionDurationDays, 45);
 
     // A second write overwrites the same singleton row, not a second one.
-    await writeAppSettings(null, { sessionDurationDays: 60 });
-    assert.equal((await getAppSettings()).sessionDurationDays, 60);
+    await writeAppSettings(testScope(), { sessionDurationDays: 60 });
+    assert.equal((await getAppSettings(testScope())).sessionDurationDays, 60);
 
     const count = await db
       .selectFrom('app_settings')
@@ -65,12 +66,12 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
   });
 
   it('merges a partial app-settings write onto the stored value', async () => {
-    await writeAppSettings(null, { sessionDurationDays: 45 });
-    await writeAppSettings(null, {
+    await writeAppSettings(testScope(), { sessionDurationDays: 45 });
+    await writeAppSettings(testScope(), {
       webhooks: { commentCreatedUrl: 'https://example.com/hook' },
     });
 
-    const settings = await getAppSettings();
+    const settings = await getAppSettings(testScope());
     // The webhook landed...
     assert.equal(settings.webhooks.commentCreatedUrl, 'https://example.com/hook');
     // ...and the earlier field survived the partial write.
@@ -78,40 +79,40 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
   });
 
   it('round-trips the organization theme and normalizes an invalid id to empty', async () => {
-    await writeAppSettings(null, {
+    await writeAppSettings(testScope(), {
       defaultThemeId: 'clicknl',
       enabledThemes: ['deckyard', 'clicknl'],
     });
-    let s = await getAppSettings();
+    let s = await getAppSettings(testScope());
     assert.equal(s.defaultThemeId, 'clicknl');
     assert.deepEqual(s.enabledThemes, ['deckyard', 'clicknl']);
 
     // getDefaultThemeId prefers the stored setting over env/built-in.
     delete process.env.DEFAULT_THEME;
-    assert.equal(await getDefaultThemeId(), 'clicknl');
+    assert.equal(await getDefaultThemeId(testScope()), 'clicknl');
 
     // An invalid id normalizes to empty, then falls back to the built-in default.
-    await writeAppSettings(null, { defaultThemeId: 'bad id!!' });
-    s = await getAppSettings();
+    await writeAppSettings(testScope(), { defaultThemeId: 'bad id!!' });
+    s = await getAppSettings(testScope());
     assert.equal(s.defaultThemeId, '');
-    assert.equal(await getDefaultThemeId(), DEFAULT_THEME_ID);
+    assert.equal(await getDefaultThemeId(testScope()), DEFAULT_THEME_ID);
   });
 
   it('keeps a stock-media source a partial write does not mention', async () => {
-    assert.equal((await getAppSettings()).stockMedia.bundled.enabled, false);
+    assert.equal((await getAppSettings(testScope())).stockMedia.bundled.enabled, false);
 
-    await writeAppSettings(null, {
+    await writeAppSettings(testScope(), {
       stockMedia: { bundled: { enabled: true }, unsplash: { enabled: true } },
     });
     // A client that only knows about Giphy must not switch the other two off.
-    const after = await writeAppSettings(null, {
+    const after = await writeAppSettings(testScope(), {
       stockMedia: { giphy: { enabled: true } },
     });
     assert.equal(after.stockMedia.bundled.enabled, true);
     assert.equal(after.stockMedia.unsplash.enabled, true);
     assert.equal(after.stockMedia.giphy.enabled, true);
     // And the merge is durable, not just in the return value.
-    assert.equal((await getAppSettings()).stockMedia.bundled.enabled, true);
+    assert.equal((await getAppSettings(testScope())).stockMedia.bundled.enabled, true);
   });
 
   // The dead internal/external analytics chain was removed. A settings bag that
@@ -138,13 +139,13 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
       .execute();
 
     // Read back: the legacy sub-objects are gone, the master switch survives.
-    const read = await getAppSettings();
+    const read = await getAppSettings(testScope());
     assert.equal(read.analytics.enabled, true);
     assert.equal('teamAnalytics' in read.analytics, false);
     assert.equal('externalAnalytics' in read.analytics, false);
 
     // A later write must not resurrect them in the stored bag.
-    await writeAppSettings(null, { sessionDurationDays: 45 });
+    await writeAppSettings(testScope(), { sessionDurationDays: 45 });
     const row = await db
       .selectFrom('app_settings')
       .select('settings')
@@ -165,13 +166,13 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
       })
       .execute();
 
-    const read = await getUserSettings(null, 'legacy@example.com');
+    const read = await getUserSettings(testScope(), 'legacy@example.com');
     assert.equal(read.digest.enabled, true);
     assert.equal(read.digest.dayOfWeek, 3);
     assert.equal('includeTeamAnalytics' in read.digest, false);
 
     // A later write does not persist the dropped key.
-    await writeUserSettings(null, 'legacy@example.com', { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), 'legacy@example.com', { uiLocale: 'nl' });
     const row = await db
       .selectFrom('user_settings')
       .select('settings')
@@ -182,17 +183,17 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
   });
 
   it('reads code defaults from an empty user_settings', async () => {
-    assert.deepEqual(await getUserSettings(null, 'jaap@ciiic.nl'), defaultUserSettings());
+    assert.deepEqual(await getUserSettings(testScope(), 'jaap@ciiic.nl'), defaultUserSettings());
   });
 
   it('round-trips user settings keyed on the e-mail, case-insensitively', async () => {
-    await writeUserSettings(null, 'Jaap@Ciiic.nl', {
+    await writeUserSettings(testScope(), 'Jaap@Ciiic.nl', {
       uiLocale: 'nl',
       profile: { name: 'Jaap' },
     });
 
     // Looked up by a differently-cased spelling of the same address.
-    const read = await getUserSettings(null, 'jaap@ciiic.nl');
+    const read = await getUserSettings(testScope(), 'jaap@ciiic.nl');
     assert.equal(read.uiLocale, 'nl');
     assert.equal(read.profile.name, 'Jaap');
 
@@ -211,11 +212,11 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
   });
 
   it('keeps different users in separate rows', async () => {
-    await writeUserSettings(null, 'a@x.test', { uiLocale: 'nl' });
-    await writeUserSettings(null, 'b@x.test', { uiLocale: 'en' });
+    await writeUserSettings(testScope(), 'a@x.test', { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), 'b@x.test', { uiLocale: 'en' });
 
-    assert.equal((await getUserSettings(null, 'a@x.test')).uiLocale, 'nl');
-    assert.equal((await getUserSettings(null, 'b@x.test')).uiLocale, 'en');
+    assert.equal((await getUserSettings(testScope(), 'a@x.test')).uiLocale, 'nl');
+    assert.equal((await getUserSettings(testScope(), 'b@x.test')).uiLocale, 'en');
 
     const count = await db
       .selectFrom('user_settings')
@@ -225,14 +226,14 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
   });
 
   it('merges a partial user-settings write onto the stored value', async () => {
-    await writeUserSettings(null, 'jaap@ciiic.nl', {
+    await writeUserSettings(testScope(), 'jaap@ciiic.nl', {
       profile: { name: 'Jaap' },
       highlighter: { color: '#00ff00' },
     });
     // Update only the locale; name and highlighter must survive.
-    await writeUserSettings(null, 'jaap@ciiic.nl', { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), 'jaap@ciiic.nl', { uiLocale: 'nl' });
 
-    const read = await getUserSettings(null, 'jaap@ciiic.nl');
+    const read = await getUserSettings(testScope(), 'jaap@ciiic.nl');
     assert.equal(read.uiLocale, 'nl');
     assert.equal(read.profile.name, 'Jaap');
     assert.equal(read.highlighter.color, '#00ff00');
@@ -241,28 +242,28 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
   // A partial write (an API consumer PUTting one preference) must not reset the
   // other stored opt-outs — per-key for emailByType, and the channel booleans.
   it('a partial emailByType write keeps other stored opt-outs', async () => {
-    await writeUserSettings(null, 'merge@example.com', {
+    await writeUserSettings(testScope(), 'merge@example.com', {
       notifications: { emailByType: { comment_reply: false } },
     });
-    await writeUserSettings(null, 'merge@example.com', {
+    await writeUserSettings(testScope(), 'merge@example.com', {
       notifications: { emailByType: { comment_created: false } },
     });
 
-    const s = await getUserSettings(null, 'merge@example.com');
+    const s = await getUserSettings(testScope(), 'merge@example.com');
     assert.equal(s.notifications.emailByType.comment_created, false);
     assert.equal(s.notifications.emailByType.comment_reply, false);
     assert.equal(s.notifications.emailByType.comment_mention, true);
   });
 
   it('a partial notifications write keeps channel opt-outs and defaultLevel', async () => {
-    await writeUserSettings(null, 'merge@example.com', {
+    await writeUserSettings(testScope(), 'merge@example.com', {
       notifications: { emailEnabled: false, defaultLevel: 'watching' },
     });
-    await writeUserSettings(null, 'merge@example.com', {
+    await writeUserSettings(testScope(), 'merge@example.com', {
       notifications: { slackEnabled: false },
     });
 
-    const s = await getUserSettings(null, 'merge@example.com');
+    const s = await getUserSettings(testScope(), 'merge@example.com');
     assert.equal(s.notifications.emailEnabled, false);
     assert.equal(s.notifications.slackEnabled, false);
     assert.equal(s.notifications.defaultLevel, 'watching');

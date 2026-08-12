@@ -56,7 +56,7 @@ async function handlePublish(ctx, id) {
         const ownerEmail = pres?.ownerEmail || pres?.createdBy || apiKey.ownerEmail;
         if (ownerEmail) {
           try {
-            const userSettings = await getUserSettings(repoRoot, ownerEmail);
+            const userSettings = await getUserSettings(storageScope, ownerEmail);
             authorInfo = {
               name: userSettings?.profile?.name || ownerEmail.split('@')[0],
               imageUrl: userSettings?.profile?.imageUrl || '',

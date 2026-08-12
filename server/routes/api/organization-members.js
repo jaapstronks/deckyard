@@ -112,7 +112,7 @@ async function handleMemberList({ res, url }, organizationId) {
 }
 
 // POST /api/organizations/:id/members - Invite/add a member
-async function handleMemberInvite({ repoRoot, req, res, authedUser }, organizationId, { user, userId, actorMembership }) {
+async function handleMemberInvite({ repoRoot, storageScope, req, res, authedUser }, organizationId, { user, userId, actorMembership }) {
   // Only admins and owners can invite members
   if (!hasOrganizationRole(actorMembership.role, 'admin')) {
     return forbidden(res, 'Admin or owner access required to invite members');
@@ -197,7 +197,7 @@ async function handleMemberInvite({ repoRoot, req, res, authedUser }, organizati
     let invitationSent = false;
     if (sendInvitation && invitationToken) {
       const setupUrl = buildSetupUrl(req, invitationToken);
-      const locale = await getEmailDefaultLocale(repoRoot).catch(() => 'en');
+      const locale = await getEmailDefaultLocale(storageScope).catch(() => 'en');
 
       const sendResult = await sendUserInvitationEmail({
         recipientEmail: email,

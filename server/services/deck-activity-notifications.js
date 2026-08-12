@@ -36,6 +36,7 @@ import {
   getUnreadCount,
 } from '../storage/notifications.js';
 import { broadcastToUser, NotificationEventTypes } from './notification-events.js';
+import { crossOrganizationScope } from '../storage/scope.js';
 
 export const DECK_ACTIVITY_TYPE = 'deck_activity';
 
@@ -147,7 +148,10 @@ async function resolveDeckActivityRecipients({ repoRoot, presentation, actor, ct
       let level = overrides.get(email);
       if (!level) {
         try {
-          const settings = await getUserSettings(repoRoot || defaultRepoRoot, email);
+          const settings = await getUserSettings(
+            crossOrganizationScope(repoRoot || defaultRepoRoot, 'notification fan-out: recipient preference read'),
+            email
+          );
           level = settings?.notifications?.defaultLevel || 'participating';
         } catch {
           level = 'participating';

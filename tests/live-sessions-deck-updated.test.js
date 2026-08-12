@@ -10,6 +10,11 @@ import {
 } from '../server/storage/live-sessions/sessions.js';
 import { notifyDeckUpdatedForPresentation } from '../server/storage/live-sessions/sse.js';
 
+/** The presenter scope the routes would pass (see server/storage/scope.js). */
+function testScope(repoRoot) {
+  return { repoRoot, organizationId: '00000000-0000-0000-0000-0000000000aa', actorEmail: null };
+}
+
 function fakeSseClient() {
   const chunks = [];
   return {
@@ -28,14 +33,14 @@ test('notifyDeckUpdatedForPresentation broadcasts deckUpdated to session clients
   const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-deck-updated-'));
   const presentationId = 'pres-deck-updated-test';
 
-  const created = await createLiveSession(repoRoot, { presentationId });
+  const created = await createLiveSession(testScope(repoRoot), { presentationId });
   assert.ok(created?.sessionId, 'session should be created');
 
-  const session = await getLiveSession(repoRoot, created.sessionId);
+  const session = await getLiveSession(testScope(repoRoot), created.sessionId);
   const client = fakeSseClient();
   session.clients.add(client);
 
-  const result = await notifyDeckUpdatedForPresentation(repoRoot, presentationId, {
+  const result = await notifyDeckUpdatedForPresentation(testScope(repoRoot), presentationId, {
     reason: 'test_mutation',
   });
   assert.equal(result.ok, true);
@@ -51,7 +56,7 @@ test('notifyDeckUpdatedForPresentation broadcasts deckUpdated to session clients
 
 test('notifyDeckUpdatedForPresentation is a no-op without a live session', async () => {
   const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-deck-updated-'));
-  const result = await notifyDeckUpdatedForPresentation(repoRoot, 'no-such-presentation');
+  const result = await notifyDeckUpdatedForPresentation(testScope(repoRoot), 'no-such-presentation');
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'no_live_session');
 });
@@ -59,9 +64,9 @@ test('notifyDeckUpdatedForPresentation is a no-op without a live session', async
 test('notifyDeckUpdatedForPresentation ignores sessions without clients', async () => {
   const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-deck-updated-'));
   const presentationId = 'pres-no-clients-test';
-  await createLiveSession(repoRoot, { presentationId });
+  await createLiveSession(testScope(repoRoot), { presentationId });
 
-  const result = await notifyDeckUpdatedForPresentation(repoRoot, presentationId);
+  const result = await notifyDeckUpdatedForPresentation(testScope(repoRoot), presentationId);
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'no_live_session');
 });
