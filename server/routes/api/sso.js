@@ -203,9 +203,9 @@ async function handleOidcCallback({ repoRoot, req, res, url }) {
   }
 
   const result = await getOrCreateSsoUser(
+    ctx,
     identity,
-    { autoProvision: oidc.autoProvision, defaultRole: oidc.defaultRole },
-    ctx
+    { autoProvision: oidc.autoProvision, defaultRole: oidc.defaultRole }
   );
 
   if (!result.ok) {

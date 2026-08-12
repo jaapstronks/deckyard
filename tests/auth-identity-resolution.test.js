@@ -276,7 +276,7 @@ test('getPasswordChangedAt returns the stored timestamp', async () => {
 
 test('setUserPassword updates the existing row instead of adding one', async () => {
   const db = seedSingleOrg();
-  const result = await passwordReset.setUserPassword('alice@example.com', 'a brand new secret', ctx);
+  const result = await passwordReset.setUserPassword(ctx, 'alice@example.com', 'a brand new secret');
 
   assert.equal(result.ok, true);
   assert.equal(db.__tables.users.length, 1, 'still one user row');
@@ -286,7 +286,7 @@ test('setUserPassword updates the existing row instead of adding one', async () 
 
 test('setUserPassword creates a user when the email is unknown', async () => {
   const db = seedSingleOrg();
-  const result = await passwordReset.setUserPassword('newcomer@example.com', 'a brand new secret', ctx);
+  const result = await passwordReset.setUserPassword(ctx, 'newcomer@example.com', 'a brand new secret');
 
   assert.equal(result.ok, true);
   assert.equal(db.__tables.users.length, 2);
@@ -296,7 +296,7 @@ test('setUserPassword creates a user when the email is unknown', async () => {
 
 test('getOrCreateMagicLinkUser reuses an existing user', async () => {
   const db = seedSingleOrg();
-  const result = await magicLinkStore.getOrCreateMagicLinkUser('alice@example.com', ctx);
+  const result = await magicLinkStore.getOrCreateMagicLinkUser(ctx, 'alice@example.com');
 
   assert.equal(result.ok, true);
   assert.equal(result.user.id, 'user-alice');
@@ -305,7 +305,7 @@ test('getOrCreateMagicLinkUser reuses an existing user', async () => {
 
 test('getOrCreateMagicLinkUser provisions a new user in the context organization', async () => {
   const db = seedSingleOrg();
-  const result = await magicLinkStore.getOrCreateMagicLinkUser('newcomer@example.com', ctx);
+  const result = await magicLinkStore.getOrCreateMagicLinkUser(ctx, 'newcomer@example.com');
 
   assert.equal(result.ok, true);
   assert.equal(db.__tables.users.length, 2);
@@ -318,18 +318,18 @@ test('getOrCreateSsoUser provisions and then reuses the same row', async () => {
   const db = seedSingleOrg();
 
   const provisioned = await ssoStore.getOrCreateSsoUser(
+    ctx,
     { email: 'sso@example.com', name: 'Sso Person' },
-    { autoProvision: true },
-    ctx
+    { autoProvision: true }
   );
   assert.equal(provisioned.ok, true);
   assert.equal(provisioned.provisioned, true);
   assert.equal(db.__tables.users.length, 2);
 
   const again = await ssoStore.getOrCreateSsoUser(
+    ctx,
     { email: 'sso@example.com', name: 'Renamed Person' },
-    { autoProvision: true },
-    ctx
+    { autoProvision: true }
   );
   assert.equal(again.ok, true);
   assert.equal(again.provisioned, false);
@@ -344,9 +344,9 @@ test('getOrCreateSsoUser provisions and then reuses the same row', async () => {
 test('getOrCreateSsoUser refuses an unknown identity when auto-provision is off', async () => {
   seedSingleOrg();
   const result = await ssoStore.getOrCreateSsoUser(
+    ctx,
     { email: 'stranger@example.com' },
-    { autoProvision: false },
-    ctx
+    { autoProvision: false }
   );
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'not_provisioned');
@@ -387,7 +387,7 @@ test('searchUsers only returns members of the context organization', async () =>
     updated_at: '2026-02-01T00:00:00.000Z',
   });
 
-  const found = await usersStore.searchUsers('example.com', {}, ctx);
+  const found = await usersStore.searchUsers(ctx, 'example.com', {});
   assert.deepEqual(found.map((u) => u.email), ['alice@example.com']);
 });
 
@@ -403,8 +403,8 @@ test('getUserById only resolves within the context organization', async () => {
     updated_at: '2026-02-01T00:00:00.000Z',
   });
 
-  assert.ok(await usersStore.getUserById('user-alice', ctx));
-  assert.equal(await usersStore.getUserById('user-bob', ctx), null);
+  assert.ok(await usersStore.getUserById(ctx, 'user-alice'));
+  assert.equal(await usersStore.getUserById(ctx, 'user-bob'), null);
 });
 
 // Pin the wire format with a literal instead of recomputing it: asserting

@@ -14,6 +14,7 @@ import { loadDotEnv } from '../server/config/env.js';
 import { repoRoot } from '../server/config/paths.js';
 import { initializeStorage, closeStorage } from '../server/storage/adapters/index.js';
 import { createApiKey } from '../server/storage/api-keys.js';
+import { singleOrganizationScope } from '../server/storage/scope.js';
 
 const args = process.argv.slice(2);
 
@@ -37,7 +38,10 @@ async function main() {
   await loadDotEnv(repoRoot);
   await initializeStorage();
 
-  const result = await createApiKey({ name, ownerEmail: email, permissions }, { repoRoot });
+  const scope = singleOrganizationScope(repoRoot, 'scripts/create-api-key.js', {
+    actorEmail: email,
+  });
+  const result = await createApiKey(scope, { name, ownerEmail: email, permissions });
 
   if (!result.ok) {
     console.error('Failed to create API key:', result.reason);

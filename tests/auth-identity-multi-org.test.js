@@ -340,9 +340,9 @@ test('the double rejects a duplicate email, like the unique constraint does', as
 test('a password reset from another organization updates the existing row', async () => {
   const db = seedMultiOrg();
   const result = await passwordReset.setUserPassword(
+    ctxIn(ORG_A),
     'alice@example.com',
-    'a brand new secret',
-    ctxIn(ORG_A)
+    'a brand new secret'
   );
 
   assert.equal(result.ok, true);
@@ -353,7 +353,7 @@ test('a password reset from another organization updates the existing row', asyn
 
 test('a magic-link login from another organization reuses the existing row', async () => {
   const db = seedMultiOrg();
-  const result = await magicLinkStore.getOrCreateMagicLinkUser('alice@example.com', ctxIn(ORG_A));
+  const result = await magicLinkStore.getOrCreateMagicLinkUser(ctxIn(ORG_A), 'alice@example.com');
 
   assert.equal(result.ok, true);
   assert.equal(result.user.id, 'user-alice');
@@ -363,9 +363,9 @@ test('a magic-link login from another organization reuses the existing row', asy
 test('an SSO login from another organization reuses the existing row', async () => {
   const db = seedMultiOrg();
   const result = await ssoStore.getOrCreateSsoUser(
+    ctxIn(ORG_A),
     { email: 'alice@example.com', name: 'Alice' },
-    { autoProvision: true },
-    ctxIn(ORG_A)
+    { autoProvision: true }
   );
 
   assert.equal(result.ok, true);
@@ -375,7 +375,7 @@ test('an SSO login from another organization reuses the existing row', async () 
 
 test('inviting someone who already exists elsewhere reports already_exists', async () => {
   const db = seedMultiOrg();
-  const result = await usersStore.createUser({ email: 'alice@example.com' }, ctxIn(ORG_A));
+  const result = await usersStore.createUser(ctxIn(ORG_A), { email: 'alice@example.com' });
 
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'already_exists', 'a clean refusal, not a constraint violation');
@@ -384,7 +384,7 @@ test('inviting someone who already exists elsewhere reports already_exists', asy
 
 test('inviting a genuinely new person still creates them in the current organization', async () => {
   const db = seedMultiOrg();
-  const result = await usersStore.createUser({ email: 'newcomer@example.com' }, ctxIn(ORG_A));
+  const result = await usersStore.createUser(ctxIn(ORG_A), { email: 'newcomer@example.com' });
 
   assert.equal(result.ok, true);
   assert.equal(db.__tables.users.length, 2);

@@ -156,11 +156,11 @@ async function handleMemberInvite({ repoRoot, storageScope, req, res, authedUser
 
     if (!targetUser) {
       // Create a new user (will need to set up password)
-      const createResult = await createUser({
+      const createResult = await createUser(ctx, {
         email,
         name: body?.name || null,
         role: 'user', // System-level role is always 'user'
-      }, ctx);
+      });
 
       if (!createResult.ok) {
         return badRequest(res, 'Failed to create user invitation');

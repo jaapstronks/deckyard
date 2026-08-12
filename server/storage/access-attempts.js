@@ -4,6 +4,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
+import { toStorageContext } from './backend-dispatch.js';
 import { norm, nowIso, normalizeEmail } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 
@@ -18,23 +19,24 @@ export const ACCESS_TYPES = {
 
 /**
  * Log an access attempt.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {Object} data - Access attempt data
  * @param {string} data.presentationId - Presentation ID
  * @param {string} data.accessType - Type of access (share_link, collaborator, trashed)
  * @param {string} [data.accessReferenceId] - Reference ID (e.g., share link ID)
  * @param {string} [data.accessorEmail] - Accessor's email (if logged in)
  * @param {string} [data.accessorIp] - Accessor's IP address
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result
  */
-export async function logAccessAttempt(data, ctx) {
+export async function logAccessAttempt(scope, data) {
+  toStorageContext(scope, 'logAccessAttempt');
   const presentationId = norm(data?.presentationId);
   if (!presentationId) {
     return { ok: false, reason: 'invalid' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const row = await db
       .insertInto('access_attempt_log')
@@ -59,20 +61,21 @@ export async function logAccessAttempt(data, ctx) {
 
 /**
  * Check if author should be notified (rate limit: 1 per accessor per 24h).
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - Presentation ID
  * @param {string} [accessorEmail] - Accessor's email
  * @param {string} [accessorIp] - Accessor's IP (used if no email)
- * @param {Object} ctx - Context object
  * @returns {Promise<boolean>} - True if should notify
  */
-export async function shouldNotifyAuthor(presentationId, accessorEmail, accessorIp, ctx) {
+export async function shouldNotifyAuthor(scope, presentationId, accessorEmail, accessorIp) {
+  toStorageContext(scope, 'shouldNotifyAuthor');
   const pid = norm(presentationId);
   if (!pid) return false;
 
   const email = normalizeEmail(accessorEmail);
 
   return withDbGuard(false, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
     let query = db
@@ -102,18 +105,19 @@ export async function shouldNotifyAuthor(presentationId, accessorEmail, accessor
 
 /**
  * Mark an access attempt as having notified the author.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} attemptId - Access attempt ID
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result
  */
-export async function markAuthorNotified(attemptId, ctx) {
+export async function markAuthorNotified(scope, attemptId) {
+  toStorageContext(scope, 'markAuthorNotified');
   const id = norm(attemptId);
   if (!id) {
     return { ok: false, reason: 'invalid' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     await db
       .updateTable('access_attempt_log')

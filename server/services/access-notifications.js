@@ -39,16 +39,13 @@ export async function notifyAuthorOfAccessAttempt({
 }) {
   try {
     // 1. Log the access attempt
-    const logResult = await logAccessAttempt(
-      {
-        presentationId,
-        accessType,
-        accessReferenceId,
-        accessorEmail,
-        accessorIp,
-      },
-      ctx
-    );
+    const logResult = await logAccessAttempt(ctx, {
+      presentationId,
+      accessType,
+      accessReferenceId,
+      accessorEmail,
+      accessorIp,
+    });
 
     if (!logResult.ok) {
       return { ok: false, reason: logResult.reason };
@@ -56,10 +53,10 @@ export async function notifyAuthorOfAccessAttempt({
 
     // 2. Check rate limit (1 notification per accessor per 24h)
     const shouldNotify = await shouldNotifyAuthor(
+      ctx,
       presentationId,
       accessorEmail,
-      accessorIp,
-      ctx
+      accessorIp
     );
 
     if (!shouldNotify) {
@@ -99,7 +96,7 @@ export async function notifyAuthorOfAccessAttempt({
     }
 
     // 5. Mark the attempt as having notified the author
-    await markAuthorNotified(logResult.attempt.id, ctx);
+    await markAuthorNotified(ctx, logResult.attempt.id);
 
     // 6. Broadcast via SSE for real-time bell icon update
     if (notifResult.notification) {

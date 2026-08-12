@@ -206,7 +206,7 @@ async function handleMagicLinkVerify({ repoRoot, req, res }) {
   const email = consumeResult.email;
 
   // Get or create the user
-  const userResult = await getOrCreateMagicLinkUser(email, ctx);
+  const userResult = await getOrCreateMagicLinkUser(ctx, email);
 
   if (!userResult.ok) {
     await logAuthEvent({
