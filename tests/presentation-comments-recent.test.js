@@ -4,10 +4,11 @@
  *
  * The assertions here are the ones that hold whatever the comment store holds:
  * an unknown or missing owner resolves to no accessible decks and therefore no
- * comments, and odd inputs (bad scope/status, oversized limit) never throw. The
- * richer behaviour (ordering, author filter, limit, owned+shared union, title
- * enrichment) needs a live Postgres and is exercised as a local integration
- * step, matching this repo's "integration tests need DB access" boundary.
+ * comments, a missing scope throws, and odd inputs (bad visibility/status,
+ * oversized limit) never throw. The richer behaviour (ordering, author filter,
+ * limit, owned+shared union, title enrichment) needs a live Postgres and is
+ * exercised as a local integration step, matching this repo's "integration
+ * tests need DB access" boundary.
  *
  * The deck lookups these helpers do go through the presentations facade, so the
  * suite runs against the Postgres adapter on the in-memory database double
@@ -29,7 +30,6 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } = await import(
   '../server/storage/adapters/index.js'
 );
-const { repoRoot } = await import('../server/config/paths.js');
 const { listAccessiblePresentationRefs, listRecentCommentsForOwner } = await import(
   '../server/storage/presentation-comments.js'
 );
@@ -37,7 +37,7 @@ const { listAccessiblePresentationRefs, listRecentCommentsForOwner } = await imp
 // An address that owns no decks and is shared none, in any environment.
 const NOBODY = 'nobody-xyz@example.invalid';
 
-// A storage context states the organization it acts in; these helpers reach the
+// A storage scope states the organization it acts in; these helpers reach the
 // presentations facade, which no longer accepts one that does not.
 const ORG = { organizationId: ORG_ID };
 
@@ -55,41 +55,50 @@ after(() => {
 
 describe('listAccessiblePresentationRefs', () => {
   it('returns [] when there is no acting owner', async () => {
-    assert.deepStrictEqual(await listAccessiblePresentationRefs(repoRoot, { ...ORG }, 'all'), []);
-    assert.deepStrictEqual(await listAccessiblePresentationRefs(repoRoot, null, 'all'), []);
+    assert.deepStrictEqual(await listAccessiblePresentationRefs({ ...ORG }, 'all'), []);
+  });
+
+  it('throws on a missing scope', async () => {
+    await assert.rejects(listAccessiblePresentationRefs(null, 'all'), TypeError);
   });
 
   it('returns [] for an owner with no owned or shared decks', async () => {
-    const refs = await listAccessiblePresentationRefs(repoRoot, { ...ORG, actorEmail: NOBODY }, 'all');
+    const refs = await listAccessiblePresentationRefs({ ...ORG, actorEmail: NOBODY }, 'all');
     assert.deepStrictEqual(refs, []);
   });
 
-  it('accepts every scope without throwing', async () => {
-    for (const scope of ['owned', 'shared', 'all', 'bogus']) {
-      const refs = await listAccessiblePresentationRefs(repoRoot, { ...ORG, actorEmail: NOBODY }, scope);
-      assert.ok(Array.isArray(refs), `scope ${scope} should return an array`);
+  it('accepts every visibility without throwing', async () => {
+    for (const visibility of ['owned', 'shared', 'all', 'bogus']) {
+      const refs = await listAccessiblePresentationRefs(
+        { ...ORG, actorEmail: NOBODY },
+        visibility
+      );
+      assert.ok(Array.isArray(refs), `visibility ${visibility} should return an array`);
     }
   });
 });
 
 describe('listRecentCommentsForOwner', () => {
   it('returns an empty result when there is no acting owner', async () => {
-    assert.deepStrictEqual(await listRecentCommentsForOwner(repoRoot, { ...ORG }), {
+    assert.deepStrictEqual(await listRecentCommentsForOwner({ ...ORG }), {
       comments: [],
       total: 0,
     });
   });
 
+  it('throws on a missing scope', async () => {
+    await assert.rejects(listRecentCommentsForOwner(null), TypeError);
+  });
+
   it('returns an empty result for an owner with no accessible decks', async () => {
-    const result = await listRecentCommentsForOwner(repoRoot, { ...ORG, actorEmail: NOBODY });
+    const result = await listRecentCommentsForOwner({ ...ORG, actorEmail: NOBODY });
     assert.deepStrictEqual(result, { comments: [], total: 0 });
   });
 
-  it('tolerates odd options (bad scope/status, oversized limit) without throwing', async () => {
+  it('tolerates odd options (bad visibility/status, oversized limit) without throwing', async () => {
     const result = await listRecentCommentsForOwner(
-      repoRoot,
       { ...ORG, actorEmail: NOBODY },
-      { scope: 'nonsense', status: 'weird', limit: 100000, authorEmail: 'x@y.z' }
+      { visibility: 'nonsense', status: 'weird', limit: 100000, authorEmail: 'x@y.z' }
     );
     assert.deepStrictEqual(result, { comments: [], total: 0 });
   });

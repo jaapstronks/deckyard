@@ -221,12 +221,7 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
     const versionId = await seedLegacySnapshot();
 
     // The deck changes hands after that snapshot was taken.
-    const transfer = await transferPresentationOwnership(
-      null,
-      DECK_ID,
-      { newOwnerEmail: BOB, actorEmail: ALICE, keepAsCollaborator: false },
-      storageScope
-    );
+    const transfer = await transferPresentationOwnership(storageScope, DECK_ID, { newOwnerEmail: BOB, actorEmail: ALICE, keepAsCollaborator: false });
     assert.equal(transfer.ok, true, 'the transfer landed');
     assert.equal((await getPresentation(storageScope, DECK_ID)).ownerEmail, BOB);
 
@@ -269,12 +264,7 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
       { actorEmail: ALICE, reason: 'manual' }
     );
 
-    await transferPresentationOwnership(
-      null,
-      DECK_ID,
-      { newOwnerEmail: BOB, actorEmail: ALICE, keepAsCollaborator: false },
-      storageScope
-    );
+    await transferPresentationOwnership(storageScope, DECK_ID, { newOwnerEmail: BOB, actorEmail: ALICE, keepAsCollaborator: false });
 
     const version = await getPresentationVersion(storageScope, DECK_ID, created.id);
     const before = await getPresentation(storageScope, DECK_ID);

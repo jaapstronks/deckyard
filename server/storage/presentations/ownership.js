@@ -4,6 +4,7 @@
 
 import { getPresentation, updatePresentation } from './index.js';
 import { addCollaborator, removeCollaborator } from '../collaborators.js';
+import { toStorageContext } from '../backend-dispatch.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('ownership');
@@ -11,25 +12,17 @@ const log = createLogger('ownership');
 /**
  * Transfer ownership of a presentation to another user.
  *
- * @param {string} repoRoot - Repository root path
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
  * @param {Object} options - Transfer options
  * @param {string} options.newOwnerEmail - Email of the new owner
  * @param {string} options.previousOwnerEmail - Email of the previous owner
  * @param {boolean} [options.keepAsCollaborator=true] - Whether to add old owner as collaborator
  * @param {string} [options.actorEmail] - Email of the user performing the transfer
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result with updated presentation
  */
-export async function transferPresentationOwnership(
-  repoRoot,
-  presentationId,
-  options,
-  ctx
-) {
-  // The caller's storage context already states the organization; the repo root
-  // only matters for the file-backed fallback.
-  const storageScope = { ...ctx, repoRoot };
+export async function transferPresentationOwnership(scope, presentationId, options) {
+  toStorageContext(scope, 'transferPresentationOwnership');
   const newOwnerEmail = normalizeEmail(options?.newOwnerEmail);
   const previousOwnerEmail = normalizeEmail(options?.previousOwnerEmail);
   const keepAsCollaborator = options?.keepAsCollaborator !== false;
@@ -40,7 +33,7 @@ export async function transferPresentationOwnership(
   }
 
   // Get current presentation
-  const pres = await getPresentation(storageScope, presentationId);
+  const pres = await getPresentation(scope, presentationId);
   if (!pres) {
     return { ok: false, reason: 'not_found' };
   }
@@ -52,7 +45,7 @@ export async function transferPresentationOwnership(
 
   let updated;
   try {
-    updated = await updatePresentation(storageScope, presentationId, updates, {
+    updated = await updatePresentation(scope, presentationId, updates, {
       actorEmail,
       reason: 'ownership_transfer',
       // Open the owner-write gate: the adapter otherwise drops `ownerEmail` on

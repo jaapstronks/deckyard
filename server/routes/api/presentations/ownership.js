@@ -29,7 +29,7 @@ import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('ownership');
 
 export async function handleOwnershipTransfer(
-  { repoRoot, storageScope, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
@@ -78,17 +78,12 @@ export async function handleOwnershipTransfer(
   const keepAsCollaborator = body?.keepAsCollaborator !== false; // Default true
 
   try {
-    const result = await transferPresentationOwnership(
-      repoRoot,
-      id,
-      {
-        newOwnerEmail,
-        previousOwnerEmail: currentOwner,
-        keepAsCollaborator,
-        actorEmail: authedUser?.email,
-      },
-      ctx
-    );
+    const result = await transferPresentationOwnership(storageScope, id, {
+      newOwnerEmail,
+      previousOwnerEmail: currentOwner,
+      keepAsCollaborator,
+      actorEmail: authedUser?.email,
+    });
 
     if (!result.ok) {
       return jsonError(res, 400, result.reason, 'Ownership transfer failed');
