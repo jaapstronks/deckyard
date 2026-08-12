@@ -64,18 +64,18 @@ afterEach(() => {
 
 describe('acquireSlideLock — conflicting acquire', () => {
   it('grants the lock when the slide is free', async () => {
-    const res = await acquireSlideLock(PID, SID, ALICE, ctx);
+    const res = await acquireSlideLock(ctx, PID, SID, ALICE);
     assert.equal(res.ok, true);
     assert.equal(res.lock.holderEmail, ALICE.email);
     assert.equal(rows().length, 1);
   });
 
   it('reports { held } for a second holder instead of throwing a 500', async () => {
-    await acquireSlideLock(PID, SID, ALICE, ctx);
+    await acquireSlideLock(ctx, PID, SID, ALICE);
 
     // The double enforces the unique constraint, so the old delete-then-insert
     // would have thrown here. The upsert must resolve cleanly to `held`.
-    const res = await acquireSlideLock(PID, SID, BOB, ctx);
+    const res = await acquireSlideLock(ctx, PID, SID, BOB);
     assert.equal(res.ok, false);
     assert.equal(res.reason, 'held');
     assert.equal(res.lock.holderEmail, ALICE.email, 'the original holder keeps the lock');
@@ -83,8 +83,8 @@ describe('acquireSlideLock — conflicting acquire', () => {
   });
 
   it('refreshes in place when the same holder re-acquires a live lock', async () => {
-    const first = await acquireSlideLock(PID, SID, ALICE, ctx);
-    const again = await acquireSlideLock(PID, SID, ALICE, ctx);
+    const first = await acquireSlideLock(ctx, PID, SID, ALICE);
+    const again = await acquireSlideLock(ctx, PID, SID, ALICE);
     assert.equal(again.ok, true);
     assert.equal(again.lock.holderEmail, ALICE.email);
     // Extended, not duplicated.
@@ -98,7 +98,7 @@ describe('acquireSlideLock — conflicting acquire', () => {
     });
     __setTestDb(db);
 
-    const res = await acquireSlideLock(PID, SID, BOB, ctx);
+    const res = await acquireSlideLock(ctx, PID, SID, BOB);
     assert.equal(res.ok, true);
     assert.equal(res.lock.holderEmail, BOB.email, 'the expired lock is taken over');
     assert.equal(rows().length, 1);

@@ -35,9 +35,9 @@ function cleanupExpired() {
   }
 }
 
-export async function getPresentationLock(presentationId, ctx) {
+export async function getPresentationLock(scope, presentationId) {
   if (useDbLocks()) {
-    return dbLocks.getPresentationLock(presentationId, ctx);
+    return dbLocks.getPresentationLock(scope, presentationId);
   }
   cleanupExpired();
   const pid = norm(presentationId);
@@ -60,9 +60,9 @@ function holderStamp(lock) {
   return { userId: lock?.holderId || null, email: lock?.holderEmail || '' };
 }
 
-export async function acquirePresentationLock(presentationId, { email, name, userId } = {}, ctx) {
+export async function acquirePresentationLock(scope, presentationId, { email, name, userId } = {}) {
   if (useDbLocks()) {
-    return dbLocks.acquirePresentationLock(presentationId, { email, name, userId }, ctx);
+    return dbLocks.acquirePresentationLock(scope, presentationId, { email, name, userId });
   }
   cleanupExpired();
   const pid = norm(presentationId);
@@ -79,7 +79,7 @@ export async function acquirePresentationLock(presentationId, { email, name, use
     return {
       ok: false,
       reason: 'held',
-      lock: await getPresentationLock(pid),
+      lock: await getPresentationLock(scope, pid),
     };
   }
 
@@ -105,12 +105,12 @@ export async function acquirePresentationLock(presentationId, { email, name, use
         expiresAtMs,
       };
   locks.set(pid, lock);
-  return { ok: true, lock: await getPresentationLock(pid) };
+  return { ok: true, lock: await getPresentationLock(scope, pid) };
 }
 
-export async function refreshPresentationLock(presentationId, { email, userId } = {}, ctx) {
+export async function refreshPresentationLock(scope, presentationId, { email, userId } = {}) {
   if (useDbLocks()) {
-    return dbLocks.refreshPresentationLock(presentationId, { email, userId }, ctx);
+    return dbLocks.refreshPresentationLock(scope, presentationId, { email, userId });
   }
   cleanupExpired();
   const pid = norm(presentationId);
@@ -119,7 +119,7 @@ export async function refreshPresentationLock(presentationId, { email, userId } 
   const existing = locks.get(pid);
   if (!existing) return { ok: false, reason: 'missing' };
   if (!matchesIdentity({ id: userId || null, email: holderEmail }, holderStamp(existing)))
-    return { ok: false, reason: 'held', lock: await getPresentationLock(pid) };
+    return { ok: false, reason: 'held', lock: await getPresentationLock(scope, pid) };
 
   const t = nowMs();
   const isoNow = new Date(t).toISOString();
@@ -128,12 +128,12 @@ export async function refreshPresentationLock(presentationId, { email, userId } 
   existing.expiresAt = new Date(expiresAtMs).toISOString();
   existing.expiresAtMs = expiresAtMs;
   locks.set(pid, existing);
-  return { ok: true, lock: await getPresentationLock(pid) };
+  return { ok: true, lock: await getPresentationLock(scope, pid) };
 }
 
-export async function releasePresentationLock(presentationId, { email, userId } = {}, ctx) {
+export async function releasePresentationLock(scope, presentationId, { email, userId } = {}) {
   if (useDbLocks()) {
-    return dbLocks.releasePresentationLock(presentationId, { email, userId }, ctx);
+    return dbLocks.releasePresentationLock(scope, presentationId, { email, userId });
   }
   cleanupExpired();
   const pid = norm(presentationId);
@@ -142,7 +142,7 @@ export async function releasePresentationLock(presentationId, { email, userId } 
   const existing = locks.get(pid);
   if (!existing) return { ok: true, released: false };
   if (!matchesIdentity({ id: userId || null, email: holderEmail }, holderStamp(existing)))
-    return { ok: false, reason: 'held', lock: await getPresentationLock(pid) };
+    return { ok: false, reason: 'held', lock: await getPresentationLock(scope, pid) };
   locks.delete(pid);
   return { ok: true, released: true };
 }

@@ -56,7 +56,7 @@ export async function handlePresentationLockStatus(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const lock = await getPresentationLock(id, ctx);
+  const lock = await getPresentationLock(ctx, id);
 
   // Check if the current user is the lock holder
   const isHolder = isLockHolder(authedUser, lock);
@@ -64,7 +64,7 @@ export async function handlePresentationLockStatus(
   // Also include user's pending request status if they have one
   let myRequest = null;
   if (authedUser?.email) {
-    myRequest = await getUserLockRequestStatus(id, { email: authedUser.email, userId: authedUser?.id || null }, ctx);
+    myRequest = await getUserLockRequestStatus(ctx, id, { email: authedUser.email, userId: authedUser?.id || null });
   }
 
   serveJson(res, 200, { ok: true, lock, myRequest, isHolder });
@@ -80,7 +80,7 @@ export async function handlePresentationLockAcquire(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const result = await acquirePresentationLock(id, lockActor(authedUser), ctx);
+  const result = await acquirePresentationLock(ctx, id, lockActor(authedUser));
 
   serveJson(res, result.ok ? 200 : 409, result);
   return true;
@@ -95,12 +95,12 @@ export async function handlePresentationLockRefresh(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const result = await refreshPresentationLock(id, { email: authedUser?.email, userId: authedUser?.id || null }, ctx);
+  const result = await refreshPresentationLock(ctx, id, { email: authedUser?.email, userId: authedUser?.id || null });
 
   // Include pending requests count if user is the holder
   let pendingRequestsCount = 0;
   if (result.ok && isLockHolder(authedUser, result.lock)) {
-    const requests = await listPendingLockRequests(id, ctx);
+    const requests = await listPendingLockRequests(ctx, id);
     pendingRequestsCount = requests.length;
   }
 
@@ -117,7 +117,7 @@ export async function handlePresentationLockRelease(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const result = await releasePresentationLock(id, { email: authedUser?.email, userId: authedUser?.id || null }, ctx);
+  const result = await releasePresentationLock(ctx, id, { email: authedUser?.email, userId: authedUser?.id || null });
 
   serveJson(res, result.ok ? 200 : 409, result);
   return true;
@@ -132,7 +132,7 @@ export async function handlePresentationLockForceRelease(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const result = await forceReleasePresentationLock(id, ctx);
+  const result = await forceReleasePresentationLock(ctx, id);
 
   serveJson(res, result.ok ? 200 : 500, result);
   return true;
@@ -154,11 +154,11 @@ export async function handlePresentationLockRequest(
   if (!parsed.ok) return true;
   const body = parsed.body;
   const ctx = getCtx(authedUser);
-  const result = await createLockRequest(id, {
+  const result = await createLockRequest(ctx, id, {
     email: authedUser?.email,
     name: authedUser?.name,
     message: body?.message || '',
-  }, ctx);
+  });
 
   serveJson(res, result.ok ? 201 : 409, result);
   return true;
@@ -175,12 +175,12 @@ export async function handlePresentationLockRequestsList(
   const ctx = getCtx(authedUser);
 
   // Verify user is the current lock holder
-  const lock = await getPresentationLock(id, ctx);
+  const lock = await getPresentationLock(ctx, id);
   if (!isLockHolder(authedUser, lock)) {
     return forbidden(res, 'Only the current lock holder can view requests');
   }
 
-  const requests = await listPendingLockRequests(id, ctx);
+  const requests = await listPendingLockRequests(ctx, id);
   serveJson(res, 200, { ok: true, requests });
   return true;
 }
@@ -197,20 +197,20 @@ export async function handlePresentationLockRequestAccept(
   const ctx = getCtx(authedUser);
 
   // Verify user is the current lock holder
-  const lock = await getPresentationLock(id, ctx);
+  const lock = await getPresentationLock(ctx, id);
   if (!isLockHolder(authedUser, lock)) {
     return forbidden(res, 'Only the current lock holder can accept requests');
   }
 
   // Verify request belongs to this presentation
-  const request = await getLockRequest(requestId, ctx);
+  const request = await getLockRequest(ctx, requestId);
   if (!request || request.presentationId !== id) {
     return notFound(res);
   }
 
-  const result = await acceptLockRequest(requestId, {
+  const result = await acceptLockRequest(ctx, requestId, {
     holderEmail: authedUser?.email,
-  }, ctx);
+  });
 
   serveJson(res, result.ok ? 200 : 400, result);
   return true;
@@ -228,18 +228,18 @@ export async function handlePresentationLockRequestReject(
   const ctx = getCtx(authedUser);
 
   // Verify user is the current lock holder
-  const lock = await getPresentationLock(id, ctx);
+  const lock = await getPresentationLock(ctx, id);
   if (!isLockHolder(authedUser, lock)) {
     return forbidden(res, 'Only the current lock holder can reject requests');
   }
 
   // Verify request belongs to this presentation
-  const request = await getLockRequest(requestId, ctx);
+  const request = await getLockRequest(ctx, requestId);
   if (!request || request.presentationId !== id) {
     return notFound(res);
   }
 
-  const result = await rejectLockRequest(requestId, ctx);
+  const result = await rejectLockRequest(ctx, requestId);
 
   serveJson(res, result.ok ? 200 : 400, result);
   return true;
@@ -254,7 +254,7 @@ export async function handlePresentationLockMyRequest(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const request = await getUserLockRequestStatus(id, { email: authedUser?.email, userId: authedUser?.id || null }, ctx);
+  const request = await getUserLockRequestStatus(ctx, id, { email: authedUser?.email, userId: authedUser?.id || null });
 
   serveJson(res, 200, { ok: true, request });
   return true;

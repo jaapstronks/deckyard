@@ -7,6 +7,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
+import { toStorageContext } from './backend-dispatch.js';
 import { norm, nowIso, isoAfter } from '../utils/normalize.js';
 import { matchesIdentity } from '../../shared/identity-match.js';
 import { withDbGuard } from './utils/db-guard.js';
@@ -51,16 +52,17 @@ function holderStamp(row) {
 /**
  * Get all active locks for a presentation.
  * Returns a map of slideId -> lock info.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
- * @param {Object} ctx - Context with organization info
  * @returns {Promise<Object>} Map of slideId to lock info
  */
-export async function getSlideLocks(presentationId, ctx) {
+export async function getSlideLocks(scope, presentationId) {
+  toStorageContext(scope, 'getSlideLocks');
   const pid = norm(presentationId);
   if (!pid) return {};
 
   return withDbGuard({}, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     const rows = await db
@@ -81,18 +83,19 @@ export async function getSlideLocks(presentationId, ctx) {
 
 /**
  * Get a single slide lock.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
  * @param {string} slideId - The slide ID
- * @param {Object} ctx - Context with organization info
  * @returns {Promise<Object|null>} Lock info or null
  */
-export async function getSlideLock(presentationId, slideId, ctx) {
+export async function getSlideLock(scope, presentationId, slideId) {
+  toStorageContext(scope, 'getSlideLock');
   const pid = norm(presentationId);
   const sid = norm(slideId);
   if (!pid || !sid) return null;
 
   return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     const row = await db
@@ -112,13 +115,14 @@ export async function getSlideLock(presentationId, slideId, ctx) {
 /**
  * Acquire a lock for editing a slide.
  * If the same user already holds the lock, refreshes it.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
  * @param {string} slideId - The slide ID
  * @param {Object} user - User info { email, name }
- * @param {Object} ctx - Context with organization info
  * @returns {Promise<Object>} { ok: boolean, reason?, lock? }
  */
-export async function acquireSlideLock(presentationId, slideId, { email, name, userId } = {}, ctx) {
+export async function acquireSlideLock(scope, presentationId, slideId, { email, name, userId } = {}) {
+  toStorageContext(scope, 'acquireSlideLock');
   const pid = norm(presentationId);
   const sid = norm(slideId);
   const holderEmail = norm(email).toLowerCase();
@@ -130,7 +134,7 @@ export async function acquireSlideLock(presentationId, slideId, { email, name, u
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
     const expiresAt = isoAfter(LOCK_TTL_MS);
 
@@ -211,13 +215,14 @@ export async function acquireSlideLock(presentationId, slideId, { email, name, u
 /**
  * Refresh an existing slide lock (extend TTL).
  * Only the current holder can refresh.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
  * @param {string} slideId - The slide ID
  * @param {Object} user - User info { email }
- * @param {Object} ctx - Context with organization info
  * @returns {Promise<Object>} { ok: boolean, reason?, lock? }
  */
-export async function refreshSlideLock(presentationId, slideId, { email, userId } = {}, ctx) {
+export async function refreshSlideLock(scope, presentationId, slideId, { email, userId } = {}) {
+  toStorageContext(scope, 'refreshSlideLock');
   const pid = norm(presentationId);
   const sid = norm(slideId);
   const holderEmail = norm(email).toLowerCase();
@@ -228,7 +233,7 @@ export async function refreshSlideLock(presentationId, slideId, { email, userId 
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
     const expiresAt = isoAfter(LOCK_TTL_MS);
 
@@ -289,13 +294,14 @@ export async function refreshSlideLock(presentationId, slideId, { email, userId 
 /**
  * Release a slide lock.
  * Only the current holder can release.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
  * @param {string} slideId - The slide ID
  * @param {Object} user - User info { email }
- * @param {Object} ctx - Context with organization info
  * @returns {Promise<Object>} { ok: boolean, reason?, released? }
  */
-export async function releaseSlideLock(presentationId, slideId, { email, userId } = {}, ctx) {
+export async function releaseSlideLock(scope, presentationId, slideId, { email, userId } = {}) {
+  toStorageContext(scope, 'releaseSlideLock');
   const pid = norm(presentationId);
   const sid = norm(slideId);
   const holderEmail = norm(email).toLowerCase();
@@ -306,7 +312,7 @@ export async function releaseSlideLock(presentationId, slideId, { email, userId 
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Check existing lock
     const existing = await db
@@ -345,12 +351,13 @@ export async function releaseSlideLock(presentationId, slideId, { email, userId 
 /**
  * Release all slide locks held by a user in a presentation.
  * Used when user navigates away or disconnects.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
  * @param {Object} user - User info { email }
- * @param {Object} ctx - Context with organization info
  * @returns {Promise<Object>} { ok: boolean, releasedCount: number }
  */
-export async function releaseAllUserSlideLocks(presentationId, { email, userId } = {}, ctx) {
+export async function releaseAllUserSlideLocks(scope, presentationId, { email, userId } = {}) {
+  toStorageContext(scope, 'releaseAllUserSlideLocks');
   const pid = norm(presentationId);
   const holderEmail = norm(email).toLowerCase();
   const holderId = userId || null;
@@ -360,7 +367,7 @@ export async function releaseAllUserSlideLocks(presentationId, { email, userId }
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable', releasedCount: 0 }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const result = await db
       .deleteFrom('slide_locks')
@@ -385,11 +392,12 @@ export async function releaseAllUserSlideLocks(presentationId, { email, userId }
 /**
  * Release all slide locks held by a user across all presentations.
  * Used for global cleanup on disconnect.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {Object} user - User info { email }
- * @param {Object} ctx - Context with organization info
  * @returns {Promise<Object>} { ok: boolean, releasedCount: number }
  */
-export async function releaseAllUserLocksGlobally({ email, userId } = {}, ctx) {
+export async function releaseAllUserLocksGlobally(scope, { email, userId } = {}) {
+  toStorageContext(scope, 'releaseAllUserLocksGlobally');
   const holderEmail = norm(email).toLowerCase();
   const holderId = userId || null;
 
@@ -398,7 +406,7 @@ export async function releaseAllUserLocksGlobally({ email, userId } = {}, ctx) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable', releasedCount: 0 }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const result = await db
       .deleteFrom('slide_locks')
@@ -440,18 +448,19 @@ export async function cleanupExpiredSlideLocks() {
 /**
  * Get list of slides locked by others for a given presentation/user.
  * Useful for UI to show which slides are unavailable.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
  * @param {Object} user - User info { email }
- * @param {Object} ctx - Context with organization info
  * @returns {Promise<Array>} Array of lock objects for slides locked by others
  */
-export async function getLockedByOthers(presentationId, { email, userId } = {}, ctx) {
+export async function getLockedByOthers(scope, presentationId, { email, userId } = {}) {
+  toStorageContext(scope, 'getLockedByOthers');
   const pid = norm(presentationId);
   const actor = { id: userId || null, email: norm(email).toLowerCase() };
   if (!pid) return [];
 
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     const rows = await db

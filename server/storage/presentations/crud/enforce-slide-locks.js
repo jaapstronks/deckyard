@@ -131,7 +131,7 @@ export async function enforceSlideLocks({
 
   // Concurrent slide locks live in the database; without one (file mode)
   // getSlideLocks returns {} and this check is a no-op.
-  const locks = await loadSlideLocks(presentationId, ctx);
+  const locks = await loadSlideLocks(ctx, presentationId);
   const email = typeof actorEmail === 'string' ? actorEmail.toLowerCase() : '';
   for (const slideId of changedIds) {
     const lock = locks?.[slideId];
