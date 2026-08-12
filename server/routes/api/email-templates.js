@@ -58,7 +58,7 @@ function handleEmailTemplateMetadata({ res }) {
 }
 
 // PUT /api/admin/email-templates/settings - Update default locale
-async function handleEmailTemplateSettings({ repoRoot, req, res }) {
+async function handleEmailTemplateSettings({ storageScope, req, res }) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -68,13 +68,13 @@ async function handleEmailTemplateSettings({ repoRoot, req, res }) {
     return badRequest(res, `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}`);
   }
 
-  const updated = await updateDefaultLocale(repoRoot, locale);
+  const updated = await updateDefaultLocale(storageScope, locale);
   serveJson(res, 200, { ok: true, defaultLocale: updated.defaultLocale });
   return true;
 }
 
 // PUT /api/admin/email-templates/:type/:locale - Update template for locale
-async function handleEmailTemplateWrite({ repoRoot, req, res }, type, locale) {
+async function handleEmailTemplateWrite({ repoRoot, storageScope, req, res }, type, locale) {
   // Validate type
   if (!TEMPLATE_METADATA[type]) {
     return badRequest(res, `Invalid template type. Valid types: ${Object.keys(TEMPLATE_METADATA).join(', ')}`);
@@ -99,7 +99,7 @@ async function handleEmailTemplateWrite({ repoRoot, req, res }, type, locale) {
   }
 
   try {
-    await writeEmailTemplate(repoRoot, type, locale, fields);
+    await writeEmailTemplate(storageScope, type, locale, fields);
     const resolved = await resolveTemplate(repoRoot, type, locale);
     serveJson(res, 200, { ok: true, template: resolved });
     return true;
@@ -109,7 +109,7 @@ async function handleEmailTemplateWrite({ repoRoot, req, res }, type, locale) {
 }
 
 // DELETE /api/admin/email-templates/:type/:locale - Reset to default
-async function handleEmailTemplateReset({ repoRoot, res }, type, locale) {
+async function handleEmailTemplateReset({ repoRoot, storageScope, res }, type, locale) {
   // Validate type
   if (!TEMPLATE_METADATA[type]) {
     return badRequest(res, `Invalid template type. Valid types: ${Object.keys(TEMPLATE_METADATA).join(', ')}`);
@@ -121,7 +121,7 @@ async function handleEmailTemplateReset({ repoRoot, res }, type, locale) {
   }
 
   try {
-    await deleteEmailTemplate(repoRoot, type, locale);
+    await deleteEmailTemplate(storageScope, type, locale);
     const resolved = await resolveTemplate(repoRoot, type, locale);
     serveJson(res, 200, { ok: true, template: resolved });
     return true;

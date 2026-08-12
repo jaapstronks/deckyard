@@ -91,7 +91,9 @@ async function handleLeadSubmit({ repoRoot, req, res }) {
   }
 
   // Get app settings for retention period
-  const settings = await getAppSettings(repoRoot);
+  const settings = await getAppSettings(
+    crossOrganizationScope(repoRoot, 'public lead submission: retention period is instance-level')
+  );
   const retentionDays = settings?.leads?.retentionDays || 365;
 
   // Create the lead

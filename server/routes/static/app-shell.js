@@ -11,6 +11,7 @@ import { getDefaultOrganizationId } from '../../config/database.js';
 import { getOrganizationById } from '../../storage/user-organizations/index.js';
 import { getOrgSettings } from '../../utils/org-settings.js';
 import { OVERRIDDEN_CORE_SLIDE_TYPE_NAMES } from '../../../shared/slide-types.js';
+import { crossOrganizationScope } from '../../storage/scope.js';
 
 /**
  * Inline-script fragment naming the core slide types a fork has overridden by
@@ -64,7 +65,9 @@ export async function injectSeoDebugAnalytics(html, { req, url, repoRoot }) {
   if (serverRenderedTypes) {
     html = html.replace('</head>', `  ${serverRenderedTypes}\n</head>`);
   }
-  const appSettings = await getAppSettings(repoRoot);
+  const appSettings = await getAppSettings(
+    crossOrganizationScope(repoRoot, 'app shell boot: external analytics config is instance-level')
+  );
   const analytics = analyticsHeadHtml({
     context: 'app',
     sandbox: sandboxEnabled(),

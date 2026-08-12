@@ -66,7 +66,9 @@ export async function handleEmbed({ repoRoot, req, res, url }) {
   const theme = await loadTheme(repoRoot, pres?.theme);
   const modeLang = resolveLangModeFromPresOrUrl(pres, url);
   const projected = projectPresentationForLang(pres, modeLang);
-  const embedSettings = await getAppSettings(repoRoot);
+  const embedSettings = await getAppSettings(
+    crossOrganizationScope(repoRoot, 'embed page: analytics config is instance-level')
+  );
   const analytics = analyticsHeadHtml({
     context: 'embed',
     sandbox: sandboxEnabled(),

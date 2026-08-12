@@ -280,6 +280,7 @@ export async function createQuestion(
   sessionId,
   { authorId, authorName, text, originalLang } = {}
 ) {
+  toStorageContext(scope, 'createQuestion', {}, { allowCrossOrganization: true });
   const sid = String(sessionId || '').trim();
   const a = normalizeActorId(authorId);
   const n = normalizeName(authorName);

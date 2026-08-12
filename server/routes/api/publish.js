@@ -56,7 +56,7 @@ async function handlePublishCreate({ repoRoot, storageScope, req, res, authedUse
         const ownerEmail = pres?.ownerEmail || pres?.createdBy || authedUser?.email;
         if (ownerEmail) {
           try {
-            const userSettings = await getUserSettings(repoRoot, ownerEmail);
+            const userSettings = await getUserSettings(storageScope, ownerEmail);
             authorInfo = {
               name: userSettings?.profile?.name || ownerEmail.split('@')[0],
               imageUrl: userSettings?.profile?.imageUrl || '',
@@ -229,7 +229,7 @@ async function handlePreviewRegenerate({ repoRoot, storageScope, res, authedUser
       const ownerEmail = pres?.ownerEmail || pres?.createdBy || authedUser?.email;
       if (ownerEmail) {
         try {
-          const userSettings = await getUserSettings(repoRoot, ownerEmail);
+          const userSettings = await getUserSettings(storageScope, ownerEmail);
           authorInfo = {
             name: userSettings?.profile?.name || ownerEmail.split('@')[0],
             imageUrl: userSettings?.profile?.imageUrl || '',

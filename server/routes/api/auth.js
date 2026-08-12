@@ -34,6 +34,7 @@ import { normalizeEmail } from '../../utils/normalize.js';
 import { resolveDesignerCapability } from '../../utils/designer.js';
 import { canEditCustomHtml } from '../../utils/route-middleware.js';
 import { getSsoPublicConfig } from '../../config/sso.js';
+import { crossOrganizationScope } from '../../storage/scope.js';
 
 /**
  * GET /api/auth/config
@@ -148,7 +149,10 @@ async function handleAuthMe({ repoRoot, req, res }) {
   let outUser = u;
   try {
     if (u?.email) {
-      const s = await getUserSettings(repoRoot, u.email);
+      const s = await getUserSettings(
+        crossOrganizationScope(repoRoot, 'login profile read: the session cookie identifies the user'),
+        u.email
+      );
       const name = String(s?.profile?.name || '').trim();
       if (name) outUser = { ...u, name };
     }

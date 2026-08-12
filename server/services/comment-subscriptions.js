@@ -25,6 +25,7 @@ import { getThreadParticipants } from '../storage/presentation-comments.js';
 import { listSubscriptions } from '../storage/presentation-subscriptions.js';
 import { getUserSettings } from '../storage/settings.js';
 import { getUserByEmail } from '../storage/users.js';
+import { crossOrganizationScope } from '../storage/scope.js';
 
 /** Notification type per recipient reason. */
 export const REASON_TO_TYPE = {
@@ -184,7 +185,10 @@ export async function resolveCommentRecipients({
       let level = overrides.get(email);
       if (!level) {
         try {
-          const settings = await getUserSettings(repoRoot || defaultRepoRoot, email);
+          const settings = await getUserSettings(
+            crossOrganizationScope(repoRoot || defaultRepoRoot, 'notification fan-out: recipient preference read'),
+            email
+          );
           level = settings?.notifications?.defaultLevel || 'participating';
         } catch {
           level = 'participating';

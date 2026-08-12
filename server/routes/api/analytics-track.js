@@ -234,7 +234,9 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
   }
 
   // Check app-level analytics settings
-  const appSettings = await getAppSettings(ctx.repoRoot);
+  const appSettings = await getAppSettings(
+    crossOrganizationScope(ctx.repoRoot ?? null, 'public view tracking: analytics switch is instance-level')
+  );
   if (!appSettings.analytics?.enabled) {
     // Analytics disabled at app level - silently accept but don't track
     return sendSuccessResponse(res, { sessionToken: null, sessionId: null }), true;
@@ -247,7 +249,10 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
   // Check user privacy settings if viewer is authenticated
   let viewerPrivacySettings = null;
   if (isAuthenticatedViewer) {
-    viewerPrivacySettings = await getUserSettings(ctx.repoRoot, viewerEmail);
+    viewerPrivacySettings = await getUserSettings(
+      crossOrganizationScope(ctx.repoRoot ?? null, 'public view tracking: viewer privacy preference'),
+      viewerEmail
+    );
 
     // If viewer has opted out of all tracking, don't track
     if (viewerPrivacySettings?.privacy?.disableAllTracking) {

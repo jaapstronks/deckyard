@@ -6,6 +6,7 @@ import { buildLeadNotificationEmail } from '../email-templates.js';
 import { sendEmail, getSenderIdentity } from './core.js';
 import { getUserSettings } from '../../storage/settings.js';
 import { resolveTemplate, interpolatePlaceholders } from '../email-template-resolver.js';
+import { crossOrganizationScope } from '../../storage/scope.js';
 
 /**
  * Send a lead notification email to the presentation owner.
@@ -22,7 +23,10 @@ export async function maybeSendLeadNotification(repoRoot, { presentation, lead }
   if (!ownerEmail) return;
 
   // Check if user has lead notifications enabled
-  const userSettings = await getUserSettings(repoRoot, ownerEmail);
+  const userSettings = await getUserSettings(
+    crossOrganizationScope(repoRoot ?? null, 'lead notification: owner e-mail preference'),
+    ownerEmail
+  );
   if (!userSettings?.notifications?.leadEmails) {
     return; // User has disabled lead notifications
   }

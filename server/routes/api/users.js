@@ -37,7 +37,7 @@ async function handleUserSearch({ res, url, authedUser }) {
 // The auth check runs before the method check, so this stays a single
 // no-method handler (see docs/reference/route-dispatch.md, Form B guard note):
 // an unauthenticated request must get a 401, not a 405.
-async function handleUserProfiles({ repoRoot, req, res, url, authedUser }) {
+async function handleUserProfiles({ storageScope, req, res, url, authedUser }) {
   // Requires authentication to prevent user enumeration
   if (!authedUser?.email) {
     return unauthorized(res, 'Authentication required');
@@ -62,7 +62,7 @@ async function handleUserProfiles({ repoRoot, req, res, url, authedUser }) {
   const profileEntries = await Promise.all(
     emails.map(async (email) => {
       try {
-        const settings = await getUserSettings(repoRoot, email);
+        const settings = await getUserSettings(storageScope, email);
         return [
           email,
           {

@@ -31,7 +31,7 @@ import { getCtx } from './comments-shared.js';
  * Supports both authenticated users and verified guests with share link access.
  */
 export async function handlePresentationCommentsList(
-  { repoRoot, req, res, url, authedUser } = {},
+  { repoRoot, storageScope, req, res, url, authedUser } = {},
   id
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
@@ -54,7 +54,7 @@ export async function handlePresentationCommentsList(
   // too. Best-effort: recognition falls back to the default/legacy addresses.
   let aiEmail;
   try {
-    aiEmail = (await getAiIdentity(repoRoot)).email;
+    aiEmail = (await getAiIdentity(storageScope)).email;
   } catch {
     aiEmail = undefined;
   }

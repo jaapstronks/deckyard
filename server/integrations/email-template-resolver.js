@@ -13,6 +13,16 @@ import {
   DEFAULT_LOCALE,
 } from '../storage/email-templates.js';
 import { escapeHtml } from '../../shared/slide-types/helpers.js';
+import { crossOrganizationScope } from '../storage/scope.js';
+
+/**
+ * The scope template reads run under: outgoing mail — including pre-auth
+ * magic links and invitations — resolves instance-level template config
+ * without a session.
+ */
+function templateScope(repoRoot) {
+  return crossOrganizationScope(repoRoot ?? null, 'email template resolve: instance-level template config');
+}
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -184,7 +194,7 @@ function getCodeDefault(type, field, locale) {
  */
 async function resolveTemplateField(repoRoot, type, field, locale) {
   // Try custom override for requested locale
-  const override = await getEmailTemplateOverride(repoRoot, type, locale);
+  const override = await getEmailTemplateOverride(templateScope(repoRoot), type, locale);
   if (override && override[field]) {
     return override[field];
   }
@@ -225,7 +235,7 @@ export async function resolveTemplate(repoRoot, type, locale) {
   };
 
   // Get override to check if any custom values exist
-  const override = await getEmailTemplateOverride(repoRoot, type, normalizedLocale);
+  const override = await getEmailTemplateOverride(templateScope(repoRoot), type, normalizedLocale);
   if (override && Object.keys(override).length > 0) {
     result.isCustom = true;
   }
@@ -245,7 +255,7 @@ export async function resolveTemplate(repoRoot, type, locale) {
  * @returns {Promise<AllTemplatesResult>} All templates with metadata and resolved values
  */
 export async function getAllTemplates(repoRoot) {
-  const data = await getEmailTemplates(repoRoot);
+  const data = await getEmailTemplates(templateScope(repoRoot));
   const result = {
     defaultLocale: data.defaultLocale,
     supportedLocales: SUPPORTED_LOCALES,

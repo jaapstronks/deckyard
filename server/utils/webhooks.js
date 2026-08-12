@@ -2,6 +2,12 @@ import { getAppSettings, getUserSettings } from '../storage/settings.js';
 import { getRequestOrigin, toAbsoluteUrl } from './request-url.js';
 import { nowIso } from './normalize.js';
 import { assertPublicHttpUrl } from './ssrf-guard.js';
+import { crossOrganizationScope } from '../storage/scope.js';
+
+/** Webhook config reads run outside any request: instance-level settings. */
+function webhookSettingsScope(repoRoot) {
+  return crossOrganizationScope(repoRoot ?? null, 'webhook dispatch: config is instance-level');
+}
 
 function pickDisplayName({ authedUser, userSettings }) {
   const profileName =
@@ -196,7 +202,7 @@ export async function maybeFireWebhook(
   if (!e) return;
   if (!repoRoot) return;
 
-  const settings = await getAppSettings(repoRoot);
+  const settings = await getAppSettings(webhookSettingsScope(repoRoot));
   const wh =
     settings?.webhooks && typeof settings.webhooks === 'object'
       ? settings.webhooks
@@ -215,7 +221,9 @@ export async function maybeFireWebhook(
   if (!url) return;
 
   const email = String(authedUser?.email || '').trim();
-  const userSettings = email ? await getUserSettings(repoRoot, email) : null;
+  const userSettings = email
+    ? await getUserSettings(webhookSettingsScope(repoRoot), email)
+    : null;
 
   // Use different payload builder for slide library events
   const payload = e === 'slide.added_to_team_library'
@@ -264,7 +272,7 @@ export async function maybeFireLeadWebhook(
 ) {
   if (!repoRoot || !lead) return;
 
-  const settings = await getAppSettings(repoRoot);
+  const settings = await getAppSettings(webhookSettingsScope(repoRoot));
   const wh =
     settings?.webhooks && typeof settings.webhooks === 'object'
       ? settings.webhooks
@@ -317,7 +325,7 @@ export async function maybeFireInteractionWebhook(
   if (!e) return;
   if (!repoRoot) return;
 
-  const settings = await getAppSettings(repoRoot);
+  const settings = await getAppSettings(webhookSettingsScope(repoRoot));
   const wh =
     settings?.webhooks && typeof settings.webhooks === 'object'
       ? settings.webhooks
