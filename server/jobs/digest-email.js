@@ -17,6 +17,7 @@ import {
 } from '../services/digest-generation.js';
 import { sendWeeklyDigestEmail, sendTeamDigestEmail } from '../integrations/brevo.js';
 import { getAppSettings } from '../storage/settings.js';
+import { crossOrganizationScope } from '../storage/scope.js';
 
 // ============================================================
 // JOB RUNNER
@@ -38,7 +39,9 @@ async function runDigestEmailJob({ repoRoot = null, dayOfWeek = null } = {}) {
   // Check if analytics is enabled globally
   if (repoRoot) {
     try {
-      const appSettings = await getAppSettings(repoRoot);
+      const appSettings = await getAppSettings(
+        crossOrganizationScope(repoRoot ?? null, 'digest job: analytics switch is instance-level')
+      );
       if (!appSettings.analytics?.enabled) {
         console.log('[digest-email] Analytics disabled, skipping digest job');
         return results;

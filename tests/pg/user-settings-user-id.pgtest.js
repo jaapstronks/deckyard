@@ -37,6 +37,7 @@ import assert from 'node:assert/strict';
 import { closeTestDb, openTestDb, pgDescribe, truncate } from './helpers/harness.js';
 import { getUserSettings, writeUserSettings } from '../../server/storage/settings.js';
 import { getDefaultOrganizationId } from '../../server/config/database.js';
+import { testScope } from '../helpers/storage-scope.js';
 
 const ORG = getDefaultOrganizationId();
 
@@ -82,14 +83,14 @@ pgDescribe('user_settings on users.id (real PostgreSQL)', () => {
   }
 
   it("stamps a known user's stable users.id on write", async () => {
-    await writeUserSettings(null, ALICE_EMAIL, { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), ALICE_EMAIL, { uiLocale: 'nl' });
 
     assert.deepEqual(await rows(), [{ email: ALICE_EMAIL, user_id: ALICE_ID }]);
-    assert.equal((await getUserSettings(null, ALICE_EMAIL)).uiLocale, 'nl');
+    assert.equal((await getUserSettings(testScope(), ALICE_EMAIL)).uiLocale, 'nl');
   });
 
   it('a renamed user keeps their settings', async () => {
-    await writeUserSettings(null, ALICE_EMAIL, {
+    await writeUserSettings(testScope(), ALICE_EMAIL, {
       uiLocale: 'nl',
       highlighter: { color: '#00ff00', thickness: 7 },
     });
@@ -97,48 +98,48 @@ pgDescribe('user_settings on users.id (real PostgreSQL)', () => {
     await renameUser(ALICE_ID, ALICE_NEW_EMAIL);
 
     // The whole point of the re-key: the address changed, the person did not.
-    const after = await getUserSettings(null, ALICE_NEW_EMAIL);
+    const after = await getUserSettings(testScope(), ALICE_NEW_EMAIL);
     assert.equal(after.uiLocale, 'nl');
     assert.equal(after.highlighter.color, '#00ff00');
     assert.equal(after.highlighter.thickness, 7);
   });
 
   it('a write after a rename re-stamps the e-mail on the same row', async () => {
-    await writeUserSettings(null, ALICE_EMAIL, { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), ALICE_EMAIL, { uiLocale: 'nl' });
     await renameUser(ALICE_ID, ALICE_NEW_EMAIL);
-    await writeUserSettings(null, ALICE_NEW_EMAIL, { digest: { dayOfWeek: 4 } });
+    await writeUserSettings(testScope(), ALICE_NEW_EMAIL, { digest: { dayOfWeek: 4 } });
 
     // One row, not two: matched on user_id, with its e-mail column brought
     // back in step so the id and the address never drift apart.
     assert.deepEqual(await rows(), [{ email: ALICE_NEW_EMAIL, user_id: ALICE_ID }]);
 
-    const merged = await getUserSettings(null, ALICE_NEW_EMAIL);
+    const merged = await getUserSettings(testScope(), ALICE_NEW_EMAIL);
     assert.equal(merged.uiLocale, 'nl', 'the partial write merged onto the stored value');
     assert.equal(merged.digest.dayOfWeek, 4);
   });
 
   it('the old address no longer answers after a rename', async () => {
-    await writeUserSettings(null, ALICE_EMAIL, { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), ALICE_EMAIL, { uiLocale: 'nl' });
     await renameUser(ALICE_ID, ALICE_NEW_EMAIL);
-    await writeUserSettings(null, ALICE_NEW_EMAIL, { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), ALICE_NEW_EMAIL, { uiLocale: 'nl' });
 
     // The address is nobody's now, so it reads the code defaults rather than
     // handing a stranger the previous holder's preferences.
-    assert.equal((await getUserSettings(null, ALICE_EMAIL)).uiLocale, 'en');
+    assert.equal((await getUserSettings(testScope(), ALICE_EMAIL)).uiLocale, 'en');
   });
 
   it('an address with no users row stays external, with a NULL id', async () => {
-    await writeUserSettings(null, EXTERNAL_EMAIL, { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), EXTERNAL_EMAIL, { uiLocale: 'nl' });
 
     assert.deepEqual(await rows(), [{ email: EXTERNAL_EMAIL, user_id: null }]);
-    assert.equal((await getUserSettings(null, EXTERNAL_EMAIL)).uiLocale, 'nl');
+    assert.equal((await getUserSettings(testScope(), EXTERNAL_EMAIL)).uiLocale, 'nl');
   });
 
   it('the anonymous bucket is not a person and never takes an id', async () => {
-    await writeUserSettings(null, '', { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), '', { uiLocale: 'nl' });
 
     assert.deepEqual(await rows(), [{ email: 'anonymous', user_id: null }]);
-    assert.equal((await getUserSettings(null, null)).uiLocale, 'nl');
+    assert.equal((await getUserSettings(testScope(), null)).uiLocale, 'nl');
   });
 
   it('a legacy e-mail-keyed row picks up its id on the first write', async () => {
@@ -149,21 +150,21 @@ pgDescribe('user_settings on users.id (real PostgreSQL)', () => {
       .values({ email: BOB_EMAIL, user_id: null, settings: JSON.stringify({ uiLocale: 'nl' }) })
       .execute();
 
-    assert.equal((await getUserSettings(null, BOB_EMAIL)).uiLocale, 'nl', 'read still finds it');
+    assert.equal((await getUserSettings(testScope(), BOB_EMAIL)).uiLocale, 'nl', 'read still finds it');
 
-    await writeUserSettings(null, BOB_EMAIL, { digest: { dayOfWeek: 3 } });
+    await writeUserSettings(testScope(), BOB_EMAIL, { digest: { dayOfWeek: 3 } });
 
     assert.deepEqual(await rows(), [{ email: BOB_EMAIL, user_id: BOB_ID }], 'adopted, not duplicated');
-    const merged = await getUserSettings(null, BOB_EMAIL);
+    const merged = await getUserSettings(testScope(), BOB_EMAIL);
     assert.equal(merged.uiLocale, 'nl', 'and the legacy value survived the adoption');
     assert.equal(merged.digest.dayOfWeek, 3);
   });
 
   it('two people never share an id, but any number may share a NULL', async () => {
-    await writeUserSettings(null, ALICE_EMAIL, { uiLocale: 'nl' });
-    await writeUserSettings(null, BOB_EMAIL, { uiLocale: 'nl' });
-    await writeUserSettings(null, EXTERNAL_EMAIL, { uiLocale: 'nl' });
-    await writeUserSettings(null, '', { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), ALICE_EMAIL, { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), BOB_EMAIL, { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), EXTERNAL_EMAIL, { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), '', { uiLocale: 'nl' });
 
     assert.deepEqual(await rows(), [
       { email: ALICE_EMAIL, user_id: ALICE_ID },
@@ -184,12 +185,12 @@ pgDescribe('user_settings on users.id (real PostgreSQL)', () => {
   });
 
   it('deleting the user keeps the settings row, id dropped', async () => {
-    await writeUserSettings(null, BOB_EMAIL, { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), BOB_EMAIL, { uiLocale: 'nl' });
     await db.deleteFrom('users').where('id', '=', BOB_ID).execute();
 
     // ON DELETE SET NULL, not CASCADE: losing the account must not silently
     // delete what the person stored.
     assert.deepEqual(await rows(), [{ email: BOB_EMAIL, user_id: null }]);
-    assert.equal((await getUserSettings(null, BOB_EMAIL)).uiLocale, 'nl');
+    assert.equal((await getUserSettings(testScope(), BOB_EMAIL)).uiLocale, 'nl');
   });
 });

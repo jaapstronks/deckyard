@@ -4,6 +4,7 @@
 
 import { getEmailSender } from '../../storage/settings.js';
 import { getAppName } from '../../config/branding.js';
+import { crossOrganizationScope } from '../../storage/scope.js';
 
 export const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
@@ -24,7 +25,9 @@ export async function getSenderIdentity(repoRoot) {
     };
   }
   try {
-    return await getEmailSender(repoRoot);
+    return await getEmailSender(
+      crossOrganizationScope(repoRoot ?? null, 'outgoing mail: sender identity is instance-level')
+    );
   } catch {
     return {
       email: process.env.BREVO_SENDER_EMAIL || DEFAULT_SENDER_EMAIL,

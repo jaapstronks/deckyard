@@ -6,12 +6,15 @@
  * singleton `email_template_settings` (see migration 058). Code defaults remain
  * in server/i18n/locales/*.json.
  *
- * The facade is unchanged from the file-backed version — every function still
- * takes `repoRoot` first for call-site stability — but that argument is now
- * unused: persistence no longer touches disk.
+ * Every function takes a `StorageScope` first (docs/reference/storage-scope.md).
+ * Templates are instance-level configuration: the reads accept a
+ * cross-organization scope (outgoing mail — including pre-auth magic links and
+ * invitations — resolves templates without a session), the admin writes
+ * validate strictly.
  */
 
 import { sql } from 'kysely';
+import { toStorageContext } from './backend-dispatch.js';
 import { withDbGuard } from './utils/db-guard.js';
 import {
   SUPPORTED_LOCALES as SHARED_SUPPORTED_LOCALES,
@@ -108,10 +111,11 @@ function emptyConfig() {
 
 /**
  * Read all email template overrides plus the instance default locale.
- * @param {string} [repoRoot] - Unused; retained for facade-API stability.
+ * @param {import('./scope.js').StorageScope} scope
  * @returns {Promise<Object>} Email templates configuration
  */
-export async function getEmailTemplates(repoRoot) {
+export async function getEmailTemplates(scope) {
+  toStorageContext(scope, 'getEmailTemplates', {}, { allowCrossOrganization: true });
   return withDbGuard(emptyConfig(), async (db) => {
     const [rows, settings] = await Promise.all([
       db.selectFrom('email_templates').select(['type', 'locale', 'fields']).execute(),
@@ -157,13 +161,15 @@ function normalizeFields(type, fields) {
  * Write email template override for a specific type and locale. An override
  * that normalizes to no fields deletes the row (mirrors the old file
  * semantics, where an empty entry was removed).
- * @param {string} [repoRoot] - Unused; retained for facade-API stability.
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} type - Template type (e.g., 'userInvitation')
  * @param {string} locale - Locale code (e.g., 'en')
  * @param {Object} fields - Template fields to save
  * @returns {Promise<Object>} Updated templates configuration
  */
-export async function writeEmailTemplate(repoRoot, type, locale, fields) {
+export async function writeEmailTemplate(scope, type, locale, fields) {
+  // Admin action: the scope states its organization.
+  toStorageContext(scope, 'writeEmailTemplate');
   if (!TEMPLATE_METADATA[type]) {
     throw new Error(`Invalid template type: ${type}`);
   }
@@ -192,19 +198,21 @@ export async function writeEmailTemplate(repoRoot, type, locale, fields) {
         .where('locale', '=', locale)
         .execute();
     }
-    return getEmailTemplates(repoRoot);
+    return getEmailTemplates(scope);
   });
 }
 
 /**
  * Delete email template override for a specific type and locale.
  * Resets to code defaults.
- * @param {string} [repoRoot] - Unused; retained for facade-API stability.
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} type - Template type (e.g., 'userInvitation')
  * @param {string} locale - Locale code (e.g., 'en')
  * @returns {Promise<Object>} Updated templates configuration
  */
-export async function deleteEmailTemplate(repoRoot, type, locale) {
+export async function deleteEmailTemplate(scope, type, locale) {
+  // Admin action: the scope states its organization.
+  toStorageContext(scope, 'deleteEmailTemplate');
   if (!TEMPLATE_METADATA[type]) {
     throw new Error(`Invalid template type: ${type}`);
   }
@@ -218,17 +226,19 @@ export async function deleteEmailTemplate(repoRoot, type, locale) {
       .where('type', '=', type)
       .where('locale', '=', locale)
       .execute();
-    return getEmailTemplates(repoRoot);
+    return getEmailTemplates(scope);
   });
 }
 
 /**
  * Update the instance default locale setting (upserts the singleton row).
- * @param {string} [repoRoot] - Unused; retained for facade-API stability.
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} locale - New default locale
  * @returns {Promise<Object>} Updated templates configuration
  */
-export async function updateDefaultLocale(repoRoot, locale) {
+export async function updateDefaultLocale(scope, locale) {
+  // Admin action: the scope states its organization.
+  toStorageContext(scope, 'updateDefaultLocale');
   if (!SUPPORTED_LOCALES.includes(locale)) {
     throw new Error(`Invalid locale: ${locale}`);
   }
@@ -241,18 +251,19 @@ export async function updateDefaultLocale(repoRoot, locale) {
         oc.column('id').doUpdateSet({ default_locale: locale, updated_at: sql`now()` })
       )
       .execute();
-    return getEmailTemplates(repoRoot);
+    return getEmailTemplates(scope);
   });
 }
 
 /**
  * Get template override for a specific type and locale.
- * @param {string} [repoRoot] - Unused; retained for facade-API stability.
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} type - Template type
  * @param {string} locale - Locale code
  * @returns {Promise<Object|null>} Template override or null if not set
  */
-export async function getEmailTemplateOverride(repoRoot, type, locale) {
+export async function getEmailTemplateOverride(scope, type, locale) {
+  toStorageContext(scope, 'getEmailTemplateOverride', {}, { allowCrossOrganization: true });
   return withDbGuard(null, async (db) => {
     const row = await db
       .selectFrom('email_templates')
@@ -267,10 +278,11 @@ export async function getEmailTemplateOverride(repoRoot, type, locale) {
 /**
  * Get the configured default locale for email templates.
  * Used when sending user invitation emails without a specified locale.
- * @param {string} [repoRoot] - Unused; retained for facade-API stability.
+ * @param {import('./scope.js').StorageScope} scope
  * @returns {Promise<string>} Default locale code
  */
-export async function getEmailDefaultLocale(repoRoot) {
+export async function getEmailDefaultLocale(scope) {
+  toStorageContext(scope, 'getEmailDefaultLocale', {}, { allowCrossOrganization: true });
   return withDbGuard(DEFAULT_LOCALE, async (db) => {
     const row = await db
       .selectFrom('email_template_settings')

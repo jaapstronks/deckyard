@@ -37,6 +37,7 @@ import {
 } from '../../integrations/giphy.js';
 import { listBundledGradients } from '../../media/bundled-gradients.js';
 import { dispatchRoutes } from '../../utils/router.js';
+import { crossOrganizationScope } from '../../storage/scope.js';
 
 /**
  * Get stock media provider status and configuration.
@@ -44,7 +45,9 @@ import { dispatchRoutes } from '../../utils/router.js';
  * @returns {Promise<Object>}
  */
 async function getStockMediaStatus(repoRoot) {
-  const settings = await getAppSettings(repoRoot);
+  const settings = await getAppSettings(
+    crossOrganizationScope(repoRoot, 'stock media source toggles: instance-level settings')
+  );
   const stockMedia = settings?.stockMedia || {};
 
   return {

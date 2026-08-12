@@ -19,6 +19,8 @@ import assert from 'node:assert';
 const { defaultAppSettings, getDefaultThemeId } = await import(
   '../server/storage/settings.js'
 );
+const { crossOrganizationScope } = await import('../server/storage/scope.js');
+const scope = crossOrganizationScope(null, 'test: instance-level settings read');
 const { DEFAULT_THEME_ID } = await import('../shared/constants/themes.js');
 
 describe('app settings: default theme + picker allowlist', () => {
@@ -33,7 +35,7 @@ describe('getDefaultThemeId fallback precedence (empty store)', () => {
   it('falls back to the DEFAULT_THEME env var (fork seam)', async () => {
     process.env.DEFAULT_THEME = 'ciiic';
     try {
-      assert.strictEqual(await getDefaultThemeId(), 'ciiic');
+      assert.strictEqual(await getDefaultThemeId(scope), 'ciiic');
     } finally {
       delete process.env.DEFAULT_THEME;
     }
@@ -41,6 +43,6 @@ describe('getDefaultThemeId fallback precedence (empty store)', () => {
 
   it('falls back to the built-in default when nothing is set', async () => {
     delete process.env.DEFAULT_THEME;
-    assert.strictEqual(await getDefaultThemeId(), DEFAULT_THEME_ID);
+    assert.strictEqual(await getDefaultThemeId(scope), DEFAULT_THEME_ID);
   });
 });

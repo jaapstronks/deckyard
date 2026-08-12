@@ -20,6 +20,7 @@ import {
 import { broadcastToUser, NotificationEventTypes } from './notification-events.js';
 import { resolveCommentRecipients, REASON_TO_TYPE } from './comment-subscriptions.js';
 import { getUserByEmail } from '../storage/users.js';
+import { crossOrganizationScope } from '../storage/scope.js';
 
 /**
  * Send notifications for a newly created comment.
@@ -70,7 +71,9 @@ export async function notifyCommentCreated(repoRoot, req, {
 
   if (recipientEmails.size === 0 && webhookRecipients.size === 0) return;
 
-  const settings = await getAppSettings(repoRoot);
+  const settings = await getAppSettings(
+    crossOrganizationScope(repoRoot ?? null, 'comment notification fan-out: e-mail switch is instance-level')
+  );
   const origin = getRequestOrigin(req);
   const editUrl = origin && presentation?.id
     ? `${origin}/app/${presentation.id}`
@@ -90,7 +93,10 @@ export async function notifyCommentCreated(repoRoot, req, {
   const recipientPrefs = new Map();
   await Promise.all(
     [...new Set([...recipientEmails, ...webhookRecipients])].map(async (email) => {
-      const userSettings = await getUserSettings(repoRoot, email);
+      const userSettings = await getUserSettings(
+      crossOrganizationScope(repoRoot ?? null, 'comment notification fan-out: recipient preference read'),
+      email
+    );
       recipientPrefs.set(email, userSettings?.notifications || {});
     })
   );
@@ -249,14 +255,19 @@ export async function notifyMentionsAdded(repoRoot, req, {
     ctx,
   });
 
-  const settings = await getAppSettings(repoRoot);
+  const settings = await getAppSettings(
+    crossOrganizationScope(repoRoot ?? null, 'comment notification fan-out: e-mail switch is instance-level')
+  );
   const origin = getRequestOrigin(req);
   const editUrl = origin && presentation?.id
     ? `${origin}/app/${presentation.id}`
     : null;
   const recipientPrefs = new Map();
   await Promise.all(recipients.map(async ({ email }) => {
-    const userSettings = await getUserSettings(repoRoot, email);
+    const userSettings = await getUserSettings(
+      crossOrganizationScope(repoRoot ?? null, 'comment notification fan-out: recipient preference read'),
+      email
+    );
     recipientPrefs.set(email, userSettings?.notifications || {});
   }));
   await sendCommentEmails({

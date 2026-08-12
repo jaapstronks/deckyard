@@ -54,7 +54,7 @@ function canManageThemes(authedUser) {
 }
 
 // GET /api/themes - List all themes (system + custom)
-async function handleThemeList({ repoRoot, res, authedUser }) {
+async function handleThemeList({ repoRoot, storageScope, res, authedUser }) {
   const ctx = createRouteContext(authedUser);
 
   // Load system themes from filesystem. Sandbox is a public, neutral
@@ -113,8 +113,8 @@ async function handleThemeList({ repoRoot, res, authedUser }) {
   // picker can show a default-visible subset and hide the rest behind a
   // "Show all themes" toggle. An empty allowlist means every theme is shown.
   const [{ enabledThemes }, defaultThemeId] = await Promise.all([
-    getAppSettings(repoRoot),
-    getDefaultThemeId(repoRoot),
+    getAppSettings(storageScope),
+    getDefaultThemeId(storageScope),
   ]);
   const allowlist = Array.isArray(enabledThemes) ? enabledThemes : [];
   const allowSet = new Set(allowlist.map((id) => String(id).toLowerCase()));

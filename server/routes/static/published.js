@@ -203,7 +203,9 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
 
     ${jsonLdScript}
     `.trim();
-  const publishedSettings = await getAppSettings(repoRoot);
+  const publishedSettings = await getAppSettings(
+    crossOrganizationScope(repoRoot, 'published deck page: analytics config is instance-level')
+  );
   const analytics = analyticsHeadHtml({
     context: 'published',
     sandbox: sandboxNoindex,

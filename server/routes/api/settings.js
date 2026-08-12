@@ -46,8 +46,8 @@ async function canWriteOrgAdminKeys(authedUser, organizationId) {
 // - writable by admins only
 
 // GET /api/settings/app
-async function handleAppSettingsGet({ repoRoot, res, authedUser }) {
-  const settings = await getAppSettings(repoRoot);
+async function handleAppSettingsGet({ storageScope, res, authedUser }) {
+  const settings = await getAppSettings(storageScope);
   // Webhook URLs are admin-only; keep them out of non-admin clients.
   if (!authedUser?.isAdmin) {
     try {
@@ -61,12 +61,12 @@ async function handleAppSettingsGet({ repoRoot, res, authedUser }) {
 }
 
 // PUT /api/settings/app (admin only)
-async function handleAppSettingsPut({ repoRoot, req, res, authedUser }) {
+async function handleAppSettingsPut({ storageScope, req, res, authedUser }) {
   if (!authedUser?.isAdmin) return unauthorized(res);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const settings = await writeAppSettings(repoRoot, body);
+  const settings = await writeAppSettings(storageScope, body);
   serveJson(res, 200, { settings });
   return true;
 }
@@ -162,12 +162,12 @@ async function handleOrgSettingsPatch({ req, res, authedUser }) {
 // Per-user settings (profile display name, UI language / language mode).
 // The email guard runs before the method check, so this stays a single
 // no-method handler (see docs/reference/route-dispatch.md, Form B guard note).
-async function handleMySettings({ repoRoot, req, res, authedUser }) {
+async function handleMySettings({ storageScope, req, res, authedUser }) {
   const email = String(authedUser?.email || '').trim();
   if (!email) return unauthorized(res);
 
   if (req.method === 'GET') {
-    const settings = await getUserSettings(repoRoot, email);
+    const settings = await getUserSettings(storageScope, email);
     serveJson(res, 200, { settings });
     return true;
   }
@@ -175,7 +175,7 @@ async function handleMySettings({ repoRoot, req, res, authedUser }) {
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
-    const settings = await writeUserSettings(repoRoot, email, body);
+    const settings = await writeUserSettings(storageScope, email, body);
     serveJson(res, 200, { settings });
     return true;
   }

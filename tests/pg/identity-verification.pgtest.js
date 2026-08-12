@@ -32,6 +32,7 @@ import {
 } from '../../server/storage/identity-verification.js';
 import { getUserSettings, writeUserSettings } from '../../server/storage/settings.js';
 import { getDefaultOrganizationId } from '../../server/config/database.js';
+import { testScope } from '../helpers/storage-scope.js';
 
 const ORG = getDefaultOrganizationId();
 
@@ -239,7 +240,7 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
 
   it('a rename into an address held by an orphan row keeps the id-bearing row and drops the orphan', async () => {
     // Alice has settings under her current address…
-    await writeUserSettings(null, ALICE, { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), ALICE, { uiLocale: 'nl' });
     // …and some id-less row already sits on the address she is about to take:
     // a legacy disk import, or an address that never became an account.
     await db
@@ -254,7 +255,7 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
     await db.updateTable('users').set({ email: ALICE_RENAMED }).where('id', '=', ALICE_ID).execute();
 
     // Before the orphan rule this threw on the e-mail primary key.
-    await writeUserSettings(null, ALICE_RENAMED, { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), ALICE_RENAMED, { uiLocale: 'nl' });
 
     const rows = await db
       .selectFrom('user_settings')
@@ -265,7 +266,7 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
     assert.equal(rows[0].user_id, ALICE_ID, 'the surviving row is the id-bearing one');
     assert.equal(rows[0].settings.uiLocale, 'nl', "and it carries Alice's settings, not the orphan's");
 
-    const read = await getUserSettings(null, ALICE_RENAMED);
+    const read = await getUserSettings(testScope(), ALICE_RENAMED);
     assert.equal(read.uiLocale, 'nl', 'the rename kept her preferences');
   });
 
@@ -277,7 +278,7 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
       .values({ email: BOB, user_id: null, settings: JSON.stringify({ uiLocale: 'en-gb' }) })
       .execute();
 
-    await writeUserSettings(null, BOB, {});
+    await writeUserSettings(testScope(), BOB, {});
 
     const rows = await db
       .selectFrom('user_settings')
@@ -290,13 +291,13 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
   });
 
   it('leaves an unrelated orphan row alone', async () => {
-    await writeUserSettings(null, ALICE, { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), ALICE, { uiLocale: 'nl' });
     await db
       .insertInto('user_settings')
       .values({ email: EXTERNAL, user_id: null, settings: JSON.stringify({ uiLocale: 'en-gb' }) })
       .execute();
 
-    await writeUserSettings(null, ALICE, { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), ALICE, { uiLocale: 'nl' });
 
     const row = await db
       .selectFrom('user_settings')
@@ -374,7 +375,7 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
         updated_by_user_id: ALICE_ID,
       })
       .execute();
-    await writeUserSettings(null, ALICE, {});
+    await writeUserSettings(testScope(), ALICE, {});
 
     const report = await verifyIdentityConsistency();
     assert.equal(report.ok, true, formatIdentityReport(report).join('\n'));
@@ -405,7 +406,7 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
       })
       .execute();
     // The shared anonymous bucket: never a person, so never an id.
-    await writeUserSettings(null, '', {});
+    await writeUserSettings(testScope(), '', {});
 
     const report = await verifyIdentityConsistency();
     assert.equal(report.ok, true, formatIdentityReport(report).join('\n'));
@@ -457,14 +458,14 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
     // Alice renames. Her settings row keeps the old address in its `email`
     // column until she writes again — the exact "id present, e-mail stale"
     // state the re-stamp exists to close, and the one this check watches.
-    await writeUserSettings(null, ALICE, { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), ALICE, { uiLocale: 'nl' });
     await db.updateTable('users').set({ email: ALICE_RENAMED }).where('id', '=', ALICE_ID).execute();
 
     const drifted = await verifyIdentityConsistency();
     assert.equal(drifted.ok, false, 'a stale e-mail column is a mismatch, not a shrug');
     assert.equal(check(drifted, 'user_settings', 'user_id').mismatched, 1);
 
-    await writeUserSettings(null, ALICE_RENAMED, {});
+    await writeUserSettings(testScope(), ALICE_RENAMED, {});
 
     const healed = await verifyIdentityConsistency();
     assert.equal(healed.ok, true, formatIdentityReport(healed).join('\n'));
