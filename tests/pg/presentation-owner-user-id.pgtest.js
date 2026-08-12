@@ -172,12 +172,7 @@ pgDescribe('presentation owner user_id dual-key write (real PostgreSQL)', () => 
   it('transfer to a known member moves owner_email and owner_user_id together, leaving creator intact', async () => {
     const pres = await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
 
-    const result = await transferPresentationOwnership(
-      null,
-      pres.id,
-      { newOwnerEmail: MEMBER_EMAIL, previousOwnerEmail: OWNER_EMAIL, actorEmail: OWNER_EMAIL },
-      storageScope
-    );
+    const result = await transferPresentationOwnership(storageScope, pres.id, { newOwnerEmail: MEMBER_EMAIL, previousOwnerEmail: OWNER_EMAIL, actorEmail: OWNER_EMAIL });
     assert.equal(result.ok, true);
 
     const row = await storedRow(pres.id);
@@ -196,12 +191,7 @@ pgDescribe('presentation owner user_id dual-key write (real PostgreSQL)', () => 
     const external = 'newowner@external.test'; // deliberately NOT in `users`
     const pres = await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
 
-    const result = await transferPresentationOwnership(
-      null,
-      pres.id,
-      { newOwnerEmail: external, previousOwnerEmail: OWNER_EMAIL, actorEmail: OWNER_EMAIL },
-      storageScope
-    );
+    const result = await transferPresentationOwnership(storageScope, pres.id, { newOwnerEmail: external, previousOwnerEmail: OWNER_EMAIL, actorEmail: OWNER_EMAIL });
     assert.equal(result.ok, true);
 
     const row = await storedRow(pres.id);

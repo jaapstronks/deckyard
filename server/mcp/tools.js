@@ -1386,7 +1386,7 @@ export function registerTools(
       const ctx = { actorEmail: owner, organizationId: context?.organizationId };
 
       // Access guard: only decks the acting owner can see (owned or shared).
-      const refs = await listAccessiblePresentationRefs(repoRoot, ctx, 'all');
+      const refs = await listAccessiblePresentationRefs(storageScopeOf(context), 'all');
       const ref = refs.find((r) => r.id === presentationId);
       if (!ref) {
         throw new Error(`Presentation not found or not accessible: ${presentationId}`);
@@ -1450,10 +1450,8 @@ export function registerTools(
     },
     async ({ scope = 'all', authorEmail, status = 'all', since, limit = 50 } = {}, context) => {
       const owner = getOwner(context);
-      const ctx = { actorEmail: owner, organizationId: context?.organizationId };
-
-      const { comments, total } = await listRecentCommentsForOwner(repoRoot, ctx, {
-        scope,
+      const { comments, total } = await listRecentCommentsForOwner(storageScopeOf(context), {
+        visibility: scope,
         authorEmail: authorEmail || null,
         status,
         since: parseSince(since) || null,
