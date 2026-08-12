@@ -115,31 +115,35 @@ describe('collectUnreadThreadIds', () => {
 });
 
 describe('markThreadsRead (no-DB contract)', () => {
-  const CTX = { actorEmail: 'someone@example.com' };
+  const CTX = {
+    organizationId: '00000000-0000-0000-0000-0000000000aa',
+    actorEmail: 'someone@example.com',
+  };
+  const GUEST = { organizationId: CTX.organizationId };
 
   it('requires a presentation id', async () => {
-    const r = await markThreadsRead('', ['11111111-1111-1111-1111-111111111111'], CTX);
+    const r = await markThreadsRead(CTX, '', ['11111111-1111-1111-1111-111111111111']);
     assert.deepStrictEqual(r, { ok: false, reason: 'invalid_presentation' });
   });
 
   it('is a cheap no-op without an acting user (guests)', async () => {
-    const r = await markThreadsRead('pres-1', ['11111111-1111-1111-1111-111111111111'], {});
+    const r = await markThreadsRead(GUEST, 'pres-1', ['11111111-1111-1111-1111-111111111111']);
     assert.deepStrictEqual(r, { ok: true, marked: 0 });
   });
 
   it('is a no-op for an empty or non-uuid id list', async () => {
-    assert.deepStrictEqual(await markThreadsRead('pres-1', [], CTX), { ok: true, marked: 0 });
+    assert.deepStrictEqual(await markThreadsRead(CTX, 'pres-1', []), { ok: true, marked: 0 });
     assert.deepStrictEqual(
-      await markThreadsRead('pres-1', ['not-a-uuid', 123, null], CTX),
+      await markThreadsRead(CTX, 'pres-1', ['not-a-uuid', 123, null]),
       { ok: true, marked: 0 }
     );
   });
 
   it('reports unavailable without a database', async () => {
     const r = await markThreadsRead(
+      CTX,
       'pres-1',
-      ['11111111-1111-1111-1111-111111111111'],
-      CTX
+      ['11111111-1111-1111-1111-111111111111']
     );
     assert.deepStrictEqual(r, { ok: false, reason: 'unavailable' });
   });

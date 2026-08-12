@@ -11,6 +11,7 @@ import fs from 'node:fs/promises';
 import { registerWorker, QUEUE_NAMES } from '../connection.js';
 import { buildBulkExport } from '../../../export/bulk-export.js';
 import { createNotification } from '../../../storage/notifications.js';
+import { jobScope } from '../../../storage/scope.js';
 import { broadcastToUser } from '../../../services/notification-events.js';
 import { getAppBaseUrl } from '../../../config/utils.js';
 
@@ -137,20 +138,20 @@ async function sendExportNotifications({ userEmail, jobId, manifest, organizatio
 
   // 1. In-app notification
   try {
-    const ctx = {
-      organizationId,
-      actorEmail: userEmail,
-    };
+    const scope = jobScope(
+      { organizationId, actorEmail: userEmail, repoRoot },
+      'sendExportNotifications'
+    );
 
     const presCount = stats.presentations || 0;
-    const result = await createNotification({
+    const result = await createNotification(scope, {
       userEmail,
       notificationType: 'export_ready',
       title: 'Your data export is ready',
       body: `${presCount} presentation${presCount !== 1 ? 's' : ''} exported`,
       actionUrl: downloadUrl,
       data: { jobId, size: stats.totalSizeBytes },
-    }, ctx);
+    });
 
     // Broadcast via SSE for real-time update
     if (result?.ok && result.notification) {

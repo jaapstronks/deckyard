@@ -5,6 +5,7 @@
 
 import { sql } from 'kysely';
 import { getOrgId } from '../utils/context.js';
+import { toStorageContext } from './backend-dispatch.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 
@@ -14,6 +15,7 @@ import { withDbGuard } from './utils/db-guard.js';
 
 /**
  * Create a notification.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {Object} data - Notification data
  * @param {string} data.userEmail - Recipient email
  * @param {string} data.notificationType - Type (share_received, comment_mention, etc.)
@@ -24,17 +26,17 @@ import { withDbGuard } from './utils/db-guard.js';
  * @param {string} [data.actorName] - Actor name
  * @param {Object} [data.data] - Additional JSON data
  * @param {string} [data.actionUrl] - URL for the notification action
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Created notification
  */
-export async function createNotification(data, ctx) {
+export async function createNotification(scope, data) {
+  toStorageContext(scope, 'createNotification');
   const userEmail = normalizeEmail(data?.userEmail);
   if (!userEmail) {
     return { ok: false, reason: 'invalid_email' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const row = await db
       .insertInto('user_notifications')
@@ -67,6 +69,7 @@ export async function createNotification(data, ctx) {
 
 /**
  * List notifications for a user.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} userEmail - User's email
  * @param {Object} options - List options
  * @param {number} [options.limit=20] - Maximum results
@@ -75,15 +78,15 @@ export async function createNotification(data, ctx) {
  * @param {boolean} [options.archived=false] - true: only archived items;
  *   false (default): only unarchived (the inbox)
  * @param {string[]} [options.types] - Only these notification types
- * @param {Object} ctx - Context object
  * @returns {Promise<Array>} - List of notifications
  */
-export async function listNotifications(userEmail, options = {}, ctx) {
+export async function listNotifications(scope, userEmail, options = {}) {
+  toStorageContext(scope, 'listNotifications');
   const email = normalizeEmail(userEmail);
   if (!email) return [];
 
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const limit = Math.min(Math.max(1, options.limit || 20), 100);
     const offset = Math.max(0, options.offset || 0);
 
@@ -120,16 +123,17 @@ export async function listNotifications(userEmail, options = {}, ctx) {
 
 /**
  * Get unread notification count for a user.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} userEmail - User's email
- * @param {Object} ctx - Context object
  * @returns {Promise<number>} - Unread count
  */
-export async function getUnreadCount(userEmail, ctx) {
+export async function getUnreadCount(scope, userEmail) {
+  toStorageContext(scope, 'getUnreadCount');
   const email = normalizeEmail(userEmail);
   if (!email) return 0;
 
   return withDbGuard(0, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const result = await db
       .selectFrom('user_notifications')
@@ -151,19 +155,20 @@ export async function getUnreadCount(userEmail, ctx) {
 
 /**
  * Mark a notification as read.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} notificationId - Notification ID
  * @param {string} userEmail - User's email (for authorization)
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result
  */
-export async function markAsRead(notificationId, userEmail, ctx) {
+export async function markAsRead(scope, notificationId, userEmail) {
+  toStorageContext(scope, 'markAsRead');
   const email = normalizeEmail(userEmail);
   if (!email || !notificationId) {
     return { ok: false, reason: 'invalid_params' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const row = await db
       .updateTable('user_notifications')
@@ -190,18 +195,19 @@ export async function markAsRead(notificationId, userEmail, ctx) {
 
 /**
  * Mark all notifications as read for a user.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} userEmail - User's email
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result
  */
-export async function markAllAsRead(userEmail, ctx) {
+export async function markAllAsRead(scope, userEmail) {
+  toStorageContext(scope, 'markAllAsRead');
   const email = normalizeEmail(userEmail);
   if (!email) {
     return { ok: false, reason: 'invalid_email' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     const result = await db
@@ -226,14 +232,15 @@ export async function markAllAsRead(userEmail, ctx) {
  * Archive one notification ("handled": out of the default inbox list).
  * Also marks it read - an archived item should not keep the badge lit.
  */
-export async function archiveNotification(notificationId, userEmail, ctx) {
+export async function archiveNotification(scope, notificationId, userEmail) {
+  toStorageContext(scope, 'archiveNotification');
   const email = normalizeEmail(userEmail);
   if (!email || !notificationId) {
     return { ok: false, reason: 'invalid_params' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     const row = await db
@@ -255,14 +262,15 @@ export async function archiveNotification(notificationId, userEmail, ctx) {
 /**
  * Archive all unarchived notifications for a user ("inbox zero").
  */
-export async function archiveAllNotifications(userEmail, ctx) {
+export async function archiveAllNotifications(scope, userEmail) {
+  toStorageContext(scope, 'archiveAllNotifications');
   const email = normalizeEmail(userEmail);
   if (!email) {
     return { ok: false, reason: 'invalid_email' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     const result = await db
@@ -289,12 +297,13 @@ export async function archiveAllNotifications(userEmail, ctx) {
  * top-level items carry the thread id as `commentId`, reply/mention items
  * as `parentId`.
  *
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} userEmail - Whose inbox to clean
  * @param {string} presentationId
  * @param {string} threadId - Top-level comment id of the thread
- * @param {Object} ctx - Context object
  */
-export async function archiveThreadNotifications(userEmail, presentationId, threadId, ctx) {
+export async function archiveThreadNotifications(scope, userEmail, presentationId, threadId) {
+  toStorageContext(scope, 'archiveThreadNotifications');
   const email = normalizeEmail(userEmail);
   const tid = String(threadId || '').trim();
   const pid = String(presentationId || '').trim();
@@ -303,7 +312,7 @@ export async function archiveThreadNotifications(userEmail, presentationId, thre
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     const result = await db
@@ -333,27 +342,28 @@ export async function archiveThreadNotifications(userEmail, presentationId, thre
  * the deck-activity coalescer: when found, the caller refreshes it (bumps the
  * count) instead of inserting a second row.
  *
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} userEmail - Recipient
  * @param {string} presentationId
  * @param {string|null} actorEmail - The editing user (already normalised)
  * @param {string} [sinceIso] - Only match rows created after this timestamp
- * @param {Object} ctx - Context object
  * @returns {Promise<Object|null>} The matching notification, or null.
  */
 export async function findUnreadDeckActivityNotification(
+  scope,
   userEmail,
   presentationId,
   actorEmail,
-  sinceIso,
-  ctx
+  sinceIso
 ) {
+  toStorageContext(scope, 'findUnreadDeckActivityNotification');
   const email = normalizeEmail(userEmail);
   const pid = String(presentationId || '').trim();
   const actor = normalizeEmail(actorEmail);
   if (!email || !pid) return null;
 
   return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     let qb = db
       .selectFrom('user_notifications')
@@ -379,20 +389,21 @@ export async function findUnreadDeckActivityNotification(
  * unread again. This is the "window extends on each edit" half of the
  * coalesce-on-write bundling.
  *
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} notificationId
  * @param {string} userEmail - Recipient (authorization)
  * @param {{title?: string, body?: string|null, data?: Object}} updates
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} Result with the updated notification.
  */
-export async function refreshDeckActivityNotification(notificationId, userEmail, updates, ctx) {
+export async function refreshDeckActivityNotification(scope, notificationId, userEmail, updates) {
+  toStorageContext(scope, 'refreshDeckActivityNotification');
   const email = normalizeEmail(userEmail);
   if (!email || !notificationId) {
     return { ok: false, reason: 'invalid_params' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const set = { created_at: nowIso(), is_read: false, read_at: null, archived_at: null };
     if (updates?.title != null) set.title = updates.title;

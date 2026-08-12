@@ -62,7 +62,7 @@ async function handleUnreadCount({ storageScope, res, authedUser }) {
 
   // Same invariant as the feed itself: only count events on presentations
   // the user can read (a raw org-wide count leaks activity on private decks).
-  const grouped = await getUnreadEventCountsByPresentation(email, ctx);
+  const grouped = await getUnreadEventCountsByPresentation(ctx, email);
   let count = 0;
   for (const entry of grouped) {
     if (!entry.presentationId) {
@@ -90,7 +90,7 @@ async function handleMarkRead({ req, res, authedUser }) {
   const body = parsed.body;
   const eventId = body?.eventId || null; // Can be null to mark "all read"
 
-  const result = await updateUserEventRead(email, eventId, ctx);
+  const result = await updateUserEventRead(ctx, email, eventId);
 
   serveJson(res, 200, result);
   return true;

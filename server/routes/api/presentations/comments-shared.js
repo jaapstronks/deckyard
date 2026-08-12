@@ -24,8 +24,8 @@ export const getCtx = createRouteContext;
  */
 export async function broadcastCommentCounts(presentationId, ctx) {
   try {
-    const counts = await getCommentCountsBySlide(presentationId, ctx);
-    const total = await getOpenCommentCount(presentationId, ctx);
+    const counts = await getCommentCountsBySlide(ctx, presentationId);
+    const total = await getOpenCommentCount(ctx, presentationId);
     broadcastToPresentation(presentationId, CommentEventTypes.COUNTS_CHANGED, {
       counts,
       total,

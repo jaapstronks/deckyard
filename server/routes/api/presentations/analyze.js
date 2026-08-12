@@ -114,7 +114,7 @@ export async function handlePresentationAnalyze(
       const suggestion = suggestions[i];
       const commentData = suggestionToCommentData(suggestion, id, aiIdentity);
 
-      const createResult = await createComment(id, commentData, ctx);
+      const createResult = await createComment(ctx, id, commentData);
 
       if (createResult.ok) {
         createdComments.push(createResult.comment);

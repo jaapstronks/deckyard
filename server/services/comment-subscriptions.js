@@ -131,7 +131,7 @@ export async function resolveCommentRecipients({
   let threadParticipants = [];
   if (comment?.parentId) {
     try {
-      threadParticipants = await getThreadParticipants(comment.parentId, ctx);
+      threadParticipants = await getThreadParticipants(ctx, comment.parentId);
     } catch {
       threadParticipants = [];
     }
@@ -140,7 +140,7 @@ export async function resolveCommentRecipients({
   // Per-deck overrides (Map email → level); watchers join as candidates.
   let overrides = new Map();
   try {
-    overrides = await listSubscriptions(presentation?.id, ctx);
+    overrides = await listSubscriptions(ctx, presentation?.id);
   } catch {
     overrides = new Map();
   }

@@ -5,6 +5,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
+import { toStorageContext } from './backend-dispatch.js';
 import { norm, nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 
@@ -52,7 +53,8 @@ export const ACTOR_TYPES = {
 /**
  * Create a new activity event.
  */
-export async function createActivityEvent(data, ctx) {
+export async function createActivityEvent(scope, data) {
+  toStorageContext(scope, 'createActivityEvent');
   const eventType = norm(data?.eventType);
   const entityType = norm(data?.entityType);
   const entityId = norm(data?.entityId);
@@ -63,7 +65,7 @@ export async function createActivityEvent(data, ctx) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     const row = await db
@@ -195,12 +197,12 @@ export async function deleteOldActivityEvents(olderThan) {
 /**
  * Get the user's last read position.
  */
-async function getUserEventRead(userEmail, ctx) {
+async function getUserEventRead(userEmail, scope) {
   const email = norm(userEmail)?.toLowerCase();
   if (!email) return null;
 
   return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const row = await db
       .selectFrom('user_event_reads')
@@ -222,12 +224,13 @@ async function getUserEventRead(userEmail, ctx) {
 /**
  * Update user's last read position.
  */
-export async function updateUserEventRead(userEmail, eventId, ctx) {
+export async function updateUserEventRead(scope, userEmail, eventId) {
+  toStorageContext(scope, 'updateUserEventRead');
   const email = norm(userEmail)?.toLowerCase();
   if (!email) return { ok: false, reason: 'invalid' };
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     // Upsert the read marker
@@ -257,14 +260,15 @@ export async function updateUserEventRead(userEmail, eventId, ctx) {
  * leak activity on decks the user cannot read.
  * @returns {Promise<Array<{presentationId: string|null, count: number}>>}
  */
-export async function getUnreadEventCountsByPresentation(userEmail, ctx) {
+export async function getUnreadEventCountsByPresentation(scope, userEmail) {
+  toStorageContext(scope, 'getUnreadEventCountsByPresentation');
   const email = norm(userEmail)?.toLowerCase();
   if (!email) return [];
 
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
-    const readMarker = await getUserEventRead(email, ctx);
+    const readMarker = await getUserEventRead(email, scope);
 
     let query = db
       .selectFrom('activity_events')

@@ -22,7 +22,7 @@ export async function recordPresentationCreated({
 }) {
   const context = ctx || createRouteContext(actor);
 
-  return createActivityEvent({
+  return createActivityEvent(context, {
     eventType: EVENT_TYPES.PRESENTATION_CREATED,
     entityType: ENTITY_TYPES.PRESENTATION,
     entityId: presentation.id,
@@ -34,7 +34,7 @@ export async function recordPresentationCreated({
       title: presentation.title,
       visibility: presentation.visibility,
     },
-  }, context);
+  });
 }
 
 /**
@@ -48,7 +48,7 @@ export async function recordPresentationUpdated({
 }) {
   const context = ctx || createRouteContext(actor);
 
-  return createActivityEvent({
+  return createActivityEvent(context, {
     eventType: EVENT_TYPES.PRESENTATION_UPDATED,
     entityType: ENTITY_TYPES.PRESENTATION,
     entityId: presentation.id,
@@ -60,7 +60,7 @@ export async function recordPresentationUpdated({
       title: presentation.title,
       changes: changes || {},
     },
-  }, context);
+  });
 }
 
 /**
@@ -84,7 +84,7 @@ export async function recordSlidesAdded({ presentation, actor, slideIds, ctx }) 
 
   const context = ctx || createRouteContext(actor);
 
-  return createActivityEvent({
+  return createActivityEvent(context, {
     eventType: EVENT_TYPES.SLIDE_ADDED,
     entityType: ENTITY_TYPES.PRESENTATION,
     entityId: presentation.id,
@@ -97,7 +97,7 @@ export async function recordSlidesAdded({ presentation, actor, slideIds, ctx }) 
       count: ids.length,
       slideIds: ids,
     },
-  }, context);
+  });
 }
 
 /**
@@ -113,7 +113,7 @@ export async function recordSlideLevelMerge({
 }) {
   const context = ctx || createRouteContext({ email: actorEmail });
 
-  return createActivityEvent({
+  return createActivityEvent(context, {
     eventType: EVENT_TYPES.PRESENTATION_MERGED,
     entityType: ENTITY_TYPES.PRESENTATION,
     entityId: presentation.id,
@@ -129,7 +129,7 @@ export async function recordSlideLevelMerge({
       clientReordered: merge?.clientReordered ?? null,
       resultRevision: presentation.revision ?? null,
     },
-  }, context);
+  });
 }
 
 /**
@@ -142,7 +142,7 @@ export async function recordPresentationDeleted({
 }) {
   const context = ctx || createRouteContext(actor);
 
-  return createActivityEvent({
+  return createActivityEvent(context, {
     eventType: EVENT_TYPES.PRESENTATION_DELETED,
     entityType: ENTITY_TYPES.PRESENTATION,
     entityId: presentation.id,
@@ -153,7 +153,7 @@ export async function recordPresentationDeleted({
     data: {
       title: presentation.title,
     },
-  }, context);
+  });
 }
 
 /**
@@ -167,7 +167,7 @@ export async function recordPresentationMovedToOrganization({
 }) {
   const context = ctx || createRouteContext(actor);
 
-  return createActivityEvent({
+  return createActivityEvent(context, {
     eventType: EVENT_TYPES.PRESENTATION_MOVED_TO_ORGANIZATION,
     entityType: ENTITY_TYPES.PRESENTATION,
     entityId: presentation.id,
@@ -180,7 +180,7 @@ export async function recordPresentationMovedToOrganization({
       previousVisibility,
       newVisibility: presentation.visibility,
     },
-  }, context);
+  });
 }
 
 /**
@@ -195,7 +195,7 @@ export async function recordCommentCreated({
 }) {
   const context = ctx || createRouteContext(actor);
 
-  const result = await createActivityEvent({
+  const result = await createActivityEvent(context, {
     eventType: EVENT_TYPES.COMMENT_CREATED,
     entityType: ENTITY_TYPES.COMMENT,
     entityId: comment.id,
@@ -213,7 +213,7 @@ export async function recordCommentCreated({
       bodyPreview: stripMentionMarkup(comment.body).substring(0, 100),
       isReply: !!comment.parentId,
     },
-  }, context);
+  });
 
   return result;
 }
@@ -229,7 +229,7 @@ export async function recordCommentResolved({
 }) {
   const context = ctx || createRouteContext(actor);
 
-  return createActivityEvent({
+  return createActivityEvent(context, {
     eventType: EVENT_TYPES.COMMENT_RESOLVED,
     entityType: ENTITY_TYPES.COMMENT,
     entityId: comment.id,
@@ -242,7 +242,7 @@ export async function recordCommentResolved({
       slideId: comment.slideId,
       commentAuthor: comment.authorEmail,
     },
-  }, context);
+  });
 }
 
 /**
@@ -256,7 +256,7 @@ export async function recordCommentReopened({
 }) {
   const context = ctx || createRouteContext(actor);
 
-  return createActivityEvent({
+  return createActivityEvent(context, {
     eventType: EVENT_TYPES.COMMENT_REOPENED,
     entityType: ENTITY_TYPES.COMMENT,
     entityId: comment.id,
@@ -268,6 +268,6 @@ export async function recordCommentReopened({
       presentationTitle: presentation.title,
       slideId: comment.slideId,
     },
-  }, context);
+  });
 }
 

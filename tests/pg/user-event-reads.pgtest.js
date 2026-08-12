@@ -35,14 +35,14 @@ const ALICE = 'alice@example.com';
 /** Seed one activity event and return its id (for the last_read_event_id FK). */
 async function seedEvent() {
   const res = await createActivityEvent(
+    ctx,
     {
       eventType: EVENT_TYPES.PRESENTATION_CREATED,
       entityType: ENTITY_TYPES.PRESENTATION,
       // entity_id is a NOT NULL uuid column (no FK); any uuid is valid.
       entityId: crypto.randomUUID(),
       actorEmail: ALICE,
-    },
-    ctx
+    }
   );
   assert.equal(res.ok, true);
   return res.event.id;
@@ -74,7 +74,7 @@ pgDescribe('updateUserEventRead (real PostgreSQL)', () => {
   });
 
   it('inserts a fresh marker on the first read', async () => {
-    const res = await updateUserEventRead(ALICE, null, ctx);
+    const res = await updateUserEventRead(ctx, ALICE, null);
     assert.equal(res.ok, true);
 
     const rows = await readRows();
@@ -85,8 +85,8 @@ pgDescribe('updateUserEventRead (real PostgreSQL)', () => {
   it('updates in place on the (organization_id, user_email) conflict', async () => {
     const eventId = await seedEvent();
 
-    await updateUserEventRead(ALICE, null, ctx);
-    const res = await updateUserEventRead(ALICE, eventId, ctx);
+    await updateUserEventRead(ctx, ALICE, null);
+    const res = await updateUserEventRead(ctx, ALICE, eventId);
     assert.equal(res.ok, true);
 
     // Still one row for (org, alice); the second write moved the marker.
@@ -97,7 +97,7 @@ pgDescribe('updateUserEventRead (real PostgreSQL)', () => {
 
   it('nulls the marker when the referenced event is deleted (FK SET NULL)', async () => {
     const eventId = await seedEvent();
-    await updateUserEventRead(ALICE, eventId, ctx);
+    await updateUserEventRead(ctx, ALICE, eventId);
 
     await db.deleteFrom('activity_events').where('id', '=', eventId).execute();
 

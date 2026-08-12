@@ -46,7 +46,7 @@ export async function handlePresentationCommentResolve(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const comment = await getComment(commentId, ctx);
+  const comment = await getComment(ctx, commentId);
 
   if (!comment || comment.presentationId !== id) {
     return notFound(res, 'Comment not found');
@@ -57,7 +57,7 @@ export async function handlePresentationCommentResolve(
     return unauthorized(res);
   }
 
-  const result = await resolveComment(commentId, { email: authedUser?.email }, ctx);
+  const result = await resolveComment(ctx, commentId, { email: authedUser?.email });
 
   if (!result.ok) {
     return serveJson(res, 400, result);
@@ -96,7 +96,7 @@ export async function handlePresentationCommentReopen(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const comment = await getComment(commentId, ctx);
+  const comment = await getComment(ctx, commentId);
 
   if (!comment || comment.presentationId !== id) {
     return notFound(res, 'Comment not found');
@@ -107,7 +107,7 @@ export async function handlePresentationCommentReopen(
     return unauthorized(res);
   }
 
-  const result = await reopenComment(commentId, ctx);
+  const result = await reopenComment(ctx, commentId);
 
   if (!result.ok) {
     return serveJson(res, 400, result);
@@ -148,7 +148,7 @@ export async function handlePresentationCommentDismiss(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const comment = await getComment(commentId, ctx);
+  const comment = await getComment(ctx, commentId);
 
   if (!comment || comment.presentationId !== id) {
     return notFound(res, 'Comment not found');
@@ -159,7 +159,7 @@ export async function handlePresentationCommentDismiss(
     return unauthorized(res);
   }
 
-  const result = await dismissComment(commentId, { email: authedUser?.email }, ctx);
+  const result = await dismissComment(ctx, commentId, { email: authedUser?.email });
 
   if (!result.ok) {
     return serveJson(res, 400, result);
@@ -193,7 +193,7 @@ export async function handlePresentationCommentApply(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const comment = await getComment(commentId, ctx);
+  const comment = await getComment(ctx, commentId);
 
   if (!comment || comment.presentationId !== id) {
     return notFound(res, 'Comment not found');
@@ -238,7 +238,7 @@ export async function handlePresentationCommentApply(
   await updatePresentation(storageScope, id, fullPres, ctx);
 
   // Mark the suggestion as resolved
-  const resolveResult = await resolveComment(commentId, { email: authedUser?.email }, ctx);
+  const resolveResult = await resolveComment(ctx, commentId, { email: authedUser?.email });
 
   // Broadcast comment update
   if (resolveResult.ok) {
@@ -286,7 +286,7 @@ export async function handlePresentationCommentsMarkRead(
   }
 
   const ctx = getCtx(authedUser);
-  const result = await markThreadsRead(id, commentIds, ctx);
+  const result = await markThreadsRead(ctx, id, commentIds);
   if (!result.ok) {
     return serveJson(res, result.reason === 'unavailable' ? 503 : 400, result);
   }

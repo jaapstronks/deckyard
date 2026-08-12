@@ -44,8 +44,8 @@ export async function handlePresentationCommentsList(
   const status = url.searchParams.get('status') || 'all';
   const commentType = url.searchParams.get('commentType') || null;
 
-  const comments = await listComments(id, ctx, { slideId, status, commentType });
-  const openCount = await getOpenCommentCount(id, ctx);
+  const comments = await listComments(ctx, id, { slideId, status, commentType });
+  const openCount = await getOpenCommentCount(ctx, id);
 
   // The effective AI-author identity so the client can recognise legacy
   // AI-suggestion comments that predate the commentType field, including
@@ -80,7 +80,7 @@ export async function handlePresentationCommentGet(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const comment = await getComment(commentId, ctx);
+  const comment = await getComment(ctx, commentId);
 
   if (!comment || comment.presentationId !== id) {
     return notFound(res, 'Comment not found');
@@ -106,8 +106,8 @@ export async function handlePresentationCommentCounts(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const counts = await getCommentCountsBySlide(id, ctx);
-  const total = await getOpenCommentCount(id, ctx);
+  const counts = await getCommentCountsBySlide(ctx, id);
+  const total = await getOpenCommentCount(ctx, id);
 
   serveJson(res, 200, { ok: true, counts, total });
   return true;
@@ -146,8 +146,8 @@ export async function handlePresentationCommentEvents(
   // Send current counts immediately so client has latest state
   const ctx = getCtx(authedUser);
   try {
-    const counts = await getCommentCountsBySlide(id, ctx);
-    const total = await getOpenCommentCount(id, ctx);
+    const counts = await getCommentCountsBySlide(ctx, id);
+    const total = await getOpenCommentCount(ctx, id);
     res.write(`event: ${CommentEventTypes.COUNTS_CHANGED}\ndata: ${JSON.stringify({ counts, total })}\n\n`);
   } catch {
     // Ignore initial counts error

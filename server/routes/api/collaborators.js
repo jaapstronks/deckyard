@@ -200,6 +200,7 @@ async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedU
     // Create in-app notification for the invited user (non-blocking)
     try {
       const notifResult = await createNotification(
+        ctx,
         {
           userEmail,
           notificationType: 'share_received',
@@ -210,8 +211,7 @@ async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedU
           actorName: authedUser?.name,
           actionUrl: editUrl,
           data: { permission, presentationTitle },
-        },
-        ctx
+        }
       );
 
       // Broadcast notification via SSE
@@ -226,6 +226,7 @@ async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedU
     // Create activity event for the activity feed (non-blocking)
     try {
       await createActivityEvent(
+        ctx,
         {
           eventType: EVENT_TYPES.COLLABORATOR_ADDED,
           entityType: ENTITY_TYPES.COLLABORATOR,
@@ -238,8 +239,7 @@ async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedU
             permission,
             presentationTitle,
           },
-        },
-        ctx
+        }
       );
     } catch (err) {
       // Log but don't fail the invite if activity event fails
@@ -377,6 +377,7 @@ async function handleCollaboratorRemove({ storageScope, req, res, authedUser }, 
     // feed.
     try {
       await createActivityEvent(
+        ctx,
         {
           eventType: EVENT_TYPES.COLLABORATOR_REMOVED,
           entityType: ENTITY_TYPES.COLLABORATOR,
@@ -389,8 +390,7 @@ async function handleCollaboratorRemove({ storageScope, req, res, authedUser }, 
             presentationTitle: pres.title || 'Untitled presentation',
             revocationMessage: result.collaborator?.revocationMessage || null,
           },
-        },
-        ctx
+        }
       );
     } catch (err) {
       log.error(`[collaborators] Failed to record revoke event for ${email}:`, err);
@@ -435,6 +435,7 @@ async function handleCollaboratorUpdate({ storageScope, req, res, authedUser }, 
     // (non-blocking): a promotion or demotion is an access-model event too.
     try {
       await createActivityEvent(
+        ctx,
         {
           eventType: EVENT_TYPES.COLLABORATOR_PERMISSION_CHANGED,
           entityType: ENTITY_TYPES.COLLABORATOR,
@@ -447,8 +448,7 @@ async function handleCollaboratorUpdate({ storageScope, req, res, authedUser }, 
             permission,
             presentationTitle: pres.title || 'Untitled presentation',
           },
-        },
-        ctx
+        }
       );
     } catch (err) {
       log.error(`[collaborators] Failed to record permission-change event for ${email}:`, err);
