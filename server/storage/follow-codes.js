@@ -11,12 +11,14 @@
  * called, so the file only grew. A row per code makes the mint a single insert
  * and the cleanup a `DELETE`, run by the live-session sweep.
  *
- * The facade is unchanged: every function still takes `repoRoot` first for
- * call-site stability, but that argument is now unused — persistence no longer
- * touches disk.
+ * Every function takes a `StorageScope` first (docs/reference/storage-scope.md).
+ * Codes are session capabilities, not organization data: resolving one is the
+ * public audience path and the sweep is instance-wide maintenance, so those
+ * two accept a cross-organization scope.
  */
 
 import crypto from 'node:crypto';
+import { toStorageContext } from './backend-dispatch.js';
 import { withDbGuard } from './utils/db-guard.js';
 
 // Follow codes are guessable live-session handles: a valid one resolves to a
@@ -59,12 +61,14 @@ export function generateCode() {
  * occupies its code until the sweep removes it; that costs a retry, which at a
  * 4M keyspace is not a cost worth engineering around.
  *
- * @param {string} [repoRoot] - Unused; retained for facade-API stability.
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} followUrl - The `/follow/...` URL the code resolves to.
  * @returns {Promise<string|null>} The code, or null when the database is
  *   unavailable.
  */
-export async function createFollowCode(repoRoot, followUrl) {
+export async function createFollowCode(scope, followUrl) {
+  // Minting is a presenter action: the scope states its organization.
+  toStorageContext(scope, 'createFollowCode');
   return withDbGuard(null, async (db) => {
     for (let attempt = 0; attempt < MAX_MINT_ATTEMPTS; attempt++) {
       const createdAt = new Date();
@@ -93,11 +97,13 @@ export async function createFollowCode(repoRoot, followUrl) {
  * here logs the code or the URL: a live code resolves to a presenter's follow
  * URL, so both are secrets (audit L2).
  *
- * @param {string} [repoRoot] - Unused; retained for facade-API stability.
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} code - The code as typed; matched case-insensitively.
  * @returns {Promise<string|null>}
  */
-export async function resolveFollowCode(repoRoot, code) {
+export async function resolveFollowCode(scope, code) {
+  // Public audience path: the typed code is the authorization.
+  toStorageContext(scope, 'resolveFollowCode', {}, { allowCrossOrganization: true });
   const upperCode = String(code || '').toUpperCase();
   if (!upperCode) return null;
 
@@ -123,10 +129,12 @@ export async function resolveFollowCode(repoRoot, code) {
  * (`utils/live-session-cleanup.js`); the file-backed predecessor of this
  * function was never called at all, which is why the JSON blob only grew.
  *
- * @param {string} [repoRoot] - Unused; retained for facade-API stability.
+ * @param {import('./scope.js').StorageScope} scope
  * @returns {Promise<number>} How many codes were removed.
  */
-export async function cleanupExpiredCodes(repoRoot) {
+export async function cleanupExpiredCodes(scope) {
+  // Instance-wide maintenance sweep; expiry is the filter, not the organization.
+  toStorageContext(scope, 'cleanupExpiredCodes', {}, { allowCrossOrganization: true });
   const now = new Date().toISOString();
   return withDbGuard(0, async (db) => {
     const result = await db

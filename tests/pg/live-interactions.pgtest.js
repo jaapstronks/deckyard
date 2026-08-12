@@ -94,7 +94,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
   // -- questions ------------------------------------------------------------
 
   it('keeps a question after a restart, ranked and visible', async () => {
-    const created = await createQuestion(null, sessionId, {
+    const created = await createQuestion(testScope(), sessionId, {
       authorId: 'dev-a',
       authorName: 'Ada',
       text: 'Why this and not that?',
@@ -103,7 +103,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
     assert.equal(created.ok, true);
     coldStart();
 
-    const list = await listQuestions(null, sessionId);
+    const list = await listQuestions(testScope(), sessionId);
     assert.equal(list.length, 1);
     assert.equal(list[0].text, 'Why this and not that?');
     assert.equal(list[0].authorName, 'Ada');
@@ -113,17 +113,17 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
   });
 
   it('counts one upvote per device and refuses the second', async () => {
-    const { question } = await createQuestion(null, sessionId, {
+    const { question } = await createQuestion(testScope(), sessionId, {
       authorId: 'dev-a',
       text: 'First',
     });
 
-    assert.deepEqual(await upvoteQuestion(null, sessionId, {
+    assert.deepEqual(await upvoteQuestion(testScope(), sessionId, {
       questionId: question.id,
       voterId: 'dev-b',
     }), { ok: true, upvotes: 1 });
 
-    const again = await upvoteQuestion(null, sessionId, {
+    const again = await upvoteQuestion(testScope(), sessionId, {
       questionId: question.id,
       voterId: 'dev-b',
     });
@@ -139,30 +139,30 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
   });
 
   it('refuses an upvote on your own question', async () => {
-    const { question } = await createQuestion(null, sessionId, {
+    const { question } = await createQuestion(testScope(), sessionId, {
       authorId: 'dev-a',
       text: 'Mine',
     });
-    assert.deepEqual(await upvoteQuestion(null, sessionId, {
+    assert.deepEqual(await upvoteQuestion(testScope(), sessionId, {
       questionId: question.id,
       voterId: 'dev-a',
     }), { ok: false, reason: 'own_question' });
   });
 
   it('ranks promoted first, then by upvotes, then oldest first', async () => {
-    const quiet = (await createQuestion(null, sessionId, { authorId: 'a', text: 'Quiet' }))
+    const quiet = (await createQuestion(testScope(), sessionId, { authorId: 'a', text: 'Quiet' }))
       .question;
-    const loud = (await createQuestion(null, sessionId, { authorId: 'b', text: 'Loud' }))
+    const loud = (await createQuestion(testScope(), sessionId, { authorId: 'b', text: 'Loud' }))
       .question;
-    const chosen = (await createQuestion(null, sessionId, { authorId: 'c', text: 'Chosen' }))
+    const chosen = (await createQuestion(testScope(), sessionId, { authorId: 'c', text: 'Chosen' }))
       .question;
 
-    await upvoteQuestion(null, sessionId, { questionId: loud.id, voterId: 'x' });
-    await upvoteQuestion(null, sessionId, { questionId: loud.id, voterId: 'y' });
-    await promoteQuestion(null, sessionId, { questionId: chosen.id, slideId: 's9' });
+    await upvoteQuestion(testScope(), sessionId, { questionId: loud.id, voterId: 'x' });
+    await upvoteQuestion(testScope(), sessionId, { questionId: loud.id, voterId: 'y' });
+    await promoteQuestion(testScope(), sessionId, { questionId: chosen.id, slideId: 's9' });
     coldStart();
 
-    const list = await listQuestions(null, sessionId);
+    const list = await listQuestions(testScope(), sessionId);
     assert.deepEqual(
       list.map((q) => q.text),
       ['Chosen', 'Loud', 'Quiet']
@@ -174,60 +174,60 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
   });
 
   it('locks a promoted question against votes, cancellation and removal', async () => {
-    const { question } = await createQuestion(null, sessionId, {
+    const { question } = await createQuestion(testScope(), sessionId, {
       authorId: 'dev-a',
       text: 'Promote me',
     });
-    await promoteQuestion(null, sessionId, { questionId: question.id, slideId: 's1' });
+    await promoteQuestion(testScope(), sessionId, { questionId: question.id, slideId: 's1' });
 
     assert.equal(
-      (await upvoteQuestion(null, sessionId, { questionId: question.id, voterId: 'dev-b' })).reason,
+      (await upvoteQuestion(testScope(), sessionId, { questionId: question.id, voterId: 'dev-b' })).reason,
       'locked'
     );
     assert.equal(
-      (await cancelQuestion(null, sessionId, { questionId: question.id, authorId: 'dev-a' }))
+      (await cancelQuestion(testScope(), sessionId, { questionId: question.id, authorId: 'dev-a' }))
         .reason,
       'locked'
     );
     assert.equal(
-      (await removeQuestion(null, sessionId, { questionId: question.id, removedBy: 'mod' })).reason,
+      (await removeQuestion(testScope(), sessionId, { questionId: question.id, removedBy: 'mod' })).reason,
       'locked'
     );
     // Promoting twice is idempotent, not an error.
     assert.deepEqual(
-      await promoteQuestion(null, sessionId, { questionId: question.id, slideId: 's1' }),
+      await promoteQuestion(testScope(), sessionId, { questionId: question.id, slideId: 's1' }),
       { ok: true, already: true }
     );
   });
 
   it('hides cancelled and removed questions from the list', async () => {
-    const mine = (await createQuestion(null, sessionId, { authorId: 'dev-a', text: 'Oops' }))
+    const mine = (await createQuestion(testScope(), sessionId, { authorId: 'dev-a', text: 'Oops' }))
       .question;
-    const theirs = (await createQuestion(null, sessionId, { authorId: 'dev-b', text: 'Spam' }))
+    const theirs = (await createQuestion(testScope(), sessionId, { authorId: 'dev-b', text: 'Spam' }))
       .question;
 
     assert.deepEqual(
-      await cancelQuestion(null, sessionId, { questionId: mine.id, authorId: 'dev-b' }),
+      await cancelQuestion(testScope(), sessionId, { questionId: mine.id, authorId: 'dev-b' }),
       { ok: false, reason: 'forbidden' }
     );
     assert.deepEqual(
-      await cancelQuestion(null, sessionId, { questionId: mine.id, authorId: 'dev-a' }),
+      await cancelQuestion(testScope(), sessionId, { questionId: mine.id, authorId: 'dev-a' }),
       { ok: true }
     );
     assert.deepEqual(
-      await removeQuestion(null, sessionId, { questionId: theirs.id, removedBy: 'mod@example.com' }),
+      await removeQuestion(testScope(), sessionId, { questionId: theirs.id, removedBy: 'mod@example.com' }),
       { ok: true }
     );
     coldStart();
 
-    assert.deepEqual(await listQuestions(null, sessionId), []);
+    assert.deepEqual(await listQuestions(testScope(), sessionId), []);
   });
 
   it('answers "no such question" for a malformed id instead of erroring', async () => {
     // The column is uuid; a path segment is whatever the client typed.
-    assert.equal(await getQuestion(null, sessionId, 'not-a-uuid'), null);
+    assert.equal(await getQuestion(testScope(), sessionId, 'not-a-uuid'), null);
     assert.deepEqual(
-      await upvoteQuestion(null, sessionId, { questionId: 'not-a-uuid', voterId: 'dev-b' }),
+      await upvoteQuestion(testScope(), sessionId, { questionId: 'not-a-uuid', voterId: 'dev-b' }),
       { ok: false, reason: 'not_found' }
     );
   });
@@ -463,7 +463,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
   // -- lifetime -------------------------------------------------------------
 
   it('takes questions, interactions, votes and feedback down with the session', async () => {
-    await createQuestion(null, sessionId, { authorId: 'dev-a', text: 'Q' });
+    await createQuestion(testScope(), sessionId, { authorId: 'dev-a', text: 'Q' });
     await votePollInteraction(testScope(), sessionId, {
       slideId: 'poll-1',
       deviceId: 'dev-a',
@@ -483,7 +483,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
   });
 
   it('lets the TTL sweep collect all four domains in one statement', async () => {
-    await createQuestion(null, sessionId, { authorId: 'dev-a', text: 'Q' });
+    await createQuestion(testScope(), sessionId, { authorId: 'dev-a', text: 'Q' });
     await votePollInteraction(testScope(), sessionId, {
       slideId: 'poll-1',
       deviceId: 'dev-a',
@@ -510,7 +510,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
 
   it('refuses to store anything for a session that does not exist', async () => {
     assert.equal(
-      (await createQuestion(null, 'no-such-session', { authorId: 'dev-a', text: 'Q' })).reason,
+      (await createQuestion(testScope(), 'no-such-session', { authorId: 'dev-a', text: 'Q' })).reason,
       'not_found'
     );
     assert.deepEqual(

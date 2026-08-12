@@ -1,6 +1,5 @@
 import { createFollowCode, FOLLOW_CODE_TTL_MS } from '../follow-codes.js';
 import { toStorageContext } from '../backend-dispatch.js';
-import { repoRootOf } from '../scope.js';
 import { TTL_MS } from './constants.js';
 import { sessions } from './state.js';
 import {
@@ -27,11 +26,11 @@ function areFollowCodesExpired(session) {
  * has to follow the link instead of typing a code. A code is only omitted when
  * minting returned nothing (the database is unavailable), never faked.
  *
- * @param {string|null} repoRoot - Disk path for the follow-code store (not a scope).
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId
  * @returns {Promise<Object<string, string>>} Codes by language key.
  */
-async function mintFollowCodes(repoRoot, presentationId) {
+async function mintFollowCodes(scope, presentationId) {
   const followCodes = {};
   try {
     const byLang = {
@@ -39,7 +38,7 @@ async function mintFollowCodes(repoRoot, presentationId) {
       en: `/follow/${encodeURIComponent(presentationId)}?lang=en-GB`,
     };
     for (const [lang, followUrl] of Object.entries(byLang)) {
-      const code = await createFollowCode(repoRoot, followUrl);
+      const code = await createFollowCode(scope, followUrl);
       if (code) followCodes[lang] = code;
     }
     // Don't log the code values: a live follow code resolves to a presenter's
@@ -104,7 +103,7 @@ export async function createLiveSession(scope, { presentationId }) {
     let followCodes = s.followCodes || {};
     if (areFollowCodesExpired(s)) {
       log.info(`[Follow Codes] Codes expired for session ${s.sessionId}, refreshing...`);
-      followCodes = await mintFollowCodes(repoRootOf(scope), presId);
+      followCodes = await mintFollowCodes(scope, presId);
       s.followCodes = followCodes;
       s.followCodesCreatedAt = Date.now();
     }
@@ -119,7 +118,7 @@ export async function createLiveSession(scope, { presentationId }) {
   }
 
   const sessionId = newSessionId();
-  const followCodes = await mintFollowCodes(repoRootOf(scope), presId);
+  const followCodes = await mintFollowCodes(scope, presId);
   const now = Date.now();
 
   const s = {

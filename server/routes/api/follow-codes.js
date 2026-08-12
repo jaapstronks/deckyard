@@ -14,6 +14,7 @@
  */
 
 import { createFollowCode, resolveFollowCode } from '../../storage/follow-codes.js';
+import { crossOrganizationScope } from '../../storage/scope.js';
 import { badRequest, methodNotAllowed, requireJsonBody, serveJson, serverError, unauthorized, rateLimited } from '../../utils/http.js';
 import { getClientIp } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -70,7 +71,7 @@ function checkRateLimit(limitMap, ip, maxRequests) {
  * POST /api/follow-codes - Mint a short letter code for a follow URL.
  * Requires authentication to prevent abuse.
  */
-async function handleFollowCodeCreate({ repoRoot, req, res, authedUser }) {
+async function handleFollowCodeCreate({ storageScope, req, res, authedUser }) {
   // Require authentication
   if (!authedUser?.email) {
     return unauthorized(res, 'Authentication required');
@@ -101,7 +102,7 @@ async function handleFollowCodeCreate({ repoRoot, req, res, authedUser }) {
       return true;
     }
 
-    const code = await createFollowCode(repoRoot, followUrl.trim());
+    const code = await createFollowCode(storageScope, followUrl.trim());
     if (!code) {
       // Codes live in Postgres; without it there is nothing to hand out.
       serverError(res, 'Follow codes are unavailable');
@@ -130,7 +131,10 @@ async function handleFollowCodeResolve({ repoRoot, req, res }, codeParam) {
   log.info(`[Follow Codes] Resolving code: ${code}`);
 
   try {
-    const followUrl = await resolveFollowCode(repoRoot, code);
+    const followUrl = await resolveFollowCode(
+      crossOrganizationScope(repoRoot, 'follow code resolve: the typed code is the authorization'),
+      code
+    );
 
     if (!followUrl) {
       log.info(`[Follow Codes] Code not found: ${code}`);
