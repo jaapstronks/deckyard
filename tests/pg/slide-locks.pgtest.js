@@ -44,21 +44,21 @@ pgDescribe('acquireSlideLock (real PostgreSQL)', () => {
   });
 
   it('acquires a free slide and persists the holder', async () => {
-    const res = await acquireSlideLock(PID, SID, ALICE, CTX);
+    const res = await acquireSlideLock(CTX, PID, SID, ALICE);
 
     assert.equal(res.ok, true);
     assert.equal(res.lock.holderEmail, 'alice@example.com');
     assert.equal(res.lock.presentationId, PID);
 
-    const stored = await getSlideLock(PID, SID, CTX);
+    const stored = await getSlideLock(CTX, PID, SID);
     assert.equal(stored.holderEmail, 'alice@example.com');
   });
 
   it('lets the same holder re-acquire (refresh) without a second row', async () => {
-    const first = await acquireSlideLock(PID, SID, ALICE, CTX);
+    const first = await acquireSlideLock(CTX, PID, SID, ALICE);
     assert.equal(first.ok, true);
 
-    const again = await acquireSlideLock(PID, SID, ALICE, CTX);
+    const again = await acquireSlideLock(CTX, PID, SID, ALICE);
     assert.equal(again.ok, true);
     assert.equal(again.lock.holderEmail, 'alice@example.com');
 
@@ -74,19 +74,19 @@ pgDescribe('acquireSlideLock (real PostgreSQL)', () => {
   });
 
   it('reports { ok: false, reason: held } when a live lock is held by someone else', async () => {
-    const alice = await acquireSlideLock(PID, SID, ALICE, CTX);
+    const alice = await acquireSlideLock(CTX, PID, SID, ALICE);
     assert.equal(alice.ok, true);
 
     // Bob hits the conflict; the DO UPDATE's WHERE is false (lock is live and
     // held by Alice), so PostgreSQL returns no row and the held branch runs.
     // This is the assertion the double can only imitate.
-    const bob = await acquireSlideLock(PID, SID, BOB, CTX);
+    const bob = await acquireSlideLock(CTX, PID, SID, BOB);
     assert.equal(bob.ok, false);
     assert.equal(bob.reason, 'held');
     assert.equal(bob.lock.holderEmail, 'alice@example.com');
 
     // Alice still holds it — Bob's failed acquire changed nothing.
-    const stored = await getSlideLock(PID, SID, CTX);
+    const stored = await getSlideLock(CTX, PID, SID);
     assert.equal(stored.holderEmail, 'alice@example.com');
   });
 
@@ -110,11 +110,11 @@ pgDescribe('acquireSlideLock (real PostgreSQL)', () => {
 
     // Bob's acquire hits the conflict; the DO UPDATE's WHERE is true (expired),
     // so the upsert returns the updated row and Bob wins.
-    const bob = await acquireSlideLock(PID, SID, BOB, CTX);
+    const bob = await acquireSlideLock(CTX, PID, SID, BOB);
     assert.equal(bob.ok, true);
     assert.equal(bob.lock.holderEmail, 'bob@example.com');
 
-    const stored = await getSlideLock(PID, SID, CTX);
+    const stored = await getSlideLock(CTX, PID, SID);
     assert.equal(stored.holderEmail, 'bob@example.com');
   });
 });

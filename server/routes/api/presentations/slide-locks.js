@@ -68,11 +68,11 @@ export async function handleSlideLocksList(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const locks = await getSlideLocks(id, ctx);
+  const locks = await getSlideLocks(ctx, id);
 
   // Also include list of slides locked by others (for UI)
   const lockedByOthers = authedUser?.email
-    ? await getLockedByOthers(id, { email: authedUser.email, userId: authedUser?.id || null }, ctx)
+    ? await getLockedByOthers(ctx, id, { email: authedUser.email, userId: authedUser?.id || null })
     : [];
 
   serveJson(res, 200, {
@@ -103,7 +103,7 @@ export async function handleSlideLockStatus(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const lock = await getSlideLock(presentationId, slideId, ctx);
+  const lock = await getSlideLock(ctx, presentationId, slideId);
 
   const isHolder =
     !!lock && matchesIdentity(authedUser, { userId: lock.holderId, email: lock.holderEmail });
@@ -132,7 +132,7 @@ export async function handleSlideLockAcquire(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const result = await acquireSlideLock(presentationId, slideId, lockActor(authedUser), ctx);
+  const result = await acquireSlideLock(ctx, presentationId, slideId, lockActor(authedUser));
 
   // Broadcast lock event to other clients. `result.lock` carries holderId
   // alongside holderEmail/holderName, so listeners decide "is this mine?" on
@@ -168,12 +168,10 @@ export async function handleSlideLockRefresh(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const result = await refreshSlideLock(
-    presentationId,
-    slideId,
-    { email: authedUser?.email, userId: authedUser?.id || null },
-    ctx
-  );
+  const result = await refreshSlideLock(ctx, presentationId, slideId, {
+    email: authedUser?.email,
+    userId: authedUser?.id || null,
+  });
 
   serveJson(res, lockHttpStatus(result), result);
   return true;
@@ -201,12 +199,10 @@ export async function handleSlideLockRelease(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const result = await releaseSlideLock(
-    presentationId,
-    slideId,
-    { email: authedUser?.email, userId: authedUser?.id || null },
-    ctx
-  );
+  const result = await releaseSlideLock(ctx, presentationId, slideId, {
+    email: authedUser?.email,
+    userId: authedUser?.id || null,
+  });
 
   // Broadcast unlock event to other clients. The payload carries only the
   // slide: `releasedBy` was never read by any client (the receiver deletes the
@@ -242,11 +238,10 @@ export async function handleSlideLocksReleaseAll(
   if (!pres) return true;
 
   const ctx = getCtx(authedUser);
-  const result = await releaseAllUserSlideLocks(
-    presentationId,
-    { email: authedUser?.email, userId: authedUser?.id || null },
-    ctx
-  );
+  const result = await releaseAllUserSlideLocks(ctx, presentationId, {
+    email: authedUser?.email,
+    userId: authedUser?.id || null,
+  });
 
   // Broadcast that locks have changed. Listeners re-fetch the whole lock set on
   // this event, so who released them is not consulted — `releasedBy` was dead

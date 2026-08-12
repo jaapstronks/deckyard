@@ -4,6 +4,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
+import { toStorageContext } from './backend-dispatch.js';
 import { norm, nowIso, isoAfter } from '../utils/normalize.js';
 import { matchesIdentity } from '../../shared/identity-match.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
@@ -67,12 +68,13 @@ function mapRequestRow(row) {
  * Get the current lock for a presentation.
  * Returns null if no lock exists or lock is expired.
  */
-export async function getPresentationLock(presentationId, ctx) {
+export async function getPresentationLock(scope, presentationId) {
+  toStorageContext(scope, 'getPresentationLock');
   const pid = norm(presentationId);
   if (!pid) return null;
 
   return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     const row = await db
@@ -94,7 +96,8 @@ export async function getPresentationLock(presentationId, ctx) {
  * If the same user already holds the lock, refreshes it.
  * Returns { ok: true, lock } on success, { ok: false, reason, lock? } on failure.
  */
-export async function acquirePresentationLock(presentationId, { email, name, userId } = {}, ctx) {
+export async function acquirePresentationLock(scope, presentationId, { email, name, userId } = {}) {
+  toStorageContext(scope, 'acquirePresentationLock');
   const pid = norm(presentationId);
   const holderEmail = norm(email).toLowerCase();
   const holderName = norm(name) || holderEmail;
@@ -106,7 +109,7 @@ export async function acquirePresentationLock(presentationId, { email, name, use
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
     const expiresAt = isoAfter(LOCK_TTL_MS);
 
@@ -184,7 +187,8 @@ export async function acquirePresentationLock(presentationId, { email, name, use
  * Refresh an existing lock (extend TTL).
  * Only the current holder can refresh.
  */
-export async function refreshPresentationLock(presentationId, { email, userId } = {}, ctx) {
+export async function refreshPresentationLock(scope, presentationId, { email, userId } = {}) {
+  toStorageContext(scope, 'refreshPresentationLock');
   const pid = norm(presentationId);
   const holderEmail = norm(email).toLowerCase();
   const actor = { id: userId || null, email: holderEmail };
@@ -194,7 +198,7 @@ export async function refreshPresentationLock(presentationId, { email, userId } 
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
     const expiresAt = isoAfter(LOCK_TTL_MS);
 
@@ -253,7 +257,8 @@ export async function refreshPresentationLock(presentationId, { email, userId } 
  * Release a lock.
  * Only the current holder can release (except force release).
  */
-export async function releasePresentationLock(presentationId, { email, userId } = {}, ctx) {
+export async function releasePresentationLock(scope, presentationId, { email, userId } = {}) {
+  toStorageContext(scope, 'releasePresentationLock');
   const pid = norm(presentationId);
   const holderEmail = norm(email).toLowerCase();
   const actor = { id: userId || null, email: holderEmail };
@@ -263,7 +268,7 @@ export async function releasePresentationLock(presentationId, { email, userId } 
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Check existing lock
     const existing = await db
@@ -301,14 +306,15 @@ export async function releasePresentationLock(presentationId, { email, userId } 
  * Force release a lock (admin/owner use).
  * Releases regardless of who holds it.
  */
-export async function forceReleasePresentationLock(presentationId, ctx) {
+export async function forceReleasePresentationLock(scope, presentationId) {
+  toStorageContext(scope, 'forceReleasePresentationLock');
   const pid = norm(presentationId);
   if (!pid) {
     return { ok: false, reason: 'invalid' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const result = await db
       .deleteFrom('presentation_locks')
@@ -327,7 +333,8 @@ export async function forceReleasePresentationLock(presentationId, ctx) {
 /**
  * Create a request for access to a locked presentation.
  */
-export async function createLockRequest(presentationId, { email, name, message } = {}, ctx) {
+export async function createLockRequest(scope, presentationId, { email, name, message } = {}) {
+  toStorageContext(scope, 'createLockRequest');
   const pid = norm(presentationId);
   const requesterEmail = norm(email).toLowerCase();
   const requesterName = norm(name) || requesterEmail;
@@ -337,7 +344,7 @@ export async function createLockRequest(presentationId, { email, name, message }
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Check if user already has a pending request
     const existingRequest = await db
@@ -381,12 +388,13 @@ export async function createLockRequest(presentationId, { email, name, message }
  * List pending lock requests for a presentation.
  * Only the current lock holder should call this.
  */
-export async function listPendingLockRequests(presentationId, ctx) {
+export async function listPendingLockRequests(scope, presentationId) {
+  toStorageContext(scope, 'listPendingLockRequests');
   const pid = norm(presentationId);
   if (!pid) return [];
 
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const rows = await db
       .selectFrom('lock_requests')
@@ -404,9 +412,10 @@ export async function listPendingLockRequests(presentationId, ctx) {
 /**
  * Get a specific lock request by ID.
  */
-export async function getLockRequest(requestId, ctx) {
+export async function getLockRequest(scope, requestId) {
+  toStorageContext(scope, 'getLockRequest');
   return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const row = await db
       .selectFrom('lock_requests')
@@ -424,9 +433,10 @@ export async function getLockRequest(requestId, ctx) {
 /**
  * Accept a lock request - transfers the lock directly to the requester.
  */
-export async function acceptLockRequest(requestId, { holderEmail } = {}, ctx) {
+export async function acceptLockRequest(scope, requestId, { holderEmail } = {}) {
+  toStorageContext(scope, 'acceptLockRequest');
   // Get the request first (uses withDbGuard internally)
-  const request = await getLockRequest(requestId, ctx);
+  const request = await getLockRequest(scope, requestId);
 
   if (!request) {
     return { ok: false, reason: 'not_found' };
@@ -447,7 +457,7 @@ export async function acceptLockRequest(requestId, { holderEmail } = {}, ctx) {
   const holderId = resolved?.userId || null;
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
     const expiresAt = isoAfter(LOCK_TTL_MS);
 
@@ -511,9 +521,10 @@ export async function acceptLockRequest(requestId, { holderEmail } = {}, ctx) {
 /**
  * Reject a lock request.
  */
-export async function rejectLockRequest(requestId, ctx) {
+export async function rejectLockRequest(scope, requestId) {
+  toStorageContext(scope, 'rejectLockRequest');
   // Get the request first (uses withDbGuard internally)
-  const request = await getLockRequest(requestId, ctx);
+  const request = await getLockRequest(scope, requestId);
   if (!request) {
     return { ok: false, reason: 'not_found' };
   }
@@ -523,7 +534,7 @@ export async function rejectLockRequest(requestId, ctx) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     // Update request status
@@ -554,7 +565,8 @@ export async function rejectLockRequest(requestId, ctx) {
  * Only returns pending requests or recently resolved ones (within 2 minutes).
  * Returns null if the user already holds the lock (they don't need their request status).
  */
-export async function getUserLockRequestStatus(presentationId, { email, userId } = {}, ctx) {
+export async function getUserLockRequestStatus(scope, presentationId, { email, userId } = {}) {
+  toStorageContext(scope, 'getUserLockRequestStatus');
   const pid = norm(presentationId);
   const userEmail = norm(email).toLowerCase();
   if (!pid || !userEmail) return null;
@@ -563,13 +575,13 @@ export async function getUserLockRequestStatus(presentationId, { email, userId }
   // (this prevents old "accepted" requests from triggering re-acquire). The
   // holder check is id-primary; the requester lookup below stays keyed on the
   // e-mail because lock_requests carries no requester id column.
-  const currentLock = await getPresentationLock(pid, ctx);
+  const currentLock = await getPresentationLock(scope, pid);
   if (currentLock && matchesIdentity({ id: userId || null, email: userEmail }, { userId: currentLock.holderId, email: currentLock.holderEmail })) {
     return null;
   }
 
   return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Get the most recent request from this user
     const row = await db

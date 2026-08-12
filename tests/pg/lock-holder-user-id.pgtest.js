@@ -101,85 +101,85 @@ pgDescribe('lock holder identity on users.id (real PostgreSQL)', () => {
   // ── Slide locks ────────────────────────────────────────────────
 
   it('stamps and surfaces the holder users.id on a slide lock', async () => {
-    const res = await acquireSlideLock(PID, SID, alice(), CTX);
+    const res = await acquireSlideLock(CTX, PID, SID, alice());
     assert.equal(res.ok, true);
     assert.equal(res.lock.holderId, ALICE_ID);
     assert.equal(res.lock.holderEmail, ALICE_EMAIL);
 
-    const stored = await getSlideLock(PID, SID, CTX);
+    const stored = await getSlideLock(CTX, PID, SID);
     assert.equal(stored.holderId, ALICE_ID);
   });
 
   it('a renamed holder refreshes, releases and re-acquires their own slide lock', async () => {
-    await acquireSlideLock(PID, SID, alice(), CTX);
+    await acquireSlideLock(CTX, PID, SID, alice());
     await renameUser(ALICE_ID, ALICE_NEW_EMAIL);
 
     // The stored row still says alice@example.com; Alice now presents her new
     // address plus her unchanged id. The e-mail no longer matches, the id does.
-    const refreshed = await refreshSlideLock(PID, SID, alice(ALICE_NEW_EMAIL), CTX);
+    const refreshed = await refreshSlideLock(CTX, PID, SID, alice(ALICE_NEW_EMAIL));
     assert.equal(refreshed.ok, true, 'refresh recognizes the holder by id after a rename');
 
-    const released = await releaseSlideLock(PID, SID, alice(ALICE_NEW_EMAIL), CTX);
+    const released = await releaseSlideLock(CTX, PID, SID, alice(ALICE_NEW_EMAIL));
     assert.equal(released.ok, true);
     assert.equal(released.released, true, 'release recognizes the holder by id after a rename');
 
-    const reacquired = await acquireSlideLock(PID, SID, alice(ALICE_NEW_EMAIL), CTX);
+    const reacquired = await acquireSlideLock(CTX, PID, SID, alice(ALICE_NEW_EMAIL));
     assert.equal(reacquired.ok, true);
     assert.equal(reacquired.lock.holderId, ALICE_ID);
   });
 
   it("a renamed holder's own live lock is never 'locked by others' to them", async () => {
-    await acquireSlideLock(PID, SID, alice(), CTX);
+    await acquireSlideLock(CTX, PID, SID, alice());
     await renameUser(ALICE_ID, ALICE_NEW_EMAIL);
 
     // Alice's own live lock: the raw-e-mail filter this replaced would have
     // listed it (stored old address ≠ her new one); the id match excludes it.
-    const others = await getLockedByOthers(PID, alice(ALICE_NEW_EMAIL), CTX);
+    const others = await getLockedByOthers(CTX, PID, alice(ALICE_NEW_EMAIL));
     assert.deepEqual(others, []);
 
     // Bob, meanwhile, sees it as held.
-    const bobSees = await getLockedByOthers(PID, bob(), CTX);
+    const bobSees = await getLockedByOthers(CTX, PID, bob());
     assert.equal(bobSees.length, 1);
     assert.equal(bobSees[0].slideId, SID);
   });
 
   it("another user cannot take, refresh or release a live lock held by id", async () => {
-    await acquireSlideLock(PID, SID, alice(), CTX);
+    await acquireSlideLock(CTX, PID, SID, alice());
 
-    const grab = await acquireSlideLock(PID, SID, bob(), CTX);
+    const grab = await acquireSlideLock(CTX, PID, SID, bob());
     assert.equal(grab.ok, false);
     assert.equal(grab.reason, 'held');
     assert.equal(grab.lock.holderId, ALICE_ID);
 
-    const steal = await releaseSlideLock(PID, SID, bob(), CTX);
+    const steal = await releaseSlideLock(CTX, PID, SID, bob());
     assert.equal(steal.ok, false);
     assert.equal(steal.reason, 'held');
 
     // Alice still holds it — nobody else's attempt changed anything.
-    assert.equal((await getSlideLock(PID, SID, CTX)).holderId, ALICE_ID);
+    assert.equal((await getSlideLock(CTX, PID, SID)).holderId, ALICE_ID);
   });
 
   it('an external holder (no users row) stamps NULL and is matched by e-mail', async () => {
-    const res = await acquireSlideLock(PID, SID, external, CTX);
+    const res = await acquireSlideLock(CTX, PID, SID, external);
     assert.equal(res.ok, true);
     assert.equal(res.lock.holderId, null);
 
     // The external holder still refreshes their own lock via the e-mail fallback.
-    const refreshed = await refreshSlideLock(PID, SID, external, CTX);
+    const refreshed = await refreshSlideLock(CTX, PID, SID, external);
     assert.equal(refreshed.ok, true);
 
     // And Alice sees it as held by someone else.
-    const others = await getLockedByOthers(PID, alice(), CTX);
+    const others = await getLockedByOthers(CTX, PID, alice());
     assert.equal(others.length, 1);
     assert.equal(others[0].holderEmail, EXTERNAL_EMAIL);
   });
 
   it('release-all tears down a renamed holder\'s locks by id', async () => {
-    await acquireSlideLock(PID, 'slide-a', alice(), CTX);
-    await acquireSlideLock(PID, 'slide-b', alice(), CTX);
+    await acquireSlideLock(CTX, PID, 'slide-a', alice());
+    await acquireSlideLock(CTX, PID, 'slide-b', alice());
     await renameUser(ALICE_ID, ALICE_NEW_EMAIL);
 
-    const res = await releaseAllUserSlideLocks(PID, alice(ALICE_NEW_EMAIL), CTX);
+    const res = await releaseAllUserSlideLocks(CTX, PID, alice(ALICE_NEW_EMAIL));
     assert.equal(res.ok, true);
     assert.equal(res.releasedCount, 2, 'both locks removed despite the stored old address');
   });
@@ -187,23 +187,23 @@ pgDescribe('lock holder identity on users.id (real PostgreSQL)', () => {
   // ── Presentation locks ─────────────────────────────────────────
 
   it('a renamed holder keeps their whole-deck lock', async () => {
-    const acq = await acquirePresentationLock(PID, alice(), CTX);
+    const acq = await acquirePresentationLock(CTX, PID, alice());
     assert.equal(acq.ok, true);
     assert.equal(acq.lock.holderId, ALICE_ID);
 
     await renameUser(ALICE_ID, ALICE_NEW_EMAIL);
 
-    const refreshed = await refreshPresentationLock(PID, alice(ALICE_NEW_EMAIL), CTX);
+    const refreshed = await refreshPresentationLock(CTX, PID, alice(ALICE_NEW_EMAIL));
     assert.equal(refreshed.ok, true, 'the holder is recognized by id after a rename');
     assert.equal(refreshed.lock.holderId, ALICE_ID);
 
     // The acquire path re-stamps both halves, bringing the stored e-mail back in
     // step with the id (the minimal refresh above only extends the TTL).
-    const reacquired = await acquirePresentationLock(PID, alice(ALICE_NEW_EMAIL), CTX);
+    const reacquired = await acquirePresentationLock(CTX, PID, alice(ALICE_NEW_EMAIL));
     assert.equal(reacquired.ok, true);
     assert.equal(reacquired.lock.holderEmail, ALICE_NEW_EMAIL);
 
-    const released = await releasePresentationLock(PID, alice(ALICE_NEW_EMAIL), CTX);
+    const released = await releasePresentationLock(CTX, PID, alice(ALICE_NEW_EMAIL));
     assert.equal(released.ok, true);
     assert.equal(released.released, true);
   });
@@ -212,11 +212,11 @@ pgDescribe('lock holder identity on users.id (real PostgreSQL)', () => {
     // Alice holds the deck; Bob requests it; Alice accepts. The transfer must
     // stamp Bob's id — resolved from the e-mail on his request row, the one
     // write whose holder id is not the authed session's.
-    await acquirePresentationLock(PID, alice(), CTX);
-    const req = await createLockRequest(PID, { email: BOB_EMAIL, name: 'Bob' }, CTX);
+    await acquirePresentationLock(CTX, PID, alice());
+    const req = await createLockRequest(CTX, PID, { email: BOB_EMAIL, name: 'Bob' });
     assert.equal(req.ok, true);
 
-    const accepted = await acceptLockRequest(req.request.id, {}, CTX);
+    const accepted = await acceptLockRequest(CTX, req.request.id, {});
     assert.equal(accepted.ok, true);
 
     const row = await db
@@ -230,9 +230,9 @@ pgDescribe('lock holder identity on users.id (real PostgreSQL)', () => {
   });
 
   it('a transfer to an external requester (no users row) stamps NULL', async () => {
-    await acquirePresentationLock(PID, alice(), CTX);
-    const req = await createLockRequest(PID, { email: EXTERNAL_EMAIL, name: 'Ext' }, CTX);
-    const accepted = await acceptLockRequest(req.request.id, {}, CTX);
+    await acquirePresentationLock(CTX, PID, alice());
+    const req = await createLockRequest(CTX, PID, { email: EXTERNAL_EMAIL, name: 'Ext' });
+    const accepted = await acceptLockRequest(CTX, req.request.id, {});
     assert.equal(accepted.ok, true);
 
     const row = await db
@@ -246,10 +246,10 @@ pgDescribe('lock holder identity on users.id (real PostgreSQL)', () => {
   });
 
   it('deleting the holder user keeps the lock row, id dropped (ON DELETE SET NULL)', async () => {
-    await acquireSlideLock(PID, SID, bob(), CTX);
+    await acquireSlideLock(CTX, PID, SID, bob());
     await db.deleteFrom('users').where('id', '=', BOB_ID).execute();
 
-    const stored = await getSlideLock(PID, SID, CTX);
+    const stored = await getSlideLock(CTX, PID, SID);
     assert.equal(stored.holderId, null, 'the FK dropped the id but not the lock');
     assert.equal(stored.holderEmail, BOB_EMAIL);
   });
