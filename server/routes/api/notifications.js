@@ -47,7 +47,7 @@ async function handleNotificationEvents({ req, res, authedUser }) {
   addClient(userEmail, res);
 
   // Send initial connection event with current unread count
-  const unreadCount = await getUnreadCount(userEmail, ctx);
+  const unreadCount = await getUnreadCount(ctx, userEmail);
   res.write(`event: connected\ndata: ${JSON.stringify({ unreadCount })}\n\n`);
 
   // Clean up on client disconnect
@@ -62,7 +62,7 @@ async function handleNotificationEvents({ req, res, authedUser }) {
 // GET /api/notifications/unread-count - Get unread notification count
 async function handleNotificationUnreadCount({ res, authedUser }) {
   const ctx = createRouteContext(authedUser);
-  const count = await getUnreadCount(authedUser.email, ctx);
+  const count = await getUnreadCount(ctx, authedUser.email);
   serveJson(res, 200, { unreadCount: count });
   return true;
 }
@@ -78,7 +78,7 @@ async function handleNotificationMarkRead({ req, res, authedUser }) {
 
   // Mark all as read
   if (body?.all === true) {
-    const result = await markAllAsRead(userEmail, ctx);
+    const result = await markAllAsRead(ctx, userEmail);
     if (!result.ok) {
       return badRequest(res, result.reason);
     }
@@ -92,7 +92,7 @@ async function handleNotificationMarkRead({ req, res, authedUser }) {
     return badRequest(res, 'notificationId or all:true is required');
   }
 
-  const result = await markAsRead(notificationId, userEmail, ctx);
+  const result = await markAsRead(ctx, notificationId, userEmail);
   if (!result.ok) {
     if (result.reason === 'not_found') {
       return badRequest(res, 'Notification not found');
@@ -114,7 +114,7 @@ async function handleNotificationArchive({ req, res, authedUser }) {
   const body = jsonResult.body;
 
   if (body?.all === true) {
-    const result = await archiveAllNotifications(userEmail, ctx);
+    const result = await archiveAllNotifications(ctx, userEmail);
     if (!result.ok) {
       return badRequest(res, result.reason);
     }
@@ -127,7 +127,7 @@ async function handleNotificationArchive({ req, res, authedUser }) {
     return badRequest(res, 'notificationId or all:true is required');
   }
 
-  const result = await archiveNotification(notificationId, userEmail, ctx);
+  const result = await archiveNotification(ctx, notificationId, userEmail);
   if (!result.ok) {
     if (result.reason === 'not_found') {
       return badRequest(res, 'Notification not found');
@@ -154,8 +154,8 @@ async function handleNotificationList({ res, url, authedUser }) {
   else if (filter === 'mentions') opts.types = ['comment_mention'];
   else if (filter === 'archived') opts.archived = true;
 
-  const notifications = await listNotifications(userEmail, opts, ctx);
-  const unreadCount = await getUnreadCount(userEmail, ctx);
+  const notifications = await listNotifications(ctx, userEmail, opts);
+  const unreadCount = await getUnreadCount(ctx, userEmail);
 
   serveJson(res, 200, { notifications, unreadCount, filter });
   return true;

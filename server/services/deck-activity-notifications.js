@@ -138,7 +138,7 @@ async function resolveDeckActivityRecipients({ repoRoot, presentation, actor, ct
 
   let overrides = new Map();
   try {
-    overrides = await listSubscriptions(presentation?.id, ctx);
+    overrides = await listSubscriptions(ctx, presentation?.id);
   } catch {
     overrides = new Map();
   }
@@ -193,11 +193,11 @@ export async function notifyDeckActivity({ repoRoot, presentation, actor, slideC
     for (const recipientEmail of recipients) {
       try {
         const existing = await findUnreadDeckActivityNotification(
+          ctx,
           recipientEmail,
           presentation.id,
           actorEmail,
-          since,
-          ctx
+          since
         );
         const prevCount = Number(existing?.data?.slideCount) || 0;
         const count = prevCount + added;
@@ -206,20 +206,20 @@ export async function notifyDeckActivity({ repoRoot, presentation, actor, slideC
         let notification = null;
         if (existing) {
           const res = await refreshDeckActivityNotification(
+            ctx,
             existing.id,
             recipientEmail,
-            { title: input.title, body: input.body, data: input.data },
-            ctx
+            { title: input.title, body: input.body, data: input.data }
           );
           notification = res?.ok ? res.notification : null;
         } else {
-          const res = await createNotification({ ...input, userEmail: recipientEmail }, ctx);
+          const res = await createNotification(ctx, { ...input, userEmail: recipientEmail });
           notification = res?.ok ? res.notification : null;
         }
 
         if (notification) {
           broadcastToUser(recipientEmail, NotificationEventTypes.NEW, notification);
-          const unreadCount = await getUnreadCount(recipientEmail, ctx);
+          const unreadCount = await getUnreadCount(ctx, recipientEmail);
           broadcastToUser(recipientEmail, NotificationEventTypes.COUNTS, { unreadCount });
         }
       } catch (e) {

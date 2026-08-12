@@ -19,21 +19,32 @@ import {
   getUnreadCount,
 } from '../server/storage/notifications.js';
 
+// A storage scope states the organization it acts in; the layer refuses one
+// that does not (tests/storage-call-convention: scope-first, validate-first).
+const ORG = { organizationId: '00000000-0000-0000-0000-0000000000aa' };
+
+describe('scope refusal', () => {
+  it('throws on a missing or organization-less scope', async () => {
+    await assert.rejects(getUnreadCount(null, 'a@b.c'), TypeError);
+    await assert.rejects(getUnreadCount({}, 'a@b.c'), TypeError);
+  });
+});
+
 describe('archiveNotification (no-DB contract)', () => {
   it('validates params', async () => {
     assert.deepStrictEqual(
-      await archiveNotification('', 'a@b.c', {}),
+      await archiveNotification(ORG, '', 'a@b.c'),
       { ok: false, reason: 'invalid_params' }
     );
     assert.deepStrictEqual(
-      await archiveNotification('n-1', '', {}),
+      await archiveNotification(ORG, 'n-1', ''),
       { ok: false, reason: 'invalid_params' }
     );
   });
 
   it('reports unavailable without a database', async () => {
     assert.deepStrictEqual(
-      await archiveNotification('n-1', 'a@b.c', {}),
+      await archiveNotification(ORG, 'n-1', 'a@b.c'),
       { ok: false, reason: 'unavailable' }
     );
   });
@@ -42,14 +53,14 @@ describe('archiveNotification (no-DB contract)', () => {
 describe('archiveAllNotifications (no-DB contract)', () => {
   it('requires an email', async () => {
     assert.deepStrictEqual(
-      await archiveAllNotifications('', {}),
+      await archiveAllNotifications(ORG, ''),
       { ok: false, reason: 'invalid_email' }
     );
   });
 
   it('reports unavailable without a database', async () => {
     assert.deepStrictEqual(
-      await archiveAllNotifications('a@b.c', {}),
+      await archiveAllNotifications(ORG, 'a@b.c'),
       { ok: false, reason: 'unavailable' }
     );
   });
@@ -58,22 +69,22 @@ describe('archiveAllNotifications (no-DB contract)', () => {
 describe('archiveThreadNotifications (no-DB contract)', () => {
   it('validates params', async () => {
     assert.deepStrictEqual(
-      await archiveThreadNotifications('', 'p-1', 't-1', {}),
+      await archiveThreadNotifications(ORG, '', 'p-1', 't-1'),
       { ok: false, reason: 'invalid_params' }
     );
     assert.deepStrictEqual(
-      await archiveThreadNotifications('a@b.c', '', 't-1', {}),
+      await archiveThreadNotifications(ORG, 'a@b.c', '', 't-1'),
       { ok: false, reason: 'invalid_params' }
     );
     assert.deepStrictEqual(
-      await archiveThreadNotifications('a@b.c', 'p-1', '', {}),
+      await archiveThreadNotifications(ORG, 'a@b.c', 'p-1', ''),
       { ok: false, reason: 'invalid_params' }
     );
   });
 
   it('reports unavailable without a database', async () => {
     assert.deepStrictEqual(
-      await archiveThreadNotifications('a@b.c', 'p-1', 't-1', {}),
+      await archiveThreadNotifications(ORG, 'a@b.c', 'p-1', 't-1'),
       { ok: false, reason: 'unavailable' }
     );
   });
@@ -81,16 +92,16 @@ describe('archiveThreadNotifications (no-DB contract)', () => {
 
 describe('list/count guards still hold with the new options', () => {
   it('listNotifications returns [] without a user or DB, for every filter shape', async () => {
-    assert.deepStrictEqual(await listNotifications('', {}, {}), []);
-    assert.deepStrictEqual(await listNotifications('a@b.c', { archived: true }, {}), []);
+    assert.deepStrictEqual(await listNotifications(ORG, '', {}), []);
+    assert.deepStrictEqual(await listNotifications(ORG, 'a@b.c', { archived: true }), []);
     assert.deepStrictEqual(
-      await listNotifications('a@b.c', { types: ['comment_mention'] }, {}),
+      await listNotifications(ORG, 'a@b.c', { types: ['comment_mention'] }),
       []
     );
   });
 
   it('getUnreadCount returns 0 without a user or DB', async () => {
-    assert.strictEqual(await getUnreadCount('', {}), 0);
-    assert.strictEqual(await getUnreadCount('a@b.c', {}), 0);
+    assert.strictEqual(await getUnreadCount(ORG, ''), 0);
+    assert.strictEqual(await getUnreadCount(ORG, 'a@b.c'), 0);
   });
 });

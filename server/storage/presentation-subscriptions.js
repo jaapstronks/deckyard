@@ -5,6 +5,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
+import { toStorageContext } from './backend-dispatch.js';
 import { norm, normalizeEmail, nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 
@@ -15,7 +16,8 @@ export const SUBSCRIPTION_LEVELS = ['watching', 'participating', 'mentions_only'
  * Get a user's subscription override for a deck.
  * @returns {Promise<{level: string}|null>} null = no override (use default)
  */
-export async function getSubscription(presentationId, userEmail, ctx) {
+export async function getSubscription(scope, presentationId, userEmail) {
+  toStorageContext(scope, 'getSubscription');
   const pid = norm(presentationId);
   const email = normalizeEmail(userEmail);
   if (!pid || !email) return null;
@@ -25,7 +27,7 @@ export async function getSubscription(presentationId, userEmail, ctx) {
       .selectFrom('presentation_subscriptions')
       .select(['level', 'updated_at'])
       .where('presentation_id', '=', pid)
-      .where('organization_id', '=', getOrgId(ctx))
+      .where('organization_id', '=', getOrgId(scope))
       .where('user_email', '=', email)
       .executeTakeFirst();
     return row ? { level: row.level, updatedAt: row.updated_at } : null;
@@ -36,7 +38,8 @@ export async function getSubscription(presentationId, userEmail, ctx) {
  * Set (or clear) a user's subscription override for a deck.
  * @param {string|null} level - One of SUBSCRIPTION_LEVELS, or null to clear
  */
-export async function setSubscription(presentationId, userEmail, level, ctx) {
+export async function setSubscription(scope, presentationId, userEmail, level) {
+  toStorageContext(scope, 'setSubscription');
   const pid = norm(presentationId);
   const email = normalizeEmail(userEmail);
   if (!pid || !email) return { ok: false, reason: 'invalid' };
@@ -45,7 +48,7 @@ export async function setSubscription(presentationId, userEmail, level, ctx) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     if (level === null) {
       await db
         .deleteFrom('presentation_subscriptions')
@@ -78,7 +81,8 @@ export async function setSubscription(presentationId, userEmail, level, ctx) {
  * All subscription overrides on a deck, as a Map email → level.
  * @returns {Promise<Map<string, string>>}
  */
-export async function listSubscriptions(presentationId, ctx) {
+export async function listSubscriptions(scope, presentationId) {
+  toStorageContext(scope, 'listSubscriptions');
   const pid = norm(presentationId);
   if (!pid) return new Map();
 
@@ -87,7 +91,7 @@ export async function listSubscriptions(presentationId, ctx) {
       .selectFrom('presentation_subscriptions')
       .select(['user_email', 'level'])
       .where('presentation_id', '=', pid)
-      .where('organization_id', '=', getOrgId(ctx))
+      .where('organization_id', '=', getOrgId(scope))
       .execute();
     return new Map(rows.map((r) => [normalizeEmail(r.user_email), r.level]));
   });

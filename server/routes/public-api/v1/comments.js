@@ -126,7 +126,7 @@ async function handleListComments(ctx, presentationId) {
     return true;
   }
 
-  const comments = await listComments(presentationId, storageCtx(ctx), {
+  const comments = await listComments(storageCtx(ctx), presentationId, {
     status: status === 'all' ? undefined : status,
     slideId: url.searchParams.get('slideId') || undefined,
     since: sinceResult.since || undefined,
@@ -190,20 +190,20 @@ async function handleCreateComment(ctx, presentationId) {
   // For replies: fetch the parent (notification recipient + 404 mapping).
   let parentComment = null;
   if (body?.parentId) {
-    parentComment = await getComment(body.parentId, sctx);
+    parentComment = await getComment(sctx, body.parentId);
     if (!parentComment || parentComment.presentationId !== presentationId) {
       await apiError(ctx, 404, 'Parent comment not found on this presentation');
       return true;
     }
   }
 
-  const result = await createComment(presentationId, {
+  const result = await createComment(sctx, presentationId, {
     email: apiKey.ownerEmail,
     body: text,
     slideId,
     parentId: body?.parentId || null,
     slideSnapshot,
-  }, sctx);
+  });
 
   if (!result.ok) {
     await apiError(ctx, result.reason === 'unavailable' ? 503 : 400, `Could not create comment: ${result.reason}`);
@@ -263,7 +263,7 @@ async function handleCommentStatus(ctx, commentId) {
   }
 
   const sctx = storageCtx(ctx);
-  const comment = await getComment(commentId, sctx);
+  const comment = await getComment(sctx, commentId);
   if (!comment) {
     await apiError(ctx, 404, 'Comment not found');
     return true;
@@ -282,11 +282,11 @@ async function handleCommentStatus(ctx, commentId) {
 
   let result;
   if (status === 'resolved') {
-    result = await resolveComment(commentId, { email: apiKey.ownerEmail }, sctx);
+    result = await resolveComment(sctx, commentId, { email: apiKey.ownerEmail });
   } else if (status === 'dismissed') {
-    result = await dismissComment(commentId, { email: apiKey.ownerEmail }, sctx);
+    result = await dismissComment(sctx, commentId, { email: apiKey.ownerEmail });
   } else {
-    result = await reopenComment(commentId, sctx);
+    result = await reopenComment(sctx, commentId);
   }
 
   if (!result.ok) {

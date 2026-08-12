@@ -142,25 +142,27 @@ describe('REASON_TO_TYPE', () => {
   });
 });
 
+const ORG = { organizationId: '00000000-0000-0000-0000-0000000000aa' };
+
 describe('presentation-subscriptions storage (no-DB contract)', () => {
   it('getSubscription returns null without input or DB', async () => {
-    assert.strictEqual(await getSubscription('', 'a@b.c', {}), null);
-    assert.strictEqual(await getSubscription('p-1', '', {}), null);
-    assert.strictEqual(await getSubscription('p-1', 'a@b.c', {}), null);
+    assert.strictEqual(await getSubscription(ORG, '', 'a@b.c'), null);
+    assert.strictEqual(await getSubscription(ORG, 'p-1', ''), null);
+    assert.strictEqual(await getSubscription(ORG, 'p-1', 'a@b.c'), null);
   });
 
   it('setSubscription validates level', async () => {
-    const r = await setSubscription('p-1', 'a@b.c', 'shouting', {});
+    const r = await setSubscription(ORG, 'p-1', 'a@b.c', 'shouting');
     assert.deepStrictEqual(r, { ok: false, reason: 'invalid_level' });
   });
 
   it('setSubscription reports unavailable without a database', async () => {
-    const r = await setSubscription('p-1', 'a@b.c', 'mute', {});
+    const r = await setSubscription(ORG, 'p-1', 'a@b.c', 'mute');
     assert.deepStrictEqual(r, { ok: false, reason: 'unavailable' });
   });
 
   it('listSubscriptions returns an empty map without a database', async () => {
-    const map = await listSubscriptions('p-1', {});
+    const map = await listSubscriptions(ORG, 'p-1');
     assert.ok(map instanceof Map);
     assert.strictEqual(map.size, 0);
   });

@@ -56,48 +56,48 @@ pgDescribe('setSubscription (real PostgreSQL)', () => {
   });
 
   it('inserts an override on the first set', async () => {
-    const res = await setSubscription(pid, ALICE, 'watching', ctx);
+    const res = await setSubscription(ctx, pid, ALICE, 'watching');
     assert.equal(res.ok, true);
     assert.equal(res.level, 'watching');
 
-    const got = await getSubscription(pid, ALICE, ctx);
+    const got = await getSubscription(ctx, pid, ALICE);
     assert.equal(got.level, 'watching');
     assert.equal(await countRows(), 1);
   });
 
   it('updates the level in place on the (presentation_id, user_email) conflict', async () => {
-    await setSubscription(pid, ALICE, 'watching', ctx);
-    const res = await setSubscription(pid, ALICE, 'mute', ctx);
+    await setSubscription(ctx, pid, ALICE, 'watching');
+    const res = await setSubscription(ctx, pid, ALICE, 'mute');
     assert.equal(res.ok, true);
     assert.equal(res.level, 'mute');
 
-    const got = await getSubscription(pid, ALICE, ctx);
+    const got = await getSubscription(ctx, pid, ALICE);
     assert.equal(got.level, 'mute');
     assert.equal(await countRows(), 1, 'exactly one override per (deck, user)');
   });
 
   it('clears an override with a null level', async () => {
-    await setSubscription(pid, ALICE, 'watching', ctx);
-    const res = await setSubscription(pid, ALICE, null, ctx);
+    await setSubscription(ctx, pid, ALICE, 'watching');
+    const res = await setSubscription(ctx, pid, ALICE, null);
     assert.equal(res.ok, true);
     assert.equal(res.level, null);
 
-    assert.equal(await getSubscription(pid, ALICE, ctx), null);
+    assert.equal(await getSubscription(ctx, pid, ALICE), null);
     assert.equal(await countRows(), 0);
   });
 
   it('rejects an unknown level without writing', async () => {
-    const res = await setSubscription(pid, ALICE, 'nonsense', ctx);
+    const res = await setSubscription(ctx, pid, ALICE, 'nonsense');
     assert.equal(res.ok, false);
     assert.equal(res.reason, 'invalid_level');
     assert.equal(await countRows(), 0);
   });
 
   it('keeps per-user overrides distinct and lists them as a map', async () => {
-    await setSubscription(pid, ALICE, 'watching', ctx);
-    await setSubscription(pid, BOB, 'mentions_only', ctx);
+    await setSubscription(ctx, pid, ALICE, 'watching');
+    await setSubscription(ctx, pid, BOB, 'mentions_only');
 
-    const map = await listSubscriptions(pid, ctx);
+    const map = await listSubscriptions(ctx, pid);
     assert.equal(map.get(ALICE), 'watching');
     assert.equal(map.get(BOB), 'mentions_only');
     assert.equal(map.size, 2);

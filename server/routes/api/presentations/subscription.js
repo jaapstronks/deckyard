@@ -44,7 +44,7 @@ export async function handlePresentationSubscription(
   const ctx = getCtx(authedUser);
 
   if (req.method === 'GET') {
-    const sub = await getSubscription(id, authedUser.email, ctx);
+    const sub = await getSubscription(ctx, id, authedUser.email);
     const settings = await getUserSettings(storageScope, authedUser.email);
     serveJson(res, 200, {
       ok: true,
@@ -62,7 +62,7 @@ export async function handlePresentationSubscription(
     return badRequest(res, `level must be one of ${SUBSCRIPTION_LEVELS.join('|')} or null`);
   }
 
-  const result = await setSubscription(id, authedUser.email, level, ctx);
+  const result = await setSubscription(ctx, id, authedUser.email, level);
   if (!result.ok) {
     return serveJson(res, result.reason === 'unavailable' ? 503 : 400, result);
   }

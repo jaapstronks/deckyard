@@ -92,6 +92,7 @@ export async function handleOwnershipTransfer(
     // Create activity event (non-blocking)
     try {
       await createActivityEvent(
+        ctx,
         {
           eventType: EVENT_TYPES.OWNERSHIP_TRANSFERRED,
           entityType: ENTITY_TYPES.PRESENTATION,
@@ -104,8 +105,7 @@ export async function handleOwnershipTransfer(
             newOwner: newOwnerEmail,
             presentationTitle: pres.title,
           },
-        },
-        ctx
+        }
       );
     } catch (err) {
       log.error('[ownership] Failed to create activity event:', err);
@@ -118,6 +118,7 @@ export async function handleOwnershipTransfer(
       const editUrl = `${protocol}://${host}/app/${id}`;
 
       const notifResult = await createNotification(
+        ctx,
         {
           userEmail: newOwnerEmail,
           notificationType: 'ownership_received',
@@ -128,8 +129,7 @@ export async function handleOwnershipTransfer(
           actorName: authedUser?.name,
           actionUrl: editUrl,
           data: { presentationTitle: pres.title },
-        },
-        ctx
+        }
       );
 
       if (notifResult.ok) {

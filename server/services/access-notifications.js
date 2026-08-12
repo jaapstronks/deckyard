@@ -75,6 +75,7 @@ export async function notifyAuthorOfAccessAttempt({
 
     // 4. Create in-app notification for author (no email)
     const notifResult = await createNotification(
+      ctx,
       {
         userEmail: authorEmail,
         notificationType: 'access_attempt',
@@ -88,8 +89,7 @@ export async function notifyAuthorOfAccessAttempt({
           accessorIp,
           presentationTitle,
         },
-      },
-      ctx
+      }
     );
 
     if (!notifResult.ok) {

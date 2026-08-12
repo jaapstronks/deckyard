@@ -122,21 +122,23 @@ describe('deckActivityWindowMinutes', () => {
   });
 });
 
+const ORG = { organizationId: '00000000-0000-0000-0000-0000000000aa' };
+
 describe('deck-activity storage (no-DB contract)', () => {
   it('findUnreadDeckActivityNotification returns null without input or DB', async () => {
-    assert.strictEqual(await findUnreadDeckActivityNotification('', 'deck', 'a@x.com', undefined, {}), null);
+    assert.strictEqual(await findUnreadDeckActivityNotification(ORG, '', 'deck', 'a@x.com', undefined), null);
     // Valid params but no database configured in the test env: safe null.
     assert.strictEqual(
-      await findUnreadDeckActivityNotification('u@x.com', 'deck', 'a@x.com', undefined, {}),
+      await findUnreadDeckActivityNotification(ORG, 'u@x.com', 'deck', 'a@x.com', undefined),
       null
     );
   });
 
   it('refreshDeckActivityNotification reports invalid/unavailable without a database', async () => {
-    const bad = await refreshDeckActivityNotification('', 'u@x.com', {}, {});
+    const bad = await refreshDeckActivityNotification(ORG, '', 'u@x.com', {});
     assert.strictEqual(bad.ok, false);
     assert.strictEqual(bad.reason, 'invalid_params');
-    const res = await refreshDeckActivityNotification('n1', 'u@x.com', { title: 'x' }, {});
+    const res = await refreshDeckActivityNotification(ORG, 'n1', 'u@x.com', { title: 'x' });
     assert.strictEqual(res.ok, false);
     assert.strictEqual(res.reason, 'unavailable');
   });

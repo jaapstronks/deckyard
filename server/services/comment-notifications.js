@@ -378,13 +378,13 @@ async function autoArchiveOnOwnReply({ presentation, comment, parentComment, act
   const threadId = parentComment.parentId || parentComment.id;
   try {
     const result = await archiveThreadNotifications(
+      ctx,
       actorEmail,
       presentation?.id,
-      threadId,
-      ctx
+      threadId
     );
     if (result?.ok && result.updatedCount > 0) {
-      const unreadCount = await getUnreadCount(actorEmail, ctx);
+      const unreadCount = await getUnreadCount(ctx, actorEmail);
       broadcastToUser(actorEmail, NotificationEventTypes.COUNTS, { unreadCount });
     }
   } catch (e) {
@@ -415,7 +415,7 @@ async function createInAppNotifications({
 
   for (const input of inputs) {
     try {
-      const notifResult = await createNotification(input, ctx);
+      const notifResult = await createNotification(ctx, input);
       if (notifResult?.ok && notifResult.notification) {
         broadcastToUser(input.userEmail, NotificationEventTypes.NEW, notifResult.notification);
       }

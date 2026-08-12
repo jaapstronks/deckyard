@@ -266,7 +266,7 @@ export function registerTools(
     async ({ limit = 50, scope = 'owned' } = {}, context) => {
       const owner = getOwner(context);
       const validScope = ['owned', 'shared', 'all'].includes(scope) ? scope : 'owned';
-      const ctx = { actorEmail: owner, organizationId: context?.organizationId };
+      const ctx = storageScopeOf(context);
 
       // Collect owned and/or shared decks, de-duplicated by id (a deck could
       // appear in both lists in edge cases). Shared lookups are DB-only and
@@ -1382,8 +1382,7 @@ export function registerTools(
       required: ['presentationId'],
     },
     async ({ presentationId, status = 'all', slideId, since, includeReplies = false }, context) => {
-      const owner = getOwner(context);
-      const ctx = { actorEmail: owner, organizationId: context?.organizationId };
+      const ctx = storageScopeOf(context);
 
       // Access guard: only decks the acting owner can see (owned or shared).
       const refs = await listAccessiblePresentationRefs(storageScopeOf(context), 'all');
@@ -1392,7 +1391,7 @@ export function registerTools(
         throw new Error(`Presentation not found or not accessible: ${presentationId}`);
       }
 
-      const comments = await listComments(presentationId, ctx, {
+      const comments = await listComments(ctx, presentationId, {
         status: status === 'all' ? undefined : status,
         slideId: slideId || undefined,
         since: parseSince(since) || undefined,
@@ -1538,14 +1537,14 @@ export function registerTools(
       slideSnapshot = buildSlideSnapshot(slide);
     }
 
-    const ctx = { actorEmail: owner, organizationId: context?.organizationId };
-    const result = await createComment(presentationId, {
+    const ctx = storageScopeOf(context);
+    const result = await createComment(ctx, presentationId, {
       email: owner,
       body: text,
       slideId,
       parentId,
       slideSnapshot,
-    }, ctx);
+    });
 
     if (!result.ok) {
       throw new Error(`Could not create comment: ${result.reason} (comments require the DB storage backend)`);
@@ -1555,7 +1554,7 @@ export function registerTools(
     // The parent lookup rides inside the voided task: the tool response
     // must not wait on notification plumbing.
     void (async () => {
-      const parentComment = parentId ? await getComment(parentId, ctx) : null;
+      const parentComment = parentId ? await getComment(ctx, parentId) : null;
       await notifyCommentCreatedInApp({
         presentation: pres,
         comment: result.comment,
@@ -1621,10 +1620,10 @@ export function registerTools(
       required: ['presentationId', 'commentId', 'body'],
     },
     async ({ presentationId, commentId, body }, context) => {
-      const owner = requireCommentActor(context);
-      const ctx = { actorEmail: owner, organizationId: context?.organizationId };
+      requireCommentActor(context); // writes need an attributable actor
+      const ctx = storageScopeOf(context);
 
-      const parent = await getComment(commentId, ctx);
+      const parent = await getComment(ctx, commentId);
       if (!parent || parent.presentationId !== presentationId) {
         throw new Error(`Comment not found on this presentation: ${commentId}`);
       }
@@ -1656,9 +1655,9 @@ export function registerTools(
     },
     async ({ presentationId, commentId, status }, context) => {
       const owner = requireCommentActor(context);
-      const ctx = { actorEmail: owner, organizationId: context?.organizationId };
+      const ctx = storageScopeOf(context);
 
-      const comment = await getComment(commentId, ctx);
+      const comment = await getComment(ctx, commentId);
       if (!comment || comment.presentationId !== presentationId) {
         throw new Error(`Comment not found on this presentation: ${commentId}`);
       }
@@ -1670,11 +1669,11 @@ export function registerTools(
 
       let result;
       if (status === 'resolved') {
-        result = await resolveComment(commentId, { email: owner }, ctx);
+        result = await resolveComment(ctx, commentId, { email: owner });
       } else if (status === 'dismissed') {
-        result = await dismissComment(commentId, { email: owner }, ctx);
+        result = await dismissComment(ctx, commentId, { email: owner });
       } else {
-        result = await reopenComment(commentId, ctx);
+        result = await reopenComment(ctx, commentId);
       }
 
       if (!result.ok) {

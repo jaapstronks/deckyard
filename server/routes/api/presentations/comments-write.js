@@ -128,10 +128,10 @@ export async function handlePresentationCommentsCreate(
   // Get parent comment if this is a reply (for notification recipient)
   let parentComment = null;
   if (body.parentId) {
-    parentComment = await getComment(body.parentId, ctx);
+    parentComment = await getComment(ctx, body.parentId);
   }
 
-  const result = await createComment(id, {
+  const result = await createComment(ctx, id, {
     email: commenterEmail,
     name: commenterName,
     body: body.body,
@@ -139,7 +139,7 @@ export async function handlePresentationCommentsCreate(
     parentId: body.parentId || null,
     positionX: body.positionX,
     positionY: body.positionY,
-  }, ctx);
+  });
 
   if (!result.ok) {
     return serveJson(res, 400, result);
@@ -196,7 +196,7 @@ export async function handlePresentationCommentUpdate(
   if (!pres) return notFound(res, 'Presentation not found');
 
   const ctx = getCtx(authedUser);
-  const comment = await getComment(commentId, ctx);
+  const comment = await getComment(ctx, commentId);
 
   if (!comment || comment.presentationId !== id) {
     return notFound(res, 'Comment not found');
@@ -219,7 +219,7 @@ export async function handlePresentationCommentUpdate(
     return badRequest(res, `Comment must be ${MAX_COMMENT_LENGTH} characters or less`);
   }
 
-  const result = await updateComment(commentId, { body: body.body }, ctx);
+  const result = await updateComment(ctx, commentId, { body: body.body });
 
   if (!result.ok) {
     return serveJson(res, 400, result);
@@ -229,7 +229,7 @@ export async function handlePresentationCommentUpdate(
   // against the pre-edit list, so re-saving never re-notifies).
   void (async () => {
     const parentComment = result.comment?.parentId
-      ? await getComment(result.comment.parentId, ctx)
+      ? await getComment(ctx, result.comment.parentId)
       : null;
     await notifyMentionsAdded(repoRoot, req, {
       presentation: pres,
@@ -270,7 +270,7 @@ export async function handlePresentationCommentDelete(
   if (!pres) return notFound(res, 'Presentation not found');
 
   const ctx = getCtx(authedUser);
-  const comment = await getComment(commentId, ctx);
+  const comment = await getComment(ctx, commentId);
 
   if (!comment || comment.presentationId !== id) {
     return notFound(res, 'Comment not found');
@@ -281,7 +281,7 @@ export async function handlePresentationCommentDelete(
     return unauthorized(res);
   }
 
-  const result = await deleteComment(commentId, ctx);
+  const result = await deleteComment(ctx, commentId);
 
   // Broadcast to all connected clients (non-blocking)
   void broadcastToPresentation(id, CommentEventTypes.DELETED, {

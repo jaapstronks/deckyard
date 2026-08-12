@@ -34,7 +34,7 @@ pgDescribe('markThreadsRead (real PostgreSQL)', () => {
 
   /** Create a top-level comment on the seeded deck and return its id. */
   const seedComment = async (body = 'A note') => {
-    const res = await createComment(pid, { email: 'author@example.com', body }, ctx);
+    const res = await createComment(ctx, pid, { email: 'author@example.com', body });
     assert.equal(res.ok, true);
     return res.comment.id;
   };
@@ -64,7 +64,7 @@ pgDescribe('markThreadsRead (real PostgreSQL)', () => {
     const c1 = await seedComment('one');
     const c2 = await seedComment('two');
 
-    const res = await markThreadsRead(pid, [c1, c2], ctx);
+    const res = await markThreadsRead(ctx, pid, [c1, c2]);
     assert.equal(res.ok, true);
     assert.equal(res.marked, 2);
 
@@ -75,7 +75,7 @@ pgDescribe('markThreadsRead (real PostgreSQL)', () => {
   it('updates last_read_at in place on the (user_email, comment_id) conflict', async () => {
     const c1 = await seedComment();
 
-    await markThreadsRead(pid, [c1], ctx);
+    await markThreadsRead(ctx, pid, [c1]);
     const [first] = await readRowsFor(c1);
 
     // Force a distinct wall-clock second write. nowIso() has second-or-finer
@@ -87,7 +87,7 @@ pgDescribe('markThreadsRead (real PostgreSQL)', () => {
       .where('user_email', '=', ALICE)
       .execute();
 
-    const res = await markThreadsRead(pid, [c1], ctx);
+    const res = await markThreadsRead(ctx, pid, [c1]);
     assert.equal(res.marked, 1);
 
     const rows = await readRowsFor(c1);
@@ -103,11 +103,11 @@ pgDescribe('markThreadsRead (real PostgreSQL)', () => {
   it('ignores unknown ids and reply ids, marking only real top-level comments', async () => {
     const top = await seedComment('top');
     const reply = (
-      await createComment(pid, { email: ALICE, body: 'reply', parentId: top }, ctx)
+      await createComment(ctx, pid, { email: ALICE, body: 'reply', parentId: top })
     ).comment.id;
     const bogus = '00000000-0000-0000-0000-000000000000';
 
-    const res = await markThreadsRead(pid, [top, reply, bogus], ctx);
+    const res = await markThreadsRead(ctx, pid, [top, reply, bogus]);
     assert.equal(res.ok, true);
     assert.equal(res.marked, 1, 'only the top-level comment counts');
 
@@ -118,7 +118,7 @@ pgDescribe('markThreadsRead (real PostgreSQL)', () => {
 
   it('cascades the marker away when its comment is deleted (FK CASCADE)', async () => {
     const c1 = await seedComment();
-    await markThreadsRead(pid, [c1], ctx);
+    await markThreadsRead(ctx, pid, [c1]);
     assert.equal((await readRowsFor(c1)).length, 1);
 
     await db.deleteFrom('presentation_comments').where('id', '=', c1).execute();

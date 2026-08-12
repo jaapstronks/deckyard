@@ -19,12 +19,13 @@ import { listPresentationsSharedWithUser } from './collaborators.js';
  * List comments for a presentation.
  * Can filter by slideId or status.
  */
-export async function listComments(presentationId, ctx, opts = {}) {
+export async function listComments(scope, presentationId, opts = {}) {
+  toStorageContext(scope, 'listComments');
   const pid = norm(presentationId);
   if (!pid) return [];
 
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     let query = db
       .selectFrom('presentation_comments')
@@ -100,7 +101,7 @@ export async function listComments(presentationId, ctx, opts = {}) {
 
       // Per-user read-state on threads. Guests have no account, so requests
       // without an acting user get no annotation (and the panel no dots).
-      await annotateThreadReadState(db, comments, ctx);
+      await annotateThreadReadState(db, comments, scope);
     }
 
     return comments;
@@ -114,8 +115,8 @@ export async function listComments(presentationId, ctx, opts = {}) {
  * threads where the user wrote the latest foreign-free activity are never
  * unread, so your own fresh comment doesn't dot itself.
  */
-async function annotateThreadReadState(db, threads, ctx) {
-  const userEmail = normalizeEmail(ctx?.actorEmail);
+async function annotateThreadReadState(db, threads, scope) {
+  const userEmail = normalizeEmail(scope?.actorEmail);
   if (!userEmail || threads.length === 0) return;
 
   const rows = await db
@@ -163,16 +164,18 @@ async function annotateThreadReadState(db, threads, ctx) {
  * replies), normalized and deduplicated. Used by the subscription resolver:
  * writing in a thread makes you a participant.
  *
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} commentId - Top-level comment id (or a reply id; the
  *   thread is resolved via its parent)
  * @returns {Promise<string[]>}
  */
-export async function getThreadParticipants(commentId, ctx) {
+export async function getThreadParticipants(scope, commentId) {
+  toStorageContext(scope, 'getThreadParticipants');
   const cid = norm(commentId);
   if (!cid) return [];
 
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const root = await db
       .selectFrom('presentation_comments')
       .select(['id', 'parent_id', 'author_email'])
@@ -202,14 +205,15 @@ export async function getThreadParticipants(commentId, ctx) {
  * presentation count; unknown/reply ids are ignored. No-op without an acting
  * user (guests have no read-state).
  *
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId
  * @param {string[]} commentIds - Top-level comment ids to mark read
- * @param {Object} ctx - Storage context (actorEmail + org scoping)
  * @returns {Promise<{ok: boolean, marked?: number, reason?: string}>}
  */
-export async function markThreadsRead(presentationId, commentIds, ctx) {
+export async function markThreadsRead(scope, presentationId, commentIds) {
+  toStorageContext(scope, 'markThreadsRead');
   const pid = norm(presentationId);
-  const userEmail = normalizeEmail(ctx?.actorEmail);
+  const userEmail = normalizeEmail(scope?.actorEmail);
   if (!pid) return { ok: false, reason: 'invalid_presentation' };
   if (!userEmail) return { ok: true, marked: 0 };
 
@@ -219,7 +223,7 @@ export async function markThreadsRead(presentationId, commentIds, ctx) {
   if (ids.length === 0) return { ok: true, marked: 0 };
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Validate: only top-level comments of this presentation.
     const valid = await db
@@ -352,9 +356,10 @@ export async function listRecentCommentsForOwner(scope, opts = {}) {
 /**
  * Get a single comment by ID.
  */
-export async function getComment(commentId, ctx) {
+export async function getComment(scope, commentId) {
+  toStorageContext(scope, 'getComment');
   return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const row = await db
       .selectFrom('presentation_comments')
@@ -387,9 +392,10 @@ export async function getComment(commentId, ctx) {
 /**
  * Create a new comment or reply.
  */
-export async function createComment(presentationId, data, ctx) {
+export async function createComment(scope, presentationId, data) {
+  toStorageContext(scope, 'createComment');
   const pid = norm(presentationId);
-  const authorEmail = norm(data?.email || ctx?.actorEmail).toLowerCase();
+  const authorEmail = norm(data?.email || scope?.actorEmail).toLowerCase();
   const authorName = norm(data?.name) || authorEmail;
   const body = norm(data?.body);
 
@@ -398,7 +404,7 @@ export async function createComment(presentationId, data, ctx) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     // If this is a reply, validate parent exists
@@ -467,14 +473,15 @@ export async function createComment(presentationId, data, ctx) {
  * Update a comment's body.
  * Only the author can update.
  */
-export async function updateComment(commentId, data, ctx) {
+export async function updateComment(scope, commentId, data) {
+  toStorageContext(scope, 'updateComment');
   const body = norm(data?.body);
   if (!body) {
     return { ok: false, reason: 'invalid' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     const row = await db
@@ -504,9 +511,10 @@ export async function updateComment(commentId, data, ctx) {
  * Resolve a comment (mark as resolved).
  * Only presentation owner/admin can resolve.
  */
-export async function resolveComment(commentId, { email } = {}, ctx) {
+export async function resolveComment(scope, commentId, { email } = {}) {
+  toStorageContext(scope, 'resolveComment');
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
     const resolverEmail = norm(email).toLowerCase();
 
@@ -538,9 +546,10 @@ export async function resolveComment(commentId, { email } = {}, ctx) {
 /**
  * Reopen a resolved comment.
  */
-export async function reopenComment(commentId, ctx) {
+export async function reopenComment(scope, commentId) {
+  toStorageContext(scope, 'reopenComment');
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     const row = await db
@@ -572,9 +581,10 @@ export async function reopenComment(commentId, ctx) {
  * Dismiss an AI suggestion (different from resolve).
  * Sets status to 'dismissed' for AI suggestions.
  */
-export async function dismissComment(commentId, { email } = {}, ctx) {
+export async function dismissComment(scope, commentId, { email } = {}) {
+  toStorageContext(scope, 'dismissComment');
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
     const dismisserEmail = norm(email).toLowerCase();
 
@@ -607,9 +617,10 @@ export async function dismissComment(commentId, { email } = {}, ctx) {
  * Delete a comment.
  * Cascades to replies via FK constraint.
  */
-export async function deleteComment(commentId, ctx) {
+export async function deleteComment(scope, commentId) {
+  toStorageContext(scope, 'deleteComment');
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const result = await db
       .deleteFrom('presentation_comments')
@@ -628,12 +639,13 @@ export async function deleteComment(commentId, ctx) {
  * Get count of open comments for a presentation.
  * Useful for badge display.
  */
-export async function getOpenCommentCount(presentationId, ctx) {
+export async function getOpenCommentCount(scope, presentationId) {
+  toStorageContext(scope, 'getOpenCommentCount');
   const pid = norm(presentationId);
   if (!pid) return 0;
 
   return withDbGuard(0, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const result = await db
       .selectFrom('presentation_comments')
@@ -652,12 +664,13 @@ export async function getOpenCommentCount(presentationId, ctx) {
  * Get comment counts per slide for a presentation.
  * Useful for showing indicators on slide previews.
  */
-export async function getCommentCountsBySlide(presentationId, ctx) {
+export async function getCommentCountsBySlide(scope, presentationId) {
+  toStorageContext(scope, 'getCommentCountsBySlide');
   const pid = norm(presentationId);
   if (!pid) return {};
 
   return withDbGuard({}, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const rows = await db
       .selectFrom('presentation_comments')
