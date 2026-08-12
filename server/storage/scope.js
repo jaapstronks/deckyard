@@ -128,11 +128,20 @@ export function repoRootOf(storageScope) {
  * Build a scope for an operation whose authorization is a public token rather
  * than a session, so it must not be organization-filtered.
  *
- * Use it only where a globally unique token has already been resolved (publish
- * id, share token, follow code) and the deck id came *out* of that lookup. It
- * is not an escape hatch for "I don't have a context here" — a background job
- * that lost its organization should carry the organization in its payload, not
- * declare itself cross-organization.
+ * Three uses are legitimate (docs/reference/storage-scope.md § when a scope
+ * may be cross-organization):
+ *
+ * 1. A globally unique token has already been resolved (publish id, share
+ *    token, follow code) and the deck id came *out* of that lookup.
+ * 2. Session-capability audience interactions: the live session id or follow
+ *    code *is* the authorization, and the rows are keyed by session, not
+ *    organization (Q&A, poll/likert votes, feedback).
+ * 3. Instance-level configuration whose tables carry no organization column
+ *    (app settings, user settings, email templates).
+ *
+ * It is not an escape hatch for "I don't have a context here" — a background
+ * job that lost its organization should carry the organization in its
+ * payload, not declare itself cross-organization.
  *
  * @param {string|null} repoRoot - Repository root, for the file-backed fallback.
  * @param {string} reason - Why this operation cannot be organization-scoped.

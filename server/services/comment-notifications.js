@@ -94,9 +94,9 @@ export async function notifyCommentCreated(repoRoot, req, {
   await Promise.all(
     [...new Set([...recipientEmails, ...webhookRecipients])].map(async (email) => {
       const userSettings = await getUserSettings(
-      crossOrganizationScope(repoRoot ?? null, 'comment notification fan-out: recipient preference read'),
-      email
-    );
+        crossOrganizationScope(repoRoot ?? null, 'comment notification fan-out: recipient preference read'),
+        email
+      );
       recipientPrefs.set(email, userSettings?.notifications || {});
     })
   );

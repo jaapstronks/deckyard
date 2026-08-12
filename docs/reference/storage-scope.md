@@ -25,7 +25,30 @@ and where the convention's boundary lies.
 and validated in `server/storage/scope.js`. Entry points without a request
 build one through the dedicated constructors: `jobScope()` for queue workers,
 `singleOrganizationScope()` for MCP/stdio, `crossOrganizationScope()` for
-reads where a public token is the authorization.
+operations that genuinely cannot be organization-scoped (next section).
+
+## When a scope may be cross-organization
+
+A function that validates with `allowCrossOrganization: true` accepts a
+`crossOrganizationScope(repoRoot, reason)` — a scope that deliberately states
+no organization. Three categories are legitimate; everything else is a
+violation, not a fourth category waiting to be named:
+
+1. **Token-authorized reads** — a globally unique token (publish id, share
+   token, follow code) was already resolved, and the deck id came *out* of
+   that lookup.
+2. **Session-capability audience interactions** — the live session id or
+   follow code *is* the authorization, and the rows are keyed by session, not
+   organization. This covers the anonymous audience *writes* too (Q&A
+   submissions, poll/likert votes, feedback): the tables have no organization
+   column, so an organization filter has nothing to bind to.
+3. **Instance-level configuration** — `app_settings`, `user_settings` and
+   `email_templates` are per-instance (keyed by nothing or by user email);
+   jobs and pre-auth routes read them cross-organization because an
+   organization never enters the query.
+
+The `reason` string is mandatory and shows up in errors — write it for the
+reviewer who wonders why the call is exempt.
 
 - `organizationId` — whose data this call may touch. Mandatory:
   `resolveScope()` throws a `TypeError` on a missing scope, a bare string, or
