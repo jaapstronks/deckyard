@@ -15,9 +15,11 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - `client/views/`: “screens” (editor, presenter, follow-along, etc).
   - `client/lib/`: shared browser utilities (API, DOM helpers, slide mounting/cleanup, runtime helpers).
   - `client/styles/`: CSS split into app chrome vs slide styling; themes are CSS variables.
-- **`server/`**: Node server + file-based persistence.
+- **`server/`**: Node server; persistence lives in Postgres behind `server/storage/`.
   - `server/routes/`: HTTP handlers (API + static).
-  - `server/storage/`: JSON-on-disk persistence and uploads.
+  - `server/storage/`: the storage layer — facades over the database adapter,
+    plus uploads on disk. Every storage function takes a `StorageScope` as its
+    first parameter (see `docs/reference/storage-scope.md`).
   - `server/utils/`: exports (HTML/PDF/PNG/PPTX/print), rendering helpers, openai helpers, etc.
 - **`themes/`**: theme JSON files resolved at runtime into CSS variables (don’t brand the app chrome).
 - **`assets/`**: fonts/images used by slides and UI.
@@ -89,11 +91,12 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
     *undecomposed* single-concern store (`feedback.js`, `settings.js`). The
     moment a store splits into more than one module it becomes a folder `X/`
     whose `index.js` is the facade/seam — consumers import
-    `server/storage/X/index.js`, never a concern file. The DB-vs-file dispatch
-    facades follow this too: the file backend is the concern module `X/file.js`
-    *inside* the folder, not an `X-file.js` sibling *beside* it. So reading a
-    storage import tells you the shape: `X.js` = one module; `X/index.js` = a
-    seam over concern modules (`X/file.js`, `X/list.js`, …).
+    `server/storage/X/index.js`, never a concern file. So reading a storage
+    import tells you the shape: `X.js` = one module; `X/index.js` = a seam
+    over concern modules (`X/list.js`, `X/crud.js`, …). All of it reads and
+    writes Postgres through the adapter; the call convention (scope-first,
+    validated) is pinned in `docs/reference/storage-scope.md` and enforced by
+    `tests/storage-call-convention.test.js`.
 
 - **Separation of concerns**
   - **Shared slide type modules**: describe schema + defaults + **pure HTML rendering** (no DOM side effects, no fetch, no timers).
