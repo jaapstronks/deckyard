@@ -463,7 +463,11 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
   // -- lifetime -------------------------------------------------------------
 
   it('takes questions, interactions, votes and feedback down with the session', async () => {
+<<<<<<< HEAD
     await createQuestion(testScope(), sessionId, { authorId: 'dev-a', text: 'Q' });
+=======
+    await createQuestion(null, sessionId, { authorId: 'dev-a', text: 'Q' });
+>>>>>>> origin/main
     await votePollInteraction(testScope(), sessionId, {
       slideId: 'poll-1',
       deviceId: 'dev-a',
@@ -483,7 +487,11 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
   });
 
   it('lets the TTL sweep collect all four domains in one statement', async () => {
+<<<<<<< HEAD
     await createQuestion(testScope(), sessionId, { authorId: 'dev-a', text: 'Q' });
+=======
+    await createQuestion(null, sessionId, { authorId: 'dev-a', text: 'Q' });
+>>>>>>> origin/main
     await votePollInteraction(testScope(), sessionId, {
       slideId: 'poll-1',
       deviceId: 'dev-a',
