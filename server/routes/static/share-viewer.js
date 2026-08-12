@@ -25,7 +25,10 @@ export async function handleShareLink({ repoRoot, req, res, url, clientDir }) {
   // Try to get presentation info for og: tags (best-effort, don't fail if unavailable)
   let ogHeadHtml = '';
   try {
-    const shareLink = await getShareLinkByToken(token);
+    const shareLink = await getShareLinkByToken(
+      crossOrganizationScope(repoRoot, 'share link: the share token is the authorization'),
+      token
+    );
     if (shareLink?.presentationId) {
       const pres = await getPresentation(
         crossOrganizationScope(repoRoot, 'share link: the share token is the authorization'),

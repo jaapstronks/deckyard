@@ -4,6 +4,7 @@
 
 import { getDb } from '../../db/client.js';
 import { getOrgId } from '../../utils/context.js';
+import { toStorageContext } from '../backend-dispatch.js';
 import { norm, nowIso } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
 import { generateShareToken, hashPassword, verifyPassword } from './index.js';
@@ -36,6 +37,7 @@ export function formatShareLink(row) {
 
 /**
  * Create a new share link for a presentation.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
  * @param {Object} options - Share link options
  * @param {string} options.permission - 'view' | 'comment' | 'edit'
@@ -44,10 +46,10 @@ export function formatShareLink(row) {
  * @param {string} [options.expiresAt] - Optional expiration timestamp
  * @param {number} [options.maxUses] - Optional max use limit
  * @param {string} [options.createdBy] - Email of creator
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - The created share link
  */
-export async function createShareLink(presentationId, options, ctx) {
+export async function createShareLink(scope, presentationId, options) {
+  toStorageContext(scope, 'createShareLink');
   const pid = norm(presentationId);
   if (!pid) {
     return { ok: false, reason: 'invalid' };
@@ -65,7 +67,7 @@ export async function createShareLink(presentationId, options, ctx) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const token = generateShareToken();
 
     // Hash password if provided
@@ -101,24 +103,31 @@ export async function createShareLink(presentationId, options, ctx) {
 /**
  * Get a share link by its token.
  * Does not check expiration or revocation - use validateShareLink for access checks.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} token - The share token
- * @param {Object} ctx - Context object
  * @returns {Promise<Object|null>} - The share link or null
  */
-export async function getShareLinkByToken(token, ctx) {
+export async function getShareLinkByToken(scope, token) {
+  const context = toStorageContext(scope, 'getShareLinkByToken', {}, {
+    allowCrossOrganization: true,
+  });
   const t = norm(token);
   if (!t) return null;
 
   return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
-
-    const row = await db
+    let query = db
       .selectFrom('presentation_share_links')
       .selectAll()
-      .where('token', '=', t)
-      .where('organization_id', '=', orgId)
-      .executeTakeFirst();
+      .where('token', '=', t);
 
+    // A cross-organization scope is the token-authorized read (the token is
+    // globally unique and IS the authorization); a session scope keeps the
+    // organization filter.
+    if (!context.crossOrganization) {
+      query = query.where('organization_id', '=', getOrgId(scope));
+    }
+
+    const row = await query.executeTakeFirst();
     return row ? formatShareLink(row) : null;
   });
 }
@@ -131,16 +140,17 @@ export async function getShareLinkByToken(token, ctx) {
  * act on a link belonging to a different (private) deck via a forged linkId.
  * Returns revoked links too, so the containment check still holds on the
  * revoke/access-log paths.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} linkId - The share link ID
- * @param {Object} ctx - Context object
  * @returns {Promise<Object|null>} - The formatted share link, or null
  */
-export async function getShareLinkById(linkId, ctx) {
+export async function getShareLinkById(scope, linkId) {
+  toStorageContext(scope, 'getShareLinkById');
   const id = norm(linkId);
   if (!id) return null;
 
   return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const row = await db
       .selectFrom('presentation_share_links')
@@ -306,18 +316,19 @@ export async function verifyShareLinkAccess(token, password) {
 
 /**
  * List all share links for a presentation.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
  * @param {Object} [options] - Filter options
  * @param {boolean} [options.includeRevoked] - Include revoked links
- * @param {Object} ctx - Context object
  * @returns {Promise<Array>} - List of share links
  */
-export async function listShareLinks(presentationId, options, ctx) {
+export async function listShareLinks(scope, presentationId, options) {
+  toStorageContext(scope, 'listShareLinks');
   const pid = norm(presentationId);
   if (!pid) return [];
 
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     let query = db
       .selectFrom('presentation_share_links')
@@ -338,15 +349,16 @@ export async function listShareLinks(presentationId, options, ctx) {
 /**
  * Update a share link's settings.
  * Cannot change permission or token.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} linkId - The share link ID
  * @param {Object} updates - Fields to update
  * @param {string} [updates.label] - New label
  * @param {string} [updates.expiresAt] - New expiration
  * @param {number} [updates.maxUses] - New use limit
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Update result
  */
-export async function updateShareLink(linkId, updates, ctx) {
+export async function updateShareLink(scope, linkId, updates) {
+  toStorageContext(scope, 'updateShareLink');
   const id = norm(linkId);
   if (!id) {
     return { ok: false, reason: 'invalid' };
@@ -362,7 +374,7 @@ export async function updateShareLink(linkId, updates, ctx) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const row = await db
       .updateTable('presentation_share_links')
@@ -386,20 +398,15 @@ export async function updateShareLink(linkId, updates, ctx) {
 
 /**
  * Revoke a share link.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} linkId - The share link ID
  * @param {string} [revokedBy] - Email of user revoking
  * @param {Object} [options] - Options
  * @param {string} [options.message] - Optional revocation message
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Revoke result
  */
-export async function revokeShareLink(linkId, revokedBy, options, ctx) {
-  // Handle backward compatibility: if options is actually ctx (no options passed)
-  if (options && !ctx && typeof options.organizationId !== 'undefined') {
-    ctx = options;
-    options = {};
-  }
-
+export async function revokeShareLink(scope, linkId, revokedBy, options) {
+  toStorageContext(scope, 'revokeShareLink');
   const id = norm(linkId);
   if (!id) {
     return { ok: false, reason: 'invalid' };
@@ -408,7 +415,7 @@ export async function revokeShareLink(linkId, revokedBy, options, ctx) {
   const message = options?.message || null;
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const row = await db
       .updateTable('presentation_share_links')
@@ -433,19 +440,20 @@ export async function revokeShareLink(linkId, revokedBy, options, ctx) {
 
 /**
  * Revoke all share links for a presentation.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
  * @param {string} [revokedBy] - Email of user revoking
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Revoke result with count
  */
-export async function revokeAllShareLinks(presentationId, revokedBy, ctx) {
+export async function revokeAllShareLinks(scope, presentationId, revokedBy) {
+  toStorageContext(scope, 'revokeAllShareLinks');
   const pid = norm(presentationId);
   if (!pid) {
     return { ok: false, reason: 'invalid' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const result = await db
       .updateTable('presentation_share_links')

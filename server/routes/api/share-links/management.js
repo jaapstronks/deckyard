@@ -50,7 +50,7 @@ export function shareLinkBelongsToPresentation(link, presentationId) {
  *   presentation, or null after sending a 404 (mismatch or unknown link).
  */
 async function loadLinkForPresentation({ linkId, presentationId, res, ctx }) {
-  const link = await getShareLinkById(linkId, ctx);
+  const link = await getShareLinkById(ctx, linkId);
   if (!shareLinkBelongsToPresentation(link, presentationId)) {
     notFound(res);
     return null;
@@ -72,6 +72,7 @@ async function handleShareLinkCreate({ repoRoot, req, res, authedUser }, present
   if (!validatePermission(permission, res)) return true;
 
   const result = await createShareLink(
+    ctx,
     presentationId,
     {
       permission,
@@ -81,8 +82,7 @@ async function handleShareLinkCreate({ repoRoot, req, res, authedUser }, present
       maxUses: body?.maxUses,
       createdBy: authedUser?.email,
       registrationMode: body?.registrationMode || 'invite_only',
-    },
-    ctx
+    }
   );
 
   if (!result.ok) {
@@ -108,7 +108,7 @@ async function handleShareLinkList({ repoRoot, req, res, url, authedUser }, pres
   if (!pres) return true;
 
   const includeRevoked = url.searchParams.get('includeRevoked') === 'true';
-  const links = await listShareLinks(presentationId, { includeRevoked }, ctx);
+  const links = await listShareLinks(ctx, presentationId, { includeRevoked });
 
   // Add URLs to each link
   const linksWithUrls = links.map((link) => {
@@ -129,7 +129,7 @@ async function handleShareLinksRevokeAll({ repoRoot, res, authedUser }, presenta
   const pres = await withPresentationAuth({ repoRoot, id: presentationId, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
-  const result = await revokeAllShareLinks(presentationId, authedUser?.email, ctx);
+  const result = await revokeAllShareLinks(ctx, presentationId, authedUser?.email);
   if (!result.ok) {
     return badRequest(res, result.reason);
   }
@@ -153,7 +153,7 @@ async function handleShareLinkRevoke({ repoRoot, req, res, authedUser }, present
   if (!parsed.ok) return true;
   const message = parsed.body?.message || null;
 
-  const result = await revokeShareLink(linkId, authedUser?.email, { message }, ctx);
+  const result = await revokeShareLink(ctx, linkId, authedUser?.email, { message });
   if (!result.ok) {
     if (result.reason === 'not_found') return notFound(res);
     return badRequest(res, result.reason);
@@ -178,13 +178,13 @@ async function handleShareLinkUpdate({ repoRoot, req, res, authedUser }, present
   const body = jsonResult.body;
 
   const result = await updateShareLink(
+    ctx,
     linkId,
     {
       label: body?.label,
       expiresAt: body?.expiresAt,
       maxUses: body?.maxUses,
-    },
-    ctx
+    }
   );
 
   if (!result.ok) {
