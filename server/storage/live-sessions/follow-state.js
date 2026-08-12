@@ -1,4 +1,4 @@
-import { toStorageContext } from '../backend-dispatch.js';
+import { toStorageContext } from '../scope.js';
 import { LIVE_WINDOW_MS } from './constants.js';
 import { hydrateSessionsForPresentation } from './db.js';
 import { sessions } from './state.js';

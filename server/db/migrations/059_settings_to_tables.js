@@ -89,7 +89,7 @@ function safeSlug(input) {
 
 /**
  * Frozen copy of `safeEmailSlug` (server/storage/settings.js), matching the
- * filenames the file backend produced. See {@link safeSlug}.
+ * filenames the disk-JSON store produced. See {@link safeSlug}.
  * @param {string} email
  * @returns {string}
  */

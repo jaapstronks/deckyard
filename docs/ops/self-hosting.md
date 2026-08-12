@@ -157,8 +157,56 @@ see [Backups](#backups) above for the `pg_dump` command.
 
 Outside compose, back up your own PostgreSQL plus the same two directories:
 
-- `server/data/` — settings and other JSON state not yet in the database
+- `server/data/` — the deck-thumbnail cache plus whatever an old install's
+  one-time import left behind (settings and decks live in PostgreSQL since 1.x)
 - `server/uploads/` — uploaded media
+
+## Pruning legacy disk data
+
+An install that ran Deckyard before the PostgreSQL migration still carries the
+old disk-JSON state under `server/data/` — decks, versions, interactions,
+settings — all of which `db:import` and migrations 053/058–061 moved into the
+database. Those files are dead copies, but do not delete them by hand: the
+boot-time migration guard uses `server/data/presentations/` to detect an
+un-imported install, so removing it in the wrong order disarms that guard.
+What stays alive in that directory is exactly one thing: `deck-thumbs/`, the
+thumbnail cache. `server/uploads/` is unrelated and always stays.
+
+Do this in order (on a compose stack, prefix the npm commands with
+`docker compose exec app`):
+
+1. **Update first.** Run the release that ships `scripts/prune-legacy-data.js`
+   (forks sync on tags, not `main`).
+2. **Verify PostgreSQL carries the data** — this gate comes before any delete:
+
+   ```sh
+   npm run db:migrate:status   # 053, 058-061 applied?
+   # then count the rows your install cares about, e.g. via psql:
+   #   select count(*) from presentations;
+   ```
+
+   Zero rows in `presentations` while `server/data/presentations/` has decks →
+   **stop**: run `npm run db:import` first.
+3. **Back up the whole directory** before deleting anything, and keep the
+   archive at least one release:
+
+   ```sh
+   tar czf server-data-preclean-$(date +%F).tgz server/data
+   ```
+
+4. **Dry-run the prune, then run it.** The script re-checks step 2 itself,
+   defaults to a dry run, and never touches `deck-thumbs/` or the uploads
+   directory:
+
+   ```sh
+   node scripts/prune-legacy-data.js            # lists what would go
+   node scripts/prune-legacy-data.js --delete   # removes the fossils
+   ```
+
+5. **Boot and smoke-test**: log in, open a deck, run a live session with a
+   poll, export a PDF. Only then consider the backup disposable.
+6. **Running a fork?** Report back upstream what was actually on disk and
+   whether anything broke — that is how this instruction stays honest.
 
 ## Security defaults
 

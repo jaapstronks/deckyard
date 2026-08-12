@@ -38,7 +38,7 @@
  */
 
 import { sql } from 'kysely';
-import { toStorageContext } from './backend-dispatch.js';
+import { toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
 import { DEFAULT_AI_NAME, DEFAULT_AI_EMAIL } from '../../shared/constants/ai.js';

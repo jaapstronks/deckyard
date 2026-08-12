@@ -12,7 +12,7 @@
  */
 
 import { getStorage } from '../adapters/index.js';
-import { toStorageContext } from '../backend-dispatch.js';
+import { toStorageContext } from '../scope.js';
 
 /**
  * List the current user's usage records (set of used {itemType, itemId}).

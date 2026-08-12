@@ -125,7 +125,7 @@ ydoc
 
 - New adapter methods `getYDocState(id)` / `setYDocState(id, bytes)`:
   Postgres → `presentation_ydoc(presentation_id pk, state bytea, updated_at)`;
-  file backend → `data/presentation-ydocs/<id>.bin`. Stored as one merged
+  disk-JSON store (since removed) → `data/presentation-ydocs/<id>.bin`. Stored as one merged
   update (Yjs GC on), not an append log — the existing versions system keeps
   history.
 - `onStoreDocument` (debounce ~2 s, plus on last-client-disconnect):

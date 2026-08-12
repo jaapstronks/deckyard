@@ -5,7 +5,7 @@
 
 /**
  * The only accepted value of STORAGE_MODE. PostgreSQL is the sole storage
- * backend; the file backend was removed during beta (see
+ * backend; disk-JSON storage was removed during beta (see
  * docs/reference/versioning.md § the beta stance). One canonical spelling:
  * `postgresql` is not an alias for `postgres`, it is a boot error.
  * @type {readonly ['postgres']}
@@ -45,7 +45,7 @@ export function storageModeError() {
 
   if (raw === 'file') {
     return (
-      'STORAGE_MODE="file" is no longer supported: the file backend was ' +
+      'STORAGE_MODE="file" is no longer supported: disk-JSON storage was ' +
       'removed in 1.x. Run `npm run db:import` once against your existing ' +
       'data directory to move it into PostgreSQL, then remove STORAGE_MODE ' +
       'from your environment (unset means "postgres").'

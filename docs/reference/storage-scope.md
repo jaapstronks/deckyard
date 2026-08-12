@@ -6,7 +6,7 @@ envelope — a `StorageScope` — as its **first** parameter, named `scope`, and
 validates it before doing anything else:
 
 ```js
-import { toStorageContext } from '../backend-dispatch.js';
+import { toStorageContext } from './scope.js';
 
 export async function listComments(scope, presentationId, opts = {}) {
   const context = toStorageContext(scope, 'listComments');

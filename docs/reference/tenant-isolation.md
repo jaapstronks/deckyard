@@ -70,7 +70,7 @@ membership (`server/utils/context.js`, see below). A cross-org read returns
 nothing. The session is the *only* resolution path: the hostname says nothing
 about which organization a request acts in (see "Why not the hostname" below).
 
-This used to be a real footgun. The old file backend (`STORAGE_MODE=file`) had
+This used to be a real footgun. The old disk-JSON store (`STORAGE_MODE=file`) had
 no org dimension at all — decks lived flat in one directory and listings never
 consulted the org — so two tenants sharing one saw each other's organization decks.
 The server **failed closed at boot** against that combination, in a

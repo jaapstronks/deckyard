@@ -18,7 +18,7 @@
  */
 
 import crypto from 'node:crypto';
-import { toStorageContext } from './backend-dispatch.js';
+import { toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/db-guard.js';
 
 // Follow codes are guessable live-session handles: a valid one resolves to a
