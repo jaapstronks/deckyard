@@ -74,7 +74,7 @@
     "@hocuspocus/server": "^4.5.0",
     "bullmq": "^5.81.2",
     "crossws": "^0.4.10",
-    "ioredis": "^5.4.1",
+    "ioredis": "^6.0.0",
     "pdf-parse": "^2.4.5",
     "pptxgenjs": "^4.0.1",
     "puppeteer-core": "^25.5.0"
