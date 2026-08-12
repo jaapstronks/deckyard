@@ -285,6 +285,7 @@ export async function createQuestion(
   const a = normalizeActorId(authorId);
   const n = normalizeName(authorName);
   const t = normalizeText(text);
+  toStorageContext(scope, 'createQuestion', {}, { allowCrossOrganization: true });
   const from = normalizeLang(originalLang) || null;
   if (!sid) return { ok: false, reason: 'not_found' };
   if (!a) return { ok: false, reason: 'missing_author' };
