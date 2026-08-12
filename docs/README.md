@@ -205,6 +205,7 @@ nothing is discoverable only by `ls`.
 | [`jobs-and-queues.md`](reference/jobs-and-queues.md) | The BullMQ queue layer, its synchronous fallback, and the recurring interval jobs |
 | [`maintenance-mode.md`](reference/maintenance-mode.md) | Deploying without failing saves in open editors |
 | [`sso-oidc.md`](reference/sso-oidc.md) | SSO via OIDC (single IdP) |
+| [`storage-scope.md`](reference/storage-scope.md) | The storage call convention: scope-first signatures, the six disk exceptions, the burndown gate |
 | [`versioning.md`](reference/versioning.md) | Versioning & releases |
 | [`vocabulary.md`](reference/vocabulary.md) | One word per meaning: the vocabulary register (organization, visibility, permissions, storage scope) and the UI-label rule |
 | [`html-escaping.md`](reference/html-escaping.md) | Escaping and `innerHTML` in the client |
