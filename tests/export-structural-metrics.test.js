@@ -54,7 +54,7 @@ import {
   resolveChromeExecutablePath,
   closePuppeteerBrowser,
 } from '../server/utils/puppeteer-browser.js';
-import { loadTheme } from '../server/utils/themes.js';
+import { loadThemeAssets } from '../server/utils/themes.js';
 import { curatedFontPath } from '../shared/theme-fonts.js';
 import {
   FRAME,
@@ -185,7 +185,7 @@ after(async () => {
 
 for (const themeName of BUILTIN_THEMES) {
   test(`calibration slide holds its structure in the ${themeName} theme`, { skip }, async () => {
-    const theme = await loadTheme(repoRoot, themeName);
+    const theme = await loadThemeAssets(repoRoot, themeName);
     const metrics = await measureSlide(repoRoot, calibrationSlide(), { theme });
     const baseline = await baselineFor(`calibration-${themeName}`, metrics);
     if (!baseline) return;
@@ -266,7 +266,7 @@ for (const themeName of BUILTIN_THEMES) {
   });
 
   test(`calibration PDF keeps its page geometry in the ${themeName} theme`, { skip }, async () => {
-    const theme = await loadTheme(repoRoot, themeName);
+    const theme = await loadThemeAssets(repoRoot, themeName);
     const metrics = await measureDeckPdf(repoRoot, calibrationDeck(themeName), { theme });
     const baseline = await baselineFor(`calibration-${themeName}-pdf`, metrics);
     if (!baseline) return;
@@ -284,7 +284,7 @@ for (const themeName of BUILTIN_THEMES) {
 
 test('the all-field-types deck exports one page per slide, unchanged', { skip }, async () => {
   const deck = allFieldTypesDeck();
-  const theme = await loadTheme(repoRoot, deck.theme);
+  const theme = await loadThemeAssets(repoRoot, deck.theme);
   const metrics = await measureDeckPdf(repoRoot, deck, { theme });
   const baseline = await baselineFor('all-field-types-pdf', metrics);
   if (!baseline) return;
@@ -302,7 +302,7 @@ test('the all-field-types deck exports one page per slide, unchanged', { skip },
 
 test('every all-field-types slide stays inside the frame with real fonts', { skip }, async () => {
   const deck = allFieldTypesDeck();
-  const theme = await loadTheme(repoRoot, deck.theme);
+  const theme = await loadThemeAssets(repoRoot, deck.theme);
 
   const measured = [];
   for (const entry of ALL_FIELD_TYPES_SLIDES) {
@@ -372,7 +372,7 @@ test('no measured element paints in a system fallback font', { skip }, async () 
   // rather than only through the baselines: if the curated webfont fails to
   // load, Chrome silently paints a system face and every other metric still
   // matches. The theme's own first-choice family is the expected answer.
-  const theme = await loadTheme(repoRoot, 'deckyard');
+  const theme = await loadThemeAssets(repoRoot, 'deckyard');
   const metrics = await measureSlide(repoRoot, calibrationSlide(), { theme });
 
   for (const selector of MEASURED_SELECTORS) {

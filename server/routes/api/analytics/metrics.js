@@ -24,7 +24,7 @@ export async function handleOverview(ctx, presentationId) {
   const { res, url, authedUser } = ctx;
 
   const pres = await withPresentationAuth({
-    repoRoot: ctx.repoRoot,
+    storageScope: ctx.storageScope,
     id: presentationId,
     authedUser,
     res,
@@ -48,7 +48,7 @@ export async function handleSlides(ctx, presentationId) {
   const { res, url, authedUser } = ctx;
 
   const pres = await withPresentationAuth({
-    repoRoot: ctx.repoRoot,
+    storageScope: ctx.storageScope,
     id: presentationId,
     authedUser,
     res,
@@ -72,7 +72,7 @@ export async function handleHeatmap(ctx, presentationId) {
   const { res, url, authedUser } = ctx;
 
   const pres = await withPresentationAuth({
-    repoRoot: ctx.repoRoot,
+    storageScope: ctx.storageScope,
     id: presentationId,
     authedUser,
     res,
@@ -96,7 +96,7 @@ export async function handleJourney(ctx, presentationId) {
   const { res, url, authedUser } = ctx;
 
   const pres = await withPresentationAuth({
-    repoRoot: ctx.repoRoot,
+    storageScope: ctx.storageScope,
     id: presentationId,
     authedUser,
     res,
@@ -131,7 +131,7 @@ export async function handleSessions(ctx, presentationId) {
   const { res, url, authedUser } = ctx;
 
   const pres = await withPresentationAuth({
-    repoRoot: ctx.repoRoot,
+    storageScope: ctx.storageScope,
     id: presentationId,
     authedUser,
     res,

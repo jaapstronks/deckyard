@@ -2,7 +2,7 @@
  * The request-to-organization binding, single-organization mode (A1 phase 1).
  *
  * This is the regression net for the change that lets
- * `authedUser.organizationId` through `createRouteContext`. Every assertion
+ * `authedUser.organizationId` through `createStorageScope`. Every assertion
  * here describes behaviour that MUST NOT change for an existing installation:
  * single-organization instances have exactly one organization, so the value the
  * session resolves to *is* the default organization and the binding is a no-op
@@ -10,7 +10,7 @@
  * reverted; that is the point. The assertions that do are in
  * request-organization-binding-multi-org.test.js.
  *
- * The cost half matters as much as the behaviour half: `createRouteContext` is
+ * The cost half matters as much as the behaviour half: `createStorageScope` is
  * on every request, so the configuration-only branch in
  * `resolveActiveOrganization()` must stay in front of the database. Two tests
  * below assert against the query log that nothing extra is issued.
@@ -41,7 +41,7 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { hashPassword } = await import('../server/utils/password-hash.js');
 const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const auth = await import('../server/auth/auth.js');
-const { createRouteContext } = await import('../server/utils/context.js');
+const { createStorageScope } = await import('../server/utils/context.js');
 const { withPresentations } = await import(
   '../server/storage/adapters/postgres/presentations.js'
 );
@@ -140,7 +140,7 @@ async function resolveContext(sessionOptions = {}) {
     requestWithSession(login, sessionOptions),
     {}
   );
-  return { authedUser, ctx: createRouteContext(authedUser) };
+  return { authedUser, ctx: createStorageScope(authedUser) };
 }
 
 // ---------------------------------------------------------------------------
@@ -168,14 +168,14 @@ test('a session asking for another organization still resolves to the default', 
 test('contexts built without an authenticated user are unchanged', () => {
   seedSingleOrg();
 
-  assert.equal(createRouteContext(null).organizationId, DEFAULT_ORG);
-  assert.equal(createRouteContext(undefined).organizationId, DEFAULT_ORG);
+  assert.equal(createStorageScope(null).organizationId, DEFAULT_ORG);
+  assert.equal(createStorageScope(undefined).organizationId, DEFAULT_ORG);
   assert.equal(
-    createRouteContext({ email: 'apikey-owner@example.com' }).organizationId,
+    createStorageScope({ email: 'apikey-owner@example.com' }).organizationId,
     DEFAULT_ORG
   );
   assert.equal(
-    createRouteContext(null, { organizationId: OTHER_ORG }).organizationId,
+    createStorageScope(null, { organizationId: OTHER_ORG }).organizationId,
     OTHER_ORG,
     'the explicit override keeps working'
   );
@@ -205,10 +205,10 @@ test('building a context issues no queries at all', async () => {
   const { authedUser } = await resolveContext();
 
   db.__queryLog.length = 0;
-  const ctx = createRouteContext(authedUser);
+  const ctx = createStorageScope(authedUser);
 
   assert.equal(ctx.organizationId, DEFAULT_ORG);
-  assert.deepEqual(db.__queryLog, [], 'createRouteContext is pure');
+  assert.deepEqual(db.__queryLog, [], 'createStorageScope is pure');
 });
 
 test('resolving a session touches only the users table', async () => {
@@ -220,7 +220,7 @@ test('resolving a session touches only the users table', async () => {
   const req = requestWithSession(login);
 
   db.__queryLog.length = 0;
-  createRouteContext(await auth.getUserFromRequestAsync(req, {}));
+  createStorageScope(await auth.getUserFromRequestAsync(req, {}));
 
   assert.deepEqual(
     [...new Set(touchedTables(db))],

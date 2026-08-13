@@ -36,7 +36,7 @@ const {
   singleOrganizationScope,
   jobScope,
 } = await import('../server/storage/scope.js');
-const { createRouteContext } = await import('../server/utils/context.js');
+const { createStorageScope } = await import('../server/utils/context.js');
 const facade = await import('../server/storage/presentations/index.js');
 
 // The reads below that make it past scope validation need an initialized
@@ -55,7 +55,7 @@ test('a bare repoRoot string is refused, and says what to pass instead', () => {
     (err) =>
       err instanceof TypeError &&
       /takes a storage scope, not a repoRoot string/.test(err.message) &&
-      /createRouteContext/.test(err.message),
+      /createStorageScope/.test(err.message),
     'the old call shape must fail loudly, not read the default organization'
   );
 });
@@ -161,8 +161,8 @@ test('a job enqueued before the organization travelled still runs single-organiz
 
 // ─── the route context doubles as a scope ──────────────────────────────────
 
-test('createRouteContext produces a scope the facade accepts', () => {
-  const scope = createRouteContext(
+test('createStorageScope produces a scope the facade accepts', () => {
+  const scope = createStorageScope(
     { email: 'alice@example.com', organizationId: ORG },
     { repoRoot: '/srv/deckyard' }
   );
@@ -173,7 +173,7 @@ test('createRouteContext produces a scope the facade accepts', () => {
 });
 
 test('a session pending database validation cannot smuggle an organization through', () => {
-  const scope = createRouteContext(
+  const scope = createStorageScope(
     { email: 'mallory@example.com', organizationId: 'org-unverified', _needsDbValidation: true },
     { repoRoot: '/srv' }
   );

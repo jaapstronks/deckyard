@@ -25,7 +25,7 @@
  * `tests/authz-organization-scope.test.js` and
  * `tests/share-links-public-path.test.js`): the exported handler is called
  * directly with a req/res double over `tests/helpers/fake-db.js`, and the
- * storage scope is built with the same `createRouteContext()` call the router
+ * storage scope is built with the same `createStorageScope()` call the router
  * makes. No HTTP server, no browser — the suite has no e2e harness and this
  * item does not introduce one.
  *
@@ -56,14 +56,14 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } = await import(
   '../server/storage/adapters/index.js'
 );
-const { createRouteContext } = await import('../server/utils/context.js');
+const { createStorageScope } = await import('../server/utils/context.js');
 const { invalidatePermission } = await import(
   '../server/storage/cache/permission-cache.js'
 );
 const { handleCollaborators } = await import('../server/routes/api/collaborators.js');
 
 /**
- * The people. `organizationId` is what `createRouteContext` binds the request
+ * The people. `organizationId` is what `createStorageScope` binds the request
  * to, so `outsider` acts in a different organization than everyone else.
  */
 const ACTORS = {
@@ -253,7 +253,7 @@ async function seed() {
 
 /**
  * Call the collaborator handler the way `routes/api/index.js` does, including
- * the same `createRouteContext(authedUser, { repoRoot })` storage scope.
+ * the same `createStorageScope(authedUser, { repoRoot })` storage scope.
  *
  * @param {string} method - HTTP method.
  * @param {string} path - Request path.
@@ -292,7 +292,7 @@ async function call(method, path, { as = null, body } = {}) {
   const authedUser = as || undefined;
   const handled = await handleCollaborators({
     repoRoot: process.cwd(),
-    storageScope: createRouteContext(authedUser, { repoRoot: process.cwd() }),
+    storageScope: createStorageScope(authedUser, { repoRoot: process.cwd() }),
     req,
     res,
     url: new URL(`http://decks.example.test${path}`),

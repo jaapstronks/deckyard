@@ -16,7 +16,7 @@
 import { getUserFromRequestAsync } from '../../server/auth/auth.js';
 import { resolveDesignerCapability } from '../../server/utils/designer.js';
 import { canEditCustomHtml } from '../../server/utils/route-middleware.js';
-import { createRouteContext } from '../../server/utils/context.js';
+import { createStorageScope } from '../../server/utils/context.js';
 
 /**
  * @param {{repoRoot: string|null, req: object, res: object, url: URL}} parts
@@ -35,7 +35,7 @@ export async function authedRouteContext({ repoRoot, req, res, url }) {
     }
   }
 
-  const storageScope = createRouteContext(authedUser, { repoRoot });
+  const storageScope = createStorageScope(authedUser, { repoRoot });
 
   return { repoRoot, storageScope, req, res, url, authedUser };
 }

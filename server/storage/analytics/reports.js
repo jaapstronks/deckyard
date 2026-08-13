@@ -6,6 +6,7 @@ import crypto from 'node:crypto';
 import { norm, nowIso } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
 import { getOrgId } from '../../utils/context.js';
+import { toStorageContext } from '../scope.js';
 
 // ============================================================
 // CONSTANTS
@@ -25,6 +26,7 @@ function generateShareToken() {
 
 /**
  * Create a new analytics report.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {Object} data - Report data
  * @param {string} data.presentationId - The presentation ID
  * @param {string} data.title - Report title
@@ -35,10 +37,10 @@ function generateShareToken() {
  * @param {boolean} [data.isPublic] - Whether report is publicly accessible
  * @param {number} [data.expiresInDays] - Days until share link expires
  * @param {string} data.createdBy - Email of creator
- * @param {Object} ctx - Request context
  * @returns {Promise<{ok: boolean, report?: Object, reason?: string}>}
  */
-export async function createAnalyticsReport(data, ctx) {
+export async function createAnalyticsReport(scope, data) {
+  toStorageContext(scope, 'createAnalyticsReport');
   const presentationId = norm(data?.presentationId);
   const title = norm(data?.title);
   const reportType = norm(data?.reportType);
@@ -51,7 +53,7 @@ export async function createAnalyticsReport(data, ctx) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
     const shareToken = data?.isPublic ? generateShareToken() : null;
 
@@ -92,16 +94,17 @@ export async function createAnalyticsReport(data, ctx) {
 
 /**
  * Get an analytics report by ID.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} reportId - The report ID
- * @param {Object} ctx - Request context
  * @returns {Promise<Object|null>}
  */
-export async function getAnalyticsReport(reportId, ctx) {
+export async function getAnalyticsReport(scope, reportId) {
+  toStorageContext(scope, 'getAnalyticsReport');
   const id = norm(reportId);
   if (!id) return null;
 
   return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const row = await db
       .selectFrom('analytics_reports')
@@ -172,17 +175,18 @@ export async function getAnalyticsReportByToken(shareToken) {
 
 /**
  * List analytics reports for a presentation.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
- * @param {Object} ctx - Request context
  * @param {Object} opts - Query options
  * @returns {Promise<{reports: Object[], total: number}>}
  */
-export async function listAnalyticsReports(presentationId, ctx, opts = {}) {
+export async function listAnalyticsReports(scope, presentationId, opts = {}) {
+  toStorageContext(scope, 'listAnalyticsReports');
   const presId = norm(presentationId);
   if (!presId) return { reports: [], total: 0 };
 
   return withDbGuard({ reports: [], total: 0 }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     let query = db
       .selectFrom('analytics_reports')
@@ -219,17 +223,18 @@ export async function listAnalyticsReports(presentationId, ctx, opts = {}) {
 
 /**
  * Update an analytics report.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} reportId - The report ID
  * @param {Object} updates - Update data
- * @param {Object} ctx - Request context
  * @returns {Promise<{ok: boolean, reason?: string}>}
  */
-export async function updateAnalyticsReport(reportId, updates, ctx) {
+export async function updateAnalyticsReport(scope, reportId, updates) {
+  toStorageContext(scope, 'updateAnalyticsReport');
   const id = norm(reportId);
   if (!id) return { ok: false, reason: 'invalid' };
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const updateData = {};
 
@@ -277,16 +282,17 @@ export async function updateAnalyticsReport(reportId, updates, ctx) {
 
 /**
  * Delete an analytics report.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} reportId - The report ID
- * @param {Object} ctx - Request context
  * @returns {Promise<{ok: boolean, deleted?: boolean, reason?: string}>}
  */
-export async function deleteAnalyticsReport(reportId, ctx) {
+export async function deleteAnalyticsReport(scope, reportId) {
+  toStorageContext(scope, 'deleteAnalyticsReport');
   const id = norm(reportId);
   if (!id) return { ok: false, reason: 'invalid' };
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const result = await db
       .deleteFrom('analytics_reports')
@@ -302,16 +308,17 @@ export async function deleteAnalyticsReport(reportId, ctx) {
 
 /**
  * Regenerate share token for a report.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} reportId - The report ID
- * @param {Object} ctx - Request context
  * @returns {Promise<{ok: boolean, shareToken?: string, reason?: string}>}
  */
-export async function regenerateShareToken(reportId, ctx) {
+export async function regenerateShareToken(scope, reportId) {
+  toStorageContext(scope, 'regenerateShareToken');
   const id = norm(reportId);
   if (!id) return { ok: false, reason: 'invalid' };
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const newToken = generateShareToken();
 
     await db

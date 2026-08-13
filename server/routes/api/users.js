@@ -8,14 +8,12 @@
 
 import { searchUsers } from '../../storage/users.js';
 import { getUserSettings } from '../../storage/settings.js';
-import { createRouteContext } from '../../utils/context.js';
 import { serveJson, methodNotAllowed, unauthorized } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 // GET /api/users/search - Search users in organization
-async function handleUserSearch({ res, url, authedUser }) {
-  const ctx = createRouteContext(authedUser);
+async function handleUserSearch({ storageScope, res, url }) {
   const query = url.searchParams.get('q') || '';
   const { limit } = parsePaginationParams(url.searchParams, { defaultLimit: 10 });
   const excludeParam = url.searchParams.get('exclude') || '';
@@ -27,7 +25,7 @@ async function handleUserSearch({ res, url, authedUser }) {
     return serveJson(res, 200, { users: [] });
   }
 
-  const users = await searchUsers(query, { limit, exclude }, ctx);
+  const users = await searchUsers(storageScope, query, { limit, exclude });
 
   serveJson(res, 200, { users });
   return true;

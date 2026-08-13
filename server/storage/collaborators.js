@@ -35,6 +35,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
+import { toStorageContext } from './scope.js';
 import { norm, nowIso, normalizeEmail } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
@@ -314,16 +315,17 @@ export async function listCollaborators(presentationId) {
  * that is a product question about what "shared with me" means across
  * organizations, tracked with the identity epic rather than decided here.
  *
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} userEmail - The user's email
- * @param {Object} ctx - Context object
  * @returns {Promise<Array>} - List of presentations with permission info
  */
-export async function listPresentationsSharedWithUser(userEmail, ctx) {
+export async function listPresentationsSharedWithUser(scope, userEmail) {
+  toStorageContext(scope, 'listPresentationsSharedWithUser');
   const email = normalizeEmail(userEmail);
   if (!email) return [];
 
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const rows = await db
       .selectFrom('presentation_collaborators as c')

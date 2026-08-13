@@ -134,7 +134,7 @@ async function handleAdminUserCreate({ repoRoot, storageScope: ctx, req, res, au
       return badRequest(res, 'Valid email is required');
     }
 
-    const result = await createUser({ email, name, role }, ctx);
+    const result = await createUser(ctx, { email, name, role });
 
     if (!result.ok) {
       if (result.reason === 'already_exists') {
@@ -204,7 +204,7 @@ async function handleAdminUserCreate({ repoRoot, storageScope: ctx, req, res, au
 // GET /api/admin/users/:id - Get a specific user
 async function handleAdminUserGet({ storageScope: ctx, res }, userId) {
   try {
-    const targetUser = await getUserById(userId, ctx);
+    const targetUser = await getUserById(ctx, userId);
 
     if (!targetUser) {
       return notFound(res);
@@ -241,7 +241,7 @@ async function handleAdminUserUpdate({ storageScope: ctx, req, res }, userId) {
 
     // Update user fields (name, role) if provided
     if (hasUserUpdates) {
-      const result = await updateUser(userId, updates, ctx);
+      const result = await updateUser(ctx, userId, updates);
       if (!result.ok) {
         if (result.reason === 'not_found') {
           return notFound(res);
@@ -253,7 +253,7 @@ async function handleAdminUserUpdate({ storageScope: ctx, req, res }, userId) {
 
     // Update designer flag on the user's org membership
     if (hasDesignerUpdate) {
-      const targetUser = resultUser || await getUserById(userId, ctx);
+      const targetUser = resultUser || await getUserById(ctx, userId);
       if (!targetUser) {
         return notFound(res);
       }
@@ -291,12 +291,12 @@ async function handleAdminUserUpdate({ storageScope: ctx, req, res }, userId) {
 async function handleAdminUserDelete({ storageScope: ctx, req, res, authedUser: user }, userId) {
   try {
     // Prevent self-deletion
-    const targetUser = await getUserById(userId, ctx);
+    const targetUser = await getUserById(ctx, userId);
     if (targetUser?.email === user.email) {
       return badRequest(res, 'You cannot delete your own account');
     }
 
-    const result = await deleteUser(userId, ctx);
+    const result = await deleteUser(ctx, userId);
 
     if (!result.ok) {
       if (result.reason === 'not_found') {
@@ -327,7 +327,7 @@ async function handleAdminUserDelete({ storageScope: ctx, req, res, authedUser: 
 // POST /api/admin/users/:id/resend-invitation - Resend invitation
 async function handleAdminUserResendInvitation({ repoRoot, storageScope: ctx, req, res, authedUser: user }, userId) {
   try {
-    const result = await resendInvitation(userId, ctx);
+    const result = await resendInvitation(ctx, userId);
 
     if (!result.ok) {
       if (result.reason === 'not_found') {
@@ -339,7 +339,7 @@ async function handleAdminUserResendInvitation({ repoRoot, storageScope: ctx, re
       return badRequest(res, 'Failed to resend invitation');
     }
 
-    const targetUser = await getUserById(userId, ctx);
+    const targetUser = await getUserById(ctx, userId);
     let invitationSent = false;
     if (targetUser && result.invitationToken) {
       const setupUrl = buildSetupUrl(req, result.invitationToken);

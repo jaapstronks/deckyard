@@ -140,7 +140,7 @@ See `docs/ops/self-hosting.md`.
 
 ### Importing Data: File to PostgreSQL
 
-For data left behind by the removed file backend. It reads an old data
+For data left behind by the removed disk-JSON store. It reads an old data
 directory from disk and covers every domain that lived there (presentations,
 image library, slide library, published, tags, slide collections,
 slide-library usage). The import stays after the teardown, and is idempotent —

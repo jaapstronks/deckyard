@@ -22,7 +22,6 @@ import {
   getShareLinkById,
 } from '../../../storage/share-links/index.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
-import { createRouteContext } from '../../../utils/context.js';
 import { dispatchRoutes } from '../../../utils/router.js';
 import { serveJson, notFound, badRequest, requireJsonBody } from '../../../utils/http.js';
 import { validatePermission, parsePaginationParams } from '../../../utils/request-validators.js';
@@ -49,8 +48,8 @@ export function shareLinkBelongsToPresentation(link, presentationId) {
  * @returns {Promise<Object|null>} the share link if it belongs to the
  *   presentation, or null after sending a 404 (mismatch or unknown link).
  */
-async function loadLinkForPresentation({ linkId, presentationId, res, ctx }) {
-  const link = await getShareLinkById(ctx, linkId);
+async function loadLinkForPresentation({ linkId, presentationId, res, storageScope }) {
+  const link = await getShareLinkById(storageScope, linkId);
   if (!shareLinkBelongsToPresentation(link, presentationId)) {
     notFound(res);
     return null;
@@ -59,9 +58,8 @@ async function loadLinkForPresentation({ linkId, presentationId, res, ctx }) {
 }
 
 /** POST /api/presentations/:id/share-links - Create share link */
-async function handleShareLinkCreate({ repoRoot, req, res, authedUser }, presentationId) {
-  const ctx = createRouteContext(authedUser);
-  const pres = await withPresentationAuth({ repoRoot, id: presentationId, authedUser, res, permission: 'write' });
+async function handleShareLinkCreate({ storageScope, req, res, authedUser }, presentationId) {
+  const pres = await withPresentationAuth({ storageScope, id: presentationId, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
   const jsonResult = await requireJsonBody(req, res);
@@ -72,7 +70,7 @@ async function handleShareLinkCreate({ repoRoot, req, res, authedUser }, present
   if (!validatePermission(permission, res)) return true;
 
   const result = await createShareLink(
-    ctx,
+    storageScope,
     presentationId,
     {
       permission,
@@ -102,13 +100,12 @@ async function handleShareLinkCreate({ repoRoot, req, res, authedUser }, present
 }
 
 /** GET /api/presentations/:id/share-links - List share links */
-async function handleShareLinkList({ repoRoot, req, res, url, authedUser }, presentationId) {
-  const ctx = createRouteContext(authedUser);
-  const pres = await withPresentationAuth({ repoRoot, id: presentationId, authedUser, res, permission: 'write' });
+async function handleShareLinkList({ storageScope, req, res, url, authedUser }, presentationId) {
+  const pres = await withPresentationAuth({ storageScope, id: presentationId, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
   const includeRevoked = url.searchParams.get('includeRevoked') === 'true';
-  const links = await listShareLinks(ctx, presentationId, { includeRevoked });
+  const links = await listShareLinks(storageScope, presentationId, { includeRevoked });
 
   // Add URLs to each link
   const linksWithUrls = links.map((link) => {
@@ -124,12 +121,11 @@ async function handleShareLinkList({ repoRoot, req, res, url, authedUser }, pres
 }
 
 /** DELETE /api/presentations/:id/share-links - Revoke all share links */
-async function handleShareLinksRevokeAll({ repoRoot, res, authedUser }, presentationId) {
-  const ctx = createRouteContext(authedUser);
-  const pres = await withPresentationAuth({ repoRoot, id: presentationId, authedUser, res, permission: 'write' });
+async function handleShareLinksRevokeAll({ storageScope, res, authedUser }, presentationId) {
+  const pres = await withPresentationAuth({ storageScope, id: presentationId, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
-  const result = await revokeAllShareLinks(ctx, presentationId, authedUser?.email);
+  const result = await revokeAllShareLinks(storageScope, presentationId, authedUser?.email);
   if (!result.ok) {
     return badRequest(res, result.reason);
   }
@@ -139,13 +135,12 @@ async function handleShareLinksRevokeAll({ repoRoot, res, authedUser }, presenta
 }
 
 /** DELETE /api/presentations/:id/share-links/:linkId - Revoke specific link */
-async function handleShareLinkRevoke({ repoRoot, req, res, authedUser }, presentationId, linkId) {
-  const ctx = createRouteContext(authedUser);
-  const pres = await withPresentationAuth({ repoRoot, id: presentationId, authedUser, res, permission: 'write' });
+async function handleShareLinkRevoke({ storageScope, req, res, authedUser }, presentationId, linkId) {
+  const pres = await withPresentationAuth({ storageScope, id: presentationId, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
   // Bind linkId to the authorized presentation (prevents cross-deck IDOR).
-  const link = await loadLinkForPresentation({ linkId, presentationId, res, ctx });
+  const link = await loadLinkForPresentation({ linkId, presentationId, res, storageScope });
   if (!link) return true;
 
   // Parse optional message from request body
@@ -153,7 +148,7 @@ async function handleShareLinkRevoke({ repoRoot, req, res, authedUser }, present
   if (!parsed.ok) return true;
   const message = parsed.body?.message || null;
 
-  const result = await revokeShareLink(ctx, linkId, authedUser?.email, { message });
+  const result = await revokeShareLink(storageScope, linkId, authedUser?.email, { message });
   if (!result.ok) {
     if (result.reason === 'not_found') return notFound(res);
     return badRequest(res, result.reason);
@@ -164,13 +159,12 @@ async function handleShareLinkRevoke({ repoRoot, req, res, authedUser }, present
 }
 
 /** PATCH /api/presentations/:id/share-links/:linkId - Update link */
-async function handleShareLinkUpdate({ repoRoot, req, res, authedUser }, presentationId, linkId) {
-  const ctx = createRouteContext(authedUser);
-  const pres = await withPresentationAuth({ repoRoot, id: presentationId, authedUser, res, permission: 'write' });
+async function handleShareLinkUpdate({ storageScope, req, res, authedUser }, presentationId, linkId) {
+  const pres = await withPresentationAuth({ storageScope, id: presentationId, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
   // Bind linkId to the authorized presentation (prevents cross-deck IDOR).
-  const link = await loadLinkForPresentation({ linkId, presentationId, res, ctx });
+  const link = await loadLinkForPresentation({ linkId, presentationId, res, storageScope });
   if (!link) return true;
 
   const jsonResult = await requireJsonBody(req, res);
@@ -178,7 +172,7 @@ async function handleShareLinkUpdate({ repoRoot, req, res, authedUser }, present
   const body = jsonResult.body;
 
   const result = await updateShareLink(
-    ctx,
+    storageScope,
     linkId,
     {
       label: body?.label,
@@ -197,14 +191,13 @@ async function handleShareLinkUpdate({ repoRoot, req, res, authedUser }, present
 }
 
 /** GET /api/presentations/:id/share-links/:linkId/access-log - Get access log */
-async function handleShareLinkAccessLog({ repoRoot, res, url, authedUser }, presentationId, linkId) {
-  const ctx = createRouteContext(authedUser);
-  const pres = await withPresentationAuth({ repoRoot, id: presentationId, authedUser, res, permission: 'write' });
+async function handleShareLinkAccessLog({ storageScope, res, url, authedUser }, presentationId, linkId) {
+  const pres = await withPresentationAuth({ storageScope, id: presentationId, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
   // Bind linkId to the authorized presentation before reading viewer PII
   // (IP/UA access log) — prevents cross-deck IDOR.
-  const link = await loadLinkForPresentation({ linkId, presentationId, res, ctx });
+  const link = await loadLinkForPresentation({ linkId, presentationId, res, storageScope });
   if (!link) return true;
 
   const { limit, offset } = parsePaginationParams(url.searchParams, { defaultLimit: 100 });

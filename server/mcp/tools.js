@@ -60,7 +60,7 @@ import { analyzeForCompression, applyCompression } from '../utils/ai/compress-de
 import { analyzePresentation } from '../utils/ai/analyze-presentation.js';
 import { convertSlideWithAi } from '../utils/ai.js';
 import { generateSlidesToAppendFromRawContent } from '../utils/openai/append.js';
-import { listThemeIds, loadTheme, resolveThemeId } from '../utils/themes.js';
+import { listThemeIds, loadThemeAssets, resolveThemeId } from '../utils/themes.js';
 import { GLOBAL_SLIDE_OPTIONS } from '../utils/ai/slide-type-catalog.js';
 import { resolveAgentSlideTypes } from '../utils/ai/slide-catalog/agent-catalog.js';
 import { loadDisabledSlideTypes, loadCustomSlideTypes } from '../utils/org-slide-types.js';
@@ -286,7 +286,7 @@ export function registerTools(
       }
 
       if ((validScope === 'shared' || validScope === 'all') && owner) {
-        const shared = await listPresentationsSharedWithUser(owner, ctx);
+        const shared = await listPresentationsSharedWithUser(ctx, owner);
         for (const p of shared) {
           if (!seen.has(p.id)) {
             seen.add(p.id);
@@ -402,7 +402,7 @@ export function registerTools(
       // Load theme for title slide type
       let titleSlideType = 'title-slide';
       try {
-        const themeObj = await loadTheme(repoRoot, resolveThemeId(theme));
+        const themeObj = await loadThemeAssets(repoRoot, resolveThemeId(theme));
         titleSlideType = themeObj?.defaultTitleSlide || 'title-slide';
       } catch { /* use default */ }
 
@@ -529,7 +529,7 @@ export function registerTools(
       if (auto_prepend_title) {
         let titleSlideType = 'title-slide';
         try {
-          const themeObj = await loadTheme(repoRoot, resolveThemeId(theme));
+          const themeObj = await loadThemeAssets(repoRoot, resolveThemeId(theme));
           titleSlideType = themeObj?.defaultTitleSlide || 'title-slide';
         } catch { /* keep default */ }
 
@@ -867,7 +867,7 @@ export function registerTools(
 
       for (const id of ids) {
         try {
-          const theme = await loadTheme(repoRoot, id);
+          const theme = await loadThemeAssets(repoRoot, id);
           themes.push({
             id: theme.id,
             label: theme.label || theme.id,
@@ -1291,7 +1291,7 @@ export function registerTools(
       const slide = pres.slides[slideIndex];
       let theme = null;
       try {
-        theme = await loadTheme(repoRoot, resolveThemeId(pres.theme));
+        theme = await loadThemeAssets(repoRoot, resolveThemeId(pres.theme));
       } catch { /* use default styling */ }
 
       const html = await buildSingleSlidePreviewHtml(slide, { theme, lang: resolveDeckLang(pres) });
@@ -1322,7 +1322,7 @@ export function registerTools(
 
       let theme = null;
       try {
-        theme = await loadTheme(repoRoot, resolveThemeId(pres.theme));
+        theme = await loadThemeAssets(repoRoot, resolveThemeId(pres.theme));
       } catch { /* use default styling */ }
 
       let slides = pres.slides || [];
@@ -1560,14 +1560,14 @@ export function registerTools(
         comment: result.comment,
         parentComment,
         actor: { email: owner },
-        ctx,
+        scope: ctx,
       });
     })().catch(() => { /* notification failures never fail the tool call */ });
     void recordCommentCreated({
       comment: result.comment,
       presentation: pres,
       actor: { email: owner },
-      ctx,
+      scope: ctx,
     });
     void broadcastToPresentation(presentationId, CommentEventTypes.CREATED, {
       comment: result.comment,
@@ -1682,10 +1682,10 @@ export function registerTools(
 
       const actor = { email: owner };
       if (status === 'resolved') {
-        void recordCommentResolved({ comment: result.comment, presentation: pres, actor, ctx });
+        void recordCommentResolved({ comment: result.comment, presentation: pres, actor, scope: ctx });
         void broadcastToPresentation(presentationId, CommentEventTypes.RESOLVED, { comment: result.comment });
       } else if (status === 'open') {
-        void recordCommentReopened({ comment: result.comment, presentation: pres, actor, ctx });
+        void recordCommentReopened({ comment: result.comment, presentation: pres, actor, scope: ctx });
         void broadcastToPresentation(presentationId, CommentEventTypes.REOPENED, { comment: result.comment });
       } else {
         void broadcastToPresentation(presentationId, CommentEventTypes.RESOLVED, { comment: result.comment });

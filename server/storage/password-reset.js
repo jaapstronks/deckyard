@@ -5,6 +5,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
+import { toStorageContext } from './scope.js';
 import { getUserByEmailGlobal } from './identity.js';
 import { nowIso, isoAfter, isoBefore, normalizeEmail } from '../utils/normalize.js';
 import { generateSecureToken, hashToken, isValidEmail } from '../utils/secure-tokens.js';
@@ -243,12 +244,13 @@ export async function hasDatabaseCredentials(email) {
 /**
  * Create or update a user with database credentials.
  * Used when an ENV user migrates to database auth or sets a new password.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} email - The user's email
  * @param {string} password - The new password
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result
  */
-export async function setUserPassword(email, password, ctx) {
+export async function setUserPassword(scope, email, password) {
+  toStorageContext(scope, 'setUserPassword');
   const normalized = normalizeEmail(email);
   if (!normalized) {
     return { ok: false, reason: 'invalid_email' };
@@ -265,7 +267,7 @@ export async function setUserPassword(email, password, ctx) {
   const existingUser = await getUserByEmailGlobal(normalized);
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const passwordHash = await hashPassword(password);
     const now = nowIso();
 

@@ -22,10 +22,7 @@ import {
   SlideLockEventTypes,
 } from '../../../services/comment-events.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
-import { createRouteContext } from '../../../utils/context.js';
 import { matchesIdentity } from '../../../../shared/identity-match.js';
-
-const getCtx = createRouteContext;
 
 /** The identity an authed user carries into a slide-lock write. */
 function lockActor(authedUser) {
@@ -60,19 +57,18 @@ export function lockHttpStatus(result) {
  * List all active slide locks for a presentation.
  */
 export async function handleSlideLocksList(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'read' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const locks = await getSlideLocks(ctx, id);
+  const locks = await getSlideLocks(storageScope, id);
 
   // Also include list of slides locked by others (for UI)
   const lockedByOthers = authedUser?.email
-    ? await getLockedByOthers(ctx, id, { email: authedUser.email, userId: authedUser?.id || null })
+    ? await getLockedByOthers(storageScope, id, { email: authedUser.email, userId: authedUser?.id || null })
     : [];
 
   serveJson(res, 200, {
@@ -88,13 +84,13 @@ export async function handleSlideLocksList(
  * Get lock status for a specific slide.
  */
 export async function handleSlideLockStatus(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   presentationId,
   slideId
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
   const pres = await withPresentationAuth({
-    repoRoot,
+    storageScope,
     id: presentationId,
     authedUser,
     res,
@@ -102,8 +98,7 @@ export async function handleSlideLockStatus(
   });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const lock = await getSlideLock(ctx, presentationId, slideId);
+  const lock = await getSlideLock(storageScope, presentationId, slideId);
 
   const isHolder =
     !!lock && matchesIdentity(authedUser, { userId: lock.holderId, email: lock.holderEmail });
@@ -117,13 +112,13 @@ export async function handleSlideLockStatus(
  * Acquire a lock on a slide.
  */
 export async function handleSlideLockAcquire(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   presentationId,
   slideId
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   const pres = await withPresentationAuth({
-    repoRoot,
+    storageScope,
     id: presentationId,
     authedUser,
     res,
@@ -131,8 +126,7 @@ export async function handleSlideLockAcquire(
   });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const result = await acquireSlideLock(ctx, presentationId, slideId, lockActor(authedUser));
+  const result = await acquireSlideLock(storageScope, presentationId, slideId, lockActor(authedUser));
 
   // Broadcast lock event to other clients. `result.lock` carries holderId
   // alongside holderEmail/holderName, so listeners decide "is this mine?" on
@@ -153,13 +147,13 @@ export async function handleSlideLockAcquire(
  * Refresh (extend) an existing slide lock.
  */
 export async function handleSlideLockRefresh(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   presentationId,
   slideId
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   const pres = await withPresentationAuth({
-    repoRoot,
+    storageScope,
     id: presentationId,
     authedUser,
     res,
@@ -167,8 +161,7 @@ export async function handleSlideLockRefresh(
   });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const result = await refreshSlideLock(ctx, presentationId, slideId, {
+  const result = await refreshSlideLock(storageScope, presentationId, slideId, {
     email: authedUser?.email,
     userId: authedUser?.id || null,
   });
@@ -182,7 +175,7 @@ export async function handleSlideLockRefresh(
  * Release a slide lock.
  */
 export async function handleSlideLockRelease(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   presentationId,
   slideId
 ) {
@@ -190,7 +183,7 @@ export async function handleSlideLockRelease(
     return methodNotAllowed(res, ['DELETE', 'POST']);
   }
   const pres = await withPresentationAuth({
-    repoRoot,
+    storageScope,
     id: presentationId,
     authedUser,
     res,
@@ -198,8 +191,7 @@ export async function handleSlideLockRelease(
   });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const result = await releaseSlideLock(ctx, presentationId, slideId, {
+  const result = await releaseSlideLock(storageScope, presentationId, slideId, {
     email: authedUser?.email,
     userId: authedUser?.id || null,
   });
@@ -224,12 +216,12 @@ export async function handleSlideLockRelease(
  * Used when user navigates away or closes the editor.
  */
 export async function handleSlideLocksReleaseAll(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   presentationId
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   const pres = await withPresentationAuth({
-    repoRoot,
+    storageScope,
     id: presentationId,
     authedUser,
     res,
@@ -237,8 +229,7 @@ export async function handleSlideLocksReleaseAll(
   });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const result = await releaseAllUserSlideLocks(ctx, presentationId, {
+  const result = await releaseAllUserSlideLocks(storageScope, presentationId, {
     email: authedUser?.email,
     userId: authedUser?.id || null,
   });

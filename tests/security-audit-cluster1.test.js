@@ -124,7 +124,7 @@ test('H2: list/get/revoke queries all scope by owner_email', async () => {
   );
   // Guard the invariant: every read/revoke query builder must carry an
   // owner_email filter so a cross-user IDOR can't regress back in.
-  const ownerFilters = src.match(/\.where\('owner_email', '=', getOwnerEmail\(ctx\)\)/g) || [];
+  const ownerFilters = src.match(/\.where\('owner_email', '=', getOwnerEmail\(scope\)\)/g) || [];
   assert.ok(
     ownerFilters.length >= 3,
     `expected owner_email scoping on list/get/revoke, found ${ownerFilters.length}`,

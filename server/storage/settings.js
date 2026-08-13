@@ -38,7 +38,7 @@
  */
 
 import { sql } from 'kysely';
-import { toStorageContext } from './backend-dispatch.js';
+import { toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
 import { DEFAULT_AI_NAME, DEFAULT_AI_EMAIL } from '../../shared/constants/ai.js';
@@ -977,17 +977,6 @@ export async function getDefaultThemeId(scope) {
     normalizeThemeId(process.env.DEFAULT_THEME) ||
     DEFAULT_THEME_ID
   );
-}
-
-/**
- * Get session duration in days from app settings.
- * @param {import('./scope.js').StorageScope} scope
- * @returns {Promise<number>}
- */
-export async function getSessionDurationDays(scope) {
-  toStorageContext(scope, 'getSessionDurationDays', {}, { allowCrossOrganization: true });
-  const settings = await getAppSettings(scope);
-  return settings.sessionDurationDays || 30;
 }
 
 /**

@@ -5,7 +5,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
-import { toStorageContext } from './backend-dispatch.js';
+import { toStorageContext } from './scope.js';
 import { norm, nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 
@@ -95,10 +95,12 @@ export async function createActivityEvent(scope, data) {
 /**
  * List activity events for an organization.
  * Supports pagination and filtering.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
+ * @param {Object} [opts] - Pagination and filter options
  */
-export async function listActivityEvents(ctx, opts = {}) {
+export async function listActivityEvents(scope, opts = {}) {
   return withDbGuard({ events: [], total: 0 }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     let query = db
       .selectFrom('activity_events')

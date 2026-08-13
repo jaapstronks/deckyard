@@ -10,22 +10,18 @@ import {
   broadcastToPresentation,
   CommentEventTypes,
 } from '../../../services/comment-events.js';
-import { createRouteContext } from '../../../utils/context.js';
 
 /** Maximum length for comment body text */
 export const MAX_COMMENT_LENGTH = 5000;
-
-/** Shorthand for creating route context */
-export const getCtx = createRouteContext;
 
 /**
  * Broadcast updated comment counts to all connected clients.
  * Called after any comment mutation (create/update/delete/resolve/reopen).
  */
-export async function broadcastCommentCounts(presentationId, ctx) {
+export async function broadcastCommentCounts(presentationId, storageScope) {
   try {
-    const counts = await getCommentCountsBySlide(ctx, presentationId);
-    const total = await getOpenCommentCount(ctx, presentationId);
+    const counts = await getCommentCountsBySlide(storageScope, presentationId);
+    const total = await getOpenCommentCount(storageScope, presentationId);
     broadcastToPresentation(presentationId, CommentEventTypes.COUNTS_CHANGED, {
       counts,
       total,

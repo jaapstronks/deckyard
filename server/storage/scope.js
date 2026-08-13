@@ -16,7 +16,7 @@
  * ## The two legitimate shapes
  *
  * 1. **An organization-scoped scope.** `{ repoRoot, organizationId, actorEmail }`.
- *    Route handlers get this from {@link module:server/utils/context.createRouteContext},
+ *    Route handlers get this from {@link module:server/utils/context.createStorageScope},
  *    which since #356 carries the membership-verified session organization.
  *
  * 2. **A cross-organization scope.** `{ repoRoot, crossOrganization: '<reason>' }`.
@@ -41,7 +41,7 @@ import { isMultiOrgEnabled } from '../config/features.js';
 
 /**
  * @typedef {Object} StorageScope
- * @property {string|null} [repoRoot] - Repository root, for the file-backed fallback.
+ * @property {string|null} [repoRoot] - Repository root: the disk path for uploads, thumbnails and theme files.
  * @property {string} [organizationId] - The organization this operation acts in.
  * @property {string|null} [actorEmail] - Who the operation is attributed to.
  * @property {string} [crossOrganization] - Reason this operation is deliberately unscoped.
@@ -64,7 +64,7 @@ export function resolveScope(storageScope, operation, { allowCrossOrganization =
   if (typeof storageScope === 'string') {
     throw new TypeError(
       `${operation}() takes a storage scope, not a repoRoot string. ` +
-        'Pass createRouteContext(authedUser, { repoRoot }) on session paths, or ' +
+        'Pass createStorageScope(authedUser, { repoRoot }) on session paths, or ' +
         "crossOrganizationScope(repoRoot, '<reason>') where a public token is the authorization. " +
         'See server/storage/scope.js.'
     );
@@ -111,11 +111,12 @@ export function resolveScope(storageScope, operation, { allowCrossOrganization =
 }
 
 /**
- * The repository root a scope carries, for the file-backed fallback.
+ * The repository root a scope carries — the disk path for uploads, thumbnails
+ * and theme files.
  *
- * Unlike the organization this is allowed to be absent: paths that only ever
- * run against an initialized adapter (analytics ingest, for one) have no repo
- * root to give, and the file modules are never reached from there.
+ * Unlike the organization this is allowed to be absent: paths that never touch
+ * the disk (analytics ingest, for one) have no repo root to give, and the six
+ * disk-path functions are never reached from there.
  *
  * @param {StorageScope} storageScope
  * @returns {string|null}
@@ -143,7 +144,7 @@ export function repoRootOf(storageScope) {
  * job that lost its organization should carry the organization in its
  * payload, not declare itself cross-organization.
  *
- * @param {string|null} repoRoot - Repository root, for the file-backed fallback.
+ * @param {string|null} repoRoot - Repository root: the disk path for uploads, thumbnails and theme files.
  * @param {string} reason - Why this operation cannot be organization-scoped.
  * @param {Object} [extra] - Additional scope fields (e.g. actorEmail).
  * @returns {StorageScope}
@@ -165,7 +166,7 @@ export function crossOrganizationScope(repoRoot, reason, extra = {}) {
  * default one" stops being an answer, so it throws instead — the entry point
  * has to be given a real organization before it can run there.
  *
- * @param {string|null} repoRoot - Repository root, for the file-backed fallback.
+ * @param {string|null} repoRoot - Repository root: the disk path for uploads, thumbnails and theme files.
  * @param {string} entryPoint - What is asking, for the error message.
  * @param {Object} [extra] - Additional scope fields (e.g. actorEmail).
  * @returns {StorageScope}
@@ -205,4 +206,33 @@ export function jobScope(jobData, operation) {
     return { repoRoot, organizationId, actorEmail };
   }
   return singleOrganizationScope(repoRoot, operation, { actorEmail });
+}
+
+/**
+ * Reduce a caller's storage scope to the context the storage adapters take.
+ *
+ * Every facade under `server/storage/` calls this before touching storage —
+ * it is the convention's first statement (docs/reference/storage-scope.md).
+ * The organization is never invented: it comes from the scope or the call
+ * throws (see {@link resolveScope}). Only the actor may be sharpened per
+ * call: a personal-collection op names its `userEmail`, a create attributes
+ * to `ownerEmail`, a write to `actorEmail`. At most one of those is ever set
+ * on a given call, so the precedence below is a pick, not a priority fight.
+ *
+ * @param {StorageScope} storageScope - The caller's storage scope.
+ * @param {string} operation - Facade function name, for the error message.
+ * @param {{actorEmail?: string, userEmail?: string, ownerEmail?: string}} [opts]
+ *   A sharper actor for this call.
+ * @param {{allowCrossOrganization?: boolean}} [resolveOpts] - Passed through to
+ *   resolveScope; set `allowCrossOrganization` for a read addressed by a public
+ *   token.
+ * @returns {Object} Context for the storage adapter.
+ */
+export function toStorageContext(storageScope, operation, opts = {}, resolveOpts) {
+  const resolved = resolveScope(storageScope, operation, resolveOpts);
+  return {
+    ...resolved,
+    actorEmail:
+      opts.actorEmail || opts.userEmail || opts.ownerEmail || resolved.actorEmail,
+  };
 }

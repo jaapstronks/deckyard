@@ -14,7 +14,7 @@
  */
 
 import { sql } from 'kysely';
-import { toStorageContext } from './backend-dispatch.js';
+import { toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/db-guard.js';
 import {
   SUPPORTED_LOCALES as SHARED_SUPPORTED_LOCALES,

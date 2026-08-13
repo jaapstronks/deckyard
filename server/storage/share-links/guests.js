@@ -3,7 +3,7 @@
  */
 
 import { getOrgId } from '../../utils/context.js';
-import { toStorageContext } from '../backend-dispatch.js';
+import { toStorageContext } from '../scope.js';
 import { norm, nowIso, isoAfter, isoBefore, normalizeEmail } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
 import { generateGuestToken } from './index.js';
@@ -286,96 +286,6 @@ export async function getGuestBySessionToken(sessionToken) {
       guest: formatGuest(guest),
       shareLink: formatShareLink(shareLink),
     };
-  });
-}
-
-/**
- * Get a guest by share link and email.
- * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
- * @param {string} shareLinkId - The share link ID
- * @param {string} email - The guest email
- * @returns {Promise<Object|null>} - Guest info or null
- */
-export async function getGuestByEmail(scope, shareLinkId, email) {
-  toStorageContext(scope, 'getGuestByEmail');
-  const id = norm(shareLinkId);
-  const normalized = normalizeEmail(email);
-  if (!id || !normalized) return null;
-
-  return withDbGuard(null, async (db) => {
-    const guest = await db
-      .selectFrom('share_link_guests')
-      .selectAll()
-      .where('share_link_id', '=', id)
-      .where('email', '=', normalized)
-      .executeTakeFirst();
-
-    return guest ? formatGuest(guest) : null;
-  });
-}
-
-/**
- * Extend a guest's session (called on each access).
- * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
- * @param {string} guestId - The guest ID
- * @returns {Promise<Object>} - Updated session info
- */
-export async function extendGuestSession(scope, guestId) {
-  toStorageContext(scope, 'extendGuestSession');
-  const id = norm(guestId);
-  if (!id) {
-    return { ok: false, reason: 'invalid' };
-  }
-
-  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const sessionExpires = isoAfter(7 * 24 * 60 * 60 * 1000); // 7 days
-
-    const updated = await db
-      .updateTable('share_link_guests')
-      .set({
-        session_expires_at: sessionExpires,
-        last_accessed_at: nowIso(),
-      })
-      .where('id', '=', id)
-      .where('verified_at', 'is not', null)
-      .returningAll()
-      .executeTakeFirst();
-
-    if (!updated) {
-      return { ok: false, reason: 'not_found' };
-    }
-
-    return {
-      ok: true,
-      sessionExpiresAt: sessionExpires,
-    };
-  });
-}
-
-/**
- * Invalidate all guest sessions for a share link.
- * Called when a share link is revoked.
- * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
- * @param {string} shareLinkId - The share link ID
- * @returns {Promise<number>} - Number of sessions invalidated
- */
-export async function invalidateGuestSessions(scope, shareLinkId) {
-  toStorageContext(scope, 'invalidateGuestSessions');
-  const id = norm(shareLinkId);
-  if (!id) return 0;
-
-  return withDbGuard(0, async (db) => {
-    const result = await db
-      .updateTable('share_link_guests')
-      .set({
-        session_token: null,
-        session_expires_at: null,
-      })
-      .where('share_link_id', '=', id)
-      .where('session_token', 'is not', null)
-      .executeTakeFirst();
-
-    return Number(result.numUpdatedRows) || 0;
   });
 }
 

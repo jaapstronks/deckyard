@@ -16,7 +16,7 @@ import {
 import { serveJson, badRequest, requireJsonBody } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
-import { getClientIp, createRouteContext } from '../../utils/context.js';
+import { getClientIp, createStorageScope } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { sendMagicLinkEmail } from '../../integrations/brevo.js';
 import { validateEmail } from '../../utils/secure-tokens.js';
@@ -162,8 +162,7 @@ async function handleMagicLinkRequest({ repoRoot, req, res }) {
 // Verify a magic link token and create session
 // ============================================================
 async function handleMagicLinkVerify({ repoRoot, req, res }) {
-  const ctx = createRouteContext(null);
-  ctx.repoRoot = repoRoot;
+  const ctx = createStorageScope(null, { repoRoot });
 
   if (!authEnabled()) {
     return badRequest(res, t('api.error.authNotEnabled', 'Authentication is not enabled'));
@@ -206,7 +205,7 @@ async function handleMagicLinkVerify({ repoRoot, req, res }) {
   const email = consumeResult.email;
 
   // Get or create the user
-  const userResult = await getOrCreateMagicLinkUser(email, ctx);
+  const userResult = await getOrCreateMagicLinkUser(ctx, email);
 
   if (!userResult.ok) {
     await logAuthEvent({

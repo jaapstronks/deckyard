@@ -120,10 +120,10 @@ export function buildDeckActivityNotificationInput({ presentation, actor, count 
  * @param {string} [options.repoRoot]
  * @param {Object} options.presentation
  * @param {Object} options.actor
- * @param {Object} [options.ctx]
+ * @param {import('../storage/scope.js').StorageScope} options.scope - the caller's storage scope
  * @returns {Promise<string[]>} Recipient emails.
  */
-async function resolveDeckActivityRecipients({ repoRoot, presentation, actor, ctx }) {
+async function resolveDeckActivityRecipients({ repoRoot, presentation, actor, scope }) {
   let collaborators = [];
   try {
     collaborators = (await listCollaborators(presentation?.id))
@@ -138,7 +138,7 @@ async function resolveDeckActivityRecipients({ repoRoot, presentation, actor, ct
 
   let overrides = new Map();
   try {
-    overrides = await listSubscriptions(ctx, presentation?.id);
+    overrides = await listSubscriptions(scope, presentation?.id);
   } catch {
     overrides = new Map();
   }
@@ -176,14 +176,14 @@ async function resolveDeckActivityRecipients({ repoRoot, presentation, actor, ct
  * @param {Object} options.presentation - The saved deck (ownerEmail/createdBy).
  * @param {Object} options.actor - The editing user.
  * @param {number} options.slideCount - Slides added in this save.
- * @param {Object} [options.ctx] - Storage context (org scoping).
+ * @param {import('../storage/scope.js').StorageScope} options.scope - the caller's storage scope
  */
-export async function notifyDeckActivity({ repoRoot, presentation, actor, slideCount, ctx }) {
+export async function notifyDeckActivity({ repoRoot, presentation, actor, slideCount, scope }) {
   try {
     if (!presentation?.id || !actor?.email) return;
     const added = Number.isInteger(slideCount) && slideCount > 0 ? slideCount : 1;
 
-    const recipients = await resolveDeckActivityRecipients({ repoRoot, presentation, actor, ctx });
+    const recipients = await resolveDeckActivityRecipients({ repoRoot, presentation, actor, scope });
     if (recipients.length === 0) return;
 
     const actorEmail = normalizeEmail(actor?.email) || null;
@@ -193,7 +193,7 @@ export async function notifyDeckActivity({ repoRoot, presentation, actor, slideC
     for (const recipientEmail of recipients) {
       try {
         const existing = await findUnreadDeckActivityNotification(
-          ctx,
+          scope,
           recipientEmail,
           presentation.id,
           actorEmail,
@@ -206,20 +206,20 @@ export async function notifyDeckActivity({ repoRoot, presentation, actor, slideC
         let notification = null;
         if (existing) {
           const res = await refreshDeckActivityNotification(
-            ctx,
+            scope,
             existing.id,
             recipientEmail,
             { title: input.title, body: input.body, data: input.data }
           );
           notification = res?.ok ? res.notification : null;
         } else {
-          const res = await createNotification(ctx, { ...input, userEmail: recipientEmail });
+          const res = await createNotification(scope, { ...input, userEmail: recipientEmail });
           notification = res?.ok ? res.notification : null;
         }
 
         if (notification) {
           broadcastToUser(recipientEmail, NotificationEventTypes.NEW, notification);
-          const unreadCount = await getUnreadCount(ctx, recipientEmail);
+          const unreadCount = await getUnreadCount(scope, recipientEmail);
           broadcastToUser(recipientEmail, NotificationEventTypes.COUNTS, { unreadCount });
         }
       } catch (e) {

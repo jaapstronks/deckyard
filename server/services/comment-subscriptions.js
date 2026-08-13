@@ -115,7 +115,7 @@ export function buildCandidates({
  * @param {Object} options.comment - The created comment
  * @param {Object} [options.parentComment]
  * @param {Object} options.actor
- * @param {Object} [options.ctx] - Storage context (org scoping)
+ * @param {import('../storage/scope.js').StorageScope} options.scope - The caller's storage scope (org scoping)
  * @returns {Promise<Array<{email: string, reason: string}>>}
  */
 export async function resolveCommentRecipients({
@@ -124,14 +124,14 @@ export async function resolveCommentRecipients({
   comment,
   parentComment,
   actor,
-  ctx,
+  scope,
 }) {
   // Thread participants: everyone who wrote in the thread this comment
   // joins (only meaningful for replies).
   let threadParticipants = [];
   if (comment?.parentId) {
     try {
-      threadParticipants = await getThreadParticipants(ctx, comment.parentId);
+      threadParticipants = await getThreadParticipants(scope, comment.parentId);
     } catch {
       threadParticipants = [];
     }
@@ -140,7 +140,7 @@ export async function resolveCommentRecipients({
   // Per-deck overrides (Map email → level); watchers join as candidates.
   let overrides = new Map();
   try {
-    overrides = await listSubscriptions(ctx, presentation?.id);
+    overrides = await listSubscriptions(scope, presentation?.id);
   } catch {
     overrides = new Map();
   }
@@ -177,7 +177,7 @@ export async function resolveCommentRecipients({
       // notification or email.
       if (reason === 'mention') {
         try {
-          if (!(await getUserByEmail(email, ctx))) return null;
+          if (!(await getUserByEmail(scope, email))) return null;
         } catch {
           return null;
         }

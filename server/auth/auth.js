@@ -325,7 +325,7 @@ export function getUserFromRequest(req) {
       isAdmin: role === 'admin',
       // Include organization context from session (multi-organization mode).
       // No default fallback: this synchronous path is marked
-      // `_needsDbValidation` and is ignored by createRouteContext, so a missing
+      // `_needsDbValidation` and is ignored by createStorageScope, so a missing
       // orgId must stay missing rather than resolve to the default organization.
       organizationId: payload?.orgId,
       _needsDbValidation: true,

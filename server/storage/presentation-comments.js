@@ -6,7 +6,7 @@
 import { getOrgId } from '../utils/context.js';
 import { norm, normalizeEmail, nowIso } from '../utils/normalize.js';
 import { parseMentions } from '../../shared/comment-mentions.js';
-import { toStorageContext } from './backend-dispatch.js';
+import { toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { listPresentations } from './presentations/index.js';
 import { listPresentationsSharedWithUser } from './collaborators.js';
@@ -285,7 +285,7 @@ export async function listAccessiblePresentationRefs(scope, visibility = 'all') 
   }
 
   if (wantShared) {
-    const shared = await listPresentationsSharedWithUser(owner, scope);
+    const shared = await listPresentationsSharedWithUser(scope, owner);
     for (const p of shared) {
       if (!titleById.has(p.id)) titleById.set(p.id, p.title || 'Untitled');
     }

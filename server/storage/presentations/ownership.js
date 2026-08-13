@@ -4,7 +4,7 @@
 
 import { getPresentation, updatePresentation } from './index.js';
 import { addCollaborator, removeCollaborator } from '../collaborators.js';
-import { toStorageContext } from '../backend-dispatch.js';
+import { toStorageContext } from '../scope.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('ownership');

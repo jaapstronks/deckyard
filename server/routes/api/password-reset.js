@@ -17,7 +17,7 @@ import {
 import { serveJson, badRequest, unauthorized, requireJsonBody } from '../../utils/http.js';
 import { getString, getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
-import { getClientIp, createRouteContext } from '../../utils/context.js';
+import { getClientIp, createStorageScope } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { sendPasswordResetEmail } from '../../integrations/brevo.js';
 import { normalizeEmail } from '../../utils/normalize.js';
@@ -64,9 +64,7 @@ async function userExists(email) {
  * repoRoot carried alongside — the same shape the old entry built once.
  */
 function resetCtx(repoRoot) {
-  const ctx = createRouteContext(null);
-  ctx.repoRoot = repoRoot;
-  return ctx;
+  return createStorageScope(null, { repoRoot });
 }
 
 // ============================================================
@@ -238,7 +236,7 @@ async function handleResetPassword({ repoRoot, req, res }) {
   const email = consumeResult.email;
 
   // Set the new password (creates/updates database user)
-  const setResult = await setUserPassword(email, password, ctx);
+  const setResult = await setUserPassword(ctx, email, password);
 
   if (!setResult.ok) {
     await logAuthEvent({
@@ -325,7 +323,7 @@ async function handleChangePassword({ repoRoot, req, res }) {
   }
 
   // Set the new password
-  const setResult = await setUserPassword(email, newPassword, ctx);
+  const setResult = await setUserPassword(ctx, email, newPassword);
 
   if (!setResult.ok) {
     await logAuthEvent({

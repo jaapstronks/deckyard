@@ -12,8 +12,7 @@
  */
 
 import { getStorage } from '../adapters/index.js';
-import { repoRootOf } from '../scope.js';
-import { toStorageContext } from '../backend-dispatch.js';
+import { repoRootOf, toStorageContext } from '../scope.js';
 import { isCollabLiveEditsEnabled } from '../../config/features.js';
 import { deleteYDocState } from '../presentation-ydocs.js';
 import { normalizeSlides } from './slides.js';
@@ -154,6 +153,7 @@ export async function updatePresentation(storageScope, id, body, opts) {
       presentation: result,
       actorEmail: opts.actorEmail,
       merge: result._slideMerge,
+      scope: storageScope,
     }).catch(() => {});
   }
   // Any successful mutation (editor save, public API, MCP tool) refreshes

@@ -7,8 +7,7 @@ import {
   ensureLikertInteractionForSlide,
 } from '../interactions.js';
 import { ensureFeedbackForSlide } from '../feedback.js';
-import { crossOrganizationScope, repoRootOf } from '../scope.js';
-import { toStorageContext } from '../backend-dispatch.js';
+import { crossOrganizationScope, repoRootOf, toStorageContext } from '../scope.js';
 
 /**
  * Get slides array from presentation, respecting i18n active language

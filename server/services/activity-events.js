@@ -9,7 +9,6 @@ import {
   ENTITY_TYPES,
   ACTOR_TYPES,
 } from '../storage/activity-events.js';
-import { createRouteContext } from '../utils/context.js';
 import { stripMentionMarkup } from '../../shared/comment-mentions.js';
 
 /**
@@ -18,11 +17,10 @@ import { stripMentionMarkup } from '../../shared/comment-mentions.js';
 export async function recordPresentationCreated({
   presentation,
   actor,
-  ctx,
+  scope,
 }) {
-  const context = ctx || createRouteContext(actor);
 
-  return createActivityEvent(context, {
+  return createActivityEvent(scope, {
     eventType: EVENT_TYPES.PRESENTATION_CREATED,
     entityType: ENTITY_TYPES.PRESENTATION,
     entityId: presentation.id,
@@ -44,11 +42,10 @@ export async function recordPresentationUpdated({
   presentation,
   actor,
   changes,
-  ctx,
+  scope,
 }) {
-  const context = ctx || createRouteContext(actor);
 
-  return createActivityEvent(context, {
+  return createActivityEvent(scope, {
     eventType: EVENT_TYPES.PRESENTATION_UPDATED,
     entityType: ENTITY_TYPES.PRESENTATION,
     entityId: presentation.id,
@@ -75,16 +72,14 @@ export async function recordPresentationUpdated({
  * @param {object} args.presentation - the updated presentation
  * @param {object} args.actor - the acting user ({ email, name })
  * @param {string[]} args.slideIds - ids of the newly added slides
- * @param {object} [args.ctx] - route context
+ * @param {import('../storage/scope.js').StorageScope} args.scope - the caller's storage scope
  * @returns {Promise<object|null>}
  */
-export async function recordSlidesAdded({ presentation, actor, slideIds, ctx }) {
+export async function recordSlidesAdded({ presentation, actor, slideIds, scope }) {
   const ids = Array.isArray(slideIds) ? slideIds.filter(Boolean) : [];
   if (ids.length === 0) return null;
 
-  const context = ctx || createRouteContext(actor);
-
-  return createActivityEvent(context, {
+  return createActivityEvent(scope, {
     eventType: EVENT_TYPES.SLIDE_ADDED,
     entityType: ENTITY_TYPES.PRESENTATION,
     entityId: presentation.id,
@@ -109,11 +104,10 @@ export async function recordSlideLevelMerge({
   presentation,
   actorEmail,
   merge,
-  ctx,
+  scope,
 }) {
-  const context = ctx || createRouteContext({ email: actorEmail });
 
-  return createActivityEvent(context, {
+  return createActivityEvent(scope, {
     eventType: EVENT_TYPES.PRESENTATION_MERGED,
     entityType: ENTITY_TYPES.PRESENTATION,
     entityId: presentation.id,
@@ -138,11 +132,10 @@ export async function recordSlideLevelMerge({
 export async function recordPresentationDeleted({
   presentation,
   actor,
-  ctx,
+  scope,
 }) {
-  const context = ctx || createRouteContext(actor);
 
-  return createActivityEvent(context, {
+  return createActivityEvent(scope, {
     eventType: EVENT_TYPES.PRESENTATION_DELETED,
     entityType: ENTITY_TYPES.PRESENTATION,
     entityId: presentation.id,
@@ -163,11 +156,9 @@ export async function recordPresentationMovedToOrganization({
   presentation,
   actor,
   previousVisibility,
-  ctx,
+  scope,
 }) {
-  const context = ctx || createRouteContext(actor);
-
-  return createActivityEvent(context, {
+  return createActivityEvent(scope, {
     eventType: EVENT_TYPES.PRESENTATION_MOVED_TO_ORGANIZATION,
     entityType: ENTITY_TYPES.PRESENTATION,
     entityId: presentation.id,
@@ -191,11 +182,10 @@ export async function recordCommentCreated({
   presentation,
   actor,
   isGuest,
-  ctx,
+  scope,
 }) {
-  const context = ctx || createRouteContext(actor);
 
-  const result = await createActivityEvent(context, {
+  const result = await createActivityEvent(scope, {
     eventType: EVENT_TYPES.COMMENT_CREATED,
     entityType: ENTITY_TYPES.COMMENT,
     entityId: comment.id,
@@ -225,11 +215,10 @@ export async function recordCommentResolved({
   comment,
   presentation,
   actor,
-  ctx,
+  scope,
 }) {
-  const context = ctx || createRouteContext(actor);
 
-  return createActivityEvent(context, {
+  return createActivityEvent(scope, {
     eventType: EVENT_TYPES.COMMENT_RESOLVED,
     entityType: ENTITY_TYPES.COMMENT,
     entityId: comment.id,
@@ -252,11 +241,10 @@ export async function recordCommentReopened({
   comment,
   presentation,
   actor,
-  ctx,
+  scope,
 }) {
-  const context = ctx || createRouteContext(actor);
 
-  return createActivityEvent(context, {
+  return createActivityEvent(scope, {
     eventType: EVENT_TYPES.COMMENT_REOPENED,
     entityType: ENTITY_TYPES.COMMENT,
     entityId: comment.id,

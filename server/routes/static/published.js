@@ -4,7 +4,7 @@ import { getPresentation } from '../../storage/presentations/index.js';
 import { getPublishedById } from '../../storage/published/index.js';
 import { buildStandaloneHtml } from '../../export/html.js';
 import { buildReaderHtml } from '../../export/reader.js';
-import { loadTheme } from '../../utils/themes.js';
+import { loadThemeAssets } from '../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
 import { getAppName } from '../../config/branding.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
@@ -233,7 +233,7 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
     readerLabel
   )}</a>`;
 
-  const theme = await loadTheme(repoRoot, pres?.theme);
+  const theme = await loadThemeAssets(repoRoot, pres?.theme);
 
   // Add analytics tracking script for published pages
   const trackingScript = generateTrackingScriptHtml({

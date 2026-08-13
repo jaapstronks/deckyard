@@ -12,7 +12,6 @@ import {
 } from '../../../utils/http.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { createComment } from '../../../storage/presentation-comments.js';
-import { createRouteContext } from '../../../utils/context.js';
 import {
   analyzePresentation,
   suggestionToCommentData,
@@ -25,8 +24,6 @@ import { getAiIdentity } from '../../../storage/settings.js';
 import { createLogger } from '../../../utils/logger.js';
 import { sseErrorPayload } from '../../../utils/sse.js';
 const log = createLogger('analyze');
-
-const getCtx = createRouteContext;
 
 /**
  * Send SSE event to client
@@ -51,7 +48,7 @@ function sendSSE(res, event, data) {
  * - error: { message }
  */
 export async function handlePresentationAnalyze(
-  { repoRoot, storageScope, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
@@ -81,8 +78,6 @@ export async function handlePresentationAnalyze(
 
   // Send initial connection confirmation
   sendSSE(res, 'connected', { presentationId: id });
-
-  const ctx = getCtx(authedUser);
 
   // Get AI identity from settings (custom name/email if configured)
   const aiIdentity = await getAiIdentity(storageScope);
@@ -114,7 +109,7 @@ export async function handlePresentationAnalyze(
       const suggestion = suggestions[i];
       const commentData = suggestionToCommentData(suggestion, id, aiIdentity);
 
-      const createResult = await createComment(ctx, id, commentData);
+      const createResult = await createComment(storageScope, id, commentData);
 
       if (createResult.ok) {
         createdComments.push(createResult.comment);

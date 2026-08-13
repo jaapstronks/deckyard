@@ -9,8 +9,7 @@
  */
 
 import { getStorage } from '../adapters/index.js';
-import { resolveScope } from '../scope.js';
-import { toStorageContext } from '../backend-dispatch.js';
+import { resolveScope, toStorageContext } from '../scope.js';
 
 /**
  * List the image library of the storageScope's organization.

@@ -8,7 +8,7 @@
  */
 
 import { getStorage } from './adapters/index.js';
-import { toStorageContext } from './backend-dispatch.js';
+import { toStorageContext } from './scope.js';
 import { getPublishedIndex } from './published/index.js';
 
 /**

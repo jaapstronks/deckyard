@@ -146,9 +146,11 @@ and *is* the authorization, which is why link reads take no organization
 
 ### 1. A request asks for a deck
 
-`withPresentationAuth({ repoRoot, id, authedUser, res, permission })`:
+`withPresentationAuth({ storageScope, id, authedUser, res, permission })` —
+the caller passes the request's central storage scope; the helper builds
+nothing itself:
 
-1. `getPresentation(createRouteContext(authedUser), id)` — organization-scoped.
+1. `getPresentation(storageScope, id)` — organization-scoped.
    Nothing back → **404**. A deck in another organization is *absent*, not
    forbidden, so authorization never sees it.
 2. For `read` and `write`, look up the caller's collaborator permission

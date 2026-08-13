@@ -21,7 +21,6 @@ import {
 import { listUsers } from '../../storage/users.js';
 import { sendCollaboratorInviteEmail } from '../../integrations/brevo.js';
 import { canManageCollaborators } from '../../utils/presentation-authz.js';
-import { createRouteContext } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, jsonError, serverError, getErrorStatus } from '../../utils/http.js';
 import { validatePermission } from '../../utils/request-validators.js';
@@ -54,14 +53,13 @@ const INVITE_FAILURE_MESSAGES = {
 
 // GET /api/presentations/shared-with-me - List presentations shared with current user
 async function handleSharedWithMe({ storageScope, res, authedUser }) {
-  const ctx = createRouteContext(authedUser);
 
   if (!authedUser?.email) {
     return unauthorized(res);
   }
 
   try {
-    const presentations = await listPresentationsSharedWithUser(authedUser.email, ctx);
+    const presentations = await listPresentationsSharedWithUser(storageScope, authedUser.email);
 
     // Batch-fetch first slides for all presentations (avoids N+1 queries).
     // The grid only needs the presence signal — the thumbnail is a
@@ -84,7 +82,6 @@ async function handleSharedWithMe({ storageScope, res, authedUser }) {
 
 // POST /api/presentations/:id/collaborators - Add collaborator(s)
 async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedUser }, presentationId) {
-  const ctx = createRouteContext(authedUser);
 
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
@@ -134,7 +131,7 @@ async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedU
   // Get all users in the organization
   let users;
   try {
-    users = await listUsers(ctx);
+    users = await listUsers(storageScope);
   } catch (err) {
     log.error('[collaborators] Failed to list users:', err);
     return serverError(res, 'Failed to load users');
@@ -200,7 +197,7 @@ async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedU
     // Create in-app notification for the invited user (non-blocking)
     try {
       const notifResult = await createNotification(
-        ctx,
+        storageScope,
         {
           userEmail,
           notificationType: 'share_received',
@@ -226,7 +223,7 @@ async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedU
     // Create activity event for the activity feed (non-blocking)
     try {
       await createActivityEvent(
-        ctx,
+        storageScope,
         {
           eventType: EVENT_TYPES.COLLABORATOR_ADDED,
           entityType: ENTITY_TYPES.COLLABORATOR,
@@ -312,7 +309,6 @@ async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedU
 
 // GET /api/presentations/:id/collaborators - List collaborators
 async function handleCollaboratorList({ storageScope, res, authedUser }, presentationId) {
-  const ctx = createRouteContext(authedUser);
 
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
@@ -325,7 +321,7 @@ async function handleCollaboratorList({ storageScope, res, authedUser }, present
     const collaborators = await listCollaborators(presentationId);
 
     // Enrich with user names if available
-    const users = await listUsers(ctx);
+    const users = await listUsers(storageScope);
     const userMap = new Map(users.map((u) => [u.email?.toLowerCase(), u]));
 
     const enrichedCollaborators = collaborators.map((c) => {
@@ -346,7 +342,6 @@ async function handleCollaboratorList({ storageScope, res, authedUser }, present
 
 // DELETE /api/presentations/:id/collaborators/:email - Remove collaborator
 async function handleCollaboratorRemove({ storageScope, req, res, authedUser }, presentationId, rawEmail) {
-  const ctx = createRouteContext(authedUser);
   const email = decodeURIComponent(rawEmail);
 
   const pres = await getPresentation(storageScope, presentationId);
@@ -377,7 +372,7 @@ async function handleCollaboratorRemove({ storageScope, req, res, authedUser }, 
     // feed.
     try {
       await createActivityEvent(
-        ctx,
+        storageScope,
         {
           eventType: EVENT_TYPES.COLLABORATOR_REMOVED,
           entityType: ENTITY_TYPES.COLLABORATOR,
@@ -406,7 +401,6 @@ async function handleCollaboratorRemove({ storageScope, req, res, authedUser }, 
 
 // PATCH /api/presentations/:id/collaborators/:email - Update permission
 async function handleCollaboratorUpdate({ storageScope, req, res, authedUser }, presentationId, rawEmail) {
-  const ctx = createRouteContext(authedUser);
   const email = decodeURIComponent(rawEmail);
 
   const pres = await getPresentation(storageScope, presentationId);
@@ -435,7 +429,7 @@ async function handleCollaboratorUpdate({ storageScope, req, res, authedUser }, 
     // (non-blocking): a promotion or demotion is an access-model event too.
     try {
       await createActivityEvent(
-        ctx,
+        storageScope,
         {
           eventType: EVENT_TYPES.COLLABORATOR_PERMISSION_CHANGED,
           entityType: ENTITY_TYPES.COLLABORATOR,

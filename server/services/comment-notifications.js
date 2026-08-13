@@ -34,14 +34,14 @@ import { crossOrganizationScope } from '../storage/scope.js';
  * @param {Object} options.comment - The created comment
  * @param {Object} [options.parentComment] - Parent comment if this is a reply
  * @param {Object} options.actor - The user/guest who created the comment
- * @param {Object} [options.ctx] - Route context (org scoping for in-app notifications)
+ * @param {import('../storage/scope.js').StorageScope} options.scope - the caller's storage scope
  */
 export async function notifyCommentCreated(repoRoot, req, {
   presentation,
   comment,
   parentComment,
   actor,
-  ctx,
+  scope,
 }) {
   const ownerEmail = normalizeEmail(presentation?.ownerEmail);
   const commenterEmail = normalizeEmail(actor?.email);
@@ -55,7 +55,7 @@ export async function notifyCommentCreated(repoRoot, req, {
     comment,
     parentComment,
     actor,
-    ctx,
+    scope,
   });
   const recipientEmails = new Set(recipients.map((r) => r.email));
 
@@ -67,7 +67,7 @@ export async function notifyCommentCreated(repoRoot, req, {
 
   // Your own reply archives your open inbox items for this thread — even
   // when nobody else is left to notify.
-  await autoArchiveOnOwnReply({ presentation, comment, parentComment, actor, ctx });
+  await autoArchiveOnOwnReply({ presentation, comment, parentComment, actor, scope });
 
   if (recipientEmails.size === 0 && webhookRecipients.size === 0) return;
 
@@ -86,7 +86,7 @@ export async function notifyCommentCreated(repoRoot, req, {
     parentComment,
     actor,
     recipients,
-    ctx,
+    scope,
   });
 
   // Fetch user preferences for all recipients (both channels), in parallel
@@ -170,21 +170,21 @@ function commentMentions(comment) {
  * @param {Object} options.comment - The created comment
  * @param {Object} [options.parentComment] - Parent comment if this is a reply
  * @param {Object} options.actor - The user/agent who created the comment
- * @param {Object} [options.ctx] - Context (org scoping)
+ * @param {import('../storage/scope.js').StorageScope} options.scope - the caller's storage scope
  */
 export async function notifyCommentCreatedInApp({
   presentation,
   comment,
   parentComment,
   actor,
-  ctx,
+  scope,
 }) {
   const recipients = await resolveCommentRecipients({
     presentation,
     comment,
     parentComment,
     actor,
-    ctx,
+    scope,
   });
   await createInAppNotifications({
     presentation,
@@ -192,10 +192,10 @@ export async function notifyCommentCreatedInApp({
     parentComment,
     actor,
     recipients,
-    ctx,
+    scope,
   });
   // Your own reply archives your open inbox items for this thread.
-  await autoArchiveOnOwnReply({ presentation, comment, parentComment, actor, ctx });
+  await autoArchiveOnOwnReply({ presentation, comment, parentComment, actor, scope });
 }
 
 /**
@@ -213,7 +213,7 @@ export async function notifyCommentCreatedInApp({
  *   before the edit
  * @param {Object} [options.parentComment] - Parent if the comment is a reply
  * @param {Object} options.actor - The user who edited the comment
- * @param {Object} [options.ctx] - Route context (org scoping)
+ * @param {import('../storage/scope.js').StorageScope} options.scope - the caller's storage scope
  */
 export async function notifyMentionsAdded(repoRoot, req, {
   presentation,
@@ -221,7 +221,7 @@ export async function notifyMentionsAdded(repoRoot, req, {
   previousMentions,
   parentComment,
   actor,
-  ctx,
+  scope,
 }) {
   const before = new Set(
     (Array.isArray(previousMentions) ? previousMentions : [])
@@ -236,7 +236,7 @@ export async function notifyMentionsAdded(repoRoot, req, {
 
   const users = await Promise.all(added.map(async (email) => {
     try {
-      return await getUserByEmail(email, ctx);
+      return await getUserByEmail(scope, email);
     } catch {
       return null;
     }
@@ -252,7 +252,7 @@ export async function notifyMentionsAdded(repoRoot, req, {
     parentComment,
     actor,
     recipients,
-    ctx,
+    scope,
   });
 
   const settings = await getAppSettings(
@@ -372,19 +372,19 @@ export function buildInAppNotificationInputs({
  * means you handled it, so your open inbox items for that thread archive
  * themselves. The badge follows live via a counts push.
  */
-async function autoArchiveOnOwnReply({ presentation, comment, parentComment, actor, ctx }) {
+async function autoArchiveOnOwnReply({ presentation, comment, parentComment, actor, scope }) {
   const actorEmail = normalizeEmail(actor?.email);
   if (!actorEmail || !parentComment) return;
   const threadId = parentComment.parentId || parentComment.id;
   try {
     const result = await archiveThreadNotifications(
-      ctx,
+      scope,
       actorEmail,
       presentation?.id,
       threadId
     );
     if (result?.ok && result.updatedCount > 0) {
-      const unreadCount = await getUnreadCount(ctx, actorEmail);
+      const unreadCount = await getUnreadCount(scope, actorEmail);
       broadcastToUser(actorEmail, NotificationEventTypes.COUNTS, { unreadCount });
     }
   } catch (e) {
@@ -403,7 +403,7 @@ async function createInAppNotifications({
   parentComment,
   actor,
   recipients,
-  ctx,
+  scope,
 }) {
   const inputs = buildInAppNotificationInputs({
     presentation,
@@ -415,7 +415,7 @@ async function createInAppNotifications({
 
   for (const input of inputs) {
     try {
-      const notifResult = await createNotification(ctx, input);
+      const notifResult = await createNotification(scope, input);
       if (notifResult?.ok && notifResult.notification) {
         broadcastToUser(input.userEmail, NotificationEventTypes.NEW, notifResult.notification);
       }

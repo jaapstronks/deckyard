@@ -10,7 +10,6 @@ import { transferPresentationOwnership } from '../../../storage/presentations/ow
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { listUsers } from '../../../storage/users.js';
 import { canTransferOwnership } from '../../../utils/presentation-authz.js';
-import { createRouteContext } from '../../../utils/context.js';
 import {
   methodNotAllowed,
   notFound,
@@ -34,7 +33,6 @@ export async function handleOwnershipTransfer(
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const ctx = createRouteContext(authedUser);
   const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
 
@@ -63,7 +61,7 @@ export async function handleOwnershipTransfer(
   // Verify new owner exists in organization
   let users;
   try {
-    users = await listUsers(ctx);
+    users = await listUsers(storageScope);
   } catch (err) {
     log.error('[ownership] Failed to list users:', err);
     return serverError(res, 'Failed to verify user');
@@ -92,7 +90,7 @@ export async function handleOwnershipTransfer(
     // Create activity event (non-blocking)
     try {
       await createActivityEvent(
-        ctx,
+        storageScope,
         {
           eventType: EVENT_TYPES.OWNERSHIP_TRANSFERRED,
           entityType: ENTITY_TYPES.PRESENTATION,
@@ -118,7 +116,7 @@ export async function handleOwnershipTransfer(
       const editUrl = `${protocol}://${host}/app/${id}`;
 
       const notifResult = await createNotification(
-        ctx,
+        storageScope,
         {
           userEmail: newOwnerEmail,
           notificationType: 'ownership_received',

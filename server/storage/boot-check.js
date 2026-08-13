@@ -1,12 +1,14 @@
 /**
- * Boot-time storage sanity check.
+ * Boot-time migration guard.
  *
- * Postgres is the default storage backend, so an install that used to run on
- * file storage and simply pulls a newer Deckyard would otherwise come up
- * against an empty database while its decks sit untouched on disk — an empty
- * organization that looks exactly like data loss. This check turns that into a
- * loud stop with the two commands that resolve it. Nothing is read, written or
- * deleted in the data directory; the file data stays exactly where it is.
+ * This is not a storage module: it exists for exactly one scenario — an
+ * install that used to keep its decks as disk JSON pulls a newer Deckyard and
+ * boots against an empty database while its data sits untouched under
+ * `server/data/`. An empty organization next to real data looks exactly like
+ * data loss, so the guard turns it into a loud stop with the two commands that
+ * resolve it (`db:migrate` + `db:import`). Nothing is read, written or deleted
+ * in the data directory. Once `server/data/presentations/` is pruned after a
+ * verified import (scripts/prune-legacy-data.js), the trigger disarms itself.
  */
 
 import fs from 'node:fs/promises';
@@ -15,7 +17,7 @@ import { dataDir } from '../config/storage-paths.js';
 import { getDb, isDatabaseAvailable } from '../db/client.js';
 
 /**
- * Number of deck JSON files in the file-storage data directory.
+ * Number of deck JSON files in the legacy data directory.
  * @param {string} repoRoot
  * @returns {Promise<number>}
  */
@@ -53,8 +55,8 @@ async function databaseHasPresentations() {
 }
 
 /**
- * Refuse to boot Postgres mode on an empty database while file-storage decks
- * are still on disk.
+ * Refuse to boot Postgres mode on an empty database while legacy disk-JSON
+ * decks are still on disk.
  *
  * @param {string} repoRoot - Repository root path.
  * @returns {Promise<string|null>} Error message, or null when the boot is fine.
@@ -69,12 +71,12 @@ export async function strandedFileDataError(repoRoot) {
   const dir = path.join(dataDir(repoRoot), 'presentations');
   return (
     `Storage mode is "postgres" and the database holds no presentations, but the ` +
-    `file-storage data directory is not empty:\n` +
+    `legacy data directory is not empty:\n` +
     `  ${dir} - ${fileCount} deck${fileCount === 1 ? '' : 's'}\n` +
     `Starting now would show an empty organization next to your data, so Deckyard stops here.\n` +
     `Your files have not been touched. Import them into Postgres (idempotent, safe to repeat):\n` +
     `    npm run db:migrate && npm run db:import\n` +
     `  Inside docker compose: docker compose exec app npm run db:import\n` +
-    `The file backend itself was removed in 1.x, so STORAGE_MODE=file is no longer a way out.`
+    `Disk-JSON storage was removed in 1.x, so STORAGE_MODE=file is no longer a way out.`
   );
 }

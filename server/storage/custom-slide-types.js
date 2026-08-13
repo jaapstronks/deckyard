@@ -16,6 +16,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
+import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { parseJson, generateSlug, isValidSlug, getUserIdByEmail } from './utils/helpers.js';
@@ -50,12 +51,12 @@ const SELECT_COLUMNS = [
 
 /**
  * List all custom slide types for an organization.
- * @param {Object} ctx - Context with organizationId
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @returns {Promise<Array>}
  */
-export async function listCustomSlideTypes(ctx) {
+export async function listCustomSlideTypes(scope) {
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const rows = await db
       .selectFrom('custom_slide_types')
@@ -72,12 +73,12 @@ export async function listCustomSlideTypes(ctx) {
 /**
  * List only published custom slide types for an organization.
  * Used by the slide picker and rendering pipeline.
- * @param {Object} ctx - Context with organizationId
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @returns {Promise<Array>}
  */
-export async function listPublishedCustomSlideTypes(ctx) {
+export async function listPublishedCustomSlideTypes(scope) {
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const rows = await db
       .selectFrom('custom_slide_types')
@@ -94,35 +95,33 @@ export async function listPublishedCustomSlideTypes(ctx) {
 
 /**
  * Get a custom slide type by ID.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} typeId - UUID
- * @param {Object} ctx - Context with organizationId
  * @returns {Promise<Object|null>}
  */
-export async function getCustomSlideType(typeId, ctx) {
+export async function getCustomSlideType(scope, typeId) {
+  toStorageContext(scope, 'getCustomSlideType');
   if (!typeId || typeof typeId !== 'string') return null;
 
   return withDbGuard(null, async (db) => {
-    let query = db
+    const row = await db
       .selectFrom('custom_slide_types')
       .select(SELECT_COLUMNS)
-      .where('id', '=', typeId);
-
-    if (ctx?.organizationId) {
-      query = query.where('organization_id', '=', ctx.organizationId);
-    }
-
-    const row = await query.executeTakeFirst();
+      .where('id', '=', typeId)
+      .where('organization_id', '=', getOrgId(scope))
+      .executeTakeFirst();
     return row ? formatRow(row) : null;
   });
 }
 
 /**
  * Create a custom slide type.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {Object} data
- * @param {Object} ctx - Context with organizationId and actorEmail
  * @returns {Promise<{ ok: boolean, customSlideType?: Object, reason?: string }>}
  */
-export async function createCustomSlideType(data, ctx) {
+export async function createCustomSlideType(scope, data) {
+  toStorageContext(scope, 'createCustomSlideType');
   const label = String(data?.label || '').trim();
   if (!label || label.length > MAX_LABEL_LEN) {
     return { ok: false, reason: 'invalid_label' };
@@ -151,7 +150,7 @@ export async function createCustomSlideType(data, ctx) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Check slug uniqueness per org
     const existing = await db
@@ -184,7 +183,7 @@ export async function createCustomSlideType(data, ctx) {
         sort_order: typeof data?.sortOrder === 'number' ? data.sortOrder : 0,
         created_at: now,
         updated_at: now,
-        created_by: ctx?.actorEmail ? await getUserIdByEmail(db, orgId, ctx.actorEmail) : null,
+        created_by: scope?.actorEmail ? await getUserIdByEmail(db, orgId, scope.actorEmail) : null,
       })
       .returningAll()
       .executeTakeFirst();
@@ -195,18 +194,19 @@ export async function createCustomSlideType(data, ctx) {
 
 /**
  * Update a custom slide type.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} typeId - UUID
  * @param {Object} updates
- * @param {Object} ctx - Context with organizationId
  * @returns {Promise<{ ok: boolean, customSlideType?: Object, reason?: string }>}
  */
-export async function updateCustomSlideType(typeId, updates, ctx) {
+export async function updateCustomSlideType(scope, typeId, updates) {
+  toStorageContext(scope, 'updateCustomSlideType');
   if (!typeId || typeof typeId !== 'string') {
     return { ok: false, reason: 'invalid_id' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const updateData = { updated_at: nowIso() };
 
     if ('label' in updates) {
@@ -309,11 +309,12 @@ export async function updateCustomSlideType(typeId, updates, ctx) {
  * loaded before someone else added a type) can't silently drop the type it
  * never saw to the bottom.
  *
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string[]} orderedIds - Every custom type id, in the desired order.
- * @param {Object} ctx - Context with organizationId
  * @returns {Promise<{ ok: boolean, reason?: string, customSlideTypes?: Array }>}
  */
-export async function reorderCustomSlideTypes(orderedIds, ctx) {
+export async function reorderCustomSlideTypes(scope, orderedIds) {
+  toStorageContext(scope, 'reorderCustomSlideTypes');
   if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
     return { ok: false, reason: 'invalid_order' };
   }
@@ -323,7 +324,7 @@ export async function reorderCustomSlideTypes(orderedIds, ctx) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const existing = await db
       .selectFrom('custom_slide_types')
@@ -346,23 +347,24 @@ export async function reorderCustomSlideTypes(orderedIds, ctx) {
         .execute();
     }
 
-    return { ok: true, customSlideTypes: await listCustomSlideTypes(ctx) };
+    return { ok: true, customSlideTypes: await listCustomSlideTypes(scope) };
   });
 }
 
 /**
  * Delete a custom slide type.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} typeId - UUID
- * @param {Object} ctx - Context with organizationId
  * @returns {Promise<{ ok: boolean, reason?: string }>}
  */
-export async function deleteCustomSlideType(typeId, ctx) {
+export async function deleteCustomSlideType(scope, typeId) {
+  toStorageContext(scope, 'deleteCustomSlideType');
   if (!typeId || typeof typeId !== 'string') {
     return { ok: false, reason: 'invalid_id' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const result = await db
       .deleteFrom('custom_slide_types')

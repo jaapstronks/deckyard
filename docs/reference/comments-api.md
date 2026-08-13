@@ -138,5 +138,5 @@ an author). Access rules are identical to the REST endpoints.
   truth for every write path — app, REST, MCP). Parser lives in
   `shared/comment-mentions.js`.
 - Comments live only in Postgres (`server/storage/presentation-comments.js`
-  wraps everything in `withDbGuard`); the removed file backend never had a
+  wraps everything in `withDbGuard`); the removed disk-JSON store never had a
   comments store, so there was no second backend to migrate.

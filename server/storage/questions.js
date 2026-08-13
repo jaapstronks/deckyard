@@ -26,7 +26,7 @@ import { sql } from 'kysely';
 
 import { normalizeLang } from '../utils/i18n.js';
 import { sseComment, sseWrite } from '../utils/sse.js';
-import { toStorageContext } from './backend-dispatch.js';
+import { toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/db-guard.js';
 
 const HEARTBEAT_MS = 15 * 1000;

@@ -24,7 +24,7 @@ import {
 } from '../../config/sso.js';
 import { getOrCreateSsoUser } from '../../storage/sso.js';
 import { logAuthEvent } from '../../storage/password-reset.js';
-import { getClientIp, createRouteContext } from '../../utils/context.js';
+import { getClientIp, createStorageScope } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { shouldUseSecureCookies } from '../../utils/request-url.js';
 import { parseCookies } from '../../utils/cookies.js';
@@ -150,8 +150,7 @@ async function handleOidcLogin({ req, res, url }) {
 // GET /api/auth/oidc/callback
 // ============================================================
 async function handleOidcCallback({ repoRoot, req, res, url }) {
-  const ctx = createRouteContext(null);
-  ctx.repoRoot = repoRoot;
+  const ctx = createStorageScope(null, { repoRoot });
 
   if (!isSsoEnabled()) {
     return redirect(res, '/login?error=sso_disabled'), true;
@@ -203,9 +202,9 @@ async function handleOidcCallback({ repoRoot, req, res, url }) {
   }
 
   const result = await getOrCreateSsoUser(
+    ctx,
     identity,
-    { autoProvision: oidc.autoProvision, defaultRole: oidc.defaultRole },
-    ctx
+    { autoProvision: oidc.autoProvision, defaultRole: oidc.defaultRole }
   );
 
   if (!result.ok) {

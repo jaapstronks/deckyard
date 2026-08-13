@@ -75,10 +75,9 @@ and mandatory in another.
 
 `server/storage/adapters/index.js` loads the `PostgresAdapter` lazily at
 `initializeStorage()`, keeping kysely and pg out of the module graph of
-scripts that never touch storage. The DB-vs-file dispatch that used to live in
-`server/storage/backend-dispatch.js` went with the file backend's removal;
-that module now only reduces a caller's scope to an adapter context
-(`toStorageContext`).
+scripts that never touch storage. The scope-to-context reduction
+(`toStorageContext`) lives in `server/storage/scope.js` next to the scope
+validation it wraps.
 
 
 ### Real cycle-breakers — do not make these static

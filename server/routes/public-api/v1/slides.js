@@ -6,7 +6,7 @@
 import { updatePresentation } from '../../../storage/presentations/index.js';
 import { methodNotAllowed } from '../../../utils/http.js';
 import { newSlide, validateSlide, resolveSlideTypeName, canonicalSlideType } from '../../../../shared/slide-types.js';
-import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
+import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
 import { requirePermission, getPresentationWithAccess, readApiV1Body, apiSuccess, apiCreated, apiError } from './middleware.js';
 import { emailCanEditCustomHtml, customHtmlEditViolation } from '../../../utils/route-middleware.js';
 import { getOptionalString, getOptionalObject, getNonNegativeNumber } from '../../../utils/request-validators.js';
@@ -173,7 +173,7 @@ async function handleCreateSlide(ctx, presentationId) {
   // one; without it a new title slide would come out flat.
   let theme = null;
   try {
-    theme = await loadTheme(repoRoot, resolveThemeId(pres.theme));
+    theme = await loadThemeAssets(repoRoot, resolveThemeId(pres.theme));
   } catch {
     // ignore — the slide is simply created without a background image
   }

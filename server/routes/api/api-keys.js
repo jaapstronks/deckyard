@@ -18,14 +18,12 @@ import {
 } from '../../storage/api-keys.js';
 import { getUsageHistory, getTodayUsage } from '../../storage/api-usage.js';
 import { serveJson, methodNotAllowed, notFound, badRequest, requireJsonBody } from '../../utils/http.js';
-import { createRouteContext } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 // GET /api/api-keys - List user's API keys
-async function handleApiKeyList({ res, url, authedUser }) {
-  const ctx = createRouteContext(authedUser);
+async function handleApiKeyList({ storageScope, res, url, authedUser }) {
   const includeRevoked = url.searchParams.get('includeRevoked') === 'true';
-  const result = await listApiKeys({ includeRevoked }, ctx);
+  const result = await listApiKeys(storageScope, { includeRevoked });
 
   if (!result.ok) {
     return badRequest(res, result.reason || 'Failed to list API keys');
@@ -39,19 +37,18 @@ async function handleApiKeyList({ res, url, authedUser }) {
 }
 
 // POST /api/api-keys - Create a new API key
-async function handleApiKeyCreate({ req, res, authedUser }) {
-  const ctx = createRouteContext(authedUser);
+async function handleApiKeyCreate({ storageScope, req, res, authedUser }) {
   // An empty body is a legitimate "create a key with the defaults".
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
   if (!parsed.ok) return true;
 
   const { name, permissions } = parsed.body || {};
 
-  const result = await createApiKey({
+  const result = await createApiKey(storageScope, {
     name: name || 'API Key',
     ownerEmail: authedUser.email,
     permissions: permissions || ['read', 'write'],
-  }, ctx);
+  });
 
   if (!result.ok) {
     const messages = {
@@ -77,11 +74,10 @@ async function handleApiKeyCreate({ req, res, authedUser }) {
 }
 
 // GET /api/api-keys/:id/usage - Get usage statistics
-async function handleApiKeyUsage({ res, url, authedUser }, keyId) {
-  const ctx = createRouteContext(authedUser);
+async function handleApiKeyUsage({ storageScope, res, url, authedUser }, keyId) {
 
   // Verify the key belongs to the user
-  const keyResult = await getApiKeyById(keyId, ctx);
+  const keyResult = await getApiKeyById(storageScope, keyId);
   if (!keyResult.ok) {
     return notFound(res, 'API key not found');
   }
@@ -115,9 +111,8 @@ async function handleApiKeyUsage({ res, url, authedUser }, keyId) {
 }
 
 // GET /api/api-keys/:id - Get API key details
-async function handleApiKeyGet({ res, authedUser }, keyId) {
-  const ctx = createRouteContext(authedUser);
-  const result = await getApiKeyById(keyId, ctx);
+async function handleApiKeyGet({ storageScope, res, authedUser }, keyId) {
+  const result = await getApiKeyById(storageScope, keyId);
 
   if (!result.ok) {
     return notFound(res, 'API key not found');
@@ -138,9 +133,8 @@ async function handleApiKeyGet({ res, authedUser }, keyId) {
 }
 
 // DELETE /api/api-keys/:id - Revoke an API key
-async function handleApiKeyRevoke({ res, authedUser }, keyId) {
-  const ctx = createRouteContext(authedUser);
-  const result = await revokeApiKey(keyId, authedUser.email, ctx);
+async function handleApiKeyRevoke({ storageScope, res, authedUser }, keyId) {
+  const result = await revokeApiKey(storageScope, keyId, authedUser.email);
 
   if (!result.ok) {
     const messages = {

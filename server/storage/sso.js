@@ -13,6 +13,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
+import { toStorageContext } from './scope.js';
 import { getUserByEmailGlobal } from './identity.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
 import { sessionVersion } from '../utils/session-version.js';
@@ -35,16 +36,17 @@ function getAdminEmail() {
  * is done through the admin-users UI. New users are provisioned at
  * `defaultRole` unless the identity is admin.
  *
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {{ email: string, name?: string, isAdmin?: boolean }} identity - From
  *   {@link mapClaimsToIdentity}.
  * @param {object} opts
  * @param {boolean} opts.autoProvision - When false, unknown users are rejected
  *   rather than created.
  * @param {string} opts.defaultRole - Role for newly provisioned users ('user'|'admin').
- * @param {object} ctx - Route context (repoRoot, req) for org resolution.
  * @returns {Promise<{ ok: true, user: object, provisioned: boolean } | { ok: false, reason: string }>}
  */
-export async function getOrCreateSsoUser(identity, opts, ctx) {
+export async function getOrCreateSsoUser(scope, identity, opts) {
+  toStorageContext(scope, 'getOrCreateSsoUser');
   const email = normalizeEmail(identity?.email);
   if (!email || !email.includes('@')) {
     return { ok: false, reason: 'invalid_email' };
@@ -55,7 +57,7 @@ export async function getOrCreateSsoUser(identity, opts, ctx) {
   const defaultRole = opts?.defaultRole === 'admin' ? 'admin' : 'user';
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     // Resolved across organizations: the IdP asserts an email, and that email

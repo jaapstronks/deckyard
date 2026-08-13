@@ -59,7 +59,7 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
    * The storage scope for one collab document. Preferred source is the
    * organization mount.js recorded when it authorized the connection; the
    * bootstrap read fills it in as a backstop. A deck with no organization at all
-   * means the file backend, which multi-organization mode refuses outright — so falling
+   * predates the Postgres migration, which multi-organization mode refuses outright — so falling
    * back to the single organization there is exact, and throws if there ever is
    * more than one.
    */
