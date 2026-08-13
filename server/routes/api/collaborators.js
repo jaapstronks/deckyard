@@ -22,7 +22,7 @@ import { listUsers } from '../../storage/users.js';
 import { sendCollaboratorInviteEmail } from '../../integrations/brevo.js';
 import { canManageCollaborators } from '../../utils/presentation-authz.js';
 import { dispatchRoutes } from '../../utils/router.js';
-import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, jsonError, serverError, getErrorStatus, withErrorHandler } from '../../utils/http.js';
+import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, jsonError, getErrorStatus, withErrorHandler } from '../../utils/http.js';
 import { validatePermission } from '../../utils/request-validators.js';
 import { createNotification } from '../../storage/notifications.js';
 import { broadcastToUser, NotificationEventTypes } from '../../services/notification-events.js';

@@ -9,7 +9,7 @@
  */
 
 import sharp from 'sharp';
-import { badRequest, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError, serverError, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import { badRequest, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { writeUserSettings } from '../../storage/settings.js';
 import { getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
 import { getFeatureFlags } from '../../config/flags-snapshot.js';

@@ -3,7 +3,7 @@
  * All routes are guarded by the MULTI_ORG_ENABLED feature flag.
  */
 
-import { serveJson, badRequest, unauthorized, forbidden, notFound, serverError, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import { serveJson, badRequest, unauthorized, forbidden, notFound, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
 import { normalizeEmail } from '../../utils/normalize.js';

@@ -4,7 +4,7 @@
  */
 
 import { updateSessionOrganization } from '../../auth/auth.js';
-import { serveJson, badRequest, unauthorized, forbidden, notFound, serverError, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import { serveJson, badRequest, unauthorized, forbidden, notFound, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
@@ -19,8 +19,6 @@ import {
   isDefaultOrganization,
 } from '../../storage/user-organizations/index.js';
 import { getUserByEmailGlobal } from '../../storage/identity.js';
-import { createLogger } from '../../utils/logger.js';
-const log = createLogger('organizations');
 
 // ============================================================
 // HELPERS

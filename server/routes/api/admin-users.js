@@ -3,7 +3,7 @@
  * Allows admins to list, create, update, and delete users.
  */
 
-import { serveJson, badRequest, unauthorized, notFound, serverError, rateLimited, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import { serveJson, badRequest, unauthorized, notFound, rateLimited, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { getClientIp, getOrgId } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';

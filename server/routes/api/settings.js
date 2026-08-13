@@ -1,4 +1,4 @@
-import { methodNotAllowed, serveJson, unauthorized, serverError, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import { methodNotAllowed, serveJson, unauthorized, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { getStringArray } from '../../utils/request-validators.js';
 import {
   getAppSettings,
@@ -15,9 +15,7 @@ import {
 import { getOrgSettings } from '../../utils/org-settings.js';
 import { canManage } from '../../utils/route-middleware.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
-import { createLogger } from '../../utils/logger.js';
 import { dispatchRoutes } from '../../utils/router.js';
-const log = createLogger('settings');
 
 /**
  * Whether this user may write the organization-level admin settings keys.
