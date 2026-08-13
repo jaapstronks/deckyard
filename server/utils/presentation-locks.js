@@ -2,13 +2,14 @@ import { isDatabaseAvailable } from '../db/client.js';
 import * as dbLocks from '../storage/presentation-locks.js';
 import { matchesIdentity } from '../../shared/identity-match.js';
 import { norm } from './normalize.js';
+import { envBool } from '../config/utils.js';
 
 const LOCK_TTL_MS = 2 * 60 * 1000;
 
 // Feature flag to use database locks when available
 // Set USE_DB_LOCKS=true to enable persistent locks
 function useDbLocks() {
-  return process.env.USE_DB_LOCKS === 'true' && isDatabaseAvailable();
+  return envBool('USE_DB_LOCKS') && isDatabaseAvailable();
 }
 
 // In-process advisory locks. This is intentionally ephemeral:

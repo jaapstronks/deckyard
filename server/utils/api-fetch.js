@@ -1,6 +1,8 @@
 /**
  * Shared utilities for fetching from external APIs with standardized error handling.
  */
+import { envStr } from '../config/utils.js';
+
 
 /**
  * Fetch from an external API with standardized error handling.
@@ -27,5 +29,5 @@ export async function apiFetch(url, serviceName, options = {}) {
  * @returns {Function} - Function that returns true if the env var is set
  */
 export function createConfigChecker(envVarName) {
-  return () => !!process.env[envVarName];
+  return () => envStr(envVarName) !== '';
 }

@@ -40,7 +40,7 @@ isolation model in [`tenant-isolation.md`](tenant-isolation.md).
   `/og/sandbox.png` social preview.
 - `server/config/storage-paths.js` — redirects data/uploads dirs to sandbox
   variants when enabled.
-- `server/config/feature-flags.js` — forces `disableAi` and `disableUploads` on
+- `server/config/flags-snapshot.js` — forces `disableAi` and `disableUploads` on
   in sandbox.
 
 ## What changes when sandbox mode is on
@@ -122,7 +122,7 @@ Central config: `server/config/sandbox.js` (all env-driven).
 | `SANDBOX_MAX_TOTAL_BYTES` | Global soft ceiling (warn only) | off |
 
 Setting `SANDBOX_MODE` also forces `disableAi` and `disableUploads` on
-(`server/config/feature-flags.js`), independent of `DISABLE_AI` / `DISABLE_UPLOADS`.
+(`server/config/flags-snapshot.js`), independent of `DISABLE_AI` / `DISABLE_UPLOADS`.
 Not to be confused with `PUPPETEER_SANDBOX` — that is the Chromium OS sandbox for
 export rendering, unrelated to this feature.
 

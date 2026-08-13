@@ -55,7 +55,7 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
 // The expensive-op bucket the GDPR endpoints use; its capacity bounds the
 // rate-limit tests below without hard-coding the number twice.
-const { AUTH_RATE_LIMITS } = await import('../server/analytics/helpers.js');
+const { AUTH_RATE_LIMITS } = await import('../server/config/rate-limits.js');
 const { handleExportMyData, handleDeleteMyData } = await import(
   '../server/routes/api/analytics/gdpr.js'
 );

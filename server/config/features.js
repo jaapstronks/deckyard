@@ -1,23 +1,20 @@
 /**
- * Feature configuration for multi-organization support.
- * These features are gated by environment variables.
+ * Feature flag declarations — the single place where a feature env var is
+ * read. Every flag is a call-time function (never a module-load constant) so
+ * `.env` loading order can't bite; `config/flags-snapshot.js` aggregates
+ * these into the client-facing snapshot.
  */
 
-import { truthy } from './utils.js';
+import { envBool } from './utils.js';
 
 /**
- * Multi-organization mode configuration.
+ * Multi-organization mode.
  * When enabled, an instance can hold several organizations that users can create and switch between (the UI labels an organization "Workspace").
  * When disabled (default), the system operates in single-organization mode using the default organization.
- */
-export const MULTI_ORG_ENABLED = truthy(process.env.MULTI_ORG_ENABLED);
-
-/**
- * Check if multi-organization features are enabled.
  * @returns {boolean}
  */
 export function isMultiOrgEnabled() {
-  return MULTI_ORG_ENABLED;
+  return envBool('MULTI_ORG_ENABLED');
 }
 
 /**
@@ -25,7 +22,7 @@ export function isMultiOrgEnabled() {
  * Use this to protect routes that should only be available in multi-organization mode.
  */
 export function requireMultiOrg() {
-  if (!MULTI_ORG_ENABLED) {
+  if (!isMultiOrgEnabled()) {
     const error = new Error('Multi-organization features are not enabled');
     error.statusCode = 403;
     throw error;
@@ -33,18 +30,17 @@ export function requireMultiOrg() {
 }
 
 /**
- * Live data sources configuration.
+ * Live data sources.
  * When enabled, slides can connect to external data sources (Notion, CSV, etc.)
  * and display live or periodically refreshed data.
+ * @returns {boolean}
  */
-export const LIVE_DATA_ENABLED = truthy(process.env.LIVE_DATA_ENABLED);
-
 export function isLiveDataEnabled() {
-  return LIVE_DATA_ENABLED;
+  return envBool('LIVE_DATA_ENABLED');
 }
 
 export function requireLiveData() {
-  if (!LIVE_DATA_ENABLED) {
+  if (!isLiveDataEnabled()) {
     const error = new Error('Live data source features are not enabled');
     error.statusCode = 403;
     throw error;
@@ -56,10 +52,10 @@ export function requireLiveData() {
  * When enabled, the server mounts a Yjs/Hocuspocus WebSocket endpoint at
  * /collab and the editor shows live collaborator presence. Default: off —
  * single-user installs run without any collaboration transport.
- * Read at call time (not module load) so .env loading order can't bite.
+ * @returns {boolean}
  */
 export function isCollabEnabled() {
-  return truthy(process.env.COLLAB_ENABLED);
+  return envBool('COLLAB_ENABLED');
 }
 
 /**
@@ -68,9 +64,10 @@ export function isCollabEnabled() {
  * while a deck is open collaboratively — persisted server-side and
  * serialized back to the deck JSON. Requires COLLAB_ENABLED; kept as a
  * separate flag so presence can ship and soak alone. Default: off.
+ * @returns {boolean}
  */
 export function isCollabLiveEditsEnabled() {
-  return isCollabEnabled() && truthy(process.env.COLLAB_LIVE_EDITS);
+  return isCollabEnabled() && envBool('COLLAB_LIVE_EDITS');
 }
 
 /**
@@ -78,12 +75,54 @@ export function isCollabLiveEditsEnabled() {
  * When enabled, organizations can activate RSS/Atom/JSON feeds for published presentations.
  * Default: true (enabled). The env var is a kill switch for instances that don't want the feature.
  * The org-level toggle (settings.rss.enabled) is the real user-facing gate.
+ * @returns {boolean}
  */
-export const RSS_FEED_ENABLED =
-  process.env.RSS_FEED_ENABLED === undefined
-    ? true
-    : truthy(process.env.RSS_FEED_ENABLED);
-
 export function isRssFeedEnabled() {
-  return RSS_FEED_ENABLED;
+  return envBool('RSS_FEED_ENABLED', true);
+}
+
+/**
+ * Demo mode: a read-mostly showcase install (sample decks, no AI, no
+ * uploads). @returns {boolean}
+ */
+export function isDemoMode() {
+  return envBool('DEMO_MODE');
+}
+
+/**
+ * ImageKit-only media: the instance serves images exclusively from the
+ * ImageKit DAM — local uploads and the image library are off.
+ * @returns {boolean}
+ */
+export function isImagekitOnly() {
+  return envBool('IMAGEKIT_ONLY');
+}
+
+/**
+ * Kill switch for all AI features (generation, refinement, alt-text).
+ * @returns {boolean}
+ */
+export function isAiDisabled() {
+  return envBool('DISABLE_AI');
+}
+
+/**
+ * Kill switch for file uploads. @returns {boolean}
+ */
+export function isUploadsDisabled() {
+  return envBool('DISABLE_UPLOADS');
+}
+
+/**
+ * Kill switch for the built-in image library. @returns {boolean}
+ */
+export function isImageLibraryDisabled() {
+  return envBool('DISABLE_IMAGE_LIBRARY');
+}
+
+/**
+ * Notion import/export integration. Default: off. @returns {boolean}
+ */
+export function isNotionFeatureEnabled() {
+  return envBool('NOTION_FEATURE');
 }

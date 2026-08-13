@@ -166,7 +166,7 @@ subtly wrong today, and fundamentally incompatible with concurrent editing.
   rate-limiting + job queues only — there is **no cross-instance pub/sub**;
   all live state is process-local Maps. Deckyard is effectively
   single-instance for realtime (known limitation; unchanged by this plan).
-- **Feature flags**: `server/config/feature-flags.js` aggregates flags exposed
+- **Feature flags**: `server/config/flags-snapshot.js` aggregates flags exposed
   to the client (`client/lib/features.js`). A `collab` flag slots straight in.
 - **Tests**: `node --test`; best templates are `tests/mcp/mcp-sse.test.js`
   (transport mounted on the HTTP server) and

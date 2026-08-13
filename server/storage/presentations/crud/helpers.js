@@ -6,6 +6,7 @@ import { normalizePresentationVisibility } from '../../../utils/presentation-aut
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { ConflictError, LockedError } from '../../../utils/errors.js';
 import { slideFingerprint } from '../../../../shared/slide-fingerprint.js';
+import { envBool } from '../../../config/utils.js';
 
 /**
  * Normalize presentation metadata.
@@ -58,7 +59,7 @@ export function lockedError(lock) {
  * Check if enforced locks are enabled.
  */
 export function useEnforcedLocks() {
-  return process.env.USE_DB_LOCKS === 'true';
+  return envBool('USE_DB_LOCKS');
 }
 
 // The slide-level merge exists for seconds-to-minutes concurrent editing.

@@ -1,16 +1,4 @@
-function boolEnv(key, defaultValue = false) {
-  const v = process.env[key];
-  if (v == null) return !!defaultValue;
-  const s = String(v).trim().toLowerCase();
-  if (!s) return !!defaultValue;
-  return s === '1' || s === 'true' || s === 'yes' || s === 'on';
-}
-
-function strEnv(key) {
-  const v = process.env[key];
-  const s = String(v == null ? '' : v).trim();
-  return s || '';
-}
+import { envBool, envStr } from '../config/utils.js';
 
 function escAttr(s) {
   return String(s || '')
@@ -150,26 +138,26 @@ export function analyticsHeadHtml({
   sandbox = false,
   settings = null,
 } = {}) {
-  if (boolEnv('DISABLE_ANALYTICS', false)) return '';
-  if (sandbox && !boolEnv('ANALYTICS_ALLOW_IN_SANDBOX', false)) return '';
-  if (context === 'embed' && !boolEnv('ANALYTICS_INCLUDE_EMBEDS', false))
+  if (envBool('DISABLE_ANALYTICS', false)) return '';
+  if (sandbox && !envBool('ANALYTICS_ALLOW_IN_SANDBOX', false)) return '';
+  if (context === 'embed' && !envBool('ANALYTICS_INCLUDE_EMBEDS', false))
     return '';
-  if (context === 'export' && !boolEnv('ANALYTICS_INCLUDE_EXPORTS', false))
+  if (context === 'export' && !envBool('ANALYTICS_INCLUDE_EXPORTS', false))
     return '';
 
   const out = [];
   const providers = settings?.analytics?.externalProviders || null;
 
   // Escape hatch: custom snippet (env vars only, not UI-configurable)
-  const customB64 = safeB64ToUtf8(strEnv('ANALYTICS_HEAD_HTML_B64'));
-  const customRaw = strEnv('ANALYTICS_HEAD_HTML');
+  const customB64 = safeB64ToUtf8(envStr('ANALYTICS_HEAD_HTML_B64'));
+  const customRaw = envStr('ANALYTICS_HEAD_HTML');
   const custom = customB64 || customRaw;
   if (custom) {
     out.push(`<!-- Analytics: custom head HTML -->\n${custom}`);
   }
 
   // Google Tag Manager (GTM) - env vars only
-  const gtmId = strEnv('GTM_CONTAINER_ID');
+  const gtmId = envStr('GTM_CONTAINER_ID');
   if (gtmId) {
     out.push(buildGtmHtml({ containerId: gtmId }));
   }
@@ -187,15 +175,15 @@ export function analyticsHeadHtml({
     }));
   } else {
     // Fall back to env vars
-    const matomoUrl = strEnv('MATOMO_URL').replace(/\/+$/, '');
-    const matomoSiteId = strEnv('MATOMO_SITE_ID');
+    const matomoUrl = envStr('MATOMO_URL').replace(/\/+$/, '');
+    const matomoSiteId = envStr('MATOMO_SITE_ID');
     if (matomoUrl && matomoSiteId) {
       out.push(buildMatomoHtml({
         url: matomoUrl,
         siteId: matomoSiteId,
-        disableCookies: boolEnv('MATOMO_DISABLE_COOKIES', true),
-        requireConsent: boolEnv('MATOMO_REQUIRE_CONSENT', false),
-        trackLinks: boolEnv('MATOMO_TRACK_LINKS', true),
+        disableCookies: envBool('MATOMO_DISABLE_COOKIES', true),
+        requireConsent: envBool('MATOMO_REQUIRE_CONSENT', false),
+        trackLinks: envBool('MATOMO_TRACK_LINKS', true),
       }));
     }
   }
@@ -210,11 +198,11 @@ export function analyticsHeadHtml({
     }));
   } else {
     // Fall back to env vars
-    const plausibleDomain = strEnv('PLAUSIBLE_DOMAIN');
+    const plausibleDomain = envStr('PLAUSIBLE_DOMAIN');
     if (plausibleDomain) {
       out.push(buildPlausibleHtml({
         domain: plausibleDomain,
-        url: strEnv('PLAUSIBLE_URL'),
+        url: envStr('PLAUSIBLE_URL'),
       }));
     }
   }
@@ -229,11 +217,11 @@ export function analyticsHeadHtml({
     }));
   } else {
     // Fall back to env vars
-    const umamiWebsiteId = strEnv('UMAMI_WEBSITE_ID');
+    const umamiWebsiteId = envStr('UMAMI_WEBSITE_ID');
     if (umamiWebsiteId) {
       out.push(buildUmamiHtml({
         websiteId: umamiWebsiteId,
-        url: strEnv('UMAMI_URL'),
+        url: envStr('UMAMI_URL'),
       }));
     }
   }
@@ -247,7 +235,7 @@ export function analyticsHeadHtml({
     }));
   } else {
     // Fall back to env vars
-    const ga4MeasurementId = strEnv('GA4_MEASUREMENT_ID');
+    const ga4MeasurementId = envStr('GA4_MEASUREMENT_ID');
     if (ga4MeasurementId) {
       out.push(buildGa4Html({
         measurementId: ga4MeasurementId,

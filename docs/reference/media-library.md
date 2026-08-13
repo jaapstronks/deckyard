@@ -162,7 +162,7 @@ logo, or an avatar) that points at it.
 | `UNSPLASH_ACCESS_KEY` | `integrations/unsplash.js` | Enables Unsplash search/import. |
 | `GIPHY_API_KEY` | `integrations/giphy.js` | Enables Giphy search/trending/import. |
 
-Feature flags (`server/config/feature-flags.js`):
+Feature flags (`server/config/flags-snapshot.js`):
 
 | Flag | Effect |
 |---|---|

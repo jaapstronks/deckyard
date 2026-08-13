@@ -5,11 +5,11 @@
 import { getClientIp, allowRequest } from '../../../utils/rate-limit.js';
 import { dispatchRoutes } from '../../../utils/router.js';
 import {
-  AUTH_RATE_LIMITS,
   sendRateLimitResponse,
   logSecurityEvent,
   SECURITY_EVENTS,
 } from '../../../analytics/helpers.js';
+import { AUTH_RATE_LIMITS } from '../../../config/rate-limits.js';
 import { handleDashboard, handlePresentationsList } from './dashboard.js';
 import { handleOverview, handleSlides, handleHeatmap, handleJourney, handleSessions } from './metrics.js';
 import { handleRealtime } from './realtime.js';

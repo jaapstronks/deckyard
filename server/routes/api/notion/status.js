@@ -4,7 +4,7 @@
  */
 
 import { serveJson } from '../../../utils/http.js';
-import { getFeatureFlags } from '../../../config/feature-flags.js';
+import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import { notionEnabled } from '../../../utils/notion.js';
 
 /**

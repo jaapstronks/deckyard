@@ -25,15 +25,7 @@ import { maybeFireLeadWebhook } from '../../utils/webhooks.js';
 import { maybeSendLeadNotification } from '../../integrations/email/senders-leads.js';
 import crypto from 'node:crypto';
 import { crossOrganizationScope } from '../../storage/scope.js';
-
-// Rate limits for public lead submission.
-// Token bucket: capacity = burst, refillPerSec = sustained rate. The limiter
-// reads { capacity, refillPerSec }; the older { limit, windowMs } shape read as
-// undefined/undefined and clamped every bucket to capacity 1 / 1 rps.
-const LEAD_RATE_LIMITS = {
-  perIp: { capacity: 10, refillPerSec: 0.167 }, // 10 burst, ~10 per minute per IP
-  global: { capacity: 100, refillPerSec: 1.667 }, // 100 burst, ~100 per minute globally
-};
+import { LEAD_RATE_LIMITS } from '../../config/rate-limits.js';
 
 // GDPR verification tokens (in-memory, short-lived)
 // In production, use Redis or similar for multi-instance support

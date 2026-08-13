@@ -12,7 +12,7 @@
  */
 
 import { dispatchRoutes } from '../../utils/router.js';
-import { getFeatureFlags } from '../../config/feature-flags.js';
+import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import {
   handleNotionStatus,
   handleNotionFetch,

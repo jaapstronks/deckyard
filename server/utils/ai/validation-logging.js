@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nowIso } from '../normalize.js';
+import { envBool } from '../../config/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,7 +21,7 @@ const __dirname = path.dirname(__filename);
 const LOG_DIR = path.resolve(__dirname, '../../logs/ai-validation');
 
 // Enable/disable via environment variable (default: enabled)
-const ENABLED = process.env.AI_VALIDATION_LOGGING !== 'false';
+const ENABLED = envBool('AI_VALIDATION_LOGGING', true);
 
 // How long to keep log files (in days)
 const LOG_RETENTION_DAYS = 30;

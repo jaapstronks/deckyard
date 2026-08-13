@@ -17,7 +17,7 @@ import {
   unauthorized,
   requireJsonBody,
 } from '../../utils/http.js';
-import { getFeatureFlags } from '../../config/feature-flags.js';
+import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { generateImageAltTexts } from '../../utils/llm/alt-text.js';
 import { listSandboxMedia } from '../../sandbox/media.js';

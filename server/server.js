@@ -12,8 +12,9 @@ import { storageModeError } from './config/database.js';
 import { publicUrlWarnings } from './config/utils.js';
 import { handleApi } from './routes/api.js';
 import { handleStatic } from './routes/static.js';
-import { getFeatureFlags } from './config/feature-flags.js';
+import { getFeatureFlags } from './config/flags-snapshot.js';
 import { allowRequest, getClientIp } from './utils/rate-limit.js';
+import { REQUEST_LIMITS } from './config/rate-limits.js';
 import { applySecurityHeaders } from './utils/security-headers.js';
 import { buildTopLevelErrorBody } from './utils/error-response.js';
 import { createLogger } from './utils/logger.js';
@@ -89,16 +90,8 @@ const server = http.createServer(async (req, res) => {
       else if (p.startsWith('/api/follow/') && method === 'POST')
         group = 'follow_post';
 
-      const LIMITS = {
-        export: { capacity: 8, refillPerSec: 0.25 }, // ~15/min
-        publish: { capacity: 6, refillPerSec: 0.2 }, // ~12/min
-        create: { capacity: 6, refillPerSec: 0.2 }, // ~12/min
-        update: { capacity: 30, refillPerSec: 1 }, // ~60/min
-        follow_post: { capacity: 20, refillPerSec: 1 }, // ~60/min
-      };
-
-      if (group && LIMITS[group]) {
-        const ok = await allowRequest(`${ip}:${group}`, LIMITS[group]);
+      if (group && REQUEST_LIMITS[group]) {
+        const ok = await allowRequest(`${ip}:${group}`, REQUEST_LIMITS[group]);
         if (!ok) {
           res.writeHead(429, {
             'Content-Type': 'application/json; charset=utf-8',

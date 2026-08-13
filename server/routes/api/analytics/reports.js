@@ -8,13 +8,13 @@ import { parsePaginationParams } from '../../../utils/request-validators.js';
 import { allowRequest, getClientIp } from '../../../utils/rate-limit.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import {
-  AUTH_RATE_LIMITS,
   sendRateLimitResponse,
   sendErrorResponse,
   sendSuccessResponse,
   logSecurityEvent,
   SECURITY_EVENTS,
 } from '../../../analytics/helpers.js';
+import { AUTH_RATE_LIMITS } from '../../../config/rate-limits.js';
 import {
   createAnalyticsReport,
   getAnalyticsReport,

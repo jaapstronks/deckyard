@@ -1,6 +1,6 @@
 import { getPresentation, updatePresentation } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
-import { getFeatureFlags } from '../../../config/feature-flags.js';
+import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import { translatePresentationStrings } from '../../../utils/ai.js';
 import {
   badRequest,

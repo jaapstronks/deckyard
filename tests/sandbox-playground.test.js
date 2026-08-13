@@ -21,7 +21,7 @@ import path from 'node:path';
 import { handlePublish } from '../server/routes/api/publish.js';
 import { uploadsDir } from '../server/config/storage-paths.js';
 import { writeUploadedFile } from '../server/storage/uploads.js';
-import { getFeatureFlags } from '../server/config/feature-flags.js';
+import { getFeatureFlags } from '../server/config/flags-snapshot.js';
 import { listThemeIds, listCoreThemeIds } from '../server/utils/themes.js';
 import { listSandboxExamples } from '../server/sandbox/examples.js';
 import { listSandboxMedia } from '../server/sandbox/media.js';

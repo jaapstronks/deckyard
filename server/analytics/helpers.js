@@ -39,40 +39,6 @@ export const ANALYTICS_CONFIG = {
 };
 
 // ============================================================
-// RATE LIMITING CONFIGURATION
-// ============================================================
-
-/**
- * Rate limits for tracking endpoints.
- * Uses token bucket algorithm with capacity (burst) and refill rate.
- */
-export const TRACKING_RATE_LIMITS = {
-  // Per-IP limits for public tracking endpoints
-  sessionStart: { capacity: 10, refillPerSec: 0.5 }, // 10 burst, 1 per 2 seconds
-  heartbeat: { capacity: 20, refillPerSec: 2 },      // 20 burst, 2 per second
-  sessionEnd: { capacity: 10, refillPerSec: 1 },     // 10 burst, 1 per second
-  slideView: { capacity: 30, refillPerSec: 3 },      // 30 burst, 3 per second
-
-  // Per-session rate limits (more restrictive)
-  sessionHeartbeat: { capacity: 5, refillPerSec: 0.5 },  // 5 burst, 1 per 2 seconds
-  sessionSlideView: { capacity: 10, refillPerSec: 1 },   // 10 burst, 1 per second
-};
-
-/**
- * Rate limits for authenticated analytics endpoints.
- */
-export const AUTH_RATE_LIMITS = {
-  // Standard authenticated endpoints (per user)
-  standard: { capacity: 60, refillPerSec: 1 }, // 60 burst, 1 per second
-
-  // Expensive operations (reports, exports)
-  expensive: { capacity: 10, refillPerSec: 0.2 }, // 10 burst, 1 per 5 seconds
-
-  // Public report access (prevent token enumeration)
-  publicReport: { capacity: 10, refillPerSec: 0.2 }, // 10 burst, 1 per 5 seconds
-};
-
-// ============================================================
 // VALIDATION PATTERNS
 // ============================================================
 
