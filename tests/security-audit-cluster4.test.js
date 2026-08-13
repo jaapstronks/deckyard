@@ -165,7 +165,6 @@ function seedSession(root, sessionId, presentationId, extra = {}) {
     createdAt: 1,
     lastActivityAt: Date.now(),
     clients: new Set(),
-    heartbeatTimers: new Map(),
     persistTimer: null,
     ...extra,
   };
