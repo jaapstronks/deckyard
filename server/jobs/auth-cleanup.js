@@ -12,6 +12,9 @@ import {
   cleanupExpiredTokens as cleanupPasswordResetTokens,
   cleanupOldAuditLogs,
 } from '../storage/password-reset.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('auth-cleanup');
 
 // ============================================================
 // CONFIGURATION
@@ -31,21 +34,21 @@ const DEFAULT_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
  * @returns {Promise<{magicLinkTokens: number, passwordResetTokens: number, auditLogs: number}>}
  */
 async function runAuthCleanup() {
-  console.log('[auth-cleanup] Starting cleanup');
+  log.info('Starting cleanup');
 
   // Clean up expired magic link tokens
   const magicLinkTokens = await cleanupMagicLinkTokens();
-  console.log(`[auth-cleanup] Deleted ${magicLinkTokens} expired magic link tokens`);
+  log.info(`Deleted ${magicLinkTokens} expired magic link tokens`);
 
   // Clean up expired password reset tokens
   const passwordResetTokens = await cleanupPasswordResetTokens();
-  console.log(`[auth-cleanup] Deleted ${passwordResetTokens} expired password reset tokens`);
+  log.info(`Deleted ${passwordResetTokens} expired password reset tokens`);
 
   // Clean up old audit logs (90+ days)
   const auditLogs = await cleanupOldAuditLogs();
-  console.log(`[auth-cleanup] Deleted ${auditLogs} old audit log entries`);
+  log.info(`Deleted ${auditLogs} old audit log entries`);
 
-  console.log('[auth-cleanup] Cleanup complete');
+  log.info('Cleanup complete');
 
   return {
     magicLinkTokens,
@@ -67,7 +70,7 @@ export function scheduleAuthCleanup({ intervalMs = DEFAULT_INTERVAL_MS } = {}) {
 
   async function runJob() {
     if (isRunning) {
-      console.log('[auth-cleanup] Job already running, skipping');
+      log.info('Job already running, skipping');
       return;
     }
 
@@ -75,7 +78,7 @@ export function scheduleAuthCleanup({ intervalMs = DEFAULT_INTERVAL_MS } = {}) {
     try {
       await runAuthCleanup();
     } catch (err) {
-      console.error('[auth-cleanup] Job failed:', err.message);
+      log.error('Job failed:', err.message);
     } finally {
       isRunning = false;
     }

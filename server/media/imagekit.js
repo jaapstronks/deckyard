@@ -1,4 +1,7 @@
 import { cleanStr } from '../../shared/string-utils.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('ImageKit');
 
 function cleanFolder(v) {
   const s = cleanStr(v);
@@ -301,7 +304,7 @@ export async function uploadImageKitBuffer({
 export async function uploadImageKitUrl(imageUrl, fileName, options = {}) {
   const cfg = getImageKitConfigFromEnv();
   if (!cfg.configured) {
-    console.log('[ImageKit] Not configured, returning original URL');
+    log.info('Not configured, returning original URL');
     return imageUrl;
   }
 
@@ -332,7 +335,7 @@ export async function uploadImageKitUrl(imageUrl, fileName, options = {}) {
 
     return result?.url || imageUrl;
   } catch (e) {
-    console.error(`[ImageKit] Failed to upload from URL: ${e.message}`);
+    log.error(`Failed to upload from URL: ${e.message}`);
     // Return original URL as fallback
     return imageUrl;
   }

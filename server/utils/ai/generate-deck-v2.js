@@ -15,6 +15,9 @@ import { createSessionLogger, generateSessionId } from './logging.js';
 import { validateAndFixRefinedSlides } from './validate-slides.js';
 import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
 import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('DeckGen V2');
 
 /**
  * Assemble the final deck from refined slides
@@ -104,13 +107,13 @@ export async function generateDeckV2(rawContent, {
   const sessionId = generateSessionId();
   const logger = enableLogging ? createSessionLogger(sessionId) : null;
 
-  console.log(`[DeckGen V2] Starting session ${sessionId}`);
+  log.info(`Starting session ${sessionId}`);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 1: Generate Outline
   // ═══════════════════════════════════════════════════════════════════════════
 
-  console.log('[DeckGen V2] Phase 1: Generating outline...');
+  log.info('Phase 1: Generating outline...');
 
   let outline = await generateOutline(rawContent, {
     userName,
@@ -119,7 +122,7 @@ export async function generateDeckV2(rawContent, {
     onLog: logger ? (data) => logger.logPhase1(data) : null,
   });
 
-  console.log(`[DeckGen V2] Phase 1 complete: ${outline.slides.length} slides, title: "${outline.title}"`);
+  log.info(`Phase 1 complete: ${outline.slides.length} slides, title: "${outline.title}"`);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 1b: Revise the outline
@@ -131,7 +134,7 @@ export async function generateDeckV2(rawContent, {
 
   let outlineRevision = null;
   if (reviseOutlineBeforeRefine) {
-    console.log('[DeckGen V2] Phase 1b: Revising outline...');
+    log.info('Phase 1b: Revising outline...');
     const revised = await reviseOutline(outline, rawContent, {
       vendor,
       lang: outline.metadata?.requestedLang || outline.metadata?.detectedLang || 'en',
@@ -146,7 +149,7 @@ export async function generateDeckV2(rawContent, {
   // ═══════════════════════════════════════════════════════════════════════════
 
   const { structuralSlides, contentGroups } = separateSlidesForProcessing(outline.slides);
-  console.log(`[DeckGen V2] Structural slides: ${structuralSlides.length}, Content groups: ${contentGroups.length}`);
+  log.info(`Structural slides: ${structuralSlides.length}, Content groups: ${contentGroups.length}`);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 2: Refine Content Slides Only
@@ -156,7 +159,7 @@ export async function generateDeckV2(rawContent, {
   let refinedContentSlides = [];
 
   if (contentGroups.length > 0) {
-    console.log('[DeckGen V2] Phase 2: Refining content slides...');
+    log.info('Phase 2: Refining content slides...');
 
     refinedContentSlides = await refineAllSlideGroups(contentGroups, {
       lang,
@@ -172,7 +175,7 @@ export async function generateDeckV2(rawContent, {
       themeContext,
     });
 
-    console.log(`[DeckGen V2] Phase 2 complete: ${refinedContentSlides.length} content slides refined`);
+    log.info(`Phase 2 complete: ${refinedContentSlides.length} content slides refined`);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -184,7 +187,7 @@ export async function generateDeckV2(rawContent, {
     .sort((a, b) => a.originalIndex - b.originalIndex);
 
   const validatedSlides = validateAndFixRefinedSlides(allSlides);
-  console.log(`[DeckGen V2] Validation complete: ${validatedSlides.length} slides total`);
+  log.info(`Validation complete: ${validatedSlides.length} slides total`);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ASSEMBLE FINAL DECK
@@ -228,8 +231,8 @@ export async function generateDeckV2(rawContent, {
     });
   }
 
-  console.log(`[DeckGen V2] Session ${sessionId} complete in ${Date.now() - startTime}ms`);
-  console.log(`[DeckGen V2] Slide types: ${JSON.stringify(deck._generationMeta.slideTypeDistribution)}`);
+  log.info(`Session ${sessionId} complete in ${Date.now() - startTime}ms`);
+  log.info(`Slide types: ${JSON.stringify(deck._generationMeta.slideTypeDistribution)}`);
 
   return deck;
 }

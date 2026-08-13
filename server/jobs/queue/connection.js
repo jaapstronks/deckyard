@@ -12,6 +12,9 @@
  */
 
 import { isRedisConfigured, getRedisClient } from '../../utils/redis-client.js';
+import { createLogger } from '../../utils/logger.js';
+
+const log = createLogger('queue');
 
 let queues = null;
 let workers = [];
@@ -87,7 +90,7 @@ export async function initializeQueues() {
 
   initPromise = (async () => {
     if (!isRedisConfigured()) {
-      console.log('[queue] Redis not configured, using synchronous fallback');
+      log.info('Redis not configured, using synchronous fallback');
       isInitialized = true;
       return false;
     }
@@ -96,7 +99,7 @@ export async function initializeQueues() {
       // Ensure Redis connection is established first
       const redis = await getRedisClient();
       if (!redis) {
-        console.log('[queue] Redis unavailable, using synchronous fallback');
+        log.info('Redis unavailable, using synchronous fallback');
         isInitialized = true;
         return false;
       }
@@ -112,12 +115,12 @@ export async function initializeQueues() {
         [QUEUE_NAMES.HEAVY]: new Queue(QUEUE_NAMES.HEAVY, { connection }),
       };
 
-      console.log('[queue] Job queues initialized');
+      log.info('Job queues initialized');
       isInitialized = true;
       return true;
     } catch (err) {
-      console.warn('[queue] Failed to initialize:', err.message);
-      console.log('[queue] Using synchronous fallback');
+      log.warn('Failed to initialize:', err.message);
+      log.info('Using synchronous fallback');
       isInitialized = true;
       return false;
     }
@@ -200,7 +203,7 @@ export async function getJobStatus(queueName, jobId) {
       finishedOn: job.finishedOn,
     };
   } catch (err) {
-    console.warn('[queue] Error getting job status:', err.message);
+    log.warn('Error getting job status:', err.message);
     return null;
   }
 }
@@ -228,23 +231,23 @@ export async function registerWorker(queueName, processor, options = {}) {
     });
 
     worker.on('completed', (job) => {
-      console.log(`[worker:${queueName}] Job ${job.id} completed`);
+      log.info(`[worker:${queueName}] Job ${job.id} completed`);
     });
 
     worker.on('failed', (job, err) => {
-      console.error(`[worker:${queueName}] Job ${job?.id} failed:`, err.message);
+      log.error(`[worker:${queueName}] Job ${job?.id} failed:`, err.message);
     });
 
     worker.on('error', (err) => {
-      console.error(`[worker:${queueName}] Worker error:`, err.message);
+      log.error(`[worker:${queueName}] Worker error:`, err.message);
     });
 
     workers.push(worker);
-    console.log(`[worker:${queueName}] Worker registered`);
+    log.info(`[worker:${queueName}] Worker registered`);
 
     return worker;
   } catch (err) {
-    console.warn('[queue] Failed to register worker:', err.message);
+    log.warn('Failed to register worker:', err.message);
     return null;
   }
 }
@@ -259,7 +262,7 @@ export async function closeQueues() {
     try {
       await worker.close();
     } catch (err) {
-      console.warn('[queue] Error closing worker:', err.message);
+      log.warn('Error closing worker:', err.message);
     }
   }
   workers = [];
@@ -270,7 +273,7 @@ export async function closeQueues() {
       try {
         await queue.close();
       } catch (err) {
-        console.warn('[queue] Error closing queue:', err.message);
+        log.warn('Error closing queue:', err.message);
       }
     }
     queues = null;
@@ -278,7 +281,7 @@ export async function closeQueues() {
 
   isInitialized = false;
   initPromise = null;
-  console.log('[queue] Queues closed');
+  log.info('Queues closed');
 }
 
 /**
@@ -308,7 +311,7 @@ export async function getQueueStats(queueName) {
       total: waiting + active + delayed,
     };
   } catch (err) {
-    console.warn('[queue] Error getting queue stats:', err.message);
+    log.warn('Error getting queue stats:', err.message);
     return null;
   }
 }

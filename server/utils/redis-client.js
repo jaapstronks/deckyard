@@ -12,6 +12,10 @@
  * - REDIS_ENABLED: Set to 'false' to explicitly disable Redis (default: true if URL/host configured)
  */
 
+import { createLogger } from './logger.js';
+
+const log = createLogger('redis');
+
 let redisClient = null;
 let redisAvailable = null; // null = unknown, true = connected, false = unavailable
 let connectionPromise = null;
@@ -74,7 +78,7 @@ async function initializeRedis() {
       // Reconnection options
       retryStrategy(times) {
         if (times > 10) {
-          console.warn('[redis] Max reconnection attempts reached, giving up');
+          log.warn('Max reconnection attempts reached, giving up');
           return null; // Stop retrying
         }
         // Exponential backoff: 50ms, 100ms, 200ms, ... max 3s
@@ -102,35 +106,35 @@ async function initializeRedis() {
       });
     });
 
-    console.log('[redis] Connected successfully');
+    log.info('Connected successfully');
     redisAvailable = true;
     redisClient = client;
 
     // Handle connection events
     client.on('error', (err) => {
-      console.warn('[redis] Connection error:', err.message);
+      log.warn('Connection error:', err.message);
       redisAvailable = false;
     });
 
     client.on('reconnecting', () => {
-      console.log('[redis] Reconnecting...');
+      log.info('Reconnecting...');
     });
 
     client.on('ready', () => {
-      console.log('[redis] Connection restored');
+      log.info('Connection restored');
       redisAvailable = true;
     });
 
     client.on('end', () => {
-      console.log('[redis] Connection closed');
+      log.info('Connection closed');
       redisAvailable = false;
       redisClient = null;
     });
 
     return client;
   } catch (err) {
-    console.warn('[redis] Failed to connect:', err.message);
-    console.warn('[redis] Falling back to in-memory operations');
+    log.warn('Failed to connect:', err.message);
+    log.warn('Falling back to in-memory operations');
     redisAvailable = false;
     return null;
   }
@@ -188,9 +192,9 @@ export async function closeRedis() {
   if (redisClient) {
     try {
       await redisClient.quit();
-      console.log('[redis] Connection closed gracefully');
+      log.info('Connection closed gracefully');
     } catch (err) {
-      console.warn('[redis] Error during close:', err.message);
+      log.warn('Error during close:', err.message);
     }
     redisClient = null;
     redisAvailable = false;
@@ -213,7 +217,7 @@ export async function withRedis(fn, fallback) {
   try {
     return await fn(client);
   } catch (err) {
-    console.warn('[redis] Command failed:', err.message);
+    log.warn('Command failed:', err.message);
     return fallback;
   }
 }

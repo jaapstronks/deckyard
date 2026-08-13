@@ -1,5 +1,8 @@
 import { mightRedisBeAvailable } from './redis-client.js';
 import { allowRequestRedis } from './rate-limit-redis.js';
+import { createLogger } from './logger.js';
+
+const log = createLogger('rate-limit');
 
 function truthy(v) {
   const s = String(v || '').trim().toLowerCase();
@@ -79,8 +82,8 @@ export function getClientIp(req) {
       // Chain shorter than the configured hop count, or a malformed hop:
       // don't guess — fall through to X-Real-IP / socket rather than trust a
       // client-supplied leftmost value.
-      console.warn(
-        `[rate-limit] Untrusted/short X-Forwarded-For (len ${ips.length}, hops ${trustedProxyCount()})`
+      log.warn(
+        `Untrusted/short X-Forwarded-For (len ${ips.length}, hops ${trustedProxyCount()})`
       );
     }
 
@@ -194,9 +197,9 @@ export async function allowRequest(key, { capacity, refillPerSec }) {
         return result;
       }
       // Redis unavailable, fall back to memory
-      console.warn('[rate-limit] Redis unavailable, using in-memory fallback');
+      log.warn('Redis unavailable, using in-memory fallback');
     } catch (err) {
-      console.warn('[rate-limit] Redis error, falling back to memory:', err.message);
+      log.warn('Redis error, falling back to memory:', err.message);
     }
   }
 

@@ -10,6 +10,9 @@ import { createSessionLogger, generateSessionId } from '../ai/logging.js';
 import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
 import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';
 import { firstSlideIsTitle } from './helpers.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('File Convert');
 
 /**
  * Use AI V2 (two-phase) to convert the formatted content into a deck
@@ -32,7 +35,7 @@ export async function convertWithAi(formattedContent, options = {}) {
   const sessionId = generateSessionId();
   const logger = enableLogging ? createSessionLogger(sessionId) : null;
 
-  console.log(`[File Convert] Starting V2 conversion, session ${sessionId}`);
+  log.info(`Starting V2 conversion, session ${sessionId}`);
 
   // Phase 1: Generate outline from the formatted content
   // Pass the raw title from first slide (if available) so the LLM can use it
@@ -45,7 +48,7 @@ export async function convertWithAi(formattedContent, options = {}) {
     onLog: logger ? (data) => logger.logPhase1(data) : null,
   });
 
-  console.log(`[File Convert] Phase 1 complete: ${outline.slides.length} slides outlined`);
+  log.info(`Phase 1 complete: ${outline.slides.length} slides outlined`);
 
   // Get the detected language for use in Phase 2 (if lang was 'auto')
   const detectedLang = outline.metadata?.detectedLang || 'nl';
@@ -66,7 +69,7 @@ export async function convertWithAi(formattedContent, options = {}) {
 
   // Phase 2: Separate structural vs content slides (like the wizard does)
   const { structuralSlides, contentGroups } = separateSlidesForProcessing(outline.slides);
-  console.log(`[File Convert] Structural: ${structuralSlides.length}, Content groups: ${contentGroups.length}`);
+  log.info(`Structural: ${structuralSlides.length}, Content groups: ${contentGroups.length}`);
 
   // Refine content slides with presentation context
   let refinedContentSlides = [];
@@ -84,7 +87,7 @@ export async function convertWithAi(formattedContent, options = {}) {
     });
   }
 
-  console.log(`[File Convert] Phase 2 complete: ${refinedContentSlides.length} content slides refined`);
+  log.info(`Phase 2 complete: ${refinedContentSlides.length} content slides refined`);
 
   // Combine structural + content slides, sorted by original index
   const allSlides = [...structuralSlides, ...refinedContentSlides]
@@ -214,7 +217,7 @@ export async function convertWithAi(formattedContent, options = {}) {
     });
   }
 
-  console.log(`[File Convert] Session ${sessionId} complete, ${deck.slides.length} slides`);
+  log.info(`Session ${sessionId} complete, ${deck.slides.length} slides`);
 
   return deck;
 }
