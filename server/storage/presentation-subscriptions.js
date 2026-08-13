@@ -5,7 +5,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
-import { toStorageContext } from './backend-dispatch.js';
+import { toStorageContext } from './scope.js';
 import { norm, normalizeEmail, nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 

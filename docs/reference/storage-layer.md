@@ -24,10 +24,9 @@ each path resolves.
 
 **The seam (read these first):**
 
-- `server/storage/scope.js` — defines and validates storage *scopes*; the
-  tenancy gate (see *Authz & tenancy*).
-- `server/storage/backend-dispatch.js` — reduces a caller scope to the adapter's
-  `StorageContext` via `toStorageContext()`.
+- `server/storage/scope.js` — defines and validates storage *scopes*, and
+  reduces a caller scope to the adapter's `StorageContext` via
+  `toStorageContext()`; the tenancy gate (see *Authz & tenancy*).
 - `server/storage/adapters/index.js` — the adapter factory
   (`initializeStorage` / `getStorage` / `closeStorage`), a memoized singleton.
 - `server/storage/adapters/types.js` — the data-shape contract (`StorageContext`,
@@ -136,8 +135,8 @@ that one has no id beside it yet.
 ## Flows
 
 - **A scoped read/write.** Route handler builds a scope (org + actor) →
-  facade validates it through `resolveScope` (`scope.js`) → `toStorageContext`
-  (`backend-dispatch.js`) hands the adapter a `StorageContext` → the Postgres
+  facade validates it through `toStorageContext` (`scope.js`, wrapping
+  `resolveScope`), which hands the adapter a `StorageContext` → the Postgres
   mixin runs a query filtered by `organization_id`. No org on the scope and no
   declared cross-org reason → `TypeError` before any SQL.
 - **A deliberate cross-org read.** Published decks, share tokens and follow

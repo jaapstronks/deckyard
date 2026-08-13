@@ -1,7 +1,7 @@
 /**
  * Storage adapter factory.
- * PostgreSQL is the only storage backend; the file backend was removed in 1.x
- * (run `npm run db:import` once against an old data directory to move it in).
+ * PostgreSQL is the only storage backend; disk-JSON storage was removed in
+ * 1.x (run `npm run db:import` once against an old data directory to move it in).
  */
 
 import { createLogger } from '../../utils/logger.js';

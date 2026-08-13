@@ -13,7 +13,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
-import { toStorageContext } from './backend-dispatch.js';
+import { toStorageContext } from './scope.js';
 import { getUserByEmailGlobal } from './identity.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
 import { sessionVersion } from '../utils/session-version.js';

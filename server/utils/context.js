@@ -113,7 +113,7 @@ export function getOrgId(ctx) {
  * @param {Object} authedUser - The authenticated user object
  * @param {Object} [options] - Additional options
  * @param {string} [options.organizationId] - Override organization ID
- * @param {string|null} [options.repoRoot] - Repository root, for the file-backed fallback
+ * @param {string|null} [options.repoRoot] - Repository root: the disk path for uploads, thumbnails and theme files
  * @returns {Object} - Context object with organizationId, actorEmail and repoRoot
  */
 export function createRouteContext(authedUser, options = {}) {

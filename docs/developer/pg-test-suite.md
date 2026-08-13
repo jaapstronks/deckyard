@@ -67,7 +67,7 @@ There are two shapes of test:
 
 Foreign-key parents are seeded from `tests/pg/helpers/seed.js`
 (`seedDefaultOrganization`, `seedPresentation`, `seedSlideLibraryItem`): unlike
-the file backend, PostgreSQL enforces that a tag belongs to a real organization
+the disk-JSON store, PostgreSQL enforces that a tag belongs to a real organization
 and a `presentation_tags` link points at a real `presentations.id` uuid — so a
 facade test seeds real rows rather than the `'p1'`/`'s1'` string literals the
 file suite tolerated.
@@ -96,7 +96,7 @@ the same public facade the server uses in `STORAGE_MODE=postgres`.
 | `setYDocState` (postgres `presentations`) | the collab `bytea` round-trip: a `Uint8Array` stored via `Buffer.from` reads back byte-for-byte, upserting on the `presentation_id` primary key |
 | image favorites (postgres adapter) | `addImageFavorite`'s `ON CONFLICT DO NOTHING` makes a duplicate add a silent no-op on the composite PK, and the `image_id` FK cascades favorites out when the image is deleted |
 | image library usage facade | the `jsonb_path_exists` search over `slides` and `i18n` that replaced the old directory scan — whole-value, content-scoped, org- and trash-filtered — a query shape the in-memory double does not model at all |
-| settings facade | the singleton `app_settings` upsert (one jsonb bag, one row) and the per-e-mail `user_settings` upsert (migration 059) — store-raw / normalize-on-read round-trips plus the partial-write merges the file backend used to prove on disk |
+| settings facade | the singleton `app_settings` upsert (one jsonb bag, one row) and the per-e-mail `user_settings` upsert (migration 059) — store-raw / normalize-on-read round-trips plus the partial-write merges the disk-JSON store used to prove on disk |
 | follow codes | that a five-character code fits the column at all: the 001 schema declared `char(4)`, which the double (any string is any string) could never have caught, and migration 060 widened |
 | present sessions | the substrate swap: a session survives a cold process, a stale row loses to a fresher in-memory copy and a newer row wins, the `presentation_id` cascade removes sessions with their deck, and the TTL sweep spares live ones |
 | live interactions (questions, polls/likerts, feedback) | the constraints that replaced per-process Maps: `voters @> ARRAY[…]` makes a second upvote a no-op, `interaction_votes`' composite primary key makes a re-vote a replacement, `feedback`'s `(session, slide, device)` unique makes a resubmit an edit — and the `session_id` cascade that lets one sweep collect all four domains |

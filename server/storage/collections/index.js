@@ -16,7 +16,7 @@
  */
 
 import { getStorage } from '../adapters/index.js';
-import { toStorageContext } from '../backend-dispatch.js';
+import { toStorageContext } from '../scope.js';
 
 function cleanName(input) {
   return typeof input?.name === 'string' ? input.name.trim() : '';

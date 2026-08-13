@@ -1,5 +1,5 @@
 import { sseComment, sseWrite } from '../../utils/sse.js';
-import { toStorageContext } from '../backend-dispatch.js';
+import { toStorageContext } from '../scope.js';
 import { HEARTBEAT_MS } from './constants.js';
 import { schedulePersist } from './db.js';
 import { sessions } from './state.js';

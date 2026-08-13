@@ -15,8 +15,8 @@
  * The explicit byte cap adds a second gate: once a guest's *stored* bytes are
  * already over budget, no further decks are minted.
  *
- * Since sandbox runs on Postgres (the file backend is gone from every sandbox
- * deploy), the counts come from the `presentations` table, keyed on
+ * Since sandbox runs on Postgres, the counts come from the `presentations`
+ * table, keyed on
  * `owner_email` within the instance's single organization — not a directory
  * scan. `pg_column_size(slides) + pg_column_size(i18n)` is the on-disk byte
  * proxy for a deck; it is the compressed jsonb size, so an approximation of the

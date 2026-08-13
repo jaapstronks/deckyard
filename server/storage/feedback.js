@@ -24,8 +24,7 @@ import { sql } from 'kysely';
 
 import { notifyLiveSessionInteractionState } from './live-sessions/index.js';
 import { maybeFireInteractionWebhook } from '../utils/webhooks.js';
-import { toStorageContext } from './backend-dispatch.js';
-import { repoRootOf } from './scope.js';
+import { repoRootOf, toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/db-guard.js';
 import {
   ensureInteractionSlide,

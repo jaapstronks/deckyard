@@ -6,7 +6,7 @@ import crypto from 'node:crypto';
 import { norm, nowIso } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
 import { getOrgId } from '../../utils/context.js';
-import { toStorageContext } from '../backend-dispatch.js';
+import { toStorageContext } from '../scope.js';
 
 // ============================================================
 // CONSTANTS

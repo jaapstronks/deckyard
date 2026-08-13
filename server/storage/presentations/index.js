@@ -12,8 +12,7 @@
  */
 
 import { getStorage } from '../adapters/index.js';
-import { repoRootOf } from '../scope.js';
-import { toStorageContext } from '../backend-dispatch.js';
+import { repoRootOf, toStorageContext } from '../scope.js';
 import { isCollabLiveEditsEnabled } from '../../config/features.js';
 import { deleteYDocState } from '../presentation-ydocs.js';
 import { normalizeSlides } from './slides.js';

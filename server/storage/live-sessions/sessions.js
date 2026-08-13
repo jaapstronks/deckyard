@@ -1,5 +1,5 @@
 import { createFollowCode, FOLLOW_CODE_TTL_MS } from '../follow-codes.js';
-import { toStorageContext } from '../backend-dispatch.js';
+import { toStorageContext } from '../scope.js';
 import { TTL_MS } from './constants.js';
 import { sessions } from './state.js';
 import {
