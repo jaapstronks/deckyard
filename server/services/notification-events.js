@@ -119,3 +119,13 @@ export function startHeartbeat() {
   heartbeatIntervalId = setInterval(sendAllHeartbeats, HEARTBEAT_INTERVAL_MS);
   heartbeatIntervalId.unref?.(); // Don't keep process alive just for this
 }
+
+/**
+ * Stop the global heartbeat interval.
+ */
+export function stopHeartbeat() {
+  if (heartbeatIntervalId) {
+    clearInterval(heartbeatIntervalId);
+    heartbeatIntervalId = null;
+  }
+}
