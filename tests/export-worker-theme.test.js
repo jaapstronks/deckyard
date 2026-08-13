@@ -73,6 +73,27 @@ test('the export worker loads its theme through utils/themes.js', async () => {
   );
 });
 
+test('the export worker reads the export type from the job name, not job.data', async () => {
+  // The enqueue site (`export/pipeline.js`) passes the export type as the
+  // BullMQ job *name* — `addJob(QUEUE_NAMES.EXPORT, exportType, data)` — and
+  // never puts a `type` field in the data. The worker used to destructure
+  // `type` out of `job.data`, so every queued export failed with "Unknown
+  // export type: undefined" (found by the A7.20 Redis verification; the sync
+  // fallback masked it on every Redis-less environment, the same way it
+  // masked the theme swap above).
+  const src = await fs.readFile(
+    path.join(repoRoot, 'server/jobs/queue/workers/export-worker.js'),
+    'utf8'
+  );
+
+  assert.match(src, /const type = job\.name/, 'the job name is the type’s one canonical carrier');
+  assert.doesNotMatch(
+    src,
+    /\{[^}\n]*\btype\b[^}\n]*\}\s*=\s*job\.data/,
+    'job.data has no type field — destructuring one reintroduces the undefined-type failure'
+  );
+});
+
 test('no server call site passes a repoRoot into storage getThemeRecord', async () => {
   const offenders = [];
 
