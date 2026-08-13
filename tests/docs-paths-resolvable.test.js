@@ -30,14 +30,20 @@ const TOP_LEVEL_DIRS = ['assets', 'client', 'docs', 'scripts', 'server', 'shared
 
 /**
  * Gitignored roots that only exist once the app has been installed or run:
- * `server/data/` + `server/uploads/` (created on first run) and
- * `assets/fonts/google/` (fetched by the `postinstall` hook). The docs name them
- * precisely *because* they are not in the tree — backup targets, volume mounts,
- * `chown` targets, the reason the export smoke test wants a normal checkout. They
- * are permanently absent by design, so this is a skip, not an allowlist entry
- * that could ever go stale.
+ * `server/data/` + `server/uploads/` and their sandbox-mode siblings (created
+ * on first run) and `assets/fonts/google/` (fetched by the `postinstall`
+ * hook). The docs name them precisely *because* they are not in the tree —
+ * backup targets, volume mounts, `chown` targets, the reason the export smoke
+ * test wants a normal checkout. They are permanently absent by design, so this
+ * is a skip, not an allowlist entry that could ever go stale.
  */
-const GITIGNORED_RUNTIME_ROOTS = ['server/data/', 'server/uploads/', 'assets/fonts/google/'];
+const GITIGNORED_RUNTIME_ROOTS = [
+  'server/data/',
+  'server/data-sandbox',
+  'server/uploads/',
+  'server/uploads-sandbox',
+  'assets/fonts/google/',
+];
 
 /**
  * Doc trees this gate does not read and does not require links into.
