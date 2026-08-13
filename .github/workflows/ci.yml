@@ -78,6 +78,47 @@ jobs:
         run: cp tests/fixtures/fork-slide-types/*.js custom/slide-types/
       - run: npm test
 
+  # The committed client/vendor/ tree, against what the vendor scripts produce
+  # from the lockfile. The browser loads the *committed* copies, so a dependency
+  # bump without a re-vendor ships the old code — an XSS-patched dompurify in
+  # package-lock.json while client/vendor/dompurify/ still serves the vulnerable
+  # build (#693; same pattern earlier with katex/prismjs in #570). The `test`
+  # job cannot catch this: its `npm ci` runs postinstall, which regenerates the
+  # vendored copies in the runner's working tree *before* the suite starts, so
+  # the staleness is masked exactly where it would have been observed — and
+  # vendor:collab is not in postinstall at all, so the collab bundle is never
+  # even regenerated there.
+  #
+  # This job makes the masking step the check itself: run `npm ci` (postinstall
+  # re-vendors lucide/dompurify/prism-katex) plus `npm run vendor:collab`
+  # (esbuild pinned in devDependencies, so the output is reproducible from the
+  # lockfile), then fail if the committed tree changed. A dep bump of a vendored
+  # package is green only when the PR re-vendors.
+  #
+  # A separate job, like the others, so a red mark reads as "the vendored
+  # copies are stale — run the vendor scripts and commit" without opening the
+  # run.
+  vendor-freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run vendor:collab
+      - name: Committed client/vendor tree must match what the scripts produce
+        run: |
+          set -euo pipefail
+          if [ -n "$(git status --porcelain -- client/vendor)" ]; then
+            echo "::error::client/vendor/ is stale: regenerating from the lockfile changed it."
+            echo "Run: npm ci && npm run vendor:collab — then commit the client/vendor/ changes."
+            git status -- client/vendor
+            git diff --stat -- client/vendor
+            exit 1
+          fi
+
   # The migrations, against a real PostgreSQL. Until this job existed, none of
   # them ran anywhere in CI: one is exercised individually against the in-memory
   # double (tests/helpers/fake-db.js) and the rest ran for the first time on
