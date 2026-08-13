@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { serveJson } from '../../utils/http.js';
+import { serveJson , withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 async function listAssetDir(repoRoot, subdir, allowedExts) {
@@ -73,6 +73,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleAssets(ctx) {
-  return dispatchRoutes(ROUTES, ctx);
-}
+export const handleAssets = withErrorHandler('assets', (ctx) =>
+  dispatchRoutes(ROUTES, ctx)
+);

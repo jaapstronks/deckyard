@@ -2,7 +2,6 @@ import { badRequest, serveJson, requireJsonBody } from '../../../utils/http.js';
 import { getString, getOptionalString, getLang } from '../../../utils/request-validators.js';
 import { generateOutlineOnly } from '../../../utils/ai/index.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
-import { log } from './shared.js';
 
 /**
  * POST /api/ai/wizard-v2/outline — get the outline only (for debugging/preview).
@@ -19,19 +18,14 @@ export async function handleAiWizardV2Outline({ req, res, authedUser }) {
 
   const userName = getDisplayNameForUser(authedUser);
 
-  try {
-    const outline = await generateOutlineOnly(raw, {
-      userName,
-      targetLang: lang,
-      vendor,
-    });
-    serveJson(res, 200, outline);
-  } catch (e) {
-    log.error('[AI Outline] Error:', e);
-    const statusCode = e?.statusCode || 500;
-    serveJson(res, statusCode, {
-      error: e?.message || 'Outline generation failed',
-    });
-  }
+  // LLM failures are AppErrors (LlmError/ValidationError) — the
+  // withErrorHandler wrapper on the ai dispatcher serves them as the
+  // canonical envelope with their own status.
+  const outline = await generateOutlineOnly(raw, {
+    userName,
+    targetLang: lang,
+    vendor,
+  });
+  serveJson(res, 200, outline);
   return true;
 }

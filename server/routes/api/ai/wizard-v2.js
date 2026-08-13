@@ -5,7 +5,6 @@ import { generateDeckV2 } from '../../../utils/ai/index.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
 import { sandboxDefaultThemeId, sandboxEnabled } from '../../../config/sandbox.js';
 import {
-  log,
   loadSlideTypeContext,
   loadAiThemeContext,
   reattachAiMeta,
@@ -42,42 +41,36 @@ export async function handleAiWizardV2({ repoRoot, storageScope, req, res, authe
   );
 
   const slideTypeCtx = await loadSlideTypeContext(authedUser);
-  try {
-    const deck = await generateDeckV2(raw, {
-      userName,
-      targetLang: lang,
-      vendor,
-      theme: effectiveTheme,
-      titleSlideType,
-      enableLogging,
-      disabledSlideTypes: slideTypeCtx.disabled,
-      customSlideTypes: slideTypeCtx.custom,
-      themeContext,
-    });
+  // LLM failures are AppErrors (LlmError/ValidationError) — the
+  // withErrorHandler wrapper on the ai dispatcher serves them as the
+  // canonical envelope with their own status.
+  const deck = await generateDeckV2(raw, {
+    userName,
+    targetLang: lang,
+    vendor,
+    theme: effectiveTheme,
+    titleSlideType,
+    enableLogging,
+    disabledSlideTypes: slideTypeCtx.disabled,
+    customSlideTypes: slideTypeCtx.custom,
+    themeContext,
+  });
 
-    const parts = deckToPresentationParts(deck);
-    reattachAiMeta(parts.slides, deck.slides);
+  const parts = deckToPresentationParts(deck);
+  reattachAiMeta(parts.slides, deck.slides);
 
-    const updated = await createPresentationWithI18n(storageScope, {
-      parts,
-      lang,
-      authedUser,
-      theme: effectiveTheme,
-      settings: settingsFromRequest,
-    });
+  const updated = await createPresentationWithI18n(storageScope, {
+    parts,
+    lang,
+    authedUser,
+    theme: effectiveTheme,
+    settings: settingsFromRequest,
+  });
 
-    // Include generation metadata for debugging
-    serveJson(res, 201, {
-      ...updated,
-      _generationMeta: deck._generationMeta,
-    });
-  } catch (e) {
-    log.error('[AI Wizard V2] Error:', e);
-    const statusCode = e?.statusCode || 500;
-    serveJson(res, statusCode, {
-      error: e?.message || 'Deck generation failed',
-      details: e?.rawResponse?.slice(0, 1000),
-    });
-  }
+  // Include generation metadata for debugging
+  serveJson(res, 201, {
+    ...updated,
+    _generationMeta: deck._generationMeta,
+  });
   return true;
 }

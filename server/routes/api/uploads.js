@@ -1,4 +1,4 @@
-import { badRequest, jsonError, serveJson, serverError, unauthorized, requireJsonBody } from '../../utils/http.js';
+import { badRequest, jsonError, serveJson, serverError, unauthorized, requireJsonBody , withErrorHandler } from '../../utils/http.js';
 import { getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
 import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -67,6 +67,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleUploads(ctx) {
-  return dispatchRoutes(ROUTES, ctx);
-}
+export const handleUploads = withErrorHandler('uploads', (ctx) =>
+  dispatchRoutes(ROUTES, ctx)
+);

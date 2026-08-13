@@ -12,6 +12,7 @@
  */
 
 import { dispatchRoutes } from '../../utils/router.js';
+import { withErrorHandler } from '../../utils/http.js';
 import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import {
   handleNotionStatus,
@@ -60,7 +61,7 @@ export const GATED_ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>} true if a route handled the request.
  */
-export async function handleNotion(ctx) {
+export const handleNotion = withErrorHandler('notion', async (ctx) => {
   const handled = await dispatchRoutes(ROUTES, ctx);
   if (handled) return true;
 
@@ -69,4 +70,4 @@ export async function handleNotion(ctx) {
   if (!flags?.enableNotion) return false;
 
   return dispatchRoutes(GATED_ROUTES, ctx);
-}
+});

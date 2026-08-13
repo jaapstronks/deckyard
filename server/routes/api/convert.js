@@ -11,7 +11,7 @@ import {
   jsonError,
   serveJson,
   requireJsonBody,
-} from '../../utils/http.js';
+ withErrorHandler } from '../../utils/http.js';
 import {
   getConvertParams,
 } from '../../utils/request-validators.js';
@@ -480,6 +480,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleConvert(ctx) {
-  return dispatchRoutes(ROUTES, ctx);
-}
+export const handleConvert = withErrorHandler('convert', (ctx) =>
+  dispatchRoutes(ROUTES, ctx)
+);

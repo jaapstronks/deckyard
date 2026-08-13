@@ -7,7 +7,7 @@
  *   GET    /api/data-sources/providers     - List available providers
  */
 
-import { badRequest, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError, requireJsonBody } from '../../utils/http.js';
+import { badRequest, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError, requireJsonBody , withErrorHandler } from '../../utils/http.js';
 import { isLiveDataEnabled } from '../../config/features.js';
 import { validateDataSource, DATA_SOURCE_PROVIDERS, BINDABLE_SLIDE_TYPES } from '../../../shared/data-source.js';
 import { refreshSlideData, fetchProviderData } from '../../utils/data-source/index.js';
@@ -110,7 +110,7 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleDataSources(ctx) {
+export const handleDataSources = withErrorHandler('data-sources', (ctx) => {
   if (!ctx.url.pathname.startsWith('/api/data-sources')) return false;
   if (!ctx.authedUser) return unauthorized(ctx.res);
 
@@ -120,4 +120,4 @@ export function handleDataSources(ctx) {
   }
 
   return dispatchRoutes(ROUTES, ctx);
-}
+});
