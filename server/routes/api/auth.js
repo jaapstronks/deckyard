@@ -22,7 +22,7 @@ import {
 import { rateLimited, serveJson, unauthorized, requireJsonBody } from '../../utils/http.js';
 import { getString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
-import { getFeatureFlags } from '../../config/feature-flags.js';
+import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import { getUserSettings } from '../../storage/settings.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { ensureSandboxUser } from '../../auth/sandbox.js';

@@ -1,5 +1,5 @@
 import { getPresentation, updatePresentation } from '../../../storage/presentations/index.js';
-import { getFeatureFlags } from '../../../config/feature-flags.js';
+import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import { translatePresentationStringsFillMissing } from '../../../utils/ai.js';
 import {
   methodNotAllowed,

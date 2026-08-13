@@ -189,7 +189,7 @@ Everything else is files on disk: conversation logs under `server/logs/ai/`
 | `AI_VALIDATION_LOGGING` | `utils/ai/validation-logging.js` | On unless set to `false`. |
 | `NODE_ENV` | `utils/ai/logging.js` | Full conversation logging is disabled in production. |
 
-Feature flags (`server/config/feature-flags.js`): `disableAi` — set by
+Feature flags (`server/config/flags-snapshot.js`): `disableAi` — set by
 `DISABLE_AI`, **demo mode** or **sandbox mode** — makes the router skip
 `handleAi` and `handleConvert` entirely, so `/api/ai/*` 404s rather than erroring
 per call. `aiAltText` additionally requires OpenAI as the resolved default

@@ -13,6 +13,7 @@ import {
 import { resolveIdentityByEmail } from '../../../storage/identity-resolver.js';
 import { incrementUsage, getRateLimitHeaders, checkAiRateLimit, checkExportRateLimit } from '../../../storage/api-usage.js';
 import { allowRequest } from '../../../utils/rate-limit.js';
+import { apiTierBucket } from '../../../config/rate-limits.js';
 import { serveJson, forbidden, rateLimited as sendRateLimited, readRequestBody, isJsonObject } from '../../../utils/http.js';
 import { getPresentation } from '../../../storage/presentations/index.js';
 
@@ -270,11 +271,7 @@ export async function checkRequestRateLimit(ctx) {
   const limits = TIER_LIMITS[tier] || TIER_LIMITS.free;
   const key = `api:${apiKey.id}`;
 
-  // Token bucket: capacity = requests per minute, refill = capacity / 60
-  const allowed = await allowRequest(key, {
-    capacity: limits.requestsPerMinute,
-    refillPerSec: limits.requestsPerMinute / 60,
-  });
+  const allowed = await allowRequest(key, apiTierBucket(limits.requestsPerMinute));
 
   if (!allowed) {
     sendRateLimited(res, 60, 'Rate limit exceeded. Please slow down your requests.');

@@ -22,12 +22,12 @@
  * presenters who are not writing anything.
  */
 
-import { truthy } from './utils.js';
+import { envBool } from './utils.js';
 
 /** Seconds a client should wait before retrying a refused write. */
 const DEFAULT_RETRY_AFTER_SECONDS = 30;
 
-let active = truthy(process.env.MAINTENANCE_MODE);
+let active = envBool('MAINTENANCE_MODE');
 let reason = active ? 'configured' : null;
 
 /**
@@ -92,6 +92,6 @@ export function isWriteMethod(method) {
  * Reset to the environment-seeded state. Tests only.
  */
 export function resetMaintenanceForTests() {
-  active = truthy(process.env.MAINTENANCE_MODE);
+  active = envBool('MAINTENANCE_MODE');
   reason = active ? 'configured' : null;
 }

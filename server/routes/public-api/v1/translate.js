@@ -6,7 +6,7 @@
 import { updatePresentation } from '../../../storage/presentations/index.js';
 import { translatePresentationStrings } from '../../../utils/ai.js';
 import { methodNotAllowed } from '../../../utils/http.js';
-import { getFeatureFlags } from '../../../config/feature-flags.js';
+import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import {
   normalizeTranslationLang,
   normalizeLang,

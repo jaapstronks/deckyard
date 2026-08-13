@@ -7,7 +7,7 @@ import {
   maintenanceRetryAfterSeconds,
 } from '../../config/maintenance.js';
 import { authEnabled, getUserFromRequestAsync } from '../../auth/auth.js';
-import { getFeatureFlags } from '../../config/feature-flags.js';
+import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { ensureSandboxUser } from '../../auth/sandbox.js';
 import { resolveDesignerCapability } from '../../utils/designer.js';

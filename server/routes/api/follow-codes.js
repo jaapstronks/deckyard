@@ -17,55 +17,12 @@ import { createFollowCode, resolveFollowCode } from '../../storage/follow-codes.
 import { crossOrganizationScope } from '../../storage/scope.js';
 import { badRequest, methodNotAllowed, requireJsonBody, serveJson, serverError, unauthorized, rateLimited } from '../../utils/http.js';
 import { getClientIp } from '../../utils/context.js';
+import { allowRequest } from '../../utils/rate-limit.js';
+import { FOLLOW_CODE_LIMITS } from '../../config/rate-limits.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { createLogger } from '../../utils/logger.js';
 import { getString } from '../../utils/request-validators.js';
 const log = createLogger('follow-codes');
-
-// ============================================================
-// RATE LIMITING
-// In-memory rate limiting for follow codes
-// ============================================================
-
-const RATE_LIMIT_CREATE_PER_IP = 10; // per hour
-const RATE_LIMIT_RESOLVE_PER_IP = 60; // per hour
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
-
-// Map of IP -> { count, resetAt }
-const createRateLimits = new Map();
-const resolveRateLimits = new Map();
-
-/**
- * Check and update rate limit for an IP address.
- * @param {Map} limitMap - The rate limit map
- * @param {string} ip - Client IP address
- * @param {number} maxRequests - Maximum requests per window
- * @returns {boolean} - True if rate limited
- */
-function checkRateLimit(limitMap, ip, maxRequests) {
-  const now = Date.now();
-  const entry = limitMap.get(ip);
-
-  // Clean up expired entries periodically
-  if (limitMap.size > 10000) {
-    for (const [key, val] of limitMap) {
-      if (val.resetAt < now) limitMap.delete(key);
-    }
-  }
-
-  if (!entry || entry.resetAt < now) {
-    // New window
-    limitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return false;
-  }
-
-  if (entry.count >= maxRequests) {
-    return true;
-  }
-
-  entry.count++;
-  return false;
-}
 
 /**
  * POST /api/follow-codes - Mint a short letter code for a follow URL.
@@ -79,7 +36,7 @@ async function handleFollowCodeCreate({ storageScope, req, res, authedUser }) {
 
   // Rate limit by IP
   const clientIp = getClientIp(req) || 'unknown';
-  if (checkRateLimit(createRateLimits, clientIp, RATE_LIMIT_CREATE_PER_IP)) {
+  if (!(await allowRequest(`follow-codes:create:${clientIp}`, FOLLOW_CODE_LIMITS.create))) {
     rateLimited(res, 3600, 'Too many requests. Please try again later.');
     return true;
   }
@@ -122,7 +79,7 @@ async function handleFollowCodeCreate({ storageScope, req, res, authedUser }) {
 async function handleFollowCodeResolve({ repoRoot, req, res }, codeParam) {
   // Rate limit resolution to prevent brute-force enumeration
   const clientIp = getClientIp(req) || 'unknown';
-  if (checkRateLimit(resolveRateLimits, clientIp, RATE_LIMIT_RESOLVE_PER_IP)) {
+  if (!(await allowRequest(`follow-codes:resolve:${clientIp}`, FOLLOW_CODE_LIMITS.resolve))) {
     rateLimited(res, 3600, 'Too many requests. Please try again later.');
     return true;
   }

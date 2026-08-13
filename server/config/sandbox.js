@@ -1,7 +1,7 @@
-import { truthy } from './utils.js';
+import { envBool } from './utils.js';
 
 export function sandboxEnabled() {
-  return truthy(process.env.SANDBOX_MODE);
+  return envBool('SANDBOX_MODE');
 }
 
 function sandboxTtlHours() {

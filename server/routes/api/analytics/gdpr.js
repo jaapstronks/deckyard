@@ -4,13 +4,13 @@
 
 import { allowRequest } from '../../../utils/rate-limit.js';
 import {
-  AUTH_RATE_LIMITS,
   sendRateLimitResponse,
   sendErrorResponse,
   sendSuccessResponse,
   logSecurityEvent,
   SECURITY_EVENTS,
 } from '../../../analytics/helpers.js';
+import { AUTH_RATE_LIMITS } from '../../../config/rate-limits.js';
 import {
   exportUserAnalyticsData,
   deleteUserAnalyticsData,

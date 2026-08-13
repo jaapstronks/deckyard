@@ -12,7 +12,7 @@
  * @see docs/reference/sso-oidc.md
  */
 
-import { truthy } from './utils.js';
+import { envBool, envStr, envList } from './utils.js';
 
 /** Only provider supported in Track 1. SAML (1b) is added on demand. */
 const SUPPORTED_PROVIDERS = ['oidc'];
@@ -20,32 +20,12 @@ const SUPPORTED_PROVIDERS = ['oidc'];
 /** Role assigned to JIT-provisioned users unless a group maps them to admin. */
 const DEFAULT_PROVISION_ROLE = 'user';
 
-function str(name) {
-  return String(process.env[name] || '').trim();
-}
-
-/**
- * Parse a comma/space-separated env var into a lowercased, de-duplicated list.
- * @param {string} name - Environment variable name.
- * @returns {string[]}
- */
-function list(name) {
-  return [
-    ...new Set(
-      str(name)
-        .split(/[\s,]+/)
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean)
-    ),
-  ];
-}
-
 /**
  * The provider selected for this install, or null when SSO is off / unset.
  * @returns {string|null}
  */
 export function getSsoProvider() {
-  const p = str('SSO_PROVIDER').toLowerCase();
+  const p = envStr('SSO_PROVIDER').toLowerCase();
   return SUPPORTED_PROVIDERS.includes(p) ? p : null;
 }
 
@@ -55,7 +35,7 @@ export function getSsoProvider() {
  * @returns {boolean}
  */
 export function isSsoEnabled() {
-  if (!truthy(process.env.SSO_ENABLED)) return false;
+  if (!envBool('SSO_ENABLED')) return false;
   const provider = getSsoProvider();
   if (provider !== 'oidc') return false;
   return !ssoConfigError();
@@ -68,7 +48,7 @@ export function isSsoEnabled() {
  * @returns {boolean}
  */
 export function isSsoEnforced() {
-  return isSsoEnabled() && truthy(process.env.SSO_ENFORCE);
+  return isSsoEnabled() && envBool('SSO_ENFORCE');
 }
 
 /**
@@ -86,22 +66,19 @@ export function isSsoEnforced() {
  */
 export function getOidcConfig() {
   const defaultRole =
-    str('OIDC_DEFAULT_ROLE').toLowerCase() === 'admin'
+    envStr('OIDC_DEFAULT_ROLE').toLowerCase() === 'admin'
       ? 'admin'
       : DEFAULT_PROVISION_ROLE;
   return {
-    issuerUrl: str('OIDC_ISSUER_URL'),
-    clientId: str('OIDC_CLIENT_ID'),
-    clientSecret: str('OIDC_CLIENT_SECRET'),
-    redirectUri: str('OIDC_REDIRECT_URI'),
-    allowedDomains: list('OIDC_ALLOWED_DOMAINS'),
+    issuerUrl: envStr('OIDC_ISSUER_URL'),
+    clientId: envStr('OIDC_CLIENT_ID'),
+    clientSecret: envStr('OIDC_CLIENT_SECRET'),
+    redirectUri: envStr('OIDC_REDIRECT_URI'),
+    allowedDomains: envList('OIDC_ALLOWED_DOMAINS'),
     // JIT-provision on first login unless explicitly disabled.
-    autoProvision:
-      process.env.OIDC_AUTO_PROVISION === undefined
-        ? true
-        : truthy(process.env.OIDC_AUTO_PROVISION),
+    autoProvision: envBool('OIDC_AUTO_PROVISION', true),
     defaultRole,
-    adminGroups: list('OIDC_ADMIN_GROUPS'),
+    adminGroups: envList('OIDC_ADMIN_GROUPS'),
   };
 }
 
@@ -116,9 +93,9 @@ export function getOidcConfig() {
  * @returns {string|null}
  */
 export function ssoConfigError() {
-  if (!truthy(process.env.SSO_ENABLED)) return null;
+  if (!envBool('SSO_ENABLED')) return null;
 
-  const provider = str('SSO_PROVIDER').toLowerCase();
+  const provider = envStr('SSO_PROVIDER').toLowerCase();
   if (!provider) {
     return 'SSO_ENABLED is set but SSO_PROVIDER is missing. Set SSO_PROVIDER=oidc.';
   }
@@ -127,18 +104,18 @@ export function ssoConfigError() {
   }
 
   const missing = [];
-  if (!str('OIDC_ISSUER_URL')) missing.push('OIDC_ISSUER_URL');
-  if (!str('OIDC_CLIENT_ID')) missing.push('OIDC_CLIENT_ID');
-  if (!str('OIDC_CLIENT_SECRET')) missing.push('OIDC_CLIENT_SECRET');
-  if (!str('OIDC_REDIRECT_URI')) missing.push('OIDC_REDIRECT_URI');
+  if (!envStr('OIDC_ISSUER_URL')) missing.push('OIDC_ISSUER_URL');
+  if (!envStr('OIDC_CLIENT_ID')) missing.push('OIDC_CLIENT_ID');
+  if (!envStr('OIDC_CLIENT_SECRET')) missing.push('OIDC_CLIENT_SECRET');
+  if (!envStr('OIDC_REDIRECT_URI')) missing.push('OIDC_REDIRECT_URI');
   if (missing.length) {
     return `SSO_ENABLED=true with SSO_PROVIDER=oidc but required OIDC settings are missing: ${missing.join(', ')}.`;
   }
 
   // Fail early on malformed URLs rather than at first login.
   for (const [name, value] of [
-    ['OIDC_ISSUER_URL', str('OIDC_ISSUER_URL')],
-    ['OIDC_REDIRECT_URI', str('OIDC_REDIRECT_URI')],
+    ['OIDC_ISSUER_URL', envStr('OIDC_ISSUER_URL')],
+    ['OIDC_REDIRECT_URI', envStr('OIDC_REDIRECT_URI')],
   ]) {
     try {
       // eslint-disable-next-line no-new
@@ -161,7 +138,7 @@ export function getSsoPublicConfig() {
   const enabled = isSsoEnabled();
   return {
     enabled,
-    enforce: enabled && truthy(process.env.SSO_ENFORCE),
+    enforce: enabled && envBool('SSO_ENFORCE'),
     provider: enabled ? getSsoProvider() : null,
     loginPath: '/api/auth/oidc/login',
   };

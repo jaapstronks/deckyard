@@ -31,27 +31,21 @@ import { getOrgId } from '../../utils/context.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import { AppError } from '../../utils/errors.js';
+import { envInt } from '../../config/utils.js';
 
 /** Default max decks a single sandbox guest may own. */
 const DEFAULT_MAX_DECKS_PER_GUEST = 25;
 /** Default max total bytes across a single guest's stored decks (50 MB). */
 const DEFAULT_MAX_BYTES_PER_GUEST = 50 * 1024 * 1024;
 
-function positiveIntFromEnv(name, fallback) {
-  const raw = process.env[name];
-  if (raw == null || raw === '') return fallback;
-  const n = Number(raw);
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
-}
-
 /** @returns {number} Max decks per sandbox guest. */
 function sandboxMaxDecksPerGuest() {
-  return positiveIntFromEnv('SANDBOX_MAX_DECKS_PER_GUEST', DEFAULT_MAX_DECKS_PER_GUEST);
+  return envInt('SANDBOX_MAX_DECKS_PER_GUEST', DEFAULT_MAX_DECKS_PER_GUEST, { min: 1 });
 }
 
 /** @returns {number} Max total stored bytes per sandbox guest. */
 function sandboxMaxBytesPerGuest() {
-  return positiveIntFromEnv('SANDBOX_MAX_BYTES_PER_GUEST', DEFAULT_MAX_BYTES_PER_GUEST);
+  return envInt('SANDBOX_MAX_BYTES_PER_GUEST', DEFAULT_MAX_BYTES_PER_GUEST, { min: 1 });
 }
 
 /**
@@ -60,7 +54,7 @@ function sandboxMaxBytesPerGuest() {
  * @returns {number}
  */
 export function sandboxMaxTotalBytes() {
-  return positiveIntFromEnv('SANDBOX_MAX_TOTAL_BYTES', 0);
+  return envInt('SANDBOX_MAX_TOTAL_BYTES', 0, { min: 1 });
 }
 
 /**

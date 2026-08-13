@@ -1,5 +1,5 @@
 import { getPresentation } from '../../../storage/presentations/index.js';
-import { getFeatureFlags } from '../../../config/feature-flags.js';
+import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import { methodNotAllowed, notFound, serveJson, unauthorized, requireJsonBody } from '../../../utils/http.js';
 import { getOptionalString } from '../../../utils/request-validators.js';
 import { canReadPresentation } from '../../../utils/presentation-authz.js';

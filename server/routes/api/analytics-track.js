@@ -12,8 +12,6 @@ import { getPresentation } from '../../storage/presentations/index.js';
 import { validateShareLink } from '../../storage/share-links/crud.js';
 import { getAppSettings, getUserSettings } from '../../storage/settings.js';
 import {
-  TRACKING_RATE_LIMITS,
-  AUTH_RATE_LIMITS,
   isValidDeviceId,
   isValidSessionToken,
   isValidSlideIndex,
@@ -26,6 +24,7 @@ import {
   SECURITY_EVENTS,
   SOURCE_TYPES,
 } from '../../analytics/helpers.js';
+import { TRACKING_RATE_LIMITS, AUTH_RATE_LIMITS } from '../../config/rate-limits.js';
 import {
   createViewSession,
   updateViewSession,

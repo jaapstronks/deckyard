@@ -3,6 +3,8 @@
  * Used when STORAGE_MODE=postgres
  */
 
+import { envBool } from './utils.js';
+
 /**
  * The only accepted value of STORAGE_MODE. PostgreSQL is the sole storage
  * backend; disk-JSON storage was removed during beta (see
@@ -79,9 +81,10 @@ export function isPostgresMode() {
  */
 function resolveSsl(host) {
   const isLocalhost = host === 'localhost' || host === '127.0.0.1';
-  const sslExplicitlyDisabled = process.env.DATABASE_SSL === 'false';
-  const sslEnabled = !isLocalhost && !sslExplicitlyDisabled;
-  const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
+  // DATABASE_SSL defaults to on (absent = SSL) — only an explicit false
+  // value may disable it, so the default lives in the envBool fallback.
+  const sslEnabled = !isLocalhost && envBool('DATABASE_SSL', true);
+  const rejectUnauthorized = envBool('DATABASE_SSL_REJECT_UNAUTHORIZED', true);
   return sslEnabled ? { rejectUnauthorized } : false;
 }
 

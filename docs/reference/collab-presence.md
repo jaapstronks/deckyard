@@ -78,7 +78,7 @@ Browser editor ──ws /collab──▶ node:http server (same port 4177)
   never incrementally tracked per element, so a missed `focusout` (Safari
   quirks, a re-render removing the focused node) cannot leave a stale
   "still editing" ring behind on peers.
-- **Feature gating**: server `COLLAB_ENABLED` → `server/config/feature-flags.js` `collab` →
+- **Feature gating**: server `COLLAB_ENABLED` → `server/config/flags-snapshot.js` `collab` →
   client `features.collab`. The editor controller dynamic-imports the
   presence module only when the flag is on, so the yjs vendor bundle is never
   fetched otherwise.

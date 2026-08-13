@@ -39,7 +39,7 @@ import assert from 'node:assert/strict';
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
-const { AUTH_RATE_LIMITS } = await import('../server/analytics/helpers.js');
+const { AUTH_RATE_LIMITS } = await import('../server/config/rate-limits.js');
 const { handleAnalyticsTrack } = await import('../server/routes/api/analytics-track.js');
 
 const DECK_ONE = 'deck-one';

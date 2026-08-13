@@ -12,7 +12,7 @@ import sharp from 'sharp';
 import { badRequest, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError, serverError, requireJsonBody } from '../../utils/http.js';
 import { writeUserSettings } from '../../storage/settings.js';
 import { getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
-import { getFeatureFlags } from '../../config/feature-flags.js';
+import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import { getDataUrl } from '../../utils/request-validators.js';
 import { createLogger } from '../../utils/logger.js';
 import { dispatchRoutes } from '../../utils/router.js';

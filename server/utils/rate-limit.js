@@ -1,13 +1,18 @@
 import { mightRedisBeAvailable } from './redis-client.js';
 import { allowRequestRedis } from './rate-limit-redis.js';
+import { envBool } from '../config/utils.js';
+import {
+  LOGIN_LIMITS,
+  SHARE_VERIFY_LIMITS,
+  COMPANION_NOTES_LIMITS,
+} from '../config/rate-limits.js';
 import { createLogger } from './logger.js';
 
 const log = createLogger('rate-limit');
 
-function truthy(v) {
-  const s = String(v || '').trim().toLowerCase();
-  return s === '1' || s === 'true' || s === 'yes' || s === 'on';
-}
+// Re-exported so limit values and their consumers stay importable together.
+export { LOGIN_LIMITS, SHARE_VERIFY_LIMITS, COMPANION_NOTES_LIMITS };
+
 
 // IPv4 validation regex
 const IPV4_REGEX = /^(\d{1,3}\.){3}\d{1,3}$/;
@@ -62,7 +67,7 @@ function trustedProxyCount() {
 }
 
 export function getClientIp(req) {
-  const trustProxy = truthy(process.env.TRUST_PROXY);
+  const trustProxy = envBool('TRUST_PROXY');
   const socketIp = String(req.socket?.remoteAddress || '').trim();
 
   if (trustProxy) {
@@ -218,15 +223,6 @@ export function allowRequestSync(key, { capacity, refillPerSec }) {
   return allowRequestInMemory(key, { capacity, refillPerSec });
 }
 
-/**
- * Token-bucket limits for password login (brute-force throttle).
- * Burst then a slow sustained rate; per-IP catches address rotation, per-email
- * caps targeted attacks on a single account. Security hardening 3c.
- */
-export const LOGIN_LIMITS = {
-  ip: { capacity: 10, refillPerSec: 0.1 }, // burst 10, then ~6/min
-  email: { capacity: 8, refillPerSec: 0.1 }, // burst 8, then ~6/min
-};
 
 /**
  * Throttle a password-login attempt. Consumes one token per attempt from a
@@ -243,17 +239,6 @@ export async function allowLoginAttempt({ ip, email } = {}) {
   return emailOk;
 }
 
-/**
- * Token-bucket limit for the anonymous share-link password gate
- * (`POST /api/share/:token/verify`). Mirrors the guest-verification limit next
- * door in `storage/share-links/guests.js` (3 requests per actor per hour): an
- * anonymous caller carries no session, so the only actor signal is the IP.
- * Caps password guesses at 3/hour per IP — a brute-force throttle for a secret
- * that sits behind an anonymously reachable endpoint.
- */
-export const SHARE_VERIFY_LIMITS = {
-  ip: { capacity: 3, refillPerSec: 3 / 3600 }, // burst 3, then ~3/hour
-};
 
 /**
  * Throttle an anonymous share-link password-verification attempt. Consumes one
@@ -266,18 +251,6 @@ export async function allowShareVerifyAttempt({ ip } = {}) {
   return allowRequest(ipKey, SHARE_VERIFY_LIMITS.ip);
 }
 
-/**
- * Token-bucket limit for the anonymous notes-companion write
- * (`PUT /api/live-sessions/:sessionId/notes/:slideId`). Not a secret gate
- * like the two above — the session id is the capability and the caller is
- * allowed to write — so this is a volume cap, not a guess cap: the companion
- * saves on a debounce, and a leaked join link must not be usable to hammer the
- * deck's slides column. Generous enough that a speaker typing hard never sees
- * it, tight enough to be a ceiling.
- */
-export const COMPANION_NOTES_LIMITS = {
-  ip: { capacity: 30, refillPerSec: 1 }, // burst 30, then ~1/second
-};
 
 /**
  * Throttle an anonymous notes-companion save. Consumes one token per write

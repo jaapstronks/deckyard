@@ -127,7 +127,7 @@ curl -b cookies.txt -X POST http://localhost:4177/api/data-sources/refresh \
 | Layer | Key files |
 |---|---|
 | Shared schema | `shared/data-source.js` |
-| Feature flag | `server/config/features.js`, `server/config/feature-flags.js` |
+| Feature flag | `server/config/features.js`, `server/config/flags-snapshot.js` |
 | Provider engine | `server/utils/data-source/` (index, provider-base, bindings, providers/) |
 | API routes | `server/routes/api/data-sources.js` |
 | Migration | `server/db/migrations/036_live_data_sources.js` |
