@@ -10,6 +10,9 @@
 import { getLlmConfig } from '../llm/config.js';
 import { requestChatCompletionContent, LlmError } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('Compress');
 
 /**
  * Extract a title or summary from a slide for the compression prompt
@@ -222,7 +225,7 @@ export async function analyzeForCompression(presentation, {
   result.vendor = resolvedVendor;
   result.model = model;
 
-  console.log(`[Compress] Analyzed ${slides.length} slides: ${result.summary}`);
+  log.info(`Analyzed ${slides.length} slides: ${result.summary}`);
 
   return result;
 }

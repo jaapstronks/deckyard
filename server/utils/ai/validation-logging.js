@@ -12,6 +12,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nowIso } from '../normalize.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('AI Validation Log');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -67,7 +70,7 @@ function flushBuffer() {
 
     currentBuffer = [];
   } catch (err) {
-    console.error('[AI Validation Log] Failed to flush buffer:', err.message);
+    log.error('Failed to flush buffer:', err.message);
   }
 
   writeScheduled = false;
@@ -169,7 +172,7 @@ export function getValidationLogs({
           }
         }
       } catch (err) {
-        console.error(`[AI Validation Log] Failed to read ${filename}:`, err.message);
+        log.error(`Failed to read ${filename}:`, err.message);
       }
     }
 
@@ -293,13 +296,13 @@ export function cleanupOldLogs() {
         fs.unlinkSync(path.join(LOG_DIR, filename));
         deleted++;
       } catch (err) {
-        console.error(`[AI Validation Log] Failed to delete ${filename}:`, err.message);
+        log.error(`Failed to delete ${filename}:`, err.message);
       }
     }
   }
 
   if (deleted > 0) {
-    console.log(`[AI Validation Log] Cleaned up ${deleted} old log files`);
+    log.info(`Cleaned up ${deleted} old log files`);
   }
 
   return deleted;
@@ -332,6 +335,6 @@ setTimeout(() => {
   try {
     cleanupOldLogs();
   } catch (err) {
-    console.error('[AI Validation Log] Cleanup failed:', err.message);
+    log.error('Cleanup failed:', err.message);
   }
 }, 5000).unref?.();

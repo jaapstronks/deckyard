@@ -18,6 +18,9 @@ import { SLIDE_TYPE_CATALOG } from './slide-type-catalog.js';
 import { validateSlideContentStructure } from './validate-slide-structure.js';
 import { validateSlideContent } from './schemas/index.js';
 import { prompts } from './prompts/index.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('Phase2');
 
 /**
  * Map intent to allowed slide types
@@ -103,7 +106,7 @@ function normalizeRefinedSlide(slide, originalSlide, disabledSlideTypes = []) {
 
   // Validate type is allowed for this intent
   if (!allowedTypes.includes(type)) {
-    console.warn(`[Phase2] Type "${type}" not allowed for intent "${originalSlide.intent}", using fallback`, {
+    log.warn(`Type "${type}" not allowed for intent "${originalSlide.intent}", using fallback`, {
       originalIndex: originalSlide.index,
       requestedType: type,
       intent: originalSlide.intent,
@@ -116,7 +119,7 @@ function normalizeRefinedSlide(slide, originalSlide, disabledSlideTypes = []) {
   // Validate content structure matches the type (existing validation)
   const structureIssues = validateSlideContentStructure(type, content, originalSlide.index);
   if (structureIssues.length > 0) {
-    console.warn(`[Phase2] Content structure issues for ${type}:`, {
+    log.warn(`Content structure issues for ${type}:`, {
       originalIndex: originalSlide.index,
       issues: structureIssues,
       contentKeys: Object.keys(content),
@@ -126,7 +129,7 @@ function normalizeRefinedSlide(slide, originalSlide, disabledSlideTypes = []) {
   // Zod schema validation (defense-in-depth, logs warnings but doesn't block)
   const zodResult = validateSlideContent(type, content);
   if (!zodResult.valid && zodResult.issues.length > 0) {
-    console.warn(`[Phase2] Zod validation issues for ${type}:`, {
+    log.warn(`Zod validation issues for ${type}:`, {
       originalIndex: originalSlide.index,
       issues: zodResult.issues,
     });
@@ -300,7 +303,7 @@ export async function refineSlideGroup(slideGroup, {
     } catch (err) {
       retryCount++;
       if (retryCount > maxRetries) {
-        console.error(`[Phase2] Failed after ${maxRetries + 1} attempts for group ${groupId}:`, err.message);
+        log.error(`Failed after ${maxRetries + 1} attempts for group ${groupId}:`, err.message);
 
         // Return fallback slides
         const fallbackSlides = slides.map(s => createFallbackSlide(s));
@@ -324,7 +327,7 @@ export async function refineSlideGroup(slideGroup, {
         return fallbackSlides;
       }
 
-      console.warn(`[Phase2] Retry ${retryCount} for group ${groupId}`);
+      log.warn(`Retry ${retryCount} for group ${groupId}`);
     }
   }
 
@@ -342,17 +345,17 @@ export async function refineSlideGroup(slideGroup, {
     // If exact match not found, try position-based fallback
     if (!originalSlide && pos < slides.length) {
       originalSlide = slides[pos];
-      console.warn(`[Phase2] Index ${idx} not found, using position-based fallback (actual index: ${originalSlide.index})`);
+      log.warn(`Index ${idx} not found, using position-based fallback (actual index: ${originalSlide.index})`);
     }
 
     if (!originalSlide) {
-      console.warn(`[Phase2] No original slide found for index ${idx}, position ${pos}`);
+      log.warn(`No original slide found for index ${idx}, position ${pos}`);
       continue;
     }
 
     // Skip if we already processed this original slide
     if (usedOriginalIndexes.has(originalSlide.index)) {
-      console.warn(`[Phase2] Duplicate refined slide for index ${originalSlide.index}, skipping`);
+      log.warn(`Duplicate refined slide for index ${originalSlide.index}, skipping`);
       continue;
     }
 
@@ -363,7 +366,7 @@ export async function refineSlideGroup(slideGroup, {
   // Add any missing slides as fallbacks
   for (const original of slides) {
     if (!usedOriginalIndexes.has(original.index)) {
-      console.warn(`[Phase2] Missing refined slide for index ${original.index}, using fallback`);
+      log.warn(`Missing refined slide for index ${original.index}, using fallback`);
       refinedSlides.push(createFallbackSlide(original));
     }
   }

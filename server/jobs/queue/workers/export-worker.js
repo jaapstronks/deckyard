@@ -24,6 +24,9 @@ import { projectPresentationToLang } from '../../../storage/presentations/i18n.j
 import { stripLiveOnlySlides } from '../../../export/pipeline.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { jobScope } from '../../../storage/scope.js';
+import { createLogger } from '../../../utils/logger.js';
+
+const log = createLogger('export-worker');
 
 // Store completed job results temporarily for download
 const jobResults = new Map();
@@ -123,7 +126,7 @@ async function processExportJob(job) {
   const type = job.name;
   const { scale = 1 } = job.data;
 
-  console.log(`[export-worker] Processing ${type} export for job ${job.id}`);
+  log.info(`Processing ${type} export for job ${job.id}`);
 
   // Update progress
   await job.updateProgress(10);

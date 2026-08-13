@@ -6,6 +6,9 @@
 import { getLlmConfig } from '../utils/llm/config.js';
 import { requestChatCompletionContent } from '../utils/llm/index.js';
 import { formatDuration } from '../storage/analytics/weekly-summary.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('digest-generation');
 
 // ============================================================
 // DIGEST GENERATION
@@ -51,7 +54,7 @@ export async function generateDigestWithAI(user, analytics) {
     return validated(parsed, user, analytics);
   } catch (err) {
     // Fallback to template-based digest if AI fails
-    console.error('[digest-generation] AI generation failed, using fallback:', err.message);
+    log.error('AI generation failed, using fallback:', err.message);
     return generateFallbackDigest(user, analytics);
   }
 }
@@ -89,7 +92,7 @@ export async function generateTeamDigestWithAI(admin, teamAnalytics) {
     const parsed = parseDigestResponse(content);
     return validatedTeam(parsed, admin, teamAnalytics);
   } catch (err) {
-    console.error('[digest-generation] Team AI generation failed, using fallback:', err.message);
+    log.error('Team AI generation failed, using fallback:', err.message);
     return generateFallbackTeamDigest(admin, teamAnalytics);
   }
 }

@@ -8,6 +8,9 @@
 
 import { SLIDE_ITEM_REQUIREMENTS, NON_CONTENT_SLIDE_TYPES } from './constants.js';
 import { logValidation } from './logging.js';
+import { createLogger } from '../../logger.js';
+
+const log = createLogger('ValidateSlide');
 
 /**
  * Pre-check if a slide type is appropriate given the content
@@ -59,7 +62,7 @@ export function validateSlideCount(slides, targetSlides) {
     });
   } else {
     // Info-level log for monitoring
-    console.log(`[ValidateSlide] Slide budget: ${contentSlides}/${targetSlides} content slides (${percentage}%)`);
+    log.info(`Slide budget: ${contentSlides}/${targetSlides} content slides (${percentage}%)`);
   }
 
   return { contentSlides, totalSlides, overBudget, percentage };

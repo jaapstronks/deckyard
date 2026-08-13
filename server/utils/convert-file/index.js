@@ -18,6 +18,9 @@ import {
   SUPPORTED_MIME_TYPES,
 } from './helpers.js';
 import { convertMarkdownText, convertMarkdownBundle } from '../markdown-import/index.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('File Convert');
 
 // Re-export constants
 export { SUPPORTED_EXTENSIONS, SUPPORTED_MIME_TYPES };
@@ -138,14 +141,14 @@ export async function convertFile(buffer, options = {}) {
   );
 
   if (imageOnlySlides.length > 0) {
-    console.log(`[File Convert] Found ${imageOnlySlides.length} image-only slide(s)`);
+    log.info(`Found ${imageOnlySlides.length} image-only slide(s)`);
     if (typeof onStatusMessage === 'function') {
       onStatusMessage(`${imageOnlySlides.length} afbeelding-slide(s) direct converteren...`);
     }
   }
 
   if (titleSlideCandidate) {
-    console.log(`[File Convert] Using first image slide as title slide`);
+    log.info(`Using first image slide as title slide`);
   }
 
   // Format remaining content for AI conversion

@@ -42,6 +42,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sql } from 'kysely';
 import { dataDir } from '../../config/storage-paths.js';
+import { createLogger } from '../../utils/logger.js';
+
+const log = createLogger('059');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // server/db/migrations -> repo root
@@ -193,8 +196,8 @@ export const up = async (db) => {
 
   const app = await importAppSettingsFromDisk(db);
   const users = await importUserSettingsFromDisk(db);
-  console.log(
-    `[059] imported ${app.app ? 'the instance settings' : 'no instance settings'}` +
+  log.info(
+    `imported ${app.app ? 'the instance settings' : 'no instance settings'}` +
       ` and ${users.users} user-settings row(s)`
   );
 };

@@ -4,6 +4,9 @@
  */
 
 import { uploadImageKitBuffer, getImageKitConfigFromEnv } from '../../media/imagekit.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('File Convert');
 
 /**
  * Process image-only slides by uploading their images to ImageKit and creating image-slide data.
@@ -30,7 +33,7 @@ export async function processImageOnlySlides(slides, options = {}) {
   const canUploadImages = imagekitConfig.configured;
 
   if (!canUploadImages) {
-    console.log('[File Convert] ImageKit not configured, skipping image extraction');
+    log.info('ImageKit not configured, skipping image extraction');
     // Return all slides as regular if we can't upload images
     return { imageOnlySlides: [], regularSlides: slides, titleSlideCandidate: null };
   }
@@ -56,7 +59,7 @@ export async function processImageOnlySlides(slides, options = {}) {
           tags: ['pptx-import', 'auto-converted'],
         });
 
-        console.log(`[File Convert] Uploaded image for slide ${slide.slideNumber}: ${uploadResult.url}`);
+        log.info(`Uploaded image for slide ${slide.slideNumber}: ${uploadResult.url}`);
 
         const titleText = slide.textContent?.trim() || '';
 
@@ -64,7 +67,7 @@ export async function processImageOnlySlides(slides, options = {}) {
         // The image is illustrative (for title slide background), not content.
         // This is true regardless of text length - the LLM will determine the proper title.
         if (i === 0) {
-          console.log(`[File Convert] First slide with image detected - using as title slide background (illustrative)`);
+          log.info(`First slide with image detected - using as title slide background (illustrative)`);
           titleSlideCandidate = {
             title: titleText, // May be empty, contextual, or actual title - LLM will determine
             imageUrl: uploadResult.url,
@@ -99,7 +102,7 @@ export async function processImageOnlySlides(slides, options = {}) {
           },
         });
       } catch (err) {
-        console.warn(`[File Convert] Failed to upload image for slide ${slide.slideNumber}:`, err.message);
+        log.warn(`Failed to upload image for slide ${slide.slideNumber}:`, err.message);
         // Fall back to regular processing if upload fails
         regularSlides.push(slide);
       }

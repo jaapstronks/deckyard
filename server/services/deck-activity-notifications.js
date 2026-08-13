@@ -37,6 +37,9 @@ import {
 } from '../storage/notifications.js';
 import { broadcastToUser, NotificationEventTypes } from './notification-events.js';
 import { crossOrganizationScope } from '../storage/scope.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('deck-activity');
 
 export const DECK_ACTIVITY_TYPE = 'deck_activity';
 
@@ -223,15 +226,13 @@ export async function notifyDeckActivity({ repoRoot, presentation, actor, slideC
           broadcastToUser(recipientEmail, NotificationEventTypes.COUNTS, { unreadCount });
         }
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          `[deck-activity] notification failed to=${recipientEmail}:`,
+        log.warn(
+          `notification failed to=${recipientEmail}:`,
           e?.message || e
         );
       }
     }
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.warn('[deck-activity] notifyDeckActivity error:', e?.message || e);
+    log.warn('notifyDeckActivity error:', e?.message || e);
   }
 }

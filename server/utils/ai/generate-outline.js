@@ -14,6 +14,9 @@ import { requestChatCompletionContent, LlmError } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import { detectDeckLanguage, normalizeLang } from '../openai/lang.js';
 import { prompts } from './prompts/index.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('Phase1');
 
 /**
  * Calculate target slide count based on content length and user preference
@@ -240,7 +243,7 @@ export async function generateOutline(rawContent, {
 
   // Calculate target slide count based on content and user preference
   const { targetSlides, estimatedInputLines } = calculateTargetSlides(rawContent, targetLength);
-  console.log(`[Phase1] Target: ${targetSlides} slides for ${estimatedInputLines} lines (targetLength: ${targetLength})`);
+  log.info(`Target: ${targetSlides} slides for ${estimatedInputLines} lines (targetLength: ${targetLength})`);
 
   const systemPrompt = prompts.buildPhase1SystemPrompt({
     detectedLang,

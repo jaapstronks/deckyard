@@ -6,6 +6,9 @@
 import { initializeExportWorker } from './export-worker.js';
 import { initializeTranslateWorker } from './translate-worker.js';
 import { initializeBulkExportWorker } from './bulk-export-worker.js';
+import { createLogger } from '../../../utils/logger.js';
+
+const log = createLogger('workers');
 
 /**
  * Initialize all workers.
@@ -21,7 +24,7 @@ export async function initializeWorkers() {
     workers.bulkExport = await initializeBulkExportWorker();
 
     const activeCount = Object.values(workers).filter(Boolean).length;
-    console.log(`[workers] ${activeCount} workers initialized`);
+    log.info(`${activeCount} workers initialized`);
 
     return {
       ok: true,
@@ -32,7 +35,7 @@ export async function initializeWorkers() {
       },
     };
   } catch (err) {
-    console.warn('[workers] Failed to initialize workers:', err.message);
+    log.warn('Failed to initialize workers:', err.message);
     return {
       ok: false,
       error: err.message,
