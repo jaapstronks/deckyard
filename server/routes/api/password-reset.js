@@ -17,7 +17,7 @@ import {
 import { serveJson, badRequest, unauthorized, requireJsonBody } from '../../utils/http.js';
 import { getString, getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
-import { getClientIp, createRouteContext } from '../../utils/context.js';
+import { getClientIp, createStorageScope } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { sendPasswordResetEmail } from '../../integrations/brevo.js';
 import { normalizeEmail } from '../../utils/normalize.js';
@@ -64,7 +64,7 @@ async function userExists(email) {
  * repoRoot carried alongside — the same shape the old entry built once.
  */
 function resetCtx(repoRoot) {
-  return createRouteContext(null, { repoRoot });
+  return createStorageScope(null, { repoRoot });
 }
 
 // ============================================================

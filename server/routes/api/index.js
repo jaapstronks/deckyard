@@ -12,7 +12,7 @@ import { sandboxEnabled } from '../../config/sandbox.js';
 import { ensureSandboxUser } from '../../auth/sandbox.js';
 import { resolveDesignerCapability } from '../../utils/designer.js';
 import { canEditCustomHtml } from '../../utils/route-middleware.js';
-import { createRouteContext } from '../../utils/context.js';
+import { createStorageScope } from '../../utils/context.js';
 
 // Public API v1 (API key authentication)
 import { handlePublicApiV1 } from '../public-api/v1/index.js';
@@ -177,7 +177,7 @@ export async function handleApi({ repoRoot, req, res, url }) {
   // works in (membership-verified upstream, see utils/context.js) and on whose
   // behalf. Built once here so a handler passes the scope it was given rather
   // than letting the storage layer invent one — see server/storage/scope.js.
-  const storageScope = createRouteContext(authedUser, { repoRoot });
+  const storageScope = createStorageScope(authedUser, { repoRoot });
 
   const ctx = { repoRoot, storageScope, req, res, url, authedUser };
   const flags = getFeatureFlags();

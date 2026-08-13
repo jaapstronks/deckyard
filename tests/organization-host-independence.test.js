@@ -55,7 +55,7 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { hashPassword } = await import('../server/utils/password-hash.js');
 const auth = await import('../server/auth/auth.js');
 const context = await import('../server/utils/context.js');
-const { createRouteContext } = context;
+const { createStorageScope } = context;
 const { createOrganization, updateOrganization, listUserOrganizations } = await import(
   '../server/storage/user-organizations/index.js'
 );
@@ -161,7 +161,7 @@ async function contextFor(organizationId, headers = {}) {
     requestWithSession(login, organizationId, headers),
     {}
   );
-  return createRouteContext(authedUser);
+  return createStorageScope(authedUser);
 }
 
 // ---------------------------------------------------------------------------

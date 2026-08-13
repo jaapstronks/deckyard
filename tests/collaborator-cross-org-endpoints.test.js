@@ -73,7 +73,7 @@ const { initializeStorage, __resetStorageForTests } = await import(
   '../server/storage/adapters/index.js'
 );
 const { isMultiOrgEnabled } = await import('../server/config/features.js');
-const { createRouteContext } = await import('../server/utils/context.js');
+const { createStorageScope } = await import('../server/utils/context.js');
 const { invalidatePermission } = await import(
   '../server/storage/cache/permission-cache.js'
 );
@@ -209,7 +209,7 @@ async function seed({ deckOrg = HOME_ORG, rowOrg = HOME_ORG, revoked = false } =
 
 /**
  * Call an endpoint handler the way `routes/api/index.js` does. The storage
- * scope is `createRouteContext(user)`, so it carries the *session's*
+ * scope is `createStorageScope(user)`, so it carries the *session's*
  * organization — which for the cross-organization cases below deliberately differs
  * from the deck's, and must not be papered over here.
  *
@@ -242,7 +242,7 @@ async function call(handler, user, { method = 'GET' } = {}) {
   await handler(
     {
       repoRoot: process.cwd(),
-      storageScope: createRouteContext(user, { repoRoot: process.cwd() }),
+      storageScope: createStorageScope(user, { repoRoot: process.cwd() }),
       req,
       res,
       url: new URL(`http://decks.example.test/api/presentations/${DECK}`),
@@ -324,7 +324,7 @@ test('the shared route middleware admits the same person for a write', async () 
     end() {},
   };
   const pres = await withPresentationAuth({
-    storageScope: createRouteContext(COLLABORATOR, { repoRoot: process.cwd() }),
+    storageScope: createStorageScope(COLLABORATOR, { repoRoot: process.cwd() }),
     id: DECK,
     authedUser: COLLABORATOR,
     res,

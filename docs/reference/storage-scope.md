@@ -21,7 +21,7 @@ and where the convention's boundary lies.
 ## What a `StorageScope` is
 
 `{ organizationId, actorEmail, repoRoot }` — built once per request by
-`createRouteContext()` (`server/utils/context.js`) and passed down; defined
+`createStorageScope()` (`server/utils/context.js`) and passed down; defined
 and validated in `server/storage/scope.js`. Entry points without a request
 build one through the dedicated constructors: `jobScope()` for queue workers,
 `singleOrganizationScope()` for MCP/stdio, `crossOrganizationScope()` for
@@ -116,10 +116,11 @@ violations are carried in `tests/storage-call-convention-burndown.json`, an
 allowlist that **only shrinks**: fixing an export deletes its line; adding a
 new export in either old shape fails the suite.
 
-**Honest status note (2026-08-12):** the layer is mid-migration. The burndown
-list started at 163 lines (160 exports; three carry both violations). Exports
-whose scope parameter is correctly positioned but still *named* `ctx` ride
-along in the final naming pass, together with the rename
-`createRouteContext` → `createStorageScope`. Nothing here promises
-compatibility with the old shapes: during beta they are removed, not
-tolerated (`docs/reference/versioning.md` § the beta stance).
+**Honest status note (2026-08-13):** the burndown list is at zero (plus the
+six documented disk-path exceptions), the factory is named
+`createStorageScope()`, and route handlers pass the per-request scope down
+instead of rebuilding it. What remains of the migration is the naming pass
+(exports whose scope parameter is correctly positioned but still *named*
+`ctx`). Nothing here promises compatibility with the old shapes: during beta
+they are removed, not tolerated (`docs/reference/versioning.md` § the beta
+stance).

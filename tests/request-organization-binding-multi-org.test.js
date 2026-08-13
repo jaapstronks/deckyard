@@ -1,15 +1,15 @@
 /**
  * The request-to-organization binding, with MULTI_ORG_ENABLED (A1 phase 1).
  *
- * `createRouteContext` used to discard `authedUser.organizationId` and hand
+ * `createStorageScope` used to discard `authedUser.organizationId` and hand
  * every request the default organization, so a person who had switched
  * organizations still read and wrote in the default one. This file walks the whole
  * chain the way a request does — session cookie → `getUserFromRequestAsync` →
- * `createRouteContext` → the Postgres presentations adapter — and pins that the
+ * `createStorageScope` → the Postgres presentations adapter — and pins that the
  * organization the session is resolved to is the organization the queries scope
  * on.
  *
- * **Which assertions fail without the change** (revert `createRouteContext` in
+ * **Which assertions fail without the change** (revert `createStorageScope` in
  * server/utils/context.js to `options.organizationId || getDefaultOrganizationId()`
  * and these six go red, the rest stay green):
  *
@@ -54,7 +54,7 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { hashPassword } = await import('../server/utils/password-hash.js');
 const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const auth = await import('../server/auth/auth.js');
-const { createRouteContext } = await import('../server/utils/context.js');
+const { createStorageScope } = await import('../server/utils/context.js');
 const { withPresentations } = await import(
   '../server/storage/adapters/postgres/presentations.js'
 );
@@ -177,7 +177,7 @@ async function contextFor(organizationId) {
     requestWithSession(login, organizationId),
     {}
   );
-  return { authedUser, ctx: authedUser ? createRouteContext(authedUser) : null };
+  return { authedUser, ctx: authedUser ? createStorageScope(authedUser) : null };
 }
 
 // ---------------------------------------------------------------------------
@@ -198,7 +198,7 @@ test('an explicit override still wins over the session', async () => {
   seedTwoOrgs();
   const { authedUser } = await contextFor(ORG_B);
 
-  const ctx = createRouteContext(authedUser, { organizationId: ORG_A });
+  const ctx = createStorageScope(authedUser, { organizationId: ORG_A });
   assert.equal(ctx.organizationId, ORG_A, 'options.organizationId is the top precedence');
 });
 
@@ -208,7 +208,7 @@ test('a context with nobody authenticated falls back to the default', () => {
   // The callers that build a context before (or without) authentication:
   // password reset, magic link, SSO, email templates. They pass null, so the
   // absence is stated rather than lost, and the default is not a guess.
-  assert.equal(createRouteContext(null).organizationId, ORG_A);
+  assert.equal(createStorageScope(null).organizationId, ORG_A);
 });
 
 test('an authenticated user with no resolved organization gets none (L10)', () => {
@@ -219,7 +219,7 @@ test('an authenticated user with no resolved organization gets none (L10)', () =
   // audit. Once an instance holds several organizations the request gets no
   // organization at all and getOrgId() refuses the query instead of guessing.
   assert.equal(
-    createRouteContext({ email: 'apikey-owner@example.com' }).organizationId,
+    createStorageScope({ email: 'apikey-owner@example.com' }).organizationId,
     null
   );
 });
@@ -238,7 +238,7 @@ test('an unverified organization from the synchronous path is ignored', () => {
     _needsDbValidation: true,
   };
 
-  assert.equal(createRouteContext(unverified).organizationId, null);
+  assert.equal(createStorageScope(unverified).organizationId, null);
 });
 
 // ---------------------------------------------------------------------------
@@ -362,7 +362,7 @@ test('switching organizations moves the request with it', async () => {
   };
 
   const authedUser = await auth.getUserFromRequestAsync(switched, {});
-  const ctx = createRouteContext(authedUser);
+  const ctx = createStorageScope(authedUser);
 
   assert.equal(ctx.organizationId, ORG_B, 'the switch reaches the storage layer');
   assert.ok(await adapter.getPresentation('deck-beta', ctx));
