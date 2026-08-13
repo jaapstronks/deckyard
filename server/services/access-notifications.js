@@ -11,6 +11,9 @@ import {
 } from '../storage/access-attempts.js';
 import { createNotification } from '../storage/notifications.js';
 import { broadcastToUser, NotificationEventTypes } from './notification-events.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('access-notifications');
 
 /**
  * Notify author of an access attempt to revoked content.
@@ -91,7 +94,7 @@ export async function notifyAuthorOfAccessAttempt({
 
     if (!notifResult.ok) {
       // Log but don't fail - the access attempt is already logged
-      console.warn('[access-notifications] Failed to create notification:', notifResult.reason);
+      log.warn('Failed to create notification:', notifResult.reason);
       return { ok: true, notified: false, reason: 'notification_failed' };
     }
 
@@ -105,7 +108,7 @@ export async function notifyAuthorOfAccessAttempt({
 
     return { ok: true, notified: true };
   } catch (error) {
-    console.error('[access-notifications] Error notifying author:', error);
+    log.error('Error notifying author:', error);
     return { ok: false, reason: 'internal_error' };
   }
 }

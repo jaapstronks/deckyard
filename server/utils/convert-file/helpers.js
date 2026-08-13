@@ -3,6 +3,10 @@
  * Utility functions for file conversion.
  */
 
+import { createLogger } from '../logger.js';
+
+const log = createLogger('File Convert');
+
 /**
  * Detect file type from filename and/or MIME type
  */
@@ -116,13 +120,13 @@ export function firstSlideIsTitle(firstSlideContent, outline) {
   const lines = text.split('\n').filter(l => l.trim()).length;
   if (lines <= 3) {
     // Few lines = likely a title slide
-    console.log('[File Convert] First slide looks like a title (few lines)');
+    log.info('First slide looks like a title (few lines)');
     return true;
   }
 
   // Check 2: First slide contains the detected presentation title
   if (outlineTitle && text.includes(outlineTitle)) {
-    console.log('[File Convert] First slide contains presentation title');
+    log.info('First slide contains presentation title');
     return true;
   }
 
@@ -134,7 +138,7 @@ export function firstSlideIsTitle(firstSlideContent, outline) {
   // Check 4: Check if first AI slide is a title-slide type
   const firstAiSlide = outline.slides?.[0];
   if (firstAiSlide?.intent === 'opening') {
-    console.log('[File Convert] First AI slide has opening intent');
+    log.info('First AI slide has opening intent');
     return true;
   }
 

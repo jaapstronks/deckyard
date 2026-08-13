@@ -20,6 +20,9 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pathToFileURL } from 'node:url';
 import { clampUsage } from '../../../../shared/slide-types/usage.js';
+import { createLogger } from '../../logger.js';
+
+const log = createLogger('custom-ai-loader');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -87,8 +90,8 @@ export async function loadCustomAiCatalog() {
         // that `usage` goes down with it, since a fork author who wrote only a
         // usage rule would otherwise get silence.
         if (!aiDef.description) {
-          console.warn(
-            `[custom-ai-loader] Skipping AI metadata for ${typeName}: missing 'description'` +
+          log.warn(
+            `Skipping AI metadata for ${typeName}: missing 'description'` +
               (aiDef.usage ? " (its 'usage' rule is dropped with it)" : '')
           );
           continue;
@@ -99,8 +102,8 @@ export async function loadCustomAiCatalog() {
         // ignored — said out loud, because silently dropping it is how a fork
         // ends up wondering why its constraints stopped reaching the model.
         if (aiDef.schema && typeof aiDef.schema === 'object') {
-          console.warn(
-            `[custom-ai-loader] Ignoring 'ai.schema' on ${typeName}: the agent-facing ` +
+          log.warn(
+            `Ignoring 'ai.schema' on ${typeName}: the agent-facing ` +
               'schema is derived from the type definition\'s fields[]. Move any ' +
               'constraint you need onto the field itself, and use `ai: false` on a ' +
               'field you do not want agents to fill.'
@@ -129,10 +132,10 @@ export async function loadCustomAiCatalog() {
           examples[typeName] = aiDef.examples;
         }
 
-        console.log(`[custom-ai-loader] Loaded AI metadata for: ${typeName}`);
+        log.info(`Loaded AI metadata for: ${typeName}`);
       }
     } catch (err) {
-      console.error(`[custom-ai-loader] Error loading ${file}:`, err.message);
+      log.error(`Error loading ${file}:`, err.message);
     }
   }
 

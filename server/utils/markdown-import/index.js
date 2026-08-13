@@ -10,6 +10,9 @@ import { parseMarkdownDeck } from './parse.js';
 import { mapParsedDeckToSlides } from './map.js';
 import { resolveSlideImages } from './images.js';
 import { getMediaProvider } from '../../media/index.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('markdown-bundle');
 
 /**
  * Convert markdown text to a deck object + import report.
@@ -148,7 +151,7 @@ export async function convertMarkdownBundle(zipBuffer, opts = {}) {
         }
       }
     } catch (err) {
-      console.warn(`[markdown-bundle] Failed to upload image ${name}:`, err.message);
+      log.warn(`Failed to upload image ${name}:`, err.message);
     }
   }
 

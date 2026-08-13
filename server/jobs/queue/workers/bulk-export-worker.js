@@ -14,6 +14,9 @@ import { createNotification } from '../../../storage/notifications.js';
 import { jobScope } from '../../../storage/scope.js';
 import { broadcastToUser } from '../../../services/notification-events.js';
 import { getAppBaseUrl } from '../../../config/utils.js';
+import { createLogger } from '../../../utils/logger.js';
+
+const log = createLogger('bulk-export-worker');
 
 // Store completed job results temporarily for download
 const jobResults = new Map();
@@ -158,7 +161,7 @@ async function sendExportNotifications({ userEmail, jobId, manifest, organizatio
       broadcastToUser(userEmail, 'notification:new', result.notification);
     }
   } catch (err) {
-    console.warn('[bulk-export-worker] In-app notification failed:', err.message);
+    log.warn('In-app notification failed:', err.message);
   }
 
   // 2. Email notification (lazy import to avoid circular deps)
@@ -171,7 +174,7 @@ async function sendExportNotifications({ userEmail, jobId, manifest, organizatio
       repoRoot,
     });
   } catch (err) {
-    console.warn('[bulk-export-worker] Email notification failed:', err.message);
+    log.warn('Email notification failed:', err.message);
   }
 }
 
@@ -183,7 +186,7 @@ async function sendExportNotifications({ userEmail, jobId, manifest, organizatio
 async function processBulkExportJob(job) {
   const { repoRoot, userEmail, organizationId, options } = job.data;
 
-  console.log(`[bulk-export-worker] Processing bulk export for ${userEmail}, job ${job.id}`);
+  log.info(`Processing bulk export for ${userEmail}, job ${job.id}`);
 
   try {
     const { filePath, manifest } = await buildBulkExport({
@@ -226,8 +229,8 @@ async function processBulkExportJob(job) {
       completedAt: new Date().toISOString(),
     });
 
-    console.log(
-      `[bulk-export-worker] Bulk export complete for ${userEmail}: ` +
+    log.info(
+      `Bulk export complete for ${userEmail}: ` +
       `${manifest.stats.presentations} presentations, ${size} bytes`
     );
 
@@ -239,7 +242,7 @@ async function processBulkExportJob(job) {
       organizationId,
       repoRoot,
     }).catch((err) => {
-      console.warn('[bulk-export-worker] Notification error:', err.message);
+      log.warn('Notification error:', err.message);
     });
 
     return {

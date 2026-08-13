@@ -7,6 +7,9 @@ import { sendEmail, getSenderIdentity } from './core.js';
 import { getUserSettings } from '../../storage/settings.js';
 import { resolveTemplate, interpolatePlaceholders } from '../email-template-resolver.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
+import { createLogger } from '../../utils/logger.js';
+
+const log = createLogger('email');
 
 /**
  * Send a lead notification email to the presentation owner.
@@ -42,8 +45,7 @@ export async function maybeSendLeadNotification(repoRoot, { presentation, lead }
       repoRoot,
     });
   } catch (err) {
-    // eslint-disable-next-line no-console
-    console.warn('[email] Failed to send lead notification:', err.message);
+    log.warn('Failed to send lead notification:', err.message);
   }
 }
 

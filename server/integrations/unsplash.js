@@ -8,6 +8,9 @@
  */
 
 import { apiFetch, createConfigChecker } from '../utils/api-fetch.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('unsplash');
 
 const UNSPLASH_API_BASE = 'https://api.unsplash.com';
 
@@ -93,7 +96,7 @@ export async function triggerDownload(downloadLocation) {
   });
 
   if (!resp.ok) {
-    console.warn(`Unsplash download tracking failed: ${resp.status}`);
+    log.warn(`Unsplash download tracking failed: ${resp.status}`);
   }
 }
 
