@@ -273,14 +273,14 @@ server.listen(PORT, HOST, () => {
 
 // Graceful shutdown
 async function shutdown(signal) {
-  console.log(`\n[Server] Received ${signal}, shutting down...`);
+  log.info(`Received ${signal}, shutting down...`);
   // Tell open editors before anything closes: go read-only, pause autosave,
   // keep the work in the browser. This is the moment a deploy actually hurts —
   // a container booting with MAINTENANCE_MODE set would be announcing it to
   // nobody, because the connections are all on the container going down.
   try {
     const { notified } = announceMaintenance(true, { reason: 'shutdown' });
-    if (notified > 0) console.log(`[Server] Maintenance announced to ${notified} client(s)`);
+    if (notified > 0) log.info(`Maintenance announced to ${notified} client(s)`);
   } catch {
     // Never let the announcement block the shutdown it precedes.
   }
@@ -290,12 +290,12 @@ async function shutdown(signal) {
     await closeQueues(); // Close job queues and workers
     await closeStorage();
     await closeRedis(); // Close Redis connection
-    console.log('[Server] Shutdown complete');
+    log.info('Shutdown complete');
     process.exit(0);
   });
   // Force exit after 10s if graceful shutdown hangs
   setTimeout(() => {
-    console.error('[Server] Forced shutdown after timeout');
+    log.error('Forced shutdown after timeout');
     process.exit(1);
   }, 10000);
 }

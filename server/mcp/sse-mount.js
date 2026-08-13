@@ -12,7 +12,7 @@ import { registerPrompts } from './prompts.js';
 import { createSseHandler } from './sse.js';
 import { createLogger } from '../utils/logger.js';
 
-const log = createLogger('MCP/SSE');
+const log = createLogger('mcp-sse');
 
 // Memoized as a promise so concurrent first requests share one initialization.
 let _handlerPromise = null;

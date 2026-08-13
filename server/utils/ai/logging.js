@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { nowIso } from '../normalize.js';
 import { createLogger } from '../logger.js';
 
-const log = createLogger('AI Log');
+const log = createLogger('ai-log');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

@@ -9,12 +9,15 @@
  *
  * Two kinds of exceptions exist, both deliberate:
  *
- * 1. ALLOWLIST — whole files whose raw console output is the point:
- *    the logger implementation itself, the migrate CLI, and the
- *    boot/shutdown lines in server.js that must reach stdout unadorned.
- * 2. CLI tails — `if (process.argv[1]?.endsWith(...))` blocks in jobs
+ * 1. ALLOWLIST — files whose raw console output is the point: the logger
+ *    implementation itself, the migrate CLI, and the boot banners in
+ *    server.js. An entry may pin `count`: the exemption then covers exactly
+ *    that many call sites, so a new raw console in an allowlisted file still
+ *    fails here instead of riding along on the exemption.
+ * 2. CLI tails — `if (process.argv[1]?.endsWith('…')) {` blocks in jobs
  *    files: output for a human running the file directly. The scanner
- *    skips those blocks (brace-balanced from the guard line).
+ *    skips those blocks (brace-balanced from the guard line); the guard
+ *    must carry its opening brace on the same line to be recognized.
  *
  * Anything else: use `createLogger()` — or extend ALLOWLIST with a reason.
  *
@@ -34,11 +37,23 @@ const ALLOWLIST = [
   { file: 'server/utils/logger.js', reason: 'the logger implementation itself' },
   { file: 'server/utils/debug-log.js', reason: 'logger family: DEBUG_LOG-gated raw output is the contract' },
   { file: 'server/db/migrate.js', reason: 'CLI output for a human running migrations' },
-  { file: 'server/server.js', reason: 'boot/shutdown lines run before/after everything and go to stdout unadorned' },
+  {
+    file: 'server/server.js',
+    reason: 'boot banners (pre/at-listen fatals and warnings) go to stdout unadorned; shutdown logs through createLogger',
+    count: 8,
+  },
 ];
 
-const CONSOLE_CALL = /\bconsole\.(log|info|warn|error|debug|trace|dir)\s*\(/;
-const CLI_TAIL_GUARD = /if\s*\(\s*process\.argv\[1\]/;
+// Every console method that produces output, plus the computed-member form
+// (`console[level](…)`) that would otherwise slip past a method-name list.
+const CONSOLE_CALL =
+  /\bconsole\s*(?:\.\s*(?:log|info|warn|error|debug|trace|dir|table|group|groupCollapsed|groupEnd|count|countReset|time|timeEnd|timeLog|assert)\s*\(|\[)/;
+
+// A CLI tail is only recognized in its canonical shape: the `?.endsWith(`
+// guard with its opening brace on the same line. A braceless or differently
+// shaped guard is NOT masked — the brace-balancing below would otherwise run
+// past the guard and mask unrelated code.
+const CLI_TAIL_GUARD = /if\s*\(\s*process\.argv\[1\]\?\.endsWith\(.*\)\s*\{\s*$/;
 
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -76,24 +91,41 @@ function cliTailMask(lines) {
   return mask;
 }
 
+/** Raw console call-lines in a file (comment-only lines skipped). */
+function consoleCallLines(file) {
+  const lines = fs.readFileSync(file, 'utf8').split('\n');
+  const inTail = cliTailMask(lines);
+  const hits = [];
+  lines.forEach((line, i) => {
+    if (inTail[i]) return;
+    const trimmed = line.trimStart();
+    // Skip comment-only lines so documentation mentioning console is fine.
+    if (trimmed.startsWith('//') || trimmed.startsWith('*')) return;
+    if (CONSOLE_CALL.test(line)) hits.push({ line: i + 1, text: trimmed.trim() });
+  });
+  return hits;
+}
+
 test('no bare console.* under server/ (log through createLogger)', () => {
-  const allowed = new Set(ALLOWLIST.map((a) => a.file));
+  const allowed = new Map(ALLOWLIST.map((a) => [a.file, a]));
   const violations = [];
 
   for (const file of walk(path.join(repoRoot, 'server'))) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
-    if (allowed.has(rel)) continue;
-    const lines = fs.readFileSync(file, 'utf8').split('\n');
-    const inTail = cliTailMask(lines);
-    lines.forEach((line, i) => {
-      if (inTail[i]) return;
-      const trimmed = line.trimStart();
-      // Skip comment-only lines so documentation mentioning console is fine.
-      if (trimmed.startsWith('//') || trimmed.startsWith('*')) return;
-      if (CONSOLE_CALL.test(line)) {
-        violations.push(`${rel}:${i + 1}  ${trimmed.trim()}`);
+    const entry = allowed.get(rel);
+    if (entry && entry.count === undefined) continue;
+    const hits = consoleCallLines(file);
+    if (entry) {
+      // Count-pinned exemption: the file may keep exactly `count` raw sites.
+      if (hits.length !== entry.count) {
+        violations.push(
+          `${rel}: ${hits.length} raw console sites, allowlist pins ${entry.count} — ` +
+            'use createLogger() for new logging, or re-pin with a reason'
+        );
       }
-    });
+      continue;
+    }
+    for (const h of hits) violations.push(`${rel}:${h.line}  ${h.text}`);
   }
 
   assert.equal(
@@ -110,4 +142,28 @@ test('the allowlist only names files that still exist', () => {
       `Stale allowlist entry: ${file} no longer exists — remove it.`
     );
   }
+});
+
+test('createLogger namespaces are kebab-case', () => {
+  // One vocabulary for the [module] slot: lowercase kebab-case, so grepping a
+  // log line back to its module never stumbles over spelling ('DB' vs 'db',
+  // 'AI Log' vs 'ai-log', a bare migration number).
+  const NAMESPACE = /createLogger\(\s*'([^']*)'\s*\)/g;
+  const OK = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+  const bad = [];
+  for (const file of walk(path.join(repoRoot, 'server'))) {
+    const rel = path.relative(repoRoot, file).split(path.sep).join('/');
+    const src = fs.readFileSync(file, 'utf8');
+    for (const m of src.matchAll(NAMESPACE)) {
+      if (!OK.test(m[1])) {
+        const line = src.slice(0, m.index).split('\n').length;
+        bad.push(`${rel}:${line}  createLogger('${m[1]}')`);
+      }
+    }
+  }
+  assert.equal(
+    bad.length,
+    0,
+    `Logger namespaces must be kebab-case:\n  ${bad.join('\n  ')}`
+  );
 });

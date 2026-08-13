@@ -20,7 +20,7 @@ import {
 import { convertMarkdownText, convertMarkdownBundle } from '../markdown-import/index.js';
 import { createLogger } from '../logger.js';
 
-const log = createLogger('File Convert');
+const log = createLogger('convert-file');
 
 // Re-export constants
 export { SUPPORTED_EXTENSIONS, SUPPORTED_MIME_TYPES };

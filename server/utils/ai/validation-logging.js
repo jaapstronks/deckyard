@@ -15,7 +15,7 @@ import { nowIso } from '../normalize.js';
 import { envBool } from '../../config/utils.js';
 import { createLogger } from '../logger.js';
 
-const log = createLogger('AI Validation Log');
+const log = createLogger('ai-validation');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -117,14 +117,14 @@ export function logValidationEvent(event, details = {}) {
   currentBuffer.push(entry);
   scheduleFlush();
 
-  // Also log to console for immediate visibility
+  // Also log through the shared logger for immediate visibility
   const level =
     event.includes('error') || event.includes('fail')
       ? 'error'
       : event.includes('warn') || event.includes('unknown')
         ? 'warn'
-        : 'log';
-  console[level](`[AI Validation] ${event}:`, JSON.stringify(details, null, 2));
+        : 'info';
+  log[level](`${event}:`, JSON.stringify(details, null, 2));
 }
 
 /**

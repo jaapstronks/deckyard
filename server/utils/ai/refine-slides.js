@@ -20,7 +20,7 @@ import { validateSlideContent } from './schemas/index.js';
 import { prompts } from './prompts/index.js';
 import { createLogger } from '../logger.js';
 
-const log = createLogger('Phase2');
+const log = createLogger('refine-slides');
 
 /**
  * Map intent to allowed slide types

@@ -5,7 +5,7 @@
 
 import { createLogger } from '../logger.js';
 
-const log = createLogger('File Convert');
+const log = createLogger('convert-file');
 
 /**
  * Detect file type from filename and/or MIME type
