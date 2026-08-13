@@ -78,16 +78,16 @@ export class SandboxQuotaError extends AppError {
  * Count a guest's decks and sum their stored bytes in the shared presentations
  * table, scoped to the context's organization. The byte figure is the
  * compressed jsonb size of the two big columns (slides + i18n).
- * @param {object} ctx - Storage context carrying the organization.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope.
  * @param {string} ownerEmail
  * @returns {Promise<{ deckCount: number, totalBytes: number }>}
  */
-export async function getSandboxUsageForOwner(ctx, ownerEmail) {
+export async function getSandboxUsageForOwner(scope, ownerEmail) {
   const owner = normalizeEmail(ownerEmail);
   if (!owner) return { deckCount: 0, totalBytes: 0 };
 
   const db = getDb();
-  const orgId = getOrgId(ctx);
+  const orgId = getOrgId(scope);
   const { rows } = await sql`
     SELECT
       count(*)::int AS deck_count,
@@ -107,12 +107,12 @@ export async function getSandboxUsageForOwner(ctx, ownerEmail) {
 /**
  * Sum stored bytes of every deck in the shared presentations table, scoped to
  * the organization. Used by the cleanup loop's global disk-usage guard.
- * @param {object} ctx - Storage context carrying the organization.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @returns {Promise<number>}
  */
-export async function getSandboxTotalBytes(ctx) {
+export async function getSandboxTotalBytes(scope) {
   const db = getDb();
-  const orgId = getOrgId(ctx);
+  const orgId = getOrgId(scope);
   const { rows } = await sql`
     SELECT coalesce(sum(pg_column_size(slides) + pg_column_size(i18n)), 0)::bigint AS total_bytes
     FROM presentations
@@ -126,18 +126,18 @@ export async function getSandboxTotalBytes(ctx) {
  * would exceed the per-guest deck-count cap, or the guest's stored bytes are
  * already over the per-guest byte cap. No-op outside sandbox mode or without an
  * owner email, so it is safe to call unconditionally from the create path.
- * @param {object} ctx - Storage context carrying the organization.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} ownerEmail
  * @returns {Promise<void>}
  */
-export async function assertSandboxQuotaForCreate(ctx, ownerEmail) {
+export async function assertSandboxQuotaForCreate(scope, ownerEmail) {
   if (!sandboxEnabled()) return;
   const owner = normalizeEmail(ownerEmail);
   if (!owner) return;
 
   const maxDecks = sandboxMaxDecksPerGuest();
   const maxBytes = sandboxMaxBytesPerGuest();
-  const { deckCount, totalBytes } = await getSandboxUsageForOwner(ctx, owner);
+  const { deckCount, totalBytes } = await getSandboxUsageForOwner(scope, owner);
 
   if (deckCount >= maxDecks) {
     throw new SandboxQuotaError(

@@ -27,7 +27,6 @@ import {
   recordSlidesAdded,
 } from '../../../services/activity-events.js';
 import { notifyDeckActivity } from '../../../services/deck-activity-notifications.js';
-import { createRouteContext } from '../../../utils/context.js';
 import { filterForViewOnly } from '../../../utils/public-output.js';
 import { broadcastToPresentation, PresentationEventTypes } from '../../../services/comment-events.js';
 import { scheduleDeckThumbnailWarm } from './thumbnail.js';
@@ -38,11 +37,11 @@ import { scheduleDeckThumbnailWarm } from './thumbnail.js';
  * downloading the whole deck (see client/views/editor/remote-refresh.js).
  */
 export async function handlePresentationRevision(
-  { repoRoot, storageScope, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'read' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
   if (!pres) return true;
   serveJson(res, 200, {
     id: pres.id,
@@ -54,11 +53,11 @@ export async function handlePresentationRevision(
 }
 
 export async function handlePresentationItem(
-  { repoRoot, storageScope, req, res, url, authedUser } = {},
+  { storageScope, req, res, url, authedUser } = {},
   id
 ) {
   if (req.method === 'GET') {
-    const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'read' });
+    const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
     if (!pres) return true;
 
     // Determine user's effective permission for the client UI
@@ -118,7 +117,7 @@ export async function handlePresentationItem(
     const jsonResult = await requireJsonBody(req, res);
     if (!jsonResult.ok) return true;
     const body = jsonResult.body;
-    const existing = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
+    const existing = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
     if (!existing) return true;
 
     // If-Match is required for everyone, admins included. Admins used to bypass
@@ -203,7 +202,6 @@ export async function handlePresentationItem(
 
     // Record activity event (non-blocking)
     if (authedUser?.email) {
-      const ctx = createRouteContext(authedUser);
 
       // Slides this actor added, for the slide.added feed event.
       const submittedSlides = Array.isArray(body?.slides) ? body.slides : updated.slides;
@@ -215,7 +213,7 @@ export async function handlePresentationItem(
           presentation: updated,
           actor: authedUser,
           previousVisibility: existing.visibility,
-          ctx,
+          scope: storageScope,
         });
       } else if (addedSlideIds.length > 0) {
         // A slide-add is more specific than a generic update, so emit it
@@ -226,7 +224,7 @@ export async function handlePresentationItem(
           presentation: updated,
           actor: authedUser,
           slideIds: addedSlideIds,
-          ctx,
+          scope: storageScope,
         });
         // Bundled "someone worked on your deck" bell notification for the
         // owner/collaborators (coalesced per actor within the debounce window;
@@ -235,7 +233,7 @@ export async function handlePresentationItem(
           presentation: updated,
           actor: authedUser,
           slideCount: addedSlideIds.length,
-          ctx,
+          scope: storageScope,
         });
       } else if (updated.visibility === 'organization') {
         // Record general update (only for organization-visible presentations to reduce noise)
@@ -245,7 +243,7 @@ export async function handlePresentationItem(
           changes: {
             titleChanged: existing.title !== updated.title,
           },
-          ctx,
+          scope: storageScope,
         });
       }
     }
@@ -269,14 +267,14 @@ export async function handlePresentationItem(
     // Deck-grid raster: queue a debounced re-render when this save changed
     // slide 1, so the next Home load is a cache hit instead of the thing that
     // triggers the render. No-ops for every other save.
-    scheduleDeckThumbnailWarm({ repoRoot, before: existing, after: updated, authedUser });
+    scheduleDeckThumbnailWarm({ scope: storageScope, before: existing, after: updated });
 
     serveJson(res, 200, updated);
     return true;
   }
 
   if (req.method === 'DELETE') {
-    const existing = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'delete' });
+    const existing = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'delete' });
     if (!existing) return true;
 
     // Parse optional message from request body
@@ -295,7 +293,7 @@ export async function handlePresentationItem(
       void recordPresentationDeleted({
         presentation: existing,
         actor: authedUser,
-        ctx: createRouteContext(authedUser),
+        scope: storageScope,
       });
     }
 

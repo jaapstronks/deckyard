@@ -78,7 +78,7 @@ export async function handleListReports(ctx, presentationId) {
   const { res, url, authedUser } = ctx;
 
   const pres = await withPresentationAuth({
-    repoRoot: ctx.repoRoot,
+    storageScope: ctx.storageScope,
     id: presentationId,
     authedUser,
     res,
@@ -115,7 +115,7 @@ export async function handleCreateReport(ctx, presentationId) {
   }
 
   const pres = await withPresentationAuth({
-    repoRoot: ctx.repoRoot,
+    storageScope: ctx.storageScope,
     id: presentationId,
     authedUser,
     res,
@@ -177,7 +177,7 @@ export async function handleGetReport(ctx, presentationId, reportId) {
   const { res, authedUser } = ctx;
 
   const pres = await withPresentationAuth({
-    repoRoot: ctx.repoRoot,
+    storageScope: ctx.storageScope,
     id: presentationId,
     authedUser,
     res,
@@ -206,7 +206,7 @@ export async function handleUpdateReport(ctx, presentationId, reportId) {
   const { req, res, authedUser } = ctx;
 
   const pres = await withPresentationAuth({
-    repoRoot: ctx.repoRoot,
+    storageScope: ctx.storageScope,
     id: presentationId,
     authedUser,
     res,
@@ -235,7 +235,7 @@ export async function handleDeleteReport(ctx, presentationId, reportId) {
   const { res, authedUser } = ctx;
 
   const pres = await withPresentationAuth({
-    repoRoot: ctx.repoRoot,
+    storageScope: ctx.storageScope,
     id: presentationId,
     authedUser,
     res,
@@ -260,7 +260,7 @@ export async function handleRegenerateToken(ctx, presentationId, reportId) {
   const { res, authedUser } = ctx;
 
   const pres = await withPresentationAuth({
-    repoRoot: ctx.repoRoot,
+    storageScope: ctx.storageScope,
     id: presentationId,
     authedUser,
     res,

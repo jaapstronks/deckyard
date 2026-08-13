@@ -18,7 +18,7 @@ export async function handleRealtime(ctx, presentationId) {
   const { req, res, authedUser } = ctx;
 
   const pres = await withPresentationAuth({
-    repoRoot: ctx.repoRoot,
+    storageScope: ctx.storageScope,
     id: presentationId,
     authedUser,
     res,

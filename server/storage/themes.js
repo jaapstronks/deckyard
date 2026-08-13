@@ -41,12 +41,12 @@ async function verifyFontFamilyIds(db, orgId, fonts) {
 
 /**
  * List all themes for an organization.
- * @param {Object} ctx - Context object
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @returns {Promise<Array>} - List of themes
  */
-export async function listThemes(ctx) {
+export async function listThemes(scope) {
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const rows = await db
       .selectFrom('themes')
@@ -83,8 +83,8 @@ export async function listThemes(ctx) {
  * @param {string} themeId - The theme ID (UUID)
  * @returns {Promise<Object|null>} - Theme object or null
  */
-export async function getTheme(scope, themeId) {
-  const context = toStorageContext(scope, 'getTheme', {}, {
+export async function getThemeRecord(scope, themeId) {
+  const context = toStorageContext(scope, 'getThemeRecord', {}, {
     allowCrossOrganization: true,
   });
   if (!themeId || typeof themeId !== 'string') return null;

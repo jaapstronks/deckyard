@@ -16,8 +16,7 @@
 
 import { getPresentation } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
-import { createRouteContext } from '../../../utils/context.js';
-import { loadTheme } from '../../../utils/themes.js';
+import { loadThemeAssets } from '../../../utils/themes.js';
 import { canReadPresentation } from '../../../utils/presentation-authz.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
@@ -39,19 +38,17 @@ import { methodNotAllowed, notFound, unauthorized } from '../../../utils/http.js
  * regenerate later. Uses slide 1, matching what
  * {@link handlePresentationThumbnail} serves.
  *
- * @param {string} repoRoot
+ * @param {import('../../../storage/scope.js').StorageScope} scope - The request's storage scope
  * @param {object} pres - Full presentation, post-save.
- * @param {object|null} authedUser
  * @returns {Promise<void>}
  */
-export async function warmDeckThumbnail(repoRoot, pres, authedUser) {
+export async function warmDeckThumbnail(scope, pres) {
   try {
     const slide = Array.isArray(pres?.slides) ? pres.slides[0] : null;
     if (!slide || typeof slide !== 'object') return;
-    const ctx = createRouteContext(authedUser);
-    const theme = await loadTheme(repoRoot, pres?.theme);
-    const slideTypes = await buildMergedSlideTypes(ctx);
-    await requestThumbnailGeneration(repoRoot, pres, slide, theme, slideTypes);
+    const theme = await loadThemeAssets(scope.repoRoot, pres?.theme);
+    const slideTypes = await buildMergedSlideTypes(scope);
+    await requestThumbnailGeneration(scope.repoRoot, pres, slide, theme, slideTypes);
   } catch {
     // best-effort: the on-demand route regenerates on next request
   }
@@ -71,19 +68,16 @@ export async function warmDeckThumbnail(repoRoot, pres, authedUser) {
  * Returns immediately; the render happens later, on no request's thread.
  *
  * @param {object} params
- * @param {string} params.repoRoot
+ * @param {import('../../../storage/scope.js').StorageScope} params.scope - The request's storage scope
  * @param {object} params.before - Presentation as it was before the save.
  * @param {object} params.after - Presentation as stored after the save.
- * @param {object|null} [params.authedUser]
  * @returns {boolean} whether a warm is now pending for this deck.
  */
-export function scheduleDeckThumbnailWarm({ repoRoot, before, after, authedUser = null } = {}) {
+export function scheduleDeckThumbnailWarm({ scope, before, after } = {}) {
   const id = after?.id;
   if (!id) return false;
   if (firstSlideSignature(before) === firstSlideSignature(after)) return false;
-  return scheduleThumbnailWarm(String(id), () =>
-    warmDeckThumbnail(repoRoot, after, authedUser)
-  );
+  return scheduleThumbnailWarm(String(id), () => warmDeckThumbnail(scope, after));
 }
 
 export async function handlePresentationThumbnail(
@@ -94,7 +88,6 @@ export async function handlePresentationThumbnail(
     return methodNotAllowed(res, ['GET']);
   }
 
-  const ctx = createRouteContext(authedUser);
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
 
@@ -106,7 +99,7 @@ export async function handlePresentationThumbnail(
     return unauthorized(res);
   }
 
-  const theme = await loadTheme(repoRoot, pres?.theme);
+  const theme = await loadThemeAssets(repoRoot, pres?.theme);
   const { filename, prefix } = thumbCacheKey(pres, theme);
 
   /** Send a raster; `fresh` decides how long the browser may hold onto it. */
@@ -130,7 +123,7 @@ export async function handlePresentationThumbnail(
   // on the request thread. Empty decks (no slide) just stay a placeholder.
   const firstSlide = Array.isArray(pres?.slides) ? pres.slides[0] : null;
   if (firstSlide && typeof firstSlide === 'object') {
-    const slideTypes = await buildMergedSlideTypes(ctx);
+    const slideTypes = await buildMergedSlideTypes(storageScope);
     requestThumbnailGeneration(repoRoot, pres, firstSlide, theme, slideTypes);
   }
 

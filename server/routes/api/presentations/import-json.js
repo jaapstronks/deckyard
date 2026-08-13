@@ -2,7 +2,7 @@ import { createPresentation, updatePresentation } from '../../../storage/present
 import { serveJson, serverError, requireJsonBody } from '../../../utils/http.js';
 import { isAppError } from '../../../utils/errors.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
-import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
+import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('import-json');
 
@@ -29,7 +29,7 @@ export async function handlePresentationsImportJson({
     // background image from its presets.
     let themeConfig = null;
     try {
-      themeConfig = await loadTheme(repoRoot, resolveThemeId(deck?.theme));
+      themeConfig = await loadThemeAssets(repoRoot, resolveThemeId(deck?.theme));
     } catch {
       // ignore — title slides are imported without a background image
     }

@@ -12,7 +12,7 @@ import { updatePresentation } from '../../../storage/presentations/index.js';
 import { getUserSettings } from '../../../storage/settings.js';
 import { pickOgImageUrlFromPresentation } from '../../../render/og-image.js';
 import { methodNotAllowed } from '../../../utils/http.js';
-import { loadTheme } from '../../../utils/themes.js';
+import { loadThemeAssets } from '../../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../../render/preview-image.js';
 import { isMediaProviderInitialized } from '../../../media/index.js';
 import { requirePermission, getPresentationWithAccess, apiSuccess } from './middleware.js';
@@ -46,7 +46,7 @@ async function handlePublish(ctx, id) {
       : null;
 
     if (firstSlide && isMediaProviderInitialized()) {
-      const theme = await loadTheme(repoRoot, pres.theme);
+      const theme = await loadThemeAssets(repoRoot, pres.theme);
 
       // Check if author overlay should be shown
       const showAuthor = pres?.settings?.ogPreview?.showAuthor === true;

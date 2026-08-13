@@ -46,7 +46,7 @@ const { initializeStorage, __resetStorageForTests } = await import(
   '../server/storage/adapters/index.js'
 );
 const { handleLiveSessions } = await import('../server/routes/api/live-sessions.js');
-const { createRouteContext } = await import('../server/utils/context.js');
+const { createStorageScope } = await import('../server/utils/context.js');
 const { handleLiveSessionsPublic } = await import(
   '../server/routes/api/live-session-audience.js'
 );
@@ -189,7 +189,7 @@ async function callLiveSessions({ root, method, pathname, body, authedUser }) {
     repoRoot: root,
     // Mirror the dispatcher (routes/api/index.js): every authed route carries
     // the request's storage scope.
-    storageScope: createRouteContext(authedUser, { repoRoot: root }),
+    storageScope: createStorageScope(authedUser, { repoRoot: root }),
     req: mockReq(method, body),
     res,
     url,
@@ -394,6 +394,7 @@ test('MH2: a linkId that resolves to no in-scope link is denied (404, fail close
     // lookup returns null): the containment gate must 404, never 200.
     const handled = await handleShareLinkManagement({
       repoRoot: root,
+      storageScope: createStorageScope(OWNER, { repoRoot: root }),
       req: mockReq('DELETE'),
       res,
       url,

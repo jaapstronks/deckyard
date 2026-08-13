@@ -17,7 +17,7 @@ import {
 } from '../../../utils/http.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { getString } from '../../../utils/request-validators.js';
-import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
+import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
 import { getConvertibleSlideTypes, convertSlideToType } from '../../../../shared/slide-types/convert.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
 import { createLogger } from '../../../utils/logger.js';
@@ -30,7 +30,7 @@ const log = createLogger('change-theme');
  * @returns {Object} { exclude: Set, include: Set }
  */
 function getThemeSlideTypeConfig(theme) {
-  // `newTheme` comes from loadTheme(), which normalizes, so `slideTypes.exclude`
+  // `newTheme` comes from loadThemeAssets(), which normalizes, so `slideTypes.exclude`
   // is the whole story here — the legacy `hiddenSlideTypes` alias is folded away
   // in normalizeTheme().
   const st = theme?.slideTypes && typeof theme.slideTypes === 'object' ? theme.slideTypes : {};
@@ -123,7 +123,7 @@ export async function handleAnalyzeThemeChange(
   }
 
   // Load the new theme
-  const newTheme = await loadTheme(repoRoot, newThemeId);
+  const newTheme = await loadThemeAssets(repoRoot, newThemeId);
   if (!newTheme) {
     return badRequest(res, 'Theme not found');
   }
@@ -208,7 +208,7 @@ export async function handleChangeTheme(
   }
 
   // Load the new theme to verify it exists
-  const newTheme = await loadTheme(repoRoot, newThemeId);
+  const newTheme = await loadThemeAssets(repoRoot, newThemeId);
   if (!newTheme) {
     return badRequest(res, 'Theme not found');
   }

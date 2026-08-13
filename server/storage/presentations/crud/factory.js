@@ -7,7 +7,7 @@ import { cryptoUuid } from '../../../../shared/slide-types/helpers.js';
 import { normalizeI18n } from '../i18n.js';
 import { attachSandboxMeta } from '../sandbox.js';
 import { sandboxDefaultThemeId, sandboxEnabled } from '../../../config/sandbox.js';
-import { resolveThemeId, loadTheme } from '../../../utils/themes.js';
+import { resolveThemeId, loadThemeAssets } from '../../../utils/themes.js';
 import { normalizeMeta } from './helpers.js';
 import { normalizeRevealStyle } from '../../../../shared/reveal-style.js';
 
@@ -42,7 +42,7 @@ export async function prepareNewPresentation(repoRoot, body) {
   let themeConfig = null;
   try {
     const themeId = resolveThemeId(effectiveTheme);
-    themeConfig = await loadTheme(repoRoot, themeId);
+    themeConfig = await loadThemeAssets(repoRoot, themeId);
     defaultTitleSlide = themeConfig?.defaultTitleSlide || 'title-slide';
   } catch {
     // ignore

@@ -242,7 +242,7 @@ missing is listed under *What is not done yet* below.
   Lookups that ask "who is this?" are organization-independent; lookups that ask
   "who is in this organization?" (`server/storage/users.js`, the member lists,
   `created_by` resolution) keep their organization filter.
-- **The request-to-organization binding — done.** `createRouteContext()`
+- **The request-to-organization binding — done.** `createStorageScope()`
   (`server/utils/context.js`) puts the session's resolved organization on the
   context, and every storage query that is given that context scopes on it via
   `getOrgId(ctx)`. So a request acts in the organization the person switched to:
@@ -351,7 +351,7 @@ missing is listed under *What is not done yet* below.
   that states neither an organization nor a reason it cannot have one. There is
   no fallback left: a caller that gives nothing gets a `TypeError`, not a guess.
 
-  Sessions get their scope from `createRouteContext()`, built once per request in
+  Sessions get their scope from `createStorageScope()`, built once per request in
   `server/routes/api/index.js` and carried on the same parameter bag that already
   carried `repoRoot`, so route handlers pass the scope they were given.
 

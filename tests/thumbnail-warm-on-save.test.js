@@ -46,7 +46,7 @@ import {
 } from '../server/render/deck-thumbnail.js';
 import { handlePresentationItem } from '../server/routes/api/presentations/presentation.js';
 import { handlePresentationThumbnail } from '../server/routes/api/presentations/thumbnail.js';
-import { loadTheme } from '../server/utils/themes.js';
+import { loadThemeAssets } from '../server/utils/themes.js';
 import { dataDir } from '../server/config/storage-paths.js';
 import { testScope } from './helpers/storage-scope.js';
 
@@ -363,7 +363,7 @@ test('after the warm ran, the next Home load is a cache hit instead of a miss', 
       { expectedRevision: before.revision, actorEmail: OWNER }
     );
 
-    const theme = await loadTheme(repoRoot, updated.theme);
+    const theme = await loadThemeAssets(repoRoot, updated.theme);
     const { filename } = thumbCacheKey(updated, theme);
 
     // No warm yet: the next Home load misses, so it serves the previous raster

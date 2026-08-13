@@ -66,7 +66,7 @@ const ALLOWLIST = [
   },
   {
     file: 'server/utils/context.js',
-    reason: 'createRouteContext pre-auth default (reset / magic-link / SSO have no resolved org)',
+    reason: 'createStorageScope pre-auth default (reset / magic-link / SSO have no resolved org)',
   },
   {
     file: 'server/routes/feed.js',

@@ -47,7 +47,7 @@ import { renderSlideToPngBuffer } from '../server/render/png.js';
 import { buildPptxBuffer } from '../server/export/pptx.js';
 import { renderSandboxOgImagePng } from '../server/utils/sandbox-og-image.js';
 import { parsePdf } from '../server/utils/convert-file/pdf-parser.js';
-import { loadTheme } from '../server/utils/themes.js';
+import { loadThemeAssets } from '../server/utils/themes.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -123,7 +123,7 @@ test('a Chrome/Chromium binary is available to the export chain', { skip }, () =
 });
 
 test('PDF export produces a real, non-blank PDF', { skip }, async () => {
-  const theme = await loadTheme(repoRoot, 'default');
+  const theme = await loadThemeAssets(repoRoot, 'default');
   const buf = await renderSlidesToPdfBuffer(repoRoot, smokeDeck(), { theme });
 
   assert.ok(Buffer.isBuffer(buf), 'export should return a Node Buffer, not a bare Uint8Array');
@@ -155,7 +155,7 @@ test('PDF export produces a real, non-blank PDF', { skip }, async () => {
 });
 
 test('PNG export produces a correctly sized, non-blank image', { skip }, async () => {
-  const theme = await loadTheme(repoRoot, 'default');
+  const theme = await loadThemeAssets(repoRoot, 'default');
   const buf = await renderSlideToPngBuffer(repoRoot, smokeSlide(), { scale: 2, theme });
 
   assert.ok(Buffer.isBuffer(buf), 'export should return a Node Buffer, not a bare Uint8Array');
@@ -184,7 +184,7 @@ test('PNG export produces a correctly sized, non-blank image', { skip }, async (
  * process keeps that regression covered.
  */
 test('PPTX export embeds the Chrome-rendered slide image', { skip }, async () => {
-  const theme = await loadTheme(repoRoot, 'default');
+  const theme = await loadThemeAssets(repoRoot, 'default');
   const { buffer } = await buildPptxBuffer(repoRoot, smokeDeck(), { scale: 1, theme });
 
   // Explicit bytes rather than a string literal: a .pptx starts with the

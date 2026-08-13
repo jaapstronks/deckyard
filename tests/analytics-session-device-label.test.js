@@ -71,6 +71,7 @@ const { publicDeviceLabel, deviceLabelKeySource } = await import(
   '../server/analytics/helpers.js'
 );
 const { handleSessions } = await import('../server/routes/api/analytics/metrics.js');
+const { createStorageScope } = await import('../server/utils/context.js');
 
 /** Two decks owned by the same person, so authorization is never the variable. */
 const DECK_ONE = 'deck-one';
@@ -181,6 +182,7 @@ async function callSessions(deck) {
   await handleSessions(
     {
       repoRoot: process.cwd(),
+      storageScope: createStorageScope(OWNER, { repoRoot: process.cwd() }),
       res,
       url: new URL(`http://decks.example.test/api/presentations/${deck}/analytics/sessions`),
       authedUser: OWNER,

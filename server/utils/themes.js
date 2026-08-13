@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
-import { getTheme as getCustomTheme } from '../storage/themes.js';
+import { getThemeRecord as getCustomTheme } from '../storage/themes.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { listAllFontFamiliesWithVariants } from '../storage/font-families.js';
 import { buildThemeConfig } from './theme-builder.js';
@@ -58,7 +58,7 @@ function findThemeFile(repoRoot, themeId) {
   return null;
 }
 
-export async function loadTheme(repoRoot, rawThemeId, ctx = null) {
+export async function loadThemeAssets(repoRoot, rawThemeId, ctx = null) {
   const rawId = String(rawThemeId || '').trim();
 
   // Check if this is a custom theme UUID
@@ -88,7 +88,7 @@ export async function loadTheme(repoRoot, rawThemeId, ctx = null) {
 
   // Theme not found, try falling back to default theme
   if (id !== DEFAULT_THEME) {
-    return loadTheme(repoRoot, DEFAULT_THEME);
+    return loadThemeAssets(repoRoot, DEFAULT_THEME);
   }
 
   // Final fallback: a minimal in-memory theme.
@@ -150,7 +150,7 @@ async function loadCustomTheme(themeId, ctx, repoRoot) {
   }
 
   // Fall back to default theme
-  return loadTheme(repoRoot, DEFAULT_THEME);
+  return loadThemeAssets(repoRoot, DEFAULT_THEME);
 }
 
 /**
@@ -172,7 +172,7 @@ const HEX_COLOR_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
  * Resolve a theme's base slide background color, for the deck-grid thumbnail
  * placeholder (shown until the rasterized PNG loads). Returns the theme's
  * `--t-color-background` cssVar when it's a plain hex, else null (the card then
- * falls back to a neutral surface). Cheap: `loadTheme` is memoized.
+ * falls back to a neutral surface). Cheap: `loadThemeAssets` is memoized.
  *
  * @param {string} repoRoot
  * @param {string} rawThemeId
@@ -181,7 +181,7 @@ const HEX_COLOR_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
  */
 export async function resolveThemeThumbBg(repoRoot, rawThemeId, ctx = null) {
   try {
-    const theme = await loadTheme(repoRoot, rawThemeId, ctx);
+    const theme = await loadThemeAssets(repoRoot, rawThemeId, ctx);
     const bg = theme?.cssVars?.['--t-color-background'];
     return typeof bg === 'string' && HEX_COLOR_RE.test(bg.trim()) ? bg.trim() : null;
   } catch {

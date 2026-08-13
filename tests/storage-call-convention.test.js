@@ -55,7 +55,7 @@ const PERMANENT_EXCEPTIONS = new Map([
   ],
   [
     'server/storage/presentations/crud/factory.js :: prepareNewPresentation',
-    'reads theme files from disk via loadTheme(repoRoot, …)',
+    'reads theme files from disk via loadThemeAssets(repoRoot, …)',
   ],
 ]);
 
