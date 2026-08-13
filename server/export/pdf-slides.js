@@ -373,7 +373,7 @@ export async function buildSlidesPdfHtml(
   const displayPx = imageTransform
     ? await measureImageDisplayPx({ slidesHtml, styleContent: buildStyleContent(css) })
     : new Map();
-  const imgSrcTransform = displayAwareEmbedTransform(process.env, displayPx) ?? imageTransform;
+  const imgSrcTransform = displayAwareEmbedTransform(displayPx) ?? imageTransform;
 
   let pagesHtml = slidesHtml
     .map((slideHtml, i) => {

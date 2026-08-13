@@ -53,12 +53,43 @@ test('displayCap: a small display size yields a small cap, clamped both ends', (
   assert.equal(displayCap(0, cfg, 2), cfg.maxPx);
 });
 
-test('retinaScale: default 2, env override clamped to [1, 4]', () => {
-  assert.equal(retinaScale({}), DEFAULT_RETINA_SCALE);
-  assert.equal(retinaScale({ PDF_EXPORT_IMAGE_RETINA_SCALE: '3' }), 3);
-  assert.equal(retinaScale({ PDF_EXPORT_IMAGE_RETINA_SCALE: '100' }), 4);
-  assert.equal(retinaScale({ PDF_EXPORT_IMAGE_RETINA_SCALE: '0' }), DEFAULT_RETINA_SCALE);
-  assert.equal(retinaScale({ PDF_EXPORT_IMAGE_RETINA_SCALE: 'nope' }), DEFAULT_RETINA_SCALE);
+/** Run `fn` with PDF_EXPORT_* env vars set (undefined = unset). */
+function withEnv(env, fn) {
+  const keys = ['PDF_EXPORT_IMAGE_RETINA_SCALE', 'PDF_EXPORT_IMAGE_COMPRESSION'];
+  const saved = {};
+  for (const k of keys) {
+    saved[k] = process.env[k];
+    delete process.env[k];
+  }
+  for (const [k, v] of Object.entries(env)) {
+    if (v !== undefined) process.env[k] = v;
+  }
+  try {
+    return fn();
+  } finally {
+    for (const k of keys) {
+      if (saved[k] === undefined) delete process.env[k];
+      else process.env[k] = saved[k];
+    }
+  }
+}
+
+test('retinaScale: default 2, valid override in [1, 4], else fallback', () => {
+  withEnv({}, () => assert.equal(retinaScale(), DEFAULT_RETINA_SCALE));
+  withEnv({ PDF_EXPORT_IMAGE_RETINA_SCALE: '3' }, () =>
+    assert.equal(retinaScale(), 3)
+  );
+  // Out-of-range and garbage fall back to the default (envInt contract; the
+  // pre-family parser clamped 100 → 4 instead).
+  withEnv({ PDF_EXPORT_IMAGE_RETINA_SCALE: '100' }, () =>
+    assert.equal(retinaScale(), DEFAULT_RETINA_SCALE)
+  );
+  withEnv({ PDF_EXPORT_IMAGE_RETINA_SCALE: '0' }, () =>
+    assert.equal(retinaScale(), DEFAULT_RETINA_SCALE)
+  );
+  withEnv({ PDF_EXPORT_IMAGE_RETINA_SCALE: 'nope' }, () =>
+    assert.equal(retinaScale(), DEFAULT_RETINA_SCALE)
+  );
 });
 
 test('hasMeasurableImages: only local <img src> counts', () => {
@@ -74,15 +105,14 @@ test('hasMeasurableImages: only local <img src> counts', () => {
 });
 
 test('displayAwareEmbedTransform: null when compression is off', () => {
-  assert.equal(
-    displayAwareEmbedTransform({ PDF_EXPORT_IMAGE_COMPRESSION: 'off' }, new Map()),
-    null,
+  withEnv({ PDF_EXPORT_IMAGE_COMPRESSION: 'off' }, () =>
+    assert.equal(displayAwareEmbedTransform(new Map()), null)
   );
 });
 
 test('displayAwareEmbedTransform: an unmeasured url keeps the flat cap', async () => {
   const raw = await bigOpaqueJpeg(2400);
-  const transform = displayAwareEmbedTransform({}, new Map());
+  const transform = withEnv({}, () => displayAwareEmbedTransform(new Map()));
   const { buf } = await transform(raw, 'jpg', 'image/jpeg', '/uploads/unknown.jpg');
   const meta = await sharp(buf).metadata();
   // No measurement → flat cap 2600 → 2400 source kept (never enlarged).
@@ -92,7 +122,7 @@ test('displayAwareEmbedTransform: an unmeasured url keeps the flat cap', async (
 test('displayAwareEmbedTransform: a small measured url is shrunk to its cap', async () => {
   const raw = await bigOpaqueJpeg(2400);
   const displayPx = new Map([['/uploads/thumb.jpg', 300]]);
-  const transform = displayAwareEmbedTransform({}, displayPx);
+  const transform = withEnv({}, () => displayAwareEmbedTransform(displayPx));
   const { buf } = await transform(raw, 'jpg', 'image/jpeg', '/uploads/thumb.jpg');
   const meta = await sharp(buf).metadata();
   assert.equal(Math.max(meta.width, meta.height), 600); // 300 * 2 retina

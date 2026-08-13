@@ -46,22 +46,59 @@ async function bigTransparentPng(px = 3000) {
     .toBuffer();
 }
 
+/** Run `fn` with the given PDF_EXPORT_* vars set (undefined = unset). */
+function withEnv(env, fn) {
+  const keys = [
+    'PDF_EXPORT_IMAGE_COMPRESSION',
+    'PDF_EXPORT_IMAGE_MAX_PX',
+    'PDF_EXPORT_IMAGE_QUALITY',
+  ];
+  const saved = {};
+  for (const k of keys) {
+    saved[k] = process.env[k];
+    delete process.env[k];
+  }
+  for (const [k, v] of Object.entries(env)) {
+    if (v !== undefined) process.env[k] = v;
+  }
+  try {
+    return fn();
+  } finally {
+    for (const k of keys) {
+      if (saved[k] === undefined) delete process.env[k];
+      else process.env[k] = saved[k];
+    }
+  }
+}
+
 test('config: default enabled with safe values, disable switches', () => {
-  const def = pdfImageCompressionConfig({});
+  const def = withEnv({}, () => pdfImageCompressionConfig());
   assert.ok(def && def.maxPx > 0 && def.quality >= 1 && def.quality <= 100);
 
-  assert.equal(pdfImageCompressionConfig({ PDF_EXPORT_IMAGE_COMPRESSION: 'off' }), null);
-  assert.equal(pdfImageCompressionConfig({ PDF_EXPORT_IMAGE_COMPRESSION: '0' }), null);
-  assert.equal(pdfImageCompressionConfig({ PDF_EXPORT_IMAGE_MAX_PX: '0' }), null);
+  // Every recognized falsy token disables; an unrecognized value stays ON
+  // (default-on flag: a typo must not silently change export behaviour).
+  for (const v of ['off', '0', 'false', 'no']) {
+    withEnv({ PDF_EXPORT_IMAGE_COMPRESSION: v }, () =>
+      assert.equal(pdfImageCompressionConfig(), null, `toggle ${v}`)
+    );
+  }
+  withEnv({ PDF_EXPORT_IMAGE_COMPRESSION: 'banana' }, () =>
+    assert.ok(pdfImageCompressionConfig(), 'unrecognized toggle stays enabled')
+  );
+  withEnv({ PDF_EXPORT_IMAGE_MAX_PX: '0' }, () =>
+    assert.equal(pdfImageCompressionConfig(), null)
+  );
 
-  const custom = pdfImageCompressionConfig({
-    PDF_EXPORT_IMAGE_MAX_PX: '1800',
-    PDF_EXPORT_IMAGE_QUALITY: '65',
-  });
+  const custom = withEnv(
+    { PDF_EXPORT_IMAGE_MAX_PX: '1800', PDF_EXPORT_IMAGE_QUALITY: '65' },
+    () => pdfImageCompressionConfig()
+  );
   assert.deepEqual(custom, { maxPx: 1800, quality: 65 });
 
-  // Out-of-range clamps rather than throwing.
-  assert.equal(pdfImageCompressionConfig({ PDF_EXPORT_IMAGE_QUALITY: '999' }).quality, 100);
+  // Out-of-range falls back to the default (envInt contract).
+  withEnv({ PDF_EXPORT_IMAGE_QUALITY: '999' }, () =>
+    assert.equal(pdfImageCompressionConfig().quality, def.quality)
+  );
 });
 
 test('opaque image is downsampled and re-encoded as JPEG, much smaller', async () => {
@@ -126,7 +163,7 @@ test('toDataUrlIfLocal applies the transform end-to-end', async () => {
     const buf = await bigOpaquePng(3000);
     await fs.writeFile(path.join(uploads, 'photo.png'), buf);
 
-    const transform = pdfImageEmbedTransform({}); // defaults, enabled
+    const transform = withEnv({}, () => pdfImageEmbedTransform()); // defaults, enabled
     const dataUrl = await toDataUrlIfLocal(dir, '/uploads/photo.png', { transform });
     assert.match(dataUrl, /^data:image\/jpeg;base64,/, 'opaque upload embedded as JPEG');
 

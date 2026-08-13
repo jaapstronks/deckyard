@@ -19,38 +19,30 @@
  */
 
 import sharp from 'sharp';
+import { envBool, envInt } from '../config/utils.js';
 
 const DEFAULT_MAX_PX = 2600;
 const DEFAULT_QUALITY = 80;
 
-function parseIntEnv(raw, fallback, { min, max }) {
-  if (raw == null || raw === '') return fallback;
-  const n = Number(raw);
-  if (!Number.isFinite(n)) return fallback;
-  const i = Math.round(n);
-  if (i < min) return min;
-  if (i > max) return max;
-  return i;
-}
-
 /**
  * Read the PDF-export image-compression config from the environment.
- * Disabled entirely when `PDF_EXPORT_IMAGE_COMPRESSION` is a falsy string
- * ("0"/"off"/"false"/"no") or when `PDF_EXPORT_IMAGE_MAX_PX` is set to 0.
+ * Disabled entirely when `PDF_EXPORT_IMAGE_COMPRESSION` is an explicit falsy
+ * token ("0"/"off"/"false"/"no") or when `PDF_EXPORT_IMAGE_MAX_PX` is set to
+ * 0; any unrecognized toggle value leaves compression on (envBool fallback).
+ * Out-of-range numbers fall back to the defaults per the envInt contract.
  *
  * @returns {{ maxPx: number, quality: number } | null} null when disabled.
  */
-export function pdfImageCompressionConfig(env = process.env) {
-  const toggle = String(env.PDF_EXPORT_IMAGE_COMPRESSION ?? '').trim().toLowerCase();
-  if (['0', 'off', 'false', 'no'].includes(toggle)) return null;
+export function pdfImageCompressionConfig() {
+  if (!envBool('PDF_EXPORT_IMAGE_COMPRESSION', true)) return null;
 
-  const maxPx = parseIntEnv(env.PDF_EXPORT_IMAGE_MAX_PX, DEFAULT_MAX_PX, {
+  const maxPx = envInt('PDF_EXPORT_IMAGE_MAX_PX', DEFAULT_MAX_PX, {
     min: 0,
     max: 20000,
   });
   if (maxPx === 0) return null;
 
-  const quality = parseIntEnv(env.PDF_EXPORT_IMAGE_QUALITY, DEFAULT_QUALITY, {
+  const quality = envInt('PDF_EXPORT_IMAGE_QUALITY', DEFAULT_QUALITY, {
     min: 1,
     max: 100,
   });
@@ -125,11 +117,10 @@ export async function compressImageForEmbed(buf, ext, mime, config) {
  * is disabled. The returned function matches the `transform(buf, ext, mime)`
  * hook consumed by `toDataUrlIfLocal`.
  *
- * @param {NodeJS.ProcessEnv} [env]
  * @returns {((buf: Buffer, ext: string, mime: string) => Promise<{buf: Buffer, mime: string}>) | null}
  */
-export function pdfImageEmbedTransform(env = process.env) {
-  const config = pdfImageCompressionConfig(env);
+export function pdfImageEmbedTransform() {
+  const config = pdfImageCompressionConfig();
   if (!config) return null;
   return (buf, ext, mime) => compressImageForEmbed(buf, ext, mime, config);
 }

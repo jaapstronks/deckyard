@@ -9,6 +9,7 @@ import { shouldUseSecureCookies } from '../utils/request-url.js';
 import { sessionVersion } from '../utils/session-version.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { getDefaultOrganizationId } from '../config/database.js';
+import { envBool, envStr } from '../config/utils.js';
 import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('auth');
@@ -34,7 +35,7 @@ function base64urlToBuf(s) {
 let warnedNoAdminEmail = false;
 
 function getAdminEmail() {
-  const email = String(process.env.AUTH_ADMIN_EMAIL || '').trim().toLowerCase();
+  const email = envStr('AUTH_ADMIN_EMAIL').toLowerCase();
   if (!email && !warnedNoAdminEmail) {
     warnedNoAdminEmail = true;
     log.warn('AUTH_ADMIN_EMAIL not configured - no admin user set');
@@ -43,7 +44,7 @@ function getAdminEmail() {
 }
 
 function getSecret() {
-  const s = String(process.env.AUTH_SECRET || '').trim();
+  const s = envStr('AUTH_SECRET');
   if (!s)
     throw new Error(
       'AUTH_SECRET is required when auth is enabled'
@@ -54,7 +55,7 @@ function getSecret() {
 let warnedCookieDomain = false;
 
 function getCookieDomain() {
-  const d = String(process.env.COOKIE_DOMAIN || '').trim();
+  const d = envStr('COOKIE_DOMAIN');
   if (!d) return null;
 
   // Validate cookie domain format
@@ -79,13 +80,11 @@ function getCookieDomain() {
 let warnedAuthMisconfig = false;
 
 export function authEnabled() {
-  const hasSecret = !!String(
-    process.env.AUTH_SECRET || ''
-  ).trim();
-  // Default to enabled - explicitly set AUTH_ENABLED=false to disable
-  const explicitlyDisabled =
-    String(process.env.AUTH_ENABLED || '').trim().toLowerCase() === 'false';
-  const enabled = !explicitlyDisabled;
+  const hasSecret = !!envStr('AUTH_SECRET');
+  // Default-ON: only a recognized falsy token (false/0/no/off) disables auth.
+  // envBool's fallback-on-unrecognized is load-bearing here — a typo'd value
+  // must leave auth on, never fail open to anonymous admin.
+  const enabled = envBool('AUTH_ENABLED', true);
 
   if (enabled && !hasSecret && !warnedAuthMisconfig) {
     warnedAuthMisconfig = true;
@@ -101,8 +100,6 @@ export function authEnabled() {
 // and forgeable. 32 chars of randomness is the value recommended in
 // .env.example.
 export const MIN_AUTH_SECRET_LENGTH = 32;
-
-const truthyEnv = (v) => /^(1|true|yes|on)$/i.test(String(v || '').trim());
 
 /**
  * Guard against auth misconfiguration at startup. Two fatal cases:
@@ -124,14 +121,11 @@ const truthyEnv = (v) => /^(1|true|yes|on)$/i.test(String(v || '').trim());
  * @see security-audit-2026-07 L3 (weak-secret boot floor)
  */
 export function authConfigError() {
-  const secret = String(process.env.AUTH_SECRET || '').trim();
+  const secret = envStr('AUTH_SECRET');
 
-  const explicitlyDisabled =
-    String(process.env.AUTH_ENABLED || '').trim().toLowerCase() === 'false';
-  if (explicitlyDisabled) return null;
+  if (!envBool('AUTH_ENABLED', true)) return null;
 
-  const isSandboxOrDemo =
-    truthyEnv(process.env.SANDBOX_MODE) || truthyEnv(process.env.DEMO_MODE);
+  const isSandboxOrDemo = envBool('SANDBOX_MODE') || envBool('DEMO_MODE');
 
   if (!secret) {
     if (isSandboxOrDemo) return null;
@@ -145,7 +139,7 @@ export function authConfigError() {
   if (
     secret.length < MIN_AUTH_SECRET_LENGTH &&
     !isSandboxOrDemo &&
-    !truthyEnv(process.env.AUTH_ALLOW_WEAK_SECRET)
+    !envBool('AUTH_ALLOW_WEAK_SECRET')
   ) {
     return (
       `AUTH_SECRET is only ${secret.length} characters; Deckyard refuses to ` +
@@ -173,12 +167,10 @@ export function authConfigError() {
  */
 export function authConfigWarnings() {
   const warnings = [];
-  const secret = String(process.env.AUTH_SECRET || '').trim();
-  const explicitlyDisabled =
-    String(process.env.AUTH_ENABLED || '').trim().toLowerCase() === 'false';
+  const secret = envStr('AUTH_SECRET');
   // A short secret weakens the HMAC that signs session tokens. This only
   // reaches boot when the hard floor was overridden or in sandbox/demo.
-  if (secret && !explicitlyDisabled && secret.length < MIN_AUTH_SECRET_LENGTH) {
+  if (secret && envBool('AUTH_ENABLED', true) && secret.length < MIN_AUTH_SECRET_LENGTH) {
     warnings.push(
       `AUTH_SECRET is only ${secret.length} characters; use at least ` +
         `${MIN_AUTH_SECRET_LENGTH} random characters so session tokens cannot ` +
@@ -195,15 +187,10 @@ export function devAuthBypassEnabled() {
   // grant anonymous admin. Belt-and-suspenders with the startup check in
   // server.js. See docs/reference/security-posture.md
   // § Dev auth bypass is development-only.
-  if (
-    String(process.env.NODE_ENV || '').trim().toLowerCase() !== 'development'
-  ) {
+  if (envStr('NODE_ENV').toLowerCase() !== 'development') {
     return false;
   }
-  const v = String(process.env.AUTH_DEV_BYPASS || '')
-    .trim()
-    .toLowerCase();
-  return v === '1' || v === 'true' || v === 'yes';
+  return envBool('AUTH_DEV_BYPASS');
 }
 
 export function devBypassUser() {

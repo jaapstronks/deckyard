@@ -1,6 +1,6 @@
 import { mightRedisBeAvailable } from './redis-client.js';
 import { allowRequestRedis } from './rate-limit-redis.js';
-import { envBool } from '../config/utils.js';
+import { envBool, envInt } from '../config/utils.js';
 import {
   LOGIN_LIMITS,
   SHARE_VERIFY_LIMITS,
@@ -9,10 +9,6 @@ import {
 import { createLogger } from './logger.js';
 
 const log = createLogger('rate-limit');
-
-// Re-exported so limit values and their consumers stay importable together.
-export { LOGIN_LIMITS, SHARE_VERIFY_LIMITS, COMPANION_NOTES_LIMITS };
-
 
 // IPv4 validation regex
 const IPV4_REGEX = /^(\d{1,3}\.){3}\d{1,3}$/;
@@ -62,8 +58,7 @@ function isValidIp(ip) {
  * @returns {number}
  */
 function trustedProxyCount() {
-  const n = Number(process.env.TRUSTED_PROXY_COUNT);
-  return Number.isInteger(n) && n >= 1 ? n : 1;
+  return envInt('TRUSTED_PROXY_COUNT', 1, { min: 1 });
 }
 
 export function getClientIp(req) {

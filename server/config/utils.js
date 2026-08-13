@@ -18,17 +18,22 @@ export function envStr(name, fallback = '') {
 }
 
 /**
- * Read a boolean env var. `1`/`true`/`yes`/`on` (any case) → true, any other
- * set value → false, unset or blank → fallback.
+ * Read a boolean env var. `1`/`true`/`yes`/`on` (any case) → true,
+ * `0`/`false`/`no`/`off` (any case) → false, unset, blank, or any other
+ * value → fallback.
+ *
+ * Unrecognized values falling back (rather than counting as false) is what
+ * keeps a typo on the safe side in whichever direction the flag defaults:
+ * `AUTH_ENABLED=fasle` leaves auth ON because its fallback is true.
  * @param {string} name - Environment variable name
  * @param {boolean} [fallback]
  * @returns {boolean}
  */
 export function envBool(name, fallback = false) {
-  const s = envStr(name);
-  if (!s) return !!fallback;
-  const l = s.toLowerCase();
-  return l === '1' || l === 'true' || l === 'yes' || l === 'on';
+  const l = envStr(name).toLowerCase();
+  if (l === '1' || l === 'true' || l === 'yes' || l === 'on') return true;
+  if (l === '0' || l === 'false' || l === 'no' || l === 'off') return false;
+  return !!fallback;
 }
 
 /**

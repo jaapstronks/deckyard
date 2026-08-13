@@ -20,25 +20,21 @@
  *      connection can pin resources; it is not visible to well-behaved clients.
  */
 
+import { envInt } from '../config/utils.js';
 import { getClientIp } from './rate-limit.js';
 import { isPrivateAddress } from './ssrf-guard.js';
 
-function num(v, dflt) {
-  const n = Number(v);
-  return Number.isFinite(n) && n > 0 ? n : dflt;
-}
-
 /** Total concurrent public SSE streams allowed across the server. */
 function globalMax() {
-  return num(process.env.SSE_MAX_CONNECTIONS, 2000);
+  return envInt('SSE_MAX_CONNECTIONS', 2000, { min: 1 });
 }
 /** Concurrent streams allowed per distinguishable client IP. */
 function perIpMax() {
-  return num(process.env.SSE_MAX_CONNECTIONS_PER_IP, 50);
+  return envInt('SSE_MAX_CONNECTIONS_PER_IP', 50, { min: 1 });
 }
 /** Absolute stream lifetime before a force-close (ms). */
 function maxLifetimeMs() {
-  return num(process.env.SSE_MAX_LIFETIME_MS, 6 * 60 * 60 * 1000);
+  return envInt('SSE_MAX_LIFETIME_MS', 6 * 60 * 60 * 1000, { min: 1 });
 }
 
 let globalCount = 0;

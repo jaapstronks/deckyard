@@ -18,6 +18,7 @@
  * - **Off under `node --test` by default.** See {@link warmOnSaveEnabled}.
  */
 
+import { envBool } from '../config/utils.js';
 import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('thumbnail-warm');
@@ -43,10 +44,7 @@ const pending = new Map();
  * @returns {boolean}
  */
 export function warmOnSaveEnabled() {
-  const raw = String(process.env.DECK_THUMBNAIL_WARM_ON_SAVE ?? '').trim().toLowerCase();
-  if (raw === '1' || raw === 'true' || raw === 'yes') return true;
-  if (raw === '0' || raw === 'false' || raw === 'no') return false;
-  return !process.env.NODE_TEST_CONTEXT;
+  return envBool('DECK_THUMBNAIL_WARM_ON_SAVE', !process.env.NODE_TEST_CONTEXT);
 }
 
 /**
