@@ -12,7 +12,7 @@ import { methodNotAllowed } from '../../../utils/http.js';
 import { safeFilename } from '../../../utils/filename.js';
 import { stripLiveOnlySlidesFromPresentation } from '../../../utils/public-output.js';
 import { normalizeLang, projectPresentationForLang } from '../../../utils/i18n.js';
-import { loadTheme } from '../../../utils/themes.js';
+import { loadThemeAssets } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
   requirePermission,
@@ -52,7 +52,7 @@ async function prepareExportContext(ctx, presentationId) {
 
   const projected = exportLang ? projectPresentationForLang(pres, exportLang) : pres;
   const filteredPres = stripLiveOnlySlidesFromPresentation(projected);
-  const theme = await loadTheme(repoRoot, projected?.themeId);
+  const theme = await loadThemeAssets(repoRoot, projected?.themeId);
   const langSuffix = getLangSuffix(exportLang);
 
   // Load merged slide types (core + org-specific custom types)

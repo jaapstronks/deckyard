@@ -26,7 +26,7 @@ import {
   requestThumbnailGeneration,
 } from '../server/render/deck-thumbnail.js';
 import { dataDir } from '../server/config/storage-paths.js';
-import { loadTheme } from '../server/utils/themes.js';
+import { loadThemeAssets } from '../server/utils/themes.js';
 import { handlePresentationThumbnail } from '../server/routes/api/presentations/thumbnail.js';
 import { testScope } from './helpers/storage-scope.js';
 
@@ -172,7 +172,7 @@ test('route serves a cached webp to the owner', async () => {
     slides: [{ id: 's1', type: 'title-slide', content: { title: 'Hi' } }],
   });
   const pres = await getPresentation(testScope(), created.id);
-  const theme = await loadTheme(repoRoot, pres.theme);
+  const theme = await loadThemeAssets(repoRoot, pres.theme);
   const { filename } = thumbCacheKey(pres, theme);
 
   const webp = await sharp({
@@ -290,7 +290,7 @@ test('route serves the previous raster instead of 404 while the new one renders'
     expectedRevision: seeded.revision,
   });
   const pres = await getPresentation(testScope(), created.id);
-  const theme = await loadTheme(repoRoot, pres.theme);
+  const theme = await loadThemeAssets(repoRoot, pres.theme);
   const { prefix, filename } = thumbCacheKey(pres, theme);
 
   const webp = await sharp({

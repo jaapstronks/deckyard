@@ -980,17 +980,6 @@ export async function getDefaultThemeId(scope) {
 }
 
 /**
- * Get session duration in days from app settings.
- * @param {import('./scope.js').StorageScope} scope
- * @returns {Promise<number>}
- */
-export async function getSessionDurationDays(scope) {
-  toStorageContext(scope, 'getSessionDurationDays', {}, { allowCrossOrganization: true });
-  const settings = await getAppSettings(scope);
-  return settings.sessionDurationDays || 30;
-}
-
-/**
  * Resolve the analytics retention policy the cleanup job applies.
  *
  * The single runtime source: whatever the admin set in the UI

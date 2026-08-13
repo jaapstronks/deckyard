@@ -51,12 +51,12 @@ const SELECT_COLUMNS = [
 
 /**
  * List all custom slide types for an organization.
- * @param {Object} ctx - Context with organizationId
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @returns {Promise<Array>}
  */
-export async function listCustomSlideTypes(ctx) {
+export async function listCustomSlideTypes(scope) {
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const rows = await db
       .selectFrom('custom_slide_types')
@@ -73,12 +73,12 @@ export async function listCustomSlideTypes(ctx) {
 /**
  * List only published custom slide types for an organization.
  * Used by the slide picker and rendering pipeline.
- * @param {Object} ctx - Context with organizationId
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @returns {Promise<Array>}
  */
-export async function listPublishedCustomSlideTypes(ctx) {
+export async function listPublishedCustomSlideTypes(scope) {
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const rows = await db
       .selectFrom('custom_slide_types')

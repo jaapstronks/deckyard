@@ -16,7 +16,7 @@
 
 import { getPresentation } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
-import { loadTheme } from '../../../utils/themes.js';
+import { loadThemeAssets } from '../../../utils/themes.js';
 import { canReadPresentation } from '../../../utils/presentation-authz.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
@@ -46,7 +46,7 @@ export async function warmDeckThumbnail(scope, pres) {
   try {
     const slide = Array.isArray(pres?.slides) ? pres.slides[0] : null;
     if (!slide || typeof slide !== 'object') return;
-    const theme = await loadTheme(scope.repoRoot, pres?.theme);
+    const theme = await loadThemeAssets(scope.repoRoot, pres?.theme);
     const slideTypes = await buildMergedSlideTypes(scope);
     await requestThumbnailGeneration(scope.repoRoot, pres, slide, theme, slideTypes);
   } catch {
@@ -99,7 +99,7 @@ export async function handlePresentationThumbnail(
     return unauthorized(res);
   }
 
-  const theme = await loadTheme(repoRoot, pres?.theme);
+  const theme = await loadThemeAssets(repoRoot, pres?.theme);
   const { filename, prefix } = thumbCacheKey(pres, theme);
 
   /** Send a raster; `fresh` decides how long the browser may hold onto it. */

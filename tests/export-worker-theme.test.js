@@ -4,8 +4,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { loadTheme } from '../server/utils/themes.js';
-import { getTheme } from '../server/storage/themes.js';
+import { loadThemeAssets } from '../server/utils/themes.js';
+import { getThemeRecord } from '../server/storage/themes.js';
 
 /**
  * Regression guard for the *loader*, not the theme.
@@ -13,11 +13,11 @@ import { getTheme } from '../server/storage/themes.js';
  * Two functions in this codebase are called "get the theme" and they take
  * different arguments:
  *
- *   utils/themes.js    loadTheme(repoRoot, rawThemeId, ctx?)
- *   storage/themes.js  getTheme(scope, themeId)
+ *   utils/themes.js    loadThemeAssets(repoRoot, rawThemeId, ctx?)
+ *   storage/themes.js  getThemeRecord(scope, themeId)
  *
  * The queued export worker imported the second and called it with the first
- * one's arguments — `getTheme(repoRoot, themeName)`. Before the scope-first
+ * one's arguments — `getThemeRecord(repoRoot, themeName)`. Before the scope-first
  * convention (A7.20) neither argument was rejected: a repo path was simply not
  * a theme UUID (→ `null`), so every queued export (pptx, pdf, pdf-slides, png,
  * handoff-zip, notes) rendered with `theme = null` while the synchronous path
@@ -29,28 +29,28 @@ import { getTheme } from '../server/storage/themes.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-test('loadTheme and storage getTheme are not interchangeable', async () => {
+test('loadThemeAssets and storage getThemeRecord are not interchangeable', async () => {
   // The exact call the worker used to make: repoRoot in the scope slot. Since
   // the scope-first convention (A7.20) this fails loudly instead of answering
   // null — a string is not a StorageScope.
   await assert.rejects(
-    () => getTheme(repoRoot, 'midnight'),
-    /getTheme\(\) takes a storage scope, not a repoRoot string/,
-    'storage getTheme must refuse a repoRoot in the scope slot — the silent null is what hid the swap'
+    () => getThemeRecord(repoRoot, 'midnight'),
+    /getThemeRecord\(\) takes a storage scope, not a repoRoot string/,
+    'storage getThemeRecord must refuse a repoRoot in the scope slot — the silent null is what hid the swap'
   );
 
   // The call it makes now, with the same two values, resolves a real theme.
-  const theme = await loadTheme(repoRoot, 'midnight');
+  const theme = await loadThemeAssets(repoRoot, 'midnight');
   assert.equal(theme?.id, 'midnight');
   assert.ok(theme.cssVars && typeof theme.cssVars === 'object');
 });
 
-test('loadTheme always resolves a theme, never null', async () => {
+test('loadThemeAssets always resolves a theme, never null', async () => {
   // The failure mode was `theme = null` reaching every export builder, so pin
   // the invariant the worker now relies on: named, unknown and absent all
   // resolve to a usable theme object.
   for (const themeName of ['midnight', 'editorial', 'no-such-theme', '', undefined]) {
-    const theme = await loadTheme(repoRoot, themeName);
+    const theme = await loadThemeAssets(repoRoot, themeName);
     assert.ok(theme?.id, `theme ${String(themeName)} must resolve to a theme object`);
   }
 });
@@ -63,17 +63,17 @@ test('the export worker loads its theme through utils/themes.js', async () => {
 
   assert.match(
     src,
-    /import\s*\{[^}]*\bloadTheme\b[^}]*\}\s*from\s*'[^']*utils\/themes\.js'/,
-    'export-worker must import loadTheme from utils/themes.js'
+    /import\s*\{[^}]*\bloadThemeAssets\b[^}]*\}\s*from\s*'[^']*utils\/themes\.js'/,
+    'export-worker must import loadThemeAssets from utils/themes.js'
   );
   assert.doesNotMatch(
     src,
     /from\s*'[^']*storage\/themes\.js'/,
-    'export-worker must not reach for the storage-layer theme accessor: its signature is (themeId, ctx)'
+    'export-worker must not reach for the storage-layer theme accessor: its signature is (scope, themeId)'
   );
 });
 
-test('no server call site passes a repoRoot into storage getTheme', async () => {
+test('no server call site passes a repoRoot into storage getThemeRecord', async () => {
   const offenders = [];
 
   async function walk(dir) {
@@ -84,7 +84,7 @@ test('no server call site passes a repoRoot into storage getTheme', async () => 
         await walk(full);
       } else if (entry.name.endsWith('.js')) {
         const src = await fs.readFile(full, 'utf8');
-        if (/\bgetTheme\s*\(\s*(?:job\.data\.)?_?repoRoot\b/.test(src)) {
+        if (/\bgetThemeRecord\s*\(\s*(?:job\.data\.)?_?repoRoot\b/.test(src)) {
           offenders.push(path.relative(repoRoot, full));
         }
       }
@@ -96,6 +96,6 @@ test('no server call site passes a repoRoot into storage getTheme', async () => 
   assert.deepEqual(
     offenders,
     [],
-    'getTheme takes (themeId, ctx); passing a repoRoot returns null instead of throwing'
+    'getThemeRecord takes (scope, themeId); passing a repoRoot as the scope throws'
   );
 });

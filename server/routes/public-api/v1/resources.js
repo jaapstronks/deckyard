@@ -4,7 +4,7 @@
  */
 
 import { methodNotAllowed } from '../../../utils/http.js';
-import { listThemeIds, loadTheme } from '../../../utils/themes.js';
+import { listThemeIds, loadThemeAssets } from '../../../utils/themes.js';
 import { sandboxEnabled } from '../../../config/sandbox.js';
 import { listThemes } from '../../../storage/themes.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
@@ -35,7 +35,7 @@ async function handleThemes(ctx) {
   const systemThemes = [];
   for (const id of filteredSystemIds) {
     try {
-      const t = await loadTheme(repoRoot, id);
+      const t = await loadThemeAssets(repoRoot, id);
       systemThemes.push({
         id: String(t?.id || id),
         label: String(t?.label || t?.id || id),
