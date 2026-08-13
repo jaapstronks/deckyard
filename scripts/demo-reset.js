@@ -1,12 +1,14 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { loadDotEnv } from '../server/config/env.js';
 import { repoRoot } from '../server/config/paths.js';
+import { dataDir, uploadsDir } from '../server/config/storage-paths.js';
 
 /**
  * Reset the on-disk state of a demo instance.
  *
- * WARNING: deletes files under server/data + server/uploads. Only run this on
- * the demo deployment.
+ * WARNING: deletes files under dataDir() + uploadsDir() (server/data +
+ * server/uploads by default). Only run this on the demo deployment.
  *
  * Deck, session and settings data live in Postgres, so this script only
  * touches what a demo instance actually accumulates on disk: the thumbnail
@@ -26,8 +28,9 @@ async function ensureDir(p) {
 }
 
 async function resetDemoData() {
-  const dataRoot = path.join(repoRoot, 'server', 'data');
-  const uploadsRoot = path.join(repoRoot, 'server', 'uploads');
+  await loadDotEnv(repoRoot);
+  const dataRoot = dataDir(repoRoot);
+  const uploadsRoot = uploadsDir(repoRoot);
 
   // Thumbnail cache (server/render/deck-thumbnail.js).
   await rmIfExists(path.join(dataRoot, 'deck-thumbs'));
