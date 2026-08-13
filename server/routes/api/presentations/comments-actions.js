@@ -11,6 +11,8 @@ import {
   badRequest,
   requireJsonBody,
   notFound,
+  jsonError,
+  getErrorStatus,
 } from '../../../utils/http.js';
 import { canResolveComment } from '../../../utils/presentation-authz.js';
 import {
@@ -59,7 +61,7 @@ export async function handlePresentationCommentResolve(
   const result = await resolveComment(storageScope, commentId, { email: authedUser?.email });
 
   if (!result.ok) {
-    return serveJson(res, 400, result);
+    return jsonError(res, getErrorStatus(result.reason), result.reason);
   }
 
   // Record activity event (non-blocking)
@@ -108,7 +110,7 @@ export async function handlePresentationCommentReopen(
   const result = await reopenComment(storageScope, commentId);
 
   if (!result.ok) {
-    return serveJson(res, 400, result);
+    return jsonError(res, getErrorStatus(result.reason), result.reason);
   }
 
   // Record activity event (non-blocking)
@@ -159,7 +161,7 @@ export async function handlePresentationCommentDismiss(
   const result = await dismissComment(storageScope, commentId, { email: authedUser?.email });
 
   if (!result.ok) {
-    return serveJson(res, 400, result);
+    return jsonError(res, getErrorStatus(result.reason), result.reason);
   }
 
   // Broadcast to all connected clients (non-blocking)
@@ -283,7 +285,7 @@ export async function handlePresentationCommentsMarkRead(
 
   const result = await markThreadsRead(storageScope, id, commentIds);
   if (!result.ok) {
-    return serveJson(res, result.reason === 'unavailable' ? 503 : 400, result);
+    return jsonError(res, getErrorStatus(result.reason), result.reason);
   }
 
   serveJson(res, 200, { ok: true, marked: result.marked });
