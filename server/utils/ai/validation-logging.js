@@ -117,14 +117,14 @@ export function logValidationEvent(event, details = {}) {
   currentBuffer.push(entry);
   scheduleFlush();
 
-  // Also log through the shared logger for immediate visibility
+  // Also log to console for immediate visibility
   const level =
     event.includes('error') || event.includes('fail')
       ? 'error'
       : event.includes('warn') || event.includes('unknown')
         ? 'warn'
-        : 'info';
-  log[level](`${event}:`, JSON.stringify(details, null, 2));
+        : 'log';
+  console[level](`[AI Validation] ${event}:`, JSON.stringify(details, null, 2));
 }
 
 /**
