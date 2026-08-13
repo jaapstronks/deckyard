@@ -10,7 +10,7 @@ import { SLIDE_ITEM_REQUIREMENTS, NON_CONTENT_SLIDE_TYPES } from './constants.js
 import { logValidation } from './logging.js';
 import { createLogger } from '../../logger.js';
 
-const log = createLogger('ValidateSlide');
+const log = createLogger('validate-slides');
 
 /**
  * Pre-check if a slide type is appropriate given the content

@@ -6,7 +6,7 @@
 import { uploadImageKitBuffer, getImageKitConfigFromEnv } from '../../media/imagekit.js';
 import { createLogger } from '../logger.js';
 
-const log = createLogger('File Convert');
+const log = createLogger('convert-file');
 
 /**
  * Process image-only slides by uploading their images to ImageKit and creating image-slide data.

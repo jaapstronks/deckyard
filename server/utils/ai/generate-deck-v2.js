@@ -17,7 +17,7 @@ import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
 import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';
 import { createLogger } from '../logger.js';
 
-const log = createLogger('DeckGen V2');
+const log = createLogger('generate-deck-v2');
 
 /**
  * Assemble the final deck from refined slides

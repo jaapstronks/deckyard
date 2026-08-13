@@ -34,7 +34,7 @@ import { sql } from 'kysely';
 import { dataDir } from '../../config/storage-paths.js';
 import { createLogger } from '../../utils/logger.js';
 
-const log = createLogger('058');
+const log = createLogger('migration-058');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // server/db/migrations -> repo root

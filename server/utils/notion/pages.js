@@ -7,7 +7,7 @@ import { notionFetchJson, fetchAllBlockChildren } from './client.js';
 import { richTextToPlain, pageTitleFromProperties, blockTextLine, extractImageFromBlock, extractPageId } from './parser.js';
 import { createLogger } from '../logger.js';
 
-const log = createLogger('pages');
+const log = createLogger('notion-pages');
 
 export async function searchRecentPages({ pageSize = 50 } = {}) {
   return await searchPages({

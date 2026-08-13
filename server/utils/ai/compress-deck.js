@@ -12,7 +12,7 @@ import { requestChatCompletionContent, LlmError } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import { createLogger } from '../logger.js';
 
-const log = createLogger('Compress');
+const log = createLogger('compress-deck');
 
 /**
  * Extract a title or summary from a slide for the compression prompt

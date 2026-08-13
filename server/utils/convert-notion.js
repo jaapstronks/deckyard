@@ -20,7 +20,7 @@ import { DECK_FORMAT_ID } from '../../shared/slide-types/deck-format-id.js';
 import { uploadImageKitUrl, getImageKitConfigFromEnv } from '../media/imagekit.js';
 import { createLogger } from './logger.js';
 
-const log = createLogger('Notion Convert');
+const log = createLogger('convert-notion');
 
 /**
  * Convert a Notion page to a deck.

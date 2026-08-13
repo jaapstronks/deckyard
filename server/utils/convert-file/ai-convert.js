@@ -12,7 +12,7 @@ import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';
 import { firstSlideIsTitle } from './helpers.js';
 import { createLogger } from '../logger.js';
 
-const log = createLogger('File Convert');
+const log = createLogger('convert-file');
 
 /**
  * Use AI V2 (two-phase) to convert the formatted content into a deck

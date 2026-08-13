@@ -1,7 +1,7 @@
 import { cleanStr } from '../../shared/string-utils.js';
 import { createLogger } from '../utils/logger.js';
 
-const log = createLogger('ImageKit');
+const log = createLogger('imagekit');
 
 function cleanFolder(v) {
   const s = cleanStr(v);

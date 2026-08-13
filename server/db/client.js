@@ -8,7 +8,7 @@ import { Kysely, PostgresDialect, sql } from 'kysely';
 import { getDatabaseConfig, isPostgresMode } from '../config/database.js';
 import { createLogger } from '../utils/logger.js';
 
-const log = createLogger('DB');
+const log = createLogger('db');
 
 const { Pool } = pg;
 

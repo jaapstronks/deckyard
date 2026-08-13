@@ -6,7 +6,7 @@
 import { createHmac, randomBytes } from 'node:crypto';
 import { createLogger } from '../utils/logger.js';
 
-const log = createLogger('security');
+const log = createLogger('analytics');
 
 // ============================================================
 // CONFIGURATION CONSTANTS (can be overridden via env vars)

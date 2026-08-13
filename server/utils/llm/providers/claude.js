@@ -2,7 +2,7 @@ import { createLlmProvider } from '../provider-base.js';
 import { normalizeUsage } from '../usage.js';
 import { createLogger } from '../../logger.js';
 
-const log = createLogger('Claude');
+const log = createLogger('claude');
 
 /**
  * Extract text content from Claude's response format

@@ -23,7 +23,7 @@ import { extractJsonObject } from '../openai/json.js';
 import { prompts } from './prompts/index.js';
 import { createLogger } from '../logger.js';
 
-const log = createLogger('Revise');
+const log = createLogger('revise-outline');
 
 /** Reject a revision that would drop more than this share of content slides. */
 const MAX_DROP_RATIO = 0.25;

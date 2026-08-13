@@ -16,7 +16,7 @@ import { detectDeckLanguage, normalizeLang } from '../openai/lang.js';
 import { prompts } from './prompts/index.js';
 import { createLogger } from '../logger.js';
 
-const log = createLogger('Phase1');
+const log = createLogger('generate-outline');
 
 /**
  * Calculate target slide count based on content length and user preference
