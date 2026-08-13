@@ -271,7 +271,7 @@ test('jobs: a non-GET falls through (Form A), matching the old module-wide guard
 
 test('jobs: module guards — foreign prefix falls through, stats requires admin', async () => {
   const foreign = ctx('GET', '/api/not-jobs');
-  assert.equal(handleJobs(foreign.ctx), false);
+  assert.equal(await handleJobs(foreign.ctx), false);
 
   const nonAdmin = ctx('GET', '/api/jobs/queue/export/stats');
   await handleJobs(nonAdmin.ctx);

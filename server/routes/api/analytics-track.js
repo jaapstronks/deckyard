@@ -3,7 +3,7 @@
  * These endpoints do NOT require authentication and are used by viewers.
  */
 
-import { requireJsonBody } from '../../utils/http.js';
+import { requireJsonBody , withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { norm } from '../../utils/normalize.js';
 import { redactSecret } from '../../utils/log-redact.js';
@@ -584,6 +584,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').PublicContext} ctx
  * @returns {Promise<boolean>} True if handled
  */
-export function handleAnalyticsTrack(ctx) {
+export const handleAnalyticsTrack = withErrorHandler('analytics-track', (ctx) => {
   return dispatchRoutes(ROUTES, ctx);
-}
+});

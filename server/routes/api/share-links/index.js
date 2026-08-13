@@ -22,6 +22,7 @@ import { dispatchRoutes } from '../../../utils/router.js';
 import { MANAGEMENT_ROUTES } from './management.js';
 import { GUEST_ROUTES } from './guests.js';
 import { PUBLIC_ROUTES } from './public.js';
+import { withErrorHandler } from '../../../utils/http.js';
 
 export { PUBLIC_ROUTES };
 
@@ -36,14 +37,14 @@ export const AUTHED_ROUTES = [...MANAGEMENT_ROUTES, ...GUEST_ROUTES];
  * Handle authenticated share link management endpoints.
  * @param {import('../../../utils/context.js').AuthedContext} ctx
  */
-export async function handleShareLinks(ctx) {
+export const handleShareLinks = withErrorHandler('share-links', async (ctx) => {
   return dispatchRoutes(AUTHED_ROUTES, ctx);
-}
+});
 
 /**
  * Handle public share link endpoints (no auth required).
  * @param {import('../../../utils/context.js').PublicContext} ctx
  */
-export async function handleSharePublic(ctx) {
+export const handleSharePublic = withErrorHandler('share-links', async (ctx) => {
   return dispatchRoutes(PUBLIC_ROUTES, ctx);
-}
+});

@@ -3,7 +3,7 @@
  * Handles lead submission (public) and lead management (authenticated).
  */
 
-import { badRequest, notFound, serveJson, unauthorized, jsonError, requireJsonBody } from '../../utils/http.js';
+import { badRequest, notFound, serveJson, unauthorized, jsonError, requireJsonBody , withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';
@@ -139,9 +139,9 @@ export const PUBLIC_ROUTES = [
  * @param {import('../../utils/context.js').PublicContext} ctx
  * @returns {Promise<boolean>} True if handled
  */
-export async function handleLeadsPublic(ctx) {
+export const handleLeadsPublic = withErrorHandler('leads', async (ctx) => {
   return dispatchRoutes(PUBLIC_ROUTES, ctx);
-}
+});
 
 /**
  * Authenticated lead routes: the three presentation-scoped reads, then the
@@ -166,12 +166,12 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>} True if handled
  */
-export async function handleLeads(ctx) {
+export const handleLeads = withErrorHandler('leads', async (ctx) => {
   if (!ctx.authedUser) {
     return false; // Let api/index.js handle unauthorized
   }
   return dispatchRoutes(ROUTES, ctx);
-}
+});
 
 // ============================================================
 // HANDLER FUNCTIONS

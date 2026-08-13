@@ -25,6 +25,7 @@ import {
   serveJson,
   unauthorized,
   methodNotAllowed,
+  withErrorHandler,
 } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
@@ -146,6 +147,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleHome(ctx) {
+export const handleHome = withErrorHandler('home', (ctx) => {
   return dispatchRoutes(ROUTES, ctx);
-}
+});

@@ -10,7 +10,7 @@
  * PUT    /api/custom-slide-types/reorder - Set display order (designer only)
  */
 
-import { badRequest, methodNotAllowed, serveJson, unauthorized, notFound, requireJsonBody } from '../../utils/http.js';
+import { badRequest, methodNotAllowed, serveJson, unauthorized, notFound, requireJsonBody , withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
   listCustomSlideTypes,
@@ -219,6 +219,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleCustomSlideTypes(ctx) {
+export const handleCustomSlideTypes = withErrorHandler('custom-slide-types', (ctx) => {
   return dispatchRoutes(ROUTES, ctx);
-}
+});

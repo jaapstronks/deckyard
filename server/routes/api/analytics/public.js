@@ -16,6 +16,7 @@ import { AUTH_RATE_LIMITS } from '../../../config/rate-limits.js';
 import { getAnalyticsReportByToken } from '../../../storage/analytics/reports.js';
 import { normalizePresentationVisibility } from '../../../utils/presentation-authz.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
+import { withErrorHandler } from '../../../utils/http.js';
 
 /**
  * GET /api/analytics/reports/:token - Public report access (no auth required).
@@ -92,6 +93,6 @@ export const ROUTES = [
  * @param {import('../../../utils/context.js').PublicContext} ctx
  * @returns {Promise<boolean>} True if handled
  */
-export function handleAnalyticsReportPublic(ctx) {
+export const handleAnalyticsReportPublic = withErrorHandler('analytics', (ctx) => {
   return dispatchRoutes(ROUTES, ctx);
-}
+});

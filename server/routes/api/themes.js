@@ -13,7 +13,7 @@
  * POST /api/themes/custom/clear-default - Clear org default (admin only)
  */
 
-import { serveJson, badRequest, notFound, requireJsonBody, forbidden } from '../../utils/http.js';
+import { serveJson, badRequest, notFound, requireJsonBody, forbidden , withErrorHandler } from '../../utils/http.js';
 import {
   listThemeIds,
   listCoreThemeIds,
@@ -379,6 +379,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleThemes(ctx) {
+export const handleThemes = withErrorHandler('themes', (ctx) => {
   return dispatchRoutes(ROUTES, ctx);
-}
+});

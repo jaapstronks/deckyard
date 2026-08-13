@@ -5,6 +5,7 @@ import {
   serveJson,
   unauthorized,
   requireJsonBody,
+  withErrorHandler,
 } from '../../utils/http.js';
 import { getFollowStateForPresentation } from '../../storage/live-sessions/index.js';
 import crypto from 'node:crypto';
@@ -188,6 +189,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleQuestions(ctx) {
+export const handleQuestions = withErrorHandler('questions', (ctx) => {
   return dispatchRoutes(ROUTES, ctx);
-}
+});
