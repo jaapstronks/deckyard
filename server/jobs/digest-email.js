@@ -18,6 +18,9 @@ import {
 import { sendWeeklyDigestEmail, sendTeamDigestEmail } from '../integrations/brevo.js';
 import { getAppSettings } from '../storage/settings.js';
 import { crossOrganizationScope } from '../storage/scope.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('digest-email');
 
 // ============================================================
 // JOB RUNNER
@@ -34,7 +37,7 @@ async function runDigestEmailJob({ repoRoot = null, dayOfWeek = null } = {}) {
   const today = dayOfWeek ?? new Date().getDay();
   const results = { sent: 0, skipped: 0, errors: 0 };
 
-  console.log(`[digest-email] Starting digest job for day ${today}`);
+  log.info(`Starting digest job for day ${today}`);
 
   // Check if analytics is enabled globally
   if (repoRoot) {
@@ -43,7 +46,7 @@ async function runDigestEmailJob({ repoRoot = null, dayOfWeek = null } = {}) {
         crossOrganizationScope(repoRoot ?? null, 'digest job: analytics switch is instance-level')
       );
       if (!appSettings.analytics?.enabled) {
-        console.log('[digest-email] Analytics disabled, skipping digest job');
+        log.info('Analytics disabled, skipping digest job');
         return results;
       }
     } catch {
@@ -55,9 +58,9 @@ async function runDigestEmailJob({ repoRoot = null, dayOfWeek = null } = {}) {
   let users;
   try {
     users = await getUsersWithDigestDay(today);
-    console.log(`[digest-email] Found ${users.length} users with digest scheduled for today`);
+    log.info(`Found ${users.length} users with digest scheduled for today`);
   } catch (err) {
-    console.error('[digest-email] Failed to get users:', err.message);
+    log.error('Failed to get users:', err.message);
     return results;
   }
 
@@ -71,7 +74,7 @@ async function runDigestEmailJob({ repoRoot = null, dayOfWeek = null } = {}) {
         results.skipped++;
       }
     } catch (err) {
-      console.error(`[digest-email] Error processing digest for ${user.email}:`, err.message);
+      log.error(`Error processing digest for ${user.email}:`, err.message);
       results.errors++;
     }
   }
@@ -87,12 +90,12 @@ async function runDigestEmailJob({ repoRoot = null, dayOfWeek = null } = {}) {
         results.skipped++;
       }
     } catch (err) {
-      console.error(`[digest-email] Error processing team digest for ${admin.email}:`, err.message);
+      log.error(`Error processing team digest for ${admin.email}:`, err.message);
       results.errors++;
     }
   }
 
-  console.log(`[digest-email] Completed: ${results.sent} sent, ${results.skipped} skipped, ${results.errors} errors`);
+  log.info(`Completed: ${results.sent} sent, ${results.skipped} skipped, ${results.errors} errors`);
   return results;
 }
 
@@ -103,14 +106,14 @@ async function runDigestEmailJob({ repoRoot = null, dayOfWeek = null } = {}) {
  * @returns {Promise<boolean>} True if email was sent
  */
 async function processUserDigest(user, repoRoot) {
-  console.log(`[digest-email] Processing digest for ${user.email}`);
+  log.info(`Processing digest for ${user.email}`);
 
   // Get weekly analytics
   const analytics = await getWeeklyAnalyticsForUser(user.id, user.email);
 
   // Skip if no activity and no presentations
   if (!analytics.hasActivity && analytics.presentationCount === 0) {
-    console.log(`[digest-email] Skipping ${user.email}: no activity and no presentations`);
+    log.info(`Skipping ${user.email}: no activity and no presentations`);
     return false;
   }
 
@@ -134,7 +137,7 @@ async function processUserDigest(user, repoRoot) {
     throw new Error(result.error || 'Failed to send email');
   }
 
-  console.log(`[digest-email] Sent digest to ${user.email}`);
+  log.info(`Sent digest to ${user.email}`);
   return true;
 }
 
@@ -146,18 +149,18 @@ async function processUserDigest(user, repoRoot) {
  */
 async function processTeamDigest(admin, repoRoot) {
   if (!admin.organizationId) {
-    console.log(`[digest-email] Skipping team digest for ${admin.email}: no organization`);
+    log.info(`Skipping team digest for ${admin.email}: no organization`);
     return false;
   }
 
-  console.log(`[digest-email] Processing team digest for ${admin.email}`);
+  log.info(`Processing team digest for ${admin.email}`);
 
   // Get team-wide analytics
   const teamAnalytics = await getTeamWeeklyAnalytics(admin.organizationId);
 
   // Skip if no team activity
   if (!teamAnalytics.hasActivity) {
-    console.log(`[digest-email] Skipping team digest for ${admin.email}: no team activity`);
+    log.info(`Skipping team digest for ${admin.email}: no team activity`);
     return false;
   }
 
@@ -181,7 +184,7 @@ async function processTeamDigest(admin, repoRoot) {
     throw new Error(result.error || 'Failed to send team email');
   }
 
-  console.log(`[digest-email] Sent team digest to ${admin.email}`);
+  log.info(`Sent team digest to ${admin.email}`);
   return true;
 }
 
@@ -223,7 +226,7 @@ export function scheduleDigestEmailJob({
 
   async function runJob() {
     if (isRunning) {
-      console.log('[digest-email] Job already running, skipping');
+      log.info('Job already running, skipping');
       return;
     }
 
@@ -231,7 +234,7 @@ export function scheduleDigestEmailJob({
     try {
       await runDigestEmailJob({ repoRoot });
     } catch (err) {
-      console.error('[digest-email] Job failed:', err.message);
+      log.error('Job failed:', err.message);
     } finally {
       isRunning = false;
     }
@@ -253,7 +256,7 @@ export function scheduleDigestEmailJob({
 
   // Schedule first run
   const initialDelay = getDelayUntilRunTime();
-  console.log(`[digest-email] Scheduling first run in ${Math.round(initialDelay / 1000 / 60)} minutes`);
+  log.info(`Scheduling first run in ${Math.round(initialDelay / 1000 / 60)} minutes`);
 
   timeoutId = setTimeout(() => {
     runJob();

@@ -16,6 +16,9 @@ import { cleanupOldUsage } from '../storage/api-usage.js';
 import { cleanupExpiredShareLinks } from '../storage/share-links/index.js';
 import { deleteOldActivityEvents } from '../storage/activity-events.js';
 import { cleanupExpiredSlideLocks } from '../storage/slide-locks.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('retention-cleanup');
 
 // ============================================================
 // CONFIGURATION
@@ -41,25 +44,25 @@ const ACTIVITY_RETENTION_DAYS =
 export async function runRetentionCleanup({
   activityRetentionDays = ACTIVITY_RETENTION_DAYS,
 } = {}) {
-  console.log('[retention-cleanup] Starting cleanup');
+  log.info('Starting cleanup');
 
   const usage = await cleanupOldUsage();
-  console.log(`[retention-cleanup] Deleted ${usage} old api_usage_daily rows`);
+  log.info(`Deleted ${usage} old api_usage_daily rows`);
 
   const shareLinks = await cleanupExpiredShareLinks();
-  console.log(`[retention-cleanup] Revoked ${shareLinks} expired share links`);
+  log.info(`Revoked ${shareLinks} expired share links`);
 
   const activityCutoff = new Date();
   activityCutoff.setDate(activityCutoff.getDate() - activityRetentionDays);
   const { deleted: activityEvents } = await deleteOldActivityEvents(
     activityCutoff.toISOString()
   );
-  console.log(`[retention-cleanup] Deleted ${activityEvents} old activity events`);
+  log.info(`Deleted ${activityEvents} old activity events`);
 
   const slideLocks = await cleanupExpiredSlideLocks();
-  console.log(`[retention-cleanup] Deleted ${slideLocks} expired slide locks`);
+  log.info(`Deleted ${slideLocks} expired slide locks`);
 
-  console.log('[retention-cleanup] Cleanup complete');
+  log.info('Cleanup complete');
 
   return { usage, shareLinks, activityEvents, slideLocks };
 }
@@ -80,7 +83,7 @@ export function scheduleRetentionCleanup({
 
   async function runJob() {
     if (isRunning) {
-      console.log('[retention-cleanup] Job already running, skipping');
+      log.info('Job already running, skipping');
       return;
     }
 
@@ -88,7 +91,7 @@ export function scheduleRetentionCleanup({
     try {
       await runRetentionCleanup({ activityRetentionDays });
     } catch (err) {
-      console.error('[retention-cleanup] Job failed:', err.message);
+      log.error('Job failed:', err.message);
     } finally {
       isRunning = false;
     }

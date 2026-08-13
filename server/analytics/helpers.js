@@ -4,6 +4,9 @@
  */
 
 import { createHmac, randomBytes } from 'node:crypto';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('security');
 
 // ============================================================
 // CONFIGURATION CONSTANTS (can be overridden via env vars)
@@ -268,7 +271,7 @@ export function logSecurityEvent(event, details = {}) {
   };
 
   // Log to console with prefix for easy filtering
-  console.warn(`[security] ${event}:`, JSON.stringify(logEntry));
+  log.warn(`${event}:`, JSON.stringify(logEntry));
 
   // TODO: In production, send to centralized logging/SIEM system
   // Example: await sendToSecurityLog(logEntry);

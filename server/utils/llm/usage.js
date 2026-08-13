@@ -9,6 +9,10 @@
  * API cost, and cost reporting is useful beyond it.
  */
 
+import { createLogger } from '../logger.js';
+
+const log = createLogger('llm-usage');
+
 /** @type {Set<(event: LlmUsageEvent) => void>} */
 const listeners = new Set();
 
@@ -46,7 +50,7 @@ export function emitLlmUsage(event) {
     try {
       listener(event);
     } catch (err) {
-      console.warn('[llm-usage] listener failed:', err?.message);
+      log.warn('listener failed:', err?.message);
     }
   }
 }

@@ -8,6 +8,9 @@ import { listAllFontFamiliesWithVariants } from '../storage/font-families.js';
 import { buildThemeConfig } from './theme-builder.js';
 import { slideBackgroundsCssText } from '../../shared/theme-slide-backgrounds.js';
 import { normalizeTheme } from '../../shared/theme-normalize.js';
+import { createLogger } from './logger.js';
+
+const log = createLogger('themes');
 
 const THEME_ID_RE = /^[a-z0-9-]{1,32}$/i;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -82,7 +85,7 @@ export async function loadThemeAssets(repoRoot, rawThemeId, ctx = null) {
       cache.set(id, normalized);
       return normalized;
     } catch (err) {
-      console.warn(`[themes] Error loading theme ${id}:`, err.message);
+      log.warn(`Error loading theme ${id}:`, err.message);
     }
   }
 
@@ -146,7 +149,7 @@ async function loadCustomTheme(themeId, ctx, repoRoot) {
       return normalized;
     }
   } catch (err) {
-    console.warn(`[themes] Error loading custom theme ${themeId}:`, err.message);
+    log.warn(`Error loading custom theme ${themeId}:`, err.message);
   }
 
   // Fall back to default theme

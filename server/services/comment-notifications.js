@@ -21,6 +21,9 @@ import { broadcastToUser, NotificationEventTypes } from './notification-events.j
 import { resolveCommentRecipients, REASON_TO_TYPE } from './comment-subscriptions.js';
 import { getUserByEmail } from '../storage/users.js';
 import { crossOrganizationScope } from '../storage/scope.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('comment-notifications');
 
 /**
  * Send notifications for a newly created comment.
@@ -388,8 +391,7 @@ async function autoArchiveOnOwnReply({ presentation, comment, parentComment, act
       broadcastToUser(actorEmail, NotificationEventTypes.COUNTS, { unreadCount });
     }
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.warn('[comment-notifications] auto-archive failed:', e?.message || e);
+    log.warn('auto-archive failed:', e?.message || e);
   }
 }
 
@@ -420,8 +422,7 @@ async function createInAppNotifications({
         broadcastToUser(input.userEmail, NotificationEventTypes.NEW, notifResult.notification);
       }
     } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn(`[comment-notifications] in-app notification failed to=${input.userEmail}:`, e?.message || e);
+      log.warn(`in-app notification failed to=${input.userEmail}:`, e?.message || e);
     }
   }
 }
@@ -515,8 +516,7 @@ async function sendCommentEmails({
         repoRoot,
       }).then((result) => {
         if (!result.ok) {
-          // eslint-disable-next-line no-console
-          console.warn(
+          log.warn(
             `[brevo] email failed to=${recipientEmail} error=${result.error || ''}`.trim()
           );
         }

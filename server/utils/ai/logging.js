@@ -12,6 +12,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nowIso } from '../normalize.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('AI Log');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -86,10 +89,10 @@ export function logLlmConversation({
 
     fs.writeFileSync(filepath, JSON.stringify(logEntry, null, 2), 'utf8');
 
-    console.log(`[AI Log] Saved: ${filename}`);
+    log.info(`Saved: ${filename}`);
     return filepath;
   } catch (err) {
-    console.error('[AI Log] Failed to write log:', err.message);
+    log.error('Failed to write log:', err.message);
     return null;
   }
 }
@@ -142,10 +145,10 @@ export function logDeckGenerationSession({
 
     fs.writeFileSync(filepath, JSON.stringify(logEntry, null, 2), 'utf8');
 
-    console.log(`[AI Log] Session saved: ${filename}`);
+    log.info(`Session saved: ${filename}`);
     return filepath;
   } catch (err) {
-    console.error('[AI Log] Failed to write session log:', err.message);
+    log.error('Failed to write session log:', err.message);
     return null;
   }
 }

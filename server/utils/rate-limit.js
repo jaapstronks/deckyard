@@ -6,6 +6,9 @@ import {
   SHARE_VERIFY_LIMITS,
   COMPANION_NOTES_LIMITS,
 } from '../config/rate-limits.js';
+import { createLogger } from './logger.js';
+
+const log = createLogger('rate-limit');
 
 // Re-exported so limit values and their consumers stay importable together.
 export { LOGIN_LIMITS, SHARE_VERIFY_LIMITS, COMPANION_NOTES_LIMITS };
@@ -84,8 +87,8 @@ export function getClientIp(req) {
       // Chain shorter than the configured hop count, or a malformed hop:
       // don't guess — fall through to X-Real-IP / socket rather than trust a
       // client-supplied leftmost value.
-      console.warn(
-        `[rate-limit] Untrusted/short X-Forwarded-For (len ${ips.length}, hops ${trustedProxyCount()})`
+      log.warn(
+        `Untrusted/short X-Forwarded-For (len ${ips.length}, hops ${trustedProxyCount()})`
       );
     }
 
@@ -199,9 +202,9 @@ export async function allowRequest(key, { capacity, refillPerSec }) {
         return result;
       }
       // Redis unavailable, fall back to memory
-      console.warn('[rate-limit] Redis unavailable, using in-memory fallback');
+      log.warn('Redis unavailable, using in-memory fallback');
     } catch (err) {
-      console.warn('[rate-limit] Redis error, falling back to memory:', err.message);
+      log.warn('Redis error, falling back to memory:', err.message);
     }
   }
 

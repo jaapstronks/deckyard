@@ -9,6 +9,9 @@ import { shouldUseSecureCookies } from '../utils/request-url.js';
 import { sessionVersion } from '../utils/session-version.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { getDefaultOrganizationId } from '../config/database.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('auth');
 
 const COOKIE_NAME = 'sb_session';
 
@@ -34,7 +37,7 @@ function getAdminEmail() {
   const email = String(process.env.AUTH_ADMIN_EMAIL || '').trim().toLowerCase();
   if (!email && !warnedNoAdminEmail) {
     warnedNoAdminEmail = true;
-    console.warn('[auth] AUTH_ADMIN_EMAIL not configured - no admin user set');
+    log.warn('AUTH_ADMIN_EMAIL not configured - no admin user set');
   }
   return email;
 }
@@ -59,13 +62,13 @@ function getCookieDomain() {
   // or be a specific hostname
   if (!warnedCookieDomain) {
     if (d.includes(' ') || d.includes(';') || d.includes(',')) {
-      console.error('[auth] COOKIE_DOMAIN contains invalid characters - ignoring');
+      log.error('COOKIE_DOMAIN contains invalid characters - ignoring');
       return null;
     }
     if (!d.startsWith('.') && d.includes('.')) {
       // Not starting with dot but has dots - might be intentional for single domain
       // This is valid, just log for awareness
-      console.info(`[auth] COOKIE_DOMAIN "${d}" set for single domain (not subdomain sharing)`);
+      log.info(`COOKIE_DOMAIN "${d}" set for single domain (not subdomain sharing)`);
     }
     warnedCookieDomain = true;
   }
@@ -86,9 +89,8 @@ export function authEnabled() {
 
   if (enabled && !hasSecret && !warnedAuthMisconfig) {
     warnedAuthMisconfig = true;
-    // eslint-disable-next-line no-console
-    console.warn(
-      '[auth] AUTH_ENABLED but AUTH_SECRET is missing; auth disabled until configured.'
+    log.warn(
+      'AUTH_ENABLED but AUTH_SECRET is missing; auth disabled until configured.'
     );
   }
   return enabled && hasSecret;

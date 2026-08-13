@@ -5,6 +5,9 @@
  */
 
 import JSZip from 'jszip';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('pptx-parser');
 
 /**
  * Extract text content and images from each slide in a PPTX file.
@@ -176,11 +179,11 @@ async function extractImagesFromSlide(zip, slidePath, slideXml, slideNumber) {
         }
       } catch (e) {
         // Skip images that can't be read
-        console.warn(`Could not extract image ${imagePath}: ${e.message}`);
+        log.warn(`Could not extract image ${imagePath}: ${e.message}`);
       }
     }
   } catch (e) {
-    console.warn(`Error extracting images from slide ${slideNumber}: ${e.message}`);
+    log.warn(`Error extracting images from slide ${slideNumber}: ${e.message}`);
   }
 
   return images;

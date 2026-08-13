@@ -10,6 +10,9 @@ import { registerTools } from './tools.js';
 import { loadCustomToolsRegistrar } from './custom-tools-loader.js';
 import { registerPrompts } from './prompts.js';
 import { createSseHandler } from './sse.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('MCP/SSE');
 
 // Memoized as a promise so concurrent first requests share one initialization.
 let _handlerPromise = null;
@@ -33,7 +36,7 @@ function getHandler() {
 
     const toolCount = server.tools.size;
     const promptCount = server.prompts.size;
-    console.log(`[MCP/SSE] Initialized: ${toolCount} tools, ${promptCount} prompts`);
+    log.info(`Initialized: ${toolCount} tools, ${promptCount} prompts`);
 
     return handler;
   })();

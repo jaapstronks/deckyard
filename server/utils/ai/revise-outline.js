@@ -21,6 +21,9 @@ import { getLlmConfig } from '../llm/config.js';
 import { requestChatCompletionContent, LlmError } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import { prompts } from './prompts/index.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('Revise');
 
 /** Reject a revision that would drop more than this share of content slides. */
 const MAX_DROP_RATIO = 0.25;
@@ -180,12 +183,12 @@ export async function reviseOutline(outline, rawContent, { vendor = null, lang =
     parsed = extractJsonObject(content);
   } catch (err) {
     const message = err instanceof LlmError ? err.message : String(err?.message || err);
-    console.warn(`[Revise] Outline revision failed, keeping the draft: ${message}`);
+    log.warn(`Outline revision failed, keeping the draft: ${message}`);
     return { outline, revision: null };
   }
 
   if (!parsed || !Array.isArray(parsed.operations)) {
-    console.warn('[Revise] Outline revision returned no usable operations, keeping the draft');
+    log.warn('Outline revision returned no usable operations, keeping the draft');
     return { outline, revision: null };
   }
 
@@ -203,8 +206,8 @@ export async function reviseOutline(outline, rawContent, { vendor = null, lang =
     model: config.model,
   };
 
-  console.log(
-    `[Revise] ${applied.length}/${parsed.operations.length} operations applied ` +
+  log.info(
+    `${applied.length}/${parsed.operations.length} operations applied ` +
       `(${outline.slides.length} -> ${revisedOutline.slides.length} slides)` +
       (rejected.length ? `, ${rejected.length} rejected` : '')
   );
