@@ -28,6 +28,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sql } from 'kysely';
 import { dataDir } from '../../config/storage-paths.js';
+import { createLogger } from '../../utils/logger.js';
+
+const log = createLogger('053');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // server/db/migrations -> repo root
@@ -148,8 +151,8 @@ export const up = async (db) => {
     }
   }
 
-  console.log(
-    `[053] imported ${imported} file-based version snapshot(s) ` +
+  log.info(
+    `imported ${imported} file-based version snapshot(s) ` +
       `(skipped ${skippedExisting} already present, ${skippedOrphan} orphaned presentation(s))`
   );
 };

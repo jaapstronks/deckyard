@@ -1,5 +1,8 @@
 import { createLlmProvider } from '../provider-base.js';
 import { normalizeUsage } from '../usage.js';
+import { createLogger } from '../../logger.js';
+
+const log = createLogger('Claude');
 
 /**
  * Extract text content from Claude's response format
@@ -75,7 +78,7 @@ export const requestClaudeMessagesContent = createLlmProvider({
     try {
       parsed = JSON.parse(bodyText);
     } catch (e) {
-      console.warn('[Claude] Failed to parse response JSON:', e.message);
+      log.warn('Failed to parse response JSON:', e.message);
       parsed = null;
     }
     return coerceClaudeText(parsed) || '';

@@ -14,6 +14,9 @@ import { deleteOldSlideViews } from '../storage/analytics/slide-views.js';
 import { anonymizeExpiredLeads, anonymizeOldLeadIpAddresses } from '../storage/leads.js';
 import { getAnalyticsRetention } from '../storage/settings.js';
 import { crossOrganizationScope } from '../storage/scope.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('analytics-cleanup');
 
 /**
  * Run the analytics cleanup job.
@@ -41,31 +44,31 @@ async function runAnalyticsCleanup(overrides = {}) {
   ipCutoff.setDate(ipCutoff.getDate() - ipAnonymizationDays);
   const ipAnonymizationDate = ipCutoff.toISOString();
 
-  console.log(`[analytics-cleanup] Starting cleanup`);
-  console.log(`[analytics-cleanup] - Deleting data older than ${deletionDate}`);
-  console.log(`[analytics-cleanup] - Anonymizing IPs older than ${ipAnonymizationDate}`);
+  log.info(`Starting cleanup`);
+  log.info(`- Deleting data older than ${deletionDate}`);
+  log.info(`- Anonymizing IPs older than ${ipAnonymizationDate}`);
 
   // Anonymize IP addresses first (for data we're keeping but need to anonymize)
   const ipResult = await anonymizeOldIpAddresses(ipAnonymizationDate);
-  console.log(`[analytics-cleanup] Anonymized ${ipResult.anonymized} IP addresses`);
+  log.info(`Anonymized ${ipResult.anonymized} IP addresses`);
 
   // Delete old slide views first (they reference view_sessions)
   const slideViewsResult = await deleteOldSlideViews(deletionDate);
-  console.log(`[analytics-cleanup] Deleted ${slideViewsResult.deleted} slide views`);
+  log.info(`Deleted ${slideViewsResult.deleted} slide views`);
 
   // Delete old view sessions
   const sessionsResult = await deleteOldViewSessions(deletionDate);
-  console.log(`[analytics-cleanup] Deleted ${sessionsResult.deleted} view sessions`);
+  log.info(`Deleted ${sessionsResult.deleted} view sessions`);
 
   // Anonymize expired leads (based on per-lead retention_expires_at)
   const leadsResult = await anonymizeExpiredLeads();
-  console.log(`[analytics-cleanup] Anonymized ${leadsResult.anonymized} expired leads`);
+  log.info(`Anonymized ${leadsResult.anonymized} expired leads`);
 
   // Anonymize old lead IP addresses (same policy as view sessions)
   const leadIpsResult = await anonymizeOldLeadIpAddresses(ipAnonymizationDate);
-  console.log(`[analytics-cleanup] Anonymized ${leadIpsResult.anonymized} lead IP addresses`);
+  log.info(`Anonymized ${leadIpsResult.anonymized} lead IP addresses`);
 
-  console.log(`[analytics-cleanup] Cleanup complete`);
+  log.info(`Cleanup complete`);
 
   return {
     deletedSessions: sessionsResult.deleted,
@@ -93,7 +96,7 @@ export function scheduleAnalyticsCleanup({
 
   async function runJob() {
     if (isRunning) {
-      console.log('[analytics-cleanup] Job already running, skipping');
+      log.info('Job already running, skipping');
       return;
     }
 
@@ -101,7 +104,7 @@ export function scheduleAnalyticsCleanup({
     try {
       await runAnalyticsCleanup();
     } catch (err) {
-      console.error('[analytics-cleanup] Job failed:', err.message);
+      log.error('Job failed:', err.message);
     } finally {
       isRunning = false;
     }

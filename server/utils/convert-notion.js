@@ -18,6 +18,9 @@ import { createSessionLogger, generateSessionId } from './ai/logging.js';
 import { cryptoUuid } from '../../shared/slide-types/helpers.js';
 import { DECK_FORMAT_ID } from '../../shared/slide-types/deck-format-id.js';
 import { uploadImageKitUrl, getImageKitConfigFromEnv } from '../media/imagekit.js';
+import { createLogger } from './logger.js';
+
+const log = createLogger('Notion Convert');
 
 /**
  * Convert a Notion page to a deck.
@@ -150,7 +153,7 @@ async function processNotionImages(images, options = {}) {
   // Check if ImageKit is configured
   const imagekitConfig = getImageKitConfigFromEnv();
   if (!imagekitConfig.configured) {
-    console.log('[Notion Convert] ImageKit not configured, using original URLs');
+    log.info('ImageKit not configured, using original URLs');
     // Return original URLs if ImageKit is not configured
     return images.map((img) => ({
       originalUrl: img.url,
@@ -174,7 +177,7 @@ async function processNotionImages(images, options = {}) {
         blockId: img.blockId,
       });
     } catch (e) {
-      console.error(`[Notion Convert] Failed to upload image: ${e.message}`);
+      log.error(`Failed to upload image: ${e.message}`);
       // Fall back to original URL
       results.push({
         originalUrl: img.url,
@@ -207,8 +210,8 @@ async function convertWithAi(formattedContent, options = {}) {
   const sessionId = generateSessionId();
   const logger = enableLogging ? createSessionLogger(sessionId) : null;
 
-  console.log(`[Notion Convert] Starting AI conversion session ${sessionId}`);
-  console.log(`[Notion Convert] Content length: ${formattedContent.length} chars, ${sectionCount} sections`);
+  log.info(`Starting AI conversion session ${sessionId}`);
+  log.info(`Content length: ${formattedContent.length} chars, ${sectionCount} sections`);
 
   // Phase 1: Generate outline
   if (typeof onStatusMessage === 'function') {
@@ -230,7 +233,7 @@ async function convertWithAi(formattedContent, options = {}) {
         outline.metadata?.requestedLang ||
         'nl';
 
-  console.log(`[Notion Convert] Outline generated: ${outline.slides.length} slides planned, lang=${effectiveLang}`);
+  log.info(`Outline generated: ${outline.slides.length} slides planned, lang=${effectiveLang}`);
 
   // Notify about status messages
   const statusMessages = outline.statusMessages || [];
@@ -241,7 +244,7 @@ async function convertWithAi(formattedContent, options = {}) {
   // Separate structural vs content slides
   const { structuralSlides, contentGroups } = separateSlidesForProcessing(outline.slides);
 
-  console.log(`[Notion Convert] Separated: ${structuralSlides.length} structural, ${contentGroups.length} content groups`);
+  log.info(`Separated: ${structuralSlides.length} structural, ${contentGroups.length} content groups`);
 
   // Phase 2: Refine content slides
   if (typeof onStatusMessage === 'function') {

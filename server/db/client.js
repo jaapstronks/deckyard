@@ -6,6 +6,9 @@
 import pg from 'pg';
 import { Kysely, PostgresDialect, sql } from 'kysely';
 import { getDatabaseConfig, isPostgresMode } from '../config/database.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('DB');
 
 const { Pool } = pg;
 
@@ -43,7 +46,7 @@ let pool = null;
  */
 export async function initializeDatabase() {
   if (!isPostgresMode()) {
-    console.log('[DB] Storage mode is file-based, skipping PostgreSQL initialization');
+    log.info('Storage mode is file-based, skipping PostgreSQL initialization');
     return null;
   }
 
@@ -52,7 +55,7 @@ export async function initializeDatabase() {
   }
 
   const config = getDatabaseConfig();
-  console.log(`[DB] Connecting to PostgreSQL at ${config.host}:${config.port}/${config.database}`);
+  log.info(`Connecting to PostgreSQL at ${config.host}:${config.port}/${config.database}`);
 
   pool = new Pool({
     host: config.host,
@@ -70,9 +73,9 @@ export async function initializeDatabase() {
     const client = await pool.connect();
     await client.query('SELECT 1');
     client.release();
-    console.log('[DB] PostgreSQL connection successful');
+    log.info('PostgreSQL connection successful');
   } catch (err) {
-    console.error('[DB] PostgreSQL connection failed:', err.message);
+    log.error('PostgreSQL connection failed:', err.message);
     throw err;
   }
 
@@ -148,7 +151,7 @@ export async function closeDatabase() {
     await db.destroy();
     db = null;
     pool = null; // Pool is closed by db.destroy()
-    console.log('[DB] Database connections closed');
+    log.info('Database connections closed');
   }
 }
 

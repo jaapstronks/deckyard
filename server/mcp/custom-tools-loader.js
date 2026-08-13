@@ -23,6 +23,9 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { repoRoot } from '../config/paths.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('mcp');
 
 const CUSTOM_TOOLS_FILE = join(repoRoot, 'custom', 'mcp-tools.js');
 
@@ -37,15 +40,15 @@ export async function loadCustomToolsRegistrar() {
     const mod = await import(pathToFileURL(CUSTOM_TOOLS_FILE).href);
     const fn = mod.default ?? mod.registerCustomTools;
     if (typeof fn !== 'function') {
-      console.warn(
-        '[mcp] custom/mcp-tools.js exists but exports no function (default or registerCustomTools) — ignored'
+      log.warn(
+        'custom/mcp-tools.js exists but exports no function (default or registerCustomTools) — ignored'
       );
       return null;
     }
-    console.log('[mcp] loaded custom tools registrar from custom/mcp-tools.js');
+    log.info('loaded custom tools registrar from custom/mcp-tools.js');
     return fn;
   } catch (err) {
-    console.warn(`[mcp] failed to load custom/mcp-tools.js: ${err.message}`);
+    log.warn(`failed to load custom/mcp-tools.js: ${err.message}`);
     return null;
   }
 }

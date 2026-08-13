@@ -3,6 +3,9 @@ import { getRequestOrigin, toAbsoluteUrl } from './request-url.js';
 import { nowIso } from './normalize.js';
 import { assertPublicHttpUrl } from './ssrf-guard.js';
 import { crossOrganizationScope } from '../storage/scope.js';
+import { createLogger } from './logger.js';
+
+const log = createLogger('webhook');
 
 /** Webhook config reads run outside any request: instance-level settings. */
 function webhookSettingsScope(repoRoot) {
@@ -248,9 +251,8 @@ export async function maybeFireWebhook(
     headers: { 'x-sb-event': e },
   }).then((r) => {
     if (!r.ok) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        `[webhook] failed event=${e} status=${r.status} url=${url} err=${r.error || ''}`.trim()
+      log.warn(
+        `failed event=${e} status=${r.status} url=${url} err=${r.error || ''}`.trim()
       );
     }
   });
@@ -309,9 +311,8 @@ export async function maybeFireLeadWebhook(
     headers: { 'x-sb-event': 'lead.submitted' },
   }).then((r) => {
     if (!r.ok) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        `[webhook] failed event=lead.submitted status=${r.status} url=${url} err=${r.error || ''}`.trim()
+      log.warn(
+        `failed event=lead.submitted status=${r.status} url=${url} err=${r.error || ''}`.trim()
       );
     }
   });
@@ -352,9 +353,8 @@ export async function maybeFireInteractionWebhook(
     headers: { 'x-sb-event': e },
   }).then((r) => {
     if (!r.ok) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        `[webhook] failed event=${e} status=${r.status} url=${url} err=${r.error || ''}`.trim()
+      log.warn(
+        `failed event=${e} status=${r.status} url=${url} err=${r.error || ''}`.trim()
       );
     }
   });

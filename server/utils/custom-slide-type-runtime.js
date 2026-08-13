@@ -14,6 +14,9 @@ import { esc } from '../../shared/slide-types/helpers.js';
 import { sanitizeSlideHtmlSync } from '../../shared/sanitize.js';
 import { filterCssText } from '../../shared/css-filter.js';
 import { listPublishedCustomSlideTypes } from '../storage/custom-slide-types.js';
+import { createLogger } from './logger.js';
+
+const log = createLogger('custom-slide-type-runtime');
 
 /**
  * Convert a custom slide type record into a runtime slide type definition.
@@ -90,7 +93,7 @@ export async function buildMergedSlideTypes(ctx) {
       merged[typeKey] = toRuntimeSlideType(ct);
     }
   } catch (err) {
-    console.warn('Failed to load custom slide types:', err.message || err);
+    log.warn('Failed to load custom slide types:', err.message || err);
   }
 
   return merged;

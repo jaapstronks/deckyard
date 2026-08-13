@@ -27,6 +27,9 @@
 import { existsSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { createLogger } from '../../logger.js';
+
+const log = createLogger('custom-ai-prompts');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -61,28 +64,28 @@ export async function loadCustomPromptOverrides({ file = DEFAULT_CUSTOM_PROMPTS_
   try {
     mod = await import(pathToFileURL(file).href);
   } catch (err) {
-    console.error(`[custom-ai-prompts] failed to load ${file}:`, err.message);
+    log.error(`failed to load ${file}:`, err.message);
     return {};
   }
 
   const overrides = mod?.default;
   if (!overrides || typeof overrides !== 'object') {
-    console.warn('[custom-ai-prompts] custom/ai/prompts.js default export is not an object; ignoring');
+    log.warn('custom/ai/prompts.js default export is not an object; ignoring');
     return {};
   }
 
   const clean = {};
   for (const [name, value] of Object.entries(overrides)) {
     if (typeof value !== 'function') {
-      console.warn(`[custom-ai-prompts] override "${name}" is not a function; ignoring`);
+      log.warn(`override "${name}" is not a function; ignoring`);
       continue;
     }
     if (allow && !allow.has(name)) {
-      console.warn(`[custom-ai-prompts] override "${name}" does not match a known prompt builder; ignoring`);
+      log.warn(`override "${name}" does not match a known prompt builder; ignoring`);
       continue;
     }
     clean[name] = value;
-    console.log(`[custom-ai-prompts] using custom prompt builder: ${name}`);
+    log.info(`using custom prompt builder: ${name}`);
   }
 
   return clean;

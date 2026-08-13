@@ -74,7 +74,7 @@ async function handleShareValidate({ repoRoot, req, res }, token) {
             accessorIp: ipAddress,
             // The deck was resolved from the link, so its organization is
             // the one this access belongs to.
-            ctx: { organizationId: pres.organizationId },
+            scope: { organizationId: pres.organizationId },
           }),
           'notify author of share-link access attempt'
         );
