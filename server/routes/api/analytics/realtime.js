@@ -5,6 +5,7 @@
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { ANALYTICS_CONFIG } from '../../../analytics/helpers.js';
 import { getActiveViewerCount } from '../../../storage/analytics/view-sessions.js';
+import { openSseStream } from '../../../utils/sse.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('realtime');
 
@@ -26,11 +27,8 @@ export async function handleRealtime(ctx, presentationId) {
   });
   if (!pres) return true;
 
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    Connection: 'keep-alive',
-  });
+  const stream = openSseStream(req, res);
+  if (!stream.ok) return true;
 
   // Send initial count
   const initialCount = await getActiveViewerCount(presentationId);

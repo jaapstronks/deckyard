@@ -15,6 +15,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { validateApiKey } from '../storage/api-keys.js';
+import { openSseStream } from '../utils/sse.js';
 
 // ─── Constants ───────────────────────────────────────────────────────────
 
@@ -37,7 +38,7 @@ const sessions = new Map();
  * @property {number} createdAt
  * @property {number} lastActiveAt
  * @property {import('node:http').ServerResponse|null} sseResponse - Active SSE stream (if any)
- * @property {NodeJS.Timeout|null} keepaliveTimer
+ * @property {(() => void)|null} closeSse
  */
 
 function createSession(apiKey) {
@@ -52,7 +53,7 @@ function createSession(apiKey) {
     createdAt: Date.now(),
     lastActiveAt: Date.now(),
     sseResponse: null,
-    keepaliveTimer: null,
+    closeSse: null,
   };
   sessions.set(session.id, session);
   return session;
@@ -72,7 +73,7 @@ function getSession(sessionId) {
 function destroySession(sessionId) {
   const session = sessions.get(sessionId);
   if (!session) return;
-  if (session.keepaliveTimer) clearInterval(session.keepaliveTimer);
+  session.closeSse?.();
   if (session.sseResponse) {
     try { session.sseResponse.end(); } catch { /* ignore */ }
   }
@@ -125,11 +126,6 @@ function sendSseEvent(res, data, eventType) {
   if (!res.writable) return;
   if (eventType) res.write(`event: ${eventType}\n`);
   res.write(`data: ${JSON.stringify(data)}\n\n`);
-}
-
-function sendSseKeepAlive(res) {
-  if (!res.writable) return;
-  res.write(': keepalive\n\n');
 }
 
 // ─── Request body parsing ────────────────────────────────────────────────
@@ -364,33 +360,28 @@ async function handleGet(req, res) {
   // Close existing SSE stream if any
   if (session.sseResponse) {
     try { session.sseResponse.end(); } catch { /* ignore */ }
-    if (session.keepaliveTimer) clearInterval(session.keepaliveTimer);
+    session.closeSse?.();
   }
 
-  // Start SSE stream
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache, no-transform',
-    'Connection': 'keep-alive',
-    'X-Accel-Buffering': 'no', // Disable nginx buffering
+  // Start SSE stream. Guard opt-out: this endpoint is bearer-authenticated
+  // and sessions carry their own TTL sweep, so the public-stream connection
+  // caps don't apply. `no-transform` on top of the canonical set: MCP
+  // responses must not be recoded by intermediaries.
+  const stream = openSseStream(req, res, {
+    guard: false,
+    heartbeatMs: KEEPALIVE_INTERVAL_MS,
+    cacheControl: 'no-cache, no-transform',
+    onClose: () => {
+      session.sseResponse = null;
+      session.closeSse = null;
+    },
   });
 
   session.sseResponse = res;
-
-  // Keepalive to prevent proxy/load balancer timeouts
-  session.keepaliveTimer = setInterval(() => {
-    sendSseKeepAlive(res);
-  }, KEEPALIVE_INTERVAL_MS);
+  session.closeSse = stream.close;
 
   // Send initial connected event
   sendSseEvent(res, { type: 'session', status: 'connected', sessionId: session.id }, 'endpoint');
-
-  // Clean up on disconnect
-  req.on('close', () => {
-    if (session.keepaliveTimer) clearInterval(session.keepaliveTimer);
-    session.sseResponse = null;
-    session.keepaliveTimer = null;
-  });
 
   return true;
 }

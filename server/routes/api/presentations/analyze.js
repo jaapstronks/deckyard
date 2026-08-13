@@ -22,7 +22,7 @@ import {
 } from '../../../services/comment-events.js';
 import { getAiIdentity } from '../../../storage/settings.js';
 import { createLogger } from '../../../utils/logger.js';
-import { sseErrorPayload } from '../../../utils/sse.js';
+import { sseErrorPayload, openSseStream } from '../../../utils/sse.js';
 const log = createLogger('analyze');
 
 /**
@@ -68,13 +68,8 @@ export async function handlePresentationAnalyze(
   if (!parsed.ok) return true;
   const categories = Array.isArray(parsed.body?.categories) ? parsed.body.categories : null;
 
-  // Set up SSE headers
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'X-Accel-Buffering': 'no',
-  });
+  const stream = openSseStream(req, res);
+  if (!stream.ok) return true;
 
   // Send initial connection confirmation
   sendSSE(res, 'connected', { presentationId: id });

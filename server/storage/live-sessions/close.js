@@ -28,11 +28,6 @@ export function closeSession(sessionId, reason = 'closed') {
       res.end?.();
     } catch {}
   }
-  for (const tid of s.heartbeatTimers.values()) {
-    try {
-      clearInterval(tid);
-    } catch {}
-  }
   if (s.persistTimer) {
     try {
       clearTimeout(s.persistTimer);
