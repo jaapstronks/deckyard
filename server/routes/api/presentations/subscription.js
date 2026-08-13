@@ -24,27 +24,25 @@ import {
   SUBSCRIPTION_LEVELS,
 } from '../../../storage/presentation-subscriptions.js';
 import { getUserSettings } from '../../../storage/settings.js';
-import { getCtx } from './comments-shared.js';
 
 export async function handlePresentationSubscription(
-  { repoRoot, storageScope, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'GET' && req.method !== 'PUT') {
     return methodNotAllowed(res, ['GET', 'PUT']);
   }
 
-  const { pres } = await withPresentationReadAuth({ repoRoot, req, id, authedUser, res });
+  const { pres } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
   if (!pres) return true;
 
   if (!authedUser?.email) {
     return unauthorized(res);
   }
 
-  const ctx = getCtx(authedUser);
 
   if (req.method === 'GET') {
-    const sub = await getSubscription(ctx, id, authedUser.email);
+    const sub = await getSubscription(storageScope, id, authedUser.email);
     const settings = await getUserSettings(storageScope, authedUser.email);
     serveJson(res, 200, {
       ok: true,
@@ -62,7 +60,7 @@ export async function handlePresentationSubscription(
     return badRequest(res, `level must be one of ${SUBSCRIPTION_LEVELS.join('|')} or null`);
   }
 
-  const result = await setSubscription(ctx, id, authedUser.email, level);
+  const result = await setSubscription(storageScope, id, authedUser.email, level);
   if (!result.ok) {
     return serveJson(res, result.reason === 'unavailable' ? 503 : 400, result);
   }

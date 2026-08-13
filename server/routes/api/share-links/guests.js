@@ -21,7 +21,6 @@ import {
 } from '../../../storage/share-links/index.js';
 import { sendGuestInvitationEmail } from '../../../integrations/brevo.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
-import { createRouteContext } from '../../../utils/context.js';
 import { dispatchRoutes } from '../../../utils/router.js';
 import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, jsonError } from '../../../utils/http.js';
 import { buildShareUrl } from '../../../utils/request-url.js';
@@ -46,7 +45,6 @@ async function handleGuestPreRegister(
   presentationId,
   linkId
 ) {
-  const ctx = createRouteContext(authedUser);
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
   const collaboratorPermission = await getCollabPermission(pres, authedUser);
@@ -59,7 +57,7 @@ async function handleGuestPreRegister(
   const body = jsonResult.body;
 
   const result = await preRegisterGuest(
-    ctx,
+    storageScope,
     linkId,
     { email: body?.email, name: body?.name },
     authedUser?.email
@@ -78,7 +76,7 @@ async function handleGuestPreRegister(
 
   // Send invitation email if requested
   if (body?.sendInvitation !== false) {
-    const shareLinks = await listShareLinks(ctx, presentationId, {});
+    const shareLinks = await listShareLinks(storageScope, presentationId, {});
     const shareLink = shareLinks.find((l) => l.id === linkId);
     if (shareLink) {
       const baseShareUrl = buildShareUrl(req, shareLink.token);
@@ -97,7 +95,7 @@ async function handleGuestPreRegister(
             repoRoot,
           }).then((emailResult) => {
             if (emailResult.ok) {
-              markInvitationSent(ctx, result.guest.id);
+              markInvitationSent(storageScope, result.guest.id);
             } else {
               // eslint-disable-next-line no-console
               log.warn(
@@ -117,7 +115,6 @@ async function handleGuestPreRegister(
 
 /** GET /api/presentations/:id/share-links/:linkId/guests - List guests */
 async function handleGuestList({ storageScope, res, authedUser }, presentationId, linkId) {
-  const ctx = createRouteContext(authedUser);
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
   const collaboratorPermission = await getCollabPermission(pres, authedUser);
@@ -125,7 +122,7 @@ async function handleGuestList({ storageScope, res, authedUser }, presentationId
     return unauthorized(res);
   }
 
-  const guests = await listGuestsForShareLink(ctx, linkId);
+  const guests = await listGuestsForShareLink(storageScope, linkId);
   serveJson(res, 200, { guests });
   return true;
 }
@@ -137,7 +134,6 @@ async function handleGuestRemove(
   _linkId,
   guestId
 ) {
-  const ctx = createRouteContext(authedUser);
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
   const collaboratorPermission = await getCollabPermission(pres, authedUser);
@@ -145,7 +141,7 @@ async function handleGuestRemove(
     return unauthorized(res);
   }
 
-  const result = await removeGuest(ctx, guestId);
+  const result = await removeGuest(storageScope, guestId);
   if (!result.ok) {
     return badRequest(res, result.reason);
   }
@@ -161,7 +157,6 @@ async function handleGuestResend(
   linkId,
   guestId
 ) {
-  const ctx = createRouteContext(authedUser);
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
   const collaboratorPermission = await getCollabPermission(pres, authedUser);
@@ -170,14 +165,14 @@ async function handleGuestResend(
   }
 
   // Get the guest
-  const guests = await listGuestsForShareLink(ctx, linkId);
+  const guests = await listGuestsForShareLink(storageScope, linkId);
   const guest = guests.find((g) => g.id === guestId);
   if (!guest) {
     return notFound(res);
   }
 
   // Get the share link
-  const shareLinks = await listShareLinks(ctx, presentationId, {});
+  const shareLinks = await listShareLinks(storageScope, presentationId, {});
   const shareLink = shareLinks.find((l) => l.id === linkId);
   if (!shareLink) {
     return notFound(res);
@@ -200,7 +195,7 @@ async function handleGuestResend(
   });
 
   if (emailResult.ok) {
-    await markInvitationSent(ctx, guestId);
+    await markInvitationSent(storageScope, guestId);
     serveJson(res, 200, { ok: true, message: 'Invitation resent' });
   } else {
     jsonError(res, 500, 'email_failed');

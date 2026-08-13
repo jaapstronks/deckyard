@@ -162,8 +162,7 @@ async function handleMagicLinkRequest({ repoRoot, req, res }) {
 // Verify a magic link token and create session
 // ============================================================
 async function handleMagicLinkVerify({ repoRoot, req, res }) {
-  const ctx = createRouteContext(null);
-  ctx.repoRoot = repoRoot;
+  const ctx = createRouteContext(null, { repoRoot });
 
   if (!authEnabled()) {
     return badRequest(res, t('api.error.authNotEnabled', 'Authentication is not enabled'));

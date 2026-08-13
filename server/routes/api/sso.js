@@ -150,8 +150,7 @@ async function handleOidcLogin({ req, res, url }) {
 // GET /api/auth/oidc/callback
 // ============================================================
 async function handleOidcCallback({ repoRoot, req, res, url }) {
-  const ctx = createRouteContext(null);
-  ctx.repoRoot = repoRoot;
+  const ctx = createRouteContext(null, { repoRoot });
 
   if (!isSsoEnabled()) {
     return redirect(res, '/login?error=sso_disabled'), true;

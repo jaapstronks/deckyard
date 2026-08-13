@@ -29,24 +29,23 @@ import {
   CommentEventTypes,
 } from '../../../services/comment-events.js';
 import { withPresentationAuth, withPresentationReadAuth } from '../../../utils/route-middleware.js';
-import { getCtx, broadcastCommentCounts } from './comments-shared.js';
+import { broadcastCommentCounts } from './comments-shared.js';
 
 /**
  * Resolve a comment.
  * POST /api/presentations/:id/comments/:commentId/resolve
  */
 export async function handlePresentationCommentResolve(
-  { repoRoot, storageScope, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id,
   commentId
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'read' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const comment = await getComment(ctx, commentId);
+  const comment = await getComment(storageScope, commentId);
 
   if (!comment || comment.presentationId !== id) {
     return notFound(res, 'Comment not found');
@@ -57,7 +56,7 @@ export async function handlePresentationCommentResolve(
     return unauthorized(res);
   }
 
-  const result = await resolveComment(ctx, commentId, { email: authedUser?.email });
+  const result = await resolveComment(storageScope, commentId, { email: authedUser?.email });
 
   if (!result.ok) {
     return serveJson(res, 400, result);
@@ -68,14 +67,14 @@ export async function handlePresentationCommentResolve(
     comment: result.comment,
     presentation: pres,
     actor: authedUser,
-    ctx,
+    scope: storageScope,
   });
 
   // Broadcast to all connected clients (non-blocking)
   void broadcastToPresentation(id, CommentEventTypes.RESOLVED, {
     comment: result.comment,
   });
-  void broadcastCommentCounts(id, ctx);
+  void broadcastCommentCounts(id, storageScope);
 
   serveJson(res, 200, result);
   return true;
@@ -86,17 +85,16 @@ export async function handlePresentationCommentResolve(
  * POST /api/presentations/:id/comments/:commentId/reopen
  */
 export async function handlePresentationCommentReopen(
-  { repoRoot, storageScope, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id,
   commentId
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'read' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const comment = await getComment(ctx, commentId);
+  const comment = await getComment(storageScope, commentId);
 
   if (!comment || comment.presentationId !== id) {
     return notFound(res, 'Comment not found');
@@ -107,7 +105,7 @@ export async function handlePresentationCommentReopen(
     return unauthorized(res);
   }
 
-  const result = await reopenComment(ctx, commentId);
+  const result = await reopenComment(storageScope, commentId);
 
   if (!result.ok) {
     return serveJson(res, 400, result);
@@ -118,14 +116,14 @@ export async function handlePresentationCommentReopen(
     comment: result.comment,
     presentation: pres,
     actor: authedUser,
-    ctx,
+    scope: storageScope,
   });
 
   // Broadcast to all connected clients (non-blocking)
   void broadcastToPresentation(id, CommentEventTypes.REOPENED, {
     comment: result.comment,
   });
-  void broadcastCommentCounts(id, ctx);
+  void broadcastCommentCounts(id, storageScope);
 
   serveJson(res, 200, result);
   return true;
@@ -138,17 +136,16 @@ export async function handlePresentationCommentReopen(
  * Different from resolve - used specifically for AI suggestions the user doesn't want to act on.
  */
 export async function handlePresentationCommentDismiss(
-  { repoRoot, storageScope, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id,
   commentId
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'read' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const comment = await getComment(ctx, commentId);
+  const comment = await getComment(storageScope, commentId);
 
   if (!comment || comment.presentationId !== id) {
     return notFound(res, 'Comment not found');
@@ -159,7 +156,7 @@ export async function handlePresentationCommentDismiss(
     return unauthorized(res);
   }
 
-  const result = await dismissComment(ctx, commentId, { email: authedUser?.email });
+  const result = await dismissComment(storageScope, commentId, { email: authedUser?.email });
 
   if (!result.ok) {
     return serveJson(res, 400, result);
@@ -169,7 +166,7 @@ export async function handlePresentationCommentDismiss(
   void broadcastToPresentation(id, CommentEventTypes.RESOLVED, {
     comment: result.comment,
   });
-  void broadcastCommentCounts(id, ctx);
+  void broadcastCommentCounts(id, storageScope);
 
   serveJson(res, 200, result);
   return true;
@@ -183,17 +180,16 @@ export async function handlePresentationCommentDismiss(
  * after the slide referenced by the comment's slideId.
  */
 export async function handlePresentationCommentApply(
-  { repoRoot, storageScope, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id,
   commentId
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'read' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const comment = await getComment(ctx, commentId);
+  const comment = await getComment(storageScope, commentId);
 
   if (!comment || comment.presentationId !== id) {
     return notFound(res, 'Comment not found');
@@ -235,10 +231,10 @@ export async function handlePresentationCommentApply(
 
   // Update the presentation
   fullPres.slides = updatedSlides;
-  await updatePresentation(storageScope, id, fullPres, ctx);
+  await updatePresentation(storageScope, id, fullPres, storageScope);
 
   // Mark the suggestion as resolved
-  const resolveResult = await resolveComment(ctx, commentId, { email: authedUser?.email });
+  const resolveResult = await resolveComment(storageScope, commentId, { email: authedUser?.email });
 
   // Broadcast comment update
   if (resolveResult.ok) {
@@ -246,7 +242,7 @@ export async function handlePresentationCommentApply(
       comment: resolveResult.comment,
     });
   }
-  void broadcastCommentCounts(id, ctx);
+  void broadcastCommentCounts(id, storageScope);
 
   serveJson(res, 200, {
     ok: true,
@@ -267,12 +263,12 @@ export async function handlePresentationCommentApply(
  * so the client doesn't need a special guest path.
  */
 export async function handlePresentationCommentsMarkRead(
-  { repoRoot, storageScope, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const { pres } = await withPresentationReadAuth({ repoRoot, req, id, authedUser, res });
+  const { pres } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
   if (!pres) return true;
 
   const jsonResult = await requireJsonBody(req, res);
@@ -285,8 +281,7 @@ export async function handlePresentationCommentsMarkRead(
     return badRequest(res, 'Too many commentIds (max 500)');
   }
 
-  const ctx = getCtx(authedUser);
-  const result = await markThreadsRead(ctx, id, commentIds);
+  const result = await markThreadsRead(storageScope, id, commentIds);
   if (!result.ok) {
     return serveJson(res, result.reason === 'unavailable' ? 503 : 400, result);
   }

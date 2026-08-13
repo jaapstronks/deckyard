@@ -3,7 +3,6 @@ import { serveJson, requireJsonBody } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import { recordPresentationCreated } from '../../../services/activity-events.js';
 import { recordSlideLibraryUsage } from '../../../storage/slide-library-usage/index.js';
-import { createRouteContext } from '../../../utils/context.js';
 
 /**
  * Build the usage refs for a compose-from-library create: each source slide id
@@ -38,7 +37,7 @@ export async function handlePresentationsCreate({ storageScope, req, res, authed
     void recordPresentationCreated({
       presentation: created,
       actor: authedUser,
-      ctx: createRouteContext(authedUser),
+      scope: storageScope,
     });
 
     // Record library-usage server-side so it also covers MCP/agent composes

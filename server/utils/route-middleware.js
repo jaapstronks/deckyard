@@ -20,7 +20,6 @@ import {
   canForceLockRelease,
   canCommentOnPresentation,
 } from './presentation-authz.js';
-import { createRouteContext } from './context.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { getGuestBySessionToken } from '../storage/share-links/index.js';
 import { parseCookies } from './cookies.js';
@@ -223,7 +222,7 @@ const PERMISSION_CHECKS = {
  * form to migrate to (see the file header).
  *
  * @param {Object} options
- * @param {string} options.repoRoot - Repository root path
+ * @param {import('../storage/scope.js').StorageScope} options.storageScope - The request's storage scope
  * @param {string} options.id - Presentation ID
  * @param {Object} options.authedUser - Authenticated user object
  * @param {Object} options.res - HTTP response object
@@ -231,12 +230,12 @@ const PERMISSION_CHECKS = {
  * @returns {Promise<Object|null>} The presentation if authorized, null if error response was sent
  *
  * @example
- * const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
+ * const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
  * if (!pres) return true; // Response already sent
  * // Continue with handler logic...
  */
-export async function withPresentationAuth({ repoRoot, id, authedUser, res, permission = 'read' }) {
-  const pres = await getPresentation(createRouteContext(authedUser, { repoRoot }), id);
+export async function withPresentationAuth({ storageScope, id, authedUser, res, permission = 'read' }) {
+  const pres = await getPresentation(storageScope, id);
   if (!pres) {
     notFound(res);
     return null;
@@ -282,7 +281,7 @@ export async function getGuestFromRequest(req) {
  * via share links, making it suitable for endpoints that allow guest viewers.
  *
  * @param {Object} options
- * @param {string} options.repoRoot - Repository root path
+ * @param {import('../storage/scope.js').StorageScope} options.storageScope - The request's storage scope
  * @param {Object} options.req - HTTP request object
  * @param {string} options.id - Presentation ID
  * @param {Object} options.authedUser - Authenticated user object
@@ -290,11 +289,11 @@ export async function getGuestFromRequest(req) {
  * @returns {Promise<{pres: Object|null, guestInfo: Object|null, collaboratorPermission: string|null}>}
  *
  * @example
- * const { pres, guestInfo } = await withPresentationReadAuth({ repoRoot, req, id, authedUser, res });
+ * const { pres, guestInfo } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
  * if (!pres) return true; // Response already sent
  */
-export async function withPresentationReadAuth({ repoRoot, req, id, authedUser, res }) {
-  const pres = await getPresentation(createRouteContext(authedUser, { repoRoot }), id);
+export async function withPresentationReadAuth({ storageScope, req, id, authedUser, res }) {
+  const pres = await getPresentation(storageScope, id);
   if (!pres) {
     notFound(res);
     return { pres: null, guestInfo: null, collaboratorPermission: null };
@@ -316,15 +315,15 @@ export async function withPresentationReadAuth({ repoRoot, req, id, authedUser, 
  * Suitable for endpoints that allow guest commenters via share links.
  *
  * @param {Object} options
- * @param {string} options.repoRoot - Repository root path
+ * @param {import('../storage/scope.js').StorageScope} options.storageScope - The request's storage scope
  * @param {Object} options.req - HTTP request object
  * @param {string} options.id - Presentation ID
  * @param {Object} options.authedUser - Authenticated user object
  * @param {Object} options.res - HTTP response object
  * @returns {Promise<{pres: Object|null, guestInfo: Object|null, collaboratorPermission: string|null}>}
  */
-export async function withPresentationCommentAuth({ repoRoot, req, id, authedUser, res }) {
-  const pres = await getPresentation(createRouteContext(authedUser, { repoRoot }), id);
+export async function withPresentationCommentAuth({ storageScope, req, id, authedUser, res }) {
+  const pres = await getPresentation(storageScope, id);
   if (!pres) {
     notFound(res);
     return { pres: null, guestInfo: null, collaboratorPermission: null };

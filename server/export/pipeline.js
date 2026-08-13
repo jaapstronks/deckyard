@@ -8,7 +8,6 @@ import { canReadPresentation } from '../utils/presentation-authz.js';
 import { getCollaboratorPermission } from '../storage/collaborators.js';
 import { addJob, isQueueAvailable, QUEUE_NAMES } from '../jobs/queue/connection.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
-import { createRouteContext } from '../utils/context.js';
 
 /**
  * Get the language suffix for filenames based on export language
@@ -34,7 +33,9 @@ function buildExportHeaders({ contentType, filename, langSuffix = '', extension 
 }
 
 /**
- * Common export context preparation - handles auth, loading, projection
+ * Common export context preparation - handles auth, loading, projection.
+ * `storageScope` is the request's scope, passed down from the route context —
+ * this module never builds one itself.
  * @param {Object} options - Context options
  * @returns {Object} Export context or null if request should be rejected
  */
@@ -49,10 +50,7 @@ export async function prepareExportContext({
 }) {
   const exportLang = normalizeLang(url?.searchParams?.get('lang'));
 
-  const pres = await getPresentation(
-    storageScope || createRouteContext(authedUser, { repoRoot }),
-    presentationId
-  );
+  const pres = await getPresentation(storageScope, presentationId);
   if (!pres) {
     notFound(res);
     return null;
@@ -147,7 +145,7 @@ export function createExportRoute(config) {
     getFilename = (ctx) => ctx.title,
   } = config;
 
-  return async function handler({ repoRoot, req, res, url, authedUser }) {
+  return async function handler({ repoRoot, storageScope, req, res, url, authedUser }) {
     const match = url.pathname.match(pattern);
     if (!match || req.method !== method) return false;
 
@@ -158,6 +156,7 @@ export function createExportRoute(config) {
       url,
       authedUser,
       presentationId,
+      storageScope,
       stripLiveOnly,
     });
 
@@ -190,7 +189,7 @@ export function createExportRoute(config) {
 export function createHtmlPreviewRoute(config) {
   const { pattern, method = 'GET', stripLiveOnly = true, buildHtml } = config;
 
-  return async function handler({ repoRoot, req, res, url, authedUser }) {
+  return async function handler({ repoRoot, storageScope, req, res, url, authedUser }) {
     const match = url.pathname.match(pattern);
     if (!match || req.method !== method) return false;
 
@@ -201,6 +200,7 @@ export function createHtmlPreviewRoute(config) {
       url,
       authedUser,
       presentationId,
+      storageScope,
       stripLiveOnly,
     });
 
@@ -244,7 +244,7 @@ export function createAsyncExportRoute(config) {
     getFilename = (ctx) => ctx.title,
   } = config;
 
-  return async function handler({ repoRoot, req, res, url, authedUser }) {
+  return async function handler({ repoRoot, storageScope, req, res, url, authedUser }) {
     const match = url.pathname.match(pattern);
     if (!match || req.method !== method) return false;
 
@@ -256,10 +256,7 @@ export function createAsyncExportRoute(config) {
     // If queue is available and not forcing sync, queue the job
     if (!forceSync && isQueueAvailable()) {
       // Quick auth check
-      const pres = await getPresentation(
-        createRouteContext(authedUser, { repoRoot }),
-        presentationId
-      );
+      const pres = await getPresentation(storageScope, presentationId);
       if (!pres) {
         return notFound(res);
       }
@@ -304,6 +301,7 @@ export function createAsyncExportRoute(config) {
       url,
       authedUser,
       presentationId,
+      storageScope,
       stripLiveOnly,
     });
 

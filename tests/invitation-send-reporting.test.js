@@ -218,6 +218,7 @@ async function invite(email) {
   const res = fakeResponse();
   await handleOrganizationMembers({
     repoRoot: null,
+    storageScope: { repoRoot: null, organizationId: ORG, actorEmail: OWNER },
     req: fakeRequest('POST', { email }),
     res,
     url: new URL(`http://localhost/api/organizations/${ORG}/members`),

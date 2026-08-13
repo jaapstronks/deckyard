@@ -324,7 +324,7 @@ test('the shared route middleware admits the same person for a write', async () 
     end() {},
   };
   const pres = await withPresentationAuth({
-    repoRoot: process.cwd(),
+    storageScope: createRouteContext(COLLABORATOR, { repoRoot: process.cwd() }),
     id: DECK,
     authedUser: COLLABORATOR,
     res,

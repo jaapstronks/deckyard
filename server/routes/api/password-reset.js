@@ -64,9 +64,7 @@ async function userExists(email) {
  * repoRoot carried alongside — the same shape the old entry built once.
  */
 function resetCtx(repoRoot) {
-  const ctx = createRouteContext(null);
-  ctx.repoRoot = repoRoot;
-  return ctx;
+  return createRouteContext(null, { repoRoot });
 }
 
 // ============================================================

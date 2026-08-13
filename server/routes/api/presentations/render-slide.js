@@ -11,7 +11,6 @@
 
 import { getPresentation } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
-import { createRouteContext } from '../../../utils/context.js';
 import { loadTheme } from '../../../utils/themes.js';
 import { canReadPresentation } from '../../../utils/presentation-authz.js';
 import { renderSlideHtml } from '../../../../shared/slide-types.js';
@@ -36,7 +35,6 @@ export async function handleRenderSlide(
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const ctx = createRouteContext(authedUser);
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
 
@@ -63,7 +61,7 @@ export async function handleRenderSlide(
 
   // Load theme and merged slide types for rendering context
   const theme = await loadTheme(repoRoot, pres?.theme);
-  const slideTypes = await buildMergedSlideTypes(ctx);
+  const slideTypes = await buildMergedSlideTypes(storageScope);
 
   const mode = ['preview', 'thumb', 'present', 'follow'].includes(body?.mode)
     ? body.mode

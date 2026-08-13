@@ -57,9 +57,9 @@ import { getString, getOptionalBoolean } from '../../utils/request-validators.js
  * @returns {Promise<Object|null>} the presentation if authorized, or null after
  *   the helper has already sent a 404/401 response.
  */
-async function requirePresentationControl({ repoRoot, presentationId, authedUser, res }) {
+async function requirePresentationControl({ storageScope, presentationId, authedUser, res }) {
   return withPresentationAuth({
-    repoRoot,
+    storageScope,
     id: presentationId,
     authedUser,
     res,
@@ -75,7 +75,7 @@ function csvEscapeCell(v) {
 }
 
 // POST /api/live-sessions - Create/resume a live session (deck-write only)
-async function handleLiveSessionCreate({ repoRoot, storageScope, req, res, authedUser }) {
+async function handleLiveSessionCreate({ storageScope, req, res, authedUser }) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -85,7 +85,7 @@ async function handleLiveSessionCreate({ repoRoot, storageScope, req, res, authe
   // Only someone who can write the deck may create/resume its live session.
   // Otherwise the returned sessionId hands live control to a non-owner.
   const pres = await requirePresentationControl({
-    repoRoot,
+    storageScope,
     presentationId: presentationId.trim(),
     authedUser,
     res,
@@ -104,7 +104,7 @@ async function handleLiveSessionCreate({ repoRoot, storageScope, req, res, authe
 // session-existence check answers 404 before the method decision (an unknown
 // session must not learn which methods exist), so the whole path stays one
 // no-method handler (route-dispatch.md, guard-before-method exception).
-async function handleLiveSessionStatePush({ repoRoot, storageScope, req, res, authedUser }, sessionId) {
+async function handleLiveSessionStatePush({ storageScope, req, res, authedUser }, sessionId) {
   const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   // GET is capability-based (the session id is the authorization) and is
@@ -112,7 +112,7 @@ async function handleLiveSessionStatePush({ repoRoot, storageScope, req, res, au
   if (req.method === 'POST') {
     // Pushing live state is a presenter action → require deck-write.
     const pres = await requirePresentationControl({
-      repoRoot,
+      storageScope,
       presentationId: s.presentationId,
       authedUser,
       res,
@@ -186,12 +186,12 @@ async function handleLiveSessionStatePush({ repoRoot, storageScope, req, res, au
 }
 
 // POST /api/live-sessions/:id/interactions/:slideId/(open|close|reset)
-async function handleLiveSessionInteractionAction({ repoRoot, storageScope, res, authedUser }, sessionId, slideId, action) {
+async function handleLiveSessionInteractionAction({ storageScope, res, authedUser }, sessionId, slideId, action) {
   const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   // Opening/closing/resetting an interaction is a presenter action.
   const pres = await requirePresentationControl({
-    repoRoot,
+    storageScope,
     presentationId: s.presentationId,
     authedUser,
     res,
@@ -283,12 +283,12 @@ async function handleLiveSessionInteractionAction({ repoRoot, storageScope, res,
 
 // GET /api/live-sessions/:id/feedback/:slideId.(csv|json) - Export feedback
 // (audience PII, deck-write only)
-async function handleLiveSessionFeedbackExport({ repoRoot, storageScope, res, authedUser }, sessionId, slideId, fmt) {
+async function handleLiveSessionFeedbackExport({ storageScope, res, authedUser }, sessionId, slideId, fmt) {
   const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   // Feedback entries are audience PII (free text + deviceId) → deck-write only.
   const pres = await requirePresentationControl({
-    repoRoot,
+    storageScope,
     presentationId: s.presentationId,
     authedUser,
     res,
@@ -340,11 +340,11 @@ async function handleLiveSessionFeedbackExport({ repoRoot, storageScope, res, au
 }
 
 // POST /api/live-sessions/:id/control/enable - Enable remote control
-async function handleLiveSessionControlEnable({ repoRoot, storageScope, res, authedUser }, sessionId) {
+async function handleLiveSessionControlEnable({ storageScope, res, authedUser }, sessionId) {
   const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   const pres = await requirePresentationControl({
-    repoRoot,
+    storageScope,
     presentationId: s.presentationId,
     authedUser,
     res,
@@ -356,11 +356,11 @@ async function handleLiveSessionControlEnable({ repoRoot, storageScope, res, aut
 }
 
 // POST /api/live-sessions/:id/control/disable - Disable remote control
-async function handleLiveSessionControlDisable({ repoRoot, storageScope, res, authedUser }, sessionId) {
+async function handleLiveSessionControlDisable({ storageScope, res, authedUser }, sessionId) {
   const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   const pres = await requirePresentationControl({
-    repoRoot,
+    storageScope,
     presentationId: s.presentationId,
     authedUser,
     res,
@@ -372,11 +372,11 @@ async function handleLiveSessionControlDisable({ repoRoot, storageScope, res, au
 }
 
 // POST /api/live-sessions/:id/control - Send a remote-control command
-async function handleLiveSessionControlCommand({ repoRoot, storageScope, req, res, authedUser }, sessionId) {
+async function handleLiveSessionControlCommand({ storageScope, req, res, authedUser }, sessionId) {
   const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   const pres = await requirePresentationControl({
-    repoRoot,
+    storageScope,
     presentationId: s.presentationId,
     authedUser,
     res,

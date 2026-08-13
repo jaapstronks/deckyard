@@ -5,7 +5,6 @@
 
 import { serveJson, badRequest, unauthorized, forbidden, notFound, serverError, requireJsonBody } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
-import { createRouteContext } from '../../utils/context.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import {
@@ -118,9 +117,6 @@ async function handleMemberInvite({ repoRoot, storageScope, req, res, authedUser
     return forbidden(res, 'Admin or owner access required to invite members');
   }
 
-  const ctx = createRouteContext(authedUser);
-  ctx.repoRoot = repoRoot;
-
   try {
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
@@ -156,7 +152,7 @@ async function handleMemberInvite({ repoRoot, storageScope, req, res, authedUser
 
     if (!targetUser) {
       // Create a new user (will need to set up password)
-      const createResult = await createUser(ctx, {
+      const createResult = await createUser(storageScope, {
         email,
         name: body?.name || null,
         role: 'user', // System-level role is always 'user'

@@ -19,10 +19,7 @@ import {
   getUserLockRequestStatus,
 } from '../../../utils/presentation-locks.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
-import { createRouteContext } from '../../../utils/context.js';
 import { matchesIdentity } from '../../../../shared/identity-match.js';
-
-const getCtx = createRouteContext;
 
 /**
  * Whether the authed user holds this lock — id-primary, e-mail fallback.
@@ -48,15 +45,14 @@ function lockActor(authedUser) {
 }
 
 export async function handlePresentationLockStatus(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'read' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const lock = await getPresentationLock(ctx, id);
+  const lock = await getPresentationLock(storageScope, id);
 
   // Check if the current user is the lock holder
   const isHolder = isLockHolder(authedUser, lock);
@@ -64,7 +60,7 @@ export async function handlePresentationLockStatus(
   // Also include user's pending request status if they have one
   let myRequest = null;
   if (authedUser?.email) {
-    myRequest = await getUserLockRequestStatus(ctx, id, { email: authedUser.email, userId: authedUser?.id || null });
+    myRequest = await getUserLockRequestStatus(storageScope, id, { email: authedUser.email, userId: authedUser?.id || null });
   }
 
   serveJson(res, 200, { ok: true, lock, myRequest, isHolder });
@@ -72,35 +68,33 @@ export async function handlePresentationLockStatus(
 }
 
 export async function handlePresentationLockAcquire(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const result = await acquirePresentationLock(ctx, id, lockActor(authedUser));
+  const result = await acquirePresentationLock(storageScope, id, lockActor(authedUser));
 
   serveJson(res, result.ok ? 200 : 409, result);
   return true;
 }
 
 export async function handlePresentationLockRefresh(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const result = await refreshPresentationLock(ctx, id, { email: authedUser?.email, userId: authedUser?.id || null });
+  const result = await refreshPresentationLock(storageScope, id, { email: authedUser?.email, userId: authedUser?.id || null });
 
   // Include pending requests count if user is the holder
   let pendingRequestsCount = 0;
   if (result.ok && isLockHolder(authedUser, result.lock)) {
-    const requests = await listPendingLockRequests(ctx, id);
+    const requests = await listPendingLockRequests(storageScope, id);
     pendingRequestsCount = requests.length;
   }
 
@@ -109,30 +103,28 @@ export async function handlePresentationLockRefresh(
 }
 
 export async function handlePresentationLockRelease(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const result = await releasePresentationLock(ctx, id, { email: authedUser?.email, userId: authedUser?.id || null });
+  const result = await releasePresentationLock(storageScope, id, { email: authedUser?.email, userId: authedUser?.id || null });
 
   serveJson(res, result.ok ? 200 : 409, result);
   return true;
 }
 
 export async function handlePresentationLockForceRelease(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'forceLock' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'forceLock' });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const result = await forceReleasePresentationLock(ctx, id);
+  const result = await forceReleasePresentationLock(storageScope, id);
 
   serveJson(res, result.ok ? 200 : 500, result);
   return true;
@@ -143,18 +135,17 @@ export async function handlePresentationLockForceRelease(
 // ============================================================
 
 export async function handlePresentationLockRequest(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const ctx = getCtx(authedUser);
-  const result = await createLockRequest(ctx, id, {
+  const result = await createLockRequest(storageScope, id, {
     email: authedUser?.email,
     name: authedUser?.name,
     message: body?.message || '',
@@ -165,50 +156,48 @@ export async function handlePresentationLockRequest(
 }
 
 export async function handlePresentationLockRequestsList(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
 
   // Verify user is the current lock holder
-  const lock = await getPresentationLock(ctx, id);
+  const lock = await getPresentationLock(storageScope, id);
   if (!isLockHolder(authedUser, lock)) {
     return forbidden(res, 'Only the current lock holder can view requests');
   }
 
-  const requests = await listPendingLockRequests(ctx, id);
+  const requests = await listPendingLockRequests(storageScope, id);
   serveJson(res, 200, { ok: true, requests });
   return true;
 }
 
 export async function handlePresentationLockRequestAccept(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id,
   requestId
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
 
   // Verify user is the current lock holder
-  const lock = await getPresentationLock(ctx, id);
+  const lock = await getPresentationLock(storageScope, id);
   if (!isLockHolder(authedUser, lock)) {
     return forbidden(res, 'Only the current lock holder can accept requests');
   }
 
   // Verify request belongs to this presentation
-  const request = await getLockRequest(ctx, requestId);
+  const request = await getLockRequest(storageScope, requestId);
   if (!request || request.presentationId !== id) {
     return notFound(res);
   }
 
-  const result = await acceptLockRequest(ctx, requestId, {
+  const result = await acceptLockRequest(storageScope, requestId, {
     holderEmail: authedUser?.email,
   });
 
@@ -217,44 +206,42 @@ export async function handlePresentationLockRequestAccept(
 }
 
 export async function handlePresentationLockRequestReject(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id,
   requestId
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
 
   // Verify user is the current lock holder
-  const lock = await getPresentationLock(ctx, id);
+  const lock = await getPresentationLock(storageScope, id);
   if (!isLockHolder(authedUser, lock)) {
     return forbidden(res, 'Only the current lock holder can reject requests');
   }
 
   // Verify request belongs to this presentation
-  const request = await getLockRequest(ctx, requestId);
+  const request = await getLockRequest(storageScope, requestId);
   if (!request || request.presentationId !== id) {
     return notFound(res);
   }
 
-  const result = await rejectLockRequest(ctx, requestId);
+  const result = await rejectLockRequest(storageScope, requestId);
 
   serveJson(res, result.ok ? 200 : 400, result);
   return true;
 }
 
 export async function handlePresentationLockMyRequest(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'read' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const request = await getUserLockRequestStatus(ctx, id, { email: authedUser?.email, userId: authedUser?.id || null });
+  const request = await getUserLockRequestStatus(storageScope, id, { email: authedUser?.email, userId: authedUser?.id || null });
 
   serveJson(res, 200, { ok: true, request });
   return true;

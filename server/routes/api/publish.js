@@ -29,7 +29,7 @@ async function handlePublishCreate({ repoRoot, storageScope, req, res, authedUse
     return true;
   }
 
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
   const publishId =
@@ -110,7 +110,7 @@ async function handlePublishCreate({ repoRoot, storageScope, req, res, authedUse
 
   // Warm the deck-grid thumbnail for the post-publish revision so the next
   // list view shows the raster immediately (fire-and-forget, non-blocking).
-  warmDeckThumbnail(repoRoot, updated || nextPres, authedUser);
+  warmDeckThumbnail(storageScope, updated || nextPres);
 
   await maybeFireWebhook(repoRoot, req, {
     event: 'presentation.published',
@@ -134,8 +134,8 @@ async function handlePublishCreate({ repoRoot, storageScope, req, res, authedUse
 }
 
 // DELETE /api/presentations/:id/publish — depublish (disable public link)
-async function handlePublishDelete({ repoRoot, storageScope, res, authedUser }, id) {
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
+async function handlePublishDelete({ storageScope, res, authedUser }, id) {
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
   const publishId = String(pres?.published?.id || '').trim();
@@ -155,8 +155,8 @@ async function handlePublishDelete({ repoRoot, storageScope, res, authedUser }, 
 
 // PATCH /api/presentations/:id/publish/slug — update published slug (cosmetic,
 // but controls the canonical URL)
-async function handlePublishSlug({ repoRoot, storageScope, req, res, authedUser }, id) {
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
+async function handlePublishSlug({ storageScope, req, res, authedUser }, id) {
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
   const publishId = String(pres?.published?.id || '').trim();
@@ -194,7 +194,7 @@ async function handlePublishSlug({ repoRoot, storageScope, req, res, authedUser 
 // POST /api/presentations/:id/preview/regenerate — regenerate the preview image
 // for an already-published presentation
 async function handlePreviewRegenerate({ repoRoot, storageScope, res, authedUser }, id) {
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
   const publishId = String(pres?.published?.id || '').trim();

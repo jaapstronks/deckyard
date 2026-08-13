@@ -394,6 +394,7 @@ test('MH2: a linkId that resolves to no in-scope link is denied (404, fail close
     // lookup returns null): the containment gate must 404, never 200.
     const handled = await handleShareLinkManagement({
       repoRoot: root,
+      storageScope: createRouteContext(OWNER, { repoRoot: root }),
       req: mockReq('DELETE'),
       res,
       url,
