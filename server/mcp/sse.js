@@ -79,15 +79,22 @@ function destroySession(sessionId) {
   sessions.delete(sessionId);
 }
 
-// Periodic cleanup of expired sessions
-setInterval(() => {
+/**
+ * Destroy every expired MCP session, once. Scheduled from `server.js` via
+ * `jobs/mcp-session-sweep.js` — no module-load timer here.
+ * @returns {number} How many sessions were destroyed.
+ */
+export function sweepExpiredMcpSessions() {
   const now = Date.now();
+  let destroyed = 0;
   for (const [id, session] of sessions) {
     if (now - session.lastActiveAt > SESSION_TTL_MS) {
       destroySession(id);
+      destroyed += 1;
     }
   }
-}, 60_000);
+  return destroyed;
+}
 
 // ─── Auth ────────────────────────────────────────────────────────────────
 

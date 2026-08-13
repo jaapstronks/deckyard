@@ -21,7 +21,6 @@ import {
 import {
   addClient,
   removeClient,
-  startHeartbeat,
 } from '../../services/notification-events.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { serveJson, badRequest, requireJsonBody } from '../../utils/http.js';
@@ -37,9 +36,6 @@ async function handleNotificationEvents({ storageScope, req, res, authedUser }) 
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
   res.flushHeaders();
-
-  // Start the heartbeat interval (idempotent)
-  startHeartbeat();
 
   // Register client
   addClient(userEmail, res);

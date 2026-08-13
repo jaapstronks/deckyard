@@ -117,4 +117,5 @@ let heartbeatIntervalId = null;
 export function startHeartbeat() {
   if (heartbeatIntervalId) return; // Already running
   heartbeatIntervalId = setInterval(sendAllHeartbeats, HEARTBEAT_INTERVAL_MS);
+  heartbeatIntervalId.unref?.(); // Don't keep process alive just for this
 }

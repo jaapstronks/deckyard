@@ -6,7 +6,7 @@
  * per session with its own `createdAt`/`lastActivityAt` and its own 24h TTL
  * timer, which was a second lifetime for a thing that already had one. The live
  * session is the lifetime — the cascade takes the questions with it when the
- * session closes or the sweep in `utils/live-session-cleanup.js` collects it.
+ * session closes or the sweep in `jobs/live-session-cleanup.js` collects it.
  *
  * What stays in this process is the SSE registry: the response streams attached
  * here and their heartbeat timers. Those are sockets, so they cannot be shared
