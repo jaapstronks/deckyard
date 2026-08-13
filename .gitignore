@@ -8,7 +8,9 @@ node_modules
 
 # Local runtime data
 server/data/
+server/data-sandbox/
 server/uploads/
+server/uploads-sandbox/
 readme.md.local
 
 # Personal docs
