@@ -152,22 +152,21 @@ export async function handleLeadsPublic(ctx) {
 }
 
 /**
- * Authenticated lead routes in the old chain's exact order: the three
- * presentation-scoped reads, then `DELETE /api/leads/:id`, then the GDPR
- * self-service paths. NOTE (pre-existing, preserved): the `:id` DELETE row
- * precedes — and therefore shadows — `DELETE /api/leads/my-data`, exactly as
- * the old chain did; that request deletes nothing and answers 404 via
- * `handleDeleteLead('my-data')`.
+ * Authenticated lead routes: the three presentation-scoped reads, then the
+ * GDPR self-service paths, then `DELETE /api/leads/:id`. The literal
+ * `my-data` rows must precede the `:id` row — `:id` matches any segment, so
+ * the reverse order would resolve `DELETE /api/leads/my-data` as
+ * `leadId='my-data'` and the erasure handler would never run.
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
   { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/leads$/, handler: handleGetLeads },
   { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/leads\/count$/, handler: handleGetLeadCount },
   { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/leads\/export$/, handler: handleExportLeads },
-  { method: 'DELETE', pattern: /^\/api\/leads\/([^/]+)$/, handler: handleDeleteLead },
   { method: 'POST', pattern: '/api/leads/my-data/request', handler: handleRequestMyData },
   { method: 'GET', pattern: '/api/leads/my-data', handler: handleGetMyData },
   { method: 'DELETE', pattern: '/api/leads/my-data', handler: handleDeleteMyData },
+  { method: 'DELETE', pattern: /^\/api\/leads\/([^/]+)$/, handler: handleDeleteLead },
 ];
 
 /**

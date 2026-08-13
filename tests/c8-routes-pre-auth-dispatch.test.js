@@ -170,17 +170,17 @@ test('leads: authed routes resolve to their named handlers in order', () => {
   named(LEAD_ROUTES, 'GET', '/api/presentations/p1/leads', 'handleGetLeads');
   named(LEAD_ROUTES, 'GET', '/api/presentations/p1/leads/count', 'handleGetLeadCount');
   named(LEAD_ROUTES, 'GET', '/api/presentations/p1/leads/export', 'handleExportLeads');
-  named(LEAD_ROUTES, 'DELETE', '/api/leads/l1', 'handleDeleteLead');
   named(LEAD_ROUTES, 'POST', '/api/leads/my-data/request', 'handleRequestMyData');
   named(LEAD_ROUTES, 'GET', '/api/leads/my-data', 'handleGetMyData');
+  named(LEAD_ROUTES, 'DELETE', '/api/leads/l1', 'handleDeleteLead');
 });
 
-test('leads: DELETE /api/leads/my-data is shadowed by the :id row (pre-existing, preserved)', () => {
-  // The old chain checked `DELETE /api/leads/:id` before the my-data branch,
-  // so `DELETE /api/leads/my-data` always resolved as leadId `my-data`. The
-  // table preserves that order; fixing it is a behaviour change for a
-  // follow-up, not for this migration.
-  named(LEAD_ROUTES, 'DELETE', '/api/leads/my-data', 'handleDeleteLead');
+test('leads: DELETE /api/leads/my-data reaches the erasure handler, not the :id row', () => {
+  // The `:id` pattern matches any segment, so the literal my-data row must
+  // come first — otherwise the GDPR self-service delete resolves as
+  // leadId 'my-data' and answers 404 without deleting anything.
+  named(LEAD_ROUTES, 'DELETE', '/api/leads/my-data', 'handleDeleteMyData');
+  named(LEAD_ROUTES, 'DELETE', '/api/leads/l1', 'handleDeleteLead');
 });
 
 test('leads: without a session the authed entry declines; unknown paths fall through', async () => {
