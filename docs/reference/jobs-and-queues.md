@@ -58,14 +58,16 @@ The interval jobs (`server/jobs/`):
 - `server/jobs/digest-email.js` — the weekly engagement digest. Daily check,
   aligned to a wall-clock hour.
 
-Two more sweeps live outside `server/jobs/` because they belong to their
-subsystem rather than to maintenance, but they are the same shape (a `setInterval`
-started from `server/server.js`):
-
-- `server/utils/sandbox-cleanup.js` — expired guest decks, see
+- `server/jobs/sandbox-cleanup.js` — expired guest decks, see
   [`sandbox-mode.md`](sandbox-mode.md).
-- `server/utils/live-session-cleanup.js` — live-session and follow-code TTL,
+- `server/jobs/live-session-cleanup.js` — live-session and follow-code TTL,
   see [`live-sessions.md`](live-sessions.md).
+- `server/jobs/mcp-session-sweep.js` — expired MCP SSE sessions (the registry
+  itself lives in `server/mcp/sse.js`; the job only owns the schedule).
+
+Every recurring task lives in `server/jobs/` and exports
+`schedule<Name>() → { stop() }`; timers call `.unref?.()` so they never keep
+the process alive on their own.
 
 Supporting and consuming modules:
 
@@ -111,11 +113,13 @@ through a storage facade.
 
 ### 1. Boot and shutdown
 
-`server/server.js`, in order: `startSandboxCleanupLoop()`,
-`startLiveSessionCleanupLoop()`, `startHeartbeat()`, then the four interval jobs
-(`scheduleAuthCleanup`, `scheduleDigestEmailJob`, `scheduleAnalyticsCleanup`,
-`scheduleRetentionCleanup`), then `await initializeQueues()` and
-`await initializeWorkers()`.
+`server/server.js`, in order: the two SSE broadcast heartbeats
+(comment-events, notification-events), then the `runningJobs` array — every
+`schedule…()` handle in one block (`sandbox-cleanup`, `live-session-cleanup`,
+`mcp-session-sweep`, `auth-cleanup`, `digest-email`, `analytics-cleanup`,
+`retention-cleanup`, plus the two heartbeat stop handles) — then
+`await initializeQueues()` and `await initializeWorkers()`. `shutdown()` walks
+`runningJobs` and calls every `stop()`.
 
 `initializeQueues()` is idempotent and memoized on its own promise. It returns
 `false` — not an error — when `isRedisConfigured()` is false or the client will

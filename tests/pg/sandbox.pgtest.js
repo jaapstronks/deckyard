@@ -6,7 +6,7 @@
  * both against a real database — the coverage that lets the file backend go in
  * PR G.
  *
- *  - the sweep (server/utils/sandbox-cleanup.js) hard-deletes expired ephemeral
+ *  - the sweep (server/jobs/sandbox-cleanup.js) hard-deletes expired ephemeral
  *    decks, spares fresh decks and curated organization-visible decks, and cascades
  *    to each deck's version snapshots and published entry;
  *  - the quota (server/storage/presentations/sandbox-quota.js) counts a guest's
@@ -29,7 +29,7 @@ import {
 } from './helpers/harness.js';
 import { seedDefaultOrganization } from './helpers/seed.js';
 import { getDefaultOrganizationId } from '../../server/config/database.js';
-import { sweepExpiredSandboxDecks } from '../../server/utils/sandbox-cleanup.js';
+import { sweepExpiredSandboxDecks } from '../../server/jobs/sandbox-cleanup.js';
 import {
   assertSandboxQuotaForCreate,
   getSandboxUsageForOwner,

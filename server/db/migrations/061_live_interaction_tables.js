@@ -53,7 +53,7 @@
  * No import: all three are 24h-TTL ephemera bound to a live session (decision
  * 4), so whatever sits in `questions/`, `interactions/` or `feedback/` on an
  * upgrading install expires on its own. Collection is the `ON DELETE CASCADE`
- * from `present_sessions`, which the sweep in `utils/live-session-cleanup.js`
+ * from `present_sessions`, which the sweep in `jobs/live-session-cleanup.js`
  * now drives for these domains too.
  */
 

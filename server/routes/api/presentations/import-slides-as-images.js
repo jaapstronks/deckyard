@@ -9,7 +9,7 @@ import {
   badRequest,
   requireJsonBody,
 } from '../../../utils/http.js';
-import { sseWrite, sseError } from '../../../utils/sse.js';
+import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { getString } from '../../../utils/request-validators.js';
 import { createLogger } from '../../../utils/logger.js';
@@ -57,15 +57,6 @@ function generateSlideId() {
   return `slide-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function writeSseHeaders(res) {
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream; charset=utf-8',
-    'Cache-Control': 'no-store',
-    Connection: 'keep-alive',
-    'X-Accel-Buffering': 'no',
-  });
-}
-
 /**
  * Handle POST /api/presentations/:id/import-slides-as-images
  *
@@ -106,7 +97,8 @@ export async function handlePresentationImportSlidesAsImages(
   }
 
   // Set up SSE
-  writeSseHeaders(res);
+  const stream = openSseStream(req, res);
+  if (!stream.ok) return true;
 
   const sendProgress = (message, data = {}) => {
     sseWrite(res, {

@@ -20,7 +20,7 @@ import {
   validateSlideCount,
 } from '../../../utils/ai/validate-slides.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
-import { sseErrorPayload } from '../../../utils/sse.js';
+import { sseErrorPayload, openSseStream } from '../../../utils/sse.js';
 import { sandboxDefaultThemeId, sandboxEnabled } from '../../../config/sandbox.js';
 import {
   log,
@@ -69,13 +69,8 @@ export async function handleAiWizardV2Stream({ repoRoot, storageScope, req, res,
     `[AI Wizard V2 Stream] Starting session ${sessionId}, theme: ${effectiveTheme}, titleSlideType: ${titleSlideType}, targetLength: ${targetLength}`
   );
 
-  // Set up SSE headers
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    Connection: 'keep-alive',
-    'X-Accel-Buffering': 'no', // Disable nginx buffering
-  });
+  const stream = openSseStream(req, res);
+  if (!stream.ok) return true;
 
   const sendEvent = (event, data) => {
     res.write(`event: ${event}\n`);

@@ -17,7 +17,7 @@ import {
 } from '../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../shared/slide-types.js';
 import { createLogger } from '../../utils/logger.js';
-import { sseErrorPayload } from '../../utils/sse.js';
+import { sseErrorPayload, openSseStream } from '../../utils/sse.js';
 import { dispatchRoutes } from '../../utils/router.js';
 const log = createLogger('convert');
 import {
@@ -216,12 +216,8 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
   }
 
   // Set up SSE headers
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    Connection: 'keep-alive',
-    'X-Accel-Buffering': 'no',
-  });
+  const stream = openSseStream(req, res);
+  if (!stream.ok) return true;
 
   const sendEvent = (event, data) => {
     res.write(`event: ${event}\n`);

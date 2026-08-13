@@ -21,25 +21,18 @@ import {
 import {
   addClient,
   removeClient,
-  startHeartbeat,
 } from '../../services/notification-events.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { serveJson, badRequest, requireJsonBody } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
+import { openSseStream } from '../../utils/sse.js';
 
 // GET /api/notifications/events - SSE endpoint for real-time notifications
 async function handleNotificationEvents({ storageScope, req, res, authedUser }) {
   const userEmail = authedUser.email;
 
-  // Set up SSE headers
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
-  res.flushHeaders();
-
-  // Start the heartbeat interval (idempotent)
-  startHeartbeat();
+  const stream = openSseStream(req, res);
+  if (!stream.ok) return true;
 
   // Register client
   addClient(userEmail, res);

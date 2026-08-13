@@ -329,11 +329,13 @@ export function downloadLogFile(filename) {
   return fs.readFileSync(filepath, 'utf8');
 }
 
-// Run cleanup on startup
+// Run cleanup once, shortly after startup. One-shot, so it stays here rather
+// than in server/jobs/ (that layer is for recurring work); unref'd so it never
+// keeps a short-lived process (tests, CLI) alive.
 setTimeout(() => {
   try {
     cleanupOldLogs();
   } catch (err) {
     log.error('Cleanup failed:', err.message);
   }
-}, 5000);
+}, 5000).unref?.();

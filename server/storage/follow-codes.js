@@ -126,7 +126,7 @@ export async function resolveFollowCode(scope, code) {
 
 /**
  * Delete every expired code. Called by the live-session sweep
- * (`utils/live-session-cleanup.js`); the file-backed predecessor of this
+ * (`jobs/live-session-cleanup.js`); the file-backed predecessor of this
  * function was never called at all, which is why the JSON blob only grew.
  *
  * @param {import('./scope.js').StorageScope} scope

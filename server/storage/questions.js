@@ -6,7 +6,7 @@
  * per session with its own `createdAt`/`lastActivityAt` and its own 24h TTL
  * timer, which was a second lifetime for a thing that already had one. The live
  * session is the lifetime — the cascade takes the questions with it when the
- * session closes or the sweep in `utils/live-session-cleanup.js` collects it.
+ * session closes or the sweep in `jobs/live-session-cleanup.js` collects it.
  *
  * What stays in this process is the SSE registry: the response streams attached
  * here and their heartbeat timers. Those are sockets, so they cannot be shared
@@ -25,11 +25,10 @@
 import { sql } from 'kysely';
 
 import { normalizeLang } from '../utils/i18n.js';
-import { sseComment, sseWrite } from '../utils/sse.js';
+import { sseWrite } from '../utils/sse.js';
 import { toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/db-guard.js';
 
-const HEARTBEAT_MS = 15 * 1000;
 // Note: questions are not auto-translated (explicit translation may be added later).
 
 /** Author/voter ids come from a client-controlled cookie; clamp to the column. */
@@ -37,7 +36,7 @@ const MAX_AUTHOR_ID_LENGTH = 100;
 
 /**
  * SSE clients per session — the half of a session that cannot be a row.
- * @type {Map<string, { clients: Set<any>, heartbeatTimers: Map<any, any> }>}
+ * @type {Map<string, { clients: Set<any> }>}
  */
 const sseSessions = new Map();
 
@@ -499,7 +498,7 @@ export async function attachQuestionsSseClient(scope, sessionId, res) {
 
   let reg = sseSessions.get(sid);
   if (!reg) {
-    reg = { clients: new Set(), heartbeatTimers: new Map() };
+    reg = { clients: new Set() };
     sseSessions.set(sid, reg);
   }
   reg.clients.add(res);
@@ -508,19 +507,8 @@ export async function attachQuestionsSseClient(scope, sessionId, res) {
   const questions = await listQuestions(scope, sid);
   sseWrite(res, { event: 'questions', data: { questions: questions || [] } });
 
-  // Heartbeats
-  const tid = setInterval(() => {
-    sseComment(res, 'heartbeat');
-  }, HEARTBEAT_MS);
-  reg.heartbeatTimers.set(res, tid);
-
+  // No heartbeat here: openSseStream() owns the per-connection heartbeat.
   const detach = () => {
-    try {
-      clearInterval(tid);
-    } catch {}
-    try {
-      reg.heartbeatTimers.delete(res);
-    } catch {}
     try {
       reg.clients.delete(res);
     } catch {}
@@ -553,11 +541,6 @@ export function closeQuestionsClients(sessionId, reason = 'closed') {
     } catch {}
     try {
       res.end?.();
-    } catch {}
-  }
-  for (const tid of reg.heartbeatTimers.values()) {
-    try {
-      clearInterval(tid);
     } catch {}
   }
   sseSessions.delete(sid);

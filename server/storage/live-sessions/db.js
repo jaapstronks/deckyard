@@ -126,7 +126,6 @@ function mergeRow(row) {
     const session = {
       ...incoming,
       clients: new Set(),
-      heartbeatTimers: new Map(),
       persistTimer: null,
     };
     sessions.set(session.sessionId, session);
@@ -282,7 +281,7 @@ export async function deletePersistedSession(sessionId) {
  */
 export async function sweepExpiredSessions() {
   // TTL_MS stays the single source of the window; only the comparison lives in
-  // SQL. Same shape as the sandbox sweep (utils/sandbox-cleanup.js).
+  // SQL. Same shape as the sandbox sweep (jobs/sandbox-cleanup.js).
   const cutoff = new Date(Date.now() - TTL_MS).toISOString();
   return withDbGuard(0, async (db) => {
     const result = await db

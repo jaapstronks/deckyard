@@ -21,6 +21,7 @@ import {
 } from '../../../services/comment-events.js';
 import { withPresentationReadAuth } from '../../../utils/route-middleware.js';
 import { getAiIdentity } from '../../../storage/settings.js';
+import { openSseStream } from '../../../utils/sse.js';
 
 /**
  * List comments for a presentation.
@@ -125,13 +126,8 @@ export async function handlePresentationCommentEvents(
   const { pres } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
   if (!pres) return true;
 
-  // Set up SSE headers
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'X-Accel-Buffering': 'no', // Disable nginx buffering
-  });
+  const stream = openSseStream(req, res);
+  if (!stream.ok) return true;
 
   // Send initial connection confirmation
   res.write(`event: connected\ndata: ${JSON.stringify({ presentationId: id })}\n\n`);
