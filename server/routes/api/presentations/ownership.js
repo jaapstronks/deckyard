@@ -18,7 +18,6 @@ import {
   badRequest,
   requireJsonBody,
   jsonError,
-  serverError,
 } from '../../../utils/http.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { createActivityEvent, EVENT_TYPES, ENTITY_TYPES } from '../../../storage/activity-events.js';
@@ -59,13 +58,7 @@ export async function handleOwnershipTransfer(
   }
 
   // Verify new owner exists in organization
-  let users;
-  try {
-    users = await listUsers(storageScope);
-  } catch (err) {
-    log.error('[ownership] Failed to list users:', err);
-    return serverError(res, 'Failed to verify user');
-  }
+  const users = await listUsers(storageScope);
 
   const newOwnerUser = users.find((u) => normalizeEmail(u.email) === newOwnerEmail);
   if (!newOwnerUser) {
@@ -75,79 +68,74 @@ export async function handleOwnershipTransfer(
   // Whether to keep old owner as collaborator
   const keepAsCollaborator = body?.keepAsCollaborator !== false; // Default true
 
-  try {
-    const result = await transferPresentationOwnership(storageScope, id, {
-      newOwnerEmail,
-      previousOwnerEmail: currentOwner,
-      keepAsCollaborator,
-      actorEmail: authedUser?.email,
-    });
+  const result = await transferPresentationOwnership(storageScope, id, {
+    newOwnerEmail,
+    previousOwnerEmail: currentOwner,
+    keepAsCollaborator,
+    actorEmail: authedUser?.email,
+  });
 
-    if (!result.ok) {
-      return jsonError(res, 400, result.reason, 'Ownership transfer failed');
-    }
-
-    // Create activity event (non-blocking)
-    try {
-      await createActivityEvent(
-        storageScope,
-        {
-          eventType: EVENT_TYPES.OWNERSHIP_TRANSFERRED,
-          entityType: ENTITY_TYPES.PRESENTATION,
-          entityId: id,
-          presentationId: id,
-          actorEmail: authedUser?.email,
-          actorName: authedUser?.name,
-          data: {
-            previousOwner: currentOwner,
-            newOwner: newOwnerEmail,
-            presentationTitle: pres.title,
-          },
-        }
-      );
-    } catch (err) {
-      log.error('[ownership] Failed to create activity event:', err);
-    }
-
-    // Notify new owner (non-blocking)
-    try {
-      const host = req.headers.host || 'localhost';
-      const protocol = req.headers['x-forwarded-proto'] || 'http';
-      const editUrl = `${protocol}://${host}/app/${id}`;
-
-      const notifResult = await createNotification(
-        storageScope,
-        {
-          userEmail: newOwnerEmail,
-          notificationType: 'ownership_received',
-          title: `${authedUser?.name || authedUser?.email} transferred ownership to you`,
-          body: `You are now the owner of "${pres.title || 'Untitled presentation'}".`,
-          presentationId: id,
-          actorEmail: authedUser?.email,
-          actorName: authedUser?.name,
-          actionUrl: editUrl,
-          data: { presentationTitle: pres.title },
-        }
-      );
-
-      if (notifResult.ok) {
-        broadcastToUser(newOwnerEmail, NotificationEventTypes.NEW, notifResult.notification);
-      }
-    } catch (err) {
-      log.error('[ownership] Failed to create notification:', err);
-    }
-
-    serveJson(res, 200, {
-      ok: true,
-      presentation: result.presentation,
-      previousOwner: currentOwner,
-      newOwner: newOwnerEmail,
-      previousOwnerKeptAsCollaborator: keepAsCollaborator && result.collaboratorAdded,
-    });
-  } catch (err) {
-    log.error('[ownership] Failed to transfer ownership:', err);
-    return serverError(res, 'Failed to transfer ownership');
+  if (!result.ok) {
+    return jsonError(res, 400, result.reason, 'Ownership transfer failed');
   }
+
+  // Create activity event (non-blocking)
+  try {
+    await createActivityEvent(
+      storageScope,
+      {
+        eventType: EVENT_TYPES.OWNERSHIP_TRANSFERRED,
+        entityType: ENTITY_TYPES.PRESENTATION,
+        entityId: id,
+        presentationId: id,
+        actorEmail: authedUser?.email,
+        actorName: authedUser?.name,
+        data: {
+          previousOwner: currentOwner,
+          newOwner: newOwnerEmail,
+          presentationTitle: pres.title,
+        },
+      }
+    );
+  } catch (err) {
+    log.error('[ownership] Failed to create activity event:', err);
+  }
+
+  // Notify new owner (non-blocking)
+  try {
+    const host = req.headers.host || 'localhost';
+    const protocol = req.headers['x-forwarded-proto'] || 'http';
+    const editUrl = `${protocol}://${host}/app/${id}`;
+
+    const notifResult = await createNotification(
+      storageScope,
+      {
+        userEmail: newOwnerEmail,
+        notificationType: 'ownership_received',
+        title: `${authedUser?.name || authedUser?.email} transferred ownership to you`,
+        body: `You are now the owner of "${pres.title || 'Untitled presentation'}".`,
+        presentationId: id,
+        actorEmail: authedUser?.email,
+        actorName: authedUser?.name,
+        actionUrl: editUrl,
+        data: { presentationTitle: pres.title },
+      }
+    );
+
+    if (notifResult.ok) {
+      broadcastToUser(newOwnerEmail, NotificationEventTypes.NEW, notifResult.notification);
+    }
+  } catch (err) {
+    log.error('[ownership] Failed to create notification:', err);
+  }
+
+  serveJson(res, 200, {
+    ok: true,
+    presentation: result.presentation,
+    previousOwner: currentOwner,
+    newOwner: newOwnerEmail,
+    previousOwnerKeptAsCollaborator: keepAsCollaborator && result.collaboratorAdded,
+  });
 
   return true;
 }
