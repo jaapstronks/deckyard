@@ -126,7 +126,6 @@ function mergeRow(row) {
     const session = {
       ...incoming,
       clients: new Set(),
-      heartbeatTimers: new Map(),
       persistTimer: null,
     };
     sessions.set(session.sessionId, session);
