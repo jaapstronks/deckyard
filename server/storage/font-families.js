@@ -16,6 +16,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
+import { toStorageContext } from './backend-dispatch.js';
 import { nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { parseJson, generateSlug, isValidSlug, getUserIdByEmail } from './utils/helpers.js';
@@ -58,21 +59,20 @@ const VARIANT_COLUMNS = [
 
 /**
  * Get a single font family by ID, with eagerly-loaded variants.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
+ * @param {string} familyId - The font family ID
  */
-export async function getFontFamily(familyId, ctx) {
+export async function getFontFamily(scope, familyId) {
+  toStorageContext(scope, 'getFontFamily');
   if (!familyId || typeof familyId !== 'string') return null;
 
   return withDbGuard(null, async (db) => {
-    let query = db
+    const row = await db
       .selectFrom('font_families')
       .select(FAMILY_COLUMNS)
-      .where('id', '=', familyId);
-
-    if (ctx?.organizationId) {
-      query = query.where('organization_id', '=', ctx.organizationId);
-    }
-
-    const row = await query.executeTakeFirst();
+      .where('id', '=', familyId)
+      .where('organization_id', '=', getOrgId(scope))
+      .executeTakeFirst();
     if (!row) return null;
 
     const variants = await db
@@ -92,8 +92,11 @@ export async function getFontFamily(familyId, ctx) {
 
 /**
  * Create a font family.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
+ * @param {Object} data - Font family data
  */
-export async function createFontFamily(data, ctx) {
+export async function createFontFamily(scope, data) {
+  toStorageContext(scope, 'createFontFamily');
   const name = String(data?.name || '').trim();
   if (!name || name.length > MAX_NAME_LEN) {
     return { ok: false, reason: 'invalid_name' };
@@ -115,7 +118,7 @@ export async function createFontFamily(data, ctx) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Check slug uniqueness per org
     const existing = await db
@@ -144,7 +147,7 @@ export async function createFontFamily(data, ctx) {
         sort_order: typeof data?.sortOrder === 'number' ? data.sortOrder : 0,
         created_at: now,
         updated_at: now,
-        created_by: ctx?.actorEmail ? await getUserIdByEmail(db, orgId, ctx.actorEmail) : null,
+        created_by: scope?.actorEmail ? await getUserIdByEmail(db, orgId, scope.actorEmail) : null,
       })
       .returningAll()
       .executeTakeFirst();
@@ -155,14 +158,18 @@ export async function createFontFamily(data, ctx) {
 
 /**
  * Update a font family.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
+ * @param {string} familyId - The font family ID
+ * @param {Object} updates - Fields to update
  */
-export async function updateFontFamily(familyId, updates, ctx) {
+export async function updateFontFamily(scope, familyId, updates) {
+  toStorageContext(scope, 'updateFontFamily');
   if (!familyId || typeof familyId !== 'string') {
     return { ok: false, reason: 'invalid_id' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const updateData = { updated_at: nowIso() };
 
     if ('name' in updates) {
@@ -234,14 +241,17 @@ export async function updateFontFamily(familyId, updates, ctx) {
 /**
  * Delete a font family (cascades to variants).
  * Also clears familyId references from any themes using this font.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
+ * @param {string} familyId - The font family ID
  */
-export async function deleteFontFamily(familyId, ctx) {
+export async function deleteFontFamily(scope, familyId) {
+  toStorageContext(scope, 'deleteFontFamily');
   if (!familyId || typeof familyId !== 'string') {
     return { ok: false, reason: 'invalid_id' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Get the family first (to return variant URLs for cleanup)
     const family = await db
@@ -320,8 +330,12 @@ export async function deleteFontFamily(familyId, ctx) {
 
 /**
  * Add a variant to a font family.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
+ * @param {string} familyId - The font family ID
+ * @param {Object} variantData - Variant data
  */
-export async function addFontVariant(familyId, variantData, ctx) {
+export async function addFontVariant(scope, familyId, variantData) {
+  toStorageContext(scope, 'addFontVariant');
   if (!familyId || typeof familyId !== 'string') {
     return { ok: false, reason: 'invalid_id' };
   }
@@ -342,7 +356,7 @@ export async function addFontVariant(familyId, variantData, ctx) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Verify family belongs to org
     const family = await db
@@ -397,14 +411,17 @@ export async function addFontVariant(familyId, variantData, ctx) {
 
 /**
  * Remove a font variant.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
+ * @param {string} variantId - The font variant ID
  */
-export async function removeFontVariant(variantId, ctx) {
+export async function removeFontVariant(scope, variantId) {
+  toStorageContext(scope, 'removeFontVariant');
   if (!variantId || typeof variantId !== 'string') {
     return { ok: false, reason: 'invalid_id' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Verify variant belongs to a family in this org
     const variant = await db

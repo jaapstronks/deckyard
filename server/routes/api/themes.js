@@ -214,7 +214,7 @@ async function handleCustomThemeCreate({ req, res, authedUser }) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
 
-  const result = await createTheme(parsed.body, ctx);
+  const result = await createTheme(ctx, parsed.body);
 
   if (!result.ok) {
     const messages = {
@@ -239,7 +239,7 @@ async function handleCustomThemeClearDefault({ res, authedUser }) {
   }
 
   const ctx = createRouteContext(authedUser);
-  const result = await setDefaultTheme(null, ctx);
+  const result = await setDefaultTheme(ctx, null);
 
   if (!result.ok) {
     return badRequest(res, 'Failed to clear default theme');
@@ -252,7 +252,7 @@ async function handleCustomThemeClearDefault({ res, authedUser }) {
 // GET /api/themes/custom/:id - Get a custom theme
 async function handleCustomThemeGet({ res, authedUser }, themeId) {
   const ctx = createRouteContext(authedUser);
-  const theme = await getTheme(themeId, ctx);
+  const theme = await getTheme(ctx, themeId);
   if (!theme) {
     return notFound(res, 'Theme not found');
   }
@@ -269,7 +269,7 @@ async function handleCustomThemeUpdate({ req, res, authedUser }, themeId) {
   const ctx = createRouteContext(authedUser);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
-  const result = await updateTheme(themeId, parsed.body, ctx);
+  const result = await updateTheme(ctx, themeId, parsed.body);
 
   if (!result.ok) {
     if (result.reason === 'not_found') {
@@ -298,7 +298,7 @@ async function handleCustomThemeDelete({ res, authedUser }, themeId) {
   }
 
   const ctx = createRouteContext(authedUser);
-  const result = await deleteTheme(themeId, ctx);
+  const result = await deleteTheme(ctx, themeId);
 
   if (!result.ok) {
     if (result.reason === 'not_found') {
@@ -319,7 +319,7 @@ async function handleCustomThemeSetDefault({ res, authedUser }, themeId) {
   }
 
   const ctx = createRouteContext(authedUser);
-  const result = await setDefaultTheme(themeId, ctx);
+  const result = await setDefaultTheme(ctx, themeId);
 
   if (!result.ok) {
     if (result.reason === 'not_found') {
@@ -336,7 +336,7 @@ async function handleCustomThemeSetDefault({ res, authedUser }, themeId) {
 async function handleCustomThemeConfig({ res, authedUser }, themeId) {
   const ctx = createRouteContext(authedUser);
 
-  const theme = await getTheme(themeId, ctx);
+  const theme = await getTheme(ctx, themeId);
   if (!theme) {
     return notFound(res, 'Theme not found');
   }

@@ -11,18 +11,18 @@ import { getTheme } from '../server/storage/themes.js';
  * Regression guard for the *loader*, not the theme.
  *
  * Two functions in this codebase are called "get the theme" and they take
- * opposite arguments:
+ * different arguments:
  *
  *   utils/themes.js    loadTheme(repoRoot, rawThemeId, ctx?)
- *   storage/themes.js  getTheme(themeId, ctx)
+ *   storage/themes.js  getTheme(scope, themeId)
  *
  * The queued export worker imported the second and called it with the first
- * one's arguments — `getTheme(repoRoot, themeName)`. Neither argument is
- * rejected: a repo path is simply not a theme UUID (→ `null`) and a theme name
- * is an object-shaped ctx that has no `organizationId` (→ no org filter). So
- * every queued export (pptx, pdf, pdf-slides, png, handoff-zip, notes) rendered
- * with `theme = null` while the synchronous path rendered with a real theme.
- * Silent in every test, wrong in production.
+ * one's arguments — `getTheme(repoRoot, themeName)`. Before the scope-first
+ * convention (A7.20) neither argument was rejected: a repo path was simply not
+ * a theme UUID (→ `null`), so every queued export (pptx, pdf, pdf-slides, png,
+ * handoff-zip, notes) rendered with `theme = null` while the synchronous path
+ * rendered with a real theme. Silent in every test, wrong in production. Today
+ * the same call throws: a string in the scope slot fails toStorageContext.
  *
  * These tests pin the swap itself, so putting it back turns something red.
  */
@@ -30,11 +30,13 @@ import { getTheme } from '../server/storage/themes.js';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 test('loadTheme and storage getTheme are not interchangeable', async () => {
-  // The exact call the worker used to make: repoRoot in the themeId slot.
-  assert.equal(
-    await getTheme(repoRoot, 'midnight'),
-    null,
-    'storage getTheme accepts a repoRoot silently and answers null — that is why the swap was invisible'
+  // The exact call the worker used to make: repoRoot in the scope slot. Since
+  // the scope-first convention (A7.20) this fails loudly instead of answering
+  // null — a string is not a StorageScope.
+  await assert.rejects(
+    () => getTheme(repoRoot, 'midnight'),
+    /getTheme\(\) takes a storage scope, not a repoRoot string/,
+    'storage getTheme must refuse a repoRoot in the scope slot — the silent null is what hid the swap'
   );
 
   // The call it makes now, with the same two values, resolves a real theme.

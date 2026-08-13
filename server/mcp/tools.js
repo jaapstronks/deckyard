@@ -286,7 +286,7 @@ export function registerTools(
       }
 
       if ((validScope === 'shared' || validScope === 'all') && owner) {
-        const shared = await listPresentationsSharedWithUser(owner, ctx);
+        const shared = await listPresentationsSharedWithUser(ctx, owner);
         for (const p of shared) {
           if (!seen.has(p.id)) {
             seen.add(p.id);

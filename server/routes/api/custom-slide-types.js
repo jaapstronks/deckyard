@@ -57,7 +57,7 @@ async function handleCustomSlideTypeCreate({ req, res, authedUser }) {
   const body = parsed.body;
 
   const ctx = createRouteContext(authedUser);
-  const result = await createCustomSlideType(body, ctx);
+  const result = await createCustomSlideType(ctx, body);
 
   if (!result.ok) {
     return badRequest(res, ERROR_MESSAGES[result.reason] || 'Failed to create slide type.');
@@ -77,7 +77,7 @@ async function handleCustomSlideTypeReorder({ req, res, authedUser }) {
   const body = parsed.body;
 
   const ctx = createRouteContext(authedUser);
-  const result = await reorderCustomSlideTypes(body.order, ctx);
+  const result = await reorderCustomSlideTypes(ctx, body.order);
   if (!result.ok) {
     return badRequest(res, ERROR_MESSAGES[result.reason] || 'Failed to reorder slide types.');
   }
@@ -96,7 +96,7 @@ async function handleCustomSlideTypeDuplicate({ req, res, authedUser }, sourceId
 
   // Source can be a custom type or a core type slug
   let sourceData;
-  const existing = await getCustomSlideType(sourceId, ctx);
+  const existing = await getCustomSlideType(ctx, sourceId);
   if (existing) {
     sourceData = existing;
   } else {
@@ -123,6 +123,7 @@ async function handleCustomSlideTypeDuplicate({ req, res, authedUser }, sourceId
 
   const newLabel = body?.label || `${sourceData.label} (copy)`;
   const result = await createCustomSlideType(
+    ctx,
     {
       label: newLabel,
       baseType: sourceData.baseType || sourceData.slug || sourceId,
@@ -132,8 +133,7 @@ async function handleCustomSlideTypeDuplicate({ req, res, authedUser }, sourceId
       template: sourceData.template || null,
       css: sourceData.css || null,
       usage: sourceData.usage || null,
-    },
-    ctx
+    }
   );
 
   if (!result.ok) {
@@ -146,7 +146,7 @@ async function handleCustomSlideTypeDuplicate({ req, res, authedUser }, sourceId
 // GET /api/custom-slide-types/:id - Get one
 async function handleCustomSlideTypeGet({ res, authedUser }, typeId) {
   const ctx = createRouteContext(authedUser);
-  const type = await getCustomSlideType(typeId, ctx);
+  const type = await getCustomSlideType(ctx, typeId);
   if (!type) {
     notFound(res, 'Slide type not found.');
     return true;
@@ -163,7 +163,7 @@ async function handleCustomSlideTypeUpdate({ req, res, authedUser }, typeId) {
   const body = parsed.body;
 
   const ctx = createRouteContext(authedUser);
-  const result = await updateCustomSlideType(typeId, body, ctx);
+  const result = await updateCustomSlideType(ctx, typeId, body);
   if (!result.ok) {
     if (result.reason === 'not_found') {
       notFound(res, 'Slide type not found.');
@@ -179,7 +179,7 @@ async function handleCustomSlideTypeUpdate({ req, res, authedUser }, typeId) {
 async function handleCustomSlideTypeDelete({ res, authedUser }, typeId) {
   if (!canManage(authedUser)) return unauthorized(res);
   const ctx = createRouteContext(authedUser);
-  const result = await deleteCustomSlideType(typeId, ctx);
+  const result = await deleteCustomSlideType(ctx, typeId);
   if (!result.ok) {
     if (result.reason === 'not_found') {
       notFound(res, 'Slide type not found.');
