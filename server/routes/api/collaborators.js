@@ -22,7 +22,7 @@ import { listUsers } from '../../storage/users.js';
 import { sendCollaboratorInviteEmail } from '../../integrations/brevo.js';
 import { canManageCollaborators } from '../../utils/presentation-authz.js';
 import { dispatchRoutes } from '../../utils/router.js';
-import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, jsonError, serverError, getErrorStatus } from '../../utils/http.js';
+import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, jsonError, serverError, getErrorStatus, withErrorHandler } from '../../utils/http.js';
 import { validatePermission } from '../../utils/request-validators.js';
 import { createNotification } from '../../storage/notifications.js';
 import { broadcastToUser, NotificationEventTypes } from '../../services/notification-events.js';
@@ -58,25 +58,20 @@ async function handleSharedWithMe({ storageScope, res, authedUser }) {
     return unauthorized(res);
   }
 
-  try {
-    const presentations = await listPresentationsSharedWithUser(storageScope, authedUser.email);
+  const presentations = await listPresentationsSharedWithUser(storageScope, authedUser.email);
 
-    // Batch-fetch first slides for all presentations (avoids N+1 queries).
-    // The grid only needs the presence signal — the thumbnail is a
-    // server-rasterized PNG — so this collapses to a boolean.
-    const ids = presentations.map((p) => p.id);
-    const firstSlidesMap = await getFirstSlidesForIds(storageScope, ids);
+  // Batch-fetch first slides for all presentations (avoids N+1 queries).
+  // The grid only needs the presence signal — the thumbnail is a
+  // server-rasterized PNG — so this collapses to a boolean.
+  const ids = presentations.map((p) => p.id);
+  const firstSlidesMap = await getFirstSlidesForIds(storageScope, ids);
 
-    const presentationsWithSlides = presentations.map((p) => ({
-      ...p,
-      hasSlides: !!firstSlidesMap.get(p.id),
-    }));
+  const presentationsWithSlides = presentations.map((p) => ({
+    ...p,
+    hasSlides: !!firstSlidesMap.get(p.id),
+  }));
 
-    serveJson(res, 200, { presentations: presentationsWithSlides });
-  } catch (err) {
-    log.error('[collaborators] Failed to list shared presentations:', err);
-    return serverError(res, 'Failed to load shared presentations');
-  }
+  serveJson(res, 200, { presentations: presentationsWithSlides });
   return true;
 }
 
@@ -130,12 +125,7 @@ async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedU
 
   // Get all users in the organization
   let users;
-  try {
-    users = await listUsers(storageScope);
-  } catch (err) {
-    log.error('[collaborators] Failed to list users:', err);
-    return serverError(res, 'Failed to load users');
-  }
+  users = await listUsers(storageScope);
   const userMap = new Map(users.map((u) => [u.email?.toLowerCase(), u]));
 
   // Process invites
@@ -317,26 +307,21 @@ async function handleCollaboratorList({ storageScope, res, authedUser }, present
     return unauthorized(res);
   }
 
-  try {
-    const collaborators = await listCollaborators(presentationId);
+  const collaborators = await listCollaborators(presentationId);
 
-    // Enrich with user names if available
-    const users = await listUsers(storageScope);
-    const userMap = new Map(users.map((u) => [u.email?.toLowerCase(), u]));
+  // Enrich with user names if available
+  const users = await listUsers(storageScope);
+  const userMap = new Map(users.map((u) => [u.email?.toLowerCase(), u]));
 
-    const enrichedCollaborators = collaborators.map((c) => {
-      const user = userMap.get(c.userEmail?.toLowerCase());
-      return {
-        ...c,
-        userName: user?.name || null,
-      };
-    });
+  const enrichedCollaborators = collaborators.map((c) => {
+    const user = userMap.get(c.userEmail?.toLowerCase());
+    return {
+      ...c,
+      userName: user?.name || null,
+    };
+  });
 
-    serveJson(res, 200, { collaborators: enrichedCollaborators });
-  } catch (err) {
-    log.error('[collaborators] Failed to list collaborators:', err);
-    return serverError(res, 'Failed to load collaborators');
-  }
+  serveJson(res, 200, { collaborators: enrichedCollaborators });
   return true;
 }
 
@@ -356,46 +341,41 @@ async function handleCollaboratorRemove({ storageScope, req, res, authedUser }, 
   if (!parsed.ok) return true;
   const message = parsed.body?.message || null;
 
-  try {
-    const result = await removeCollaborator(presentationId, email, authedUser?.email, {
-      message,
-    });
+  const result = await removeCollaborator(presentationId, email, authedUser?.email, {
+    message,
+  });
 
-    if (!result.ok) {
-      if (result.reason === 'not_found') return notFound(res);
-      return badRequest(res, result.reason);
-    }
-
-    // Log the revocation the way a grant is logged (non-blocking): a grant
-    // writes collaborator.added, so a revoke writes collaborator.removed —
-    // without it the security-relevant half of the model is nowhere in the
-    // feed.
-    try {
-      await createActivityEvent(
-        storageScope,
-        {
-          eventType: EVENT_TYPES.COLLABORATOR_REMOVED,
-          entityType: ENTITY_TYPES.COLLABORATOR,
-          entityId: result.collaborator?.id || presentationId,
-          presentationId,
-          actorEmail: authedUser?.email,
-          actorName: authedUser?.name,
-          data: {
-            collaboratorEmail: result.collaborator?.userEmail || email,
-            presentationTitle: pres.title || 'Untitled presentation',
-            revocationMessage: result.collaborator?.revocationMessage || null,
-          },
-        }
-      );
-    } catch (err) {
-      log.error(`[collaborators] Failed to record revoke event for ${email}:`, err);
-    }
-
-    serveJson(res, 200, { ok: true, collaborator: result.collaborator });
-  } catch (err) {
-    log.error('[collaborators] Failed to remove collaborator:', err);
-    return serverError(res, 'Failed to remove collaborator');
+  if (!result.ok) {
+    if (result.reason === 'not_found') return notFound(res);
+    return badRequest(res, result.reason);
   }
+
+  // Log the revocation the way a grant is logged (non-blocking): a grant
+  // writes collaborator.added, so a revoke writes collaborator.removed —
+  // without it the security-relevant half of the model is nowhere in the
+  // feed.
+  try {
+    await createActivityEvent(
+      storageScope,
+      {
+        eventType: EVENT_TYPES.COLLABORATOR_REMOVED,
+        entityType: ENTITY_TYPES.COLLABORATOR,
+        entityId: result.collaborator?.id || presentationId,
+        presentationId,
+        actorEmail: authedUser?.email,
+        actorName: authedUser?.name,
+        data: {
+          collaboratorEmail: result.collaborator?.userEmail || email,
+          presentationTitle: pres.title || 'Untitled presentation',
+          revocationMessage: result.collaborator?.revocationMessage || null,
+        },
+      }
+    );
+  } catch (err) {
+    log.error(`[collaborators] Failed to record revoke event for ${email}:`, err);
+  }
+
+  serveJson(res, 200, { ok: true, collaborator: result.collaborator });
   return true;
 }
 
@@ -417,42 +397,37 @@ async function handleCollaboratorUpdate({ storageScope, req, res, authedUser }, 
   const permission = body?.permission;
   if (!validatePermission(permission, res)) return true;
 
-  try {
-    const result = await updateCollaboratorPermission(presentationId, email, permission);
+  const result = await updateCollaboratorPermission(presentationId, email, permission);
 
-    if (!result.ok) {
-      if (result.reason === 'not_found') return notFound(res);
-      return badRequest(res, result.reason);
-    }
-
-    // Log the permission change symmetrically with grant and revoke
-    // (non-blocking): a promotion or demotion is an access-model event too.
-    try {
-      await createActivityEvent(
-        storageScope,
-        {
-          eventType: EVENT_TYPES.COLLABORATOR_PERMISSION_CHANGED,
-          entityType: ENTITY_TYPES.COLLABORATOR,
-          entityId: result.collaborator?.id || presentationId,
-          presentationId,
-          actorEmail: authedUser?.email,
-          actorName: authedUser?.name,
-          data: {
-            collaboratorEmail: result.collaborator?.userEmail || email,
-            permission,
-            presentationTitle: pres.title || 'Untitled presentation',
-          },
-        }
-      );
-    } catch (err) {
-      log.error(`[collaborators] Failed to record permission-change event for ${email}:`, err);
-    }
-
-    serveJson(res, 200, { collaborator: result.collaborator });
-  } catch (err) {
-    log.error('[collaborators] Failed to update collaborator permission:', err);
-    return serverError(res, 'Failed to update permission');
+  if (!result.ok) {
+    if (result.reason === 'not_found') return notFound(res);
+    return badRequest(res, result.reason);
   }
+
+  // Log the permission change symmetrically with grant and revoke
+  // (non-blocking): a promotion or demotion is an access-model event too.
+  try {
+    await createActivityEvent(
+      storageScope,
+      {
+        eventType: EVENT_TYPES.COLLABORATOR_PERMISSION_CHANGED,
+        entityType: ENTITY_TYPES.COLLABORATOR,
+        entityId: result.collaborator?.id || presentationId,
+        presentationId,
+        actorEmail: authedUser?.email,
+        actorName: authedUser?.name,
+        data: {
+          collaboratorEmail: result.collaborator?.userEmail || email,
+          permission,
+          presentationTitle: pres.title || 'Untitled presentation',
+        },
+      }
+    );
+  } catch (err) {
+    log.error(`[collaborators] Failed to record permission-change event for ${email}:`, err);
+  }
+
+  serveJson(res, 200, { collaborator: result.collaborator });
   return true;
 }
 
@@ -478,6 +453,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleCollaborators(ctx) {
-  return dispatchRoutes(ROUTES, ctx);
-}
+export const handleCollaborators = withErrorHandler('collaborators', (ctx) =>
+  dispatchRoutes(ROUTES, ctx)
+);

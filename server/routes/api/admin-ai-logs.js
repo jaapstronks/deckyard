@@ -3,7 +3,7 @@
  * Allows admins to view, download, and analyze AI validation events.
  */
 
-import { serveJson, unauthorized, notFound, badRequest } from '../../utils/http.js';
+import { serveJson, unauthorized, notFound, badRequest , withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
   getValidationLogs,
@@ -95,7 +95,7 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleAdminAiLogs(ctx) {
+export const handleAdminAiLogs = withErrorHandler('admin-ai-logs', (ctx) => {
   // Only handle /api/admin/ai-logs routes
   if (!ctx.url.pathname.startsWith('/api/admin/ai-logs')) {
     return false;
@@ -111,4 +111,4 @@ export function handleAdminAiLogs(ctx) {
   }
 
   return dispatchRoutes(ROUTES, ctx);
-}
+});

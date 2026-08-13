@@ -4,7 +4,7 @@
  */
 
 import { updateSessionOrganization } from '../../auth/auth.js';
-import { serveJson, badRequest, unauthorized, forbidden, notFound, serverError, requireJsonBody } from '../../utils/http.js';
+import { serveJson, badRequest, unauthorized, forbidden, notFound, serverError, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
@@ -40,224 +40,188 @@ function isValidSlug(slug) {
 
 // GET /api/organizations - List user's organizations
 async function handleOrgList({ res, userId }) {
-  try {
-    const organizations = await listUserOrganizations(userId);
-    serveJson(res, 200, { organizations });
-    return true;
-  } catch (err) {
-    log.error('[organizations] Failed to list organizations:', err);
-    serverError(res, 'Failed to load organizations');
-    return true;
-  }
+  const organizations = await listUserOrganizations(userId);
+  serveJson(res, 200, { organizations });
+  return true;
 }
 
 // POST /api/organizations - Create a new organization
 async function handleOrgCreate({ req, res, userId }) {
-  try {
-    const parsed = await requireJsonBody(req, res);
-    if (!parsed.ok) return true;
-    const body = parsed.body;
-    const name = getTrimmedString(body, 'name') || '';
-    const slug = (getTrimmedString(body, 'slug') || '').toLowerCase();
-    const displayName = body?.displayName ? String(body.displayName).trim() : null;
-    const description = body?.description ? String(body.description).trim() : null;
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  const name = getTrimmedString(body, 'name') || '';
+  const slug = (getTrimmedString(body, 'slug') || '').toLowerCase();
+  const displayName = body?.displayName ? String(body.displayName).trim() : null;
+  const description = body?.description ? String(body.description).trim() : null;
 
-    if (!name || name.length < 2) {
-      return badRequest(res, 'Organization name must be at least 2 characters');
-    }
-
-    if (!isValidSlug(slug)) {
-      return badRequest(res, 'Slug must be 2-63 characters, lowercase alphanumeric with optional hyphens');
-    }
-
-    const result = await createOrganization({
-      name,
-      slug,
-      displayName,
-      description,
-      ownerId: userId,
-    });
-
-    if (!result.ok) {
-      if (result.reason === 'slug_taken') {
-        return badRequest(res, 'An organization with this slug already exists');
-      }
-      return badRequest(res, 'Failed to create organization');
-    }
-
-    serveJson(res, 201, {
-      ok: true,
-      organization: result.organization,
-    });
-    return true;
-  } catch (err) {
-    log.error('[organizations] Failed to create organization:', err);
-    serverError(res, 'Failed to create organization');
-    return true;
+  if (!name || name.length < 2) {
+    return badRequest(res, 'Organization name must be at least 2 characters');
   }
+
+  if (!isValidSlug(slug)) {
+    return badRequest(res, 'Slug must be 2-63 characters, lowercase alphanumeric with optional hyphens');
+  }
+
+  const result = await createOrganization({
+    name,
+    slug,
+    displayName,
+    description,
+    ownerId: userId,
+  });
+
+  if (!result.ok) {
+    if (result.reason === 'slug_taken') {
+      return badRequest(res, 'An organization with this slug already exists');
+    }
+    return badRequest(res, 'Failed to create organization');
+  }
+
+  serveJson(res, 201, {
+    ok: true,
+    organization: result.organization,
+  });
+  return true;
 }
 
 // GET /api/organizations/:id - Get organization details
 async function handleOrgGet({ res, userId }, orgId) {
-  try {
-    // Check membership
-    const membership = await getMembership(userId, orgId);
-    if (!membership) {
-      return forbidden(res, 'You are not a member of this organization');
-    }
-
-    const organization = await getOrganizationById(orgId);
-    if (!organization) {
-      return notFound(res);
-    }
-
-    serveJson(res, 200, {
-      // `isDefault` is the one rule about this organization that DELETE
-      // enforces and nothing else on the wire reveals: the default organization
-      // is what every single-organization path falls back to and may not be
-      // removed. Without it the profile screen can only offer its owner a
-      // Delete button that is certain to be refused.
-      organization: { ...organization, isDefault: isDefaultOrganization(organization.id) },
-      membership: {
-        role: membership.role,
-        joinedAt: membership.joinedAt,
-      },
-    });
-    return true;
-  } catch (err) {
-    log.error('[organizations] Failed to get organization:', err);
-    serverError(res, 'Failed to load organization');
-    return true;
+  // Check membership
+  const membership = await getMembership(userId, orgId);
+  if (!membership) {
+    return forbidden(res, 'You are not a member of this organization');
   }
+
+  const organization = await getOrganizationById(orgId);
+  if (!organization) {
+    return notFound(res);
+  }
+
+  serveJson(res, 200, {
+    // `isDefault` is the one rule about this organization that DELETE
+    // enforces and nothing else on the wire reveals: the default organization
+    // is what every single-organization path falls back to and may not be
+    // removed. Without it the profile screen can only offer its owner a
+    // Delete button that is certain to be refused.
+    organization: { ...organization, isDefault: isDefaultOrganization(organization.id) },
+    membership: {
+      role: membership.role,
+      joinedAt: membership.joinedAt,
+    },
+  });
+  return true;
 }
 
 // PATCH /api/organizations/:id - Update organization
 async function handleOrgUpdate({ req, res, userId }, orgId) {
-  try {
-    // Check membership and admin permission
-    const membership = await getMembership(userId, orgId);
-    if (!membership) {
-      return forbidden(res, 'You are not a member of this organization');
-    }
-
-    if (!hasOrganizationRole(membership.role, 'admin')) {
-      return forbidden(res, 'Admin or owner access required');
-    }
-
-    const parsed = await requireJsonBody(req, res);
-    if (!parsed.ok) return true;
-    const body = parsed.body;
-    const updates = {};
-
-    if ('name' in body) {
-      const name = getTrimmedString(body, 'name') || '';
-      if (name.length < 2) {
-        return badRequest(res, 'Organization name must be at least 2 characters');
-      }
-      updates.name = name;
-    }
-
-    if ('displayName' in body) {
-      updates.displayName = body.displayName ? String(body.displayName).trim() : null;
-    }
-
-    if ('description' in body) {
-      updates.description = body.description ? String(body.description).trim() : null;
-    }
-
-    if ('logoUrl' in body) {
-      updates.logoUrl = body.logoUrl ? String(body.logoUrl).trim() : null;
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return badRequest(res, 'No valid updates provided');
-    }
-
-    const result = await updateOrganization(orgId, updates);
-
-    if (!result.ok) {
-      if (result.reason === 'not_found') {
-        return notFound(res);
-      }
-      return badRequest(res, 'Failed to update organization');
-    }
-
-    serveJson(res, 200, { ok: true, organization: result.organization });
-    return true;
-  } catch (err) {
-    log.error('[organizations] Failed to update organization:', err);
-    serverError(res, 'Failed to update organization');
-    return true;
+  // Check membership and admin permission
+  const membership = await getMembership(userId, orgId);
+  if (!membership) {
+    return forbidden(res, 'You are not a member of this organization');
   }
+
+  if (!hasOrganizationRole(membership.role, 'admin')) {
+    return forbidden(res, 'Admin or owner access required');
+  }
+
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  const updates = {};
+
+  if ('name' in body) {
+    const name = getTrimmedString(body, 'name') || '';
+    if (name.length < 2) {
+      return badRequest(res, 'Organization name must be at least 2 characters');
+    }
+    updates.name = name;
+  }
+
+  if ('displayName' in body) {
+    updates.displayName = body.displayName ? String(body.displayName).trim() : null;
+  }
+
+  if ('description' in body) {
+    updates.description = body.description ? String(body.description).trim() : null;
+  }
+
+  if ('logoUrl' in body) {
+    updates.logoUrl = body.logoUrl ? String(body.logoUrl).trim() : null;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return badRequest(res, 'No valid updates provided');
+  }
+
+  const result = await updateOrganization(orgId, updates);
+
+  if (!result.ok) {
+    if (result.reason === 'not_found') {
+      return notFound(res);
+    }
+    return badRequest(res, 'Failed to update organization');
+  }
+
+  serveJson(res, 200, { ok: true, organization: result.organization });
+  return true;
 }
 
 // DELETE /api/organizations/:id - Delete organization
 async function handleOrgDelete({ res, userId }, orgId) {
-  try {
-    // Only owner can delete organization
-    const membership = await getMembership(userId, orgId);
-    if (!membership) {
-      return forbidden(res, 'You are not a member of this organization');
-    }
-
-    if (membership.role !== 'owner') {
-      return forbidden(res, 'Only the owner can delete the organization');
-    }
-
-    const result = await deleteOrganization(orgId);
-
-    if (!result.ok) {
-      if (result.reason === 'not_found') {
-        return notFound(res);
-      }
-      if (result.reason === 'cannot_delete_default') {
-        return forbidden(res, 'The default organization cannot be deleted');
-      }
-      return badRequest(res, 'Failed to delete organization');
-    }
-
-    serveJson(res, 200, { ok: true });
-    return true;
-  } catch (err) {
-    log.error('[organizations] Failed to delete organization:', err);
-    serverError(res, 'Failed to delete organization');
-    return true;
+  // Only owner can delete organization
+  const membership = await getMembership(userId, orgId);
+  if (!membership) {
+    return forbidden(res, 'You are not a member of this organization');
   }
+
+  if (membership.role !== 'owner') {
+    return forbidden(res, 'Only the owner can delete the organization');
+  }
+
+  const result = await deleteOrganization(orgId);
+
+  if (!result.ok) {
+    if (result.reason === 'not_found') {
+      return notFound(res);
+    }
+    if (result.reason === 'cannot_delete_default') {
+      return forbidden(res, 'The default organization cannot be deleted');
+    }
+    return badRequest(res, 'Failed to delete organization');
+  }
+
+  serveJson(res, 200, { ok: true });
+  return true;
 }
 
 // POST /api/organizations/:id/switch - Switch active organization
 // (Sets the user's active organization for this session)
 async function handleOrgSwitch({ req, res, userId }, orgId) {
-  try {
-    // Verify membership
-    const membership = await getMembership(userId, orgId);
-    if (!membership) {
-      return forbidden(res, 'You are not a member of this organization');
-    }
-
-    const organization = await getOrganizationById(orgId);
-    if (!organization) {
-      return notFound(res);
-    }
-
-    // Update the session cookie with the new organization
-    updateSessionOrganization(req, res, orgId);
-
-    // Return the organization info for the client
-    serveJson(res, 200, {
-      ok: true,
-      organization,
-      membership: {
-        role: membership.role,
-        joinedAt: membership.joinedAt,
-      },
-    });
-    return true;
-  } catch (err) {
-    log.error('[organizations] Failed to switch organization:', err);
-    serverError(res, 'Failed to switch organization');
-    return true;
+  // Verify membership
+  const membership = await getMembership(userId, orgId);
+  if (!membership) {
+    return forbidden(res, 'You are not a member of this organization');
   }
+
+  const organization = await getOrganizationById(orgId);
+  if (!organization) {
+    return notFound(res);
+  }
+
+  // Update the session cookie with the new organization
+  updateSessionOrganization(req, res, orgId);
+
+  // Return the organization info for the client
+  serveJson(res, 200, {
+    ok: true,
+    organization,
+    membership: {
+      role: membership.role,
+      joinedAt: membership.joinedAt,
+    },
+  });
+  return true;
 }
 
 /**
@@ -288,7 +252,7 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export async function handleOrganizations(ctx) {
+export const handleOrganizations = withErrorHandler('organizations', async (ctx) => {
   // Only handle /api/organizations routes
   if (!ctx.url.pathname.startsWith('/api/organizations')) {
     return false;
@@ -313,4 +277,4 @@ export async function handleOrganizations(ctx) {
   }
 
   return dispatchRoutes(ROUTES, { ...ctx, userId: dbUser.id });
-}
+});
