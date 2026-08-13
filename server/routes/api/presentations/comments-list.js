@@ -21,7 +21,6 @@ import {
 } from '../../../services/comment-events.js';
 import { withPresentationReadAuth } from '../../../utils/route-middleware.js';
 import { getAiIdentity } from '../../../storage/settings.js';
-import { getCtx } from './comments-shared.js';
 
 /**
  * List comments for a presentation.
@@ -31,21 +30,20 @@ import { getCtx } from './comments-shared.js';
  * Supports both authenticated users and verified guests with share link access.
  */
 export async function handlePresentationCommentsList(
-  { repoRoot, storageScope, req, res, url, authedUser } = {},
+  { storageScope, req, res, url, authedUser } = {},
   id
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
-  const { pres } = await withPresentationReadAuth({ repoRoot, req, id, authedUser, res });
+  const { pres } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
   const slideId = url.searchParams.get('slideId') || null;
   const status = url.searchParams.get('status') || 'all';
   const commentType = url.searchParams.get('commentType') || null;
 
-  const comments = await listComments(ctx, id, { slideId, status, commentType });
-  const openCount = await getOpenCommentCount(ctx, id);
+  const comments = await listComments(storageScope, id, { slideId, status, commentType });
+  const openCount = await getOpenCommentCount(storageScope, id);
 
   // The effective AI-author identity so the client can recognise legacy
   // AI-suggestion comments that predate the commentType field, including
@@ -70,17 +68,16 @@ export async function handlePresentationCommentsList(
  * Supports both authenticated users and verified guests with share link access.
  */
 export async function handlePresentationCommentGet(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id,
   commentId
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
-  const { pres } = await withPresentationReadAuth({ repoRoot, req, id, authedUser, res });
+  const { pres } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const comment = await getComment(ctx, commentId);
+  const comment = await getComment(storageScope, commentId);
 
   if (!comment || comment.presentationId !== id) {
     return notFound(res, 'Comment not found');
@@ -97,17 +94,16 @@ export async function handlePresentationCommentGet(
  * Supports both authenticated users and verified guests with share link access.
  */
 export async function handlePresentationCommentCounts(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
-  const { pres } = await withPresentationReadAuth({ repoRoot, req, id, authedUser, res });
+  const { pres } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
   if (!pres) return true;
 
-  const ctx = getCtx(authedUser);
-  const counts = await getCommentCountsBySlide(ctx, id);
-  const total = await getOpenCommentCount(ctx, id);
+  const counts = await getCommentCountsBySlide(storageScope, id);
+  const total = await getOpenCommentCount(storageScope, id);
 
   serveJson(res, 200, { ok: true, counts, total });
   return true;
@@ -121,12 +117,12 @@ export async function handlePresentationCommentCounts(
  * Supports both authenticated users and verified guests with share link access.
  */
 export async function handlePresentationCommentEvents(
-  { repoRoot, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
-  const { pres } = await withPresentationReadAuth({ repoRoot, req, id, authedUser, res });
+  const { pres } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
   if (!pres) return true;
 
   // Set up SSE headers
@@ -144,10 +140,9 @@ export async function handlePresentationCommentEvents(
   addClient(id, res);
 
   // Send current counts immediately so client has latest state
-  const ctx = getCtx(authedUser);
   try {
-    const counts = await getCommentCountsBySlide(ctx, id);
-    const total = await getOpenCommentCount(ctx, id);
+    const counts = await getCommentCountsBySlide(storageScope, id);
+    const total = await getOpenCommentCount(storageScope, id);
     res.write(`event: ${CommentEventTypes.COUNTS_CHANGED}\ndata: ${JSON.stringify({ counts, total })}\n\n`);
   } catch {
     // Ignore initial counts error

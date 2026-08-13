@@ -160,7 +160,7 @@ const exportRoutes = [
 
 // GET /api/presentations/:id/export/png/:n.png - Special handler for an
 // individual PNG slide (has extra URL param)
-async function handlePngSlideExport({ repoRoot, res, url, authedUser }, presentationId, slideNumRaw) {
+async function handlePngSlideExport({ repoRoot, storageScope, res, url, authedUser }, presentationId, slideNumRaw) {
   const slideNum = Number(slideNumRaw || 0) || 0; // 1-based
 
   const ctx = await prepareExportContext({
@@ -169,6 +169,7 @@ async function handlePngSlideExport({ repoRoot, res, url, authedUser }, presenta
     url,
     authedUser,
     presentationId,
+    storageScope,
     stripLiveOnly: true,
   });
 

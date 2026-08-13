@@ -15,18 +15,14 @@ import {
   getUnreadEventCountsByPresentation,
   updateUserEventRead,
 } from '../../storage/activity-events.js';
-import { createRouteContext } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { canReadPresentation } from '../../utils/presentation-authz.js';
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
 
-const getCtx = createRouteContext;
-
 // GET /api/activity - List activity events
 async function handleActivityList({ storageScope, res, url, authedUser }) {
   const email = String(authedUser?.email || '').trim();
-  const ctx = getCtx(authedUser);
 
   // Parse query params
   const { limit, offset } = parsePaginationParams(url.searchParams);
@@ -46,7 +42,7 @@ async function handleActivityList({ storageScope, res, url, authedUser }) {
     opts.excludeActorEmail = email;
   }
 
-  const payload = await getEnrichedActivity({ storageScope, authedUser, ctx, opts });
+  const payload = await getEnrichedActivity({ storageScope, authedUser, opts });
 
   serveJson(res, 200, {
     ok: true,
@@ -58,11 +54,10 @@ async function handleActivityList({ storageScope, res, url, authedUser }) {
 // GET /api/activity/unread-count - Get unread event count
 async function handleUnreadCount({ storageScope, res, authedUser }) {
   const email = String(authedUser?.email || '').trim();
-  const ctx = getCtx(authedUser);
 
   // Same invariant as the feed itself: only count events on presentations
   // the user can read (a raw org-wide count leaks activity on private decks).
-  const grouped = await getUnreadEventCountsByPresentation(ctx, email);
+  const grouped = await getUnreadEventCountsByPresentation(storageScope, email);
   let count = 0;
   for (const entry of grouped) {
     if (!entry.presentationId) {
@@ -81,16 +76,15 @@ async function handleUnreadCount({ storageScope, res, authedUser }) {
 }
 
 // POST /api/activity/mark-read - Mark events as read
-async function handleMarkRead({ req, res, authedUser }) {
+async function handleMarkRead({ storageScope, req, res, authedUser }) {
   const email = String(authedUser?.email || '').trim();
-  const ctx = getCtx(authedUser);
 
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
   if (!parsed.ok) return true;
   const body = parsed.body;
   const eventId = body?.eventId || null; // Can be null to mark "all read"
 
-  const result = await updateUserEventRead(ctx, email, eventId);
+  const result = await updateUserEventRead(storageScope, email, eventId);
 
   serveJson(res, 200, result);
   return true;
@@ -133,16 +127,15 @@ export function handleActivity(ctx) {
  * apply the same access filtering and event shape.
  *
  * @param {object} args
- * @param {string} args.repoRoot
+ * @param {import('../../storage/scope.js').StorageScope} args.storageScope - The request's storage scope
  * @param {object} args.authedUser
- * @param {object} args.ctx - storage/route context
  * @param {object} args.opts - listActivityEvents filters (limit, offset,
  *   presentationId, eventType, eventTypes[], actorEmail, excludeActorEmail,
  *   since, until)
  * @returns {Promise<{events: object[], total: number, limit: number, offset: number}>}
  */
-export async function getEnrichedActivity({ storageScope, authedUser, ctx, opts }) {
-  const result = await listActivityEvents(ctx, opts);
+export async function getEnrichedActivity({ storageScope, authedUser, opts }) {
+  const result = await listActivityEvents(storageScope, opts);
   const events = await enrichEventsWithPresentations(result.events, storageScope, authedUser);
   return {
     events,

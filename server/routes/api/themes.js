@@ -21,7 +21,6 @@ import {
   clearCustomThemeCache,
 } from '../../utils/themes.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
-import { createRouteContext } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { canManage } from '../../utils/route-middleware.js';
 import {
@@ -55,7 +54,6 @@ function canManageThemes(authedUser) {
 
 // GET /api/themes - List all themes (system + custom)
 async function handleThemeList({ repoRoot, storageScope, res, authedUser }) {
-  const ctx = createRouteContext(authedUser);
 
   // Load system themes from filesystem. Sandbox is a public, neutral
   // playground, so it lists only the built-in core themes (never filesystem
@@ -89,7 +87,7 @@ async function handleThemeList({ repoRoot, storageScope, res, authedUser }) {
   // Load custom themes from database. Sandbox is a public, neutral
   // playground, so it deliberately hides organization custom themes (which may
   // carry a customer's branding) and shows only the built-in system themes.
-  const customThemes = sandboxEnabled() ? [] : await listThemes(ctx);
+  const customThemes = sandboxEnabled() ? [] : await listThemes(storageScope);
   const customThemeList = customThemes.map((t) => ({
     id: t.id,
     slug: t.slug,
@@ -151,7 +149,7 @@ function handleThemeFonts({ res }) {
 // been saved yet. Deriving the tokens client-side would be a second copy of
 // the colour maths, which is exactly the drift #118 removed — so the draft is
 // built through the same `buildThemeConfig` production uses.
-async function handleThemePreviewConfig({ req, res, authedUser }) {
+async function handleThemePreviewConfig({ storageScope, req, res, authedUser }) {
   if (!canManageThemes(authedUser)) {
     return forbidden(res, 'Admin access required');
   }
@@ -169,7 +167,7 @@ async function handleThemePreviewConfig({ req, res, authedUser }) {
   if (fonts.headingFamilyId || fonts.bodyFamilyId) {
     try {
       managedFonts = await listAllFontFamiliesWithVariants(
-        createRouteContext(authedUser)
+        storageScope
       );
     } catch {
       // Fall back to no managed fonts
@@ -197,24 +195,22 @@ async function handleThemePreviewConfig({ req, res, authedUser }) {
 }
 
 // GET /api/themes/custom - List custom themes only
-async function handleCustomThemeList({ res, authedUser }) {
-  const ctx = createRouteContext(authedUser);
-  const themes = await listThemes(ctx);
+async function handleCustomThemeList({ storageScope, res, authedUser }) {
+  const themes = await listThemes(storageScope);
   serveJson(res, 200, { themes });
   return true;
 }
 
 // POST /api/themes/custom - Create a custom theme (admin only)
-async function handleCustomThemeCreate({ req, res, authedUser }) {
+async function handleCustomThemeCreate({ storageScope, req, res, authedUser }) {
   if (!canManageThemes(authedUser)) {
     return forbidden(res, 'Admin access required');
   }
 
-  const ctx = createRouteContext(authedUser);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
 
-  const result = await createTheme(ctx, parsed.body);
+  const result = await createTheme(storageScope, parsed.body);
 
   if (!result.ok) {
     const messages = {
@@ -233,13 +229,12 @@ async function handleCustomThemeCreate({ req, res, authedUser }) {
 }
 
 // POST /api/themes/custom/clear-default - Clear org default
-async function handleCustomThemeClearDefault({ res, authedUser }) {
+async function handleCustomThemeClearDefault({ storageScope, res, authedUser }) {
   if (!canManageThemes(authedUser)) {
     return forbidden(res, 'Admin access required');
   }
 
-  const ctx = createRouteContext(authedUser);
-  const result = await setDefaultTheme(ctx, null);
+  const result = await setDefaultTheme(storageScope, null);
 
   if (!result.ok) {
     return badRequest(res, 'Failed to clear default theme');
@@ -250,9 +245,8 @@ async function handleCustomThemeClearDefault({ res, authedUser }) {
 }
 
 // GET /api/themes/custom/:id - Get a custom theme
-async function handleCustomThemeGet({ res, authedUser }, themeId) {
-  const ctx = createRouteContext(authedUser);
-  const theme = await getTheme(ctx, themeId);
+async function handleCustomThemeGet({ storageScope, res, authedUser }, themeId) {
+  const theme = await getTheme(storageScope, themeId);
   if (!theme) {
     return notFound(res, 'Theme not found');
   }
@@ -261,15 +255,14 @@ async function handleCustomThemeGet({ res, authedUser }, themeId) {
 }
 
 // PUT /api/themes/custom/:id - Update a custom theme (admin only)
-async function handleCustomThemeUpdate({ req, res, authedUser }, themeId) {
+async function handleCustomThemeUpdate({ storageScope, req, res, authedUser }, themeId) {
   if (!canManageThemes(authedUser)) {
     return forbidden(res, 'Admin access required');
   }
 
-  const ctx = createRouteContext(authedUser);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
-  const result = await updateTheme(ctx, themeId, parsed.body);
+  const result = await updateTheme(storageScope, themeId, parsed.body);
 
   if (!result.ok) {
     if (result.reason === 'not_found') {
@@ -292,13 +285,12 @@ async function handleCustomThemeUpdate({ req, res, authedUser }, themeId) {
 }
 
 // DELETE /api/themes/custom/:id - Delete a custom theme (admin only)
-async function handleCustomThemeDelete({ res, authedUser }, themeId) {
+async function handleCustomThemeDelete({ storageScope, res, authedUser }, themeId) {
   if (!canManageThemes(authedUser)) {
     return forbidden(res, 'Admin access required');
   }
 
-  const ctx = createRouteContext(authedUser);
-  const result = await deleteTheme(ctx, themeId);
+  const result = await deleteTheme(storageScope, themeId);
 
   if (!result.ok) {
     if (result.reason === 'not_found') {
@@ -313,13 +305,12 @@ async function handleCustomThemeDelete({ res, authedUser }, themeId) {
 }
 
 // POST /api/themes/custom/:id/set-default - Set as org default (admin only)
-async function handleCustomThemeSetDefault({ res, authedUser }, themeId) {
+async function handleCustomThemeSetDefault({ storageScope, res, authedUser }, themeId) {
   if (!canManageThemes(authedUser)) {
     return forbidden(res, 'Admin access required');
   }
 
-  const ctx = createRouteContext(authedUser);
-  const result = await setDefaultTheme(ctx, themeId);
+  const result = await setDefaultTheme(storageScope, themeId);
 
   if (!result.ok) {
     if (result.reason === 'not_found') {
@@ -333,10 +324,9 @@ async function handleCustomThemeSetDefault({ res, authedUser }, themeId) {
 }
 
 // GET /api/themes/custom/:id/config - Get theme config for rendering
-async function handleCustomThemeConfig({ res, authedUser }, themeId) {
-  const ctx = createRouteContext(authedUser);
+async function handleCustomThemeConfig({ storageScope, res, authedUser }, themeId) {
 
-  const theme = await getTheme(ctx, themeId);
+  const theme = await getTheme(storageScope, themeId);
   if (!theme) {
     return notFound(res, 'Theme not found');
   }
@@ -346,7 +336,7 @@ async function handleCustomThemeConfig({ res, authedUser }, themeId) {
   const fonts = theme.fonts || {};
   if (fonts.headingFamilyId || fonts.bodyFamilyId) {
     try {
-      managedFonts = await listAllFontFamiliesWithVariants(ctx);
+      managedFonts = await listAllFontFamiliesWithVariants(storageScope);
     } catch {
       // Fall back to no managed fonts
     }

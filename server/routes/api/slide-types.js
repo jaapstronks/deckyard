@@ -19,7 +19,6 @@ import {
 } from '../../../shared/slide-types/authoring-companions.js';
 import { slideTypeInspectorKeeps } from '../../../shared/slide-types/inline-edit-companions.js';
 import { listPublishedCustomSlideTypes } from '../../storage/custom-slide-types.js';
-import { createRouteContext } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 /**
@@ -32,7 +31,7 @@ import { dispatchRoutes } from '../../utils/router.js';
  *
  * @param {import('../../utils/context.js').AuthedContext} ctx
  */
-async function handleSlideTypeList({ res, authedUser }) {
+async function handleSlideTypeList({ storageScope, res, authedUser }) {
   const meta = {};
 
   // Registered types: core, plus whatever a fork put in custom/slide-types/.
@@ -160,8 +159,7 @@ async function handleSlideTypeList({ res, authedUser }) {
   // lands on the picker's "Custom" shelf — the fallback for a type that
   // declares nothing, not a rule about where custom types belong.
   try {
-    const ctx = createRouteContext(authedUser);
-    const customTypes = await listPublishedCustomSlideTypes(ctx);
+    const customTypes = await listPublishedCustomSlideTypes(storageScope);
     for (const ct of customTypes) {
       // Use "custom-<slug>" as the type key to avoid collisions with core types
       const typeKey = `custom-${ct.slug}`;

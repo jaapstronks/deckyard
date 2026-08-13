@@ -16,7 +16,7 @@
  * ## The two legitimate shapes
  *
  * 1. **An organization-scoped scope.** `{ repoRoot, organizationId, actorEmail }`.
- *    Route handlers get this from {@link module:server/utils/context.createRouteContext},
+ *    Route handlers get this from {@link module:server/utils/context.createStorageScope},
  *    which since #356 carries the membership-verified session organization.
  *
  * 2. **A cross-organization scope.** `{ repoRoot, crossOrganization: '<reason>' }`.
@@ -64,7 +64,7 @@ export function resolveScope(storageScope, operation, { allowCrossOrganization =
   if (typeof storageScope === 'string') {
     throw new TypeError(
       `${operation}() takes a storage scope, not a repoRoot string. ` +
-        'Pass createRouteContext(authedUser, { repoRoot }) on session paths, or ' +
+        'Pass createStorageScope(authedUser, { repoRoot }) on session paths, or ' +
         "crossOrganizationScope(repoRoot, '<reason>') where a public token is the authorization. " +
         'See server/storage/scope.js.'
     );

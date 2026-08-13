@@ -6,7 +6,6 @@
 import { methodNotAllowed } from '../../../utils/http.js';
 import { listThemeIds, loadTheme } from '../../../utils/themes.js';
 import { sandboxEnabled } from '../../../config/sandbox.js';
-import { createRouteContext } from '../../../utils/context.js';
 import { listThemes } from '../../../storage/themes.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
 import { requirePermission, parsePaginationParams, apiSuccess, apiError } from './middleware.js';
@@ -19,17 +18,13 @@ import { requirePermission, parsePaginationParams, apiSuccess, apiError } from '
  * GET /api/v1/themes - List available themes.
  */
 async function handleThemes(ctx) {
-  const { repoRoot, apiKey } = ctx;
+  const { repoRoot } = ctx;
 
   if (!requirePermission(ctx, 'read')) return true;
 
-  // A key acts in the organization it belongs to. Building this from the owner
-  // email alone resolved every key against the default organization, which is
-  // wrong for any key issued to a second organization.
-  const routeCtx = createRouteContext({
-    email: apiKey.ownerEmail,
-    organizationId: apiKey.organizationId,
-  });
+  // A key acts in the organization it belongs to; the storage scope built by
+  // the v1 auth middleware carries exactly that.
+  const routeCtx = ctx.storageScope;
 
   // Load system themes from filesystem
   const systemThemeIds = await listThemeIds(repoRoot);

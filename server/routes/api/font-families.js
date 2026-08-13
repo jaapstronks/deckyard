@@ -14,7 +14,6 @@
 
 import { badRequest, methodNotAllowed, serveJson, unauthorized, notFound, requireJsonBody } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
-import { createRouteContext } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { clearCustomThemeCache } from '../../utils/themes.js';
 import {
@@ -53,23 +52,21 @@ const WOFF2_MAGIC = [0x77, 0x4f, 0x46, 0x32];
 const WOFF_MAGIC = [0x77, 0x4f, 0x46, 0x46];
 
 // GET /api/font-families - List all (org-scoped)
-async function handleFontFamilyList({ res, authedUser }) {
+async function handleFontFamilyList({ storageScope, res, authedUser }) {
   if (!authedUser) return unauthorized(res);
-  const ctx = createRouteContext(authedUser);
-  const families = await listAllFontFamiliesWithVariants(ctx);
+  const families = await listAllFontFamiliesWithVariants(storageScope);
   serveJson(res, 200, { fontFamilies: families });
   return true;
 }
 
 // POST /api/font-families - Create (designer only)
-async function handleFontFamilyCreate({ req, res, authedUser }) {
+async function handleFontFamilyCreate({ storageScope, req, res, authedUser }) {
   if (!canManage(authedUser)) return unauthorized(res);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
 
-  const ctx = createRouteContext(authedUser);
-  const result = await createFontFamily(ctx, body);
+  const result = await createFontFamily(storageScope, body);
 
   if (!result.ok) {
     return badRequest(res, ERROR_MESSAGES[result.reason] || 'Failed to create font family.');
@@ -108,7 +105,7 @@ async function handleFontFamilyDiscoverAdobe({ req, res, authedUser }) {
 }
 
 // POST /api/font-families/import-adobe-family - Import Adobe family (designer only)
-async function handleFontFamilyImportAdobe({ req, res, authedUser }) {
+async function handleFontFamilyImportAdobe({ storageScope, req, res, authedUser }) {
   if (!canManage(authedUser)) return unauthorized(res);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
@@ -117,12 +114,11 @@ async function handleFontFamilyImportAdobe({ req, res, authedUser }) {
     return badRequest(res, 'Missing projectId or familyName.');
   }
 
-  const ctx = createRouteContext(authedUser);
   const familyName = String(body.familyName).trim();
   const category = getTrimmedString(body, 'category') || 'sans-serif';
 
   // Create the font family
-  const result = await createFontFamily(ctx, {
+  const result = await createFontFamily(storageScope, {
     name: familyName,
     source: 'adobe',
     category,
@@ -136,7 +132,7 @@ async function handleFontFamilyImportAdobe({ req, res, authedUser }) {
   // Add variants if provided
   if (Array.isArray(body.variants)) {
     for (const v of body.variants) {
-      await addFontVariant(ctx, result.fontFamily.id, {
+      await addFontVariant(storageScope, result.fontFamily.id, {
         weight: v.weight || 400,
         style: v.style || 'normal',
         format: 'woff2',
@@ -145,19 +141,18 @@ async function handleFontFamilyImportAdobe({ req, res, authedUser }) {
   }
 
   // Re-fetch with variants
-  const family = await getFontFamily(ctx, result.fontFamily.id);
+  const family = await getFontFamily(storageScope, result.fontFamily.id);
   serveJson(res, 201, family);
   return true;
 }
 
 // POST /api/font-families/:id/upload-variant - Upload font file (designer only)
-async function handleFontFamilyUploadVariant({ req, res, authedUser }, familyId) {
+async function handleFontFamilyUploadVariant({ storageScope, req, res, authedUser }, familyId) {
   if (!canManage(authedUser)) return unauthorized(res);
 
-  const ctx = createRouteContext(authedUser);
 
   // Verify family exists
-  const family = await getFontFamily(ctx, familyId);
+  const family = await getFontFamily(storageScope, familyId);
   if (!family) {
     notFound(res, 'Font family not found.');
     return true;
@@ -208,7 +203,7 @@ async function handleFontFamilyUploadVariant({ req, res, authedUser }, familyId)
   }
 
   // Create variant record — store the storage key in filename for cleanup
-  const result = await addFontVariant(ctx, familyId, {
+  const result = await addFontVariant(storageScope, familyId, {
     weight,
     style,
     filename: uploadResult.key,
@@ -228,12 +223,11 @@ async function handleFontFamilyUploadVariant({ req, res, authedUser }, familyId)
 }
 
 // DELETE /api/font-families/:id/variants/:vid - Remove variant (designer only)
-async function handleFontFamilyRemoveVariant({ res, authedUser }, familyId, variantId) {
+async function handleFontFamilyRemoveVariant({ storageScope, res, authedUser }, familyId, variantId) {
   if (!canManage(authedUser)) return unauthorized(res);
 
-  const ctx = createRouteContext(authedUser);
 
-  const result = await removeFontVariant(ctx, variantId);
+  const result = await removeFontVariant(storageScope, variantId);
 
   if (!result.ok) {
     if (result.reason === 'not_found') {
@@ -260,10 +254,9 @@ async function handleFontFamilyRemoveVariant({ res, authedUser }, familyId, vari
 }
 
 // GET /api/font-families/:id - Get one with variants
-async function handleFontFamilyGet({ res, authedUser }, familyId) {
+async function handleFontFamilyGet({ storageScope, res, authedUser }, familyId) {
   if (!authedUser) return unauthorized(res);
-  const ctx = createRouteContext(authedUser);
-  const family = await getFontFamily(ctx, familyId);
+  const family = await getFontFamily(storageScope, familyId);
   if (!family) {
     notFound(res, 'Font family not found.');
     return true;
@@ -273,14 +266,13 @@ async function handleFontFamilyGet({ res, authedUser }, familyId) {
 }
 
 // PUT /api/font-families/:id - Update (designer only)
-async function handleFontFamilyUpdate({ req, res, authedUser }, familyId) {
+async function handleFontFamilyUpdate({ storageScope, req, res, authedUser }, familyId) {
   if (!canManage(authedUser)) return unauthorized(res);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
 
-  const ctx = createRouteContext(authedUser);
-  const result = await updateFontFamily(ctx, familyId, body);
+  const result = await updateFontFamily(storageScope, familyId, body);
   if (!result.ok) {
     if (result.reason === 'not_found') {
       notFound(res, 'Font family not found.');
@@ -295,10 +287,9 @@ async function handleFontFamilyUpdate({ req, res, authedUser }, familyId) {
 }
 
 // DELETE /api/font-families/:id - Delete (designer only)
-async function handleFontFamilyDelete({ res, authedUser }, familyId) {
+async function handleFontFamilyDelete({ storageScope, res, authedUser }, familyId) {
   if (!canManage(authedUser)) return unauthorized(res);
-  const ctx = createRouteContext(authedUser);
-  const result = await deleteFontFamily(ctx, familyId);
+  const result = await deleteFontFamily(storageScope, familyId);
   if (!result.ok) {
     if (result.reason === 'not_found') {
       notFound(res, 'Font family not found.');

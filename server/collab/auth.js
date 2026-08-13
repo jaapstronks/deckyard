@@ -10,7 +10,7 @@
 import { getUserFromRequestAsync } from '../auth/auth.js';
 import { getPresentation } from '../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../storage/collaborators.js';
-import { createRouteContext } from '../utils/context.js';
+import { createStorageScope } from '../utils/context.js';
 import {
   canReadPresentation,
   canWritePresentation,
@@ -77,7 +77,7 @@ export async function authorizeDocument({ repoRoot, documentName, user }) {
   if (!user?.email) throw httpError('Unauthorized', 401);
 
   const pres = await getPresentation(
-    createRouteContext(user, { repoRoot }),
+    createStorageScope(user, { repoRoot }),
     presentationId
   );
   if (!pres) throw httpError('Presentation not found', 404);

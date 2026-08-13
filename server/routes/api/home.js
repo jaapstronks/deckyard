@@ -28,7 +28,6 @@ import {
 } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
-import { createRouteContext } from '../../utils/context.js';
 import { getPopularPresentations } from './presentations/popular.js';
 import { getEnrichedActivity } from './activity.js';
 import { listTeamLibrary } from '../../storage/slide-library/index.js';
@@ -92,7 +91,6 @@ async function handleHomeGet({ storageScope, res, url, authedUser }) {
   const email = String(authedUser?.email || '').trim().toLowerCase();
   if (!email) return unauthorized(res);
 
-  const ctx = createRouteContext(authedUser);
   const activityOpts = buildActivityOpts(url.searchParams, email);
 
   // Fire every section's storage read in parallel — the whole point of the
@@ -103,7 +101,7 @@ async function handleHomeGet({ storageScope, res, url, authedUser }) {
       getPopularPresentations({ user: authedUser, organizationId: storageScope?.organizationId }).catch(
         () => []
       ),
-      getEnrichedActivity({ storageScope, authedUser, ctx, opts: activityOpts }).catch(
+      getEnrichedActivity({ storageScope, authedUser, opts: activityOpts }).catch(
         () => ({ events: [], total: 0, limit: activityOpts.limit, offset: 0 })
       ),
       listPersonalCollections(storageScope, email).catch(() => ({ items: [] })),

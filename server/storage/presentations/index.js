@@ -153,6 +153,7 @@ export async function updatePresentation(storageScope, id, body, opts) {
       presentation: result,
       actorEmail: opts.actorEmail,
       merge: result._slideMerge,
+      scope: storageScope,
     }).catch(() => {});
   }
   // Any successful mutation (editor save, public API, MCP tool) refreshes

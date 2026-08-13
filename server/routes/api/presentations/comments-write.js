@@ -35,7 +35,7 @@ import {
 } from '../../../services/comment-events.js';
 import { getGuestFromRequest, withPresentationCommentAuth } from '../../../utils/route-middleware.js';
 import { notifyCommentCreated, notifyMentionsAdded } from '../../../services/comment-notifications.js';
-import { getCtx, MAX_COMMENT_LENGTH, broadcastCommentCounts } from './comments-shared.js';
+import { MAX_COMMENT_LENGTH, broadcastCommentCounts } from './comments-shared.js';
 import { getString } from '../../../utils/request-validators.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('comments-write');
@@ -81,7 +81,7 @@ export async function handlePresentationCommentsCreate(
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const { pres, guestInfo: foundGuestInfo } = await withPresentationCommentAuth({ repoRoot, req, id, authedUser, res });
+  const { pres, guestInfo: foundGuestInfo } = await withPresentationCommentAuth({ storageScope, req, id, authedUser, res });
   if (!pres) return true;
 
   // Determine commenter identity
@@ -123,15 +123,14 @@ export async function handlePresentationCommentsCreate(
     return badRequest(res, `Comment must be ${MAX_COMMENT_LENGTH} characters or less`);
   }
 
-  const ctx = getCtx(authedUser);
 
   // Get parent comment if this is a reply (for notification recipient)
   let parentComment = null;
   if (body.parentId) {
-    parentComment = await getComment(ctx, body.parentId);
+    parentComment = await getComment(storageScope, body.parentId);
   }
 
-  const result = await createComment(ctx, id, {
+  const result = await createComment(storageScope, id, {
     email: commenterEmail,
     name: commenterName,
     body: body.body,
@@ -156,7 +155,7 @@ export async function handlePresentationCommentsCreate(
     comment: result.comment,
     parentComment,
     actor: notificationUser,
-    ctx,
+    scope: storageScope,
   });
 
   // Record activity event (non-blocking)
@@ -165,14 +164,14 @@ export async function handlePresentationCommentsCreate(
     presentation: pres,
     actor: notificationUser,
     isGuest,
-    ctx,
+    scope: storageScope,
   });
 
   // Broadcast to all connected clients (non-blocking)
   void broadcastToPresentation(id, CommentEventTypes.CREATED, {
     comment: result.comment,
   });
-  void broadcastCommentCounts(id, ctx);
+  void broadcastCommentCounts(id, storageScope);
 
   serveJson(res, 201, result);
   return true;
@@ -195,8 +194,7 @@ export async function handlePresentationCommentUpdate(
   const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res, 'Presentation not found');
 
-  const ctx = getCtx(authedUser);
-  const comment = await getComment(ctx, commentId);
+  const comment = await getComment(storageScope, commentId);
 
   if (!comment || comment.presentationId !== id) {
     return notFound(res, 'Comment not found');
@@ -219,7 +217,7 @@ export async function handlePresentationCommentUpdate(
     return badRequest(res, `Comment must be ${MAX_COMMENT_LENGTH} characters or less`);
   }
 
-  const result = await updateComment(ctx, commentId, { body: body.body });
+  const result = await updateComment(storageScope, commentId, { body: body.body });
 
   if (!result.ok) {
     return serveJson(res, 400, result);
@@ -229,7 +227,7 @@ export async function handlePresentationCommentUpdate(
   // against the pre-edit list, so re-saving never re-notifies).
   void (async () => {
     const parentComment = result.comment?.parentId
-      ? await getComment(ctx, result.comment.parentId)
+      ? await getComment(storageScope, result.comment.parentId)
       : null;
     await notifyMentionsAdded(repoRoot, req, {
       presentation: pres,
@@ -237,7 +235,7 @@ export async function handlePresentationCommentUpdate(
       previousMentions: comment.mentions,
       parentComment,
       actor: authedUser || { email: comment.authorEmail, name: comment.authorName },
-      ctx,
+      scope: storageScope,
     });
   })().catch((e) => {
     // eslint-disable-next-line no-console
@@ -260,7 +258,7 @@ export async function handlePresentationCommentUpdate(
  * Supports both authenticated users and verified guests deleting their own comments.
  */
 export async function handlePresentationCommentDelete(
-  { repoRoot, storageScope, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id,
   commentId
 ) {
@@ -269,8 +267,7 @@ export async function handlePresentationCommentDelete(
   const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res, 'Presentation not found');
 
-  const ctx = getCtx(authedUser);
-  const comment = await getComment(ctx, commentId);
+  const comment = await getComment(storageScope, commentId);
 
   if (!comment || comment.presentationId !== id) {
     return notFound(res, 'Comment not found');
@@ -281,14 +278,14 @@ export async function handlePresentationCommentDelete(
     return unauthorized(res);
   }
 
-  const result = await deleteComment(ctx, commentId);
+  const result = await deleteComment(storageScope, commentId);
 
   // Broadcast to all connected clients (non-blocking)
   void broadcastToPresentation(id, CommentEventTypes.DELETED, {
     commentId,
     slideId: comment.slideId,
   });
-  void broadcastCommentCounts(id, ctx);
+  void broadcastCommentCounts(id, storageScope);
 
   serveJson(res, 200, result);
   return true;
