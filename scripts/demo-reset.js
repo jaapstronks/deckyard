@@ -1,6 +1,21 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { loadDotEnv } from '../server/config/env.js';
 import { repoRoot } from '../server/config/paths.js';
+import { dataDir, uploadsDir } from '../server/config/storage-paths.js';
+
+/**
+ * Reset the on-disk state of a demo instance.
+ *
+ * WARNING: deletes files under dataDir() + uploadsDir() (server/data +
+ * server/uploads by default). Only run this on the demo deployment.
+ *
+ * Deck, session and settings data live in Postgres, so this script only
+ * touches what a demo instance actually accumulates on disk: the thumbnail
+ * cache and uploads. Resetting the database itself is a separate operation.
+ * Pre-DB file-store fossils on an upgrading install are handled by
+ * `scripts/prune-legacy-data.js` (fixed allowlist + dry run), not here.
+ */
 
 async function rmIfExists(p) {
   try {
@@ -13,45 +28,18 @@ async function ensureDir(p) {
 }
 
 async function resetDemoData() {
-  // WARNING: this deletes data in server/data + server/uploads for a demo instance.
-  // Only run this on the demo deployment.
-  const dataRoot = path.join(repoRoot, 'server', 'data');
+  await loadDotEnv(repoRoot);
+  const dataRoot = dataDir(repoRoot);
+  const uploadsRoot = uploadsDir(repoRoot);
 
-  // Presentations + publish state
-  await rmIfExists(path.join(dataRoot, 'presentations'));
-  await rmIfExists(path.join(dataRoot, 'published'));
+  // Thumbnail cache (server/render/deck-thumbnail.js).
+  await rmIfExists(path.join(dataRoot, 'deck-thumbs'));
 
-  // Live/session-ish data. questions/, feedback/ and interactions/ moved to
-  // Postgres (disk-JSON-to-PG, PR 5) and are no longer written to disk.
-  await rmIfExists(path.join(dataRoot, 'live-sessions'));
-  await rmIfExists(path.join(dataRoot, 'polls'));
-  await rmIfExists(path.join(dataRoot, 'trivia-sessions'));
-
-  // Note: keep follow codes + image library unless you want to reset them too.
-  // await rmIfExists(path.join(dataRoot, 'follow-codes.json'));
-  // await rmIfExists(path.join(dataRoot, 'image-library.json'));
-
-  // Uploads (demo should typically disable uploads anyway).
-  await rmIfExists(path.join(repoRoot, 'server', 'uploads'));
-
-  // Recreate required dirs so the server can boot cleanly.
-  await ensureDir(path.join(dataRoot, 'presentations'));
-  await ensureDir(path.join(dataRoot, 'published'));
-  await ensureDir(path.join(dataRoot, 'polls'));
-  await ensureDir(path.join(repoRoot, 'server', 'uploads'));
+  // Uploads (a demo should typically disable uploads anyway).
+  await rmIfExists(uploadsRoot);
+  await ensureDir(uploadsRoot);
 }
 
 await resetDemoData();
 // eslint-disable-next-line no-console
-console.log('Demo reset complete.');
-
-
-
-
-
-
-
-
-
-
-
+console.log('Demo reset complete (disk state; database state is not touched).');
