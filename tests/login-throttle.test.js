@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { allowLoginAttempt, LOGIN_LIMITS } from '../server/utils/rate-limit.js';
+import { allowLoginAttempt } from '../server/utils/rate-limit.js';
+import { LOGIN_LIMITS } from '../server/config/rate-limits.js';
 
 /**
  * Security hardening 3c: password login must be brute-force throttled. The

@@ -1,15 +1,12 @@
-function truthyEnv(v) {
-  const s = String(v || '').trim().toLowerCase();
-  return s === '1' || s === 'true' || s === 'yes' || s === 'on';
-}
+import { envBool } from '../config/utils.js';
 
 export function isDebugLogEnabled() {
-  return truthyEnv(process.env.DEBUG_LOG);
+  return envBool('DEBUG_LOG');
 }
 
 export function isClientDebugLogEnabled() {
   // Keep this separate so you can enable server debug logs without spamming the browser console.
-  return truthyEnv(process.env.DEBUG_LOG_CLIENT) || isDebugLogEnabled();
+  return envBool('DEBUG_LOG_CLIENT') || isDebugLogEnabled();
 }
 
 export function debugLog(...args) {

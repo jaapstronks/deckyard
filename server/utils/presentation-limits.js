@@ -12,16 +12,18 @@
  * - PRESENTATION_HARD_SIZE_MB (default: 50)
  */
 
+import { envInt } from '../config/utils.js';
+
 /**
  * Get the current limit configuration from environment variables.
  * @returns {Object} Limits configuration
  */
 function getLimits() {
   return {
-    softSlideLimit: Number(process.env.PRESENTATION_SOFT_SLIDE_LIMIT) || 100,
-    hardSlideLimit: Number(process.env.PRESENTATION_HARD_SLIDE_LIMIT) || 500,
-    softSizeMb: Number(process.env.PRESENTATION_SOFT_SIZE_MB) || 10,
-    hardSizeMb: Number(process.env.PRESENTATION_HARD_SIZE_MB) || 50,
+    softSlideLimit: envInt('PRESENTATION_SOFT_SLIDE_LIMIT', 100, { min: 1 }),
+    hardSlideLimit: envInt('PRESENTATION_HARD_SLIDE_LIMIT', 500, { min: 1 }),
+    softSizeMb: envInt('PRESENTATION_SOFT_SIZE_MB', 10, { min: 1 }),
+    hardSizeMb: envInt('PRESENTATION_HARD_SIZE_MB', 50, { min: 1 }),
   };
 }
 

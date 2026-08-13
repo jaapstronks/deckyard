@@ -23,8 +23,12 @@ const __dirname = path.dirname(__filename);
 // Log directory - relative to server root
 const LOG_DIR = path.resolve(__dirname, '../../logs/ai-validation');
 
-// Enable/disable via environment variable (default: enabled)
-const ENABLED = envBool('AI_VALIDATION_LOGGING', true);
+// Enable/disable via environment variable (default: enabled). Read at call
+// time, like every env-driven flag: a module-load snapshot would pin the value
+// before tests (or a late dotenv load) can set it.
+function loggingEnabled() {
+  return envBool('AI_VALIDATION_LOGGING', true);
+}
 
 // How long to keep log files (in days)
 const LOG_RETENTION_DAYS = 30;
@@ -55,7 +59,7 @@ function ensureLogDir() {
  * Flush the current buffer to disk
  */
 function flushBuffer() {
-  if (!ENABLED || currentBuffer.length === 0) {
+  if (!loggingEnabled() || currentBuffer.length === 0) {
     writeScheduled = false;
     return;
   }
@@ -95,7 +99,7 @@ function scheduleFlush() {
  * @param {Object} details - Event details
  */
 export function logValidationEvent(event, details = {}) {
-  if (!ENABLED) return;
+  if (!loggingEnabled()) return;
 
   // Check if we've crossed into a new day
   const today = new Date().toISOString().slice(0, 10);
@@ -113,14 +117,14 @@ export function logValidationEvent(event, details = {}) {
   currentBuffer.push(entry);
   scheduleFlush();
 
-  // Also log to console for immediate visibility
+  // Also log through the shared logger for immediate visibility
   const level =
     event.includes('error') || event.includes('fail')
       ? 'error'
       : event.includes('warn') || event.includes('unknown')
         ? 'warn'
-        : 'log';
-  console[level](`[AI Validation] ${event}:`, JSON.stringify(details, null, 2));
+        : 'info';
+  log[level](`${event}:`, JSON.stringify(details, null, 2));
 }
 
 /**

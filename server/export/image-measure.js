@@ -46,6 +46,7 @@
 
 import { getPuppeteerBrowser } from '../utils/puppeteer-browser.js';
 import { debugLog } from '../utils/debug-log.js';
+import { envInt } from '../config/utils.js';
 import { pdfImageCompressionConfig, compressImageForEmbed } from './image-compress.js';
 
 /** Retina margin over the measured display size. A full-bleed image at 2× the
@@ -61,17 +62,16 @@ export const MIN_DISPLAY_CAP = 256;
 /**
  * Operator override for the retina margin, mostly to make a before/after
  * measurement reproducible without patching the source (mirrors
- * `PDF_GRADIENT_RASTER_WIDTH`). Clamped to [1, 4].
+ * `PDF_GRADIENT_RASTER_WIDTH`). Valid range [1, 4]; anything outside falls
+ * back to the default per the envInt contract.
  *
- * @param {NodeJS.ProcessEnv} [env]
  * @returns {number}
  */
-export function retinaScale(env = process.env) {
-  const raw = env.PDF_EXPORT_IMAGE_RETINA_SCALE;
-  if (raw == null || raw === '') return DEFAULT_RETINA_SCALE;
-  const n = Number(raw);
-  if (!Number.isFinite(n) || n <= 0) return DEFAULT_RETINA_SCALE;
-  return Math.min(4, Math.max(1, n));
+export function retinaScale() {
+  return envInt('PDF_EXPORT_IMAGE_RETINA_SCALE', DEFAULT_RETINA_SCALE, {
+    min: 1,
+    max: 4,
+  });
 }
 
 /**
@@ -217,14 +217,13 @@ export async function measureImageDisplayPx({ slidesHtml, styleContent }) {
  * absent from the map (unmeasured, `data:`, remote) uses the flat cap, so this is
  * a strict tightening — never looser than the plain transform.
  *
- * @param {NodeJS.ProcessEnv} env
  * @param {Map<string, number>} displayPx - src → largest display longest-edge.
  * @returns {((buf: Buffer, ext: string, mime: string, url?: string) => Promise<{buf: Buffer, mime: string}>) | null}
  */
-export function displayAwareEmbedTransform(env, displayPx) {
-  const config = pdfImageCompressionConfig(env);
+export function displayAwareEmbedTransform(displayPx) {
+  const config = pdfImageCompressionConfig();
   if (!config) return null;
-  const scale = retinaScale(env);
+  const scale = retinaScale();
   const map = displayPx instanceof Map ? displayPx : new Map();
   return (buf, ext, mime, url) => {
     const cap = displayCap(map.get(url), config, scale);

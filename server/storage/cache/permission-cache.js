@@ -11,6 +11,7 @@
  */
 
 import { withRedis, isRedisAvailable } from '../../utils/redis-client.js';
+import { envInt } from '../../config/utils.js';
 
 const CACHE_PREFIX = 'perm:';
 const DEFAULT_TTL_SECONDS = 300; // 5 minutes
@@ -26,8 +27,8 @@ const cacheAccessOrder = [];
  */
 function getConfig() {
   return {
-    ttlSeconds: Number(process.env.PERMISSION_CACHE_TTL_SECONDS) || DEFAULT_TTL_SECONDS,
-    maxSize: Number(process.env.PERMISSION_CACHE_MAX_SIZE) || DEFAULT_MAX_SIZE,
+    ttlSeconds: envInt('PERMISSION_CACHE_TTL_SECONDS', DEFAULT_TTL_SECONDS, { min: 1 }),
+    maxSize: envInt('PERMISSION_CACHE_MAX_SIZE', DEFAULT_MAX_SIZE, { min: 1 }),
   };
 }
 
