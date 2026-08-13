@@ -91,7 +91,7 @@ they ask for a *path*, not a scope:
 | `boot-check.js :: strandedFileDataError` | migration guard inspecting `dataDir()` before boot |
 | `scope.js :: crossOrganizationScope` | scope *builder*: repoRoot is its input |
 | `scope.js :: singleOrganizationScope` | scope *builder*: repoRoot is its input |
-| `presentations/crud/factory.js :: prepareNewPresentation` | reads theme files from disk via `loadTheme` |
+| `presentations/crud/factory.js :: prepareNewPresentation` | reads theme files from disk via `loadThemeAssets` |
 
 Outside `server/storage/**`, `repoRoot` remains a perfectly legitimate
 parameter (export pipeline, rendering, theme CSS, uploads); the convention's
@@ -116,11 +116,15 @@ violations are carried in `tests/storage-call-convention-burndown.json`, an
 allowlist that **only shrinks**: fixing an export deletes its line; adding a
 new export in either old shape fails the suite.
 
-**Honest status note (2026-08-13):** the burndown list is at zero (plus the
-six documented disk-path exceptions), the factory is named
-`createStorageScope()`, and route handlers pass the per-request scope down
-instead of rebuilding it. What remains of the migration is the naming pass
-(exports whose scope parameter is correctly positioned but still *named*
-`ctx`). Nothing here promises compatibility with the old shapes: during beta
+**Honest status note (2026-08-13):** the migration is complete. The burndown
+list is at zero (plus the six documented disk-path exceptions), the factory is
+named `createStorageScope()`, route handlers pass the per-request scope down
+instead of rebuilding it, and the naming pass has landed: no storage export
+names its scope parameter `ctx` anymore, and the near-collision pair is now
+`getThemeRecord()` (DB row, storage layer) vs `loadThemeAssets()` (theme
+files, `utils/themes.js`). Two deliberate scope-homonyms remain outside the
+layer's parameter convention: the MCP tool input `scope: owned|shared|all`
+(external contract) and the slide-library `opts.scope: personal|team` (DB
+column). Nothing here promises compatibility with the old shapes: during beta
 they are removed, not tolerated (`docs/reference/versioning.md` § the beta
 stance).

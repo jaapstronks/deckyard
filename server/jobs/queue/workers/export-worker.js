@@ -14,7 +14,7 @@
 
 import { registerWorker, QUEUE_NAMES } from '../connection.js';
 import { getPresentation } from '../../../storage/presentations/index.js';
-import { loadTheme } from '../../../utils/themes.js';
+import { loadThemeAssets } from '../../../utils/themes.js';
 import { buildPptxBuffer } from '../../../export/pptx.js';
 import { buildHandoffZipBuffer } from '../../../export/handoff-zip.js';
 import { renderSlidesToPdfBuffer } from '../../../render/pdf.js';
@@ -92,10 +92,10 @@ async function prepareExportContext(job) {
 
   // Load theme. Same loader as the synchronous pipeline (`export/pipeline.js`):
   // `utils/themes.js` takes repoRoot first and resolves both built-in themes
-  // and custom-theme UUIDs. The storage-layer `getTheme(scope, themeId)` is a
+  // and custom-theme UUIDs. The storage-layer `getThemeRecord(scope, themeId)` is a
   // different signature entirely — calling it with a repoRoot used to yield
   // `theme = null` on every queued export; today it throws.
-  const theme = await loadTheme(repoRoot, filteredPres.theme);
+  const theme = await loadThemeAssets(repoRoot, filteredPres.theme);
 
   // Load merged slide types (core + org-specific custom types)
   const orgId = pres?.organizationId;

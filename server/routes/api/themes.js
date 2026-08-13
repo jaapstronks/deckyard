@@ -17,7 +17,7 @@ import { serveJson, badRequest, notFound, requireJsonBody, forbidden } from '../
 import {
   listThemeIds,
   listCoreThemeIds,
-  loadTheme,
+  loadThemeAssets,
   clearCustomThemeCache,
 } from '../../utils/themes.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
@@ -25,7 +25,7 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { canManage } from '../../utils/route-middleware.js';
 import {
   listThemes,
-  getTheme,
+  getThemeRecord,
   createTheme,
   updateTheme,
   deleteTheme,
@@ -73,7 +73,7 @@ async function handleThemeList({ repoRoot, storageScope, res, authedUser }) {
   const systemThemes = [];
   for (const id of filteredSystemIds) {
     try {
-      const t = await loadTheme(repoRoot, id);
+      const t = await loadThemeAssets(repoRoot, id);
       systemThemes.push({
         id: String(t?.id || id),
         label: String(t?.label || t?.id || id),
@@ -246,7 +246,7 @@ async function handleCustomThemeClearDefault({ storageScope, res, authedUser }) 
 
 // GET /api/themes/custom/:id - Get a custom theme
 async function handleCustomThemeGet({ storageScope, res, authedUser }, themeId) {
-  const theme = await getTheme(storageScope, themeId);
+  const theme = await getThemeRecord(storageScope, themeId);
   if (!theme) {
     return notFound(res, 'Theme not found');
   }
@@ -326,7 +326,7 @@ async function handleCustomThemeSetDefault({ storageScope, res, authedUser }, th
 // GET /api/themes/custom/:id/config - Get theme config for rendering
 async function handleCustomThemeConfig({ storageScope, res, authedUser }, themeId) {
 
-  const theme = await getTheme(storageScope, themeId);
+  const theme = await getThemeRecord(storageScope, themeId);
   if (!theme) {
     return notFound(res, 'Theme not found');
   }

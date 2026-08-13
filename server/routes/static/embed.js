@@ -2,7 +2,7 @@ import { notFound } from '../../utils/http.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { getPublishedById } from '../../storage/published/index.js';
-import { loadTheme } from '../../utils/themes.js';
+import { loadThemeAssets } from '../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
 import { buildEmbedHtml, parseEmbedOptionsFromUrl } from '../../utils/embed-html.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
@@ -63,7 +63,7 @@ export async function handleEmbed({ repoRoot, req, res, url }) {
   }
 
   const opts = parseEmbedOptionsFromUrl(url);
-  const theme = await loadTheme(repoRoot, pres?.theme);
+  const theme = await loadThemeAssets(repoRoot, pres?.theme);
   const modeLang = resolveLangModeFromPresOrUrl(pres, url);
   const projected = projectPresentationForLang(pres, modeLang);
   const embedSettings = await getAppSettings(

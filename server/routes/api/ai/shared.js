@@ -6,7 +6,7 @@ import {
   loadDisabledSlideTypes,
   loadCustomSlideTypes,
 } from '../../../utils/org-slide-types.js';
-import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
+import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
 import { createLogger } from '../../../utils/logger.js';
 
 /** Shared logger for all AI route handlers. */
@@ -77,7 +77,7 @@ export async function loadAiThemeContext(repoRoot, effectiveTheme) {
   let themeContext = null;
   try {
     const themeId = resolveThemeId(effectiveTheme);
-    const theme = await loadTheme(repoRoot, themeId);
+    const theme = await loadThemeAssets(repoRoot, themeId);
     titleSlideType = theme?.defaultTitleSlide || 'title-slide';
     themeContext = extractThemeContext(theme);
   } catch {

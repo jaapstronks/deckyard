@@ -96,9 +96,9 @@ export async function createActivityEvent(scope, data) {
  * List activity events for an organization.
  * Supports pagination and filtering.
  */
-export async function listActivityEvents(ctx, opts = {}) {
+export async function listActivityEvents(scope, opts = {}) {
   return withDbGuard({ events: [], total: 0 }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     let query = db
       .selectFrom('activity_events')

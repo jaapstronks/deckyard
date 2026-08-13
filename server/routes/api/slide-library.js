@@ -25,7 +25,7 @@ import {
   recordSlideLibraryUsage,
 } from '../../storage/slide-library-usage/index.js';
 import { maybeFireWebhook } from '../../utils/webhooks.js';
-import { loadTheme } from '../../utils/themes.js';
+import { loadThemeAssets } from '../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../render/preview-image.js';
 import { isMediaProviderInitialized } from '../../media/index.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -150,7 +150,7 @@ async function handleTeamCreate({ repoRoot, storageScope, req, res, authedUser }
         type: r.item.slideType,
         content: r.item.content,
       };
-      const theme = await loadTheme(repoRoot, r.item.themeId);
+      const theme = await loadThemeAssets(repoRoot, r.item.themeId);
       previewUrl = await generateAndSaveOgPreview(
         repoRoot,
         mockSlide,

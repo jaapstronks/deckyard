@@ -11,7 +11,7 @@
 
 import { getPresentation } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
-import { loadTheme } from '../../../utils/themes.js';
+import { loadThemeAssets } from '../../../utils/themes.js';
 import { canReadPresentation } from '../../../utils/presentation-authz.js';
 import { renderSlideHtml } from '../../../../shared/slide-types.js';
 import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
@@ -60,7 +60,7 @@ export async function handleRenderSlide(
   }
 
   // Load theme and merged slide types for rendering context
-  const theme = await loadTheme(repoRoot, pres?.theme);
+  const theme = await loadThemeAssets(repoRoot, pres?.theme);
   const slideTypes = await buildMergedSlideTypes(storageScope);
 
   const mode = ['preview', 'thumb', 'present', 'follow'].includes(body?.mode)

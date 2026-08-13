@@ -16,7 +16,7 @@ import {
 import { getString, getTrimmedString } from '../../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { convertMarkdownText } from '../../../utils/markdown-import/index.js';
-import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
+import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('import-markdown');
 
@@ -62,7 +62,7 @@ export async function handlePresentationsImportMarkdown({
     // background image from its presets.
     let themeConfig = null;
     try {
-      themeConfig = await loadTheme(repoRoot, resolveThemeId(deck?.theme));
+      themeConfig = await loadThemeAssets(repoRoot, resolveThemeId(deck?.theme));
     } catch {
       // ignore — title slides are imported without a background image
     }

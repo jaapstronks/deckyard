@@ -11,7 +11,7 @@ import { serveJson, forbidden, serverError, badRequest, requireJsonBody } from '
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { maybeFireWebhook } from '../../utils/webhooks.js';
-import { loadTheme } from '../../utils/themes.js';
+import { loadThemeAssets } from '../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../render/preview-image.js';
 import { warmDeckThumbnail } from './presentations/thumbnail.js';
 import { isMediaProviderInitialized } from '../../media/index.js';
@@ -46,7 +46,7 @@ async function handlePublishCreate({ repoRoot, storageScope, req, res, authedUse
       : null;
 
     if (firstSlide && isMediaProviderInitialized()) {
-      const theme = await loadTheme(repoRoot, pres.theme);
+      const theme = await loadThemeAssets(repoRoot, pres.theme);
 
       // Check if author overlay should be shown
       const showAuthor = pres?.settings?.ogPreview?.showAuthor === true;
@@ -219,7 +219,7 @@ async function handlePreviewRegenerate({ repoRoot, storageScope, res, authedUser
   }
 
   try {
-    const theme = await loadTheme(repoRoot, pres.theme);
+    const theme = await loadThemeAssets(repoRoot, pres.theme);
 
     // Check if author overlay should be shown
     const showAuthor = pres?.settings?.ogPreview?.showAuthor === true;

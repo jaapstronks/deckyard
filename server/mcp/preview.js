@@ -38,7 +38,7 @@ async function getMinimalCss() {
  *
  * @param {Array} slides - Array of slide objects ({ type, content, ... })
  * @param {Object} options
- * @param {Object} options.theme - Theme object (from loadTheme)
+ * @param {Object} options.theme - Theme object (from loadThemeAssets)
  * @param {string} options.title - Presentation title
  * @param {number} options.startIndex - Starting slide index (for numbering)
  * @param {'nl'|'en-GB'|null} [options.lang] - Deck language, from `resolveDeckLang(pres)`
@@ -174,7 +174,7 @@ export async function buildSlidePreviewHtml(slides, { theme = null, title = '', 
  *
  * @param {Object} slide - Slide object
  * @param {Object} [options]
- * @param {Object} [options.theme] - Theme object (from loadTheme)
+ * @param {Object} [options.theme] - Theme object (from loadThemeAssets)
  * @param {'nl'|'en-GB'|null} [options.lang] - Deck language, from `resolveDeckLang(pres)`
  * @returns {Promise<string>} Self-contained HTML string
  */

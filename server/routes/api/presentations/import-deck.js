@@ -29,7 +29,7 @@ import { readDeckBundle } from '../../../export/deck-bundle.js';
 import { writeUploadedFile } from '../../../storage/uploads.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { rewriteBundleRefs } from '../../../../shared/slide-types/deck-assets.js';
-import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
+import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('import-deck');
 
@@ -85,7 +85,7 @@ export async function handlePresentationsImportDeck({
     // from its presets (mirrors import-json.js).
     let themeConfig = null;
     try {
-      themeConfig = await loadTheme(repoRoot, resolveThemeId(rehydrated?.theme));
+      themeConfig = await loadThemeAssets(repoRoot, resolveThemeId(rehydrated?.theme));
     } catch {
       // ignore — title slides are imported without a background image
     }

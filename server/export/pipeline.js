@@ -3,7 +3,7 @@ import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { badRequest, notFound, unauthorized, serveJson } from '../utils/http.js';
 import { getPresentation } from '../storage/presentations/index.js';
 import { normalizeLang, projectPresentationForLang } from '../utils/i18n.js';
-import { loadTheme } from '../utils/themes.js';
+import { loadThemeAssets } from '../utils/themes.js';
 import { canReadPresentation } from '../utils/presentation-authz.js';
 import { getCollaboratorPermission } from '../storage/collaborators.js';
 import { addJob, isQueueAvailable, QUEUE_NAMES } from '../jobs/queue/connection.js';
@@ -67,7 +67,7 @@ export async function prepareExportContext({
 
   const projected = exportLang ? projectPresentationForLang(pres, exportLang) : pres;
   const filteredPres = stripLiveOnly ? stripLiveOnlySlidesFromPresentation(projected) : projected;
-  const theme = await loadTheme(repoRoot, projected?.theme);
+  const theme = await loadThemeAssets(repoRoot, projected?.theme);
   const langSuffix = getLangSuffix(exportLang);
 
   // Load merged slide types (core + org-specific custom types)

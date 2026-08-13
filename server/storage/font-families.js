@@ -462,9 +462,9 @@ export async function removeFontVariant(scope, variantId) {
  * List all font families with their full variant arrays.
  * Used by theme editor for font selection.
  */
-export async function listAllFontFamiliesWithVariants(ctx) {
+export async function listAllFontFamiliesWithVariants(scope) {
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const families = await db
       .selectFrom('font_families')

@@ -14,11 +14,11 @@ import { withDbGuard } from './utils/db-guard.js';
  * list/read/revoke queries to the caller. Returns '' when absent, which the
  * `owner_email = ''` filter turns into an empty result set (fail closed) —
  * never a cross-user match. Keep the org filter alongside this.
- * @param {Object} ctx - Route context ({ actorEmail })
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope ({ actorEmail })
  * @returns {string} Normalized owner email, or '' if unavailable
  */
-export function getOwnerEmail(ctx) {
-  return normalizeEmail(ctx?.actorEmail) || '';
+export function getOwnerEmail(scope) {
+  return normalizeEmail(scope?.actorEmail) || '';
 }
 
 // ============================================================

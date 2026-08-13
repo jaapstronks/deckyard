@@ -390,42 +390,6 @@ export async function releaseAllUserSlideLocks(scope, presentationId, { email, u
 }
 
 /**
- * Release all slide locks held by a user across all presentations.
- * Used for global cleanup on disconnect.
- * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
- * @param {Object} user - User info { email }
- * @returns {Promise<Object>} { ok: boolean, releasedCount: number }
- */
-export async function releaseAllUserLocksGlobally(scope, { email, userId } = {}) {
-  toStorageContext(scope, 'releaseAllUserLocksGlobally');
-  const holderEmail = norm(email).toLowerCase();
-  const holderId = userId || null;
-
-  if (!holderEmail) {
-    return { ok: false, reason: 'invalid', releasedCount: 0 };
-  }
-
-  return withDbGuard({ ok: false, reason: 'unavailable', releasedCount: 0 }, async (db) => {
-    const orgId = getOrgId(scope);
-
-    const result = await db
-      .deleteFrom('slide_locks')
-      .where('organization_id', '=', orgId)
-      .where((eb) => {
-        const mine = [eb('holder_email', '=', holderEmail)];
-        if (holderId) mine.push(eb('holder_user_id', '=', holderId));
-        return eb.or(mine);
-      })
-      .executeTakeFirst();
-
-    return {
-      ok: true,
-      releasedCount: Number(result.numDeletedRows) || 0,
-    };
-  });
-}
-
-/**
  * Cleanup all expired slide locks (background task).
  *
  * Instance-wide on purpose: a scheduled job has no org context, and an expired

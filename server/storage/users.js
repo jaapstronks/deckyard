@@ -15,12 +15,12 @@ import { generateSecureToken, hashToken } from '../utils/secure-tokens.js';
 
 /**
  * List all users in the organization with status information.
- * @param {Object} ctx - Context object
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @returns {Promise<Array>} - List of users with status fields
  */
-export async function listUsers(ctx) {
+export async function listUsers(scope) {
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const rows = await db
       .selectFrom('users')
