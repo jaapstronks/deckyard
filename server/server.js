@@ -17,13 +17,21 @@ import { allowRequest, getClientIp } from './utils/rate-limit.js';
 import { applySecurityHeaders } from './utils/security-headers.js';
 import { buildTopLevelErrorBody } from './utils/error-response.js';
 import { createLogger } from './utils/logger.js';
-import { startSandboxCleanupLoop } from './utils/sandbox-cleanup.js';
-import { startLiveSessionCleanupLoop } from './utils/live-session-cleanup.js';
+import { scheduleSandboxCleanup } from './jobs/sandbox-cleanup.js';
+import { scheduleLiveSessionCleanup } from './jobs/live-session-cleanup.js';
+import { scheduleMcpSessionSweep } from './jobs/mcp-session-sweep.js';
 import { uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './storage/adapters/index.js';
 import { strandedFileDataError } from './storage/boot-check.js';
 import { initializeMediaProvider } from './media/index.js';
-import { startHeartbeat, stopHeartbeat } from './services/comment-events.js';
+import {
+  startHeartbeat as startCommentHeartbeat,
+  stopHeartbeat as stopCommentHeartbeat,
+} from './services/comment-events.js';
+import {
+  startHeartbeat as startNotificationHeartbeat,
+  stopHeartbeat as stopNotificationHeartbeat,
+} from './services/notification-events.js';
 import { announceMaintenance } from './services/maintenance.js';
 import { scheduleAuthCleanup } from './jobs/auth-cleanup.js';
 import { scheduleDigestEmailJob } from './jobs/digest-email.js';
@@ -228,13 +236,22 @@ await initializeStorage();
 }
 await initializeMediaProvider(repoRoot);
 await initSanitizer(); // Enable sync HTML sanitization for markdown rendering
-startSandboxCleanupLoop();
-startLiveSessionCleanupLoop(); // TTL sweep for live sessions + follow codes
-startHeartbeat(); // SSE heartbeat for real-time comment updates
-const authCleanupJob = scheduleAuthCleanup(); // Clean expired tokens hourly
-const digestEmailJob = scheduleDigestEmailJob({ repoRoot }); // Weekly digest emails
-const analyticsCleanupJob = scheduleAnalyticsCleanup(); // Clean old analytics daily
-const retentionCleanupJob = scheduleRetentionCleanup(); // Trim usage/share-links/activity/slide-locks daily
+// Recurring background work starts here and only here: every schedule…()
+// returns { stop() }, every handle lands in runningJobs, and shutdown()
+// walks the array. No route and no module-load starts a timer.
+startCommentHeartbeat(); // SSE broadcast heartbeat for real-time comment updates
+startNotificationHeartbeat(); // SSE broadcast heartbeat for the notification bell
+const runningJobs = [
+  scheduleSandboxCleanup(), // TTL sweep for expired sandbox decks
+  scheduleLiveSessionCleanup(), // TTL sweep for live sessions + follow codes
+  scheduleMcpSessionSweep(), // TTL sweep for expired MCP SSE sessions
+  scheduleAuthCleanup(), // Clean expired tokens hourly
+  scheduleDigestEmailJob({ repoRoot }), // Weekly digest emails
+  scheduleAnalyticsCleanup(), // Clean old analytics daily
+  scheduleRetentionCleanup(), // Trim usage/share-links/activity/slide-locks daily
+  { stop: stopCommentHeartbeat },
+  { stop: stopNotificationHeartbeat },
+];
 
 // Initialize background job queue (Redis-based, with fallback)
 await initializeQueues();
@@ -274,12 +291,8 @@ async function shutdown(signal) {
   } catch {
     // Never let the announcement block the shutdown it precedes.
   }
-  stopHeartbeat(); // Stop SSE heartbeat
   await shutdownCollab(); // Close collab WebSocket connections
-  authCleanupJob.stop(); // Stop auth cleanup job
-  digestEmailJob.stop(); // Stop digest email job
-  analyticsCleanupJob.stop(); // Stop analytics cleanup job
-  retentionCleanupJob.stop(); // Stop retention cleanup job
+  for (const job of runningJobs) job.stop(); // Stop every recurring job
   server.close(async () => {
     await closeQueues(); // Close job queues and workers
     await closeStorage();

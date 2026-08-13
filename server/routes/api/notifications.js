@@ -21,7 +21,6 @@ import {
 import {
   addClient,
   removeClient,
-  startHeartbeat,
 } from '../../services/notification-events.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { serveJson, badRequest, requireJsonBody } from '../../utils/http.js';
@@ -34,9 +33,6 @@ async function handleNotificationEvents({ storageScope, req, res, authedUser }) 
 
   const stream = openSseStream(req, res);
   if (!stream.ok) return true;
-
-  // Start the heartbeat interval (idempotent)
-  startHeartbeat();
 
   // Register client
   addClient(userEmail, res);

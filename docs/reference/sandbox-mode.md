@@ -33,7 +33,7 @@ isolation model in [`tenant-isolation.md`](tenant-isolation.md).
   `isSandboxEphemeralPresentation()`; stamps `sandbox.expires` on ephemeral decks.
 - `server/storage/presentations/sandbox-quota.js` — per-guest deck/byte quota;
   `SandboxQuotaError` (HTTP 429).
-- `server/utils/sandbox-cleanup.js` — the TTL sweep loop.
+- `server/jobs/sandbox-cleanup.js` — the TTL sweep loop.
 - `server/utils/sandbox-watermark.js` — export watermark markup.
 - `server/utils/sandbox-seo.js`, `server/utils/sandbox-og-image.js`,
   `server/routes/static/sandbox-og.js` — SEO/OG head tags and the
@@ -71,7 +71,7 @@ Isolation is per-cookie / per-owner-email within the one org.
 - **Ephemeral vs seed** — `server/storage/presentations/sandbox.js`: a deck is
   ephemeral unless its `scope === 'organization'`. `attachSandboxMeta()` stamps
   `pres.sandbox.enabled` and `pres.sandbox.expires = created + TTL`.
-- **TTL sweep** — `server/utils/sandbox-cleanup.js`: `startSandboxCleanupLoop()`
+- **TTL sweep** — `server/jobs/sandbox-cleanup.js`: `scheduleSandboxCleanup()`
   (started from `server/server.js`) runs every ~10 min, no-op outside sandbox.
   `sweepExpiredSandboxDecks()` bulk-deletes non-`organization` decks older than the
   TTL; FKs cascade (version snapshots, published entry, cold Y.Doc state). It

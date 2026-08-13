@@ -11,7 +11,7 @@
  *  - "one vote per device" and "one entry per device" are constraints rather
  *    than Map semantics in one process,
  *  - the rows go away with their session, through the foreign key, which is
- *    what lets `utils/live-session-cleanup.js` collect all four domains with
+ *    what lets `jobs/live-session-cleanup.js` collect all four domains with
  *    one DELETE.
  *
  * "A second process" is modelled by clearing the in-memory `sessions` map of
@@ -29,7 +29,7 @@ import { sessions } from '../../server/storage/live-sessions/state.js';
 import { createLiveSession } from '../../server/storage/live-sessions/sessions.js';
 import { closeSession } from '../../server/storage/live-sessions/close.js';
 import { TTL_MS } from '../../server/storage/live-sessions/constants.js';
-import { sweepExpiredLiveSessions } from '../../server/utils/live-session-cleanup.js';
+import { sweepExpiredLiveSessions } from '../../server/jobs/live-session-cleanup.js';
 import {
   cancelQuestion,
   createQuestion,

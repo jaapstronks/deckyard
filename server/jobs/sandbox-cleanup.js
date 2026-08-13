@@ -5,7 +5,7 @@ import {
   getSandboxTotalBytes,
   sandboxMaxTotalBytes,
 } from '../storage/presentations/sandbox-quota.js';
-import { createLogger } from './logger.js';
+import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('sandbox-cleanup');
 
@@ -58,15 +58,15 @@ export async function sweepExpiredSandboxDecks() {
 }
 
 /**
- * Start the periodic sandbox TTL sweep. No-op (returns an inert stop function)
+ * Schedule the periodic sandbox TTL sweep. No-op (returns an inert handle)
  * outside sandbox mode, so non-sandbox deploys never touch the database here.
  *
  * @param {object} [opts]
  * @param {number} [opts.intervalMs] - Sweep interval (min 30s).
- * @returns {() => void} Stop function.
+ * @returns {{ stop: () => void }} Job handle.
  */
-export function startSandboxCleanupLoop({ intervalMs = 10 * 60 * 1000 } = {}) {
-  if (!sandboxEnabled()) return () => {};
+export function scheduleSandboxCleanup({ intervalMs = 10 * 60 * 1000 } = {}) {
+  if (!sandboxEnabled()) return { stop() {} };
 
   let stopped = false;
   let running = false;
@@ -85,15 +85,19 @@ export function startSandboxCleanupLoop({ intervalMs = 10 * 60 * 1000 } = {}) {
     }
   }
 
-  // Run immediately, then on interval.
+  // Run immediately, then on interval — the first synchronous sweep collects
+  // what a crash left behind.
   sweep();
   const t = setInterval(sweep, Math.max(30_000, Number(intervalMs) || 10 * 60 * 1000));
-  return () => {
-    stopped = true;
-    try {
-      clearInterval(t);
-    } catch {
-      // ignore
-    }
+  t.unref?.(); // Don't keep process alive just for this
+  return {
+    stop() {
+      stopped = true;
+      try {
+        clearInterval(t);
+      } catch {
+        // ignore
+      }
+    },
   };
 }
