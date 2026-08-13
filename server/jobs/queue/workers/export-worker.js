@@ -117,7 +117,11 @@ async function prepareExportContext(job) {
  * @returns {Promise<Object>} Result with download info
  */
 async function processExportJob(job) {
-  const { type, scale = 1 } = job.data;
+  // The enqueue site (export/pipeline.js) passes the export type as the BullMQ
+  // job *name*: `addJob(QUEUE_NAMES.EXPORT, exportType, data)`. The name is the
+  // type's only carrier — `job.data` carries no `type` field.
+  const type = job.name;
+  const { scale = 1 } = job.data;
 
   console.log(`[export-worker] Processing ${type} export for job ${job.id}`);
 
