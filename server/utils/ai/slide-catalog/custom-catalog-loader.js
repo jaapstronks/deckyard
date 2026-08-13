@@ -37,6 +37,9 @@ import { existsSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { clampUsage } from '../../../../shared/slide-types/usage.js';
+import { createLogger } from '../../logger.js';
+
+const log = createLogger('custom-ai-catalog');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -88,24 +91,24 @@ export async function loadCustomCatalogOverrides({ file = DEFAULT_CUSTOM_CATALOG
   try {
     mod = await import(pathToFileURL(file).href);
   } catch (err) {
-    console.error(`[custom-ai-catalog] failed to load ${file}:`, err.message);
+    log.error(`failed to load ${file}:`, err.message);
     return {};
   }
 
   const overrides = mod?.default;
   if (!overrides || typeof overrides !== 'object') {
-    console.warn('[custom-ai-catalog] custom/ai/catalog.js default export is not an object; ignoring');
+    log.warn('custom/ai/catalog.js default export is not an object; ignoring');
     return {};
   }
 
   const clean = {};
   for (const [type, value] of Object.entries(overrides)) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
-      console.warn(`[custom-ai-catalog] override "${type}" is not an object; ignoring`);
+      log.warn(`override "${type}" is not an object; ignoring`);
       continue;
     }
     if (allow && !allow.has(type)) {
-      console.warn(`[custom-ai-catalog] override "${type}" does not match a known slide type; ignoring`);
+      log.warn(`override "${type}" does not match a known slide type; ignoring`);
       continue;
     }
     // Keep only the recognised override fields so a stray key can't smuggle
@@ -117,13 +120,13 @@ export async function loadCustomCatalogOverrides({ file = DEFAULT_CUSTOM_CATALOG
         // never carry a raw template literal's indentation or an unbounded rule.
         const usage = clampUsage(v);
         if (usage) partial.usage = usage;
-        else console.warn(`[custom-ai-catalog] override "${type}.usage" is not a non-empty string; ignoring`);
+        else log.warn(`override "${type}.usage" is not a non-empty string; ignoring`);
       } else if (OVERRIDABLE_FIELDS.has(k)) partial[k] = v;
-      else console.warn(`[custom-ai-catalog] override "${type}.${k}" is not an overridable field; ignoring`);
+      else log.warn(`override "${type}.${k}" is not an overridable field; ignoring`);
     }
     if (Object.keys(partial).length === 0) continue;
     clean[type] = partial;
-    console.log(`[custom-ai-catalog] overriding core slide type copy: ${type} (${Object.keys(partial).join(', ')})`);
+    log.info(`overriding core slide type copy: ${type} (${Object.keys(partial).join(', ')})`);
   }
 
   return clean;

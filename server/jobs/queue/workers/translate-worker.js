@@ -11,6 +11,9 @@ import { getPresentation, updatePresentation } from '../../../storage/presentati
 import { translatePresentationStrings } from '../../../utils/ai.js';
 import { normalizeTranslationLang, normalizeLang } from '../../../storage/presentations/i18n.js';
 import { jobScope } from '../../../storage/scope.js';
+import { createLogger } from '../../../utils/logger.js';
+
+const log = createLogger('translate-worker');
 
 // Store completed job results
 const jobResults = new Map();
@@ -64,7 +67,7 @@ async function processTranslateJob(job) {
     actorEmail,
   } = job.data;
 
-  console.log(`[translate-worker] Translating ${presentationId} from ${from} to ${to}`);
+  log.info(`Translating ${presentationId} from ${from} to ${to}`);
 
   await job.updateProgress(10);
 

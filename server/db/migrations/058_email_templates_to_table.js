@@ -32,6 +32,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sql } from 'kysely';
 import { dataDir } from '../../config/storage-paths.js';
+import { createLogger } from '../../utils/logger.js';
+
+const log = createLogger('058');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // server/db/migrations -> repo root
@@ -148,8 +151,8 @@ export const up = async (db) => {
     .execute();
 
   const result = await importEmailTemplatesFromDisk(db);
-  console.log(
-    `[058] imported ${result.templates} email-template override(s)` +
+  log.info(
+    `imported ${result.templates} email-template override(s)` +
       (result.defaultLocale ? ' and the instance default locale' : '')
   );
 };

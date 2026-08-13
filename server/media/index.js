@@ -7,6 +7,9 @@
 
 import { getEffectiveMediaProvider } from './config.js';
 import { LocalProvider } from './local.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('media');
 
 let _provider = null;
 let _repoRoot = null;
@@ -18,7 +21,7 @@ let _repoRoot = null;
  */
 export async function initializeMediaProvider(repoRoot) {
   if (_provider) {
-    console.warn('[media] Provider already initialized');
+    log.warn('Provider already initialized');
     return;
   }
 
@@ -28,10 +31,10 @@ export async function initializeMediaProvider(repoRoot) {
   if (providerType === 'scaleway') {
     const { ScalewayProvider } = await import('./scaleway.js');
     _provider = new ScalewayProvider();
-    console.log('[media] Initialized Scaleway provider');
+    log.info('Initialized Scaleway provider');
   } else {
     _provider = new LocalProvider(repoRoot);
-    console.log('[media] Initialized local provider (/uploads)');
+    log.info('Initialized local provider (/uploads)');
   }
 }
 

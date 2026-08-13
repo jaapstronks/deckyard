@@ -15,6 +15,9 @@
  */
 
 import { isCollabEnabled, isCollabLiveEditsEnabled } from '../config/features.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('collab');
 
 /** URL path the WebSocket upgrade listens on. */
 export const COLLAB_PATH = '/collab';
@@ -114,7 +117,7 @@ export async function maybeAttachCollab(server, { repoRoot }) {
         });
       },
       error(peer, error) {
-        console.error('[collab] websocket error:', error?.message || error);
+        log.error('websocket error:', error?.message || error);
       },
     },
   });
@@ -132,7 +135,7 @@ export async function maybeAttachCollab(server, { repoRoot }) {
       return;
     }
     ws.handleUpgrade(req, socket, head).catch((err) => {
-      console.error('[collab] upgrade failed:', err?.message || err);
+      log.error('upgrade failed:', err?.message || err);
       try {
         socket.destroy();
       } catch {
@@ -142,8 +145,8 @@ export async function maybeAttachCollab(server, { repoRoot }) {
   });
 
   active = { hocuspocus, ws };
-  console.log(
-    `[collab] ${liveEdits ? 'presence + live-edits' : 'presence'} endpoint mounted at ${COLLAB_PATH}`
+  log.info(
+    `${liveEdits ? 'presence + live-edits' : 'presence'} endpoint mounted at ${COLLAB_PATH}`
   );
   return hocuspocus;
 }
@@ -157,6 +160,6 @@ export async function shutdownCollab() {
     hocuspocus.closeConnections();
     hocuspocus.flushPendingStores();
   } catch (err) {
-    console.error('[collab] shutdown error:', err?.message || err);
+    log.error('shutdown error:', err?.message || err);
   }
 }

@@ -13,6 +13,9 @@ import {
   fetchImageAsBuffer,
   AUTHOR_OVERLAY_MARGIN,
 } from '../utils/author-overlay.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('preview-image');
 
 // OG image dimensions (optimal for social platforms)
 const OG_WIDTH = 1200;
@@ -107,8 +110,7 @@ async function generateOgPreview(repoRoot, slide, theme, options = {}) {
         });
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('[preview-image] Author overlay generation failed:', err.message);
+      log.warn('Author overlay generation failed:', err.message);
       // Continue without author overlay
     }
   }
