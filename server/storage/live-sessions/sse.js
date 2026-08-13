@@ -1,6 +1,5 @@
-import { sseComment, sseWrite } from '../../utils/sse.js';
+import { sseWrite } from '../../utils/sse.js';
 import { toStorageContext } from '../scope.js';
-import { HEARTBEAT_MS } from './constants.js';
 import { schedulePersist } from './db.js';
 import { sessions } from './state.js';
 import { touchLiveSession, findMostRecentSessionForPresentation } from './sessions.js';
@@ -28,19 +27,8 @@ export async function attachSessionSseClient(scope, sessionId, res) {
     data: { controlEnabled: !!s.controlEnabled, updatedAt: Date.now() },
   });
 
-  // Heartbeats
-  const tid = setInterval(() => {
-    sseComment(res, 'heartbeat');
-  }, HEARTBEAT_MS);
-  s.heartbeatTimers.set(res, tid);
-
+  // No heartbeat here: openSseStream() owns the per-connection heartbeat.
   const detach = () => {
-    try {
-      clearInterval(tid);
-    } catch {}
-    try {
-      s.heartbeatTimers.delete(res);
-    } catch {}
     try {
       s.clients.delete(res);
     } catch {}

@@ -1,7 +1,6 @@
 import { attachQuestionsSseClient } from '../../../storage/questions.js';
-import { sseWrite } from '../../../utils/sse.js';
-import { guardSseConnection } from '../../../utils/sse-limiter.js';
-import { ensureQaDeviceCookie, followAudienceScope, writeSseHeaders } from './helpers.js';
+import { sseWrite, openSseStream } from '../../../utils/sse.js';
+import { ensureQaDeviceCookie, followAudienceScope } from './helpers.js';
 import { subscribeFollowStatus } from './status-ticker.js';
 
 export async function handleFollowQuestionsEvents(
@@ -10,11 +9,12 @@ export async function handleFollowQuestionsEvents(
 ) {
   if (req.method !== 'GET') return false;
 
-  // Cap unauthenticated, long-lived streams before opening one (DoS guard).
-  if (!guardSseConnection(req, res)) return true;
-
   const dev = ensureQaDeviceCookie(req);
-  writeSseHeaders(res, dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {});
+  // openSseStream applies the connection guard (429 before stream headers).
+  const stream = openSseStream(req, res, {
+    extraHeaders: dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {},
+  });
+  if (!stream.ok) return true;
 
   let detach = null;
   let currentSessionId = '';

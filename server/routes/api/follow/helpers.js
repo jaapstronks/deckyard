@@ -153,13 +153,3 @@ export function computeAudienceCapabilitiesFromState(state, pres) {
   };
 }
 
-export function writeSseHeaders(res, extraHeaders = {}) {
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream; charset=utf-8',
-    'Cache-Control': 'no-store',
-    Connection: 'keep-alive',
-    'X-Accel-Buffering': 'no',
-    ...extraHeaders,
-  });
-  res.write('\n');
-}

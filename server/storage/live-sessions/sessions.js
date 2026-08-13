@@ -135,7 +135,6 @@ export async function createLiveSession(scope, { presentationId }) {
     createdAt: now,
     lastActivityAt: now,
     clients: new Set(),
-    heartbeatTimers: new Map(),
     persistTimer: null,
   };
   sessions.set(sessionId, s);

@@ -57,7 +57,7 @@ const ALLOWLIST = [
     reason: 'single-organization identity fallback (no membership row to read)',
   },
   {
-    file: 'server/utils/sandbox-cleanup.js',
+    file: 'server/jobs/sandbox-cleanup.js',
     reason: 'the sandbox is single-org by definition',
   },
   {
