@@ -40,7 +40,7 @@ import { errorToResponse } from '../../utils/errors.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { getOptionalString } from '../../utils/request-validators.js';
 import { allowCompanionNotesWrite, getClientIp } from '../../utils/rate-limit.js';
-import { guardSseConnection } from '../../utils/sse-limiter.js';
+import { openSseStream } from '../../utils/sse.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 
 /**
@@ -115,15 +115,9 @@ async function handleSessionState({ repoRoot, res }, sessionId) {
 async function handleSessionEvents({ repoRoot, req, res }, sessionId) {
   const s = await getLiveSession(companionScope(repoRoot), sessionId);
   if (!s) return notFound(res);
-  // Cap unauthenticated, long-lived streams before opening one (DoS guard).
-  if (!guardSseConnection(req, res)) return true;
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream; charset=utf-8',
-    'Cache-Control': 'no-store',
-    Connection: 'keep-alive',
-    'X-Accel-Buffering': 'no',
-  });
-  res.write('\n');
+  // openSseStream applies the connection guard (429 before stream headers).
+  const stream = openSseStream(req, res);
+  if (!stream.ok) return true;
   await attachSessionSseClient(companionScope(repoRoot), sessionId, res);
   return true;
 }
