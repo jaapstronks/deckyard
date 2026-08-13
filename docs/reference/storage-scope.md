@@ -59,21 +59,22 @@ reviewer who wonders why the call is exempt.
 
 ## Why the first position is the rule, not a style choice
 
-Two call shapes used to coexist in the layer, and they carry **different
+Two call shapes used to coexist in the layer, and they carried **different
 authorization doctrines**:
 
 - Scope-first goes through `resolveScope()`, which *refuses* a call without
   an organization — loudly, with a `TypeError` naming the convention.
-- ctx-at-the-tail goes through `getOrgId(ctx)`, which *guesses*: a missing or
-  scope-less ctx silently falls back to the default organization and reads
-  from the wrong workspace.
+- ctx-at-the-tail went through `getOrgId(ctx)`, which *guessed*: a missing or
+  scope-less ctx silently fell back to the default organization and read
+  from the wrong workspace. (That fallback is gone — `getOrgId` refuses too
+  now; see the boundary section below.)
 
 A mandatory first parameter cannot be forgotten — leave it off and every
 argument shifts, so `resolveScope` throws on the first request. A tail
-parameter *can* be forgotten, and then the guessing dialect answers. The
-parameter's position decides which dialect you get; that is why the position
-is the contract. Reading order also follows the mental model: first *where and
-on whose behalf*, then *what*.
+parameter *can* be forgotten, and back then the guessing dialect answered.
+The parameter's position decides which dialect you get; that is why the
+position is the contract. Reading order also follows the mental model: first
+*where and on whose behalf*, then *what*.
 
 `toStorageContext(scope, '<fnName>')` as the first statement is the safety
 net for missed call sites: argument-shift bugs surface as a thrown `TypeError`
@@ -97,15 +98,22 @@ Outside `server/storage/**`, `repoRoot` remains a perfectly legitimate
 parameter (export pipeline, rendering, theme CSS, uploads); the convention's
 scope is the storage layer only.
 
-## The boundary: the org fallback stays, for now
+## The boundary: no organization means no answer
 
-Inside the layer, `getOrgId(ctx)` still falls back to
-`getDefaultOrganizationId()` when a scope states no organization. Removing
-that fallback is a *behaviour* change that depends on the open A1 question of
-which domains may be org-blind — it is explicitly **not** part of this
-convention's migration, which is behaviour-preserving throughout. Until A1
-lands, moving a function to scope-first changes its signature and adds the
-type check, but `getOrgId` keeps answering inside.
+`getOrgId(ctx)` throws when the context carries no organization. It used to
+fall back to `getDefaultOrganizationId()` — on a multi-organization instance
+that turned a missing organization into a query against the *default*
+organization, the tenant-isolation leak `resolveScope()` refuses in another
+guise. The org-scoping fallback-sweep (#623) removed the fallback, and
+`tests/get-org-id-refuses-empty-context.test.js` pins the refusal: a call
+site that reaches `getOrgId` without an organization is a bug and fails
+loudly, instead of silently scoping to the default organization.
+
+That removal happened *outside* this convention's migration, which stayed
+behaviour-preserving throughout — the boundary decision (D5, 2026-08-06)
+placed it there on purpose. The net result is one doctrine on both paths:
+whether a call arrives scope-first through `resolveScope()` or reaches
+`getOrgId()` directly, an absent organization is refused, never guessed.
 
 ## Enforcement and implementation status
 
