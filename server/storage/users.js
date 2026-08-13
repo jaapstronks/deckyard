@@ -4,6 +4,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
+import { toStorageContext } from './backend-dispatch.js';
 import { nowIso, isoAfter, normalizeEmail } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { generateSecureToken, hashToken } from '../utils/secure-tokens.js';
@@ -83,13 +84,14 @@ export async function listUsers(ctx) {
 
 /**
  * Get a user by ID.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} userId - The user ID
- * @param {Object} ctx - Context object
  * @returns {Promise<Object|null>} - User object or null
  */
-export async function getUserById(userId, ctx) {
+export async function getUserById(scope, userId) {
+  toStorageContext(scope, 'getUserById');
   return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const row = await db
       .selectFrom('users')
@@ -112,16 +114,17 @@ export async function getUserById(userId, ctx) {
 
 /**
  * Get a user by email.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} email - The user's email
- * @param {Object} ctx - Context object
  * @returns {Promise<Object|null>} - User object or null
  */
-export async function getUserByEmail(email, ctx) {
+export async function getUserByEmail(scope, email) {
+  toStorageContext(scope, 'getUserByEmail');
   const normalized = normalizeEmail(email);
   if (!normalized) return null;
 
   return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const row = await db
       .selectFrom('users')
@@ -144,21 +147,22 @@ export async function getUserByEmail(email, ctx) {
 
 /**
  * Create a new user.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {Object} userData - User data
  * @param {string} userData.email - User's email
  * @param {string} [userData.name] - User's name
  * @param {string} [userData.role] - User's role (user/admin)
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result with user and invitation token
  */
-export async function createUser(userData, ctx) {
+export async function createUser(scope, userData) {
+  toStorageContext(scope, 'createUser');
   const email = normalizeEmail(userData?.email);
   if (!email || !email.includes('@')) {
     return { ok: false, reason: 'invalid_email' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Existence is checked instance-wide, not per organization: users.email is
     // globally unique, so an organization-scoped check would report "free" for
@@ -217,16 +221,17 @@ export async function createUser(userData, ctx) {
 
 /**
  * Update a user.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} userId - The user ID
  * @param {Object} updates - Fields to update
  * @param {string} [updates.name] - User's name
  * @param {string} [updates.role] - User's role
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Update result
  */
-export async function updateUser(userId, updates, ctx) {
+export async function updateUser(scope, userId, updates) {
+  toStorageContext(scope, 'updateUser');
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const updateData = {
       updated_at: nowIso(),
@@ -261,13 +266,14 @@ export async function updateUser(userId, updates, ctx) {
 
 /**
  * Delete a user.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} userId - The user ID
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Delete result
  */
-export async function deleteUser(userId, ctx) {
+export async function deleteUser(scope, userId) {
+  toStorageContext(scope, 'deleteUser');
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Get user email before deleting (for audit)
     const user = await db
@@ -300,13 +306,14 @@ export async function deleteUser(userId, ctx) {
 
 /**
  * Resend invitation email for a user.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} userId - The user ID
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result with new invitation token
  */
-export async function resendInvitation(userId, ctx) {
+export async function resendInvitation(scope, userId) {
+  toStorageContext(scope, 'resendInvitation');
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     // Get the user
     const user = await db
@@ -359,19 +366,20 @@ export async function resendInvitation(userId, ctx) {
 
 /**
  * Search users by email or name (case-insensitive partial match).
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} query - Search query
  * @param {Object} options - Search options
  * @param {number} [options.limit=10] - Maximum results
  * @param {string[]} [options.exclude=[]] - Email addresses to exclude
- * @param {Object} ctx - Context object
  * @returns {Promise<Array>} - List of matching users
  */
-export async function searchUsers(query, options = {}, ctx) {
+export async function searchUsers(scope, query, options = {}) {
+  toStorageContext(scope, 'searchUsers');
   const searchTerm = String(query || '').toLowerCase().trim();
   if (!searchTerm) return [];
 
   return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const limit = Math.min(Math.max(1, options.limit || 10), 50);
     const exclude = Array.isArray(options.exclude) ? options.exclude.map((e) => String(e).toLowerCase().trim()) : [];
 

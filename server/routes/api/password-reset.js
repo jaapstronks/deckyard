@@ -238,7 +238,7 @@ async function handleResetPassword({ repoRoot, req, res }) {
   const email = consumeResult.email;
 
   // Set the new password (creates/updates database user)
-  const setResult = await setUserPassword(email, password, ctx);
+  const setResult = await setUserPassword(ctx, email, password);
 
   if (!setResult.ok) {
     await logAuthEvent({
@@ -325,7 +325,7 @@ async function handleChangePassword({ repoRoot, req, res }) {
   }
 
   // Set the new password
-  const setResult = await setUserPassword(email, newPassword, ctx);
+  const setResult = await setUserPassword(ctx, email, newPassword);
 
   if (!setResult.ok) {
     await logAuthEvent({

@@ -4,6 +4,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
+import { toStorageContext } from './backend-dispatch.js';
 import { getUserByEmailGlobal } from './identity.js';
 import { nowIso, isoAfter, isoBefore, normalizeEmail } from '../utils/normalize.js';
 import { sessionVersion } from '../utils/session-version.js';
@@ -192,18 +193,19 @@ export async function consumeMagicToken(rawToken) {
 /**
  * Get or create a user for magic link login.
  * If user doesn't exist, create them with magic_link auth source.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} email - The user's email
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - User object with session version
  */
-export async function getOrCreateMagicLinkUser(email, ctx) {
+export async function getOrCreateMagicLinkUser(scope, email) {
+  toStorageContext(scope, 'getOrCreateMagicLinkUser');
   const normalized = normalizeEmail(email);
   if (!normalized) {
     return { ok: false, reason: 'invalid_email' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     // Resolved across organizations: a magic link proves an email address, and

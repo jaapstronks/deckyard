@@ -236,7 +236,7 @@ export async function notifyMentionsAdded(repoRoot, req, {
 
   const users = await Promise.all(added.map(async (email) => {
     try {
-      return await getUserByEmail(email, ctx);
+      return await getUserByEmail(ctx, email);
     } catch {
       return null;
     }

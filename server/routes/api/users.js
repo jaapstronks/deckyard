@@ -27,7 +27,7 @@ async function handleUserSearch({ res, url, authedUser }) {
     return serveJson(res, 200, { users: [] });
   }
 
-  const users = await searchUsers(query, { limit, exclude }, ctx);
+  const users = await searchUsers(ctx, query, { limit, exclude });
 
   serveJson(res, 200, { users });
   return true;

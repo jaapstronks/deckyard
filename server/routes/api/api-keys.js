@@ -25,7 +25,7 @@ import { dispatchRoutes } from '../../utils/router.js';
 async function handleApiKeyList({ res, url, authedUser }) {
   const ctx = createRouteContext(authedUser);
   const includeRevoked = url.searchParams.get('includeRevoked') === 'true';
-  const result = await listApiKeys({ includeRevoked }, ctx);
+  const result = await listApiKeys(ctx, { includeRevoked });
 
   if (!result.ok) {
     return badRequest(res, result.reason || 'Failed to list API keys');
@@ -47,11 +47,11 @@ async function handleApiKeyCreate({ req, res, authedUser }) {
 
   const { name, permissions } = parsed.body || {};
 
-  const result = await createApiKey({
+  const result = await createApiKey(ctx, {
     name: name || 'API Key',
     ownerEmail: authedUser.email,
     permissions: permissions || ['read', 'write'],
-  }, ctx);
+  });
 
   if (!result.ok) {
     const messages = {
@@ -81,7 +81,7 @@ async function handleApiKeyUsage({ res, url, authedUser }, keyId) {
   const ctx = createRouteContext(authedUser);
 
   // Verify the key belongs to the user
-  const keyResult = await getApiKeyById(keyId, ctx);
+  const keyResult = await getApiKeyById(ctx, keyId);
   if (!keyResult.ok) {
     return notFound(res, 'API key not found');
   }
@@ -117,7 +117,7 @@ async function handleApiKeyUsage({ res, url, authedUser }, keyId) {
 // GET /api/api-keys/:id - Get API key details
 async function handleApiKeyGet({ res, authedUser }, keyId) {
   const ctx = createRouteContext(authedUser);
-  const result = await getApiKeyById(keyId, ctx);
+  const result = await getApiKeyById(ctx, keyId);
 
   if (!result.ok) {
     return notFound(res, 'API key not found');
@@ -140,7 +140,7 @@ async function handleApiKeyGet({ res, authedUser }, keyId) {
 // DELETE /api/api-keys/:id - Revoke an API key
 async function handleApiKeyRevoke({ res, authedUser }, keyId) {
   const ctx = createRouteContext(authedUser);
-  const result = await revokeApiKey(keyId, authedUser.email, ctx);
+  const result = await revokeApiKey(ctx, keyId, authedUser.email);
 
   if (!result.ok) {
     const messages = {

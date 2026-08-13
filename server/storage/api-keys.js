@@ -4,6 +4,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
+import { toStorageContext } from './backend-dispatch.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
 import { generateSecureToken, hashToken, isValidEmail } from '../utils/secure-tokens.js';
 import { withDbGuard } from './utils/db-guard.js';
@@ -91,14 +92,15 @@ export function getKeyPrefix(key) {
 
 /**
  * Create a new API key.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {Object} params - Key parameters
  * @param {string} params.name - Display name for the key
  * @param {string} params.ownerEmail - Email of the key owner
  * @param {string[]} [params.permissions] - Permissions for the key (defaults to read, write)
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result with the raw key (only returned once)
  */
-export async function createApiKey({ name, ownerEmail, permissions }, ctx) {
+export async function createApiKey(scope, { name, ownerEmail, permissions }) {
+  toStorageContext(scope, 'createApiKey');
   const normalizedEmail = normalizeEmail(ownerEmail);
   if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
     return { ok: false, reason: 'invalid_email' };
@@ -116,7 +118,7 @@ export async function createApiKey({ name, ownerEmail, permissions }, ctx) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const { key, prefix, hash } = generateApiKey();
 
     const row = await db
@@ -202,18 +204,19 @@ export async function validateApiKey(rawKey) {
 
 /**
  * Revoke an API key.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} keyId - The key ID to revoke
  * @param {string} revokerEmail - Email of the user revoking the key
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result
  */
-export async function revokeApiKey(keyId, revokerEmail, ctx) {
+export async function revokeApiKey(scope, keyId, revokerEmail) {
+  toStorageContext(scope, 'revokeApiKey');
   if (!keyId) {
     return { ok: false, reason: 'key_id_required' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const now = nowIso();
 
     // Only allow revoking the caller's own keys within their organization.
@@ -222,7 +225,7 @@ export async function revokeApiKey(keyId, revokerEmail, ctx) {
       .set({ revoked_at: now })
       .where('id', '=', keyId)
       .where('organization_id', '=', orgId)
-      .where('owner_email', '=', getOwnerEmail(ctx))
+      .where('owner_email', '=', getOwnerEmail(scope))
       .where('revoked_at', 'is', null)
       .returningAll()
       .executeTakeFirst();
@@ -237,14 +240,15 @@ export async function revokeApiKey(keyId, revokerEmail, ctx) {
 
 /**
  * List API keys for an organization.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {Object} options - List options
  * @param {boolean} [options.includeRevoked] - Include revoked keys
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result with key list
  */
-export async function listApiKeys(options = {}, ctx) {
+export async function listApiKeys(scope, options = {}) {
+  toStorageContext(scope, 'listApiKeys');
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
     const { includeRevoked = false } = options;
 
     let query = db
@@ -261,7 +265,7 @@ export async function listApiKeys(options = {}, ctx) {
         'created_at',
       ])
       .where('organization_id', '=', orgId)
-      .where('owner_email', '=', getOwnerEmail(ctx))
+      .where('owner_email', '=', getOwnerEmail(scope))
       .orderBy('created_at', 'desc');
 
     if (!includeRevoked) {
@@ -301,24 +305,25 @@ export async function listApiKeys(options = {}, ctx) {
 
 /**
  * Get an API key by ID.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} keyId - The key ID
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result with key data
  */
-export async function getApiKeyById(keyId, ctx) {
+export async function getApiKeyById(scope, keyId) {
+  toStorageContext(scope, 'getApiKeyById');
   if (!keyId) {
     return { ok: false, reason: 'key_id_required' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    const orgId = getOrgId(scope);
 
     const row = await db
       .selectFrom('api_keys')
       .selectAll()
       .where('id', '=', keyId)
       .where('organization_id', '=', orgId)
-      .where('owner_email', '=', getOwnerEmail(ctx))
+      .where('owner_email', '=', getOwnerEmail(scope))
       .executeTakeFirst();
 
     if (!row) {

@@ -177,7 +177,7 @@ export async function resolveCommentRecipients({
       // notification or email.
       if (reason === 'mention') {
         try {
-          if (!(await getUserByEmail(email, ctx))) return null;
+          if (!(await getUserByEmail(ctx, email))) return null;
         } catch {
           return null;
         }
