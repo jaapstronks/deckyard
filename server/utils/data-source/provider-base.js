@@ -7,6 +7,7 @@
  */
 
 import { applyBindings } from './bindings.js';
+import { AppError } from '../errors.js';
 
 /**
  * Create a data source provider.
@@ -30,8 +31,12 @@ export function createDataSourceProvider({ name, fetchData, parseResponse }) {
       try {
         return await fetchData(providerConfig);
       } catch (err) {
-        const error = new Error(`Data source "${name}" fetch failed: ${err.message}`);
-        error.statusCode = err.statusCode || 502;
+        // Preserve the causing error's status; unknown failures are a 502
+        // (upstream fetch broke, not the caller's request).
+        const error = new AppError(
+          `Data source "${name}" fetch failed: ${err.message}`,
+          err.statusCode || 502
+        );
         error.provider = name;
         throw error;
       }

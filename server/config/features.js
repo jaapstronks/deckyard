@@ -6,6 +6,7 @@
  */
 
 import { envBool } from './utils.js';
+import { ForbiddenError } from '../utils/errors.js';
 
 /**
  * Multi-organization mode.
@@ -23,9 +24,7 @@ export function isMultiOrgEnabled() {
  */
 export function requireMultiOrg() {
   if (!isMultiOrgEnabled()) {
-    const error = new Error('Multi-organization features are not enabled');
-    error.statusCode = 403;
-    throw error;
+    throw new ForbiddenError('Multi-organization features are not enabled');
   }
 }
 
@@ -41,9 +40,7 @@ export function isLiveDataEnabled() {
 
 export function requireLiveData() {
   if (!isLiveDataEnabled()) {
-    const error = new Error('Live data source features are not enabled');
-    error.statusCode = 403;
-    throw error;
+    throw new ForbiddenError('Live data source features are not enabled');
   }
 }
 

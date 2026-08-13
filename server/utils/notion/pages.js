@@ -6,6 +6,7 @@
 import { notionFetchJson, fetchAllBlockChildren } from './client.js';
 import { richTextToPlain, pageTitleFromProperties, blockTextLine, extractImageFromBlock, extractPageId } from './parser.js';
 import { createLogger } from '../logger.js';
+import { ValidationError } from '../errors.js';
 
 const log = createLogger('notion-pages');
 
@@ -101,9 +102,7 @@ async function extractTableFromBlock(block) {
 export async function extractRichContentFromPage(pageId, { depth = 3, limit = 600 } = {}) {
   const id = String(pageId || '').trim();
   if (!id) {
-    const err = new Error('Page ID is required');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('Page ID is required');
   }
 
   // Fetch page metadata
@@ -337,9 +336,7 @@ export async function getPlainTextPreviewFromPage(
 export async function fetchNotionPage(urlOrId) {
   const pageId = extractPageId(urlOrId);
   if (!pageId) {
-    const err = new Error('Invalid Notion URL or page ID');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('Invalid Notion URL or page ID');
   }
 
   // Fetch page metadata for title
