@@ -444,8 +444,11 @@ function formatUserWithStatus(row, lastLoginMap, invitationMap, now) {
   // Once a user has logged in (via any method), they're active - invitation status is irrelevant
   let invitationStatus = null;
   if (!lastLoginAt && !hasPassword && invitationExpiresAt) {
-    // ISO strings are lexicographically comparable
-    invitationStatus = invitationExpiresAt > now ? 'active' : 'expired';
+    // The pg driver returns timestamptz columns as Date objects while `now` is
+    // an ISO string; a Date-vs-string comparison coerces the string to NaN and
+    // is always false. Compare as epoch milliseconds so both shapes order.
+    invitationStatus =
+      new Date(invitationExpiresAt).getTime() > new Date(now).getTime() ? 'active' : 'expired';
   }
 
   return {
