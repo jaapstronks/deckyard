@@ -33,7 +33,10 @@ export const SSE_HEARTBEAT_MS = 15_000;
  * @param {string} [opts.cacheControl='no-cache']
  * @param {Object} [opts.extraHeaders] - Extra headers (e.g. `Set-Cookie`).
  * @param {() => void} [opts.onClose] - Called once when the client
- *   disconnects (after the heartbeat is stopped).
+ *   disconnects (after the heartbeat is stopped). NOT called when the
+ *   handler already closed the stream itself via `close()` — a handler that
+ *   replaces a stream (MCP GET) has already reassigned its references, and a
+ *   late disconnect of the old socket must not clean up the new stream's.
  * @returns {{ ok: true, close: () => void } | { ok: false }} `ok: false`
  *   means the guard already sent a 429 — the handler should return handled.
  */
@@ -72,8 +75,11 @@ export function openSseStream(req, res, {
   };
 
   req.on?.('close', () => {
+    // Capture before close() flips it: onClose only fires for a stream the
+    // handler had not already closed, and at most once.
+    const alreadyClosed = closed;
     close();
-    onClose?.();
+    if (!alreadyClosed) onClose?.();
   });
 
   return { ok: true, close };
