@@ -2,10 +2,11 @@
  * Guard: `.env.example` is the complete manifest of recognized environment
  * variables.
  *
- * Every `process.env.SOME_VAR` the server reads must have a declaration line
- * in `.env.example` (`VAR=` or `# VAR=`), so the knobs a self-hoster can turn
- * — including the security limits — are discoverable in one place. Adding a
- * new env read without documenting it fails here.
+ * Every env var the server reads — as a literal `process.env.SOME_VAR` or
+ * through the accessor family (`envStr('SOME_VAR')` and friends) — must have
+ * a declaration line in `.env.example` (`VAR=` or `# VAR=`), so the knobs a
+ * self-hoster can turn — including the security limits — are discoverable in
+ * one place. Adding a new env read without documenting it fails here.
  *
  * The manifest may only grow: renaming or removing a declared variable is a
  * breaking change per docs/reference/versioning.md.
@@ -28,8 +29,20 @@ const EXEMPT = new Set([
   'NODE_TEST_CONTEXT',
 ]);
 
-const ENV_READ = /process\.env\.([A-Z][A-Z0-9_]*)/g;
+// A literal read, or a read through the accessor family / the named-env
+// helpers — both count: the accessor form is the canonical one, so the gate
+// must not go blind exactly where the codebase follows the convention.
+const ENV_READS = [
+  /process\.env\.([A-Z][A-Z0-9_]*)/g,
+  /\b(?:envStr|envBool|envInt|envList|requireEnv|optionalEnv|createConfigChecker)\(\s*['"]([A-Z][A-Z0-9_]*)['"]/g,
+];
 const DECLARATION = /^#? ?([A-Z][A-Z0-9_]+)=/;
+
+function* envReads(src) {
+  for (const re of ENV_READS) {
+    for (const m of src.matchAll(re)) yield m;
+  }
+}
 
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -59,7 +72,7 @@ test('every env var the server reads is declared in .env.example', () => {
   for (const file of walk(path.join(repoRoot, 'server'))) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     const src = fs.readFileSync(file, 'utf8');
-    for (const m of src.matchAll(ENV_READ)) {
+    for (const m of envReads(src)) {
       const name = m[1];
       if (EXEMPT.has(name) || declared.has(name)) continue;
       if (!undeclared.has(name)) {
@@ -83,7 +96,7 @@ test('the exempt list only names vars the server actually reads', () => {
   const read = new Set();
   for (const file of walk(path.join(repoRoot, 'server'))) {
     const src = fs.readFileSync(file, 'utf8');
-    for (const m of src.matchAll(ENV_READ)) read.add(m[1]);
+    for (const m of envReads(src)) read.add(m[1]);
   }
   for (const name of EXEMPT) {
     assert.ok(

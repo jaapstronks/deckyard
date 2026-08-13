@@ -229,7 +229,7 @@ export async function fetchVideoBuffer(url, { timeoutMs = 60000, maxSizeMb = 100
  * @returns {{ pullZone: string | null, configured: boolean }}
  */
 export function getBunnyConfig() {
-  const pullZone = process.env.BUNNY_PULLZONE || process.env.BUNNY_PULL_ZONE || null;
+  const pullZone = process.env.BUNNY_PULLZONE || null;
   return {
     pullZone,
     configured: Boolean(pullZone),
