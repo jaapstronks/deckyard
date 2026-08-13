@@ -24,7 +24,7 @@ import { broadcastToUser, NotificationEventTypes } from './notification-events.j
  * @param {string} [options.accessReferenceId] - Reference ID (e.g., share link ID)
  * @param {string} [options.accessorEmail] - Accessor's email (if logged in)
  * @param {string} [options.accessorIp] - Accessor's IP address
- * @param {Object} ctx - Context object
+ * @param {import('../storage/scope.js').StorageScope} scope - Storage scope for the organization this access belongs to
  * @returns {Promise<Object>} - Result
  */
 export async function notifyAuthorOfAccessAttempt({
@@ -35,11 +35,11 @@ export async function notifyAuthorOfAccessAttempt({
   accessReferenceId,
   accessorEmail,
   accessorIp,
-  ctx,
+  scope,
 }) {
   try {
     // 1. Log the access attempt
-    const logResult = await logAccessAttempt(ctx, {
+    const logResult = await logAccessAttempt(scope, {
       presentationId,
       accessType,
       accessReferenceId,
@@ -53,7 +53,7 @@ export async function notifyAuthorOfAccessAttempt({
 
     // 2. Check rate limit (1 notification per accessor per 24h)
     const shouldNotify = await shouldNotifyAuthor(
-      ctx,
+      scope,
       presentationId,
       accessorEmail,
       accessorIp
@@ -72,7 +72,7 @@ export async function notifyAuthorOfAccessAttempt({
 
     // 4. Create in-app notification for author (no email)
     const notifResult = await createNotification(
-      ctx,
+      scope,
       {
         userEmail: authorEmail,
         notificationType: 'access_attempt',
@@ -96,7 +96,7 @@ export async function notifyAuthorOfAccessAttempt({
     }
 
     // 5. Mark the attempt as having notified the author
-    await markAuthorNotified(ctx, logResult.attempt.id);
+    await markAuthorNotified(scope, logResult.attempt.id);
 
     // 6. Broadcast via SSE for real-time bell icon update
     if (notifResult.notification) {

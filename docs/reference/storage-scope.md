@@ -98,6 +98,12 @@ Outside `server/storage/**`, `repoRoot` remains a perfectly legitimate
 parameter (export pipeline, rendering, theme CSS, uploads); the convention's
 scope is the storage layer only.
 
+The *naming* half of the convention reaches one layer further: a function in
+`server/services/**` that carries a `StorageScope` names that parameter
+`scope`, never `ctx` — a second name for the same envelope is exactly the seam
+where a caller passes the wrong shape unnoticed (that mismatch is how #707
+broke).
+
 ## The boundary: no organization means no answer
 
 `getOrgId(ctx)` throws when the context carries no organization. It used to
