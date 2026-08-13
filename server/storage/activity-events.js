@@ -95,6 +95,8 @@ export async function createActivityEvent(scope, data) {
 /**
  * List activity events for an organization.
  * Supports pagination and filtering.
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
+ * @param {Object} [opts] - Pagination and filter options
  */
 export async function listActivityEvents(scope, opts = {}) {
   return withDbGuard({ events: [], total: 0 }, async (db) => {

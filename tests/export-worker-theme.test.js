@@ -69,7 +69,7 @@ test('the export worker loads its theme through utils/themes.js', async () => {
   assert.doesNotMatch(
     src,
     /from\s*'[^']*storage\/themes\.js'/,
-    'export-worker must not reach for the storage-layer theme accessor: its signature is (themeId, ctx)'
+    'export-worker must not reach for the storage-layer theme accessor: its signature is (scope, themeId)'
   );
 });
 
@@ -84,7 +84,7 @@ test('no server call site passes a repoRoot into storage getThemeRecord', async 
         await walk(full);
       } else if (entry.name.endsWith('.js')) {
         const src = await fs.readFile(full, 'utf8');
-        if (/\bgetTheme\s*\(\s*(?:job\.data\.)?_?repoRoot\b/.test(src)) {
+        if (/\bgetThemeRecord\s*\(\s*(?:job\.data\.)?_?repoRoot\b/.test(src)) {
           offenders.push(path.relative(repoRoot, full));
         }
       }
@@ -96,6 +96,6 @@ test('no server call site passes a repoRoot into storage getThemeRecord', async 
   assert.deepEqual(
     offenders,
     [],
-    'getThemeRecord takes (themeId, ctx); passing a repoRoot returns null instead of throwing'
+    'getThemeRecord takes (scope, themeId); passing a repoRoot as the scope throws'
   );
 });

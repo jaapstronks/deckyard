@@ -107,7 +107,7 @@ export async function getSandboxUsageForOwner(scope, ownerEmail) {
 /**
  * Sum stored bytes of every deck in the shared presentations table, scoped to
  * the organization. Used by the cleanup loop's global disk-usage guard.
- * @param {object} scope - Storage context carrying the organization.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @returns {Promise<number>}
  */
 export async function getSandboxTotalBytes(scope) {
@@ -126,7 +126,7 @@ export async function getSandboxTotalBytes(scope) {
  * would exceed the per-guest deck-count cap, or the guest's stored bytes are
  * already over the per-guest byte cap. No-op outside sandbox mode or without an
  * owner email, so it is safe to call unconditionally from the create path.
- * @param {object} scope - Storage context carrying the organization.
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} ownerEmail
  * @returns {Promise<void>}
  */

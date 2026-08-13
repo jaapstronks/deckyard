@@ -15,14 +15,14 @@ import { getDb, isDatabaseAvailable } from '../../db/client.js';
  *
  * @example
  * // Before:
- * export async function listItems(ctx) {
+ * export async function listItems(scope) {
  *   if (!isDatabaseAvailable()) return [];
  *   const db = getDb();
  *   // ... rest of function
  * }
  *
  * // After:
- * export async function listItems(ctx) {
+ * export async function listItems(scope) {
  *   return withDbGuard([], async (db) => {
  *     // ... rest of function
  *   });

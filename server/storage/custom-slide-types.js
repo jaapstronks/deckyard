@@ -73,7 +73,7 @@ export async function listCustomSlideTypes(scope) {
 /**
  * List only published custom slide types for an organization.
  * Used by the slide picker and rendering pipeline.
- * @param {Object} scope - Context with organizationId
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @returns {Promise<Array>}
  */
 export async function listPublishedCustomSlideTypes(scope) {
