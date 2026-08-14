@@ -9,6 +9,7 @@
 
 import {
   badRequest,
+  forbidden,
   methodNotAllowed,
   serveJson,
   unauthorized,
@@ -52,7 +53,7 @@ function teamMutateGuard(authedUser) {
 
 function mutationError(res, reason) {
   if (reason === 'not_found') return notFound(res);
-  if (reason === 'forbidden') return unauthorized(res, 'Not allowed');
+  if (reason === 'forbidden') return forbidden(res, 'Not allowed');
   return badRequest(res, reason);
 }
 

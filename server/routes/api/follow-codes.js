@@ -44,33 +44,30 @@ async function handleFollowCodeCreate({ storageScope, req, res, authedUser }) {
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
   if (!parsed.ok) return true;
 
-  try {
-    const body = parsed.body || {};
-    const followUrl = getString(body, 'followUrl');
+  const body = parsed.body || {};
+  const followUrl = getString(body, 'followUrl');
 
-    if (!followUrl.trim()) {
-      badRequest(res, 'followUrl is required');
-      return true;
-    }
-
-    // Validate that it's a follow URL
-    if (!followUrl.startsWith('/follow/')) {
-      badRequest(res, 'Invalid follow URL format');
-      return true;
-    }
-
-    const code = await createFollowCode(storageScope, followUrl.trim());
-    if (!code) {
-      // Codes live in Postgres; without it there is nothing to hand out.
-      serverError(res, 'Follow codes are unavailable');
-      return true;
-    }
-    serveJson(res, 200, { code });
-    return true;
-  } catch (error) {
-    badRequest(res, `Failed to create code: ${error.message}`);
+  if (!followUrl.trim()) {
+    badRequest(res, 'followUrl is required');
     return true;
   }
+
+  // Validate that it's a follow URL
+  if (!followUrl.startsWith('/follow/')) {
+    badRequest(res, 'Invalid follow URL format');
+    return true;
+  }
+
+  // An unexpected throw here is infrastructure failing, not the caller's
+  // request: it falls through to the withErrorHandler wrapper as a 500.
+  const code = await createFollowCode(storageScope, followUrl.trim());
+  if (!code) {
+    // Codes live in Postgres; without it there is nothing to hand out.
+    serverError(res, 'Follow codes are unavailable');
+    return true;
+  }
+  serveJson(res, 200, { code });
+  return true;
 }
 
 /**
@@ -87,26 +84,22 @@ async function handleFollowCodeResolve({ repoRoot, req, res }, codeParam) {
   const code = codeParam.toUpperCase();
   log.info(`[Follow Codes] Resolving code: ${code}`);
 
-  try {
-    const followUrl = await resolveFollowCode(
-      crossOrganizationScope(repoRoot, 'follow code resolve: the typed code is the authorization'),
-      code
-    );
+  // An unexpected throw here is infrastructure failing, not the caller's
+  // request: it falls through to the withErrorHandler wrapper as a 500.
+  const followUrl = await resolveFollowCode(
+    crossOrganizationScope(repoRoot, 'follow code resolve: the typed code is the authorization'),
+    code
+  );
 
-    if (!followUrl) {
-      log.info(`[Follow Codes] Code not found: ${code}`);
-      badRequest(res, 'Code not found or expired');
-      return true;
-    }
-
-    log.info(`[Follow Codes] Resolved ${code} -> ${followUrl}`);
-    serveJson(res, 200, { followUrl });
-    return true;
-  } catch (error) {
-    log.error(`[Follow Codes] Error resolving ${code}:`, error);
-    badRequest(res, `Failed to resolve code: ${error.message}`);
+  if (!followUrl) {
+    log.info(`[Follow Codes] Code not found: ${code}`);
+    badRequest(res, 'Code not found or expired');
     return true;
   }
+
+  log.info(`[Follow Codes] Resolved ${code} -> ${followUrl}`);
+  serveJson(res, 200, { followUrl });
+  return true;
 }
 
 /**

@@ -17,7 +17,7 @@ import {
   AVAILABLE_PERMISSIONS,
 } from '../../storage/api-keys.js';
 import { getUsageHistory, getTodayUsage } from '../../storage/api-usage.js';
-import { serveJson, methodNotAllowed, notFound, badRequest, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import { serveJson, getErrorStatus, jsonError, methodNotAllowed, notFound, badRequest, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 // GET /api/api-keys - List user's API keys
@@ -142,10 +142,12 @@ async function handleApiKeyRevoke({ storageScope, res, authedUser }, keyId) {
       not_found_or_already_revoked: 'API key not found or already revoked',
       unavailable: 'Database unavailable',
     };
-    if (result.reason === 'not_found_or_already_revoked') {
-      return notFound(res, messages[result.reason]);
-    }
-    return badRequest(res, messages[result.reason] || 'Failed to revoke API key');
+    return jsonError(
+      res,
+      getErrorStatus(result.reason),
+      result.reason,
+      messages[result.reason] || 'Failed to revoke API key'
+    );
   }
 
   serveJson(res, 200, {

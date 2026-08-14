@@ -98,14 +98,12 @@ async function handleEmailTemplateWrite({ repoRoot, storageScope, req, res }, ty
     }
   }
 
-  try {
-    await writeEmailTemplate(storageScope, type, locale, fields);
-    const resolved = await resolveTemplate(repoRoot, type, locale);
-    serveJson(res, 200, { ok: true, template: resolved });
-    return true;
-  } catch (err) {
-    return badRequest(res, err.message);
-  }
+  // Type and locale are validated above; a throw past that point is
+  // infrastructure failing and falls through to withErrorHandler as a 500.
+  await writeEmailTemplate(storageScope, type, locale, fields);
+  const resolved = await resolveTemplate(repoRoot, type, locale);
+  serveJson(res, 200, { ok: true, template: resolved });
+  return true;
 }
 
 // DELETE /api/admin/email-templates/:type/:locale - Reset to default
@@ -120,14 +118,12 @@ async function handleEmailTemplateReset({ repoRoot, storageScope, res }, type, l
     return badRequest(res, `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}`);
   }
 
-  try {
-    await deleteEmailTemplate(storageScope, type, locale);
-    const resolved = await resolveTemplate(repoRoot, type, locale);
-    serveJson(res, 200, { ok: true, template: resolved });
-    return true;
-  } catch (err) {
-    return badRequest(res, err.message);
-  }
+  // Type and locale are validated above; a throw past that point is
+  // infrastructure failing and falls through to withErrorHandler as a 500.
+  await deleteEmailTemplate(storageScope, type, locale);
+  const resolved = await resolveTemplate(repoRoot, type, locale);
+  serveJson(res, 200, { ok: true, template: resolved });
+  return true;
 }
 
 // POST /api/admin/email-templates/:type/preview - Preview with sample data
@@ -147,21 +143,19 @@ async function handleEmailTemplatePreview({ repoRoot, req, res }, type) {
     return badRequest(res, `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}`);
   }
 
-  try {
-    const preview = await generatePreview(repoRoot, type, locale, customFields);
-    const htmlContent = buildPreviewHtml(preview);
+  // Type and locale are validated above; a throw past that point is
+  // infrastructure failing and falls through to withErrorHandler as a 500.
+  const preview = await generatePreview(repoRoot, type, locale, customFields);
+  const htmlContent = buildPreviewHtml(preview);
 
-    serveJson(res, 200, {
-      ok: true,
-      preview: {
-        ...preview,
-        htmlContent,
-      },
-    });
-    return true;
-  } catch (err) {
-    return badRequest(res, err.message);
-  }
+  serveJson(res, 200, {
+    ok: true,
+    preview: {
+      ...preview,
+      htmlContent,
+    },
+  });
+  return true;
 }
 
 // POST /api/admin/email-templates/:type/test - Send test email to admin
@@ -181,30 +175,28 @@ async function handleEmailTemplateTest({ repoRoot, req, res, authedUser: user },
     return badRequest(res, `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}`);
   }
 
-  try {
-    const preview = await generatePreview(repoRoot, type, locale, customFields);
-    const htmlContent = buildPreviewHtml(preview);
+  // Type and locale are validated above; a throw past that point is
+  // infrastructure failing and falls through to withErrorHandler as a 500.
+  const preview = await generatePreview(repoRoot, type, locale, customFields);
+  const htmlContent = buildPreviewHtml(preview);
 
-    // Send test email to the admin
-    const result = await sendEmail({
-      to: user.email,
-      toName: user.name || user.email,
-      subject: `[TEST] ${preview.subject}`,
-      htmlContent,
-    });
+  // Send test email to the admin
+  const result = await sendEmail({
+    to: user.email,
+    toName: user.name || user.email,
+    subject: `[TEST] ${preview.subject}`,
+    htmlContent,
+  });
 
-    if (!result.ok) {
-      return badRequest(res, `Failed to send test email: ${result.error}`);
-    }
-
-    serveJson(res, 200, {
-      ok: true,
-      message: `Test email sent to ${user.email}`,
-    });
-    return true;
-  } catch (err) {
-    return badRequest(res, err.message);
+  if (!result.ok) {
+    return badRequest(res, `Failed to send test email: ${result.error}`);
   }
+
+  serveJson(res, 200, {
+    ok: true,
+    message: `Test email sent to ${user.email}`,
+  });
+  return true;
 }
 
 /**
