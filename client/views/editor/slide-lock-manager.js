@@ -143,20 +143,22 @@ export function createSlideLockManager({
         emitLocksChanged();
         return true;
       }
-      // Lock held by another user
-      if (resp?.reason === 'held' && resp?.lock) {
+      // Soft-fail (no lock backend / invalid): locking is a no-op, stay quiet.
+      return false;
+    } catch (err) {
+      // Held by another user: the 409 envelope carries the competing lock.
+      if (err.code === 'held' && err.details?.lock) {
         currentSlideIsLocked = true;
-        locks[slideId] = resp.lock;
+        locks[slideId] = err.details.lock;
         lockedByOthers.add(slideId);
         emitLocksChanged();
         onLockFailed?.({
           slideId,
           reason: 'held',
-          lock: resp.lock,
+          lock: err.details.lock,
         });
+        return false;
       }
-      return false;
-    } catch (err) {
       debugLog('acquireLock error:', slideId, err.message);
       return false;
     }
@@ -205,7 +207,7 @@ export function createSlideLockManager({
       if (resp?.ok) {
         locks[currentLockedSlideId] = resp.lock;
         emitLocksChanged();
-      } else if (resp?.reason === 'expired' || resp?.reason === 'missing') {
+      } else if (resp?.reason === 'expired' || resp?.reason === 'not_found') {
         // Lock was lost, try to reacquire
         await acquireLock(currentLockedSlideId);
       }

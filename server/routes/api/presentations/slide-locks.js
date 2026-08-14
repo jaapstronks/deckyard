@@ -5,6 +5,8 @@
  */
 
 import {
+  getErrorStatus,
+  jsonError,
   methodNotAllowed,
   serveJson,
 } from '../../../utils/http.js';
@@ -50,6 +52,27 @@ function lockActor(authedUser) {
 export function lockHttpStatus(result) {
   if (result?.ok) return 200;
   return result?.reason === 'held' ? 409 : 200;
+}
+
+/**
+ * Serve an acquire/refresh/release result. The 200s (success and the
+ * deliberate soft-fails described on `lockHttpStatus`) keep the raw result
+ * body; only the genuine `held` conflict is an HTTP error and answers in the
+ * canonical envelope, with the competing lock in `details.lock`.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {{ok?: boolean, reason?: string, lock?: Object}} result
+ * @returns {true}
+ */
+function serveLockResult(res, result) {
+  const status = lockHttpStatus(result);
+  if (status !== 200) {
+    return jsonError(res, status, result.reason, undefined, {
+      details: result.lock ? { lock: result.lock } : undefined,
+    });
+  }
+  serveJson(res, 200, result);
+  return true;
 }
 
 /**
@@ -138,8 +161,7 @@ export async function handleSlideLockAcquire(
     });
   }
 
-  serveJson(res, lockHttpStatus(result), result);
-  return true;
+  return serveLockResult(res, result);
 }
 
 /**
@@ -166,8 +188,7 @@ export async function handleSlideLockRefresh(
     userId: authedUser?.id || null,
   });
 
-  serveJson(res, lockHttpStatus(result), result);
-  return true;
+  return serveLockResult(res, result);
 }
 
 /**
@@ -206,8 +227,7 @@ export async function handleSlideLockRelease(
     });
   }
 
-  serveJson(res, lockHttpStatus(result), result);
-  return true;
+  return serveLockResult(res, result);
 }
 
 /**
@@ -245,7 +265,9 @@ export async function handleSlideLocksReleaseAll(
 
   // "Nothing to release because there is no lock backend" is a no-op, not a
   // server error — otherwise editor teardown logs a 500 on file storage.
-  const status = result.ok || result.reason === 'unavailable' ? 200 : 500;
-  serveJson(res, status, result);
+  if (!result.ok && result.reason !== 'unavailable') {
+    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error');
+  }
+  serveJson(res, 200, result);
   return true;
 }

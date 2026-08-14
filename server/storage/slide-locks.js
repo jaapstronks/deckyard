@@ -247,7 +247,7 @@ export async function refreshSlideLock(scope, presentationId, slideId, { email, 
       .executeTakeFirst();
 
     if (!existing) {
-      return { ok: false, reason: 'missing' };
+      return { ok: false, reason: 'not_found' };
     }
 
     // Check if expired

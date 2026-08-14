@@ -118,7 +118,7 @@ export async function refreshPresentationLock(scope, presentationId, { email, us
   const holderEmail = norm(email).toLowerCase();
   if (!pid || !holderEmail) return { ok: false, reason: 'invalid' };
   const existing = locks.get(pid);
-  if (!existing) return { ok: false, reason: 'missing' };
+  if (!existing) return { ok: false, reason: 'not_found' };
   if (!matchesIdentity({ id: userId || null, email: holderEmail }, holderStamp(existing)))
     return { ok: false, reason: 'held', lock: await getPresentationLock(scope, pid) };
 

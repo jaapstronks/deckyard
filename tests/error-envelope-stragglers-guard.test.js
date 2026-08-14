@@ -7,11 +7,12 @@
  *    an error with a *literal* 4xx/5xx status in `serveJson(res, 4xx/5xx, …)` —
  *    errors go through `jsonError()`/the status helpers so every failure
  *    carries the canonical `{ ok: false, error: '<machine_code>' }` envelope.
- *    Computed statuses (`serveJson(res, result.ok ? 200 : 409, …)`) are
- *    outside this regex's reach: the known ones are the presentation-lock
- *    routes (`presentations/locks.js`, coupled to client lock readers) and
- *    `presentations/subscription.js` — tracked as C7g rest work, not silently
- *    covered here. The public `/api/v1/*` surface
+ *    Computed statuses are outside this regex's reach; the former escapees
+ *    (presentation/slide locks, `presentations/subscription.js`) now answer
+ *    failures via `jsonError()` too. The deliberate leftovers are the slide-
+ *    lock 200-soft-fails (raw `{ ok:false, reason }` bodies on a 200 — see
+ *    `lockHttpStatus` in `presentations/slide-locks.js`), which are results,
+ *    not error responses. The public `/api/v1/*` surface
  *    (`server/routes/public-api/`) keeps its own openapi-documented shape and
  *    is exempt.
  *

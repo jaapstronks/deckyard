@@ -1,10 +1,33 @@
 import {
   forbidden,
+  getErrorStatus,
+  jsonError,
   methodNotAllowed,
   notFound,
   serveJson,
   requireJsonBody,
 } from '../../../utils/http.js';
+
+/**
+ * Answer a failed lock-storage result in the canonical envelope.
+ *
+ * The machine code is the storage reason, the status comes from
+ * `ERROR_STATUS_MAP` (held/already_* → 409, not_found → 404, unavailable →
+ * 503, caller-side reasons → 400). When the result carries the current lock
+ * (a `held` refusal), it rides along as `details.lock` so the client can show
+ * who holds it without a second round-trip.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {{reason?: string, lock?: Object}} result
+ * @param {number} [defaultStatus]
+ * @returns {true}
+ */
+function lockError(res, result, defaultStatus = 400) {
+  const code = result?.reason || 'internal_error';
+  return jsonError(res, getErrorStatus(code, defaultStatus), code, undefined, {
+    details: result?.lock ? { lock: result.lock } : undefined,
+  });
+}
 import {
   acquirePresentationLock,
   getPresentationLock,
@@ -77,7 +100,8 @@ export async function handlePresentationLockAcquire(
 
   const result = await acquirePresentationLock(storageScope, id, lockActor(authedUser));
 
-  serveJson(res, result.ok ? 200 : 409, result);
+  if (!result.ok) return lockError(res, result);
+  serveJson(res, 200, result);
   return true;
 }
 
@@ -98,7 +122,8 @@ export async function handlePresentationLockRefresh(
     pendingRequestsCount = requests.length;
   }
 
-  serveJson(res, result.ok ? 200 : 409, { ...result, pendingRequestsCount });
+  if (!result.ok) return lockError(res, result);
+  serveJson(res, 200, { ...result, pendingRequestsCount });
   return true;
 }
 
@@ -112,7 +137,8 @@ export async function handlePresentationLockRelease(
 
   const result = await releasePresentationLock(storageScope, id, { email: authedUser?.email, userId: authedUser?.id || null });
 
-  serveJson(res, result.ok ? 200 : 409, result);
+  if (!result.ok) return lockError(res, result);
+  serveJson(res, 200, result);
   return true;
 }
 
@@ -126,7 +152,9 @@ export async function handlePresentationLockForceRelease(
 
   const result = await forceReleasePresentationLock(storageScope, id);
 
-  serveJson(res, result.ok ? 200 : 500, result);
+  // Force-release failing is our side (no lock backend), never the caller's.
+  if (!result.ok) return lockError(res, result, 500);
+  serveJson(res, 200, result);
   return true;
 }
 
@@ -151,7 +179,8 @@ export async function handlePresentationLockRequest(
     message: body?.message || '',
   });
 
-  serveJson(res, result.ok ? 201 : 409, result);
+  if (!result.ok) return lockError(res, result);
+  serveJson(res, 201, result);
   return true;
 }
 
@@ -201,7 +230,8 @@ export async function handlePresentationLockRequestAccept(
     holderEmail: authedUser?.email,
   });
 
-  serveJson(res, result.ok ? 200 : 400, result);
+  if (!result.ok) return lockError(res, result);
+  serveJson(res, 200, result);
   return true;
 }
 
@@ -229,7 +259,8 @@ export async function handlePresentationLockRequestReject(
 
   const result = await rejectLockRequest(storageScope, requestId);
 
-  serveJson(res, result.ok ? 200 : 400, result);
+  if (!result.ok) return lockError(res, result);
+  serveJson(res, 200, result);
   return true;
 }
 

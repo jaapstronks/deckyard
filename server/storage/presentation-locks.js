@@ -211,7 +211,7 @@ export async function refreshPresentationLock(scope, presentationId, { email, us
       .executeTakeFirst();
 
     if (!existing) {
-      return { ok: false, reason: 'missing' };
+      return { ok: false, reason: 'not_found' };
     }
 
     // Check if expired
