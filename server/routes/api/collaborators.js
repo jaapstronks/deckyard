@@ -124,8 +124,7 @@ async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedU
   }
 
   // Get all users in the organization
-  let users;
-  users = await listUsers(storageScope);
+  const users = await listUsers(storageScope);
   const userMap = new Map(users.map((u) => [u.email?.toLowerCase(), u]));
 
   // Process invites

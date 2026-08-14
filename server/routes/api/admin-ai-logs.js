@@ -3,7 +3,7 @@
  * Allows admins to view, download, and analyze AI validation events.
  */
 
-import { serveJson, unauthorized, notFound, badRequest , withErrorHandler } from '../../utils/http.js';
+import { serveJson, unauthorized, notFound, badRequest, withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
   getValidationLogs,
