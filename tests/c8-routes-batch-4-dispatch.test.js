@@ -183,7 +183,7 @@ test('admin-users: routes resolve to their named handlers', () => {
 
 test('admin-users: module guards — foreign prefix falls through, non-admin 401s', async () => {
   const foreign = ctx('GET', '/api/admin/other');
-  assert.equal(handleAdminUsers(foreign.ctx), false);
+  assert.equal(await handleAdminUsers(foreign.ctx), false);
 
   const unauth = ctx('GET', '/api/admin/users', null);
   await handleAdminUsers(unauth.ctx);
@@ -212,7 +212,7 @@ test('admin-ai-logs: routes resolve to their named handlers', () => {
 
 test('admin-ai-logs: module guards and Form A fall-through', async () => {
   const foreign = ctx('GET', '/api/admin/users');
-  assert.equal(handleAdminAiLogs(foreign.ctx), false);
+  assert.equal(await handleAdminAiLogs(foreign.ctx), false);
 
   const nonAdmin = ctx('GET', '/api/admin/ai-logs');
   await handleAdminAiLogs(nonAdmin.ctx);
@@ -286,7 +286,7 @@ test('email-templates: the :type/:locale PUT row still shadows /preview for PUTs
 
 test('email-templates: module guards and Form A fall-through', async () => {
   const foreign = ctx('GET', '/api/admin/ai-logs');
-  assert.equal(handleEmailTemplates(foreign.ctx), false);
+  assert.equal(await handleEmailTemplates(foreign.ctx), false);
 
   const nonAdmin = ctx('GET', '/api/admin/email-templates');
   await handleEmailTemplates(nonAdmin.ctx);
