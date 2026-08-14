@@ -3,6 +3,8 @@
  * Low-level API client for Notion integration.
  */
 
+import { AppError, RateLimitError } from '../errors.js';
+
 // Simple token bucket rate limiter for Notion API
 // Notion allows 3 requests/second average, we'll be conservative
 const NOTION_RATE_LIMIT = {
@@ -23,8 +25,7 @@ function consumeNotionRateLimit() {
 
   if (NOTION_RATE_LIMIT.tokens < 1) {
     const waitMs = Math.ceil((1 - NOTION_RATE_LIMIT.tokens) / NOTION_RATE_LIMIT.refillPerMs);
-    const err = new Error(`Notion rate limit exceeded. Retry in ${waitMs}ms.`);
-    err.statusCode = 429;
+    const err = new RateLimitError(`Notion rate limit exceeded. Retry in ${waitMs}ms.`);
     err.retryAfterMs = waitMs;
     throw err;
   }
@@ -50,9 +51,7 @@ function notionHeaders() {
 
 export async function notionFetchJson(path, { method = 'GET', body = null } = {}) {
   if (!notionEnabled()) {
-    const err = new Error('Notion is not configured');
-    err.statusCode = 501;
-    throw err;
+    throw new AppError('Notion is not configured', 501);
   }
 
   // Apply rate limiting before making request
@@ -72,9 +71,10 @@ export async function notionFetchJson(path, { method = 'GET', body = null } = {}
       payload && typeof payload === 'object'
         ? payload?.message || payload?.error || `Notion request failed (${res.status})`
         : String(payload || '').trim() || `Notion request failed (${res.status})`;
-    const err = new Error(msg);
-    err.statusCode = res.status;
-    err.details = payload && typeof payload === 'object' ? payload : null;
+    const err = new AppError(msg, res.status);
+    // Raw upstream payload rides along for logging only — deliberately NOT
+    // in `details`, which AppError.toJSON() would echo to the client.
+    err.upstream = payload && typeof payload === 'object' ? payload : null;
     throw err;
   }
   return payload;
