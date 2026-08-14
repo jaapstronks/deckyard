@@ -14,23 +14,15 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { requireMultiOrg, requireLiveData } from '../server/config/features.js';
 import { notionFetchJson } from '../server/utils/notion/client.js';
 import { appendBlocksToPage } from '../server/utils/notion/blocks.js';
 import { fetchNotionPage } from '../server/utils/notion/pages.js';
 import { refreshSlideData } from '../server/utils/data-source/index.js';
-import { AppError, ValidationError, ForbiddenError, isAppError } from '../server/utils/errors.js';
+import { AppError, ValidationError, isAppError } from '../server/utils/errors.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const isAppErrorWithStatus = (status) => (err) => isAppError(err) && err.statusCode === status;
-
-test('feature guards throw a 403 ForbiddenError when the flag is off', () => {
-  delete process.env.MULTI_ORG_ENABLED;
-  delete process.env.LIVE_DATA_ENABLED;
-  assert.throws(() => requireMultiOrg(), (err) => err instanceof ForbiddenError && err.statusCode === 403);
-  assert.throws(() => requireLiveData(), isAppErrorWithStatus(403));
-});
 
 test('unconfigured Notion answers 501, envelope code stays internal_error', async () => {
   delete process.env.NOTION_SECRET;

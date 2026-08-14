@@ -6,7 +6,6 @@
  */
 
 import { envBool } from './utils.js';
-import { ForbiddenError } from '../utils/errors.js';
 
 /**
  * Multi-organization mode.
@@ -19,16 +18,6 @@ export function isMultiOrgEnabled() {
 }
 
 /**
- * Guard function that throws if multi-organization mode is not enabled.
- * Use this to protect routes that should only be available in multi-organization mode.
- */
-export function requireMultiOrg() {
-  if (!isMultiOrgEnabled()) {
-    throw new ForbiddenError('Multi-organization features are not enabled');
-  }
-}
-
-/**
  * Live data sources.
  * When enabled, slides can connect to external data sources (Notion, CSV, etc.)
  * and display live or periodically refreshed data.
@@ -36,12 +25,6 @@ export function requireMultiOrg() {
  */
 export function isLiveDataEnabled() {
   return envBool('LIVE_DATA_ENABLED');
-}
-
-export function requireLiveData() {
-  if (!isLiveDataEnabled()) {
-    throw new ForbiddenError('Live data source features are not enabled');
-  }
 }
 
 /**
