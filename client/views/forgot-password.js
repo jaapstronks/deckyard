@@ -2,25 +2,16 @@ import { api } from '../lib/api.js';
 import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
 import { createBusyManager } from '../lib/dom/busy.js';
+import { authShell } from './auth-shell.js';
 
 export async function renderForgotPassword(root, { nav } = {}) {
-  const shell = h('div', { class: 'auth-shell' });
-  const card = h('div', { class: 'auth-card' });
-
-  // Header
-  const header = h('div', { class: 'auth-header' });
-  const title = h('h1', {
-    class: 'auth-title',
-    text: t('forgotPassword.title', 'Reset your password'),
-  });
-  const subtitle = h('p', {
-    class: 'auth-subtitle',
-    text: t(
+  const { shell, card } = authShell({
+    title: t('forgotPassword.title', 'Reset your password'),
+    subtitle: t(
       'forgotPassword.help',
       "Enter your email address and we'll send you a link to reset your password."
     ),
   });
-  header.append(title, subtitle);
 
   const form = h('div', { class: 'auth-form' });
   const email = h('input', {
@@ -105,8 +96,7 @@ export async function renderForgotPassword(root, { nav } = {}) {
   btnRow.append(btn, backLink);
 
   form.append(email, btnRow, status);
-  card.append(header, form);
-  shell.append(card);
+  card.append(form);
   root.append(shell);
 
   email.focus();

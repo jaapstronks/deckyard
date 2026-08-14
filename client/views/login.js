@@ -3,6 +3,7 @@ import { h } from '../lib/dom.js';
 import { login, me } from '../lib/user/auth.js';
 import { t } from '../lib/ui-i18n.js';
 import { createBusyManager } from '../lib/dom/busy.js';
+import { authShell } from './auth-shell.js';
 
 /**
  * Human-readable message for an SSO error code returned via ?error=sso_...
@@ -47,23 +48,10 @@ export async function renderLogin(root, { nav } = {}) {
 
   const errorCode = url.searchParams.get('error') || '';
 
-  const shell = h('div', { class: 'auth-shell' });
-  const card = h('div', { class: 'auth-card' });
-
-  // Header
-  const header = h('div', { class: 'auth-header' });
-  const title = h('h1', {
-    class: 'auth-title',
-    text: t('login.title', 'Sign in'),
+  const { shell, card, subtitle } = authShell({
+    title: t('login.title', 'Sign in'),
+    subtitle: t('login.help', 'Sign in with a magic link or your password.'),
   });
-  const subtitle = h('p', {
-    class: 'auth-subtitle',
-    text: t(
-      'login.help',
-      'Sign in with a magic link or your password.'
-    ),
-  });
-  header.append(title, subtitle);
 
   // ============================================================
   // Error banner (e.g. an SSO callback failure redirected here)
@@ -300,8 +288,7 @@ export async function renderLogin(root, { nav } = {}) {
 
   form.append(email, password, btnRow, btnDev, status);
 
-  card.append(header, errorBanner, ssoSection, ssoDivider, magicSection, divider, form);
-  shell.append(card);
+  card.append(errorBanner, ssoSection, ssoDivider, magicSection, divider, form);
   root.append(shell);
 
   // Ask the server whether SSO is enabled / enforced and adjust the form.
