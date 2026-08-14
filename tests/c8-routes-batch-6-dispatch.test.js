@@ -149,7 +149,7 @@ test('slide-library: a wrong method 405s with the pinned Allow list', async () =
 
 test('slide-library: module guards — foreign prefix falls through, unauth 401s', async () => {
   const foreign = ctx('GET', '/api/slide-collections');
-  assert.equal(handleSlideLibrary(foreign.ctx), false);
+  assert.equal(await handleSlideLibrary(foreign.ctx), false);
 
   const unauth = ctx('GET', '/api/slide-library/personal', null);
   await handleSlideLibrary(unauth.ctx);

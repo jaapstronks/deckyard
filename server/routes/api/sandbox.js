@@ -7,7 +7,7 @@
  * there is no create endpoint here.
  */
 
-import { serveJson, notFound } from '../../utils/http.js';
+import { serveJson, notFound, withErrorHandler } from '../../utils/http.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { listSandboxExamples } from '../../sandbox/examples.js';
@@ -37,6 +37,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleSandbox(ctx) {
+export const handleSandbox = withErrorHandler('sandbox', (ctx) => {
   return dispatchRoutes(ROUTES, ctx);
-}
+});
