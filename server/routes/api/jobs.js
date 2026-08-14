@@ -13,7 +13,7 @@ import { getJobStatus, getQueueStats, QUEUE_NAMES } from '../../jobs/queue/conne
 import { getStoredResult } from '../../jobs/queue/workers/export-worker.js';
 import { getStoredTranslationResult } from '../../jobs/queue/workers/translate-worker.js';
 import { getStoredBulkResult } from '../../jobs/queue/workers/bulk-export-worker.js';
-import { serveJson, notFound, badRequest, forbidden , withErrorHandler } from '../../utils/http.js';
+import { serveJson, notFound, badRequest, forbidden, withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 

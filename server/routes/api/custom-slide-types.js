@@ -10,7 +10,7 @@
  * PUT    /api/custom-slide-types/reorder - Set display order (designer only)
  */
 
-import { badRequest, methodNotAllowed, serveJson, unauthorized, notFound, requireJsonBody , withErrorHandler } from '../../utils/http.js';
+import { badRequest, methodNotAllowed, serveJson, unauthorized, notFound, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
   listCustomSlideTypes,

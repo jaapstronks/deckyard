@@ -3,7 +3,7 @@
  * Handles lead submission (public) and lead management (authenticated).
  */
 
-import { badRequest, notFound, serveJson, unauthorized, jsonError, requireJsonBody , withErrorHandler } from '../../utils/http.js';
+import { badRequest, notFound, serveJson, unauthorized, jsonError, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';

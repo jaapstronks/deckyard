@@ -7,7 +7,7 @@ import {
 import { updatePresentation } from '../../storage/presentations/index.js';
 import { getUserSettings } from '../../storage/settings.js';
 import { pickOgImageUrlFromPresentation } from '../../render/og-image.js';
-import { serveJson, forbidden, serverError, badRequest, requireJsonBody , withErrorHandler } from '../../utils/http.js';
+import { serveJson, forbidden, serverError, badRequest, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { maybeFireWebhook } from '../../utils/webhooks.js';

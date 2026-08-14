@@ -12,7 +12,7 @@
  * POST   /api/font-families/import-adobe-family     - Import Adobe family (designer only)
  */
 
-import { badRequest, methodNotAllowed, serveJson, unauthorized, notFound, requireJsonBody , withErrorHandler } from '../../utils/http.js';
+import { badRequest, methodNotAllowed, serveJson, unauthorized, notFound, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { clearCustomThemeCache } from '../../utils/themes.js';

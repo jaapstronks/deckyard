@@ -14,7 +14,7 @@ import {
   getUserFromRequestAsync,
   setSessionCookie,
 } from '../../auth/auth.js';
-import { serveJson, badRequest, unauthorized, requireJsonBody , withErrorHandler } from '../../utils/http.js';
+import { serveJson, badRequest, unauthorized, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { getString, getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
 import { getClientIp, createStorageScope } from '../../utils/context.js';

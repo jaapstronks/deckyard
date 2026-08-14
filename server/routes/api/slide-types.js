@@ -1,4 +1,4 @@
-import { serveJson , withErrorHandler } from '../../utils/http.js';
+import { serveJson, withErrorHandler } from '../../utils/http.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
 import { slideStructure } from '../../../shared/slide-types/structure.js';
 import {

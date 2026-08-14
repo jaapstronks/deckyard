@@ -17,7 +17,7 @@ import {
   getTagsForPresentation,
   setTagsForPresentation,
 } from '../../storage/tags/index.js';
-import { serveJson, badRequest, notFound, requireJsonBody, methodNotAllowed , withErrorHandler } from '../../utils/http.js';
+import { serveJson, badRequest, notFound, requireJsonBody, methodNotAllowed, withErrorHandler } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 

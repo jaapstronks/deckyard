@@ -3,7 +3,7 @@
  * These endpoints do NOT require authentication and are used by viewers.
  */
 
-import { requireJsonBody , withErrorHandler } from '../../utils/http.js';
+import { requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { norm } from '../../utils/normalize.js';
 import { redactSecret } from '../../utils/log-redact.js';

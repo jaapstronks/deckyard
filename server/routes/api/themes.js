@@ -13,7 +13,7 @@
  * POST /api/themes/custom/clear-default - Clear org default (admin only)
  */
 
-import { serveJson, badRequest, notFound, requireJsonBody, forbidden , withErrorHandler } from '../../utils/http.js';
+import { serveJson, badRequest, notFound, requireJsonBody, forbidden, withErrorHandler } from '../../utils/http.js';
 import {
   listThemeIds,
   listCoreThemeIds,

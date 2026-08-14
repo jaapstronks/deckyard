@@ -19,7 +19,7 @@ import {
   setSessionCookie,
   verifyLoginAsync,
 } from '../../auth/auth.js';
-import { rateLimited, serveJson, unauthorized, requireJsonBody , withErrorHandler } from '../../utils/http.js';
+import { rateLimited, serveJson, unauthorized, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { getString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
 import { getFeatureFlags } from '../../config/flags-snapshot.js';

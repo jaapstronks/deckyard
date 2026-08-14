@@ -7,7 +7,7 @@
  * there is no create endpoint here.
  */
 
-import { serveJson, notFound , withErrorHandler } from '../../utils/http.js';
+import { serveJson, notFound, withErrorHandler } from '../../utils/http.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { listSandboxExamples } from '../../sandbox/examples.js';

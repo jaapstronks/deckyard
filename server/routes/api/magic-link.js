@@ -13,7 +13,7 @@ import {
   authEnabled,
   setSessionCookie,
 } from '../../auth/auth.js';
-import { serveJson, badRequest, requireJsonBody , withErrorHandler } from '../../utils/http.js';
+import { serveJson, badRequest, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
 import { getClientIp, createStorageScope } from '../../utils/context.js';

@@ -11,7 +11,7 @@ import { renderSlideToPngBuffer } from '../../render/png.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { renderSlidesToPdfBuffer } from '../../render/pdf.js';
 import { presentationToDeck } from '../../../shared/slide-types.js';
-import { badRequest , withErrorHandler } from '../../utils/http.js';
+import { badRequest, withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
   createExportRoute,

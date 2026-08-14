@@ -23,7 +23,7 @@ import {
   removeClient,
 } from '../../services/notification-events.js';
 import { dispatchRoutes } from '../../utils/router.js';
-import { serveJson, badRequest, requireJsonBody , withErrorHandler } from '../../utils/http.js';
+import { serveJson, badRequest, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import { openSseStream } from '../../utils/sse.js';
 
