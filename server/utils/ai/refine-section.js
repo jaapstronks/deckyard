@@ -9,6 +9,7 @@
  * selected range (slide count may change).
  */
 import { getLlmConfig } from '../llm/config.js';
+import { LlmError } from '../llm/error.js';
 import { requestChatCompletionContent } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import { normalizeLang } from '../openai/lang.js';
@@ -94,12 +95,11 @@ export async function refineSectionWithAi(
   const obj = extractJsonObject(content);
   const revised = obj?.slides;
   if (!Array.isArray(revised) || !revised.length) {
-    const err = new Error(
-      `${resolvedVendor} did not return a valid revised section ({ slides: [...] }).`
+    // The raw response rides along as a field for logging, never the envelope.
+    throw new LlmError(
+      `${resolvedVendor} did not return a valid revised section ({ slides: [...] }).`,
+      { statusCode: 502, vendor: resolvedVendor, response: content, phase: 'refine-section' }
     );
-    err.statusCode = 502;
-    err.details = String(content || '').slice(0, 5000);
-    throw err;
   }
 
   const rationale = typeof obj?.rationale === 'string' ? obj.rationale.trim() : '';

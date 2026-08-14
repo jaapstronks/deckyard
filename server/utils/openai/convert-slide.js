@@ -1,5 +1,7 @@
 import { getLlmConfig } from '../llm/config.js';
+import { LlmError } from '../llm/error.js';
 import { requestChatCompletionContent } from '../llm/index.js';
+import { ValidationError } from '../errors.js';
 import { extractJsonObject } from './json.js';
 import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
 import { GLOBAL_SLIDE_FIELD_KEYS } from '../../../shared/slide-types/registry.js';
@@ -448,23 +450,17 @@ Return JSON with: { title, subheading, variant: "bullets", items: [{title, text}
 export async function convertSlideWithAi(slide, toType, { vendor = null, lang = 'nl' } = {}) {
   const fromType = slide?.type;
   if (!fromType) {
-    const err = new Error('Slide must have a type');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('Slide must have a type');
   }
 
   const allowed = SUPPORTED_CONVERSIONS[fromType] || [];
   if (!allowed.includes(toType)) {
-    const err = new Error(`AI conversion from "${fromType}" to "${toType}" is not supported`);
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError(`AI conversion from "${fromType}" to "${toType}" is not supported`);
   }
 
   const prompt = getConversionPrompt(fromType, toType, lang);
   if (!prompt) {
-    const err = new Error(`No conversion prompt available for ${fromType} -> ${toType}`);
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError(`No conversion prompt available for ${fromType} -> ${toType}`);
   }
 
   const llmConfig = getLlmConfig({ vendor });
@@ -485,9 +481,13 @@ export async function convertSlideWithAi(slide, toType, { vendor = null, lang = 
 
   const parsed = extractJsonObject(raw);
   if (!parsed) {
-    const err = new Error('Failed to parse AI response as JSON');
-    err.statusCode = 500;
-    throw err;
+    // The raw response rides along as a field for logging, never the envelope.
+    throw new LlmError('Failed to parse AI response as JSON', {
+      statusCode: 500,
+      vendor: llmConfig.vendor,
+      response: raw,
+      phase: 'convert-slide',
+    });
   }
 
   // Build the converted slide
