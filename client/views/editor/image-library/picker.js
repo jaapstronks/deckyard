@@ -303,7 +303,7 @@ export function openImageLibraryPicker({
     if (activeTag) {
       sectionTitle.textContent = `#${activeTag}`;
     } else {
-      const iconImg = document.createElement('img');
+      const iconImg = h('img');
       iconImg.className = 'media-lib-section-icon';
       iconImg.src = iconUrl(info.icon);
       iconImg.alt = '';

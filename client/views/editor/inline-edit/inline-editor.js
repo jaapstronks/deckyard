@@ -639,8 +639,7 @@ export function createInlineEditor({
     rerenderPreview?.();
     const anchor = resolveAnchor?.();
     if (!anchor) return;
-    const host = document.createElement('p');
-    host.className = 'ie-ghost-input';
+    const host = h('p', { class: 'ie-ghost-input' });
     host.setAttribute('data-inline-field', path);
     placeRelative(host, anchor.spawnEl || anchor.el, anchor.pos);
     beginTextEdit(host, path, meta, { isNew: true });
