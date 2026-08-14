@@ -3,7 +3,7 @@
  * Allows admins to list, create, update, and delete users.
  */
 
-import { serveJson, badRequest, unauthorized, notFound, serverError, rateLimited, requireJsonBody } from '../../utils/http.js';
+import { serveJson, badRequest, unauthorized, notFound, rateLimited, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { getClientIp, getOrgId } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -85,32 +85,26 @@ function buildSetupUrl(req, token) {
 
 // GET /api/admin/users - List all users
 async function handleAdminUserList({ storageScope: ctx, res }) {
-  try {
-    const users = await listUsers(ctx);
+  const users = await listUsers(ctx);
 
-    // Enrich users with designer status from their org membership
-    const orgId = getOrgId(ctx);
-    const org = await getOrganizationById(orgId).catch(() => null);
-    const orgSettings = org?.settings && typeof org.settings === 'object' ? org.settings : {};
+  // Enrich users with designer status from their org membership
+  const orgId = getOrgId(ctx);
+  const org = await getOrganizationById(orgId).catch(() => null);
+  const orgSettings = org?.settings && typeof org.settings === 'object' ? org.settings : {};
 
-    const enrichedUsers = await Promise.all(users.map(async (u) => {
-      try {
-        const membership = await getMembershipByEmail(u.email, orgId);
-        const isDesigner = membership ? hasDesignerCapability(membership, orgSettings) : false;
-        const isExplicitDesigner = membership ? membership.isDesigner : false;
-        return { ...u, isDesigner, isExplicitDesigner };
-      } catch {
-        return { ...u, isDesigner: false, isExplicitDesigner: false };
-      }
-    }));
+  const enrichedUsers = await Promise.all(users.map(async (u) => {
+    try {
+      const membership = await getMembershipByEmail(u.email, orgId);
+      const isDesigner = membership ? hasDesignerCapability(membership, orgSettings) : false;
+      const isExplicitDesigner = membership ? membership.isDesigner : false;
+      return { ...u, isDesigner, isExplicitDesigner };
+    } catch {
+      return { ...u, isDesigner: false, isExplicitDesigner: false };
+    }
+  }));
 
-    serveJson(res, 200, { users: enrichedUsers });
-    return true;
-  } catch (err) {
-    log.error('[admin-users] Failed to list users:', err);
-    serverError(res, 'Failed to load users');
-    return true;
-  }
+  serveJson(res, 200, { users: enrichedUsers });
+  return true;
 }
 
 // POST /api/admin/users - Create a new user
@@ -121,266 +115,236 @@ async function handleAdminUserCreate({ repoRoot, storageScope: ctx, req, res, au
     return true;
   }
 
-  try {
-    const parsed = await requireJsonBody(req, res);
-    if (!parsed.ok) return true;
-    const body = parsed.body;
-    const email = normalizeEmail(body?.email);
-    const name = getTrimmedString(body, 'name');
-    const role = body?.role === 'admin' ? 'admin' : 'user';
-    const sendInvitation = body?.sendInvitation !== false; // Default to true
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  const email = normalizeEmail(body?.email);
+  const name = getTrimmedString(body, 'name');
+  const role = body?.role === 'admin' ? 'admin' : 'user';
+  const sendInvitation = body?.sendInvitation !== false; // Default to true
 
-    if (!email || !email.includes('@')) {
-      return badRequest(res, 'Valid email is required');
-    }
-
-    const result = await createUser(ctx, { email, name, role });
-
-    if (!result.ok) {
-      if (result.reason === 'already_exists') {
-        return badRequest(res, 'A user with this email already exists');
-      }
-      return badRequest(res, 'Failed to create user');
-    }
-
-    // Log the event
-    await logAuthEvent({
-      type: 'user_created',
-      email,
-      success: true,
-      ipAddress: getClientIp(req),
-      userAgent: req.headers?.['user-agent'] || '',
-      metadata: { createdBy: user.email, role },
-    });
-
-    // Send invitation email if requested. Awaited, and the flag follows the
-    // result: sendEmail() reports a missing Brevo key by resolving with
-    // { ok: false } rather than throwing, so reporting the *request* to send
-    // promised a mail that an instance without email configuration never
-    // sent. See the same correction in routes/api/organization-members.js.
-    let invitationSent = false;
-    if (sendInvitation && result.invitationToken) {
-      const setupUrl = buildSetupUrl(req, result.invitationToken);
-
-      // Get default locale for invitations
-      const locale = await getEmailDefaultLocale(ctx).catch(() => 'en');
-
-      const sendResult = await sendUserInvitationEmail({
-        recipientEmail: email,
-        recipientName: name,
-        invitedBy: user.name || user.email,
-        setupUrl,
-        expiresAt: result.invitationExpiresAt,
-        locale,
-        repoRoot,
-      }).catch((err) => {
-        log.error('[admin-users] Failed to send invitation email:', err);
-        return { ok: false, error: String(err?.message || err) };
-      });
-
-      invitationSent = sendResult?.ok === true;
-      if (!invitationSent) {
-        log.warn(
-          '[admin-users] Invitation email not sent to %s: %s',
-          email,
-          sendResult?.error || 'unknown error'
-        );
-      }
-    }
-
-    serveJson(res, 201, {
-      ok: true,
-      user: result.user,
-      invitationSent,
-    });
-    return true;
-  } catch (err) {
-    log.error('[admin-users] Failed to create user:', err);
-    serverError(res, 'Failed to create user');
-    return true;
+  if (!email || !email.includes('@')) {
+    return badRequest(res, 'Valid email is required');
   }
+
+  const result = await createUser(ctx, { email, name, role });
+
+  if (!result.ok) {
+    if (result.reason === 'already_exists') {
+      return badRequest(res, 'A user with this email already exists');
+    }
+    return badRequest(res, 'Failed to create user');
+  }
+
+  // Log the event
+  await logAuthEvent({
+    type: 'user_created',
+    email,
+    success: true,
+    ipAddress: getClientIp(req),
+    userAgent: req.headers?.['user-agent'] || '',
+    metadata: { createdBy: user.email, role },
+  });
+
+  // Send invitation email if requested. Awaited, and the flag follows the
+  // result: sendEmail() reports a missing Brevo key by resolving with
+  // { ok: false } rather than throwing, so reporting the *request* to send
+  // promised a mail that an instance without email configuration never
+  // sent. See the same correction in routes/api/organization-members.js.
+  let invitationSent = false;
+  if (sendInvitation && result.invitationToken) {
+    const setupUrl = buildSetupUrl(req, result.invitationToken);
+
+    // Get default locale for invitations
+    const locale = await getEmailDefaultLocale(ctx).catch(() => 'en');
+
+    const sendResult = await sendUserInvitationEmail({
+      recipientEmail: email,
+      recipientName: name,
+      invitedBy: user.name || user.email,
+      setupUrl,
+      expiresAt: result.invitationExpiresAt,
+      locale,
+      repoRoot,
+    }).catch((err) => {
+      log.error('[admin-users] Failed to send invitation email:', err);
+      return { ok: false, error: String(err?.message || err) };
+    });
+
+    invitationSent = sendResult?.ok === true;
+    if (!invitationSent) {
+      log.warn(
+        '[admin-users] Invitation email not sent to %s: %s',
+        email,
+        sendResult?.error || 'unknown error'
+      );
+    }
+  }
+
+  serveJson(res, 201, {
+    ok: true,
+    user: result.user,
+    invitationSent,
+  });
+  return true;
 }
 
 // GET /api/admin/users/:id - Get a specific user
 async function handleAdminUserGet({ storageScope: ctx, res }, userId) {
-  try {
-    const targetUser = await getUserById(ctx, userId);
+  const targetUser = await getUserById(ctx, userId);
 
-    if (!targetUser) {
-      return notFound(res);
-    }
-
-    serveJson(res, 200, { user: targetUser });
-    return true;
-  } catch (err) {
-    log.error('[admin-users] Failed to get user:', err);
-    serverError(res, 'Failed to load user');
-    return true;
+  if (!targetUser) {
+    return notFound(res);
   }
+
+  serveJson(res, 200, { user: targetUser });
+  return true;
 }
 
 // PATCH /api/admin/users/:id - Update a user
 async function handleAdminUserUpdate({ storageScope: ctx, req, res }, userId) {
-  try {
-    const parsed = await requireJsonBody(req, res);
-    if (!parsed.ok) return true;
-    const body = parsed.body;
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
 
-    const updates = {};
-    if ('name' in body) updates.name = getTrimmedString(body, 'name');
-    if ('role' in body) updates.role = body.role;
+  const updates = {};
+  if ('name' in body) updates.name = getTrimmedString(body, 'name');
+  if ('role' in body) updates.role = body.role;
 
-    const hasDesignerUpdate = 'isDesigner' in body;
-    const hasUserUpdates = Object.keys(updates).length > 0;
+  const hasDesignerUpdate = 'isDesigner' in body;
+  const hasUserUpdates = Object.keys(updates).length > 0;
 
-    if (!hasUserUpdates && !hasDesignerUpdate) {
-      return badRequest(res, 'No valid updates provided');
-    }
+  if (!hasUserUpdates && !hasDesignerUpdate) {
+    return badRequest(res, 'No valid updates provided');
+  }
 
-    let resultUser = null;
+  let resultUser = null;
 
-    // Update user fields (name, role) if provided
-    if (hasUserUpdates) {
-      const result = await updateUser(ctx, userId, updates);
-      if (!result.ok) {
-        if (result.reason === 'not_found') {
-          return notFound(res);
-        }
-        return badRequest(res, 'Failed to update user');
-      }
-      resultUser = result.user;
-    }
-
-    // Update designer flag on the user's org membership
-    if (hasDesignerUpdate) {
-      const targetUser = resultUser || await getUserById(ctx, userId);
-      if (!targetUser) {
+  // Update user fields (name, role) if provided
+  if (hasUserUpdates) {
+    const result = await updateUser(ctx, userId, updates);
+    if (!result.ok) {
+      if (result.reason === 'not_found') {
         return notFound(res);
       }
+      return badRequest(res, 'Failed to update user');
+    }
+    resultUser = result.user;
+  }
 
-      const orgId = getOrgId(ctx);
-      let membership = await getMembershipByEmail(targetUser.email, orgId);
-
-      // Auto-create membership if user doesn't have one yet
-      if (!membership && targetUser.id) {
-        await addMember({
-          userId: targetUser.id,
-          organizationId: orgId,
-          role: targetUser.role === 'admin' ? 'admin' : 'member',
-        });
-        membership = await getMembershipByEmail(targetUser.email, orgId);
-      }
-
-      if (membership) {
-        await updateMemberDesigner(membership.id, Boolean(body.isDesigner));
-      }
-
-      resultUser = resultUser || targetUser;
+  // Update designer flag on the user's org membership
+  if (hasDesignerUpdate) {
+    const targetUser = resultUser || await getUserById(ctx, userId);
+    if (!targetUser) {
+      return notFound(res);
     }
 
-    serveJson(res, 200, { ok: true, user: resultUser });
-    return true;
-  } catch (err) {
-    log.error('[admin-users] Failed to update user:', err);
-    serverError(res, 'Failed to update user');
-    return true;
+    const orgId = getOrgId(ctx);
+    let membership = await getMembershipByEmail(targetUser.email, orgId);
+
+    // Auto-create membership if user doesn't have one yet
+    if (!membership && targetUser.id) {
+      await addMember({
+        userId: targetUser.id,
+        organizationId: orgId,
+        role: targetUser.role === 'admin' ? 'admin' : 'member',
+      });
+      membership = await getMembershipByEmail(targetUser.email, orgId);
+    }
+
+    if (membership) {
+      await updateMemberDesigner(membership.id, Boolean(body.isDesigner));
+    }
+
+    resultUser = resultUser || targetUser;
   }
+
+  serveJson(res, 200, { ok: true, user: resultUser });
+  return true;
 }
 
 // DELETE /api/admin/users/:id - Delete a user
 async function handleAdminUserDelete({ storageScope: ctx, req, res, authedUser: user }, userId) {
-  try {
-    // Prevent self-deletion
-    const targetUser = await getUserById(ctx, userId);
-    if (targetUser?.email === user.email) {
-      return badRequest(res, 'You cannot delete your own account');
-    }
-
-    const result = await deleteUser(ctx, userId);
-
-    if (!result.ok) {
-      if (result.reason === 'not_found') {
-        return notFound(res);
-      }
-      return badRequest(res, 'Failed to delete user');
-    }
-
-    // Log the event
-    await logAuthEvent({
-      type: 'user_deleted',
-      email: targetUser?.email,
-      success: true,
-      ipAddress: getClientIp(req),
-      userAgent: req.headers?.['user-agent'] || '',
-      metadata: { deletedBy: user.email },
-    });
-
-    serveJson(res, 200, { ok: true });
-    return true;
-  } catch (err) {
-    log.error('[admin-users] Failed to delete user:', err);
-    serverError(res, 'Failed to delete user');
-    return true;
+  // Prevent self-deletion
+  const targetUser = await getUserById(ctx, userId);
+  if (targetUser?.email === user.email) {
+    return badRequest(res, 'You cannot delete your own account');
   }
+
+  const result = await deleteUser(ctx, userId);
+
+  if (!result.ok) {
+    if (result.reason === 'not_found') {
+      return notFound(res);
+    }
+    return badRequest(res, 'Failed to delete user');
+  }
+
+  // Log the event
+  await logAuthEvent({
+    type: 'user_deleted',
+    email: targetUser?.email,
+    success: true,
+    ipAddress: getClientIp(req),
+    userAgent: req.headers?.['user-agent'] || '',
+    metadata: { deletedBy: user.email },
+  });
+
+  serveJson(res, 200, { ok: true });
+  return true;
 }
 
 // POST /api/admin/users/:id/resend-invitation - Resend invitation
 async function handleAdminUserResendInvitation({ repoRoot, storageScope: ctx, req, res, authedUser: user }, userId) {
-  try {
-    const result = await resendInvitation(ctx, userId);
+  const result = await resendInvitation(ctx, userId);
 
-    if (!result.ok) {
-      if (result.reason === 'not_found') {
-        return notFound(res);
-      }
-      if (result.reason === 'already_activated') {
-        return badRequest(res, 'This user has already set up their account');
-      }
-      return badRequest(res, 'Failed to resend invitation');
+  if (!result.ok) {
+    if (result.reason === 'not_found') {
+      return notFound(res);
     }
-
-    const targetUser = await getUserById(ctx, userId);
-    let invitationSent = false;
-    if (targetUser && result.invitationToken) {
-      const setupUrl = buildSetupUrl(req, result.invitationToken);
-
-      // Get default locale for invitations
-      const locale = await getEmailDefaultLocale(ctx).catch(() => 'en');
-
-      // Use activation reminder template since this is a resend
-      const sendResult = await sendActivationReminderEmail({
-        recipientEmail: targetUser.email,
-        recipientName: targetUser.name,
-        invitedBy: user.name || user.email,
-        setupUrl,
-        locale,
-        repoRoot,
-      }).catch((err) => {
-        log.error('[admin-users] Failed to send activation reminder email:', err);
-        return { ok: false, error: String(err?.message || err) };
-      });
-
-      invitationSent = sendResult?.ok === true;
-      if (!invitationSent) {
-        log.warn(
-          '[admin-users] Activation reminder not sent to %s: %s',
-          targetUser.email,
-          sendResult?.error || 'unknown error'
-        );
-      }
+    if (result.reason === 'already_activated') {
+      return badRequest(res, 'This user has already set up their account');
     }
-
-    // The token was rotated whatever happened to the mail, so this is a
-    // success with a caveat rather than a failure — the caller decides what
-    // to say about it. "Resent" without the caveat is what sent an admin
-    // away believing a link was on its way.
-    serveJson(res, 200, { ok: true, invitationSent });
-    return true;
-  } catch (err) {
-    log.error('[admin-users] Failed to resend invitation:', err);
-    serverError(res, 'Failed to resend invitation');
-    return true;
+    return badRequest(res, 'Failed to resend invitation');
   }
+
+  const targetUser = await getUserById(ctx, userId);
+  let invitationSent = false;
+  if (targetUser && result.invitationToken) {
+    const setupUrl = buildSetupUrl(req, result.invitationToken);
+
+    // Get default locale for invitations
+    const locale = await getEmailDefaultLocale(ctx).catch(() => 'en');
+
+    // Use activation reminder template since this is a resend
+    const sendResult = await sendActivationReminderEmail({
+      recipientEmail: targetUser.email,
+      recipientName: targetUser.name,
+      invitedBy: user.name || user.email,
+      setupUrl,
+      locale,
+      repoRoot,
+    }).catch((err) => {
+      log.error('[admin-users] Failed to send activation reminder email:', err);
+      return { ok: false, error: String(err?.message || err) };
+    });
+
+    invitationSent = sendResult?.ok === true;
+    if (!invitationSent) {
+      log.warn(
+        '[admin-users] Activation reminder not sent to %s: %s',
+        targetUser.email,
+        sendResult?.error || 'unknown error'
+      );
+    }
+  }
+
+  // The token was rotated whatever happened to the mail, so this is a
+  // success with a caveat rather than a failure — the caller decides what
+  // to say about it. "Resent" without the caveat is what sent an admin
+  // away believing a link was on its way.
+  serveJson(res, 200, { ok: true, invitationSent });
+  return true;
 }
 
 /**
@@ -415,7 +379,7 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleAdminUsers(ctx) {
+export const handleAdminUsers = withErrorHandler('admin-users', (ctx) => {
   // Only handle /api/admin/users routes
   if (!ctx.url.pathname.startsWith('/api/admin/users')) {
     return false;
@@ -430,4 +394,4 @@ export function handleAdminUsers(ctx) {
   }
 
   return dispatchRoutes(ROUTES, ctx);
-}
+});

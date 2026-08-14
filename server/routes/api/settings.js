@@ -1,4 +1,4 @@
-import { methodNotAllowed, serveJson, unauthorized, serverError, requireJsonBody } from '../../utils/http.js';
+import { methodNotAllowed, serveJson, unauthorized, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { getStringArray } from '../../utils/request-validators.js';
 import {
   getAppSettings,
@@ -15,9 +15,7 @@ import {
 import { getOrgSettings } from '../../utils/org-settings.js';
 import { canManage } from '../../utils/route-middleware.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
-import { createLogger } from '../../utils/logger.js';
 import { dispatchRoutes } from '../../utils/router.js';
-const log = createLogger('settings');
 
 /**
  * Whether this user may write the organization-level admin settings keys.
@@ -117,45 +115,40 @@ async function handleOrgSettingsPatch({ req, res, authedUser }) {
   }
   if (hasDesignerKeys && !isDesigner) return unauthorized(res);
 
-  try {
-    const org = await getOrganizationById(orgId);
-    const currentSettings = getOrgSettings(org);
+  const org = await getOrganizationById(orgId);
+  const currentSettings = getOrgSettings(org);
 
-    // Merge only allowed keys
-    const allowedKeys = ['adminsAreDesigners', 'disabledSlideTypes', 'rss'];
-    const merged = { ...currentSettings };
-    for (const key of allowedKeys) {
-      if (key in body) {
-        if (key === 'adminsAreDesigners') {
-          merged[key] = body[key] === true;
-        } else if (key === 'disabledSlideTypes') {
-          merged[key] = getStringArray(body, key, { trim: true });
-        } else if (key === 'rss') {
-          const rss = body[key];
-          if (rss && typeof rss === 'object') {
-            merged[key] = {
-              enabled: rss.enabled === true,
-              title: String(rss.title || '').slice(0, 200),
-              description: String(rss.description || '').slice(0, 500),
-              language: typeof rss.language === 'string' ? rss.language.slice(0, 10) : 'en',
-              maxItems: Math.max(1, Math.min(100, Number(rss.maxItems) || 50)),
-              copyright: String(rss.copyright || '').slice(0, 200),
-              authorName: String(rss.authorName || '').slice(0, 100),
-              customFeedUrl: String(rss.customFeedUrl || '').slice(0, 500),
-            };
-          }
-        } else {
-          merged[key] = body[key];
+  // Merge only allowed keys
+  const allowedKeys = ['adminsAreDesigners', 'disabledSlideTypes', 'rss'];
+  const merged = { ...currentSettings };
+  for (const key of allowedKeys) {
+    if (key in body) {
+      if (key === 'adminsAreDesigners') {
+        merged[key] = body[key] === true;
+      } else if (key === 'disabledSlideTypes') {
+        merged[key] = getStringArray(body, key, { trim: true });
+      } else if (key === 'rss') {
+        const rss = body[key];
+        if (rss && typeof rss === 'object') {
+          merged[key] = {
+            enabled: rss.enabled === true,
+            title: String(rss.title || '').slice(0, 200),
+            description: String(rss.description || '').slice(0, 500),
+            language: typeof rss.language === 'string' ? rss.language.slice(0, 10) : 'en',
+            maxItems: Math.max(1, Math.min(100, Number(rss.maxItems) || 50)),
+            copyright: String(rss.copyright || '').slice(0, 200),
+            authorName: String(rss.authorName || '').slice(0, 100),
+            customFeedUrl: String(rss.customFeedUrl || '').slice(0, 500),
+          };
         }
+      } else {
+        merged[key] = body[key];
       }
     }
-
-    await updateOrganization(orgId, { settings: merged });
-    serveJson(res, 200, { settings: merged });
-  } catch (err) {
-    log.error('[settings] Failed to update organization settings:', err);
-    serverError(res, 'Failed to update settings');
   }
+
+  await updateOrganization(orgId, { settings: merged });
+  serveJson(res, 200, { settings: merged });
   return true;
 }
 
@@ -204,6 +197,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleSettings(ctx) {
-  return dispatchRoutes(ROUTES, ctx);
-}
+export const handleSettings = withErrorHandler('settings', (ctx) =>
+  dispatchRoutes(ROUTES, ctx)
+);

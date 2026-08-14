@@ -9,7 +9,7 @@
  */
 
 import sharp from 'sharp';
-import { badRequest, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError, serverError, requireJsonBody } from '../../utils/http.js';
+import { badRequest, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { writeUserSettings } from '../../storage/settings.js';
 import { getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
 import { getFeatureFlags } from '../../config/flags-snapshot.js';
@@ -104,17 +104,12 @@ async function handleProfileImageUpload({ repoRoot, storageScope, req, res, auth
 async function handleProfileImageDelete({ repoRoot, storageScope, res, authedUser }) {
   const email = String(authedUser?.email || '').trim();
 
-  try {
-    // Clear the image URL from user settings
-    await writeUserSettings(storageScope, email, {
-      profile: { imageUrl: '' },
-    });
+  // Clear the image URL from user settings
+  await writeUserSettings(storageScope, email, {
+    profile: { imageUrl: '' },
+  });
 
-    serveJson(res, 200, { ok: true });
-  } catch (err) {
-    log.error('[profile] Image removal failed:', err);
-    serverError(res, 'Failed to remove profile image');
-  }
+  serveJson(res, 200, { ok: true });
   return true;
 }
 
@@ -202,15 +197,10 @@ async function handleProfileImageAdmin({ repoRoot, storageScope, req, res, authe
 
   // DELETE /api/profile/image/:email - Admin remove profile image for user
   if (req.method === 'DELETE') {
-    try {
-      await writeUserSettings(storageScope, targetEmail, {
-        profile: { imageUrl: '' },
-      });
-      serveJson(res, 200, { ok: true });
-    } catch (err) {
-      log.error('[profile] Admin image removal failed:', err);
-      serverError(res, 'Failed to remove profile image');
-    }
+    await writeUserSettings(storageScope, targetEmail, {
+      profile: { imageUrl: '' },
+    });
+    serveJson(res, 200, { ok: true });
     return true;
   }
 
@@ -239,9 +229,9 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleProfile(ctx) {
+export const handleProfile = withErrorHandler('profile', (ctx) => {
   if (!ctx.url.pathname.startsWith('/api/profile/')) return false;
   const email = String(ctx.authedUser?.email || '').trim();
   if (!email) return unauthorized(ctx.res);
   return dispatchRoutes(ROUTES, ctx);
-}
+});

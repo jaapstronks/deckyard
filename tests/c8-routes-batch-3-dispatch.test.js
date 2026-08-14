@@ -114,12 +114,13 @@ test('profile: routes resolve to their named handlers', () => {
   named(PROFILE_ROUTES, 'POST', '/api/profile/image/x%40y.test', 'handleProfileImageAdmin');
 });
 
-test('profile: the module guards run before dispatch', () => {
-  // Prefix guard: a foreign path falls through.
-  assert.equal(handleProfile(ctx('GET', '/api/not-profile/').ctx), false);
+test('profile: the module guards run before dispatch', async () => {
+  // Prefix guard: a foreign path falls through (entry is async since the
+  // withErrorHandler wrap — C7d).
+  assert.equal(await handleProfile(ctx('GET', '/api/not-profile/').ctx), false);
   // Email guard: no email → 401, not a fall-through.
   const noEmail = ctx('POST', '/api/profile/image', { email: '' });
-  handleProfile(noEmail.ctx);
+  await handleProfile(noEmail.ctx);
   assert.equal(noEmail.res.statusCode, 401);
 });
 
