@@ -177,9 +177,10 @@ export async function handlePresentationVersionExport(
     : new Date().toISOString().slice(0, 10);
   const filename = `${title}-${dateStr}-${versionId.slice(0, 8)}.json`;
 
-  res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  res.statusCode = 200;
+  res.writeHead(200, {
+    'Content-Type': 'application/json',
+    'Content-Disposition': `attachment; filename="${filename}"`,
+  });
   res.end(JSON.stringify(exportData, null, 2));
   return true;
 }
