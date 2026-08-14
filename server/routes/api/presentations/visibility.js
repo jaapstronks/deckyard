@@ -8,7 +8,6 @@ import {
   jsonError,
   requireJsonBody,
 } from '../../../utils/http.js';
-import { errorToResponse } from '../../../utils/errors.js';
 import { canChangePresentationVisibility, isPresentationAuthor } from '../../../utils/presentation-authz.js';
 import { maybeFireWebhook } from '../../../utils/webhooks.js';
 import { parseIfMatchRevision } from './helpers.js';
@@ -62,34 +61,27 @@ export async function handlePresentationVisibility(
     return jsonError(res, 428, 'missing_if_match', 'Missing If-Match revision');
 
   const nextPres = { ...existing, visibility: nextVisibility, isViewOnly: nextIsViewOnly };
-  try {
-    const updated = await updatePresentation(storageScope, id, nextPres, {
-      expectedRevision,
-      actorEmail: authedUser?.email || null,
-      allowVisibilityChange: true,
-      allowViewOnlyChange: true,
-    });
+  // Optimistic-lock failures (ConflictError/LockedError from
+  // updatePresentation) are AppErrors — the withErrorHandler wrapper on the
+  // presentations dispatcher emits them through the canonical envelope.
+  const updated = await updatePresentation(storageScope, id, nextPres, {
+    expectedRevision,
+    actorEmail: authedUser?.email || null,
+    allowVisibilityChange: true,
+    allowViewOnlyChange: true,
+  });
 
-    if (existing?.visibility !== 'organization' && updated?.visibility === 'organization') {
-      await maybeFireWebhook(repoRoot, req, {
-        event: 'presentation.moved_to_organization',
-        pres: updated,
-        authedUser,
-        extra: {
-          fromVisibility: existing?.visibility || 'private',
-          toVisibility: 'organization',
-        },
-      });
-    }
-    serveJson(res, 200, updated);
-  } catch (e) {
-    // Optimistic-lock failures (ConflictError/LockedError from
-    // updatePresentation) carry a statusCode; emit them through the canonical
-    // error envelope ({ ok:false, error:'<code>', message, details }) instead of
-    // a hand-rolled body. Unexpected errors propagate to the top-level handler.
-    if (e?.statusCode)
-      return serveJson(res, e.statusCode, errorToResponse(e));
-    throw e;
+  if (existing?.visibility !== 'organization' && updated?.visibility === 'organization') {
+    await maybeFireWebhook(repoRoot, req, {
+      event: 'presentation.moved_to_organization',
+      pres: updated,
+      authedUser,
+      extra: {
+        fromVisibility: existing?.visibility || 'private',
+        toVisibility: 'organization',
+      },
+    });
   }
+  serveJson(res, 200, updated);
   return true;
 }
