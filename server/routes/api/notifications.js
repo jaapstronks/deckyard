@@ -23,7 +23,7 @@ import {
   removeClient,
 } from '../../services/notification-events.js';
 import { dispatchRoutes } from '../../utils/router.js';
-import { serveJson, badRequest, requireJsonBody } from '../../utils/http.js';
+import { serveJson, badRequest, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import { openSseStream } from '../../utils/sse.js';
 
@@ -171,10 +171,10 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleNotifications(ctx) {
+export const handleNotifications = withErrorHandler('notifications', (ctx) => {
   // Require authentication for all notification endpoints
   if (!ctx.authedUser?.email) {
     return false;
   }
   return dispatchRoutes(ROUTES, ctx);
-}
+});

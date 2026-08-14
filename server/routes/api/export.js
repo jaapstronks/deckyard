@@ -11,7 +11,7 @@ import { renderSlideToPngBuffer } from '../../render/png.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { renderSlidesToPdfBuffer } from '../../render/pdf.js';
 import { presentationToDeck } from '../../../shared/slide-types.js';
-import { badRequest } from '../../utils/http.js';
+import { badRequest, withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
   createExportRoute,
@@ -221,7 +221,7 @@ export const ROUTES = [
   { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/export\/png\/(\d+)\.png$/, handler: handlePngSlideExport },
 ];
 
-export async function handleExports(context) {
+export const handleExports = withErrorHandler('export', async (context) => {
   // PNG slide export first (more specific pattern)
   if (await dispatchRoutes(ROUTES, context)) return true;
 
@@ -231,4 +231,4 @@ export async function handleExports(context) {
   }
 
   return false;
-}
+});

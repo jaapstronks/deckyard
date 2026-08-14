@@ -22,6 +22,7 @@ import {
   handleRegenerateToken,
 } from './reports.js';
 import { handleExportMyData, handleDeleteMyData } from './gdpr.js';
+import { withErrorHandler } from '../../../utils/http.js';
 
 /**
  * Declarative route table for the authenticated analytics surface (A7.19 C8).
@@ -72,7 +73,7 @@ export const ROUTES = [
  * @param {import('../../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>} True if handled
  */
-export async function handleAnalytics(ctx) {
+export const handleAnalytics = withErrorHandler('analytics', async (ctx) => {
   const { req, res, url, authedUser } = ctx;
 
   // Apply user-based rate limiting for authenticated endpoints. This runs for
@@ -89,7 +90,7 @@ export async function handleAnalytics(ctx) {
   }
 
   return dispatchRoutes(ROUTES, ctx);
-}
+});
 
 // Re-export public handler
 export { handleAnalyticsReportPublic } from './public.js';

@@ -8,6 +8,7 @@ import {
   serveJson,
   unauthorized,
   requireJsonBody,
+  withErrorHandler,
 } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import {
@@ -114,11 +115,11 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleActivity(ctx) {
+export const handleActivity = withErrorHandler('activity', (ctx) => {
   const email = String(ctx.authedUser?.email || '').trim();
   if (!email) return unauthorized(ctx.res);
   return dispatchRoutes(ROUTES, ctx);
-}
+});
 
 /**
  * List activity events and enrich them with readable presentation info,

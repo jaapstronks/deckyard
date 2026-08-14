@@ -104,7 +104,7 @@ test('slide-collections: a wrong method 405s with the pinned Allow list', async 
 
 test('slide-collections: module guards — foreign prefix falls through, unauth 401s', async () => {
   const foreign = ctx('GET', '/api/not-slide-collections');
-  assert.equal(handleSlideCollections(foreign.ctx), false);
+  assert.equal(await handleSlideCollections(foreign.ctx), false);
 
   const unauth = ctx('GET', '/api/slide-collections/personal', null);
   await handleSlideCollections(unauth.ctx);
@@ -164,7 +164,7 @@ test('notifications: a wrong method falls through (Form A), and unauth falls thr
   // The original guard returned false (not a 401) without a user — the root
   // dispatcher's 404 answers. Pinned so the migration cannot change it.
   const unauth = ctx('GET', '/api/notifications', null);
-  assert.equal(handleNotifications(unauth.ctx), false);
+  assert.equal(await handleNotifications(unauth.ctx), false);
   assert.equal(unauth.res.statusCode, null, 'no status written for unauth');
 });
 
