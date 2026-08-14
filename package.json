@@ -13,8 +13,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "node --test 'tests/**/*.test.js'",
-    "test:pg": "node --test --test-concurrency=1 'tests/pg/**/*.pgtest.js'",
+    "test": "node --test --test-timeout=120000 'tests/**/*.test.js'",
+    "test:pg": "node --test --test-concurrency=1 --test-timeout=120000 'tests/pg/**/*.pgtest.js'",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:deadcode": "node scripts/lint-dead-exports.js && eslint . --config eslint.deadcode.config.js",
