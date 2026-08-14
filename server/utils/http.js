@@ -237,8 +237,12 @@ const ERROR_STATUS_MAP = {
   // Rate limiting
   rate_limited: 429,
 
-  // Conflict (the resource is already in the requested state)
+  // Conflict (the resource is already in the requested state, or refuses the
+  // transition: a second vote, an invite that already went out, a closed poll)
   already_exists: 409,
+  already_voted: 409,
+  already_invited: 409,
+  closed: 409,
 
   // Bad request — the caller sent something we cannot act on
   invalid: 400,

@@ -482,8 +482,9 @@ export async function convertSlideWithAi(slide, toType, { vendor = null, lang = 
   const parsed = extractJsonObject(raw);
   if (!parsed) {
     // The raw response rides along as a field for logging, never the envelope.
+    // No statusCode override: an unparseable LLM reply is an upstream failure,
+    // so the LlmError default (502) applies — same as the sibling AI routes.
     throw new LlmError('Failed to parse AI response as JSON', {
-      statusCode: 500,
       vendor: llmConfig.vendor,
       response: raw,
       phase: 'convert-slide',

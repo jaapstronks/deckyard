@@ -75,6 +75,18 @@ test('comment failure reasons map to the intended statuses', () => {
   assert.equal(getErrorStatus('not_found_or_already_handled'), 400);
 });
 
+test('follow/share failure reasons map to the intended statuses (C7g table-driven)', () => {
+  // The follow and share-link guest routes answer via getErrorStatus() instead
+  // of per-route ternaries/statusMaps; these rows are the contract.
+  assert.equal(getErrorStatus('already_voted'), 409);
+  assert.equal(getErrorStatus('closed'), 409);
+  assert.equal(getErrorStatus('already_invited'), 409);
+  assert.equal(getErrorStatus('forbidden'), 403);
+  // Missing-input reasons stay on the caller-side default.
+  assert.equal(getErrorStatus('missing_text'), 400);
+  assert.equal(getErrorStatus('own_question'), 400);
+});
+
 test('the 403 machine code is `forbidden` — `permission_denied` must not come back', () => {
   // One machine code per meaning (A7.19-C7g): `permission_denied` was folded
   // into the existing `forbidden` code. Scan the first-party source trees so a
