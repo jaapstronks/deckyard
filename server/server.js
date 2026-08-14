@@ -14,6 +14,7 @@ import { handleApi } from './routes/api.js';
 import { handleStatic } from './routes/static.js';
 import { getFeatureFlags } from './config/flags-snapshot.js';
 import { allowRequest, getClientIp } from './utils/rate-limit.js';
+import { rateLimited } from './utils/http.js';
 import { REQUEST_LIMITS } from './config/rate-limits.js';
 import { applySecurityHeaders } from './utils/security-headers.js';
 import { buildTopLevelErrorBody } from './utils/error-response.js';
@@ -101,11 +102,7 @@ const server = http.createServer(async (req, res) => {
       if (group && REQUEST_LIMITS[group]) {
         const ok = await allowRequest(`${ip}:${group}`, REQUEST_LIMITS[group]);
         if (!ok) {
-          res.writeHead(429, {
-            'Content-Type': 'application/json; charset=utf-8',
-            'Cache-Control': 'no-store',
-          });
-          res.end(JSON.stringify({ error: 'Rate limit exceeded' }));
+          rateLimited(res);
           return;
         }
       }
