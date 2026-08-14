@@ -1,3 +1,5 @@
+import { h } from '../dom.js';
+
 const DEFAULT_DURATION_MS = 3200;
 
 let stackEl = null;
@@ -5,10 +7,11 @@ let byId = new Map();
 
 function ensureStack() {
   if (stackEl && document.body.contains(stackEl)) return stackEl;
-  stackEl = document.createElement('div');
-  stackEl.className = 'toast-stack';
-  stackEl.setAttribute('aria-live', 'polite');
-  stackEl.setAttribute('aria-relevant', 'additions');
+  stackEl = h('div', {
+    class: 'toast-stack',
+    'aria-live': 'polite',
+    'aria-relevant': 'additions',
+  });
   document.body.appendChild(stackEl);
   return stackEl;
 }
@@ -40,15 +43,14 @@ function classifyType(type) {
  */
 function renderToastContent(el, message, action) {
   el.textContent = '';
-  const text = document.createElement('span');
-  text.className = 'toast-text';
-  text.textContent = toText(message);
+  const text = h('span', { class: 'toast-text', text: toText(message) });
   el.append(text);
   if (action && typeof action.onClick === 'function' && action.label) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'toast-action';
-    btn.textContent = String(action.label);
+    const btn = h('button', {
+      type: 'button',
+      class: 'toast-action',
+      text: String(action.label),
+    });
     btn.addEventListener('click', (e) => {
       // Don't let the row's click-to-dismiss swallow the action.
       e.stopPropagation();
@@ -63,9 +65,7 @@ function renderToastContent(el, message, action) {
 }
 
 function makeToastEl(message, { type, action }) {
-  const el = document.createElement('div');
-  el.className = `toast toast-${classifyType(type)}`;
-  el.setAttribute('role', 'status');
+  const el = h('div', { class: `toast toast-${classifyType(type)}`, role: 'status' });
   el.tabIndex = 0;
   renderToastContent(el, message, action);
   el.addEventListener('click', () => dismissEl(el));

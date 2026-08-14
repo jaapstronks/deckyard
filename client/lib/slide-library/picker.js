@@ -112,7 +112,7 @@ export function createSlideLibraryPicker({
     const type = cleanStr(it?.slideType);
     if (!type) return null;
     const slide = modals.makeSlideObj(it);
-    const th = document.createElement('div');
+    const th = h('div');
     th.className = 'thumb ps-lib-thumb';
     if (onClickPreview) {
       th.style.cursor = 'pointer';
