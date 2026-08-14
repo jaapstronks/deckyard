@@ -4,6 +4,7 @@ import {
   parseOpenAiCompatibleResponse,
 } from '../provider-base.js';
 import { LlmError } from '../error.js';
+import { ValidationError } from '../../errors.js';
 
 /**
  * Request chat completion content from any OpenAI-compatible endpoint.
@@ -17,9 +18,7 @@ import { LlmError } from '../error.js';
 export async function requestOpenAiCompatChatCompletionContent(params = {}) {
   const endpoint = process.env.OPENAI_COMPAT_ENDPOINT?.trim();
   if (!endpoint) {
-    const err = new Error('OPENAI_COMPAT_ENDPOINT is not set in environment.');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('OPENAI_COMPAT_ENDPOINT is not set in environment.');
   }
 
   const headers = createOptionalBearerHeaders(params.apiKey);
