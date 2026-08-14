@@ -17,7 +17,7 @@ import {
   AVAILABLE_PERMISSIONS,
 } from '../../storage/api-keys.js';
 import { getUsageHistory, getTodayUsage } from '../../storage/api-usage.js';
-import { serveJson, methodNotAllowed, notFound, badRequest, requireJsonBody } from '../../utils/http.js';
+import { serveJson, methodNotAllowed, notFound, badRequest, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 // GET /api/api-keys - List user's API keys
@@ -184,7 +184,7 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleApiKeys(ctx) {
+export const handleApiKeys = withErrorHandler('api-keys', (ctx) => {
   if (!ctx.url.pathname.startsWith('/api/api-keys')) return false;
 
   // Require authentication
@@ -193,4 +193,4 @@ export function handleApiKeys(ctx) {
   }
 
   return dispatchRoutes(ROUTES, ctx);
-}
+});
