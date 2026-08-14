@@ -3,6 +3,7 @@
  */
 
 import { getDb, getOrgId, now } from './helpers.js';
+import { ValidationError } from '../../../utils/errors.js';
 
 /**
  * Tags mixin - adds tag methods to adapter.
@@ -199,9 +200,7 @@ export function withTags(Base) {
 
       const trimmedName = String(name || '').trim();
       if (!trimmedName || trimmedName.length > 100) {
-        const err = new Error('Invalid tag name');
-        err.statusCode = 400;
-        throw err;
+        throw new ValidationError('Invalid tag name');
       }
 
       // Check if tag already exists

@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { uploadsDir as uploadsBaseDir } from '../config/storage-paths.js';
+import { NotFoundError, ValidationError } from '../utils/errors.js';
 import {
   LocalProvider,
   parseDataUrl,
@@ -50,15 +51,11 @@ const STOCK_MAX_BYTES = 20 * 1024 * 1024; // 20MB for stock media (GIFs can be l
  */
 export async function writeUploadedFile(repoRoot, buffer, filename, contentType) {
   if (!MIME_TO_EXT[contentType]) {
-    const err = new Error(`Unsupported image type: ${contentType}`);
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError(`Unsupported image type: ${contentType}`);
   }
 
   if (buffer.length > STOCK_MAX_BYTES) {
-    const err = new Error('Image too large (max 20MB)');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('Image too large (max 20MB)');
   }
 
   const provider = new LocalProvider(repoRoot);
@@ -74,9 +71,7 @@ export async function writeUploadedFile(repoRoot, buffer, filename, contentType)
 export async function replaceUploadFromDataUrl(repoRoot, targetUrl, dataUrl) {
   const url = String(targetUrl || '').trim();
   if (!url.startsWith('/uploads/')) {
-    const err = new Error('replace target must be a local /uploads/ URL');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('replace target must be a local /uploads/ URL');
   }
   const filename = url.slice('/uploads/'.length);
   if (
@@ -85,34 +80,24 @@ export async function replaceUploadFromDataUrl(repoRoot, targetUrl, dataUrl) {
     filename.includes('\\') ||
     filename.includes('..')
   ) {
-    const err = new Error('Invalid upload filename');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('Invalid upload filename');
   }
 
   const ext = filename.includes('.') ? filename.split('.').pop().toLowerCase() : '';
   const allowedMimes = EXT_TO_MIMES[ext] || null;
   if (!allowedMimes) {
-    const err = new Error(`Unsupported upload extension: ${ext || '(none)'}`);
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError(`Unsupported upload extension: ${ext || '(none)'}`);
   }
 
   const { mime, base64 } = parseDataUrl(dataUrl);
   if (!allowedMimes.includes(mime)) {
-    const err = new Error(
-      `Replacement type mismatch: ${mime} does not match .${ext}`
-    );
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError(`Replacement type mismatch: ${mime} does not match .${ext}`);
   }
 
   let buf = Buffer.from(base64, 'base64');
   const maxBytes = 10 * 1024 * 1024;
   if (buf.length > maxBytes) {
-    const err = new Error('Image too large (max 10MB)');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('Image too large (max 10MB)');
   }
 
   if (
@@ -131,9 +116,7 @@ export async function replaceUploadFromDataUrl(repoRoot, targetUrl, dataUrl) {
   try {
     await fs.stat(absolutePath);
   } catch {
-    const err = new Error('Target upload does not exist');
-    err.statusCode = 404;
-    throw err;
+    throw new NotFoundError('Target upload does not exist');
   }
 
   await fs.writeFile(absolutePath, buf);

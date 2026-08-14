@@ -15,15 +15,14 @@ import {
   canReadPresentation,
   canWritePresentation,
 } from '../utils/presentation-authz.js';
+import {
+  ForbiddenError,
+  NotFoundError,
+  UnauthorizedError,
+} from '../utils/errors.js';
 
 /** Collab document names are `presentation:<id>` — one room per deck. */
 export const COLLAB_DOC_PREFIX = 'presentation:';
-
-function httpError(message, statusCode) {
-  const err = new Error(message);
-  err.statusCode = statusCode;
-  return err;
-}
 
 /**
  * Resolve the user from a WebSocket upgrade request.
@@ -73,21 +72,21 @@ export function presentationIdFromDocumentName(documentName) {
  */
 export async function authorizeDocument({ repoRoot, documentName, user }) {
   const presentationId = presentationIdFromDocumentName(documentName);
-  if (!presentationId) throw httpError('Unknown collab document', 404);
-  if (!user?.email) throw httpError('Unauthorized', 401);
+  if (!presentationId) throw new NotFoundError('Unknown collab document');
+  if (!user?.email) throw new UnauthorizedError();
 
   const pres = await getPresentation(
     createStorageScope(user, { repoRoot }),
     presentationId
   );
-  if (!pres) throw httpError('Presentation not found', 404);
+  if (!pres) throw new NotFoundError('Presentation not found');
 
   const collaboratorPermission = await getCollaboratorPermission(
     presentationId,
     user.email
   );
   if (!canReadPresentation({ user, pres, collaboratorPermission }))
-    throw httpError('Forbidden', 403);
+    throw new ForbiddenError();
 
   const readOnly = !canWritePresentation({
     user,
