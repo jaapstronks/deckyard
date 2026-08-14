@@ -11,15 +11,14 @@
 import { createDataSourceProvider } from '../provider-base.js';
 import { notionFetchJson, fetchAllBlockChildren, notionEnabled } from '../../notion/client.js';
 import { richTextToPlain, pageTitleFromProperties } from '../../notion/parser.js';
+import { AppError } from '../../errors.js';
 
 /**
  * Query a Notion database and return rows as objects keyed by property name.
  */
 async function queryDatabase(config) {
   if (!notionEnabled()) {
-    const err = new Error('Notion is not configured');
-    err.statusCode = 501;
-    throw err;
+    throw new AppError('Notion is not configured', 501);
   }
 
   const { databaseId, filter, sorts } = config;
@@ -123,9 +122,7 @@ function extractRollupValue(rollup) {
  */
 async function fetchBlock(config) {
   if (!notionEnabled()) {
-    const err = new Error('Notion is not configured');
-    err.statusCode = 501;
-    throw err;
+    throw new AppError('Notion is not configured', 501);
   }
 
   const { blockId, pageId } = config;

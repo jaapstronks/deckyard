@@ -8,6 +8,7 @@
 import { notionDatabaseProvider, notionBlockProvider } from './providers/notion.js';
 import { csvUrlProvider } from './providers/csv-url.js';
 import { validateDataSource } from '../../../shared/data-source.js';
+import { ValidationError } from '../errors.js';
 
 const providers = {
   'notion-database': notionDatabaseProvider,
@@ -23,9 +24,7 @@ const providers = {
 function getProvider(providerName) {
   const provider = providers[providerName];
   if (!provider) {
-    const err = new Error(`Unknown data source provider: ${providerName}`);
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError(`Unknown data source provider: ${providerName}`);
   }
   return provider;
 }
@@ -40,9 +39,7 @@ function getProvider(providerName) {
 export async function refreshSlideData(dataSource, currentContent) {
   const validation = validateDataSource(dataSource);
   if (!validation.valid) {
-    const err = new Error(validation.error);
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError(validation.error);
   }
 
   if (dataSource.refresh.mode === 'frozen') {
