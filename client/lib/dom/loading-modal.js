@@ -5,6 +5,8 @@
  * Used during AI generation for better UX.
  */
 
+import { spinner } from './spinner.js';
+
 /**
  * Create and show a loading modal
  *
@@ -24,20 +26,7 @@ export function showLoadingModal({ h, root, initialMessage = '', title = '' } = 
 
   // Spinner animation
   const spinnerWrap = h('div', { class: 'loading-modal-spinner' });
-  const spinnerSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  spinnerSvg.setAttribute('viewBox', '0 0 50 50');
-  spinnerSvg.setAttribute('class', 'loading-spinner-svg');
-  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  circle.setAttribute('cx', '25');
-  circle.setAttribute('cy', '25');
-  circle.setAttribute('r', '20');
-  circle.setAttribute('fill', 'none');
-  circle.setAttribute('stroke', 'currentColor');
-  circle.setAttribute('stroke-width', '4');
-  circle.setAttribute('stroke-linecap', 'round');
-  circle.setAttribute('class', 'loading-spinner-circle');
-  spinnerSvg.appendChild(circle);
-  spinnerWrap.appendChild(spinnerSvg);
+  spinnerWrap.appendChild(spinner('xxl'));
 
   // Title (optional)
   const titleEl = h('div', {

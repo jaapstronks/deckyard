@@ -1,4 +1,5 @@
 import { h } from '../../lib/dom.js';
+import { spinner } from '../../lib/dom/spinner.js';
 import { t } from '../../lib/ui-i18n.js';
 
 const SKELETON_CLASS = 'editor-loading-skeleton';
@@ -66,7 +67,7 @@ export function showEditorLoadingSkeleton(root) {
   ]);
 
   const status = h('div', { class: 'skeleton-status', role: 'status' }, [
-    h('span', { class: 'skeleton-spinner', 'aria-hidden': 'true' }),
+    spinner('md'),
     h('span', {
       class: 'skeleton-status-text',
       text: t('editor.loading.deck', 'Loading presentation…'),

@@ -49,44 +49,11 @@
   transform: scale(0.95);
 }
 
-/* Spinner */
+/* Spinner (built by client/lib/dom/spinner.js; sizing/animation in
+   base/01-core/06-spinner.css) */
 .loading-modal-spinner {
   width: 80px;
   height: 80px;
-  color: hsl(var(--app-accent-text));
-}
-
-.loading-spinner-svg {
-  width: 100%;
-  height: 100%;
-  animation: loading-spinner-rotate 1.5s linear infinite;
-}
-
-.loading-spinner-circle {
-  stroke-dasharray: 90, 150;
-  stroke-dashoffset: 0;
-  animation: loading-spinner-dash 1.5s ease-in-out infinite;
-}
-
-@keyframes loading-spinner-rotate {
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes loading-spinner-dash {
-  0% {
-    stroke-dasharray: 1, 150;
-    stroke-dashoffset: 0;
-  }
-  50% {
-    stroke-dasharray: 90, 150;
-    stroke-dashoffset: -35;
-  }
-  100% {
-    stroke-dasharray: 90, 150;
-    stroke-dashoffset: -124;
-  }
 }
 
 /* Title */

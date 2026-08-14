@@ -338,20 +338,8 @@
   text-align: center;
 }
 
-.auth-spinner {
-  width: 48px;
-  height: 48px;
+.auth-card .spinner {
   margin: var(--ps-space-4) auto;
-  border: 3px solid hsl(var(--app-border-default));
-  border-top-color: hsl(260 80% 55%);
-  border-radius: 50%;
-  animation: auth-spin 0.8s linear infinite;
-}
-
-@keyframes auth-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* ============================================================
