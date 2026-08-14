@@ -1,4 +1,5 @@
 import { optionalEnv, requireEnv } from './env.js';
+import { ValidationError } from '../errors.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { KNOWN_VENDORS } from '../../../shared/llm-vendors.js';
 
@@ -50,19 +51,15 @@ export function detectDefaultVendor() {
 export function getLlmConfig({ vendor = null, role = null } = {}) {
   const normalized = normalizeLlmVendor(vendor);
   if (vendor != null && typeof vendor === 'string' && vendor.trim() && !normalized) {
-    const err = new Error(
+    throw new ValidationError(
       `Invalid LLM vendor "${vendor}". Expected one of: ${KNOWN_VENDORS.join(', ')}.`
     );
-    err.statusCode = 400;
-    throw err;
   }
 
   // Sandbox stance: enforce Mistral-only even if clients request another vendor.
   if (sandboxEnabled()) {
     if (normalized && normalized !== 'mistral') {
-      const err = new Error('Sandbox mode only supports the Mistral LLM vendor.');
-      err.statusCode = 400;
-      throw err;
+      throw new ValidationError('Sandbox mode only supports the Mistral LLM vendor.');
     }
     return {
       vendor: 'mistral',
@@ -73,11 +70,9 @@ export function getLlmConfig({ vendor = null, role = null } = {}) {
 
   const resolved = normalized || detectDefaultVendor();
   if (!resolved) {
-    const err = new Error(
+    throw new ValidationError(
       'No LLM vendor configured. Set OPENAI_API, CLAUDE_API, MISTRAL_API, DEEPSEEK_API, or OPENAI_COMPAT_ENDPOINT in .env.'
     );
-    err.statusCode = 400;
-    throw err;
   }
 
   if (resolved === 'openai') {
@@ -132,9 +127,7 @@ export function getLlmConfig({ vendor = null, role = null } = {}) {
   }
 
   // Should never happen; keep it explicit for safety.
-  const err = new Error(`Unsupported LLM vendor: ${String(resolved)}`);
-  err.statusCode = 400;
-  throw err;
+  throw new ValidationError(`Unsupported LLM vendor: ${String(resolved)}`);
 }
 
 export function getLlmStatus() {

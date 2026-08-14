@@ -1,8 +1,14 @@
+import { AppError } from '../errors.js';
+
 /**
  * Unified error class for LLM-related errors.
  * Provides consistent error handling across all LLM providers and AI modules.
+ *
+ * Extends AppError so `isAppError()`/`withErrorHandler` recognize LLM failures
+ * and answer with the canonical envelope. The raw provider `response` stays a
+ * field on the instance (for logging) and is never part of the envelope.
  */
-export class LlmError extends Error {
+export class LlmError extends AppError {
   /**
    * @param {string} message - Human-readable error message
    * @param {Object} [options={}] - Error context
@@ -23,9 +29,7 @@ export class LlmError extends Error {
     retryable = true,
     context = null,
   } = {}) {
-    super(message);
-    this.name = 'LlmError';
-    this.statusCode = statusCode;
+    super(message, statusCode);
     this.vendor = vendor;
     this.model = model;
     this.response = response ? String(response).slice(0, 5000) : null;
@@ -84,21 +88,4 @@ export class LlmError extends Error {
     });
   }
 
-  /**
-   * Convert to a plain object for logging/serialization.
-   * @returns {Object}
-   */
-  toJSON() {
-    return {
-      name: this.name,
-      message: this.message,
-      statusCode: this.statusCode,
-      vendor: this.vendor,
-      model: this.model,
-      phase: this.phase,
-      retryable: this.retryable,
-      response: this.response,
-      context: this.context,
-    };
-  }
 }

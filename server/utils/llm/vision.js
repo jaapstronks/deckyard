@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { uploadsDir } from '../../config/storage-paths.js';
+import { ValidationError } from '../errors.js';
 
 const EXT_TO_MIME = {
   '.png': 'image/png',
@@ -56,9 +57,7 @@ export async function resolveImageUrlForVisionInput(repoRoot, url) {
   const buf = await fs.readFile(abs);
   const maxBytes = 4 * 1024 * 1024;
   if (buf.length > maxBytes) {
-    const err = new Error('Image too large for AI analysis (max 4MB).');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('Image too large for AI analysis (max 4MB).');
   }
 
   const b64 = buf.toString('base64');
