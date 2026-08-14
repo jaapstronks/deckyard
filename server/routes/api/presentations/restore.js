@@ -12,7 +12,6 @@ import {
   unauthorized,
   jsonError,
 } from '../../../utils/http.js';
-import { errorToResponse } from '../../../utils/errors.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { parseIfMatchRevision } from './helpers.js';
 
@@ -54,22 +53,15 @@ export async function handlePresentationRestoreVersion(
     // best-effort
   }
 
-  try {
-    const updated = await updatePresentation(storageScope, id, snapPres, {
-      expectedRevision,
-      actorEmail: authedUser?.email || null,
-      restoreFromVersionId: versionId,
-      reason: 'restore',
-    });
-    serveJson(res, 200, { ok: true, presentation: updated });
-  } catch (e) {
-    // Optimistic-lock failures (ConflictError/LockedError from
-    // updatePresentation) carry a statusCode; emit them through the canonical
-    // error envelope ({ ok:false, error:'<code>', message, details }) instead of
-    // a hand-rolled body. Unexpected errors propagate to the top-level handler.
-    if (e?.statusCode)
-      return serveJson(res, e.statusCode, errorToResponse(e));
-    throw e;
-  }
+  // Optimistic-lock failures (ConflictError/LockedError from
+  // updatePresentation) are AppErrors — the withErrorHandler wrapper on the
+  // presentations dispatcher emits them through the canonical envelope.
+  const updated = await updatePresentation(storageScope, id, snapPres, {
+    expectedRevision,
+    actorEmail: authedUser?.email || null,
+    restoreFromVersionId: versionId,
+    reason: 'restore',
+  });
+  serveJson(res, 200, { ok: true, presentation: updated });
   return true;
 }

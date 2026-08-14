@@ -15,6 +15,10 @@
  * Degrades gracefully: a bundle that lists an unsupported asset (or one that
  * fails to save) keeps its original ref rather than crashing the import; unknown
  * slide types become a harmless placeholder (deckToPresentationParts).
+ *
+ * Error handling lives in the `withErrorHandler` wrapper on the presentations
+ * dispatcher: typed AppErrors (sandbox quota, 413) surface their own status,
+ * anything else is a generic 500.
  */
 
 import { createPresentation, updatePresentation } from '../../../storage/presentations/index.js';
@@ -22,16 +26,12 @@ import {
   readRequestBody,
   serveJson,
   badRequest,
-  serverError,
 } from '../../../utils/http.js';
-import { isAppError } from '../../../utils/errors.js';
 import { readDeckBundle } from '../../../export/deck-bundle.js';
 import { writeUploadedFile } from '../../../storage/uploads.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { rewriteBundleRefs } from '../../../../shared/slide-types/deck-assets.js';
 import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
-import { createLogger } from '../../../utils/logger.js';
-const log = createLogger('import-deck');
 
 export async function handlePresentationsImportDeck({
   repoRoot,
@@ -40,106 +40,94 @@ export async function handlePresentationsImportDeck({
   res,
   authedUser,
 } = {}) {
+  const raw = await readRequestBody(req);
+  if (!raw || raw.length === 0) {
+    badRequest(res, 'Empty request body (expected a .deck bundle)');
+    return true;
+  }
+
+  let bundle;
   try {
-    const raw = await readRequestBody(req);
-    if (!raw || raw.length === 0) {
-      badRequest(res, 'Empty request body (expected a .deck bundle)');
-      return true;
-    }
+    bundle = await readDeckBundle(raw);
+  } catch (err) {
+    // Not a bundle / failed sentinel or integrity check → client error.
+    badRequest(res, `Invalid .deck bundle: ${err.message}`);
+    return true;
+  }
 
-    let bundle;
+  const { manifest, deck, assets } = bundle;
+  const lang = manifest?.lang === 'en-GB' ? 'en-GB' : 'nl';
+
+  // Re-hydrate each asset into /uploads/ and build bundle-ref -> upload-url map.
+  // The human name is recovered from the manifest's `sources` (the separate
+  // name layer), so re-imported files keep a readable basename.
+  const refToUpload = new Map();
+  const failedAssets = [];
+  for (const asset of Array.isArray(manifest?.assets) ? manifest.assets : []) {
+    const buf = assets.get(asset.ref);
+    if (!buf) continue; // readDeckBundle guarantees presence, but be defensive
+    const sourceName = Array.isArray(asset.sources) ? asset.sources[0] : '';
     try {
-      bundle = await readDeckBundle(raw);
+      const url = await writeUploadedFile(repoRoot, buf, sourceName || asset.ref, asset.mime);
+      refToUpload.set(asset.ref, url);
     } catch (err) {
-      // Not a bundle / failed sentinel or integrity check → client error.
-      badRequest(res, `Invalid .deck bundle: ${err.message}`);
-      return true;
+      // Unsupported mime / oversized asset: leave the ref in place so the rest
+      // of the deck still imports (degrade, don't crash).
+      failedAssets.push({ ref: asset.ref, reason: err.message });
     }
+  }
 
-    const { manifest, deck, assets } = bundle;
-    const lang = manifest?.lang === 'en-GB' ? 'en-GB' : 'nl';
+  // Rewrite the deck's content-addressed refs back to the new /uploads/ URLs.
+  const rehydrated = rewriteBundleRefs(deck, (ref) => refToUpload.get(ref));
 
-    // Re-hydrate each asset into /uploads/ and build bundle-ref -> upload-url map.
-    // The human name is recovered from the manifest's `sources` (the separate
-    // name layer), so re-imported files keep a readable basename.
-    const refToUpload = new Map();
-    const failedAssets = [];
-    for (const asset of Array.isArray(manifest?.assets) ? manifest.assets : []) {
-      const buf = assets.get(asset.ref);
-      if (!buf) continue; // readDeckBundle guarantees presence, but be defensive
-      const sourceName = Array.isArray(asset.sources) ? asset.sources[0] : '';
-      try {
-        const url = await writeUploadedFile(repoRoot, buf, sourceName || asset.ref, asset.mime);
-        refToUpload.set(asset.ref, url);
-      } catch (err) {
-        // Unsupported mime / oversized asset: leave the ref in place so the rest
-        // of the deck still imports (degrade, don't crash).
-        failedAssets.push({ ref: asset.ref, reason: err.message });
-      }
-    }
+  // Load the deck's theme so imported title slides can take a background image
+  // from its presets (mirrors import-json.js).
+  let themeConfig = null;
+  try {
+    themeConfig = await loadThemeAssets(repoRoot, resolveThemeId(rehydrated?.theme));
+  } catch {
+    // ignore — title slides are imported without a background image
+  }
 
-    // Rewrite the deck's content-addressed refs back to the new /uploads/ URLs.
-    const rehydrated = rewriteBundleRefs(deck, (ref) => refToUpload.get(ref));
+  const parts = deckToPresentationParts(rehydrated, { theme: themeConfig });
 
-    // Load the deck's theme so imported title slides can take a background image
-    // from its presets (mirrors import-json.js).
-    let themeConfig = null;
-    try {
-      themeConfig = await loadThemeAssets(repoRoot, resolveThemeId(rehydrated?.theme));
-    } catch {
-      // ignore — title slides are imported without a background image
-    }
+  const created = await createPresentation(storageScope, {
+    title: parts.title,
+    theme: parts.theme,
+    lang,
+    ownerEmail: authedUser?.email || null,
+  });
 
-    const parts = deckToPresentationParts(rehydrated, { theme: themeConfig });
+  // Update i18n.versions[lang] with the imported slides, otherwise
+  // normalizeI18n overwrites them with defaults (mirrors import-json.js).
+  const i18n = {
+    dominant: lang,
+    active: lang,
+    versions: {
+      [lang]: {
+        title: parts.title,
+        slides: parts.slides,
+      },
+    },
+  };
 
-    const created = await createPresentation(storageScope, {
+  const updated = await updatePresentation(storageScope,
+    created.id,
+    {
       title: parts.title,
       theme: parts.theme,
       lang,
-      ownerEmail: authedUser?.email || null,
-    });
-
-    // Update i18n.versions[lang] with the imported slides, otherwise
-    // normalizeI18n overwrites them with defaults (mirrors import-json.js).
-    const i18n = {
-      dominant: lang,
-      active: lang,
-      versions: {
-        [lang]: {
-          title: parts.title,
-          slides: parts.slides,
-        },
-      },
-    };
-
-    const updated = await updatePresentation(storageScope,
-      created.id,
-      {
-        title: parts.title,
-        theme: parts.theme,
-        lang,
-        slides: parts.slides,
-        i18n,
-      },
-      {
-        actorEmail: authedUser?.email || null,
-      }
-    );
-
-    serveJson(res, 201, {
-      ...updated,
-      ...(failedAssets.length ? { failedAssets } : {}),
-    });
-    return true;
-  } catch (err) {
-    // Typed application errors (e.g. sandbox quota) carry their own 4xx status
-    // + safe message — surface it instead of masking as a 500.
-    if (isAppError(err)) {
-      serveJson(res, err.statusCode, err.toJSON());
-      return true;
+      slides: parts.slides,
+      i18n,
+    },
+    {
+      actorEmail: authedUser?.email || null,
     }
-    log.error('[import-deck] Error:', err.message);
-    serverError(res, 'Failed to import .deck bundle');
-    return true;
-  }
+  );
+
+  serveJson(res, 201, {
+    ...updated,
+    ...(failedAssets.length ? { failedAssets } : {}),
+  });
+  return true;
 }

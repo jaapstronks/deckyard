@@ -1,15 +1,14 @@
 /**
- * Regression: the three optimistic-lock catch blocks on the presentation write
- * routes now emit the canonical error envelope.
+ * Regression: optimistic-lock conflicts on the presentation write routes emit
+ * the canonical error envelope.
  *
- * PUT /:id, PATCH /:id/visibility and POST /:id/versions/:v/restore each wrap their
- * updatePresentation() call in a catch that used to serve a hand-rolled body
- * (`{ error: <prose>, details }`) — no `ok:false`, the human message sitting in
- * the machine-code slot, and (because these handlers are not wrapped in
- * withErrorHandler) no other layer to normalize it. The catch now runs the error
- * through errorToResponse(), producing the canonical envelope
+ * PUT /:id, PATCH /:id/visibility and POST /:id/versions/:v/restore let the
+ * ConflictError from updatePresentation() propagate to the `withErrorHandler`
+ * wrapper on the presentations dispatcher (C7d) — the per-handler catch shims
+ * are gone. The wrapper serves the AppError as the canonical envelope
  * (`{ ok:false, error:'<code>', message, details }`) with the stable `conflict`
- * code and the details preserved.
+ * code and the details preserved, so these tests exercise the wrapped
+ * dispatcher, not the bare sub-handlers.
  *
  * Each test forces a real ConflictError by sending a stale If-Match revision, so
  * the assertions go red against the old hand-rolled body.
@@ -34,15 +33,7 @@ const { initializeStorage, __resetStorageForTests } = await import(
 const { createPresentation, createPresentationVersion } = await import(
   '../server/storage/presentations/index.js'
 );
-const { handlePresentationItem } = await import(
-  '../server/routes/api/presentations/presentation.js'
-);
-const { handlePresentationVisibility } = await import(
-  '../server/routes/api/presentations/visibility.js'
-);
-const { handlePresentationRestoreVersion } = await import(
-  '../server/routes/api/presentations/restore.js'
-);
+const { handlePresentations } = await import('../server/routes/api/presentations.js');
 
 const OWNER = 'owner@example.com';
 // A revision that will never match a freshly-seeded deck (revision 1), so the
@@ -122,39 +113,34 @@ function assertConflictEnvelope(res, presId) {
 test('PUT /:id conflict emits the canonical envelope', async () => {
   const pres = await seedDeck();
   const res = fakeRes();
-  await handlePresentationItem(
-    {
-      storageScope: testScope(),
-      req: fakeReq({
-        method: 'PUT',
-        headers: { 'if-match': STALE_REVISION },
-        body: { ...pres, title: 'Changed' },
-      }),
-      res,
-      url: `/api/presentations/${pres.id}`,
-      authedUser: owner,
-    },
-    pres.id
-  );
+  await handlePresentations({
+    storageScope: testScope(),
+    req: fakeReq({
+      method: 'PUT',
+      headers: { 'if-match': STALE_REVISION },
+      body: { ...pres, title: 'Changed' },
+    }),
+    res,
+    url: new URL(`http://test.local/api/presentations/${pres.id}`),
+    authedUser: owner,
+  });
   assertConflictEnvelope(res, pres.id);
 });
 
 test('PATCH /:id/visibility conflict emits the canonical envelope', async () => {
   const pres = await seedDeck();
   const res = fakeRes();
-  await handlePresentationVisibility(
-    {
-      storageScope: testScope(),
-      req: fakeReq({
-        method: 'PATCH',
-        headers: { 'if-match': STALE_REVISION },
-        body: { visibility: 'organization' },
-      }),
-      res,
-      authedUser: owner,
-    },
-    pres.id
-  );
+  await handlePresentations({
+    storageScope: testScope(),
+    req: fakeReq({
+      method: 'PATCH',
+      headers: { 'if-match': STALE_REVISION },
+      body: { visibility: 'organization' },
+    }),
+    res,
+    url: new URL(`http://test.local/api/presentations/${pres.id}/visibility`),
+    authedUser: owner,
+  });
   assertConflictEnvelope(res, pres.id);
 });
 
@@ -164,19 +150,16 @@ test('POST /:id/versions/:v/restore conflict emits the canonical envelope', asyn
     actorEmail: OWNER,
   });
   const res = fakeRes();
-  await handlePresentationRestoreVersion(
-    {
-      storageScope: testScope(),
-      req: fakeReq({
-        method: 'POST',
-        headers: { 'if-match': STALE_REVISION },
-        body: {},
-      }),
-      res,
-      authedUser: owner,
-    },
-    pres.id,
-    version?.id
-  );
+  await handlePresentations({
+    storageScope: testScope(),
+    req: fakeReq({
+      method: 'POST',
+      headers: { 'if-match': STALE_REVISION },
+      body: {},
+    }),
+    res,
+    url: new URL(`http://test.local/api/presentations/${pres.id}/versions/${version?.id}/restore`),
+    authedUser: owner,
+  });
   assertConflictEnvelope(res, pres.id);
 });

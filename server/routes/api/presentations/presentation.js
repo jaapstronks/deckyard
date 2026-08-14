@@ -12,7 +12,6 @@ import {
   requireJsonBody,
 } from '../../../utils/http.js';
 import { getEffectivePermission } from '../../../utils/presentation-authz.js';
-import { errorToResponse } from '../../../utils/errors.js';
 import {
   withPresentationAuth,
   canEditCustomHtml,
@@ -178,26 +177,17 @@ export async function handlePresentationItem(
       clientReordered = false;
     }
 
-    let updated = null;
-    try {
-      updated = await updatePresentation(storageScope, id, body, {
-        expectedRevision,
-        actorEmail: authedUser?.email || null,
-        user: authedUser || null,
-        modifiedSlideIds,
-        slideBaseFingerprints,
-        clientReordered,
-      });
-    } catch (e) {
-      // Optimistic-lock failures (ConflictError/LockedError from
-      // updatePresentation) carry a statusCode; emit them through the canonical
-      // error envelope ({ ok:false, error:'<code>', message, details }) instead
-      // of a hand-rolled body. Unexpected errors propagate to the top-level
-      // handler.
-      if (e?.statusCode)
-        return serveJson(res, e.statusCode, errorToResponse(e));
-      throw e;
-    }
+    // Optimistic-lock failures (ConflictError/LockedError from
+    // updatePresentation) are AppErrors — the withErrorHandler wrapper on the
+    // presentations dispatcher emits them through the canonical envelope.
+    const updated = await updatePresentation(storageScope, id, body, {
+      expectedRevision,
+      actorEmail: authedUser?.email || null,
+      user: authedUser || null,
+      modifiedSlideIds,
+      slideBaseFingerprints,
+      clientReordered,
+    });
     if (!updated) return notFound(res);
 
     // Record activity event (non-blocking)
