@@ -2,28 +2,18 @@ import { api } from '../lib/api.js';
 import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
 import { createBusyManager } from '../lib/dom/busy.js';
+import { authShell } from './auth-shell.js';
 
 export async function renderResetPassword(root, { nav } = {}) {
-  const shell = h('div', { class: 'auth-shell' });
-  const card = h('div', { class: 'auth-card' });
-
-  // Header
-  const header = h('div', { class: 'auth-header' });
-  const title = h('h1', {
-    class: 'auth-title',
-    text: t('resetPassword.title', 'Set a new password'),
+  const { shell, card, subtitle } = authShell({
+    title: t('resetPassword.title', 'Set a new password'),
+    subtitle: t('resetPassword.validating', 'Validating...'),
   });
-  const subtitle = h('p', {
-    class: 'auth-subtitle',
-    text: t('resetPassword.validating', 'Validating...'),
-  });
-  header.append(title, subtitle);
 
   const form = h('div', { class: 'auth-form' });
   const status = h('div', { class: 'auth-status' });
 
-  card.append(header, form);
-  shell.append(card);
+  card.append(form);
   root.append(shell);
 
   // Get token from URL

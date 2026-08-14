@@ -1,6 +1,7 @@
 import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
 import { me } from '../lib/user/auth.js';
+import { authShell } from './auth-shell.js';
 
 export async function renderMagicLogin(root, { nav } = {}) {
   const url = new URL(location.href);
@@ -10,26 +11,16 @@ export async function renderMagicLogin(root, { nav } = {}) {
       ? returnToRaw
       : '/app';
 
-  const shell = h('div', { class: 'auth-shell' });
-  const card = h('div', { class: 'auth-card is-centered' });
-
-  // Header
-  const header = h('div', { class: 'auth-header' });
-  const title = h('h1', {
-    class: 'auth-title',
-    text: t('magicLogin.title', 'Signing you in...'),
+  const { shell, card, header, title, subtitle } = authShell({
+    title: t('magicLogin.title', 'Signing you in...'),
+    subtitle: t('magicLogin.verifying', 'Verifying your link...'),
+    centered: true,
   });
-  const subtitle = h('p', {
-    class: 'auth-subtitle',
-    text: t('magicLogin.verifying', 'Verifying your link...'),
-  });
-  header.append(title, subtitle);
 
   // Add a spinner/loading indicator
   const spinner = h('div', { class: 'auth-spinner' });
 
-  card.append(header, spinner);
-  shell.append(card);
+  card.append(spinner);
   root.append(shell);
 
   // Get token from URL
