@@ -18,6 +18,7 @@ import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
 import { openModal } from '../../lib/dom/modal.js';
 import { toast } from '../../lib/dom/toast.js';
+import { downloadBlob } from '../../lib/dom/download.js';
 import { normalizeLang, hasLangVersion, otherLang } from '../../lib/format/i18n.js';
 import { createSegmented } from '../../lib/dom/segmented.js';
 import { buildExportUrl } from './publish-export/urls.js';
@@ -99,16 +100,6 @@ function filenameFromDisposition(cd, fallback) {
   }
 }
 
-/** Save a blob to disk via a transient anchor. */
-function saveBlob(blob, filename) {
-  const objUrl = URL.createObjectURL(blob);
-  const a = h('a', { href: objUrl, download: filename });
-  document.body.append(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(objUrl), 10_000);
-}
-
 /**
  * The PDF flow: fetch the server-rendered PDF synchronously (so we can detect
  * success/failure directly), download it, and only on error/timeout reveal the
@@ -136,7 +127,7 @@ async function exportPdf({ id, getLang, title, button, fallbackWrap }) {
       res.headers.get('Content-Disposition'),
       `${title || 'export'}.pdf`
     );
-    saveBlob(blob, filename);
+    downloadBlob(blob, filename);
   } catch (err) {
     // Reveal the browser-print fallback: open the printable slide page in a new
     // tab, where the user does Cmd/Ctrl-P → Save as PDF.
