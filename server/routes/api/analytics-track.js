@@ -3,7 +3,17 @@
  * These endpoints do NOT require authentication and are used by viewers.
  */
 
-import { requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import {
+  badRequest,
+  forbidden,
+  getErrorStatus,
+  jsonError,
+  notFound,
+  rateLimited,
+  requireJsonBody,
+  serveJson,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { norm } from '../../utils/normalize.js';
 import { redactSecret } from '../../utils/log-redact.js';
@@ -17,9 +27,6 @@ import {
   isValidSlideIndex,
   isValidSourceType,
   sanitizeUserAgent,
-  sendRateLimitResponse,
-  sendErrorResponse,
-  sendSuccessResponse,
   logSecurityEvent,
   SECURITY_EVENTS,
   SOURCE_TYPES,
@@ -190,7 +197,7 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
       endpoint: path,
       limitType: 'sessionStart',
     });
-    return sendRateLimitResponse(res), true;
+    return rateLimited(res);
   }
 
   const parsed = await requireJsonBody(req, res);
@@ -203,12 +210,12 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
   const deviceId = body?.deviceId ?? null;
 
   if (!presentationId || !sourceType) {
-    return sendErrorResponse(res, 400, 'Missing required fields'), true;
+    return badRequest(res, 'Missing required fields');
   }
 
   // Validate source type
   if (!isValidSourceType(sourceType)) {
-    return sendErrorResponse(res, 400, 'Invalid source type'), true;
+    return badRequest(res, 'Invalid source type');
   }
 
   // Validate device ID format if provided
@@ -218,7 +225,7 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
       endpoint: path,
       deviceId: deviceId?.slice(0, 20) + '...', // Truncate for logging
     });
-    return sendErrorResponse(res, 400, 'Invalid device ID format'), true;
+    return badRequest(res, 'Invalid device ID format');
   }
 
   // Validate presentation access (security fix: verify viewer has legitimate access)
@@ -228,8 +235,9 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
   );
 
   if (!accessValidation.ok) {
-    const statusCode = accessValidation.reason?.includes('not found') ? 404 : 403;
-    return sendErrorResponse(res, statusCode, accessValidation.reason), true;
+    return accessValidation.reason?.includes('not found')
+      ? notFound(res, accessValidation.reason)
+      : forbidden(res, accessValidation.reason);
   }
 
   // Check app-level analytics settings
@@ -238,7 +246,7 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
   );
   if (!appSettings.analytics?.enabled) {
     // Analytics disabled at app level - silently accept but don't track
-    return sendSuccessResponse(res, { sessionToken: null, sessionId: null }), true;
+    return serveJson(res, 200, { sessionToken: null, sessionId: null }), true;
   }
 
   const viewerType = body?.viewerType ?? VIEWER_TYPES.ANONYMOUS;
@@ -255,7 +263,7 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
 
     // If viewer has opted out of all tracking, don't track
     if (viewerPrivacySettings?.privacy?.disableAllTracking) {
-      return sendSuccessResponse(res, { sessionToken: null, sessionId: null }), true;
+      return serveJson(res, 200, { sessionToken: null, sessionId: null }), true;
     }
   }
 
@@ -286,10 +294,10 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
   });
 
   if (!result.ok) {
-    return sendErrorResponse(res, 500, result.reason || 'Failed to create session'), true;
+    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to create session');
   }
 
-  return sendSuccessResponse(res, {
+  return serveJson(res, 200, {
     sessionToken: result.session.sessionToken,
     sessionId: result.session.id,
   }), true;
@@ -307,7 +315,7 @@ async function handleTrackSessionHeartbeat({ req, res, url, repoRoot }) {
       endpoint: path,
       limitType: 'heartbeat',
     });
-    return sendRateLimitResponse(res), true;
+    return rateLimited(res);
   }
 
   const parsed = await requireJsonBody(req, res);
@@ -317,7 +325,7 @@ async function handleTrackSessionHeartbeat({ req, res, url, repoRoot }) {
   const sessionToken = norm(body?.sessionToken);
 
   if (!sessionToken) {
-    return sendErrorResponse(res, 400, 'Missing session token'), true;
+    return badRequest(res, 'Missing session token');
   }
 
   // Validate session token format
@@ -327,7 +335,7 @@ async function handleTrackSessionHeartbeat({ req, res, url, repoRoot }) {
       endpoint: path,
       tokenPrefix: sessionToken?.slice(0, 8) + '...',
     });
-    return sendErrorResponse(res, 400, 'Invalid session token format'), true;
+    return badRequest(res, 'Invalid session token format');
   }
 
   // Per-session rate limiting
@@ -337,7 +345,7 @@ async function handleTrackSessionHeartbeat({ req, res, url, repoRoot }) {
       endpoint: path,
       limitType: 'sessionHeartbeat',
     });
-    return sendRateLimitResponse(res), true;
+    return rateLimited(res);
   }
 
   const result = await updateViewSession(sessionToken, {
@@ -346,11 +354,10 @@ async function handleTrackSessionHeartbeat({ req, res, url, repoRoot }) {
   });
 
   if (!result.ok) {
-    const statusCode = result.reason === 'not_found' ? 404 : 500;
-    return sendErrorResponse(res, statusCode, result.reason || 'Failed to update session'), true;
+    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to update session');
   }
 
-  return sendSuccessResponse(res, { ok: true }), true;
+  return serveJson(res, 200, { ok: true }), true;
 }
 
 // POST /api/track/session/end - End a view session
@@ -365,7 +372,7 @@ async function handleTrackSessionEnd({ req, res, url, repoRoot }) {
       endpoint: path,
       limitType: 'sessionEnd',
     });
-    return sendRateLimitResponse(res), true;
+    return rateLimited(res);
   }
 
   const parsed = await requireJsonBody(req, res);
@@ -375,7 +382,7 @@ async function handleTrackSessionEnd({ req, res, url, repoRoot }) {
   const sessionToken = norm(body?.sessionToken);
 
   if (!sessionToken) {
-    return sendErrorResponse(res, 400, 'Missing session token'), true;
+    return badRequest(res, 'Missing session token');
   }
 
   // Validate session token format
@@ -385,7 +392,7 @@ async function handleTrackSessionEnd({ req, res, url, repoRoot }) {
       endpoint: path,
       tokenPrefix: sessionToken?.slice(0, 8) + '...',
     });
-    return sendErrorResponse(res, 400, 'Invalid session token format'), true;
+    return badRequest(res, 'Invalid session token format');
   }
 
   // End any open slide views first
@@ -400,11 +407,10 @@ async function handleTrackSessionEnd({ req, res, url, repoRoot }) {
   });
 
   if (!result.ok) {
-    const statusCode = result.reason === 'not_found' ? 404 : 500;
-    return sendErrorResponse(res, statusCode, result.reason || 'Failed to end session'), true;
+    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to end session');
   }
 
-  return sendSuccessResponse(res, { ok: true }), true;
+  return serveJson(res, 200, { ok: true }), true;
 }
 
 // POST /api/track/slide/view - Record slide view
@@ -419,7 +425,7 @@ async function handleTrackSlideView({ req, res, url, repoRoot }) {
       endpoint: path,
       limitType: 'slideView',
     });
-    return sendRateLimitResponse(res), true;
+    return rateLimited(res);
   }
 
   const parsed = await requireJsonBody(req, res);
@@ -431,7 +437,7 @@ async function handleTrackSlideView({ req, res, url, repoRoot }) {
   const slideIndex = body?.slideIndex ?? 0;
 
   if (!sessionToken || !slideId) {
-    return sendErrorResponse(res, 400, 'Missing required fields'), true;
+    return badRequest(res, 'Missing required fields');
   }
 
   // Validate session token format
@@ -441,7 +447,7 @@ async function handleTrackSlideView({ req, res, url, repoRoot }) {
       endpoint: path,
       tokenPrefix: sessionToken?.slice(0, 8) + '...',
     });
-    return sendErrorResponse(res, 400, 'Invalid session token format'), true;
+    return badRequest(res, 'Invalid session token format');
   }
 
   // Per-session rate limiting
@@ -451,18 +457,18 @@ async function handleTrackSlideView({ req, res, url, repoRoot }) {
       endpoint: path,
       limitType: 'sessionSlideView',
     });
-    return sendRateLimitResponse(res), true;
+    return rateLimited(res);
   }
 
   // Validate slide index (using centralized validation)
   if (!isValidSlideIndex(slideIndex)) {
-    return sendErrorResponse(res, 400, 'Invalid slide index'), true;
+    return badRequest(res, 'Invalid slide index');
   }
 
   // Get session to get session ID and presentation ID
   const session = await getViewSessionByToken(sessionToken);
   if (!session) {
-    return sendErrorResponse(res, 404, 'Session not found'), true;
+    return notFound(res, 'Session not found');
   }
 
   // Atomically transition to new slide (ends current and starts new in single transaction)
@@ -474,7 +480,7 @@ async function handleTrackSlideView({ req, res, url, repoRoot }) {
   });
 
   if (!result.ok) {
-    return sendErrorResponse(res, 500, result.reason || 'Failed to record slide view'), true;
+    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to record slide view');
   }
 
   // Also update the session with current slide info
@@ -488,7 +494,7 @@ async function handleTrackSlideView({ req, res, url, repoRoot }) {
     log.warn(`[analytics-track] Failed to update session ${redactSecret(sessionToken)}: ${sessionUpdate.reason}`);
   }
 
-  return sendSuccessResponse(res, {
+  return serveJson(res, 200, {
     ok: true,
     slideViewId: result.slideView.id,
   }), true;
@@ -515,7 +521,7 @@ async function handleTrackMyDataErase({ req, res, url, repoRoot }) {
       endpoint: path,
       limitType: 'trackErase',
     });
-    return sendRateLimitResponse(res), true;
+    return rateLimited(res);
   }
 
   const parsed = await requireJsonBody(req, res);
@@ -525,7 +531,7 @@ async function handleTrackMyDataErase({ req, res, url, repoRoot }) {
   const sessionToken = norm(body?.sessionToken);
 
   if (!sessionToken) {
-    return sendErrorResponse(res, 400, 'Missing session token'), true;
+    return badRequest(res, 'Missing session token');
   }
 
   // Validate session token format
@@ -535,7 +541,7 @@ async function handleTrackMyDataErase({ req, res, url, repoRoot }) {
       endpoint: path,
       tokenPrefix: sessionToken?.slice(0, 8) + '...',
     });
-    return sendErrorResponse(res, 400, 'Invalid session token format'), true;
+    return badRequest(res, 'Invalid session token format');
   }
 
   const session = await getViewSessionByToken(sessionToken);
@@ -547,7 +553,7 @@ async function handleTrackMyDataErase({ req, res, url, repoRoot }) {
       endpoint: path,
       reason: 'Unknown session token',
     });
-    return sendErrorResponse(res, 404, 'Session not found'), true;
+    return notFound(res, 'Session not found');
   }
 
   // A session with a device id cascades to every session of that device
@@ -557,10 +563,10 @@ async function handleTrackMyDataErase({ req, res, url, repoRoot }) {
     : await eraseAnalyticsDataForSession({ sessionId: session.id });
 
   if (!result.ok) {
-    return sendErrorResponse(res, 500, result.reason || 'Failed to erase data'), true;
+    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to erase data');
   }
 
-  return sendSuccessResponse(res, { ok: true, deleted: result.deleted }), true;
+  return serveJson(res, 200, { ok: true, deleted: result.deleted }), true;
 }
 
 /**

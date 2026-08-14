@@ -203,7 +203,11 @@ test('export refuses an unauthenticated caller and reads nothing', async () => {
 
   assert.equal(handled, true);
   assert.equal(res.statusCode, 401);
-  assert.deepEqual(res.body, { error: 'Authentication required' });
+  assert.deepEqual(res.body, {
+    ok: false,
+    error: 'unauthorized',
+    message: 'Authentication required',
+  });
   assert.deepEqual(
     db.__queryLog,
     [],
@@ -306,7 +310,11 @@ test('delete refuses an unauthenticated caller and removes nothing', async () =>
 
   assert.equal(handled, true);
   assert.equal(res.statusCode, 401);
-  assert.deepEqual(res.body, { error: 'Authentication required' });
+  assert.deepEqual(res.body, {
+    ok: false,
+    error: 'unauthorized',
+    message: 'Authentication required',
+  });
   assert.deepEqual(sessionIds(db), ['s1'], 'nothing was deleted');
   assert.deepEqual(db.__queryLog, [], 'the 401 short-circuits before any query');
 });
@@ -386,7 +394,8 @@ test('export is rate-limited once the expensive-op bucket is spent', async () =>
   const { res } = await invoke(handleExportMyData, user);
   assert.equal(res.statusCode, 429, 'the call past the burst is refused');
   assert.equal(res.headers['Retry-After'], '5');
-  assert.match(res.body.error, /Rate limit/);
+  assert.equal(res.body.error, 'rate_limited');
+  assert.match(res.body.message, /Rate limit/);
 });
 
 test('delete is rate-limited once the expensive-op bucket is spent', async () => {
@@ -401,5 +410,6 @@ test('delete is rate-limited once the expensive-op bucket is spent', async () =>
   const { res } = await invoke(handleDeleteMyData, user);
   assert.equal(res.statusCode, 429, 'the call past the burst is refused');
   assert.equal(res.headers['Retry-After'], '5');
-  assert.match(res.body.error, /Rate limit/);
+  assert.equal(res.body.error, 'rate_limited');
+  assert.match(res.body.message, /Rate limit/);
 });

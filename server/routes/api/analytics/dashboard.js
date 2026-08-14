@@ -2,7 +2,7 @@
  * Analytics dashboard endpoints.
  */
 
-import { sendErrorResponse, sendSuccessResponse } from '../../../analytics/helpers.js';
+import { badRequest, serveJson, unauthorized } from '../../../utils/http.js';
 import {
   getDashboardSummary,
   getDashboardTimeline,
@@ -21,13 +21,13 @@ export async function handleDashboard(ctx) {
   const { res, url, authedUser } = ctx;
 
   if (!authedUser?.email) {
-    return sendErrorResponse(res, 401, 'Authentication required'), true;
+    return unauthorized(res, 'Authentication required');
   }
 
   const period = url.searchParams.get('period') || '30d';
 
   if (!VALID_PERIODS.includes(period)) {
-    return sendErrorResponse(res, 400, 'Invalid period. Use 7d, 30d, 90d, or 12m'), true;
+    return badRequest(res, 'Invalid period. Use 7d, 30d, 90d, or 12m');
   }
 
   const opts = { period };
@@ -40,7 +40,7 @@ export async function handleDashboard(ctx) {
     getSourceBreakdown(authedUser.email, authedUser.organizationId, opts),
   ]);
 
-  return sendSuccessResponse(res, {
+  return serveJson(res, 200, {
     summary: summary.summary,
     trend: summary.trend,
     timeline,
@@ -56,7 +56,7 @@ export async function handlePresentationsList(ctx) {
   const { res, url, authedUser } = ctx;
 
   if (!authedUser?.email) {
-    return sendErrorResponse(res, 401, 'Authentication required'), true;
+    return unauthorized(res, 'Authentication required');
   }
 
   const period = url.searchParams.get('period') || '30d';
@@ -65,11 +65,11 @@ export async function handlePresentationsList(ctx) {
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
   if (!VALID_PERIODS.includes(period)) {
-    return sendErrorResponse(res, 400, 'Invalid period. Use 7d, 30d, 90d, or 12m'), true;
+    return badRequest(res, 'Invalid period. Use 7d, 30d, 90d, or 12m');
   }
 
   if (!VALID_SORTS.includes(sort)) {
-    return sendErrorResponse(res, 400, 'Invalid sort. Use views, duration, completion, or recent'), true;
+    return badRequest(res, 'Invalid sort. Use views, duration, completion, or recent');
   }
 
   const result = await getPresentationsWithAnalytics(
@@ -78,5 +78,5 @@ export async function handlePresentationsList(ctx) {
     { period, sort, limit, offset }
   );
 
-  return sendSuccessResponse(res, result), true;
+  return serveJson(res, 200, result), true;
 }

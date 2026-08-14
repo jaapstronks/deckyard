@@ -6,9 +6,8 @@ import { extractValidatedDateRange, parsePaginationParams } from '../../../utils
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import {
   publicDeviceLabel,
-  sendErrorResponse,
-  sendSuccessResponse,
 } from '../../../analytics/helpers.js';
+import { badRequest, serveJson } from '../../../utils/http.js';
 import { getViewSessionsForPresentation } from '../../../storage/analytics/view-sessions.js';
 import {
   getPresentationAnalyticsOverview,
@@ -33,12 +32,12 @@ export async function handleOverview(ctx, presentationId) {
   if (!pres) return true;
 
   const dateRange = extractValidatedDateRange(url.searchParams, res, {
-    sendError: (r, msg) => sendErrorResponse(r, 400, msg),
+    sendError: (r, msg) => badRequest(r, msg),
   });
   if (!dateRange) return true;
 
   const overview = await getPresentationAnalyticsOverview(presentationId, dateRange);
-  return sendSuccessResponse(res, overview), true;
+  return serveJson(res, 200, overview), true;
 }
 
 /**
@@ -57,12 +56,12 @@ export async function handleSlides(ctx, presentationId) {
   if (!pres) return true;
 
   const dateRange = extractValidatedDateRange(url.searchParams, res, {
-    sendError: (r, msg) => sendErrorResponse(r, 400, msg),
+    sendError: (r, msg) => badRequest(r, msg),
   });
   if (!dateRange) return true;
 
   const slides = await getDetailedSlideEngagement(presentationId, dateRange);
-  return sendSuccessResponse(res, { slides }), true;
+  return serveJson(res, 200, { slides }), true;
 }
 
 /**
@@ -81,12 +80,12 @@ export async function handleHeatmap(ctx, presentationId) {
   if (!pres) return true;
 
   const dateRange = extractValidatedDateRange(url.searchParams, res, {
-    sendError: (r, msg) => sendErrorResponse(r, 400, msg),
+    sendError: (r, msg) => badRequest(r, msg),
   });
   if (!dateRange) return true;
 
   const heatmap = await getInteractionHeatmapData(presentationId, dateRange);
-  return sendSuccessResponse(res, { slides: heatmap }), true;
+  return serveJson(res, 200, { slides: heatmap }), true;
 }
 
 /**
@@ -105,12 +104,12 @@ export async function handleJourney(ctx, presentationId) {
   if (!pres) return true;
 
   const dateRange = extractValidatedDateRange(url.searchParams, res, {
-    sendError: (r, msg) => sendErrorResponse(r, 400, msg),
+    sendError: (r, msg) => badRequest(r, msg),
   });
   if (!dateRange) return true;
 
   const journey = await getViewerJourneyData(presentationId, dateRange);
-  return sendSuccessResponse(res, journey), true;
+  return serveJson(res, 200, journey), true;
 }
 
 /**
@@ -141,7 +140,7 @@ export async function handleSessions(ctx, presentationId) {
 
   const { limit, offset } = parsePaginationParams(url.searchParams);
   const dateRange = extractValidatedDateRange(url.searchParams, res, {
-    sendError: (r, msg) => sendErrorResponse(r, 400, msg),
+    sendError: (r, msg) => badRequest(r, msg),
   });
   if (!dateRange) return true;
 
@@ -156,5 +155,5 @@ export async function handleSessions(ctx, presentationId) {
     deviceId: publicDeviceLabel(session.deviceId, presentationId),
   }));
 
-  return sendSuccessResponse(res, { ...result, sessions }), true;
+  return serveJson(res, 200, { ...result, sessions }), true;
 }

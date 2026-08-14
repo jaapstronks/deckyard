@@ -200,46 +200,6 @@ export function publicDeviceLabel(deviceId, presentationId) {
 }
 
 // ============================================================
-// HTTP RESPONSE HELPERS
-// ============================================================
-
-/**
- * Send a rate limit exceeded response.
- * @param {Object} res - The response object
- * @param {string} [message] - Optional custom message
- * @param {number} [retryAfter] - Retry-After header value in seconds
- */
-export function sendRateLimitResponse(res, message = 'Rate limit exceeded', retryAfter = 5) {
-  res.writeHead(429, {
-    'Content-Type': 'application/json',
-    'Retry-After': String(retryAfter),
-  });
-  res.end(JSON.stringify({ error: message }));
-}
-
-/**
- * Send a JSON error response.
- * @param {Object} res - The response object
- * @param {number} status - HTTP status code
- * @param {string} error - Error message
- */
-export function sendErrorResponse(res, status, error) {
-  res.writeHead(status, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ error }));
-}
-
-/**
- * Send a JSON success response.
- * @param {Object} res - The response object
- * @param {Object} data - Response data
- * @param {number} [status] - HTTP status code (default 200)
- */
-export function sendSuccessResponse(res, data, status = 200) {
-  res.writeHead(status, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(data));
-}
-
-// ============================================================
 // SECURITY LOGGING
 // ============================================================
 
