@@ -1,5 +1,6 @@
 import {
   badRequest,
+  forbidden,
   methodNotAllowed,
   serveJson,
   unauthorized,
@@ -198,7 +199,7 @@ async function handleTeamUpdate({ storageScope, req, res, authedUser }, id) {
     });
     if (!r.ok) {
       if (r.reason === 'not_found') return notFound(res);
-      if (r.reason === 'forbidden') return unauthorized(res, 'Not allowed');
+      if (r.reason === 'forbidden') return forbidden(res, 'Not allowed');
       return badRequest(res, r.reason);
     }
     serveJson(res, 200, r.item);
@@ -225,7 +226,7 @@ async function handleTeamDelete({ storageScope, res, authedUser }, id) {
   });
   if (!r.ok) {
     if (r.reason === 'not_found') return notFound(res);
-    if (r.reason === 'forbidden') return unauthorized(res, 'Not allowed');
+    if (r.reason === 'forbidden') return forbidden(res, 'Not allowed');
     return badRequest(res, r.reason);
   }
   serveJson(res, 200, { ok: true });

@@ -4,11 +4,16 @@
  * Two things are pinned here:
  *
  * 1. No route under `server/routes/api/` (and not `server/server.js`) answers
- *    an error with `serveJson(res, 4xx/5xx, …)` — errors go through
- *    `jsonError()`/the status helpers so every failure carries the canonical
- *    `{ ok: false, error: '<machine_code>' }` envelope. The public
- *    `/api/v1/*` surface (`server/routes/public-api/`) keeps its own
- *    openapi-documented shape and is exempt.
+ *    an error with a *literal* 4xx/5xx status in `serveJson(res, 4xx/5xx, …)` —
+ *    errors go through `jsonError()`/the status helpers so every failure
+ *    carries the canonical `{ ok: false, error: '<machine_code>' }` envelope.
+ *    Computed statuses (`serveJson(res, result.ok ? 200 : 409, …)`) are
+ *    outside this regex's reach: the known ones are the presentation-lock
+ *    routes (`presentations/locks.js`, coupled to client lock readers) and
+ *    `presentations/subscription.js` — tracked as C7g rest work, not silently
+ *    covered here. The public `/api/v1/*` surface
+ *    (`server/routes/public-api/`) keeps its own openapi-documented shape and
+ *    is exempt.
  *
  * 2. The top-level throttle in `server.js` uses `rateLimited()` — the old
  *    handwritten 429 (`{ error: 'Rate limit exceeded' }`) must not come back.

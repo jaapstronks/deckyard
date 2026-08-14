@@ -250,6 +250,17 @@ const ERROR_STATUS_MAP = {
   invalid_permission: 400,
   user_not_found: 400,
 
+  // Combined not-found/already-in-state reasons. Storage answers these from a
+  // single conditional UPDATE and deliberately does not distinguish "gone"
+  // from "already in that state" (splitting would need a second, racy query).
+  // The statuses differ on purpose and are pinned here as the explicit
+  // exception: revoking is a DELETE-shaped call where a missing key is a 404;
+  // resolve/dismiss are transition-shaped calls where the combined reason is
+  // the caller's request failing, hence 400.
+  not_found_or_already_revoked: 404,
+  not_found_or_already_resolved: 400,
+  not_found_or_already_handled: 400,
+
   // Ours, not the caller's. These must never answer 4xx: telling a client its
   // request is malformed when our insert failed sends it off to fix something
   // that is not broken, and hides the outage from every error dashboard that
