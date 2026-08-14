@@ -520,7 +520,7 @@ test('a view-only link admits no guests at all', async () => {
   });
 
   assert.equal(res.status, 403);
-  assert.equal(res.body.error, 'permission_denied');
+  assert.equal(res.body.error, 'forbidden');
   assert.deepEqual(guests(), [], 'nothing is recorded for a refused request');
 });
 
