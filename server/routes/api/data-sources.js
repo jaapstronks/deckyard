@@ -7,7 +7,7 @@
  *   GET    /api/data-sources/providers     - List available providers
  */
 
-import { badRequest, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError, requireJsonBody , withErrorHandler } from '../../utils/http.js';
+import { badRequest, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { isLiveDataEnabled } from '../../config/features.js';
 import { validateDataSource, DATA_SOURCE_PROVIDERS, BINDABLE_SLIDE_TYPES } from '../../../shared/data-source.js';
 import { refreshSlideData, fetchProviderData } from '../../utils/data-source/index.js';

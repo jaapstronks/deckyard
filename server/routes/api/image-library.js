@@ -16,7 +16,8 @@ import {
   serveJson,
   unauthorized,
   requireJsonBody,
- withErrorHandler } from '../../utils/http.js';
+  withErrorHandler,
+} from '../../utils/http.js';
 import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { generateImageAltTexts } from '../../utils/llm/alt-text.js';

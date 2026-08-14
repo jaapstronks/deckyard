@@ -11,7 +11,8 @@ import {
   jsonError,
   serveJson,
   requireJsonBody,
- withErrorHandler } from '../../utils/http.js';
+  withErrorHandler,
+} from '../../utils/http.js';
 import {
   getConvertParams,
 } from '../../utils/request-validators.js';

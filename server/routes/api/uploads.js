@@ -1,4 +1,4 @@
-import { badRequest, jsonError, serveJson, serverError, unauthorized, requireJsonBody , withErrorHandler } from '../../utils/http.js';
+import { badRequest, jsonError, serveJson, serverError, unauthorized, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
 import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import { dispatchRoutes } from '../../utils/router.js';

@@ -1,5 +1,5 @@
 import { getFeatureFlags } from '../../config/flags-snapshot.js';
-import { badRequest, jsonError, methodNotAllowed, serveJson, serverError, unauthorized, requireJsonBody , withErrorHandler } from '../../utils/http.js';
+import { badRequest, jsonError, methodNotAllowed, serveJson, serverError, unauthorized, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import {
   getImageKitConfigFromEnv,
   listImageKitFiles,

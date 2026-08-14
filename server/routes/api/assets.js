@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { serveJson , withErrorHandler } from '../../utils/http.js';
+import { serveJson, withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 async function listAssetDir(repoRoot, subdir, allowedExts) {
