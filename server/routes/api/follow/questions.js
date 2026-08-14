@@ -1,4 +1,4 @@
-import { badRequest, methodNotAllowed, serveJson, requireJsonBody, jsonError } from '../../../utils/http.js';
+import { badRequest, getErrorStatus, methodNotAllowed, serveJson, requireJsonBody, jsonError } from '../../../utils/http.js';
 import { getString } from '../../../utils/request-validators.js';
 import { getFollowStateForPresentation } from '../../../storage/live-sessions/index.js';
 import { getPresentation } from '../../../storage/presentations/index.js';
@@ -78,7 +78,7 @@ export async function handleFollowQuestions({ repoRoot, req, res }, presentation
       text,
     });
     if (!result.ok) {
-      return jsonError(res, 400, result.reason, undefined, {
+      return jsonError(res, getErrorStatus(result.reason), result.reason, undefined, {
         headers: dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {},
       });
     }
@@ -114,8 +114,7 @@ export async function handleFollowUpvote({ repoRoot, req, res }, presentationId,
     voterId,
   });
   if (!result.ok) {
-    const status = result.reason === 'already_voted' ? 409 : 400;
-    return jsonError(res, status, result.reason, undefined, {
+    return jsonError(res, getErrorStatus(result.reason), result.reason, undefined, {
       headers: dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {},
     });
   }
@@ -148,8 +147,7 @@ export async function handleFollowCancel({ repoRoot, req, res }, presentationId,
     authorId,
   });
   if (!result.ok) {
-    const status = result.reason === 'forbidden' ? 403 : 400;
-    return jsonError(res, status, result.reason, undefined, {
+    return jsonError(res, getErrorStatus(result.reason), result.reason, undefined, {
       headers: dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {},
     });
   }

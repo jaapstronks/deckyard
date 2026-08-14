@@ -22,7 +22,7 @@ import {
 import { sendGuestInvitationEmail } from '../../../integrations/brevo.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { dispatchRoutes } from '../../../utils/router.js';
-import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, jsonError } from '../../../utils/http.js';
+import { serveJson, notFound, unauthorized, badRequest, getErrorStatus, requireJsonBody, jsonError } from '../../../utils/http.js';
 import { buildShareUrl } from '../../../utils/request-url.js';
 import { createLogger } from '../../../utils/logger.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
@@ -64,13 +64,7 @@ async function handleGuestPreRegister(
   );
 
   if (!result.ok) {
-    const statusMap = {
-      invalid_email: 400,
-      already_invited: 409,
-      share_link_not_found: 404,
-    };
-    const status = statusMap[result.reason] || 400;
-    jsonError(res, status, result.reason);
+    jsonError(res, getErrorStatus(result.reason), result.reason);
     return true;
   }
 
