@@ -4,12 +4,10 @@
 
 import { allowRequest } from '../../../utils/rate-limit.js';
 import {
-  sendRateLimitResponse,
-  sendErrorResponse,
-  sendSuccessResponse,
   logSecurityEvent,
   SECURITY_EVENTS,
 } from '../../../analytics/helpers.js';
+import { getErrorStatus, jsonError, rateLimited, serveJson, unauthorized } from '../../../utils/http.js';
 import { AUTH_RATE_LIMITS } from '../../../config/rate-limits.js';
 import {
   exportUserAnalyticsData,
@@ -24,7 +22,7 @@ export async function handleExportMyData(ctx) {
   const path = url.pathname;
 
   if (!authedUser?.email) {
-    return sendErrorResponse(res, 401, 'Authentication required'), true;
+    return unauthorized(res, 'Authentication required');
   }
 
   // Stricter rate limit for GDPR export (expensive operation)
@@ -34,7 +32,7 @@ export async function handleExportMyData(ctx) {
       user: authedUser.email,
       limitType: 'gdprExport',
     });
-    return sendRateLimitResponse(res, 'Rate limit exceeded for data export', 5), true;
+    return rateLimited(res, 5, 'Rate limit exceeded for data export');
   }
 
   // Identity is the scope: the export covers this person's sessions on the
@@ -42,10 +40,10 @@ export async function handleExportMyData(ctx) {
   const result = await exportUserAnalyticsData({ email: authedUser.email });
 
   if (!result.ok) {
-    return sendErrorResponse(res, 500, result.reason || 'Failed to export data'), true;
+    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to export data');
   }
 
-  return sendSuccessResponse(res, result.data), true;
+  return serveJson(res, 200, result.data), true;
 }
 
 /**
@@ -56,7 +54,7 @@ export async function handleDeleteMyData(ctx) {
   const path = url.pathname;
 
   if (!authedUser?.email) {
-    return sendErrorResponse(res, 401, 'Authentication required'), true;
+    return unauthorized(res, 'Authentication required');
   }
 
   // Stricter rate limit for GDPR delete (expensive/destructive operation)
@@ -66,7 +64,7 @@ export async function handleDeleteMyData(ctx) {
       user: authedUser.email,
       limitType: 'gdprDelete',
     });
-    return sendRateLimitResponse(res, 'Rate limit exceeded for data deletion', 5), true;
+    return rateLimited(res, 5, 'Rate limit exceeded for data deletion');
   }
 
   // Identity is the scope — an erasure that stopped at the acting organization
@@ -74,10 +72,10 @@ export async function handleDeleteMyData(ctx) {
   const result = await deleteUserAnalyticsData({ email: authedUser.email });
 
   if (!result.ok) {
-    return sendErrorResponse(res, 500, result.reason || 'Failed to delete data'), true;
+    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to delete data');
   }
 
-  return sendSuccessResponse(res, {
+  return serveJson(res, 200, {
     ok: true,
     deleted: result.deleted,
     message: 'Your analytics data has been deleted',

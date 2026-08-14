@@ -5,9 +5,6 @@
 import { getClientIp, allowRequest } from '../../../utils/rate-limit.js';
 import { dispatchRoutes } from '../../../utils/router.js';
 import {
-  sendRateLimitResponse,
-  sendErrorResponse,
-  sendSuccessResponse,
   logSecurityEvent,
   SECURITY_EVENTS,
   isValidSessionToken,
@@ -16,7 +13,7 @@ import { AUTH_RATE_LIMITS } from '../../../config/rate-limits.js';
 import { getAnalyticsReportByToken } from '../../../storage/analytics/reports.js';
 import { normalizePresentationVisibility } from '../../../utils/presentation-authz.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
-import { withErrorHandler } from '../../../utils/http.js';
+import { badRequest, forbidden, notFound, rateLimited, serveJson, withErrorHandler } from '../../../utils/http.js';
 
 /**
  * GET /api/analytics/reports/:token - Public report access (no auth required).
@@ -36,7 +33,7 @@ async function handlePublicReport({ req, res, url }, token) {
       endpoint: path,
       limitType: 'publicReport',
     });
-    return sendRateLimitResponse(res, 'Rate limit exceeded', 5), true;
+    return rateLimited(res, 5);
   }
 
   // Validate token format (64 hex chars)
@@ -46,13 +43,13 @@ async function handlePublicReport({ req, res, url }, token) {
       endpoint: path,
       tokenPrefix: token?.slice(0, 8) + '...',
     });
-    return sendErrorResponse(res, 400, 'Invalid token format'), true;
+    return badRequest(res, 'Invalid token format');
   }
 
   const report = await getAnalyticsReportByToken(token);
 
   if (!report) {
-    return sendErrorResponse(res, 404, 'Report not found or expired'), true;
+    return notFound(res, 'Report not found or expired');
   }
 
   // Verify the associated presentation still exists and is accessible
@@ -63,7 +60,7 @@ async function handlePublicReport({ req, res, url }, token) {
     report.presentationId
   );
   if (!presentation) {
-    return sendErrorResponse(res, 404, 'Report not available - presentation no longer exists'), true;
+    return notFound(res, 'Report not available - presentation no longer exists');
   }
 
   // Check if the presentation has been set to private. Decks carry
@@ -72,10 +69,10 @@ async function handlePublicReport({ req, res, url }, token) {
   // this branch used to be dead — a report share-link stayed live after the
   // deck went private.
   if (normalizePresentationVisibility(presentation.visibility) === 'private') {
-    return sendErrorResponse(res, 403, 'Report not available - presentation is private'), true;
+    return forbidden(res, 'Report not available - presentation is private');
   }
 
-  return sendSuccessResponse(res, report), true;
+  return serveJson(res, 200, report), true;
 }
 
 /**

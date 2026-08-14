@@ -5,7 +5,6 @@
 import { getClientIp, allowRequest } from '../../../utils/rate-limit.js';
 import { dispatchRoutes } from '../../../utils/router.js';
 import {
-  sendRateLimitResponse,
   logSecurityEvent,
   SECURITY_EVENTS,
 } from '../../../analytics/helpers.js';
@@ -22,7 +21,7 @@ import {
   handleRegenerateToken,
 } from './reports.js';
 import { handleExportMyData, handleDeleteMyData } from './gdpr.js';
-import { withErrorHandler } from '../../../utils/http.js';
+import { rateLimited, withErrorHandler } from '../../../utils/http.js';
 
 /**
  * Declarative route table for the authenticated analytics surface (A7.19 C8).
@@ -86,7 +85,7 @@ export const handleAnalytics = withErrorHandler('analytics', async (ctx) => {
       user: authedUser?.email,
       limitType: 'authenticated',
     });
-    return sendRateLimitResponse(res, 'Rate limit exceeded', 1), true;
+    return rateLimited(res, 1);
   }
 
   return dispatchRoutes(ROUTES, ctx);

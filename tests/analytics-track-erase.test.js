@@ -160,7 +160,8 @@ test('a malformed token is rejected and erases nothing', async () => {
 
   assert.equal(handled, true);
   assert.equal(status, 400);
-  assert.match(body.error, /token/i);
+  assert.equal(body.error, 'bad_request');
+  assert.match(body.message, /token/i);
   assert.deepEqual(sessionIds(db), ['s1'], 'nothing was deleted');
   assert.deepEqual(slideViewIds(db), ['v1']);
 });
@@ -171,7 +172,8 @@ test('a well-formed token with no session is a 404 and erases nothing', async ()
   const { status, body } = await erase({ sessionToken: TOKEN_B });
 
   assert.equal(status, 404);
-  assert.match(body.error, /not found/i);
+  assert.equal(body.error, 'not_found');
+  assert.match(body.message, /not found/i);
   assert.deepEqual(sessionIds(db), ['s1'], 'the unrelated session survives');
 });
 
@@ -184,7 +186,8 @@ test('a bare device id is not an identifier — no token means a 400, nothing to
   const { status, body } = await erase({ deviceId: DEVICE });
 
   assert.equal(status, 400);
-  assert.match(body.error, /token/i);
+  assert.equal(body.error, 'bad_request');
+  assert.match(body.message, /token/i);
   assert.deepEqual(sessionIds(db), ['s1'], "the device's session is untouched");
 });
 

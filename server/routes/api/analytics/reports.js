@@ -2,15 +2,20 @@
  * Analytics reports CRUD endpoints.
  */
 
-import { requireJsonBody } from '../../../utils/http.js';
+import {
+  badRequest,
+  getErrorStatus,
+  jsonError,
+  notFound,
+  rateLimited,
+  requireJsonBody,
+  serveJson,
+} from '../../../utils/http.js';
 import { norm, validateDateRange } from '../../../utils/normalize.js';
 import { parsePaginationParams } from '../../../utils/request-validators.js';
 import { allowRequest, getClientIp } from '../../../utils/rate-limit.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import {
-  sendRateLimitResponse,
-  sendErrorResponse,
-  sendSuccessResponse,
   logSecurityEvent,
   SECURITY_EVENTS,
 } from '../../../analytics/helpers.js';
@@ -89,7 +94,7 @@ export async function handleListReports(ctx, presentationId) {
   const { limit, offset } = parsePaginationParams(url.searchParams, { defaultLimit: 20 });
 
   const result = await listAnalyticsReports(ctx.storageScope, presentationId, { limit, offset });
-  return sendSuccessResponse(res, result), true;
+  return serveJson(res, 200, result), true;
 }
 
 /**
@@ -111,7 +116,7 @@ export async function handleCreateReport(ctx, presentationId) {
       user: authedUser?.email,
       limitType: 'reportCreate',
     });
-    return sendRateLimitResponse(res, 'Rate limit exceeded for report creation', 5), true;
+    return rateLimited(res, 5, 'Rate limit exceeded for report creation');
   }
 
   const pres = await withPresentationAuth({
@@ -133,19 +138,19 @@ export async function handleCreateReport(ctx, presentationId) {
   const endDate = norm(body?.endDate);
 
   if (!title || !startDate || !endDate) {
-    return sendErrorResponse(res, 400, 'Missing required fields'), true;
+    return badRequest(res, 'Missing required fields');
   }
 
   // Validate report type
   const validReportTypes = ['summary', 'detailed', 'engagement'];
   if (!validReportTypes.includes(reportType)) {
-    return sendErrorResponse(res, 400, 'Invalid report type'), true;
+    return badRequest(res, 'Invalid report type');
   }
 
   // Validate date range
   const dateValidation = validateDateRange(startDate, endDate);
   if (!dateValidation.valid) {
-    return sendErrorResponse(res, 400, dateValidation.error), true;
+    return badRequest(res, dateValidation.error);
   }
 
   // Generate report data
@@ -164,10 +169,10 @@ export async function handleCreateReport(ctx, presentationId) {
   });
 
   if (!result.ok) {
-    return sendErrorResponse(res, 500, result.reason || 'Failed to create report'), true;
+    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to create report');
   }
 
-  return sendSuccessResponse(res, result.report), true;
+  return serveJson(res, 200, result.report), true;
 }
 
 /**
@@ -188,15 +193,15 @@ export async function handleGetReport(ctx, presentationId, reportId) {
   const report = await getAnalyticsReport(ctx.storageScope, reportId);
 
   if (!report) {
-    return sendErrorResponse(res, 404, 'Report not found'), true;
+    return notFound(res, 'Report not found');
   }
 
   // Verify report belongs to the presentation
   if (report.presentationId !== presentationId) {
-    return sendErrorResponse(res, 404, 'Report not found'), true;
+    return notFound(res, 'Report not found');
   }
 
-  return sendSuccessResponse(res, report), true;
+  return serveJson(res, 200, report), true;
 }
 
 /**
@@ -221,11 +226,10 @@ export async function handleUpdateReport(ctx, presentationId, reportId) {
   const result = await updateAnalyticsReport(ctx.storageScope, reportId, body);
 
   if (!result.ok) {
-    const statusCode = result.reason === 'not_found' ? 404 : 500;
-    return sendErrorResponse(res, statusCode, result.reason || 'Failed to update report'), true;
+    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to update report');
   }
 
-  return sendSuccessResponse(res, { ok: true }), true;
+  return serveJson(res, 200, { ok: true }), true;
 }
 
 /**
@@ -246,11 +250,10 @@ export async function handleDeleteReport(ctx, presentationId, reportId) {
   const result = await deleteAnalyticsReport(ctx.storageScope, reportId);
 
   if (!result.ok) {
-    const statusCode = result.reason === 'not_found' ? 404 : 500;
-    return sendErrorResponse(res, statusCode, result.reason || 'Failed to delete report'), true;
+    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to delete report');
   }
 
-  return sendSuccessResponse(res, { ok: true }), true;
+  return serveJson(res, 200, { ok: true }), true;
 }
 
 /**
@@ -271,9 +274,8 @@ export async function handleRegenerateToken(ctx, presentationId, reportId) {
   const result = await regenerateShareToken(ctx.storageScope, reportId);
 
   if (!result.ok) {
-    const statusCode = result.reason === 'not_found' ? 404 : 500;
-    return sendErrorResponse(res, statusCode, result.reason || 'Failed to regenerate token'), true;
+    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to regenerate token');
   }
 
-  return sendSuccessResponse(res, { shareToken: result.shareToken }), true;
+  return serveJson(res, 200, { shareToken: result.shareToken }), true;
 }
