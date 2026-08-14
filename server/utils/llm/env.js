@@ -1,11 +1,10 @@
 import { envStr } from '../../config/utils.js';
+import { ValidationError } from '../errors.js';
 
 export function requireEnv(name) {
   const v = envStr(name);
   if (!v) {
-    const err = new Error(`Missing ${name} in environment (.env).`);
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError(`Missing ${name} in environment (.env).`);
   }
   return v;
 }
