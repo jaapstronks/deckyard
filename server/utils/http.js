@@ -242,14 +242,10 @@ const ERROR_STATUS_MAP = {
   already_exists: 409,
   already_voted: 409,
   already_invited: 409,
-<<<<<<< HEAD
   already_requested: 409,
   already_resolved: 409,
   closed: 409,
   held: 409,
-=======
-  closed: 409,
->>>>>>> origin/main
 
   // Bad request — the caller sent something we cannot act on
   invalid: 400,
