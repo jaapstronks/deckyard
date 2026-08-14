@@ -10,6 +10,7 @@
  */
 
 import { dispatchRoutes } from '../../utils/router.js';
+import { withErrorHandler } from '../../utils/http.js';
 import { handleFollowState } from './follow/state.js';
 import {
   handleFollowCancel,
@@ -45,6 +46,6 @@ export const ROUTES = [
  * Handle public follow endpoints.
  * @param {import('../../utils/context.js').PublicContext} ctx
  */
-export async function handleFollowPublic(ctx) {
-  return dispatchRoutes(ROUTES, ctx);
-}
+export const handleFollowPublic = withErrorHandler('follow', (ctx) =>
+  dispatchRoutes(ROUTES, ctx)
+);

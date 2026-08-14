@@ -312,7 +312,7 @@ test('live-session-audience: /state and /events fall through on a wrong method (
   assert.equal(select(LSA_ROUTES, 'POST', '/api/live-sessions/s-1/state'), null);
   assert.equal(select(LSA_ROUTES, 'POST', '/api/live-sessions/s-1/events'), null);
   const { ctx: c } = ctx('POST', '/api/live-sessions/s-1/state', null);
-  assert.equal(handleLiveSessionsPublic(c), false);
+  assert.equal(await handleLiveSessionsPublic(c), false);
 });
 
 test('live-session-audience: /deck and /notes keep their explicit 405', async () => {
@@ -327,7 +327,7 @@ test('live-session-audience: /deck and /notes keep their explicit 405', async ()
   }
 });
 
-test('live-session-audience: an unknown sub-path falls through', () => {
+test('live-session-audience: an unknown sub-path falls through', async () => {
   const { ctx: c } = ctx('GET', '/api/live-sessions/s-1/unknown', null);
-  assert.equal(handleLiveSessionsPublic(c), false);
+  assert.equal(await handleLiveSessionsPublic(c), false);
 });
