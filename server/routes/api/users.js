@@ -8,7 +8,7 @@
 
 import { searchUsers } from '../../storage/users.js';
 import { getUserSettings } from '../../storage/settings.js';
-import { serveJson, methodNotAllowed, unauthorized } from '../../utils/http.js';
+import { serveJson, methodNotAllowed, unauthorized, withErrorHandler } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
@@ -98,6 +98,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleUsers(ctx) {
-  return dispatchRoutes(ROUTES, ctx);
-}
+export const handleUsers = withErrorHandler('users', (ctx) =>
+  dispatchRoutes(ROUTES, ctx)
+);

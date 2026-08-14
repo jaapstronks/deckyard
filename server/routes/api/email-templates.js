@@ -3,7 +3,7 @@
  * Allows admins to customize email templates per locale.
  */
 
-import { serveJson, badRequest, unauthorized, requireJsonBody } from '../../utils/http.js';
+import { serveJson, badRequest, unauthorized, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { getTrimmedString, getOptionalString } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
@@ -240,7 +240,7 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleEmailTemplates(ctx) {
+export const handleEmailTemplates = withErrorHandler('email-templates', (ctx) => {
   // Only handle /api/admin/email-templates routes
   if (!ctx.url.pathname.startsWith('/api/admin/email-templates')) {
     return false;
@@ -256,4 +256,4 @@ export function handleEmailTemplates(ctx) {
   }
 
   return dispatchRoutes(ROUTES, ctx);
-}
+});
