@@ -67,9 +67,10 @@ export function attachPresentationPresenceLock({
           emitStateChange();
           return { ok: true, request: myRequest };
         }
-        return { ok: false, reason: resp?.reason };
+        // Failures throw (canonical envelope); this is only a defensive fallthrough.
+        return { ok: false };
       } catch (err) {
-        return { ok: false, reason: 'error', error: err };
+        return { ok: false, reason: err.code || 'error', error: err };
       }
     },
     getPendingRequests: async () => {
@@ -93,9 +94,10 @@ export function attachPresentationPresenceLock({
           await fetchStatus();
           return { ok: true };
         }
-        return { ok: false, reason: resp?.reason };
+        // Failures throw (canonical envelope); this is only a defensive fallthrough.
+        return { ok: false };
       } catch (err) {
-        return { ok: false, reason: 'error', error: err };
+        return { ok: false, reason: err.code || 'error', error: err };
       }
     },
     rejectRequest: async (requestId) => {
@@ -109,9 +111,10 @@ export function attachPresentationPresenceLock({
           emitStateChange();
           return { ok: true };
         }
-        return { ok: false, reason: resp?.reason };
+        // Failures throw (canonical envelope); this is only a defensive fallthrough.
+        return { ok: false };
       } catch (err) {
-        return { ok: false, reason: 'error', error: err };
+        return { ok: false, reason: err.code || 'error', error: err };
       }
     },
     forceRelease: async () => {
@@ -126,9 +129,10 @@ export function attachPresentationPresenceLock({
           await acquire();
           return { ok: true };
         }
-        return { ok: false, reason: resp?.reason };
+        // Failures throw (canonical envelope); this is only a defensive fallthrough.
+        return { ok: false };
       } catch (err) {
-        return { ok: false, reason: 'error', error: err };
+        return { ok: false, reason: err.code || 'error', error: err };
       }
     },
     refresh: async () => {

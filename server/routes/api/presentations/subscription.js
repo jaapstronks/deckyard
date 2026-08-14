@@ -11,6 +11,8 @@
  */
 
 import {
+  getErrorStatus,
+  jsonError,
   methodNotAllowed,
   serveJson,
   unauthorized,
@@ -62,7 +64,7 @@ export async function handlePresentationSubscription(
 
   const result = await setSubscription(storageScope, id, authedUser.email, level);
   if (!result.ok) {
-    return serveJson(res, result.reason === 'unavailable' ? 503 : 400, result);
+    return jsonError(res, getErrorStatus(result.reason, 400), result.reason || 'internal_error');
   }
 
   serveJson(res, 200, { ok: true, level: result.level });

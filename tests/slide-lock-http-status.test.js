@@ -28,7 +28,7 @@ test('no lock backend (file storage) is not a conflict — 200', () => {
 test('invalid / expired / missing requests are not conflicts — 200', () => {
   assert.equal(lockHttpStatus({ ok: false, reason: 'invalid' }), 200);
   assert.equal(lockHttpStatus({ ok: false, reason: 'expired' }), 200);
-  assert.equal(lockHttpStatus({ ok: false, reason: 'missing' }), 200);
+  assert.equal(lockHttpStatus({ ok: false, reason: 'not_found' }), 200);
 });
 
 test('a malformed result never throws and is treated as non-conflict', () => {
