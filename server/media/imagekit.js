@@ -1,4 +1,5 @@
 import { cleanStr } from '../../shared/string-utils.js';
+import { AppError, ValidationError } from '../utils/errors.js';
 import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('imagekit');
@@ -64,9 +65,17 @@ async function fetchJsonOrThrow(url, opts = {}) {
         : body && typeof body === 'object'
           ? JSON.stringify(body)
           : 'Request failed';
-    const err = new Error(msg || `Request failed (${res.status})`);
-    err.statusCode = res.status;
-    err.details = body;
+    // Upstream 4xx messages were already client-visible; >=500 bodies are
+    // raw ImageKit payloads, so those get a generic message instead.
+    const err = new AppError(
+      res.status >= 500
+        ? `ImageKit request failed (${res.status})`
+        : msg || `Request failed (${res.status})`,
+      res.status
+    );
+    // Raw upstream payload rides along for logging only — deliberately NOT
+    // in `details`, which AppError.toJSON() would echo to the client.
+    err.upstream = body && typeof body === 'object' ? body : null;
     throw err;
   }
   return body;
@@ -98,9 +107,7 @@ export async function listImageKitFiles({
 } = {}) {
   const cfg = getImageKitConfigFromEnv();
   if (!cfg.configured) {
-    const err = new Error('ImageKit is not configured');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('ImageKit is not configured');
   }
 
   const sq = toImageKitSearchQuery({ q, searchQuery });
@@ -127,9 +134,7 @@ export async function listImageKitFiles({
 export async function listImageKitTags() {
   const cfg = getImageKitConfigFromEnv();
   if (!cfg.configured) {
-    const err = new Error('ImageKit is not configured');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('ImageKit is not configured');
   }
 
   // Fetch multiple batches to get a good sample of tags
@@ -185,15 +190,11 @@ export async function listImageKitTags() {
 export async function getImageKitFileDetails(fileId) {
   const cfg = getImageKitConfigFromEnv();
   if (!cfg.configured) {
-    const err = new Error('ImageKit is not configured');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('ImageKit is not configured');
   }
   const id = cleanStr(fileId);
   if (!id) {
-    const err = new Error('fileId is required');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('fileId is required');
   }
   const u = `https://api.imagekit.io/v1/files/${encodeURIComponent(id)}/details`;
   return await fetchJsonOrThrow(u, {
@@ -207,15 +208,11 @@ export async function getImageKitFileDetails(fileId) {
 export async function patchImageKitFileDetails(fileId, patch = {}) {
   const cfg = getImageKitConfigFromEnv();
   if (!cfg.configured) {
-    const err = new Error('ImageKit is not configured');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('ImageKit is not configured');
   }
   const id = cleanStr(fileId);
   if (!id) {
-    const err = new Error('fileId is required');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('fileId is required');
   }
   const u = `https://api.imagekit.io/v1/files/${encodeURIComponent(id)}/details`;
   return await fetchJsonOrThrow(u, {
@@ -249,21 +246,15 @@ export async function uploadImageKitBuffer({
 } = {}) {
   const cfg = getImageKitConfigFromEnv();
   if (!cfg.configured) {
-    const err = new Error('ImageKit is not configured');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('ImageKit is not configured');
   }
 
   if (!buffer || !Buffer.isBuffer(buffer)) {
-    const err = new Error('buffer is required and must be a Buffer');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('buffer is required and must be a Buffer');
   }
 
   if (!cleanStr(fileName)) {
-    const err = new Error('fileName is required');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('fileName is required');
   }
 
   // Convert buffer to base64 data URL for ImageKit upload API
