@@ -10,6 +10,7 @@ import { initContentSlideAutoFit } from './content-slide-autofit.js';
 import { initTeamCardsAutoFit } from './team-cards-autofit.js';
 import { applyThemeVarsToElement } from '../theme/theme.js';
 import { api as defaultApi } from '../api.js';
+import { h } from '../dom.js';
 import { ensurePrism, ensureKatex } from './prism-katex-loader.js';
 
 /**
@@ -359,7 +360,7 @@ export function renderSlideElement(
     }).trim();
   }
 
-  const wrap = document.createElement('div');
+  const wrap = h('div');
   wrap.innerHTML = html;
   const el = wrap.firstElementChild;
   if (!el)
@@ -440,7 +441,7 @@ export function renderSlideElement(
 async function triggerServerRender(el, slide, { mode, theme, presentationId, api }) {
   try {
     const html = await serverRenderSlide({ slide, presentationId, mode, api });
-    const wrap = document.createElement('div');
+    const wrap = h('div');
     wrap.innerHTML = html.trim();
     const newContent = wrap.firstElementChild;
 

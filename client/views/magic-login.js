@@ -1,6 +1,7 @@
 import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
 import { me } from '../lib/user/auth.js';
+import { spinner } from '../lib/dom/spinner.js';
 import { authShell } from './auth-shell.js';
 
 export async function renderMagicLogin(root, { nav } = {}) {
@@ -18,16 +19,16 @@ export async function renderMagicLogin(root, { nav } = {}) {
   });
 
   // Add a spinner/loading indicator
-  const spinner = h('div', { class: 'auth-spinner' });
+  const spinnerEl = spinner('xl');
 
-  card.append(spinner);
+  card.append(spinnerEl);
   root.append(shell);
 
   // Get token from URL
   const token = url.searchParams.get('token');
 
   if (!token) {
-    spinner.remove();
+    spinnerEl.remove();
     title.textContent = t('magicLogin.error', 'Invalid link');
     subtitle.textContent = t('magicLogin.invalidToken', 'This sign-in link is invalid or has expired.');
     subtitle.className = 'auth-subtitle';
@@ -57,7 +58,7 @@ export async function renderMagicLogin(root, { nav } = {}) {
 
     if (data.ok) {
       // Success! Redirect to app
-      spinner.remove();
+      spinnerEl.remove();
 
       // Show success icon
       const successIcon = h('div', { class: 'auth-success-icon', text: '\u2713' });
@@ -81,7 +82,7 @@ export async function renderMagicLogin(root, { nav } = {}) {
       }
     } else {
       // Token invalid or expired
-      spinner.remove();
+      spinnerEl.remove();
       title.textContent = t('magicLogin.error', 'Invalid link');
       subtitle.textContent = data.reason === 'expired'
         ? t('magicLogin.expiredToken', 'This sign-in link has expired. Please request a new one.')
@@ -101,7 +102,7 @@ export async function renderMagicLogin(root, { nav } = {}) {
       card.append(loginLink);
     }
   } catch (err) {
-    spinner.remove();
+    spinnerEl.remove();
     title.textContent = t('magicLogin.error', 'Something went wrong');
     subtitle.textContent = t('magicLogin.networkError', 'Could not verify your link. Please try again.');
     subtitle.className = 'auth-subtitle';

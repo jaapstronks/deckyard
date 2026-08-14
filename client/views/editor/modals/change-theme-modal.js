@@ -10,6 +10,7 @@
 
 import { createPromiseModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { downloadBlob } from '../../../lib/dom/download.js';
 
 /**
  * Open the change theme warning modal.
@@ -233,12 +234,7 @@ function openChangeThemeModal({
     const blob = new Blob([JSON.stringify(resp, null, 2)], {
       type: 'application/json',
     });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${pres.title || 'presentation'}-backup.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `${pres.title || 'presentation'}-backup.json`);
   }
 
   /**

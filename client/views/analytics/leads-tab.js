@@ -149,8 +149,7 @@ export function createLeadsTab({ h, presentationId, leads = [], total = 0, onDel
     try {
       // Trigger download via API
       const url = `/api/presentations/${presentationId}/leads/export`;
-      const link = document.createElement('a');
-      link.href = url;
+      const link = h('a', { href: url });
       link.download = `leads-${presentationId.slice(0, 8)}.csv`;
       document.body.appendChild(link);
       link.click();

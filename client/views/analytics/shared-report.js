@@ -4,6 +4,7 @@
 
 import { api } from '../../lib/api.js';
 import { h } from '../../lib/dom.js';
+import { spinner } from '../../lib/dom/spinner.js';
 import { t } from '../../lib/ui-i18n.js';
 import { formatDuration, formatDate, getSourceLabel } from '../../lib/format/analytics-format.js';
 
@@ -22,7 +23,7 @@ export async function renderSharedReport(root, token) {
   // Show loading
   shell.append(
     h('div', { class: 'shared-report-loading' }, [
-      h('div', { class: 'spinner' }),
+      spinner('lg'),
       h('div', { text: t('analytics.loadingReport', 'Loading report...') }),
     ])
   );

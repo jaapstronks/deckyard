@@ -8,6 +8,7 @@
  */
 
 import { h } from '../../lib/dom.js';
+import { spinner } from '../../lib/dom/spinner.js';
 import { api } from '../../lib/api.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
 import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
@@ -123,7 +124,7 @@ export async function renderShareViewer(root, token) {
     shell.innerHTML = '';
 
     const loading = h('div', { class: 'share-viewer-loading' }, [
-      h('div', { class: 'spinner' }),
+      spinner('lg'),
       h('div', { class: 'share-viewer-loading-text', text: t('share.loading', 'Loading presentation...') }),
     ]);
     shell.append(loading);

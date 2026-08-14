@@ -169,8 +169,7 @@ export function openVersionsModal({
           text: t('editor.versions.export', 'Export'),
           onclick: () => {
             // Trigger download via hidden link
-            const link = document.createElement('a');
-            link.href = `/api/presentations/${id}/versions/${v.id}/export/json`;
+            const link = h('a', { href: `/api/presentations/${id}/versions/${v.id}/export/json` });
             link.download = '';
             document.body.appendChild(link);
             link.click();

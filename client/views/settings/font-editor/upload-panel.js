@@ -127,7 +127,7 @@ export function createUploadPanel({ familyId, variants = [], onVariantChange }) 
   }
 
   async function handleUploadVariant(weight, style) {
-    const input = document.createElement('input');
+    const input = h('input');
     input.type = 'file';
     input.accept = '.woff2,.woff';
     input.onchange = async () => {

@@ -7,6 +7,7 @@ import { h } from '../../../../lib/dom.js';
 import { t } from '../../../../lib/ui-i18n.js';
 import { api } from '../../../../lib/api.js';
 import { toast } from '../../../../lib/dom/toast.js';
+import { downloadBlob } from '../../../../lib/dom/download.js';
 import { confirmModal } from '../../../../lib/dom/modal.js';
 import { readFileAsText } from '../../../../lib/util/file.js';
 import { createSlideTypeEditor } from '../../slide-type-editor/index.js';
@@ -454,13 +455,7 @@ export function createSlideTypesTab({ user } = {}) {
    */
   function exportCustomType(ct) {
     const blob = new Blob([serializeSlideType(ct)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = h('a', {
-      href: url,
-      download: `${ct.slug || 'custom-type'}.slidetype.json`,
-    });
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `${ct.slug || 'custom-type'}.slidetype.json`);
   }
 
   /**
