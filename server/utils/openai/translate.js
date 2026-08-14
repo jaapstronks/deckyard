@@ -1,6 +1,8 @@
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
 import { getLlmConfig } from '../llm/config.js';
+import { LlmError } from '../llm/error.js';
 import { requestChatCompletionContent } from '../llm/index.js';
+import { ValidationError } from '../errors.js';
 import { extractJsonObject } from './json.js';
 import { labelForLang, normalizeTranslationLang } from './lang.js';
 
@@ -66,9 +68,7 @@ export async function translatePresentationStrings(
   const fromLang = normalizeTranslationLang(from);
   const toLang = normalizeTranslationLang(to);
   if (!fromLang || !toLang || fromLang === toLang) {
-    const err = new Error('Invalid translation language pair.');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('Invalid translation language pair.');
   }
 
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
@@ -168,12 +168,13 @@ export async function translatePresentationStrings(
 
   const obj = extractJsonObject(content);
   if (!obj || typeof obj !== 'object') {
-    const err = new Error(
-      `${resolvedVendor} did not return valid translation JSON.`
-    );
-    err.statusCode = 502;
-    err.details = String(content || '').slice(0, 5000);
-    throw err;
+    // The raw response rides along as a field for logging, never the envelope.
+    throw new LlmError(`${resolvedVendor} did not return valid translation JSON.`, {
+      statusCode: 502,
+      vendor: resolvedVendor,
+      response: content,
+      phase: 'translate',
+    });
   }
 
   const llmTitle =
@@ -268,9 +269,7 @@ export async function translateShortText(text, { from, to, vendor = null } = {})
   const fromLang = normalizeTranslationLang(from);
   const toLang = normalizeTranslationLang(to);
   if (!fromLang || !toLang || fromLang === toLang) {
-    const err = new Error('Invalid translation language pair.');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('Invalid translation language pair.');
   }
 
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
@@ -319,9 +318,7 @@ export async function translateFieldMap(fields, { from, to, vendor = null } = {}
   const fromLang = normalizeTranslationLang(from);
   const toLang = normalizeTranslationLang(to);
   if (!fromLang || !toLang || fromLang === toLang) {
-    const err = new Error('Invalid translation language pair.');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('Invalid translation language pair.');
   }
 
   const input = fields && typeof fields === 'object' ? fields : {};
@@ -391,9 +388,7 @@ export async function translatePresentationStringsFillMissing(
   const fromLang = normalizeTranslationLang(from);
   const toLang = normalizeTranslationLang(to);
   if (!fromLang || !toLang || fromLang === toLang) {
-    const err = new Error('Invalid translation language pair.');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('Invalid translation language pair.');
   }
 
   const src = sourcePresentation || {};
@@ -505,12 +500,13 @@ export async function translatePresentationStringsFillMissing(
 
   const obj = extractJsonObject(content);
   if (!obj || typeof obj !== 'object') {
-    const err = new Error(
-      `${resolvedVendor} did not return valid translation JSON.`
-    );
-    err.statusCode = 502;
-    err.details = String(content || '').slice(0, 5000);
-    throw err;
+    // The raw response rides along as a field for logging, never the envelope.
+    throw new LlmError(`${resolvedVendor} did not return valid translation JSON.`, {
+      statusCode: 502,
+      vendor: resolvedVendor,
+      response: content,
+      phase: 'translate',
+    });
   }
 
   const outTitle = typeof obj.title === 'string' ? obj.title : tgtTitle;

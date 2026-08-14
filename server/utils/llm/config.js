@@ -1,4 +1,5 @@
 import { optionalEnv, requireEnv } from './env.js';
+import { LlmError } from './error.js';
 import { ValidationError } from '../errors.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { KNOWN_VENDORS } from '../../../shared/llm-vendors.js';
@@ -126,8 +127,9 @@ export function getLlmConfig({ vendor = null, role = null } = {}) {
     };
   }
 
-  // Should never happen; keep it explicit for safety.
-  throw new ValidationError(`Unsupported LLM vendor: ${String(resolved)}`);
+  // Should never happen; keep it explicit for safety. Same form as the
+  // dispatch fallback in index.js — one shape for "unsupported vendor".
+  throw LlmError.unsupportedVendor(resolved);
 }
 
 export function getLlmStatus() {

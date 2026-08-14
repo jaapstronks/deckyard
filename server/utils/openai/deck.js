@@ -1,6 +1,7 @@
 import { ICON_NAMES } from '../../../shared/icon-names.js';
 import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';
 import { getLlmConfig } from '../llm/config.js';
+import { LlmError } from '../llm/error.js';
 import { requestChatCompletionContent } from '../llm/index.js';
 import { extractJsonObject } from './json.js';
 import { detectDeckLanguage, normalizeLang } from './lang.js';
@@ -226,12 +227,13 @@ export async function generateDeckJsonFromRawContent(
 
   const deck = extractJsonObject(content);
   if (!deck) {
-    const err = new Error(
-      `${resolvedVendor} did not return valid deck JSON.`
-    );
-    err.statusCode = 502;
-    err.details = String(content || '').slice(0, 5000);
-    throw err;
+    // The raw response rides along as a field for logging, never the envelope.
+    throw new LlmError(`${resolvedVendor} did not return valid deck JSON.`, {
+      statusCode: 502,
+      vendor: resolvedVendor,
+      response: content,
+      phase: 'deck',
+    });
   }
   return deck;
 }
