@@ -5,6 +5,7 @@ import {
   unauthorized,
   notFound,
   requireJsonBody,
+  withErrorHandler,
 } from '../../utils/http.js';
 import {
   createPersonalLibraryItem,
@@ -298,8 +299,8 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleSlideLibrary(ctx) {
+export const handleSlideLibrary = withErrorHandler('slide-library', (ctx) => {
   if (!ctx.url.pathname.startsWith('/api/slide-library')) return false;
   if (!ctx.authedUser) return unauthorized(ctx.res);
   return dispatchRoutes(ROUTES, ctx);
-}
+});

@@ -17,7 +17,7 @@ import {
   getTagsForPresentation,
   setTagsForPresentation,
 } from '../../storage/tags/index.js';
-import { serveJson, badRequest, notFound, requireJsonBody, methodNotAllowed } from '../../utils/http.js';
+import { serveJson, badRequest, notFound, requireJsonBody, methodNotAllowed, withErrorHandler } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
@@ -45,15 +45,11 @@ async function handleTagCreate({ storageScope, req, res }) {
   if (!body?.name) {
     return badRequest(res, 'Tag name is required');
   }
-  try {
-    const tag = await createTag(storageScope, body.name);
-    serveJson(res, 201, tag);
-  } catch (err) {
-    if (err.statusCode === 400) {
-      return badRequest(res, err.message);
-    }
-    throw err;
-  }
+  // Duplicate/invalid tag names come back as a 400 from storage; the
+  // withErrorHandler wrapper on this dispatcher serves that status with the
+  // canonical envelope.
+  const tag = await createTag(storageScope, body.name);
+  serveJson(res, 201, tag);
   return true;
 }
 
@@ -87,9 +83,9 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleTags(ctx) {
+export const handleTags = withErrorHandler('tags', (ctx) => {
   return dispatchRoutes(ROUTES, ctx);
-}
+});
 
 /**
  * Handle presentation tags API requests

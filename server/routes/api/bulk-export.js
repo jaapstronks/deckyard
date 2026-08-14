@@ -6,7 +6,7 @@
  * Returns a job ID for status polling via the existing /api/jobs/:id infrastructure.
  */
 
-import { jsonError, requireJsonBody, serveJson, unauthorized, serverError } from '../../utils/http.js';
+import { jsonError, requireJsonBody, serveJson, unauthorized, withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { addJob, QUEUE_NAMES } from '../../jobs/queue/connection.js';
 import {
@@ -18,8 +18,6 @@ import {
   getLastCompletedExport,
 } from '../../jobs/queue/workers/bulk-export-worker.js';
 import { buildBulkExport } from '../../export/bulk-export.js';
-import { createLogger } from '../../utils/logger.js';
-const log = createLogger('bulk-export');
 
 // POST /api/bulk-export - Kick off a bulk backup job
 async function handleBulkExportStart({ res, req, repoRoot, authedUser }) {
@@ -95,11 +93,9 @@ async function handleBulkExportStart({ res, req, repoRoot, authedUser }) {
         sync: true,
       });
       return true;
-    } catch (err) {
-      log.error('[bulk-export] Sync export failed:', err.message);
-      serverError(res, 'Export failed');
-      return true;
     } finally {
+      // The withErrorHandler wrapper answers a failed sync export; this only
+      // guarantees the active-export slot is released either way.
       clearActiveBulkExport(userEmail);
     }
   }
@@ -182,6 +178,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleBulkExport(ctx) {
+export const handleBulkExport = withErrorHandler('bulk-export', (ctx) => {
   return dispatchRoutes(ROUTES, ctx);
-}
+});
