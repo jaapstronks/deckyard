@@ -102,7 +102,7 @@ test('media: a wrong method 405s with the pinned Allow list', async () => {
 
 test('media: module prefix guard falls through, presign auth 401s after the method match', async () => {
   const foreign = ctx('GET', '/api/medianot');
-  assert.equal(handleMedia(foreign.ctx), false);
+  assert.equal(await handleMedia(foreign.ctx), false);
 
   const unauth = ctx('POST', '/api/media/presign', null);
   await handleMedia(unauth.ctx);

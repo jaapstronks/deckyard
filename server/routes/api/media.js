@@ -1,5 +1,5 @@
 import { getFeatureFlags } from '../../config/flags-snapshot.js';
-import { badRequest, jsonError, methodNotAllowed, serveJson, serverError, unauthorized, requireJsonBody } from '../../utils/http.js';
+import { badRequest, jsonError, methodNotAllowed, serveJson, serverError, unauthorized, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import {
   getImageKitConfigFromEnv,
   listImageKitFiles,
@@ -177,7 +177,7 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleMedia(ctx) {
+export const handleMedia = withErrorHandler('media', (ctx) => {
   if (!ctx.url.pathname.startsWith('/api/media/')) return false;
   return dispatchRoutes(ROUTES, ctx);
-}
+});
