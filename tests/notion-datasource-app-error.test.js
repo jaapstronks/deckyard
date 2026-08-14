@@ -58,7 +58,7 @@ test('no bare .statusCode assignment left in the three converted trees', () => {
     for (const entry of readdirSync(dir)) {
       const full = path.join(dir, entry);
       if (statSync(full).isDirectory()) walk(full);
-      else if (entry.endsWith('.js') && / err(or)?\.statusCode = /.test(readFileSync(full, 'utf8'))) {
+      else if (entry.endsWith('.js') && /\.statusCode = /.test(readFileSync(full, 'utf8'))) {
         offenders.push(path.relative(repoRoot, full));
       }
     }
