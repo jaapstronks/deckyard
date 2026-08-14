@@ -15,7 +15,7 @@ function getGuestErrorMessage(errorCode) {
   const messages = {
     rate_limited: t('share.guest.error.rateLimited', 'Too many requests. Please try again later.'),
     invalid_email: t('share.guest.error.invalidEmail', 'Please enter a valid email address.'),
-    permission_denied: t('share.guest.error.permissionDenied', 'This share link does not allow commenting.'),
+    forbidden: t('share.guest.error.permissionDenied', 'This share link does not allow commenting.'),
     share_link_not_found: t('share.guest.error.linkNotFound', 'Share link not found.'),
     share_link_expired: t('share.guest.error.linkExpired', 'This share link has expired.'),
     invalid_token: t('share.guest.error.invalidToken', 'Invalid verification link.'),

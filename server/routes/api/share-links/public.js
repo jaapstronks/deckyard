@@ -24,7 +24,7 @@ import { sendGuestVerificationEmail } from '../../../integrations/brevo.js';
 import { notifyAuthorOfAccessAttempt, ACCESS_TYPES } from '../../../services/access-notifications.js';
 import { parseCookies } from '../../../utils/cookies.js';
 import { dispatchRoutes } from '../../../utils/router.js';
-import { serveJson, badRequest, getErrorStatus, jsonError, rateLimited, requireJsonBody } from '../../../utils/http.js';
+import { serveJson, badRequest, forbidden, getErrorStatus, jsonError, rateLimited, requireJsonBody } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import { buildRequestUrl, shouldUseSecureCookies } from '../../../utils/request-url.js';
 import { getClientIp, allowShareVerifyAttempt } from '../../../utils/rate-limit.js';
@@ -154,7 +154,7 @@ async function handleShareGuestRequest({ repoRoot, req, res }, token) {
 
   // Check permission allows commenting
   if (!['comment', 'edit'].includes(validation.shareLink.permission)) {
-    jsonError(res, 403, 'permission_denied');
+    forbidden(res, 'This share link does not allow commenting');
     return true;
   }
 

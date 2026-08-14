@@ -74,3 +74,20 @@ test('comment failure reasons map to the intended statuses', () => {
   assert.equal(getErrorStatus('not_found_or_not_resolved'), 400);
   assert.equal(getErrorStatus('not_found_or_already_handled'), 400);
 });
+
+test('the 403 machine code is `forbidden` — `permission_denied` must not come back', () => {
+  // One machine code per meaning (A7.19-C7g): `permission_denied` was folded
+  // into the existing `forbidden` code. Scan the first-party source trees so a
+  // second spelling cannot creep back in on either side of the wire.
+  assert.equal(getErrorStatus('forbidden'), 403);
+  const offenders = [];
+  for (const dir of ['server', 'shared', 'client']) {
+    for (const file of jsFiles(path.join(repoRoot, dir))) {
+      if (file.includes(`${path.sep}vendor${path.sep}`)) continue;
+      if (readFileSync(file, 'utf8').includes('permission_denied')) {
+        offenders.push(path.relative(repoRoot, file));
+      }
+    }
+  }
+  assert.deepEqual(offenders, [], `use 'forbidden', not 'permission_denied': ${offenders.join(', ')}`);
+});

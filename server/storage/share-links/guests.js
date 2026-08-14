@@ -73,7 +73,7 @@ export async function requestGuestVerification(shareLinkId, email, name) {
     const { shareLink } = validation;
 
     if (!['comment', 'edit'].includes(shareLink.permission)) {
-      return { ok: false, reason: 'permission_denied' };
+      return { ok: false, reason: 'forbidden' };
     }
 
     // Check registration mode - if invite_only, guest must be pre-registered

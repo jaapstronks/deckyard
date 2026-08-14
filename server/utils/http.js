@@ -231,7 +231,7 @@ const ERROR_STATUS_MAP = {
   invalid_password: 401,
 
   // Permission errors
-  permission_denied: 403,
+  forbidden: 403,
   not_invited: 403,
 
   // Rate limiting

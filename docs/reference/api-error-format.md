@@ -10,7 +10,9 @@ The internal `/api/*` routes return errors in one canonical envelope:
   client can discriminate on `ok` as well as on the HTTP status.
 - **`error`** — a stable, snake_case **machine code**. This is the field clients
   branch on (never string-match the human text). Codes are lowercase
-  (`rate_limited`, `not_found`, `invalid_password`, `permission_denied`, …).
+  (`rate_limited`, `not_found`, `invalid_password`, `forbidden`, …). One code
+  per meaning: the 403 code is `forbidden` (`permission_denied` was folded into
+  it, A7.19-C7g).
 - **`message`** — optional human-readable text for display. Safe to show a user;
   never contains stack traces or internal detail (500s stay generic).
 - **`details`** — optional structured extra (e.g. `{ field: 'email' }`). Omitted
