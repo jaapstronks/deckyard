@@ -16,8 +16,6 @@ import { canReadPresentation } from '../../../utils/presentation-authz.js';
 import { renderSlideHtml } from '../../../../shared/slide-types.js';
 import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
-import { createLogger } from '../../../utils/logger.js';
-const log = createLogger('render-slide');
 import {
   methodNotAllowed,
   notFound,
@@ -25,7 +23,6 @@ import {
   unauthorized,
   badRequest,
   requireJsonBody,
-  serverError,
 } from '../../../utils/http.js';
 import { getOptionalObject, getString } from '../../../utils/request-validators.js';
 
@@ -67,21 +64,16 @@ export async function handleRenderSlide(
     ? body.mode
     : 'preview';
 
-  try {
-    const html = renderSlideHtml(slide, {
-      mode,
-      theme,
-      slideTypes,
-      presentationId,
-      // Custom types render here, so they get the same deck language the
-      // bundled ones get on the client canvas.
-      lang: resolveDeckLang(pres),
-    });
-    serveJson(res, 200, { html });
-  } catch (err) {
-    log.error('[render-slide] Error rendering slide:', err);
-    serverError(res, 'Failed to render slide');
-  }
+  const html = renderSlideHtml(slide, {
+    mode,
+    theme,
+    slideTypes,
+    presentationId,
+    // Custom types render here, so they get the same deck language the
+    // bundled ones get on the client canvas.
+    lang: resolveDeckLang(pres),
+  });
+  serveJson(res, 200, { html });
 
   return true;
 }

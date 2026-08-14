@@ -11,6 +11,8 @@ import {
   badRequest,
   notFound,
   requireJsonBody,
+  jsonError,
+  getErrorStatus,
 } from '../../../utils/http.js';
 import {
   canReadPresentation,
@@ -141,7 +143,7 @@ export async function handlePresentationCommentsCreate(
   });
 
   if (!result.ok) {
-    return serveJson(res, 400, result);
+    return jsonError(res, getErrorStatus(result.reason), result.reason);
   }
 
   // Fire notifications (non-blocking)
@@ -220,7 +222,7 @@ export async function handlePresentationCommentUpdate(
   const result = await updateComment(storageScope, commentId, { body: body.body });
 
   if (!result.ok) {
-    return serveJson(res, 400, result);
+    return jsonError(res, getErrorStatus(result.reason), result.reason);
   }
 
   // A mention added by the edit notifies like a fresh mention (diffed
@@ -279,6 +281,9 @@ export async function handlePresentationCommentDelete(
   }
 
   const result = await deleteComment(storageScope, commentId);
+  if (!result.ok) {
+    return jsonError(res, getErrorStatus(result.reason), result.reason);
+  }
 
   // Broadcast to all connected clients (non-blocking)
   void broadcastToPresentation(id, CommentEventTypes.DELETED, {

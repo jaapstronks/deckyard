@@ -132,13 +132,13 @@ test('api-keys: a wrong method 405s with the pinned Allow list', async () => {
   }
 });
 
-test('api-keys: module guards — foreign prefix and unauth fall through', () => {
+test('api-keys: module guards — foreign prefix and unauth fall through', async () => {
   const foreign = ctx('GET', '/api/api-nope');
-  assert.equal(handleApiKeys(foreign.ctx), false);
+  assert.equal(await handleApiKeys(foreign.ctx), false);
 
   // The original guard returned false (not a 401) without a user — pinned.
   const unauth = ctx('GET', '/api/api-keys', null);
-  assert.equal(handleApiKeys(unauth.ctx), false);
+  assert.equal(await handleApiKeys(unauth.ctx), false);
   assert.equal(unauth.res.statusCode, null, 'no status written for unauth');
 });
 
@@ -271,7 +271,7 @@ test('jobs: a non-GET falls through (Form A), matching the old module-wide guard
 
 test('jobs: module guards — foreign prefix falls through, stats requires admin', async () => {
   const foreign = ctx('GET', '/api/not-jobs');
-  assert.equal(handleJobs(foreign.ctx), false);
+  assert.equal(await handleJobs(foreign.ctx), false);
 
   const nonAdmin = ctx('GET', '/api/jobs/queue/export/stats');
   await handleJobs(nonAdmin.ctx);

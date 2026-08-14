@@ -138,14 +138,14 @@ test('data-sources: the preview/refresh 405 catch-alls emit 405', () => {
   }
 });
 
-test('data-sources: the module prefix guard falls through for foreign paths', () => {
+test('data-sources: the module prefix guard falls through for foreign paths', async () => {
   const { ctx: c } = ctx('GET', '/api/not-data-sources');
-  assert.equal(handleDataSources(c), false);
+  assert.equal(await handleDataSources(c), false);
 });
 
-test('data-sources: the module auth guard 401s before the feature gate', () => {
+test('data-sources: the module auth guard 401s before the feature gate', async () => {
   const { ctx: c, res } = ctx('GET', '/api/data-sources/providers', null);
-  handleDataSources(c);
+  await handleDataSources(c);
   assert.equal(res.statusCode, 401, 'no user → 401 for any data-sources path');
 });
 

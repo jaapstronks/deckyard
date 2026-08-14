@@ -16,6 +16,7 @@ import {
   serveJson,
   unauthorized,
   requireJsonBody,
+  withErrorHandler,
 } from '../../utils/http.js';
 import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -245,6 +246,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleImageLibrary(ctx) {
-  return dispatchRoutes(ROUTES, ctx);
-}
+export const handleImageLibrary = withErrorHandler('image-library', (ctx) =>
+  dispatchRoutes(ROUTES, ctx)
+);

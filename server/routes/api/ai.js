@@ -1,4 +1,5 @@
 import { dispatchRoutes } from '../../utils/router.js';
+import { withErrorHandler } from '../../utils/http.js';
 import { handleAiVendors } from './ai/vendors.js';
 import { handleAiWizard } from './ai/wizard.js';
 import { handleAiWizardV2 } from './ai/wizard-v2.js';
@@ -36,6 +37,6 @@ const ROUTES = [
  * @param {import('./ai/shared.js').AiContext} ctx
  * @returns {Promise<boolean>} true if a route handled the request.
  */
-export function handleAi(ctx) {
-  return dispatchRoutes(ROUTES, ctx);
-}
+export const handleAi = withErrorHandler('ai', (ctx) =>
+  dispatchRoutes(ROUTES, ctx)
+);

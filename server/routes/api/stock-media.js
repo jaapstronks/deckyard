@@ -13,14 +13,12 @@ import {
   methodNotAllowed,
   serveJson,
   badRequest,
-  serverError,
   requireJsonBody,
+  withErrorHandler,
 } from '../../utils/http.js';
 import { getAppSettings } from '../../storage/settings.js';
 import { createImageLibraryItem } from '../../storage/image-library/index.js';
 import { writeUploadedFile } from '../../storage/uploads.js';
-import { createLogger } from '../../utils/logger.js';
-const log = createLogger('stock-media');
 import {
   isUnsplashConfigured,
   searchUnsplash,
@@ -105,13 +103,8 @@ async function handleUnsplashSearch({ repoRoot, res, url }) {
     return badRequest(res, 'Search query required');
   }
 
-  try {
-    const results = await searchUnsplash({ query, page, perPage });
-    serveJson(res, 200, results);
-  } catch (e) {
-    log.error('Unsplash search error:', e);
-    serverError(res, 'Unsplash search failed');
-  }
+  const results = await searchUnsplash({ query, page, perPage });
+  serveJson(res, 200, results);
   return true;
 }
 
@@ -132,47 +125,42 @@ async function handleUnsplashDownload({ repoRoot, storageScope, req, res }) {
     return badRequest(res, 'Photo ID required');
   }
 
-  try {
-    // Get photo details
-    const photo = await getUnsplashPhoto(photoId);
+  // Get photo details
+  const photo = await getUnsplashPhoto(photoId);
 
-    // Trigger download tracking (required by Unsplash API terms)
-    await triggerDownload(photo.downloadLocation);
+  // Trigger download tracking (required by Unsplash API terms)
+  await triggerDownload(photo.downloadLocation);
 
-    // Download the image
-    const imageUrl = photo.urls[size] || photo.urls.regular;
-    const { buffer, contentType } = await downloadImage(imageUrl);
+  // Download the image
+  const imageUrl = photo.urls[size] || photo.urls.regular;
+  const { buffer, contentType } = await downloadImage(imageUrl);
 
-    // Determine file extension
-    const ext = contentType.includes('png') ? 'png' : 'jpg';
-    const filename = `unsplash-${photoId}-${size}.${ext}`;
+  // Determine file extension
+  const ext = contentType.includes('png') ? 'png' : 'jpg';
+  const filename = `unsplash-${photoId}-${size}.${ext}`;
 
-    // Save to uploads
-    const localUrl = await writeUploadedFile(repoRoot, buffer, filename, contentType);
+  // Save to uploads
+  const localUrl = await writeUploadedFile(repoRoot, buffer, filename, contentType);
 
-    // Add to image library with attribution
-    const libraryItem = await createImageLibraryItem(storageScope, {
-      url: localUrl,
-      description: photo.description || '',
+  // Add to image library with attribution
+  const libraryItem = await createImageLibraryItem(storageScope, {
+    url: localUrl,
+    description: photo.description || '',
+    photographer: photo.photographer.name,
+    source: 'unsplash',
+    sourceUrl: photo.unsplashUrl,
+    tags: ['unsplash'],
+  });
+
+  serveJson(res, 200, {
+    ok: true,
+    libraryItem,
+    attribution: {
       photographer: photo.photographer.name,
-      source: 'unsplash',
-      sourceUrl: photo.unsplashUrl,
-      tags: ['unsplash'],
-    });
-
-    serveJson(res, 200, {
-      ok: true,
-      libraryItem,
-      attribution: {
-        photographer: photo.photographer.name,
-        photographerUrl: photo.photographer.profileUrl,
-        unsplashUrl: photo.unsplashUrl,
-      },
-    });
-  } catch (e) {
-    log.error('Unsplash download error:', e);
-    serverError(res, 'Unsplash download failed');
-  }
+      photographerUrl: photo.photographer.profileUrl,
+      unsplashUrl: photo.unsplashUrl,
+    },
+  });
   return true;
 }
 
@@ -191,13 +179,8 @@ async function handleGiphySearch({ repoRoot, res, url }) {
     return badRequest(res, 'Search query required');
   }
 
-  try {
-    const results = await searchGiphy({ query, offset, limit });
-    serveJson(res, 200, results);
-  } catch (e) {
-    log.error('Giphy search error:', e);
-    serverError(res, 'Giphy search failed');
-  }
+  const results = await searchGiphy({ query, offset, limit });
+  serveJson(res, 200, results);
   return true;
 }
 
@@ -211,13 +194,8 @@ async function handleGiphyTrending({ repoRoot, res, url }) {
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
   const limit = parseInt(url.searchParams.get('limit') || '20', 10);
 
-  try {
-    const results = await getTrendingGiphy({ offset, limit });
-    serveJson(res, 200, results);
-  } catch (e) {
-    log.error('Giphy trending error:', e);
-    serverError(res, 'Giphy trending failed');
-  }
+  const results = await getTrendingGiphy({ offset, limit });
+  serveJson(res, 200, results);
   return true;
 }
 
@@ -237,34 +215,29 @@ async function handleGiphyDownload({ repoRoot, storageScope, req, res }) {
     return badRequest(res, 'GIF ID required');
   }
 
-  try {
-    // Get GIF details
-    const gif = await getGiphyGif(gifId);
+  // Get GIF details
+  const gif = await getGiphyGif(gifId);
 
-    // Download the GIF
-    const { buffer, contentType } = await downloadGif(gif.urls.original);
+  // Download the GIF
+  const { buffer, contentType } = await downloadGif(gif.urls.original);
 
-    // Save to uploads
-    const filename = `giphy-${gifId}.gif`;
-    const localUrl = await writeUploadedFile(repoRoot, buffer, filename, contentType);
+  // Save to uploads
+  const filename = `giphy-${gifId}.gif`;
+  const localUrl = await writeUploadedFile(repoRoot, buffer, filename, contentType);
 
-    // Add to image library
-    const libraryItem = await createImageLibraryItem(storageScope, {
-      url: localUrl,
-      description: gif.title || '',
-      source: 'giphy',
-      sourceUrl: gif.giphyUrl,
-      tags: ['giphy', 'gif', 'animated'],
-    });
+  // Add to image library
+  const libraryItem = await createImageLibraryItem(storageScope, {
+    url: localUrl,
+    description: gif.title || '',
+    source: 'giphy',
+    sourceUrl: gif.giphyUrl,
+    tags: ['giphy', 'gif', 'animated'],
+  });
 
-    serveJson(res, 200, {
-      ok: true,
-      libraryItem,
-    });
-  } catch (e) {
-    log.error('Giphy download error:', e);
-    serverError(res, 'Giphy download failed');
-  }
+  serveJson(res, 200, {
+    ok: true,
+    libraryItem,
+  });
   return true;
 }
 
@@ -311,7 +284,7 @@ export const AUTHED_ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} - True if handled
  */
-export async function handleStockMedia(ctx) {
+export const handleStockMedia = withErrorHandler('stock-media', async (ctx) => {
   const publicResult = await dispatchRoutes(PUBLIC_ROUTES, ctx);
   if (publicResult !== false) return publicResult;
 
@@ -319,4 +292,4 @@ export async function handleStockMedia(ctx) {
   if (!ctx.authedUser) return false;
 
   return dispatchRoutes(AUTHED_ROUTES, ctx);
-}
+});

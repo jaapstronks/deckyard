@@ -104,7 +104,7 @@ test('slide-collections: a wrong method 405s with the pinned Allow list', async 
 
 test('slide-collections: module guards — foreign prefix falls through, unauth 401s', async () => {
   const foreign = ctx('GET', '/api/not-slide-collections');
-  assert.equal(handleSlideCollections(foreign.ctx), false);
+  assert.equal(await handleSlideCollections(foreign.ctx), false);
 
   const unauth = ctx('GET', '/api/slide-collections/personal', null);
   await handleSlideCollections(unauth.ctx);
@@ -164,7 +164,7 @@ test('notifications: a wrong method falls through (Form A), and unauth falls thr
   // The original guard returned false (not a 401) without a user — the root
   // dispatcher's 404 answers. Pinned so the migration cannot change it.
   const unauth = ctx('GET', '/api/notifications', null);
-  assert.equal(handleNotifications(unauth.ctx), false);
+  assert.equal(await handleNotifications(unauth.ctx), false);
   assert.equal(unauth.res.statusCode, null, 'no status written for unauth');
 });
 
@@ -183,7 +183,7 @@ test('admin-users: routes resolve to their named handlers', () => {
 
 test('admin-users: module guards — foreign prefix falls through, non-admin 401s', async () => {
   const foreign = ctx('GET', '/api/admin/other');
-  assert.equal(handleAdminUsers(foreign.ctx), false);
+  assert.equal(await handleAdminUsers(foreign.ctx), false);
 
   const unauth = ctx('GET', '/api/admin/users', null);
   await handleAdminUsers(unauth.ctx);
@@ -212,7 +212,7 @@ test('admin-ai-logs: routes resolve to their named handlers', () => {
 
 test('admin-ai-logs: module guards and Form A fall-through', async () => {
   const foreign = ctx('GET', '/api/admin/users');
-  assert.equal(handleAdminAiLogs(foreign.ctx), false);
+  assert.equal(await handleAdminAiLogs(foreign.ctx), false);
 
   const nonAdmin = ctx('GET', '/api/admin/ai-logs');
   await handleAdminAiLogs(nonAdmin.ctx);
@@ -286,7 +286,7 @@ test('email-templates: the :type/:locale PUT row still shadows /preview for PUTs
 
 test('email-templates: module guards and Form A fall-through', async () => {
   const foreign = ctx('GET', '/api/admin/ai-logs');
-  assert.equal(handleEmailTemplates(foreign.ctx), false);
+  assert.equal(await handleEmailTemplates(foreign.ctx), false);
 
   const nonAdmin = ctx('GET', '/api/admin/email-templates');
   await handleEmailTemplates(nonAdmin.ctx);
@@ -312,7 +312,7 @@ test('live-session-audience: /state and /events fall through on a wrong method (
   assert.equal(select(LSA_ROUTES, 'POST', '/api/live-sessions/s-1/state'), null);
   assert.equal(select(LSA_ROUTES, 'POST', '/api/live-sessions/s-1/events'), null);
   const { ctx: c } = ctx('POST', '/api/live-sessions/s-1/state', null);
-  assert.equal(handleLiveSessionsPublic(c), false);
+  assert.equal(await handleLiveSessionsPublic(c), false);
 });
 
 test('live-session-audience: /deck and /notes keep their explicit 405', async () => {
@@ -327,7 +327,7 @@ test('live-session-audience: /deck and /notes keep their explicit 405', async ()
   }
 });
 
-test('live-session-audience: an unknown sub-path falls through', () => {
+test('live-session-audience: an unknown sub-path falls through', async () => {
   const { ctx: c } = ctx('GET', '/api/live-sessions/s-1/unknown', null);
-  assert.equal(handleLiveSessionsPublic(c), false);
+  assert.equal(await handleLiveSessionsPublic(c), false);
 });

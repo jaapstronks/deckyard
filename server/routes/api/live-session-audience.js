@@ -35,8 +35,8 @@ import {
   rateLimited,
   serveJson,
   requireJsonBody,
+  withErrorHandler,
 } from '../../utils/http.js';
-import { errorToResponse } from '../../utils/errors.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { getOptionalString } from '../../utils/request-validators.js';
 import { allowCompanionNotesWrite, getClientIp } from '../../utils/rate-limit.js';
@@ -202,20 +202,14 @@ async function handleSessionNotesWrite({ repoRoot, req, res }, sessionId, rawSli
     actorEmail: null,
   };
 
-  let result;
-  try {
-    result = await updateSlideNotes(writeScope, pres, {
-      slideId,
-      notes,
-    });
-  } catch (e) {
-    // A locked slide is the refusal the companion can act on: somebody is
-    // editing that slide right now, or the author pinned it. LockedError (423)
-    // carries a statusCode, so emit it through the canonical error envelope
-    // instead of a hand-rolled body. Unexpected errors propagate.
-    if (e?.statusCode) return serveJson(res, e.statusCode, errorToResponse(e));
-    throw e;
-  }
+  // A locked slide is the refusal the companion can act on: somebody is
+  // editing that slide right now, or the author pinned it. LockedError (423)
+  // is an AppError — the withErrorHandler wrapper on this dispatcher emits it
+  // through the canonical envelope.
+  const result = await updateSlideNotes(writeScope, pres, {
+    slideId,
+    notes,
+  });
 
   if (!result.ok) {
     if (result.reason === 'slide_not_found') return notFound(res, 'Slide not found');
@@ -260,6 +254,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').PublicContext} ctx
  * @returns {Promise<boolean>|boolean} Whether a route handled the request.
  */
-export function handleLiveSessionsPublic(ctx) {
-  return dispatchRoutes(ROUTES, ctx);
-}
+export const handleLiveSessionsPublic = withErrorHandler('live-session-audience', (ctx) =>
+  dispatchRoutes(ROUTES, ctx)
+);

@@ -27,6 +27,7 @@ import {
   serveJson,
   unauthorized,
   requireJsonBody,
+  withErrorHandler,
 } from '../../utils/http.js';
 import {
   findSlideById,
@@ -426,6 +427,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleLiveSessions(ctx) {
-  return dispatchRoutes(ROUTES, ctx);
-}
+export const handleLiveSessions = withErrorHandler('live-sessions', (ctx) =>
+  dispatchRoutes(ROUTES, ctx)
+);

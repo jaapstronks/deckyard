@@ -1,4 +1,4 @@
-import { badRequest } from '../../utils/http.js';
+import { badRequest, withErrorHandler } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { handlePresentationsList } from './presentations/list.js';
 import { handlePopularPresentations } from './presentations/popular.js';
@@ -298,6 +298,6 @@ const ROUTES = [
  * @param {AuthedContext} ctx
  * @returns {Promise<unknown>|unknown}
  */
-export async function handlePresentations(ctx) {
-  return dispatchRoutes(ROUTES, ctx);
-}
+export const handlePresentations = withErrorHandler('presentations', (ctx) =>
+  dispatchRoutes(ROUTES, ctx)
+);

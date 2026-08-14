@@ -15,7 +15,7 @@
 
 import { createFollowCode, resolveFollowCode } from '../../storage/follow-codes.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
-import { badRequest, methodNotAllowed, requireJsonBody, serveJson, serverError, unauthorized, rateLimited } from '../../utils/http.js';
+import { badRequest, methodNotAllowed, requireJsonBody, serveJson, serverError, unauthorized, rateLimited, withErrorHandler } from '../../utils/http.js';
 import { getClientIp } from '../../utils/context.js';
 import { allowRequest } from '../../utils/rate-limit.js';
 import { FOLLOW_CODE_LIMITS } from '../../config/rate-limits.js';
@@ -151,9 +151,9 @@ export const PUBLIC_ROUTES = [
  * Handle the anonymous (pre-gate) follow-code reads.
  * @param {import('../../utils/context.js').PublicContext & { authedUser: null }} ctx
  */
-export async function handleFollowCodesPublic(ctx) {
-  return dispatchRoutes(PUBLIC_ROUTES, ctx);
-}
+export const handleFollowCodesPublic = withErrorHandler('follow-codes', (ctx) =>
+  dispatchRoutes(PUBLIC_ROUTES, ctx)
+);
 
 /**
  * Handle follow-code endpoints.
@@ -162,8 +162,8 @@ export async function handleFollowCodesPublic(ctx) {
  *   post-gate mount; public (with `authedUser: null`) on the pre-gate
  *   resolve-only mount.
  */
-export async function handleFollowCodes(ctx) {
+export const handleFollowCodes = withErrorHandler('follow-codes', (ctx) => {
   if (!ctx.url.pathname.startsWith('/api/follow-codes')) return false;
   log.info(`[Follow Codes] Handler called: ${ctx.req.method} ${ctx.url.pathname}`);
   return dispatchRoutes(ROUTES, ctx);
-}
+});

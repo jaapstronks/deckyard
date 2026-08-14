@@ -102,7 +102,7 @@ test('media: a wrong method 405s with the pinned Allow list', async () => {
 
 test('media: module prefix guard falls through, presign auth 401s after the method match', async () => {
   const foreign = ctx('GET', '/api/medianot');
-  assert.equal(handleMedia(foreign.ctx), false);
+  assert.equal(await handleMedia(foreign.ctx), false);
 
   const unauth = ctx('POST', '/api/media/presign', null);
   await handleMedia(unauth.ctx);
@@ -149,7 +149,7 @@ test('slide-library: a wrong method 405s with the pinned Allow list', async () =
 
 test('slide-library: module guards — foreign prefix falls through, unauth 401s', async () => {
   const foreign = ctx('GET', '/api/slide-collections');
-  assert.equal(handleSlideLibrary(foreign.ctx), false);
+  assert.equal(await handleSlideLibrary(foreign.ctx), false);
 
   const unauth = ctx('GET', '/api/slide-library/personal', null);
   await handleSlideLibrary(unauth.ctx);
