@@ -1,5 +1,6 @@
 import { ICON_NAMES } from '../../../shared/icon-names.js';
 import { getLlmConfig } from '../llm/config.js';
+import { LlmError } from '../llm/error.js';
 import { requestChatCompletionContent } from '../llm/index.js';
 import { extractJsonObject } from './json.js';
 import { detectDeckLanguage, normalizeLang } from './lang.js';
@@ -228,12 +229,11 @@ export async function generateSlidesToAppendFromRawContent(
   const obj = extractJsonObject(content);
   const slides = obj?.slides;
   if (!Array.isArray(slides)) {
-    const err = new Error(
-      `${resolvedVendor} did not return a valid { slides: [...] } JSON object.`
+    // The raw response rides along as a field for logging, never the envelope.
+    throw new LlmError(
+      `${resolvedVendor} did not return a valid { slides: [...] } JSON object.`,
+      { statusCode: 502, vendor: resolvedVendor, response: content, phase: 'append' }
     );
-    err.statusCode = 502;
-    err.details = String(content || '').slice(0, 5000);
-    throw err;
   }
   const rationale = typeof obj?.rationale === 'string' ? obj.rationale.trim() : '';
   // Per-slide review metadata ("why this type" + alternative types), aligned

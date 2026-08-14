@@ -8,6 +8,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import sharp from 'sharp';
 import { MediaProvider } from './interface.js';
+import { ValidationError } from '../utils/errors.js';
 import { uploadsDir } from '../config/storage-paths.js';
 
 const MIME_TO_EXT = {
@@ -47,16 +48,12 @@ export class LocalProvider extends MediaProvider {
   async uploadBuffer({ buffer, filename, contentType, maxBytes = MAX_FILE_SIZE }) {
     const ext = MIME_TO_EXT[contentType];
     if (!ext) {
-      const err = new Error(`Unsupported content type: ${contentType}`);
-      err.statusCode = 400;
-      throw err;
+      throw new ValidationError(`Unsupported content type: ${contentType}`);
     }
 
     if (buffer.length > maxBytes) {
       const mb = Math.round(maxBytes / (1024 * 1024));
-      const err = new Error(`File too large (max ${mb}MB)`);
-      err.statusCode = 400;
-      throw err;
+      throw new ValidationError(`File too large (max ${mb}MB)`);
     }
 
     // Optimize raster images
@@ -180,9 +177,7 @@ export class LocalProvider extends MediaProvider {
 export function parseDataUrl(dataUrl) {
   const m = String(dataUrl).match(/^data:([^;]+);base64,(.*)$/);
   if (!m) {
-    const err = new Error('Invalid data URL (expected data:<mime>;base64,...)');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('Invalid data URL (expected data:<mime>;base64,...)');
   }
   return { mime: m[1], base64: m[2] };
 }

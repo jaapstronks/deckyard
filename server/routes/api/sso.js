@@ -115,8 +115,7 @@ function safeReturnTo(raw) {
 }
 
 function redirect(res, location) {
-  res.statusCode = 302;
-  res.setHeader('Location', location);
+  res.writeHead(302, { Location: location });
   res.end();
 }
 

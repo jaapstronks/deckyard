@@ -341,8 +341,10 @@ export function withErrorHandler(moduleName, handler) {
     } catch (err) {
       const { res } = ctx;
 
-      // Log with consistent format
-      logError(moduleName, 'Error:', err);
+      // Log with consistent format, with the request context the old
+      // per-route catches carried (method + path).
+      const reqCtx = [ctx?.req?.method, ctx?.url?.pathname].filter(Boolean).join(' ');
+      logError(moduleName, reqCtx ? `Error handling ${reqCtx}:` : 'Error:', err);
 
       // Handle already-sent headers (e.g., SSE streams)
       if (res.headersSent || res.writableEnded) {

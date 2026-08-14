@@ -5,6 +5,7 @@
 
 import crypto from 'node:crypto';
 import { MediaProvider } from './interface.js';
+import { ValidationError } from '../utils/errors.js';
 import { getScalewayConfig } from './config.js';
 
 // AWS SDK v3 is loaded dynamically to make it an optional dependency
@@ -91,15 +92,11 @@ export class ScalewayProvider extends MediaProvider {
 
   async createPresignedUpload({ filename, contentType, size }) {
     if (!ALLOWED_CONTENT_TYPES.has(contentType)) {
-      const err = new Error(`Unsupported content type: ${contentType}`);
-      err.statusCode = 400;
-      throw err;
+      throw new ValidationError(`Unsupported content type: ${contentType}`);
     }
 
     if (size && size > MAX_FILE_SIZE) {
-      const err = new Error('File too large (max 20MB)');
-      err.statusCode = 400;
-      throw err;
+      throw new ValidationError('File too large (max 20MB)');
     }
 
     const client = await this._getClient();
@@ -134,9 +131,7 @@ export class ScalewayProvider extends MediaProvider {
 
   async uploadBuffer({ buffer, filename, contentType }) {
     if (!ALLOWED_CONTENT_TYPES.has(contentType)) {
-      const err = new Error(`Unsupported content type: ${contentType}`);
-      err.statusCode = 400;
-      throw err;
+      throw new ValidationError(`Unsupported content type: ${contentType}`);
     }
 
     const client = await this._getClient();
@@ -267,9 +262,7 @@ export class ScalewayProvider extends MediaProvider {
   _parseDataUrl(dataUrl) {
     const m = String(dataUrl).match(/^data:([^;]+);base64,(.*)$/);
     if (!m) {
-      const err = new Error('Invalid data URL (expected data:<mime>;base64,...)');
-      err.statusCode = 400;
-      throw err;
+      throw new ValidationError('Invalid data URL (expected data:<mime>;base64,...)');
     }
     return { mime: m[1], base64: m[2] };
   }
