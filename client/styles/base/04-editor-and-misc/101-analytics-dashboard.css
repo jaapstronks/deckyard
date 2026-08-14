@@ -410,18 +410,6 @@
   gap: var(--ps-space-3, 12px);
 }
 
-.dashboard-shell .spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid hsl(var(--app-border-default));
-  border-top-color: hsl(var(--app-accent-primary));
-  border-radius: 50%;
-  animation: dashboard-spin 0.8s linear infinite;
-}
-
-@keyframes dashboard-spin {
-  to { transform: rotate(360deg); }
-}
 
 .dashboard-shell .analytics-loading-text {
   color: hsl(var(--app-text-secondary));

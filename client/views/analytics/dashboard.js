@@ -3,6 +3,7 @@
  */
 
 import { h } from '../../lib/dom.js';
+import { spinner } from '../../lib/dom/spinner.js';
 import { api } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
 import { iconUrl } from '../../../shared/icon-names.js';
@@ -62,7 +63,7 @@ export async function renderDashboard(root, { nav } = {}) {
 
   // Show loading state
   const loading = h('div', { class: 'analytics-loading' }, [
-    h('div', { class: 'spinner' }),
+    spinner('lg'),
     h('div', { class: 'analytics-loading-text', text: t('dashboard.loading', 'Loading insights...') }),
   ]);
   shell.append(loading);

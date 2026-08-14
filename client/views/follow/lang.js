@@ -1,4 +1,5 @@
 import { getLangShortLabel, getLangDisplayName } from '../../lib/format/lang-selector.js';
+import { spinner } from '../../lib/dom/spinner.js';
 
 /**
  * Render language selection UI for follow-along view.
@@ -68,7 +69,7 @@ export function renderFollowLangButtons({
     });
     if (isTranslating) {
       btn.append(
-        h('span', { class: 'lang-btn-spinner' }),
+        spinner('sm'),
         h('span', { text: label })
       );
     } else {

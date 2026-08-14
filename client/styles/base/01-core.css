@@ -1,6 +1,7 @@
 /* Core app layout styles (split for maintainability) */
 @import url('./01-core/00-fonts-and-root.css');
 @import url('./01-core/05-avatar.css');
+@import url('./01-core/06-spinner.css');
 @import url('./01-core/10-shell-topbar-dropdown.css');
 @import url('./01-core/20-editor-layout.css');
 @import url('./01-core/21-editor-skeleton.css');

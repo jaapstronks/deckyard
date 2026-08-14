@@ -248,18 +248,6 @@
   align-items: center;
   gap: 5px;
 }
-.lang-btn-spinner {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border: 2px solid hsl(var(--app-text-primary) / 0.25);
-  border-top-color: hsl(var(--app-text-primary) / 0.8);
-  border-radius: 50%;
-  animation: lang-btn-spin 0.8s linear infinite;
-}
-@keyframes lang-btn-spin {
-  to { transform: rotate(360deg); }
-}
 .follow-qa {
   border-top: 1px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-elevated) / 0.92);
