@@ -1,5 +1,6 @@
 import { createQrDataUrl, renderQrToCanvas } from './poll.js';
 import { t } from '../ui-i18n.js';
+import { h } from '../dom.js';
 
 const followCodeCache = new Map();
 
@@ -107,7 +108,7 @@ export function initFollowInviteSlides(
         });
         if (ok) return;
         // Fallback: canvas rendering can fail in some contexts; use data URL image.
-        const img = document.createElement('img');
+        const img = h('img');
         img.alt = t('qr.alt', 'QR code');
         img.src = createQrDataUrl(url, { size: Math.min(420, Math.max(220, maxPx)) });
         if (isFollowInviteQr) img.className = 'sfi-qr';

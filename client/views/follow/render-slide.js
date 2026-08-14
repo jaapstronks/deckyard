@@ -1,5 +1,6 @@
 import { activateVideoEmbeds, mountSlideInto } from '../../lib/slide-runtime/slide-render.js';
 import { slideByIdOrIndex } from './slides.js';
+import { h } from '../../lib/dom.js';
 import { applyStepVisibilityForMode } from '../presenter/step.js';
 
 export function renderFollowSlide({
@@ -41,13 +42,9 @@ export function renderFollowSlide({
   if (slide.type === 'follow-invite-slide' && followInviteMessage) {
     if (slideWrap) {
       slideWrap.innerHTML = '';
-      const msgSlide = document.createElement('div');
-      msgSlide.className = 'slide follow-message-slide';
-      const inner = document.createElement('div');
-      inner.className = 'slide-inner';
-      const box = document.createElement('div');
-      box.className = 'follow-message-box';
-      box.textContent = followInviteMessage;
+      const msgSlide = h('div', { class: 'slide follow-message-slide' });
+      const inner = h('div', { class: 'slide-inner' });
+      const box = h('div', { class: 'follow-message-box', text: followInviteMessage });
       inner.appendChild(box);
       msgSlide.appendChild(inner);
       slideWrap.appendChild(msgSlide);

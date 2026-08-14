@@ -1,3 +1,5 @@
+import { h } from '../../../lib/dom.js';
+
 
 /** Slide aspect ratio (16:9) */
 const SLIDE_ASPECT_RATIO = 16 / 9;
@@ -135,7 +137,7 @@ export function installTagsAutocomplete(inputEl, datalistEl, getTagsFn) {
 
     datalistEl.innerHTML = '';
     for (const tg of filtered.slice(0, 30)) {
-      const opt = document.createElement('option');
+      const opt = h('option');
       opt.value = tg;
       datalistEl.append(opt);
     }

@@ -20,7 +20,7 @@ export async function copyToClipboard(text) {
   } catch {
     // Fallback: execCommand (best-effort for older Safari / blocked clipboard API)
     try {
-      const ta = document.createElement('textarea');
+      const ta = h('textarea');
       ta.value = t;
       ta.setAttribute('readonly', '');
       ta.style.position = 'fixed';
