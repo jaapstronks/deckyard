@@ -29,6 +29,7 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { shouldUseSecureCookies } from '../../utils/request-url.js';
 import { parseCookies } from '../../utils/cookies.js';
 import { createLogger } from '../../utils/logger.js';
+import { withErrorHandler } from '../../utils/http.js';
 
 const log = createLogger('sso');
 
@@ -237,7 +238,7 @@ export const ROUTES = [
  * Handle the OIDC SSO endpoints.
  * @param {import('../../utils/context.js').PublicContext} ctx
  */
-export async function handleSso(ctx) {
+export const handleSso = withErrorHandler('sso', async (ctx) => {
   if (!ctx.url.pathname.startsWith('/api/auth/oidc/')) return false;
   return dispatchRoutes(ROUTES, ctx);
-}
+});

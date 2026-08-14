@@ -12,7 +12,7 @@
  * POST   /api/font-families/import-adobe-family     - Import Adobe family (designer only)
  */
 
-import { badRequest, methodNotAllowed, serveJson, unauthorized, notFound, requireJsonBody } from '../../utils/http.js';
+import { badRequest, methodNotAllowed, serveJson, unauthorized, notFound, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { clearCustomThemeCache } from '../../utils/themes.js';
@@ -348,9 +348,9 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleFontFamilies(ctx) {
+export const handleFontFamilies = withErrorHandler('font-families', (ctx) => {
   return dispatchRoutes(ROUTES, ctx);
-}
+});
 
 // ============================================================
 // HELPERS

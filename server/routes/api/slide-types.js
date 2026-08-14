@@ -1,4 +1,4 @@
-import { serveJson } from '../../utils/http.js';
+import { serveJson, withErrorHandler } from '../../utils/http.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
 import { slideStructure } from '../../../shared/slide-types/structure.js';
 import {
@@ -202,6 +202,6 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleSlideTypes(ctx) {
+export const handleSlideTypes = withErrorHandler('slide-types', (ctx) => {
   return dispatchRoutes(ROUTES, ctx);
-}
+});

@@ -14,6 +14,7 @@ import {
   unauthorized,
   notFound,
   requireJsonBody,
+  withErrorHandler,
 } from '../../utils/http.js';
 import {
   listPersonalCollections,
@@ -189,8 +190,8 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export function handleSlideCollections(ctx) {
+export const handleSlideCollections = withErrorHandler('slide-collections', (ctx) => {
   if (!ctx.url.pathname.startsWith('/api/slide-collections')) return false;
   if (!ctx.authedUser) return unauthorized(ctx.res);
   return dispatchRoutes(ROUTES, ctx);
-}
+});
