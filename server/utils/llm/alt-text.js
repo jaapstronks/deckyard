@@ -3,6 +3,8 @@ import { requestChatCompletionContent } from './index.js';
 import { extractJsonObject } from '../openai/json.js';
 import { truncateForPrompt } from '../openai/prompt.js';
 import { resolveImageUrlForVisionInput } from './vision.js';
+import { ValidationError } from '../errors.js';
+import { LlmError } from './error.js';
 
 function cleanTagList(tags) {
   const arr = Array.isArray(tags) ? tags : [];
@@ -23,16 +25,12 @@ export async function generateImageAltTexts({
 } = {}) {
   const url = String(imageUrl || '').trim();
   if (!url) {
-    const err = new Error('imageUrl is required');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('imageUrl is required');
   }
 
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
   if (resolvedVendor !== 'openai') {
-    const err = new Error('Alt-text generation currently requires OpenAI.');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('Alt-text generation currently requires OpenAI.');
   }
 
   const vision = await resolveImageUrlForVisionInput(repoRoot, url);
@@ -99,10 +97,12 @@ export async function generateImageAltTexts({
 
   const obj = extractJsonObject(content);
   if (!obj || typeof obj !== 'object') {
-    const err = new Error('LLM did not return valid alt-text JSON.');
-    err.statusCode = 502;
-    err.details = String(content || '').slice(0, 5000);
-    throw err;
+    // The raw response rides along as a field for logging, never the envelope.
+    throw new LlmError('LLM did not return valid alt-text JSON.', {
+      statusCode: 502,
+      response: content,
+      phase: 'alt-text',
+    });
   }
 
   const nl = typeof obj.nl === 'string' ? obj.nl.trim() : '';
