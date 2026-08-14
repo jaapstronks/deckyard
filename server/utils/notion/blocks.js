@@ -5,6 +5,7 @@
 
 import { notionFetchJson } from './client.js';
 import { extractPageId } from './parser.js';
+import { ValidationError } from '../errors.js';
 
 /**
  * Append blocks to the bottom of a Notion page.
@@ -17,15 +18,11 @@ import { extractPageId } from './parser.js';
 export async function appendBlocksToPage(pageId, blocks) {
   const id = String(pageId || '').trim();
   if (!id) {
-    const err = new Error('Page ID is required');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('Page ID is required');
   }
 
   if (!Array.isArray(blocks) || blocks.length === 0) {
-    const err = new Error('At least one block is required');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('At least one block is required');
   }
 
   return await notionFetchJson(`/blocks/${encodeURIComponent(id)}/children`, {
@@ -127,15 +124,11 @@ export function createCalloutBlock(text, emoji = '\uD83C\uDFAF') {
 export async function publishEmbedToNotionPage(pageId, { embedUrl, title, lang = 'nl' } = {}) {
   const id = extractPageId(pageId);
   if (!id) {
-    const err = new Error('Invalid Notion page ID');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('Invalid Notion page ID');
   }
 
   if (!embedUrl) {
-    const err = new Error('Embed URL is required');
-    err.statusCode = 400;
-    throw err;
+    throw new ValidationError('Embed URL is required');
   }
 
   const headingText = lang === 'nl' ? 'Presentatie' : 'Presentation';
