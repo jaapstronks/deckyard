@@ -99,7 +99,7 @@
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
   margin: var(--slide-space-6) 0 var(--slide-space-3);
-  color: var(--color-text);
+  color: var(--slide-on-surface);
 }
 .slide-content.is-fit-medium .body .md-subheading {
   font-size: var(--slide-text-lg);
@@ -123,14 +123,14 @@
   margin: var(--slide-space-3) 0;
 }
 .slide-content .body ul li::marker {
-  color: var(--color-accent);
+  color: var(--slide-accent);
 }
 .slide-content .body a {
-  color: var(--color-link);
+  color: var(--slide-link);
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
-  text-decoration-color: var(--color-link);
+  text-decoration-color: var(--slide-link);
   transition: text-decoration-color 0.15s ease;
 }
 .slide-content .body a:hover {

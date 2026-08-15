@@ -70,7 +70,7 @@
    .stage-label and .stage-value one by one, which is why .stage-text (and
    anything added later) kept the slide's colour on a surface it isn't on. */
 .slide-funnel.slide-bg-lime .stage-bar {
-  background: var(--color-accent, #375c5d);
+  background: var(--slide-accent, #375c5d);
   --surface-text: var(--t-color-accent-contrast, var(--t-text-color-light, #ffffff));
 }
 
@@ -90,7 +90,7 @@
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
-  color: var(--color-text, #0b0b0b);
+  color: var(--slide-on-surface, #0b0b0b);
 }
 
 .slide-funnel .stage-value {
@@ -98,7 +98,7 @@
   font-size: var(--slide-text-lg);
   line-height: var(--slide-leading-snug);
   font-weight: 600;
-  color: var(--color-text, #0b0b0b);
+  color: var(--slide-on-surface, #0b0b0b);
 }
 
 /* Description text below each stage */
@@ -106,7 +106,7 @@
   font-family: var(--font-body);
   font-size: var(--slide-text-base);
   line-height: var(--slide-leading-compact);
-  color: var(--color-text-muted, rgba(11, 11, 11, 0.7));
+  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.7));
   text-align: center;
   /* allowlist: sub-step hairline — the description hugs the stage label so the
      pair reads as one block; the smallest step (4px) splits it (slide-roles.md) */
@@ -194,11 +194,11 @@
 
 /* Every other stage gets a slightly different shade */
 .slide-funnel .funnel-stage:nth-child(even) .stage-bar {
-  background: color-mix(in srgb, var(--slide-bg-lime, #e2fe52) 85%, var(--color-accent, #375c5d));
+  background: color-mix(in srgb, var(--slide-bg-lime, #e2fe52) 85%, var(--slide-accent, #375c5d));
 }
 
 .slide-funnel.slide-bg-lime .funnel-stage:nth-child(even) .stage-bar {
-  background: color-mix(in srgb, var(--color-accent, #375c5d) 85%, var(--slide-bg-lime, #e2fe52));
+  background: color-mix(in srgb, var(--slide-accent, #375c5d) 85%, var(--slide-bg-lime, #e2fe52));
 }
 
 /* ===========================================

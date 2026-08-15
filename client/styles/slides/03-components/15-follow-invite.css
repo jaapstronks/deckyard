@@ -101,7 +101,7 @@
   font-size: var(--slide-text-5xl);
   font-weight: 900;
   letter-spacing: 0.14em;
-  color: var(--color-accent);
+  color: var(--slide-accent);
   /* allowlist: single-line display glyph — the line box is the layout, not text rhythm (slide-roles.md) */
   line-height: 1;
 }

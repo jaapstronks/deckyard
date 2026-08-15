@@ -200,7 +200,7 @@
 .slide-gallery .image-placeholder-text {
   font-family: var(--font-body);
   font-size: var(--slide-text-sm);
-  color: var(--color-text-muted, rgba(11, 11, 11, 0.5));
+  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.5));
 }
 
 /* Caption overlay */

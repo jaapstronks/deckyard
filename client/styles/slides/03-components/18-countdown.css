@@ -91,12 +91,12 @@
 
 /* Zero state: flash the digits red and reveal the "Tijd!" text. */
 .slide-countdown.is-zero .cd-time {
-  color: var(--color-danger, #e23b3b);
+  color: var(--slide-color-danger);
   animation: cd-flash 1s steps(1, end) infinite;
 }
 
 .slide-countdown.is-zero .cd-zero-text {
-  color: var(--color-danger, #e23b3b);
+  color: var(--slide-color-danger);
   opacity: 1;
 }
 

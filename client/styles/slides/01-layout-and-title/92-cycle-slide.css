@@ -81,7 +81,7 @@
   font-size: var(--slide-text-sm);
   line-height: var(--slide-leading-compact);
   font-weight: var(--heading-weight, 400);
-  color: var(--color-text-muted, rgba(11, 11, 11, 0.7));
+  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.7));
 }
 
 /* ===========================================
@@ -97,7 +97,7 @@
   justify-content: center;
   /* Position on the ring, pointing clockwise tangent */
   transform: rotate(var(--arrow-angle)) translateY(-160px) rotate(90deg);
-  color: var(--color-accent, #375c5d);
+  color: var(--slide-accent, #375c5d);
 }
 
 .slide-cycle .cycle-arrow svg {
@@ -106,7 +106,7 @@
 }
 
 .slide-cycle.slide-bg-lime .cycle-arrow {
-  color: var(--color-text, #0b0b0b);
+  color: var(--slide-on-surface, #0b0b0b);
 }
 
 /* ===========================================
@@ -150,14 +150,14 @@
   background: var(--slide-bg-lime, #e2fe52);
   /* The number sits on the lime disc, not on the slide, so it reads the
      surface's own text colour. See docs/reference/nested-surfaces.md. */
-  --color-text: var(--t-slide-bg-lime-text, #0b0b0b);
-  color: var(--color-text);
+  --slide-on-surface: var(--t-slide-bg-lime-text, #0b0b0b);
+  color: var(--slide-on-surface);
   border-radius: 50%;
   box-shadow: var(--slide-shadow-md);
 }
 
 .slide-cycle.slide-bg-lime .stage-node {
-  background: var(--color-accent, #375c5d);
+  background: var(--slide-accent, #375c5d);
   color: var(--t-color-accent-contrast, #ffffff);
 }
 
@@ -185,14 +185,14 @@
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
-  color: var(--color-text, #0b0b0b);
+  color: var(--slide-on-surface, #0b0b0b);
 }
 
 .slide-cycle .cycle-text {
   font-family: var(--font-body);
   font-size: var(--slide-text-base);
   line-height: var(--slide-leading-compact);
-  color: var(--color-text-muted, rgba(11, 11, 11, 0.7));
+  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.7));
 }
 
 /* ===========================================

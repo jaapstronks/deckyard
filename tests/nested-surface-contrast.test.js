@@ -132,7 +132,7 @@ test('every surface class is defined, in one place', () => {
 test('the redirect covers every surface class', () => {
   // A pole class that is not in the redirect group sets --surface-text and
   // nothing reads it — a silent no-op, which is worse than no class at all.
-  const group = BASE_CSS.match(/\.slide :is\(([^)]*)\)\s*\{\s*--color-text: var\(--surface-text\)/);
+  const group = BASE_CSS.match(/\.slide :is\(([^)]*)\)\s*\{\s*--slide-on-surface: var\(--surface-text\)/);
   assert.ok(group, 'expected the shared redirect block');
   for (const s of SURFACES) {
     assert.ok(
@@ -143,14 +143,14 @@ test('the redirect covers every surface class', () => {
 });
 
 test('a graphic marker has its own token, and variants flip it', () => {
-  assert.match(BASE_CSS, /--slide-marker-color: var\(--color-accent\)/);
+  assert.match(BASE_CSS, /--slide-marker-color: var\(--slide-accent\)/);
   assert.match(BASE_CSS, /has-slide-bg-light-text[\s\S]{0,120}--slide-marker-color: color-mix/);
 
   // …and a theme-declared variant that flips its text colour flips it too.
   const css = slideBackgroundsCssText([
     { id: 'calm', label: 'Calm', value: '#140a26', textColor: '#ffffff' },
   ]);
-  assert.match(css, /--slide-marker-color: color-mix\(in srgb, var\(--color-accent\) 35%, var\(--slide-bg-text\)\)/);
+  assert.match(css, /--slide-marker-color: color-mix\(in srgb, var\(--slide-accent\) 35%, var\(--slide-bg-text\)\)/);
 
   // A variant with no text colour has not moved the ground, so it must not
   // move the marker either.
@@ -190,7 +190,7 @@ test('every element that paints a known surface declares which one', () => {
       // which the slide-level contrast logic already answers for.
       if (/(^|[\s,>])\.slide(-[\w-]+)?(\.[\w-]+)*$/.test(selector)) continue;
       // Paired in the rule itself (a CSS-side surface swap)?
-      if (/--surface-text\s*:/.test(body) || /--color-text\s*:/.test(body)) continue;
+      if (/--surface-text\s*:/.test(body) || /--slide-on-surface\s*:/.test(body)) continue;
       // Paired in the markup? Take the rule's last class and look for it next
       // to an on-surface-* class in the type sources.
       const leaf = [...selector.matchAll(/\.([a-z][\w-]*)/g)].pop()?.[1];

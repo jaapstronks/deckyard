@@ -31,7 +31,7 @@
   vertical-align: top;
   text-align: start; /* RTL support */
   font-weight: 400;
-  color: var(--color-text);
+  color: var(--slide-on-surface);
   min-width: 140px; /* makes small-column tables feel roomier; wide tables will scroll */
 }
 
@@ -58,7 +58,7 @@
 }
 
 .slide .md-table a {
-  color: var(--color-link);
+  color: var(--slide-link);
 }
 
 /* Action buttons (CTAs) */
@@ -121,9 +121,9 @@
 
 /* Secondary style - accent color background */
 .slide-action--secondary {
-  background: var(--color-accent, #7c3aed);
+  background: var(--slide-accent, #7c3aed);
   color: var(--t-color-accent-contrast, #fff);
-  border: 2px solid var(--color-accent, #7c3aed);
+  border: 2px solid var(--slide-accent, #7c3aed);
 }
 
 .slide-action--secondary:hover {
@@ -137,23 +137,23 @@
 }
 
 /* Outline style - transparent with visible border.
-   Uses --color-text so the resting state stays readable on dark slide
+   Uses --slide-on-surface so the resting state stays readable on dark slide
    backgrounds (identical to #0b0b0b on the default light slides). */
 .slide-action--outline {
   background: transparent;
-  color: var(--color-text, #0b0b0b);
-  border: 2px solid var(--color-text, #0b0b0b);
+  color: var(--slide-on-surface, #0b0b0b);
+  border: 2px solid var(--slide-on-surface, #0b0b0b);
 }
 
 .slide-action--outline:hover {
-  background: var(--color-text, #0b0b0b);
-  color: var(--slide-bg, var(--color-background, #fff));
+  background: var(--slide-on-surface, #0b0b0b);
+  color: var(--slide-bg, var(--slide-surface, #fff));
   box-shadow: var(--slide-shadow-md);
 }
 
 .slide-action--outline:active {
-  background: var(--color-text, #0b0b0b);
-  color: var(--slide-bg, var(--color-background, #fff));
+  background: var(--slide-on-surface, #0b0b0b);
+  color: var(--slide-bg, var(--slide-surface, #fff));
   filter: brightness(1.1);
   box-shadow: var(--slide-shadow-sm);
 }

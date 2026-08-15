@@ -13,7 +13,7 @@
      keep white text readable by using the theme's dark base background. */
   background: var(
     --t-slide-bg-dark,
-    var(--color-background)
+    var(--slide-surface)
   );
 }
 .slide-quote::before {

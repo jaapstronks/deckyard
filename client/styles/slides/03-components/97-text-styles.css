@@ -32,7 +32,7 @@
    `muted` is derived from currentColor — the field's inherited (default) text
    colour — NOT a fixed light-theme grey. That keeps it band-aware: on a light
    slide currentColor is dark → a mid-grey; on a dark band (quote/chapter, whose
-   text is white via --quote-text-color and which bypass the --color-text
+   text is white via --quote-text-color and which bypass the --slide-on-surface
    system) currentColor is white → a dimmed white. A fixed --t-color-text-muted
    would render dark-grey-on-dark-purple (~1.5:1, unreadable) there. The 72%
    mix mirrors the house --slide-bg-text-muted convention.
