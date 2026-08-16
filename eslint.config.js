@@ -97,6 +97,43 @@ export default [
     },
   },
 
+  // Every server-side env read goes through the one accessor family in
+  // server/config/utils.js (envStr/envBool/envInt/envList), so a flag means
+  // the same thing wherever it is read — `1`/`true`/`yes`/`on` all count as
+  // true, values are trimmed, defaults live at the read site. A raw
+  // `process.env.X` is how the second boolean vocabulary starts (B64; the
+  // same one-canonical-form stance as the t() rule above).
+  //
+  // Exempt: `server/config/**` (where the accessors live and dotenv loads),
+  // and the two runtime-environment markers that are not Deckyard config —
+  // NODE_ENV (the environment switch itself) and NODE_TEST_CONTEXT (set by
+  // the node:test runner).
+  {
+    files: ['server/**/*.js'],
+    ignores: ['server/config/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "MemberExpression[object.object.name='process'][object.property.name='env']" +
+            ":not([property.name='NODE_ENV']):not([property.name='NODE_TEST_CONTEXT'])",
+          message:
+            'Read env via envStr/envBool/envInt/envList from server/config/utils.js — ' +
+            'one accessor family, one flag vocabulary (B64). Only NODE_ENV and ' +
+            'NODE_TEST_CONTEXT may be read raw.',
+        },
+        {
+          selector:
+            "VariableDeclarator[init.object.name='process'][init.property.name='env']",
+          message:
+            'Do not alias or destructure process.env — read each variable via ' +
+            'envStr/envBool/envInt/envList from server/config/utils.js (B64).',
+        },
+      ],
+    },
+  },
+
   // Docs screenshot runner: Node scripts that also carry browser-context
   // callbacks (page.evaluate / waitForFunction run inside Chromium), so both
   // global sets are legitimately in play.

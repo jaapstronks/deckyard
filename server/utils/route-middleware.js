@@ -23,6 +23,7 @@ import {
 import { isMultiOrgEnabled } from '../config/features.js';
 import { getGuestBySessionToken } from '../storage/share-links/index.js';
 import { parseCookies } from './cookies.js';
+import { envStr, envList } from '../config/utils.js';
 
 // ============================================================
 // SIMPLE AUTHORIZATION HELPERS
@@ -56,10 +57,7 @@ export function canManage(authedUser) {
  * @returns {string[]}
  */
 function customHtmlEditorEmails() {
-  return String(process.env.CUSTOM_HTML_EDITOR_EMAILS || '')
-    .split(',')
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
+  return envList('CUSTOM_HTML_EDITOR_EMAILS');
 }
 
 /**
@@ -77,9 +75,7 @@ export function emailCanEditCustomHtml(email, { isAdmin = false } = {}) {
   if (isAdmin) return true;
   const e = String(email || '').trim().toLowerCase();
   if (!e) return false;
-  const adminEmail = String(process.env.AUTH_ADMIN_EMAIL || '')
-    .trim()
-    .toLowerCase();
+  const adminEmail = envStr('AUTH_ADMIN_EMAIL').toLowerCase();
   if (adminEmail && e === adminEmail) return true;
   return customHtmlEditorEmails().includes(e);
 }

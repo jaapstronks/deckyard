@@ -3,6 +3,8 @@
  * Reads from environment variables to determine which provider to use.
  */
 
+import { envStr } from '../config/utils.js';
+
 /**
  * Get the media storage mode.
  * - 'auto' - Use Scaleway if configured, otherwise local
@@ -11,7 +13,7 @@
  * @returns {'auto' | 'scaleway' | 'local'}
  */
 function getMediaStorageMode() {
-  const mode = (process.env.MEDIA_STORAGE_MODE || '').toLowerCase().trim();
+  const mode = envStr('MEDIA_STORAGE_MODE').toLowerCase();
   if (mode === 'scaleway') return 'scaleway';
   if (mode === 'local') return 'local';
   return 'auto';
@@ -24,9 +26,9 @@ function getMediaStorageMode() {
  */
 export function isScalewayConfigured() {
   return !!(
-    process.env.SCW_ACCESS_KEY &&
-    process.env.SCW_SECRET_KEY &&
-    process.env.SCW_BUCKET
+    envStr('SCW_ACCESS_KEY') &&
+    envStr('SCW_SECRET_KEY') &&
+    envStr('SCW_BUCKET')
   );
 }
 
@@ -36,16 +38,16 @@ export function isScalewayConfigured() {
  * @returns {{ accessKeyId: string, secretAccessKey: string, region: string, bucket: string, endpoint: string, cdnUrl: string | null }}
  */
 export function getScalewayConfig() {
-  const region = process.env.SCW_REGION || 'nl-ams';
+  const region = envStr('SCW_REGION', 'nl-ams');
   return {
-    accessKeyId: process.env.SCW_ACCESS_KEY || '',
-    secretAccessKey: process.env.SCW_SECRET_KEY || '',
+    accessKeyId: envStr('SCW_ACCESS_KEY'),
+    secretAccessKey: envStr('SCW_SECRET_KEY'),
     region,
-    bucket: process.env.SCW_BUCKET || '',
+    bucket: envStr('SCW_BUCKET'),
     // Scaleway S3-compatible endpoint
-    endpoint: process.env.SCW_ENDPOINT || `https://s3.${region}.scw.cloud`,
+    endpoint: envStr('SCW_ENDPOINT', `https://s3.${region}.scw.cloud`),
     // Optional CDN URL for public access (if using Scaleway Edge Services or custom domain)
-    cdnUrl: process.env.SCW_CDN_URL || null,
+    cdnUrl: envStr('SCW_CDN_URL') || null,
   };
 }
 

@@ -1,6 +1,7 @@
 /* global document */ // page.evaluate() callbacks below run in the browser context.
 import { buildSlidesPdfHtml } from '../export/pdf-slides.js';
 import { getPuppeteerBrowser, toNodeBuffer } from '../utils/puppeteer-browser.js';
+import { envInt } from '../config/utils.js';
 
 /** Puppeteer raises a TimeoutError (name === 'TimeoutError') on timeout. */
 function isTimeoutError(err) {
@@ -16,10 +17,7 @@ function isTimeoutError(err) {
  * finite default keeps a genuinely broken render from hanging forever.
  */
 function pdfExportTimeoutMs() {
-  const raw = process.env.PDF_EXPORT_TIMEOUT_MS;
-  if (raw == null || raw === '') return 120_000;
-  const n = Number(raw);
-  return Number.isFinite(n) && n >= 0 ? n : 120_000;
+  return envInt('PDF_EXPORT_TIMEOUT_MS', 120_000, { min: 0 });
 }
 
 export async function renderSlidesToPdfBuffer(

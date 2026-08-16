@@ -19,6 +19,7 @@ import { sendWeeklyDigestEmail, sendTeamDigestEmail } from '../integrations/brev
 import { getAppSettings } from '../storage/settings.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from '../utils/logger.js';
+import { envStr } from '../config/utils.js';
 
 const log = createLogger('digest-email');
 
@@ -194,12 +195,12 @@ async function processTeamDigest(admin, repoRoot) {
 
 function buildDashboardUrl(repoRoot) {
   // Use APP_URL from environment or fallback
-  const baseUrl = process.env.APP_URL || 'http://localhost:3000';
+  const baseUrl = envStr('APP_URL', 'http://localhost:3000');
   return `${baseUrl}/insights`;
 }
 
 function buildPreferencesUrl(repoRoot) {
-  const baseUrl = process.env.APP_URL || 'http://localhost:3000';
+  const baseUrl = envStr('APP_URL', 'http://localhost:3000');
   return `${baseUrl}/settings#preferences`;
 }
 

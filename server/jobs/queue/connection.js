@@ -13,6 +13,7 @@
 
 import { isRedisConfigured, getRedisClient } from '../../utils/redis-client.js';
 import { createLogger } from '../../utils/logger.js';
+import { envStr, envInt } from '../../config/utils.js';
 
 const log = createLogger('queue');
 
@@ -66,16 +67,16 @@ export function isQueueAvailable() {
  * @returns {Object} Connection options
  */
 function getConnectionOptions() {
-  const url = process.env.REDIS_URL;
+  const url = envStr('REDIS_URL');
   if (url) {
     return { url };
   }
 
   return {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: Number(process.env.REDIS_PORT) || 6379,
-    password: process.env.REDIS_PASSWORD || undefined,
-    db: Number(process.env.REDIS_DB) || 0,
+    host: envStr('REDIS_HOST', 'localhost'),
+    port: envInt('REDIS_PORT', 6379, { min: 1, max: 65535 }),
+    password: envStr('REDIS_PASSWORD') || undefined,
+    db: envInt('REDIS_DB', 0, { min: 0 }),
   };
 }
 

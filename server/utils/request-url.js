@@ -4,6 +4,7 @@
  */
 
 import { getAllowedHosts } from './config.js';
+import { envBool } from '../config/utils.js';
 
 /**
  * Extract the origin URL from a request, handling reverse proxy headers.
@@ -150,8 +151,5 @@ export function toAbsoluteUrl(origin, path) {
 export function shouldUseSecureCookies(req) {
   if (isHttpsRequest(req)) return true;
 
-  const force = String(process.env.SECURE_COOKIES || '').trim();
-  if (force === '1' || force.toLowerCase() === 'true') return true;
-
-  return false;
+  return envBool('SECURE_COOKIES');
 }

@@ -9,7 +9,7 @@ import { loadDotEnv } from './config/env.js';
 import { authConfigError, authConfigWarnings } from './auth/auth.js';
 import { ssoConfigError } from './config/sso.js';
 import { storageModeError } from './config/database.js';
-import { publicUrlWarnings } from './config/utils.js';
+import { publicUrlWarnings, envStr, envBool, envInt } from './config/utils.js';
 import { handleApi } from './routes/api.js';
 import { handleStatic } from './routes/static.js';
 import { getFeatureFlags } from './config/flags-snapshot.js';
@@ -160,8 +160,7 @@ await loadDotEnv(repoRoot);
 
 // Security check: warn if AUTH_DEV_BYPASS is enabled in production
 if (process.env.NODE_ENV === 'production') {
-  const devBypass = String(process.env.AUTH_DEV_BYPASS || '').trim().toLowerCase();
-  if (devBypass === '1' || devBypass === 'true' || devBypass === 'yes') {
+  if (envBool('AUTH_DEV_BYPASS')) {
     console.error(
       '\n⚠️  SECURITY WARNING: AUTH_DEV_BYPASS is enabled in production!\n' +
       '   This allows passwordless admin access. Set AUTH_DEV_BYPASS=false immediately.\n'
@@ -250,8 +249,8 @@ await initializeWorkers();
 // Real-time collaboration (presence) WebSocket endpoint, gated by COLLAB_ENABLED
 await maybeAttachCollab(server, { repoRoot });
 
-const PORT = Number(process.env.PORT || 4177);
-const HOST = process.env.HOST || '127.0.0.1';
+const PORT = envInt('PORT', 4177, { min: 1, max: 65535 });
+const HOST = envStr('HOST', '127.0.0.1');
 server.on('error', (err) => {
   // eslint-disable-next-line no-console
   console.error(

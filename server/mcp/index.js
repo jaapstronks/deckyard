@@ -31,6 +31,7 @@ import { initializeStorage } from '../storage/adapters/index.js';
 import { strandedFileDataError } from '../storage/boot-check.js';
 import { storageModeError } from '../config/database.js';
 import { repoRoot } from '../config/paths.js';
+import { envStr } from '../config/utils.js';
 
 // ─── CRITICAL: Redirect console.log to stderr ────────────────────────────
 // MCP uses stdout exclusively for JSON-RPC protocol messages.
@@ -144,7 +145,7 @@ async function main() {
   });
 
   // Default owner for presentations (can be set via env or CLI)
-  const defaultOwnerEmail = process.env.DECKYARD_MCP_OWNER_EMAIL || null;
+  const defaultOwnerEmail = envStr('DECKYARD_MCP_OWNER_EMAIL') || null;
   const registerCustom = await loadCustomToolsRegistrar();
   registerTools(server, { defaultOwnerEmail, registerCustom });
   registerPrompts(server);

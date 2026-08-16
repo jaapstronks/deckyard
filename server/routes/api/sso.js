@@ -27,6 +27,7 @@ import { logAuthEvent } from '../../storage/password-reset.js';
 import { getClientIp, createStorageScope } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { shouldUseSecureCookies } from '../../utils/request-url.js';
+import { envStr } from '../../config/utils.js';
 import { parseCookies } from '../../utils/cookies.js';
 import { createLogger } from '../../utils/logger.js';
 import { withErrorHandler } from '../../utils/http.js';
@@ -58,7 +59,7 @@ function base64url(buf) {
 
 /** Sign the OAuth-flow state payload with the auth secret (HMAC-SHA256). */
 function signState(payload) {
-  const secret = String(process.env.AUTH_SECRET || '');
+  const secret = envStr('AUTH_SECRET');
   const body = base64url(JSON.stringify(payload));
   const sig = crypto.createHmac('sha256', secret).update(body).digest('base64url');
   return `${body}.${sig}`;
@@ -71,7 +72,7 @@ function signState(payload) {
  * @returns {object|null}
  */
 function verifyState(token) {
-  const secret = String(process.env.AUTH_SECRET || '');
+  const secret = envStr('AUTH_SECRET');
   const [body, sig] = String(token || '').split('.');
   if (!body || !sig) return null;
   const expected = crypto.createHmac('sha256', secret).update(body).digest('base64url');

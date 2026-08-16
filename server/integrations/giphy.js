@@ -8,6 +8,7 @@
  */
 
 import { apiFetch, createConfigChecker } from '../utils/api-fetch.js';
+import { envStr } from '../config/utils.js';
 
 const GIPHY_API_BASE = 'https://api.giphy.com/v1/gifs';
 
@@ -32,7 +33,7 @@ export async function searchGiphy({ query, offset = 0, limit = 20, rating = 'g' 
   }
 
   const params = new URLSearchParams({
-    api_key: process.env.GIPHY_API_KEY,
+    api_key: envStr('GIPHY_API_KEY'),
     q: query,
     offset: String(offset),
     limit: String(Math.min(limit, 50)),
@@ -64,7 +65,7 @@ export async function getTrendingGiphy({ offset = 0, limit = 20, rating = 'g' } 
   }
 
   const params = new URLSearchParams({
-    api_key: process.env.GIPHY_API_KEY,
+    api_key: envStr('GIPHY_API_KEY'),
     offset: String(offset),
     limit: String(Math.min(limit, 50)),
     rating,
@@ -91,7 +92,7 @@ export async function getGiphyGif(id) {
   }
 
   const params = new URLSearchParams({
-    api_key: process.env.GIPHY_API_KEY,
+    api_key: envStr('GIPHY_API_KEY'),
   });
 
   const resp = await apiFetch(`${GIPHY_API_BASE}/${id}?${params}`, 'Giphy');

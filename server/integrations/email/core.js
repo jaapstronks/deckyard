@@ -5,6 +5,7 @@
 import { getEmailSender } from '../../storage/settings.js';
 import { getAppName } from '../../config/branding.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
+import { envStr } from '../../config/utils.js';
 
 export const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
@@ -20,8 +21,8 @@ const DEFAULT_SENDER_EMAIL = 'noreply@example.com';
 export async function getSenderIdentity(repoRoot) {
   if (!repoRoot) {
     return {
-      email: process.env.BREVO_SENDER_EMAIL || DEFAULT_SENDER_EMAIL,
-      name: process.env.BREVO_SENDER_NAME || getAppName(),
+      email: envStr('BREVO_SENDER_EMAIL', DEFAULT_SENDER_EMAIL),
+      name: envStr('BREVO_SENDER_NAME') || getAppName(),
     };
   }
   try {
@@ -30,8 +31,8 @@ export async function getSenderIdentity(repoRoot) {
     );
   } catch {
     return {
-      email: process.env.BREVO_SENDER_EMAIL || DEFAULT_SENDER_EMAIL,
-      name: process.env.BREVO_SENDER_NAME || getAppName(),
+      email: envStr('BREVO_SENDER_EMAIL', DEFAULT_SENDER_EMAIL),
+      name: envStr('BREVO_SENDER_NAME') || getAppName(),
     };
   }
 }
@@ -54,7 +55,7 @@ export async function getSenderIdentity(repoRoot) {
  *   that surface the failure over HTTP map the two differently (501 vs 502).
  */
 export async function sendEmail({ to, toName, subject, htmlContent, textContent, senderOverride }) {
-  const apiKey = process.env.BREVO_API_KEY;
+  const apiKey = envStr('BREVO_API_KEY');
   if (!apiKey) {
     return { ok: false, reason: 'not_configured', error: 'BREVO_API_KEY not configured' };
   }
@@ -62,11 +63,11 @@ export async function sendEmail({ to, toName, subject, htmlContent, textContent,
   // Priority: senderOverride (from app settings) > env vars > defaults
   const senderEmail =
     senderOverride?.email ||
-    process.env.BREVO_SENDER_EMAIL ||
+    envStr('BREVO_SENDER_EMAIL') ||
     DEFAULT_SENDER_EMAIL;
   const senderName =
     senderOverride?.name ||
-    process.env.BREVO_SENDER_NAME ||
+    envStr('BREVO_SENDER_NAME') ||
     getAppName();
 
   const payload = {

@@ -43,6 +43,7 @@ import { withDbGuard } from './utils/db-guard.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
 import { DEFAULT_AI_NAME, DEFAULT_AI_EMAIL } from '../../shared/constants/ai.js';
 import { getAppName } from '../config/branding.js';
+import { envStr } from '../config/utils.js';
 import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
 import { SUBSCRIPTION_LEVELS } from './presentation-subscriptions.js';
 
@@ -228,8 +229,8 @@ function normalizePositiveInt(v, fallback, min = 1, max = 365) {
  */
 function seedRetentionDefaults() {
   return {
-    sessionDataDays: normalizePositiveInt(process.env.ANALYTICS_RETENTION_DAYS, 90, 1, 365),
-    ipAnonymizationDays: normalizePositiveInt(process.env.ANALYTICS_IP_ANONYMIZATION_DAYS, 7, 1, 90),
+    sessionDataDays: normalizePositiveInt(envStr('ANALYTICS_RETENTION_DAYS'), 90, 1, 365),
+    ipAnonymizationDays: normalizePositiveInt(envStr('ANALYTICS_IP_ANONYMIZATION_DAYS'), 7, 1, 90),
   };
 }
 
@@ -952,11 +953,11 @@ export async function getEmailSender(scope) {
   return {
     email:
       settings.emailSender?.email ||
-      process.env.BREVO_SENDER_EMAIL ||
+      envStr('BREVO_SENDER_EMAIL') ||
       'noreply@example.com',
     name:
       settings.emailSender?.name ||
-      process.env.BREVO_SENDER_NAME ||
+      envStr('BREVO_SENDER_NAME') ||
       getAppName(),
   };
 }
@@ -974,7 +975,7 @@ export async function getDefaultThemeId(scope) {
   const settings = await getAppSettings(scope);
   return (
     settings.defaultThemeId ||
-    normalizeThemeId(process.env.DEFAULT_THEME) ||
+    normalizeThemeId(envStr('DEFAULT_THEME')) ||
     DEFAULT_THEME_ID
   );
 }

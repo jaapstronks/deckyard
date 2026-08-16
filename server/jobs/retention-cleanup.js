@@ -17,6 +17,7 @@ import { cleanupExpiredShareLinks } from '../storage/share-links/index.js';
 import { deleteOldActivityEvents } from '../storage/activity-events.js';
 import { cleanupExpiredSlideLocks } from '../storage/slide-locks.js';
 import { createLogger } from '../utils/logger.js';
+import { envInt } from '../config/utils.js';
 
 const log = createLogger('retention-cleanup');
 
@@ -29,7 +30,7 @@ const DEFAULT_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
 // Activity events carry actor emails; keep them long enough to be a useful feed
 // but not indefinitely. Override with ACTIVITY_RETENTION_DAYS.
 const ACTIVITY_RETENTION_DAYS =
-  parseInt(process.env.ACTIVITY_RETENTION_DAYS || '', 10) || 180;
+  envInt('ACTIVITY_RETENTION_DAYS', 180, { min: 1 });
 
 // ============================================================
 // CLEANUP

@@ -13,6 +13,7 @@
  */
 
 import { createLogger } from './logger.js';
+import { envStr, envBool } from '../config/utils.js';
 
 const log = createLogger('redis');
 
@@ -25,11 +26,10 @@ let connectionPromise = null;
  * @returns {boolean}
  */
 export function isRedisConfigured() {
-  const enabled = process.env.REDIS_ENABLED;
-  if (enabled === 'false' || enabled === '0') {
+  if (!envBool('REDIS_ENABLED', true)) {
     return false;
   }
-  return !!(process.env.REDIS_URL || process.env.REDIS_HOST);
+  return !!(envStr('REDIS_URL') || envStr('REDIS_HOST'));
 }
 
 /**
@@ -37,14 +37,15 @@ export function isRedisConfigured() {
  * @returns {string|null}
  */
 function getRedisUrl() {
-  if (process.env.REDIS_URL) {
-    return process.env.REDIS_URL;
+  const url = envStr('REDIS_URL');
+  if (url) {
+    return url;
   }
 
-  const host = process.env.REDIS_HOST || 'localhost';
-  const port = process.env.REDIS_PORT || '6379';
-  const password = process.env.REDIS_PASSWORD;
-  const db = process.env.REDIS_DB || '0';
+  const host = envStr('REDIS_HOST', 'localhost');
+  const port = envStr('REDIS_PORT', '6379');
+  const password = envStr('REDIS_PASSWORD');
+  const db = envStr('REDIS_DB', '0');
 
   if (password) {
     return `redis://:${password}@${host}:${port}/${db}`;

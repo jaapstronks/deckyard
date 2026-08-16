@@ -10,6 +10,7 @@ import { maybeFireWebhook } from '../utils/webhooks.js';
 import { sendCommentNotification } from '../integrations/brevo.js';
 import { getRequestOrigin } from '../utils/request-url.js';
 import { normalizeEmail } from '../utils/normalize.js';
+import { envStr } from '../config/utils.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
 import { parseMentions, stripMentionMarkup } from '../../shared/comment-mentions.js';
 import {
@@ -486,7 +487,7 @@ async function sendCommentEmails({
   editUrl,
 }) {
   // Check if email notifications are enabled and configured
-  if (!settings.notifications?.emailEnabled || !process.env.BREVO_API_KEY) {
+  if (!settings.notifications?.emailEnabled || !envStr('BREVO_API_KEY')) {
     return;
   }
 

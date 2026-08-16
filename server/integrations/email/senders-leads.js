@@ -8,6 +8,7 @@ import { getUserSettings } from '../../storage/settings.js';
 import { resolveTemplate, interpolatePlaceholders } from '../email-template-resolver.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 import { createLogger } from '../../utils/logger.js';
+import { envStr } from '../../config/utils.js';
 
 const log = createLogger('email');
 
@@ -79,7 +80,7 @@ async function sendLeadNotificationEmail({
 
   // Build analytics URL
   const analyticsUrl = presentationId
-    ? `${process.env.BASE_URL || ''}/app/${presentationId}?tab=leads`
+    ? `${envStr('BASE_URL')}/app/${presentationId}?tab=leads`
     : null;
 
   // Format the submission date

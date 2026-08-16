@@ -5,6 +5,7 @@
 
 import { createHmac, randomBytes } from 'node:crypto';
 import { createLogger } from '../utils/logger.js';
+import { envStr, envInt } from '../config/utils.js';
 
 const log = createLogger('analytics');
 
@@ -17,22 +18,22 @@ const log = createLogger('analytics');
  */
 export const ANALYTICS_CONFIG = {
   // Heartbeat interval (client-side sends heartbeats at this rate)
-  HEARTBEAT_INTERVAL_MS: parseInt(process.env.ANALYTICS_HEARTBEAT_INTERVAL_MS || '', 10) || 30000,
+  HEARTBEAT_INTERVAL_MS: envInt('ANALYTICS_HEARTBEAT_INTERVAL_MS', 30000, { min: 1 }),
 
   // Active session threshold (sessions with activity within this window are "active")
-  ACTIVE_THRESHOLD_SECONDS: parseInt(process.env.ANALYTICS_ACTIVE_THRESHOLD_SECONDS || '', 10) || 60,
+  ACTIVE_THRESHOLD_SECONDS: envInt('ANALYTICS_ACTIVE_THRESHOLD_SECONDS', 60, { min: 1 }),
 
   // SSE connection timeout (max time for real-time viewer connection)
-  SSE_TIMEOUT_MS: parseInt(process.env.ANALYTICS_SSE_TIMEOUT_MS || '', 10) || 60 * 60 * 1000, // 1 hour
+  SSE_TIMEOUT_MS: envInt('ANALYTICS_SSE_TIMEOUT_MS', 60 * 60 * 1000, { min: 1 }), // 1 hour
 
   // SSE update interval (how often to push viewer counts)
-  SSE_UPDATE_INTERVAL_MS: parseInt(process.env.ANALYTICS_SSE_UPDATE_INTERVAL_MS || '', 10) || 5000,
+  SSE_UPDATE_INTERVAL_MS: envInt('ANALYTICS_SSE_UPDATE_INTERVAL_MS', 5000, { min: 1 }),
 
   // Max user-agent length (truncate to prevent storage abuse)
-  MAX_USER_AGENT_LENGTH: parseInt(process.env.ANALYTICS_MAX_USER_AGENT_LENGTH || '', 10) || 500,
+  MAX_USER_AGENT_LENGTH: envInt('ANALYTICS_MAX_USER_AGENT_LENGTH', 500, { min: 1 }),
 
   // Max slide index (sanity check for slide navigation)
-  MAX_SLIDE_INDEX: parseInt(process.env.ANALYTICS_MAX_SLIDE_INDEX || '', 10) || 1000,
+  MAX_SLIDE_INDEX: envInt('ANALYTICS_MAX_SLIDE_INDEX', 1000, { min: 1 }),
 
   // Retention lives in instance settings, not here: the cleanup job reads
   // `settings.analytics.retention.*` so the admin UI is the single source of
@@ -137,7 +138,7 @@ const EPHEMERAL_LABEL_KEY = randomBytes(32).toString('hex');
  * @returns {{ source: 'auth-secret' | 'ephemeral' }}
  */
 export function deviceLabelKeySource() {
-  return { source: String(process.env.AUTH_SECRET || '').trim() ? 'auth-secret' : 'ephemeral' };
+  return { source: envStr('AUTH_SECRET') ? 'auth-secret' : 'ephemeral' };
 }
 
 /**
@@ -147,7 +148,7 @@ export function deviceLabelKeySource() {
  * @returns {string}
  */
 function deviceLabelKey() {
-  return String(process.env.AUTH_SECRET || '').trim() || EPHEMERAL_LABEL_KEY;
+  return envStr('AUTH_SECRET') || EPHEMERAL_LABEL_KEY;
 }
 
 /**

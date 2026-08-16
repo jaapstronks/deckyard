@@ -1,6 +1,7 @@
 import { cleanStr } from '../../shared/string-utils.js';
 import { AppError, ValidationError } from '../utils/errors.js';
 import { createLogger } from '../utils/logger.js';
+import { envStr } from '../config/utils.js';
 
 const log = createLogger('imagekit');
 
@@ -13,12 +14,12 @@ function cleanFolder(v) {
 }
 
 export function getImageKitConfigFromEnv() {
-  const privateKey = cleanStr(process.env.IMAGEKIT_PRIVATE_KEY);
-  const publicKey = cleanStr(process.env.IMAGEKIT_PUBLIC_KEY);
-  const urlEndpoint = cleanStr(process.env.IMAGEKIT_URL_ENDPOINT);
-  const uploadFolder = cleanFolder(process.env.IMAGEKIT_UPLOAD_FOLDER);
-  const tagPrefix = cleanStr(process.env.IMAGEKIT_TAG_PREFIX) || 'deck:';
-  const metadataFieldAltSeed = cleanStr(process.env.IMAGEKIT_METADATA_FIELD_ALT_SEED);
+  const privateKey = cleanStr(envStr('IMAGEKIT_PRIVATE_KEY'));
+  const publicKey = cleanStr(envStr('IMAGEKIT_PUBLIC_KEY'));
+  const urlEndpoint = cleanStr(envStr('IMAGEKIT_URL_ENDPOINT'));
+  const uploadFolder = cleanFolder(envStr('IMAGEKIT_UPLOAD_FOLDER'));
+  const tagPrefix = cleanStr(envStr('IMAGEKIT_TAG_PREFIX')) || 'deck:';
+  const metadataFieldAltSeed = cleanStr(envStr('IMAGEKIT_METADATA_FIELD_ALT_SEED'));
 
   const issues = [];
   const warnings = [];

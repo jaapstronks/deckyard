@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { envInt } from '../config/utils.js';
 import { isAppError, getStatusCode, errorToResponse } from './errors.js';
 import { logError } from './logger.js';
 
@@ -27,10 +28,7 @@ const MIME = {
 const DEFAULT_MAX_BODY_BYTES = 25 * 1024 * 1024;
 
 export function maxRequestBodyBytes() {
-  const raw = process.env.MAX_REQUEST_BODY_BYTES;
-  if (raw == null || raw === '') return DEFAULT_MAX_BODY_BYTES;
-  const n = Number(raw);
-  return Number.isFinite(n) && n > 0 ? n : DEFAULT_MAX_BODY_BYTES;
+  return envInt('MAX_REQUEST_BODY_BYTES', DEFAULT_MAX_BODY_BYTES, { min: 1 });
 }
 
 /**
