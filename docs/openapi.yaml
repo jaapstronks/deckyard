@@ -1356,7 +1356,7 @@ paths:
       tags:
         - AI
       summary: Get available AI vendors
-      description: Returns the list of configured LLM providers.
+      description: Returns the LLM vendor status of this install.
       responses:
         '200':
           description: Available vendors
@@ -1367,13 +1367,26 @@ paths:
                 properties:
                   vendors:
                     type: object
-                    additionalProperties:
-                      type: object
-                      properties:
-                        available:
-                          type: boolean
-                        name:
+                    properties:
+                      knownVendors:
+                        type: array
+                        items:
                           type: string
+                        description: Every vendor id this build can talk to
+                      configuredVendors:
+                        type: array
+                        items:
+                          type: string
+                        description: The subset with credentials configured on this install
+                      defaultVendor:
+                        type: string
+                        nullable: true
+                        description: The vendor used when a request names none; null when nothing is configured
+                      vendorLabels:
+                        type: object
+                        additionalProperties:
+                          type: string
+                        description: Human-readable labels, keyed by vendor id
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
