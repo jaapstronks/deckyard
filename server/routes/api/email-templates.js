@@ -3,7 +3,7 @@
  * Allows admins to customize email templates per locale.
  */
 
-import { serveJson, badRequest, unauthorized, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import { serveJson, badRequest, jsonError, unauthorized, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { getTrimmedString, getOptionalString } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
@@ -189,7 +189,10 @@ async function handleEmailTemplateTest({ repoRoot, req, res, authedUser: user },
   });
 
   if (!result.ok) {
-    return badRequest(res, `Failed to send test email: ${result.error}`);
+    // The request was valid; the upstream email provider failed. That is a
+    // 502, not a 400 — same status the AI routes use for provider failures
+    // (LlmError default), same generic-5xx machine code (A7.19-C7h).
+    return jsonError(res, 502, 'internal_error', `Failed to send test email: ${result.error}`);
   }
 
   serveJson(res, 200, {

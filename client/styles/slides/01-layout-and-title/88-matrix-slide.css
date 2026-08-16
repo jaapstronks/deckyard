@@ -3,8 +3,8 @@
 /* Use theme chart colors for tone-based cells */
 .slide-matrix {
   /* Primary/positive tone uses first chart color (teal in the default palette) */
-  --matrix-positive-bg: var(--t-chart-0, var(--color-accent, #375c5d));
-  --matrix-positive-text: var(--t-chart-0, var(--color-accent, #375c5d));
+  --matrix-positive-bg: var(--t-chart-0, var(--slide-accent, #375c5d));
+  --matrix-positive-text: var(--t-chart-0, var(--slide-accent, #375c5d));
   /* Negative tone uses third chart color (olive/amber in the default palette) */
   --matrix-negative-bg: var(--t-chart-2, #848f52);
   --matrix-negative-text: var(--t-chart-2, #6b7342);
@@ -110,7 +110,7 @@
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
   margin: 0 0 var(--slide-space-4);
-  color: var(--color-text);
+  color: var(--slide-on-surface);
 }
 
 /* Tone-based title color hints using theme colors */
@@ -149,7 +149,7 @@
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
   margin: var(--slide-space-4) 0 var(--slide-space-2);
-  color: var(--color-text);
+  color: var(--slide-on-surface);
 }
 
 .slide-matrix .cell-body .md-subheading:first-child {
@@ -167,7 +167,7 @@
 }
 
 .slide-matrix .cell-body ul li::marker {
-  color: var(--color-accent);
+  color: var(--slide-accent);
 }
 
 /* Tone-based marker colors using theme colors */
@@ -184,11 +184,11 @@
 }
 
 .slide-matrix .cell-body a {
-  color: var(--color-link);
+  color: var(--slide-link);
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
-  text-decoration-color: var(--color-link);
+  text-decoration-color: var(--slide-link);
   transition: text-decoration-color 0.15s ease;
 }
 

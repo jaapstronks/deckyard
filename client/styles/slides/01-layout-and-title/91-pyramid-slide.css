@@ -66,7 +66,7 @@
 /* See the funnel note: the bar swaps surface on a lime slide, so it swaps the
    text colour on the same selector. */
 .slide-pyramid.slide-bg-lime .level-bar {
-  background: var(--color-accent, #375c5d);
+  background: var(--slide-accent, #375c5d);
   --surface-text: var(--t-color-accent-contrast, var(--t-text-color-light, #ffffff));
 }
 
@@ -96,14 +96,14 @@
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
-  color: var(--color-text, #0b0b0b);
+  color: var(--slide-on-surface, #0b0b0b);
 }
 
 .slide-pyramid .level-text {
   font-family: var(--font-body);
   font-size: var(--slide-text-sm);
   line-height: var(--slide-leading-compact);
-  color: var(--color-text-muted, rgba(11, 11, 11, 0.7));
+  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.7));
 }
 
 /* On lime bg, muted text needs different treatment */
@@ -179,7 +179,7 @@
 
 /* Create a gradient effect from top (accent) to bottom (lime) */
 .slide-pyramid .pyramid-level:nth-child(1) .level-bar {
-  background: var(--color-accent, #375c5d);
+  background: var(--slide-accent, #375c5d);
 }
 
 .slide-pyramid .pyramid-level:nth-child(1) .level-label,
@@ -192,7 +192,7 @@
 }
 
 .slide-pyramid .pyramid-level:nth-child(2) .level-bar {
-  background: color-mix(in srgb, var(--color-accent, #375c5d) 75%, var(--slide-bg-lime, #e2fe52));
+  background: color-mix(in srgb, var(--slide-accent, #375c5d) 75%, var(--slide-bg-lime, #e2fe52));
 }
 
 .slide-pyramid .pyramid-level:nth-child(2) .level-label,
@@ -205,11 +205,11 @@
 }
 
 .slide-pyramid .pyramid-level:nth-child(3) .level-bar {
-  background: color-mix(in srgb, var(--color-accent, #375c5d) 50%, var(--slide-bg-lime, #e2fe52));
+  background: color-mix(in srgb, var(--slide-accent, #375c5d) 50%, var(--slide-bg-lime, #e2fe52));
 }
 
 .slide-pyramid .pyramid-level:nth-child(4) .level-bar {
-  background: color-mix(in srgb, var(--color-accent, #375c5d) 25%, var(--slide-bg-lime, #e2fe52));
+  background: color-mix(in srgb, var(--slide-accent, #375c5d) 25%, var(--slide-bg-lime, #e2fe52));
 }
 
 /* On lime background, invert the gradient direction */
@@ -219,33 +219,33 @@
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(1) .level-label,
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(1) .level-text {
-  color: var(--color-text, #0b0b0b);
+  color: var(--slide-on-surface, #0b0b0b);
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(1) .level-text {
-  color: var(--color-text-muted, rgba(11, 11, 11, 0.7));
+  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.7));
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(2) .level-bar {
-  background: color-mix(in srgb, var(--slide-bg-lime, #e2fe52) 75%, var(--color-accent, #375c5d));
+  background: color-mix(in srgb, var(--slide-bg-lime, #e2fe52) 75%, var(--slide-accent, #375c5d));
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(2) .level-label,
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(2) .level-text {
-  color: var(--color-text, #0b0b0b);
+  color: var(--slide-on-surface, #0b0b0b);
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(3) .level-bar {
-  background: color-mix(in srgb, var(--slide-bg-lime, #e2fe52) 50%, var(--color-accent, #375c5d));
+  background: color-mix(in srgb, var(--slide-bg-lime, #e2fe52) 50%, var(--slide-accent, #375c5d));
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(4) .level-bar {
-  background: color-mix(in srgb, var(--slide-bg-lime, #e2fe52) 25%, var(--color-accent, #375c5d));
+  background: color-mix(in srgb, var(--slide-bg-lime, #e2fe52) 25%, var(--slide-accent, #375c5d));
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(5) .level-bar,
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(6) .level-bar {
-  background: var(--color-accent, #375c5d);
+  background: var(--slide-accent, #375c5d);
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(3) .level-label,

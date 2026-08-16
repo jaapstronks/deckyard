@@ -13,6 +13,6 @@
   text-decoration: none;
 }
 .slide .card-link:focus-visible {
-  outline: 3px solid var(--color-accent, #4c8bf5);
+  outline: 3px solid var(--slide-accent, #4c8bf5);
   outline-offset: -3px;
 }

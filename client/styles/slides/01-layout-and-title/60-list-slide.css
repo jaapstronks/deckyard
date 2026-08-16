@@ -21,7 +21,7 @@
   font-family: var(--font-body);
   font-size: var(--slide-font-size-subheading);
   line-height: var(--slide-leading-normal);
-  color: var(--color-text);
+  color: var(--slide-on-surface);
   font-weight: 400;
   text-transform: none;
   max-width: 70ch;
@@ -73,7 +73,7 @@
   width: 46px;
   height: 46px;
   border-radius: var(--slide-radius-full);
-  background: var(--color-accent);
+  background: var(--slide-accent);
   color: var(--t-color-accent-contrast, #ffffff);
   display: grid;
   place-items: center;
@@ -94,7 +94,7 @@
   width: 12px;
   height: 12px;
   border-radius: var(--slide-radius-full);
-  background: var(--slide-marker-color, var(--color-accent));
+  background: var(--slide-marker-color, var(--slide-accent));
   margin-top: var(--slide-space-4); /* align with first line of text */
 }
 .slide-lijstje .lijst-item-body {

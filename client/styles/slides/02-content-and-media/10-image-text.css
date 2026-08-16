@@ -37,7 +37,7 @@
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
   margin: var(--slide-space-6) 0 var(--slide-space-3);
-  color: var(--color-text);
+  color: var(--slide-on-surface);
 }
 .slide-image-text.is-compact .copy .body .md-subheading {
   font-size: var(--slide-text-md);
@@ -55,14 +55,14 @@
   margin: var(--slide-space-3) 0;
 }
 .slide-image-text .copy .body ul li::marker {
-  color: var(--color-accent);
+  color: var(--slide-accent);
 }
 .slide-image-text .copy .body a {
-  color: var(--color-link);
+  color: var(--slide-link);
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
-  text-decoration-color: var(--color-link);
+  text-decoration-color: var(--slide-link);
   transition: text-decoration-color 0.15s ease;
 }
 .slide-image-text .copy .body a:hover {

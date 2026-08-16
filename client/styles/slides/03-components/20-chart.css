@@ -1,7 +1,7 @@
 /* --- Chart slide --- */
 .slide-chart {
   /* Theme-driven chart palette (8 colors, cycles). */
-  --chart-0: var(--t-chart-0, var(--color-accent));
+  --chart-0: var(--t-chart-0, var(--slide-accent));
   --chart-1: var(--t-chart-1, #5d989a);
   --chart-2: var(--t-chart-2, #848f52);
   --chart-3: var(--t-chart-3, #aebd63);
@@ -35,7 +35,7 @@
   margin-top: var(--slide-space-3);
   font-size: var(--slide-text-lg);
   line-height: var(--slide-leading-normal);
-  color: var(--color-text-muted);
+  color: var(--slide-on-surface-muted);
   max-width: 70ch;
 }
 .slide-chart .chart-area {
@@ -78,7 +78,7 @@
   border: 1px solid rgba(0, 0, 0, 0.12);
   background: rgba(255, 255, 255, 0.35);
   /* Use theme text color for the legend label. */
-  color: var(--color-text);
+  color: var(--slide-on-surface);
 }
 .slide-chart .chart-legend-swatch {
   width: 14px;
@@ -114,7 +114,7 @@
 @supports (color: color-mix(in srgb, white 50%, black)) {
   .slide-chart .chart-legend-item {
     border-color: color-mix(in srgb, currentColor 18%, transparent);
-    background: color-mix(in srgb, var(--color-background) 10%, transparent);
+    background: color-mix(in srgb, var(--slide-surface) 10%, transparent);
   }
   .slide-chart .chart-legend-swatch {
     border-color: color-mix(in srgb, currentColor 18%, transparent);

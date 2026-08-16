@@ -15,7 +15,7 @@
 // turns each entry into `--t-slide-bg-<id>[-text[-muted]][-link]` cssVars, and
 // the generated CSS rules below map the `slide-bg-<id>` class (emitted by
 // `bgClass()` in shared/slide-types/helpers.js) onto those vars. The rules
-// redirect `--color-text` / `--color-text-muted` / `--color-link` the same way
+// redirect `--slide-on-surface` / `--slide-on-surface-muted` / `--slide-link` the same way
 // the background-image contrast classes do (see
 // client/styles/slides/01-layout-and-title/00-base.css), so per-variant
 // contrast reaches every component without per-slide-type CSS.
@@ -132,21 +132,21 @@ export function slideBackgroundsCssText(entries) {
   const rules = [];
   for (const e of Array.isArray(entries) ? entries : []) {
     const lines = [
-      `  --slide-bg: var(--t-slide-bg-${e.id}, var(--color-background));`,
-      '  background: var(--slide-bg, var(--color-background));',
+      `  --slide-bg: var(--t-slide-bg-${e.id}, var(--slide-surface));`,
+      '  background: var(--slide-bg, var(--slide-surface));',
     ];
     if (e.textColor) {
       // Same token-redirect pattern as .has-slide-bg-light-text/-dark-text.
       lines.push(
         `  --slide-bg-text: var(--t-slide-bg-${e.id}-text, var(--t-color-text, #0b0b0b));`,
         `  --slide-bg-text-muted: var(--t-slide-bg-${e.id}-text-muted, color-mix(in srgb, var(--slide-bg-text) 70%, transparent));`,
-        '  --color-text: var(--slide-bg-text);',
-        '  --color-text-muted: var(--slide-bg-text-muted);',
+        '  --slide-on-surface: var(--slide-bg-text);',
+        '  --slide-on-surface-muted: var(--slide-bg-text-muted);',
         // A variant that flips the text colour has moved the ground out from
-        // under the brand accent too, and a bullet dot has no --color-text to
+        // under the brand accent too, and a bullet dot has no --slide-on-surface to
         // follow. Same treatment the background-image classes get in
         // 00-base.css; see the marker note there.
-        '  --slide-marker-color: color-mix(in srgb, var(--color-accent) 35%, var(--slide-bg-text));',
+        '  --slide-marker-color: color-mix(in srgb, var(--slide-accent) 35%, var(--slide-bg-text));',
         // The brand accent is tuned for the default background, so a link that
         // keeps the raw accent can go near-invisible once the variant flips the
         // ground — the #222 defect, one layer up. Mirror that fix: mix the
@@ -154,7 +154,7 @@ export function slideBackgroundsCssText(entries) {
         // variant and darkens on a light one, so it adapts without needing to
         // know which it is. `--t-slide-bg-<id>-link` (from `linkColor`) is the
         // theme author's explicit override on top.
-        `  --color-link: var(--t-slide-bg-${e.id}-link, color-mix(in srgb, var(--color-accent) 42%, var(--slide-bg-text)));`,
+        `  --slide-link: var(--t-slide-bg-${e.id}-link, color-mix(in srgb, var(--slide-accent) 42%, var(--slide-bg-text)));`,
         '  color: var(--slide-bg-text);'
       );
     }

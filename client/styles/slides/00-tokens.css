@@ -91,6 +91,29 @@
   --slide-text-gap: var(--slide-space-2);
 
   /* =========================================================================
+     COLOUR ROLES
+     =========================================================================
+     The slide-side colour vocabulary (docs/reference/slide-roles.md § Colour
+     roles), fed by the --t-color-* theme contract. Slide CSS reads the role,
+     never the theme token. Surface classes contextually rebind the on-surface
+     roles (00-patterns.css, 00-base.css) — the mechanism predates the
+     spelling and is unchanged.
+     ========================================================================= */
+
+  --slide-surface: var(--t-color-background, var(--slide-bg-lime, #e2fe52));
+  --slide-on-surface: var(--t-color-text, #0b0b0b);
+  --slide-on-surface-muted: var(--t-color-text-muted, rgba(11, 11, 11, 0.65));
+  --slide-accent: var(--t-color-accent, #385c5c);
+  --slide-on-accent: var(
+    --t-color-accent-contrast,
+    var(--t-text-color-light, #ffffff)
+  );
+  /* Link colour for slide-body hyperlinks. Defaults to the accent so light
+     backgrounds are unchanged; dark-surface blocks in 00-base.css lighten it
+     toward white for contrast. Themes can override via --t-color-link. */
+  --slide-link: var(--t-color-link, var(--slide-accent));
+
+  /* =========================================================================
      OPACITY SCALE
      =========================================================================
      Consistent opacity values for overlays, borders, and text muting.

@@ -4,7 +4,7 @@
    Do NOT use vw/vh units as they refer to the browser viewport, not the slide. */
 .slide-team-cards {
   background: var(--slide-bg-mist);
-  color: var(--color-text, #0b0b0b);
+  color: var(--slide-on-surface, #0b0b0b);
   /* Standard padding on left/right/bottom, tighter on top for more card space */
   padding: var(--slide-space-12) var(--slide-padding) var(--slide-padding);
 
@@ -264,7 +264,7 @@
   margin: var(--slide-space-3) 0 0;
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
-  color: color-mix(in srgb, var(--color-text, #0b0b0b) 75%, transparent);
+  color: color-mix(in srgb, var(--slide-on-surface, #0b0b0b) 75%, transparent);
   max-width: 75ch;
 }
 
@@ -370,7 +370,7 @@
   font-family: var(--font-body);
   font-size: var(--slide-font-size-card-body);
   line-height: var(--slide-leading-compact);
-  color: var(--color-text-muted);
+  color: var(--slide-on-surface-muted);
   width: 100%;
   overflow-wrap: anywhere;
 }
@@ -381,7 +381,7 @@
   justify-content: center;
   margin-top: var(--slide-space-2);
   font-size: var(--slide-text-md);
-  color: var(--color-text-muted);
+  color: var(--slide-on-surface-muted);
   text-decoration: none;
   transition: color 0.15s ease, transform 0.15s ease;
 }
@@ -482,7 +482,7 @@
   font-family: var(--font-body);
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-normal);
-  color: color-mix(in srgb, var(--color-text, #0b0b0b) 60%, transparent);
+  color: color-mix(in srgb, var(--slide-on-surface, #0b0b0b) 60%, transparent);
   text-align: center;
   margin-top: var(--slide-space-3);
 }
@@ -688,7 +688,7 @@
   font-family: var(--font-body);
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
-  color: color-mix(in srgb, var(--color-text, #0b0b0b) 75%, transparent);
+  color: color-mix(in srgb, var(--slide-on-surface, #0b0b0b) 75%, transparent);
   margin: 0 0 var(--slide-space-4);
   text-align: left;
 }

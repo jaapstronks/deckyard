@@ -12,21 +12,9 @@
   --slide-bg-lime: var(--t-slide-bg-lime, #e2fe52);
   --slide-bg-mist: var(--t-slide-bg-mist, #e0e6e2);
 
-  /* Default slide colors */
-  --color-background: var(
-    --t-color-background,
-    var(--slide-bg-lime)
-  );
-  --color-text: var(--t-color-text, #0b0b0b);
-  --color-text-muted: var(
-    --t-color-text-muted,
-    rgba(11, 11, 11, 0.65)
-  );
-  --color-accent: var(--t-color-accent, #385c5c);
-  /* Link colour for slide-body hyperlinks. Defaults to the accent so light
-     backgrounds are unchanged; dark-surface blocks in 00-base.css lighten it
-     toward white for contrast. Themes can override via --t-color-link. */
-  --color-link: var(--t-color-link, var(--color-accent));
+  /* Default slide colours live in 00-tokens.css as the --slide-* colour
+     roles (--slide-surface, --slide-on-surface, --slide-accent, …); the old
+     --color-* alias spelling is gone (slide-roles.md § What disappears). */
 
   /* Quote slide */
   --quote-author-color: var(
@@ -61,12 +49,6 @@
     url('/assets/images/logo.svg')
   );
 
-  /* =========================================================================
-     SLIDE SIZING
-     =========================================================================
-     Slide code uses the design tokens from 00-tokens.css directly
-     (e.g., --slide-font-size-title).
-     ========================================================================= */
-
-  --slide-padding: var(--slide-space-16, 64px);
+  /* Slide sizing lives in 00-tokens.css (e.g. --slide-font-size-title,
+     --slide-padding) — no duplicates here. */
 }

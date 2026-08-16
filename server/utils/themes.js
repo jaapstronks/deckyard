@@ -9,11 +9,11 @@ import { buildThemeConfig } from './theme-builder.js';
 import { slideBackgroundsCssText } from '../../shared/theme-slide-backgrounds.js';
 import { normalizeTheme } from '../../shared/theme-normalize.js';
 import { createLogger } from './logger.js';
+import { UUID_RE } from './uuid.js';
 
 const log = createLogger('themes');
 
 const THEME_ID_RE = /^[a-z0-9-]{1,32}$/i;
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const cache = new Map(); // id -> theme object
 const customThemeCache = new Map(); // uuid -> theme object
 
