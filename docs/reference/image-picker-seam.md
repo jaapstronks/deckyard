@@ -22,8 +22,8 @@ openImagePicker({
 
 Enabled providers, in chooser order:
 
-- **native library** (`local-library`) — enabled unless
-  `features.disableImageLibrary` (which `IMAGEKIT_ONLY` already forces). Wraps
+- **native library** (`local-library`) — enabled when
+  `features.enableImageLibrary` (which `IMAGEKIT_ONLY` forces off). Wraps
   `openImageLibraryPicker` (local/Scaleway upload + Unsplash/Giphy).
 - **bundled gradients** (`bundled`) — enabled whenever its raw opener is
   injected. See [`bundled-gradients.md`](bundled-gradients.md).

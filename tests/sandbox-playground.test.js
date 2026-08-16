@@ -116,11 +116,12 @@ test('stock-media download persists into the sandbox uploads dir', async () => {
 });
 
 test('AI is disabled in sandbox mode', async () => {
-  await withEnv({ SANDBOX_MODE: '1', DEMO_MODE: undefined, DISABLE_AI: undefined }, () => {
-    assert.equal(getFeatureFlags().disableAi, true, 'sandbox must turn AI off');
+  const noKill = { AI_ENABLED: undefined, DISABLE_AI: undefined };
+  await withEnv({ SANDBOX_MODE: '1', DEMO_MODE: undefined, ...noKill }, () => {
+    assert.equal(getFeatureFlags().enableAi, false, 'sandbox must turn AI off');
   });
-  await withEnv({ SANDBOX_MODE: undefined, DEMO_MODE: undefined, DISABLE_AI: undefined }, () => {
-    assert.equal(getFeatureFlags().disableAi, false, 'AI stays on outside sandbox/demo');
+  await withEnv({ SANDBOX_MODE: undefined, DEMO_MODE: undefined, ...noKill }, () => {
+    assert.equal(getFeatureFlags().enableAi, true, 'AI stays on outside sandbox/demo');
   });
 });
 

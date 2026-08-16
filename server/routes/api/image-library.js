@@ -25,12 +25,12 @@ import { listSandboxMedia } from '../../sandbox/media.js';
 import { getDataUrl } from '../../utils/request-validators.js';
 
 // /api/image-library - Shared image library (shared across users).
-// The disableImageLibrary flag answers 404 before the method decision, so the
+// The enableImageLibrary flag answers 404 before the method decision, so the
 // whole path stays one no-method handler (route-dispatch.md, guard-before-
 // method exception).
 async function handleImageLibraryCollection({ storageScope, req, res, authedUser }) {
   const flags = getFeatureFlags();
-  if (flags.disableImageLibrary) return notFound(res);
+  if (!flags.enableImageLibrary) return notFound(res);
   if (req.method === 'GET') {
     const items = await listImageLibrary(storageScope);
     // Sandbox: uploads are off, so seed a curated set of sample images and
@@ -95,7 +95,7 @@ async function handleGenerateAltsPreview({ repoRoot, req, res, authedUser }) {
 // so one no-method handler)
 async function handleImageUsage({ storageScope, req, res }, imageId) {
   const flags = getFeatureFlags();
-  if (flags.disableImageLibrary) return notFound(res);
+  if (!flags.enableImageLibrary) return notFound(res);
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
   const item = await getImageLibraryItem(storageScope, imageId);
   if (!item) return notFound(res);
@@ -112,7 +112,7 @@ async function handleImageUsage({ storageScope, req, res }, imageId) {
 // (flag before method, so one no-method handler)
 async function handleItemGenerateAlts({ repoRoot, storageScope, req, res, authedUser }, imageId) {
   const flags = getFeatureFlags();
-  if (flags.disableImageLibrary) return notFound(res);
+  if (!flags.enableImageLibrary) return notFound(res);
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
   if (!authedUser) return unauthorized(res, 'Login required');
@@ -139,7 +139,7 @@ async function handleItemGenerateAlts({ repoRoot, storageScope, req, res, authed
 // (flag before method, so one no-method handler)
 async function handleReplaceUpload({ repoRoot, storageScope, req, res, authedUser }, imageId) {
   const flags = getFeatureFlags();
-  if (flags.disableImageLibrary) return notFound(res);
+  if (!flags.enableImageLibrary) return notFound(res);
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
   if (!authedUser) return unauthorized(res, 'Login required');
@@ -171,7 +171,7 @@ async function handleReplaceUpload({ repoRoot, storageScope, req, res, authedUse
 // method, so one no-method handler)
 async function handleToggleFavorite({ storageScope, req, res, authedUser }, imageId) {
   const flags = getFeatureFlags();
-  if (flags.disableImageLibrary) return notFound(res);
+  if (!flags.enableImageLibrary) return notFound(res);
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   if (!authedUser) return unauthorized(res, 'Login required');
 
@@ -187,7 +187,7 @@ async function handleToggleFavorite({ storageScope, req, res, authedUser }, imag
 // method, so one no-method handler)
 async function handleImageItem({ storageScope, req, res, authedUser }, imageId) {
   const flags = getFeatureFlags();
-  if (flags.disableImageLibrary) return notFound(res);
+  if (!flags.enableImageLibrary) return notFound(res);
   if (req.method === 'GET') {
     const item = await getImageLibraryItem(storageScope, imageId);
     if (!item) return notFound(res);
@@ -220,7 +220,7 @@ async function handleImageItem({ storageScope, req, res, authedUser }, imageId) 
  * Declarative route table for `/api/image-library*` (A7.19 C8). Order matches
  * the previous if-chain — load-bearing here: the exact `/generate-alts` rows
  * come before the `/:id` regex, which would otherwise swallow that path. Most
- * paths run the `disableImageLibrary` flag guard *before* the method decision
+ * paths run the `enableImageLibrary` flag guard *before* the method decision
  * (a disabled library answers 404, not 405), so they stay single no-method
  * handlers per the documented exception; the collection-level `/generate-alts`
  * checked the method first and keeps its explicit 405 as a catch-all row.

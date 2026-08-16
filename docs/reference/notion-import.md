@@ -211,7 +211,7 @@ message, which is the actual cause nine times out of ten.
 | `NOTION_SECRET` | The internal integration token. Unset → `notionEnabled()` is false and every Notion route answers **501** `notion_not_configured`. This is the only switch import and publish need. |
 | `NOTION_FEATURE` | Turns on the flagged wizard endpoints (`subjects`, `compose`, `suggest`) via `enableNotion` in `server/config/flags-snapshot.js`. Forced off in demo mode. |
 | `IMAGEKIT_*` | When configured, imported images are re-hosted through ImageKit. See [`media-library.md`](media-library.md). |
-| `disableAi` (feature flag) | Does **not** gate the Notion routes — the dispatcher runs before the AI gate — but the import path calls the AI pipeline, so an install with AI off has an import that cannot complete. |
+| `enableAi` (feature flag) | Does **not** gate the Notion routes — the dispatcher runs before the AI gate — but the import path calls the AI pipeline, so an install with AI off has an import that cannot complete. |
 
 `GET /api/notion/status` reports both switches to the client as `enabled`
 (token present) and `fullFeatures` (token present *and* flag on), so the UI

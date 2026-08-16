@@ -6,7 +6,7 @@
  * listing, the request-validation ladder of the translate endpoint (permission
  * → daily AI limit → AI kill switch → body → deck access → language
  * validation) and its status codes: 403 without the `ai` permission, 429 with
- * rate-limit headers when the daily AI budget is spent, 503 with DISABLE_AI,
+ * rate-limit headers when the daily AI budget is spent, 503 with AI_ENABLED=false,
  * 400 for invalid/equal languages and for an existing target without
  * overwrite, 403/404 for inaccessible decks.
  *
@@ -30,6 +30,7 @@ import { Readable } from 'node:stream';
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 process.env.STORAGE_MODE = 'postgres';
+delete process.env.AI_ENABLED;
 delete process.env.DISABLE_AI;
 delete process.env.DEMO_MODE;
 delete process.env.SANDBOX_MODE;
@@ -207,6 +208,18 @@ test('POST /translate answers 429 with limit details when the daily AI budget is
 });
 
 test('POST /translate answers 503 when AI is disabled on the install', async () => {
+  await installDb();
+  process.env.AI_ENABLED = 'false';
+  try {
+    const ctx = translateCtx(DECK_ID, { targetLang: 'fr' });
+    await handleTranslation(ctx);
+    assert.equal(ctx.res.statusCode, 503);
+  } finally {
+    delete process.env.AI_ENABLED;
+  }
+});
+
+test('POST /translate still honors the legacy DISABLE_AI spelling (until 2026-11-01)', async () => {
   await installDb();
   process.env.DISABLE_AI = 'true';
   try {

@@ -50,7 +50,12 @@ test('no injected opener means no provider and no modal', () => {
 test('a single provider opens directly, without a chooser', () => {
   const root = document.createElement('div');
   const lib = spyOpener();
-  const seam = createImagePickerSeam({ h, root, openImageLibrary: lib.open });
+  const seam = createImagePickerSeam({
+    h,
+    root,
+    features: { enableImageLibrary: true },
+    openImageLibrary: lib.open,
+  });
   assert.deepEqual(
     seam.providers.map((p) => p.id),
     ['local-library']
@@ -66,7 +71,7 @@ test('bundled gradients register as a third source when their opener is injected
   const seam = createImagePickerSeam({
     h,
     root,
-    features: { imagekitConfigured: true },
+    features: { enableImageLibrary: true, imagekitConfigured: true },
     openImageLibrary: spyOpener().open,
     openBundledGradients: spyOpener().open,
     openImageKit: spyOpener().open,
@@ -79,19 +84,24 @@ test('bundled gradients register as a third source when their opener is injected
 
 test('without an injected opener the bundled source is absent, not merely hidden', () => {
   const root = document.createElement('div');
-  const seam = createImagePickerSeam({ h, root, openImageLibrary: spyOpener().open });
+  const seam = createImagePickerSeam({
+    h,
+    root,
+    features: { enableImageLibrary: true },
+    openImageLibrary: spyOpener().open,
+  });
   assert.equal(
     seam.providers.some((p) => p.id === 'bundled'),
     false
   );
 });
 
-test('disableImageLibrary drops the library but keeps the other sources', () => {
+test('enableImageLibrary: false drops the library but keeps the other sources', () => {
   const root = document.createElement('div');
   const seam = createImagePickerSeam({
     h,
     root,
-    features: { disableImageLibrary: true },
+    features: { enableImageLibrary: false },
     openImageLibrary: spyOpener().open,
     openBundledGradients: spyOpener().open,
   });
@@ -109,6 +119,7 @@ test('more than one provider shows a chooser, and choosing opens that source', (
   const seam = createImagePickerSeam({
     h,
     root,
+    features: { enableImageLibrary: true },
     openImageLibrary: lib.open,
     openBundledGradients: bundled.open,
   });
@@ -131,7 +142,12 @@ test('the gradient picker keeps its own heading, not the field\'s', () => {
   const root = document.createElement('div');
   const lib = spyOpener();
   const bundled = spyOpener();
-  createImagePickerSeam({ h, root, openImageLibrary: lib.open })({
+  createImagePickerSeam({
+    h,
+    root,
+    features: { enableImageLibrary: true },
+    openImageLibrary: lib.open,
+  })({
     title: 'Library: choose an image',
     onPick: noop,
   });

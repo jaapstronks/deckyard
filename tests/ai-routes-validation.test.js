@@ -13,8 +13,8 @@
  * A note on where authorization lives, because it shapes what this file can
  * assert. These handlers carry **no per-handler authorization**: authentication
  * is enforced once at the dispatch site (`server/routes/api/index.js` refuses an
- * unauthenticated non-guest before `handleAi` is reached) and the `DISABLE_AI`
- * kill-switch is likewise a single upstream mount gate (`!flags.disableAi &&
+ * unauthenticated non-guest before `handleAi` is reached) and the `AI_ENABLED=false`
+ * kill-switch is likewise a single upstream mount gate (`flags.enableAi &&
  * handleAi(ctx)`), not a per-route check — so, unlike the public v1 AI surface
  * (#758) where the kill-switch is uneven, the internal surface has one gate for
  * all ten routes and none of the handlers re-check it. There is therefore no

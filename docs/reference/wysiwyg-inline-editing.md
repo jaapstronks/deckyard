@@ -187,7 +187,7 @@ class, in `105-inline-edit.css`.
   `uploadFile()` (`image-library/upload.js`) — no source chooser, ImageKit stays
   browse-only. The attach reuses `resolveMediaTarget()` + the popover's
   markDirty/requestSave/rerender path (collab + undo parity). Gated on
-  `features.disableUploads` (off in imagekit-only / sandbox / demo);
+  `features.enableUploads` (off in imagekit-only / sandbox / demo);
   `isFileDrag()` ignores internal card-reorder drags. Empty slots only —
   replacing a filled image stays a popover action.
 - **Icons** → clicking an element tagged `data-inline-icon` opens the
