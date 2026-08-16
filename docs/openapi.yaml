@@ -56,6 +56,7 @@ info:
     - `423` - Locked (a changed slide is locked by the author or being edited by another user)
     - `429` - Rate Limited
     - `500` - Server Error
+    - `502` - Bad Gateway (the upstream LLM vendor failed or returned unusable output)
     - `503` - Service Unavailable (database or AI backend not available)
 
     Error responses carry a JSON envelope:
@@ -1029,6 +1030,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '429':
           $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/BadGateway'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
 
@@ -1458,6 +1461,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/BadGateway'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
 
@@ -1515,6 +1520,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/BadGateway'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
 
@@ -2317,6 +2324,15 @@ components:
                   resetAt:
                     type: integer
                     description: Unix timestamp when the limit resets (daily limiters only)
+
+    BadGateway:
+      description: >-
+        Bad gateway — the upstream LLM vendor failed or returned output the
+        server could not use.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
 
     ServiceUnavailable:
       description: >-
