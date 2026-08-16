@@ -46,11 +46,12 @@
    background. Defaults reproduce the historical look (transparent, dark
    gridlines), so a `plain` (or unset) table renders exactly as before.
 
-   Named variants below set these vars from the theme *palette*, so a table
-   looks designed on any theme with zero per-theme work. A theme can remap a
-   variant's colours by defining `--t-table-<variant>-*` tokens; the header and
-   label-column text auto-derive from whichever background wins (see
-   normalizeTheme's pickTextColorForBg pass in server/utils/themes.js).
+   Named variants below compose the colour roles (slide-roles.md § Colour
+   roles): the header and label-column planes are the emphasis role, the panel
+   body is the mist surface paired with that surface's own text, the soft body
+   is the raised surface. The per-type `--t-table-<variant>-*` token family is
+   gone (B2/B3): a theme styles tables through its palette, not through
+   type-named tokens.
    ============================================================================ */
 .slide-table .md-table {
   background: var(--table-bg, transparent);
@@ -97,33 +98,33 @@
   --table-header-bg: rgba(255, 255, 255, 0.08);
 }
 
-/* panel — filled panel surface, emphasized header row + label column */
+/* panel — filled panel surface, emphasized header row + label column.
+   The body is the mist surface, so its text is that surface's own answer
+   (--slide-on-mist): a theme that ships a dark mist (midnight does) gets
+   light body text instead of the hardcoded near-black the old literal
+   painted dark-on-dark. */
 .slide-table .md-table--panel {
-  --table-bg: var(--t-table-panel-bg, var(--t-color-surface-muted, var(--slide-bg-mist, #e0e6e2)));
-  --table-text: var(--t-table-panel-text, rgba(11, 11, 11, 0.92));
-  --table-header-bg: var(--t-table-panel-header-bg, var(--slide-accent));
-  --table-header-text: var(--t-table-panel-header-text, var(--t-color-accent-contrast, #fff));
-  --table-firstcol-bg: var(--t-table-panel-firstcol-bg, var(--t-table-panel-header-bg, var(--slide-accent)));
-  --table-firstcol-text: var(--t-table-panel-firstcol-text, var(--t-color-accent-contrast, #fff));
-  --table-border: var(--t-table-panel-border, rgba(0, 0, 0, 0.14));
+  --table-bg: var(--slide-bg-mist, #e0e6e2);
+  --table-text: var(--slide-on-mist);
+  --table-header-bg: var(--slide-emphasis);
+  --table-header-text: var(--slide-on-emphasis);
+  --table-firstcol-bg: var(--slide-emphasis);
+  --table-firstcol-text: var(--slide-on-emphasis);
+  --table-border: rgba(0, 0, 0, 0.14);
   --table-radius: var(--slide-radius-md);
 }
 
-/* soft — near-white panel, coloured header, faint accent label column */
+/* soft — near-white panel, coloured header, faint accent label column. The
+   raised surface is opaque white with no theme feed yet, so its text keeps
+   the fixed near-black it always had. */
 .slide-table .md-table--soft {
-  --table-bg: var(--t-table-soft-bg, #fff);
-  --table-text: var(--t-table-soft-text, rgba(11, 11, 11, 0.92));
-  --table-header-bg: var(--t-table-soft-header-bg, var(--slide-accent));
-  --table-header-text: var(--t-table-soft-header-text, var(--t-color-accent-contrast, #fff));
-  --table-firstcol-bg: var(
-    --t-table-soft-firstcol-bg,
-    color-mix(in srgb, var(--slide-accent) 10%, transparent)
-  );
-  --table-firstcol-text: var(--t-table-soft-firstcol-text, var(--slide-accent));
-  --table-border: var(
-    --t-table-soft-border,
-    color-mix(in srgb, var(--slide-accent) 20%, transparent)
-  );
+  --table-bg: var(--slide-surface-raised);
+  --table-text: rgba(11, 11, 11, 0.92);
+  --table-header-bg: var(--slide-emphasis);
+  --table-header-text: var(--slide-on-emphasis);
+  --table-firstcol-bg: color-mix(in srgb, var(--slide-accent) 10%, transparent);
+  --table-firstcol-text: var(--slide-accent);
+  --table-border: color-mix(in srgb, var(--slide-accent) 20%, transparent);
   --table-radius: var(--slide-radius-md);
 }
 

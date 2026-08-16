@@ -102,11 +102,11 @@
 }
 .slide-text-blocks .text-block.is-yellow {
   background: var(--slide-accent, #7c3aed);
-  color: var(--t-color-accent-contrast, #fff);
+  color: var(--slide-on-accent);
 }
 .slide-text-blocks .text-block.is-black {
-  background: var(--t-color-text, #0b0b0b);
-  color: var(--t-color-background, #fff);
+  background: var(--slide-on-surface);
+  color: var(--slide-surface);
 }
 
 /* Block title */

@@ -3,20 +3,20 @@
 /* Background variants beyond lime/mist (which 00-base.css handles globally),
    so countdown's extended background enum renders correctly. */
 .slide-countdown.slide-bg-dark {
-  background-color: var(--t-bg-dark, #212121);
-  color: var(--t-text-color-light, #ffffff);
+  background-color: var(--slide-bg-dark);
+  color: var(--slide-on-dark);
 }
 .slide-countdown.slide-bg-accent {
-  background-color: var(--t-accent, #375c5d);
-  color: var(--t-text-color-light, #ffffff);
+  background-color: var(--slide-accent);
+  color: var(--slide-on-accent);
 }
 .slide-countdown.slide-bg-brand-1 {
   background-color: var(--t-brand-1, #7c3aed);
-  color: var(--t-text-color-light, #ffffff);
+  color: var(--slide-on-dark);
 }
 .slide-countdown.slide-bg-brand-2 {
   background-color: var(--t-brand-2, #375c5d);
-  color: var(--t-text-color-light, #ffffff);
+  color: var(--slide-on-dark);
 }
 
 /* Make the slide its own size-query container so the digits scale relative to

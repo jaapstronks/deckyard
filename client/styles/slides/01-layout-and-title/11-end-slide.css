@@ -68,7 +68,7 @@
 }
 
 .slide-end .end-contact-item a {
-  color: var(--t-accent, var(--slide-on-surface));
+  color: var(--slide-accent);
   text-decoration: none;
   border-bottom: 1px solid transparent;
   transition: border-color 0.15s ease;

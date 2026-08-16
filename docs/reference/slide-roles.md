@@ -287,20 +287,23 @@ never outside the axis, only outside the measurement.
 
 ## Colour roles
 
-The role list. The text/accent/surface roles are minted in `00-tokens.css`,
-fed by the `--t-color-*` contract, and the old `--color-*` alias spelling is
-gone from the bundle:
+The role list. The roles are minted in `00-tokens.css`, fed by the theme
+colour contract, and the old `--color-*` alias spelling is gone from the
+bundle:
 
 | Role | Token |
 | --- | --- |
 | `surface` | `--slide-surface` ← `--t-color-background` |
-| `surface-raised` | `--slide-surface-white(-solid)`; per-type card/table backgrounds fold in during the per-type phase |
+| `surface-raised` | `--slide-surface-raised` (opaque card/panel plane; no theme feed yet) beside the translucent `--slide-surface-white(-solid)` pair; remaining per-type card backgrounds fold in during the per-type phase |
 | `on-surface` / `on-surface-muted` | `--slide-on-surface(-muted)` ← `--t-color-text(-muted)` |
 | `accent` / `on-accent` | `--slide-accent` / `--slide-on-accent` ← `--t-color-accent` / `--t-color-accent-contrast` |
-| link | `--slide-link` ← `--t-color-link`, defaulting to the accent |
+| link | `--slide-link` ← `--t-color-link`, defaulting to the accent; `--slide-link-on-dark` ← `--t-color-link-on-dark`, defaulting to the accent lightened toward white |
+| pole / variant text | `--slide-on-light` / `--slide-on-dark` ← the theme's two poles (`--t-text-color-dark/-light`); `--slide-on-lime` / `--slide-on-mist` ← the derived per-surface answer (`--t-slide-bg-<id>-text`) |
 | `border` | `--slide-border-*` (opacity-derived) |
-| `emphasis` | table header/first-column planes, kickers — not yet a token |
-| series palette | `--t-chart-{0..7}` (numbered accent colours; the only series palette) |
+| `emphasis` / `on-emphasis` | `--slide-emphasis` / `--slide-on-emphasis` — the filled band a type emphasises with (table header and label-column planes, kickers), fed by the accent pair |
+| series palette | `--slide-chart-{0..7}` ← `--t-chart-{0..7}` (numbered accent colours; the only series palette) |
+| brand swatches | `--slide-brand-{1..3}` ← `--t-color-brand-{1..3}`, currentColor when undeclared |
+| gradient layer | `--slide-gradient-bg` / `--slide-gradient-opacity` ← `--t-slide-gradient-bg` / `--t-gradient-enabled` |
 
 The contextual rebinding mechanism in `00-patterns.css` (a surface class
 rebinds the text role for everything inside it) is correct and stays, including
@@ -342,7 +345,11 @@ chapter families) are **removed, not aliased** — the KPI tiles join the
 This is a deliberate breaking change during beta (see `versioning.md` § *The
 beta stance*): a theme that sets a removed token does not break — unknown
 tokens do nothing — but the deck renders with role-derived styling instead;
-the release notes name each family.
+the release notes name each family. Status: the KPI-tile
+(`--t-kpi-tile-{1..4}-*`, `--t-kpi-delta-*`), table (`--t-table-<variant>-*`)
+and list (`--t-list-item-title-letter-spacing`) families are gone from the
+CSS; the icon-card-grid, quote and chapter families still have live reads and
+go with the theme-derivation step.
 
 ## Markdown output is styled per surface
 

@@ -11,6 +11,10 @@
   /* Slide backgrounds */
   --slide-bg-lime: var(--t-slide-bg-lime, #e2fe52);
   --slide-bg-mist: var(--t-slide-bg-mist, #e0e6e2);
+  /* The deep brand-tinted surface (chapter-title, quote, countdown's dark
+     variant). The legacy `--t-bg-dark` alias is not read here: themes set
+     `--t-slide-bg-dark`, theme-normalize only ever filled the alias from it. */
+  --slide-bg-dark: var(--t-slide-bg-dark, #212121);
 
   /* Default slide colours live in 00-tokens.css as the --slide-* colour
      roles (--slide-surface, --slide-on-surface, --slide-accent, …); the old

@@ -20,8 +20,8 @@
   content: '';
   position: absolute;
   inset: -12%;
-  background: var(--t-slide-gradient-bg, transparent);
-  opacity: var(--t-gradient-enabled, 1);
+  background: var(--slide-gradient-bg);
+  opacity: var(--slide-gradient-opacity);
   /* Make the gradient larger than the slide so background-position animation is visible */
   background-repeat: no-repeat;
   background-size: 300% 300%;

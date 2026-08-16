@@ -262,22 +262,18 @@
    (not hard-setting colours) keeps hover colours, currentColor icons and
    semantic fills working without !important. */
 .slide.has-slide-bg-light-text {
-  --slide-bg-text: var(--t-text-color-light, var(--slide-text-light, #fff));
+  --slide-bg-text: var(--slide-on-dark);
   --slide-bg-text-muted: color-mix(in srgb, var(--slide-bg-text) 78%, transparent);
   --slide-on-surface: var(--slide-bg-text);
   --slide-on-surface-muted: var(--slide-bg-text-muted);
   /* The brand accent is tuned for light backgrounds, so links keeping the raw
-     accent go near-invisible on a dark surface. Lighten whatever the accent is
-     toward white (accent-agnostic, works for every theme). Themes can
-     hard-override with --t-color-link-on-dark. */
-  --slide-link: var(
-    --t-color-link-on-dark,
-    color-mix(in srgb, var(--slide-accent) 42%, #ffffff)
-  );
+     accent go near-invisible on a dark surface — the on-dark link role
+     lightens it (00-tokens.css). */
+  --slide-link: var(--slide-link-on-dark);
   color: var(--slide-bg-text);
 }
 .slide.has-slide-bg-dark-text {
-  --slide-bg-text: var(--t-text-color-dark, #212121);
+  --slide-bg-text: var(--slide-on-light);
   --slide-bg-text-muted: color-mix(in srgb, var(--slide-bg-text) 70%, transparent);
   --slide-on-surface: var(--slide-bg-text);
   --slide-on-surface-muted: var(--slide-bg-text-muted);
@@ -343,26 +339,23 @@
 }
 
 .slide .on-surface-light {
-  --surface-text: var(--t-text-color-dark, #212121);
+  --surface-text: var(--slide-on-light);
 }
 .slide .on-surface-dark {
-  --surface-text: var(--t-text-color-light, #ffffff);
+  --surface-text: var(--slide-on-dark);
   /* The brand accent is tuned for light grounds, so a link keeping the raw
      accent goes near-invisible here — same lightening the slide-level dark
      block does. */
-  --surface-link: var(
-    --t-color-link-on-dark,
-    color-mix(in srgb, var(--slide-accent) 42%, #ffffff)
-  );
+  --surface-link: var(--slide-link-on-dark);
 }
 .slide .on-surface-accent {
-  --surface-text: var(--t-color-accent-contrast, var(--t-text-color-light, #ffffff));
+  --surface-text: var(--slide-on-accent);
 }
 .slide .on-surface-lime {
-  --surface-text: var(--t-slide-bg-lime-text, var(--t-text-color-dark, #212121));
+  --surface-text: var(--slide-on-lime);
 }
 .slide .on-surface-mist {
-  --surface-text: var(--t-slide-bg-mist-text, var(--t-text-color-dark, #212121));
+  --surface-text: var(--slide-on-mist);
 }
 
 /* A marker is a graphic, not text.

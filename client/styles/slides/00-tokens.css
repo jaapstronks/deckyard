@@ -112,6 +112,63 @@
      backgrounds are unchanged; dark-surface blocks in 00-base.css lighten it
      toward white for contrast. Themes can override via --t-color-link. */
   --slide-link: var(--t-color-link, var(--slide-accent));
+  /* On-dark link: the brand accent is tuned for light grounds, so a link that
+     keeps the raw accent goes near-invisible on a dark surface. Lighten
+     whatever the accent is toward white (accent-agnostic); themes can
+     hard-override via --t-color-link-on-dark. Read by the dark-ground blocks
+     in 00-base.css. */
+  --slide-link-on-dark: var(
+    --t-color-link-on-dark,
+    color-mix(in srgb, var(--slide-accent) 42%, #ffffff)
+  );
+
+  /* Surface-variant and pole text roles: what reads on each surface a theme
+     can answer for (nested-surfaces mechanism, 00-base.css § NESTED SURFACES).
+     `on-light`/`on-dark` are the theme's two poles; `on-lime`/`on-mist` read
+     the per-surface derived token (shared/theme-normalize.js runs each
+     background through pickTextColorForBg), falling back to the dark pole. */
+  --slide-on-light: var(--t-text-color-dark, #212121);
+  --slide-on-dark: var(--t-text-color-light, #ffffff);
+  --slide-on-lime: var(--t-slide-bg-lime-text, var(--slide-on-light));
+  --slide-on-mist: var(--t-slide-bg-mist-text, var(--slide-on-light));
+
+  /* Emphasis: the plane a type fills to make a band stand out — table header
+     and label-column planes, kickers. Fed by the accent pair; a distinct role
+     so emphasis carriers name their intent instead of "accent". */
+  --slide-emphasis: var(--slide-accent);
+  --slide-on-emphasis: var(--slide-on-accent);
+
+  /* Raised surface: the opaque card/panel plane types paint on top of the
+     slide background (table soft body; the card patterns fold in during the
+     per-type phase). No theme feed yet — see slide-roles.md § Colour roles. */
+  --slide-surface-raised: #ffffff;
+
+  /* Series palette: the numbered accent colours (charts, poll bars, matrix
+     planes; the KPI tiles joined this palette when their per-tile tokens were
+     removed — B3). The only numbered palette; --t-chart-{0..7} is its theme
+     contract. */
+  --slide-chart-0: var(--t-chart-0, var(--slide-accent));
+  --slide-chart-1: var(--t-chart-1, #5d989a);
+  --slide-chart-2: var(--t-chart-2, #848f52);
+  --slide-chart-3: var(--t-chart-3, #aebd63);
+  --slide-chart-4: var(--t-chart-4, #a2afa7);
+  --slide-chart-5: var(--t-chart-5, #e0e6e2);
+  --slide-chart-6: var(--t-chart-6, #2c4a4b);
+  --slide-chart-7: var(--t-chart-7, #cfd887);
+
+  /* Brand text swatches: the on-brand text colours a theme offers beyond
+     default/muted/accent (shared/slide-types/text-styles.js slots). The
+     currentColor fallback keeps an undeclared slot a no-op, exactly as the
+     text-style CSS behaved when it read the theme token directly. */
+  --slide-brand-1: var(--t-color-brand-1, currentColor);
+  --slide-brand-2: var(--t-color-brand-2, currentColor);
+  --slide-brand-3: var(--t-color-brand-3, currentColor);
+
+  /* Theme gradient layer (quote, chapter-title, icon-card-grid headers).
+     `--t-gradient-enabled` is emitted as numeric 0/1 by theme-normalize so it
+     drops straight into opacity. */
+  --slide-gradient-bg: var(--t-slide-gradient-bg, transparent);
+  --slide-gradient-opacity: var(--t-gradient-enabled, 1);
 
   /* =========================================================================
      OPACITY SCALE

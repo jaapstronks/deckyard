@@ -74,7 +74,7 @@
   height: 46px;
   border-radius: var(--slide-radius-full);
   background: var(--slide-accent);
-  color: var(--t-color-accent-contrast, #ffffff);
+  color: var(--slide-on-accent);
   display: grid;
   place-items: center;
   font-family: var(--font-mono);
@@ -110,7 +110,7 @@
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
-  letter-spacing: var(--t-list-item-title-letter-spacing, -0.01em);
+  letter-spacing: -0.01em;
   margin: 0 0 var(--slide-space-2);
 }
 .slide-lijstje .item-text {

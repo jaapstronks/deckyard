@@ -67,12 +67,12 @@
    text colour on the same selector. */
 .slide-pyramid.slide-bg-lime .level-bar {
   background: var(--slide-accent, #375c5d);
-  --surface-text: var(--t-color-accent-contrast, var(--t-text-color-light, #ffffff));
+  --surface-text: var(--slide-on-accent);
 }
 
 .slide-pyramid.slide-bg-lime .level-bar .level-label,
 .slide-pyramid.slide-bg-lime .level-bar .level-text {
-  color: var(--t-color-accent-contrast, #ffffff);
+  color: var(--slide-on-accent);
 }
 
 /* Level content (label + text) */
@@ -184,7 +184,7 @@
 
 .slide-pyramid .pyramid-level:nth-child(1) .level-label,
 .slide-pyramid .pyramid-level:nth-child(1) .level-text {
-  color: var(--t-color-accent-contrast, #ffffff);
+  color: var(--slide-on-accent);
 }
 
 .slide-pyramid .pyramid-level:nth-child(1) .level-text {
@@ -197,7 +197,7 @@
 
 .slide-pyramid .pyramid-level:nth-child(2) .level-label,
 .slide-pyramid .pyramid-level:nth-child(2) .level-text {
-  color: var(--t-color-accent-contrast, #ffffff);
+  color: var(--slide-on-accent);
 }
 
 .slide-pyramid .pyramid-level:nth-child(2) .level-text {
@@ -252,7 +252,7 @@
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(4) .level-label,
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(5) .level-label,
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(6) .level-label {
-  color: var(--t-color-accent-contrast, #ffffff);
+  color: var(--slide-on-accent);
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(3) .level-text,

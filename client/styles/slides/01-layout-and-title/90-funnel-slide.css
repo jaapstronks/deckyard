@@ -71,7 +71,7 @@
    anything added later) kept the slide's colour on a surface it isn't on. */
 .slide-funnel.slide-bg-lime .stage-bar {
   background: var(--slide-accent, #375c5d);
-  --surface-text: var(--t-color-accent-contrast, var(--t-text-color-light, #ffffff));
+  --surface-text: var(--slide-on-accent);
 }
 
 /* Stage content (label + value) */
