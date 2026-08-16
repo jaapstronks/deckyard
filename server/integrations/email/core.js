@@ -47,12 +47,16 @@ export async function getSenderIdentity(repoRoot) {
  * @param {object} [options.senderOverride] - Override sender identity from app settings
  * @param {string} [options.senderOverride.email] - Sender email
  * @param {string} [options.senderOverride.name] - Sender name
- * @returns {Promise<{ok: boolean, status?: number, error?: string}>}
+ * @returns {Promise<{ok: boolean, status?: number, error?: string, reason?: 'not_configured'|'upstream'}>}
+ *   On failure, `reason` types it: `not_configured` means this install has no
+ *   Brevo key (an operator problem, nothing was attempted), `upstream` means
+ *   the provider was tried and failed (HTTP error, network, timeout). Callers
+ *   that surface the failure over HTTP map the two differently (501 vs 502).
  */
 export async function sendEmail({ to, toName, subject, htmlContent, textContent, senderOverride }) {
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) {
-    return { ok: false, error: 'BREVO_API_KEY not configured' };
+    return { ok: false, reason: 'not_configured', error: 'BREVO_API_KEY not configured' };
   }
 
   // Priority: senderOverride (from app settings) > env vars > defaults
@@ -98,12 +102,12 @@ export async function sendEmail({ to, toName, subject, htmlContent, textContent,
 
     if (!resp.ok) {
       const text = await resp.text().catch(() => '');
-      return { ok: false, status: resp.status, error: text || `HTTP ${resp.status}` };
+      return { ok: false, reason: 'upstream', status: resp.status, error: text || `HTTP ${resp.status}` };
     }
 
     return { ok: true, status: resp.status };
   } catch (e) {
-    return { ok: false, error: String(e?.message || e) };
+    return { ok: false, reason: 'upstream', error: String(e?.message || e) };
   } finally {
     clearTimeout(timeout);
   }
