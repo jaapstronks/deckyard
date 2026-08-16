@@ -86,7 +86,8 @@
     "esbuild": "0.28.2",
     "eslint": "^10.8.1",
     "eslint-plugin-import-x": "^4.17.1",
-    "globals": "^17.9.0"
+    "globals": "^17.9.0",
+    "image-size": "file:./vendor/image-size-stub"
   },
   "overrides": {
     "image-size": "file:./vendor/image-size-stub"
