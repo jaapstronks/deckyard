@@ -18,13 +18,15 @@
  *      updating, deleting, setting a default or previewing a draft needs
  *      `canManage` (designer, or — single-org — an admin). A plain member is
  *      refused every mutation.
- *   2. **The two modules refuse a non-manager differently, on purpose.** A theme
- *      mutation without the capability is a **403** (`forbidden`, "Admin access
+ *   2. **The two modules refuse a non-manager differently.** A theme mutation
+ *      without the capability is a **403** (`forbidden`, "Admin access
  *      required"); the identical denial on a font family is a **401**
- *      (`unauthorized`). That asymmetry is intentional (it predates this test
- *      and `c8-routes-batch-5-dispatch` pins it at the guard); pinning it here
- *      at the handler contract keeps a future tidy-up from silently changing one
- *      surface's status code without the other.
+ *      (`unauthorized`). That asymmetry is a known pre-existing inconsistency —
+ *      a beta-doctrine tidy-up candidate, logged in
+ *      briefs/test-coverage-gaps.md — not a designed contract.
+ *      `c8-routes-batch-5-dispatch` pins it at the guard; pinning it here at
+ *      the handler contract keeps the eventual convergence from silently
+ *      changing one surface's status code without the other.
  *
  * Feasibility note (opt-out, logged in briefs/test-coverage-gaps.md): three
  * font-family paths cross a boundary this recipe cannot drive — `discover-adobe`
@@ -316,7 +318,7 @@ test('a designer can create a font family; a member gets a 401 (not 403)', async
     as: ACTORS.member,
     body: { name: 'Brand Sans', source: 'upload', category: 'sans-serif' },
   });
-  assert.equal(denied.res.statusCode, 401, 'font mutations deny with unauthorized — intentional asymmetry with themes');
+  assert.equal(denied.res.statusCode, 401, 'font mutations deny with unauthorized — the known asymmetry with themes (see header rule 2)');
   assert.equal(denied.res.body.error, 'unauthorized');
 
   const created = await call(handleFontFamilies, 'POST', '/api/font-families', {
