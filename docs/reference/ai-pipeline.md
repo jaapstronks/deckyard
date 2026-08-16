@@ -189,15 +189,15 @@ Everything else is files on disk: conversation logs under `server/logs/ai/`
 | `AI_VALIDATION_LOGGING` | `utils/ai/validation-logging.js` | On unless set to `false`. |
 | `NODE_ENV` | `utils/ai/logging.js` | Full conversation logging is disabled in production. |
 
-Feature flags (`server/config/flags-snapshot.js`): `disableAi` — set by
-`DISABLE_AI`, **demo mode** or **sandbox mode** — makes the router skip
-`handleAi` and `handleConvert` entirely, so `/api/ai/*` 404s rather than erroring
-per call. `aiAltText` additionally requires OpenAI as the resolved default
+Feature flags (`server/config/flags-snapshot.js`): `enableAi` — off with
+`AI_ENABLED=false`, **demo mode** or **sandbox mode** — when false makes the
+router skip `handleAi` and `handleConvert` entirely, so `/api/ai/*` 404s rather
+than erroring per call. `aiAltText` additionally requires OpenAI as the resolved default
 vendor.
 
 **Sandbox stance** (`utils/llm/config.js`): the sandbox allows Mistral and
 nothing else — an explicit request for another vendor is a `400`, not a silent
-downgrade. In practice sandbox mode also sets `disableAi`, so this is a
+downgrade. In practice sandbox mode also forces `enableAi` off, so this is a
 belt-and-braces rule at the config layer rather than the live path.
 
 Fork seams: `utils/ai/prompts/custom-loader.js` overrides prompt *copy*;
@@ -209,7 +209,7 @@ point of the seam.
 ## Authz & tenancy
 
 - Every `/api/ai/*` route sits behind the session login gate in
-  `server/routes/api/index.js`, and behind the `disableAi` flag check.
+  `server/routes/api/index.js`, and behind the `enableAi` flag check.
 - **Deck-scoped verbs** (append, refine-section, iterate, compress, convert,
   analyze, version-compare) resolve the deck through the presentation authz
   middleware first, so AI cannot reach a deck the caller could not open. The

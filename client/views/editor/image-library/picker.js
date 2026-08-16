@@ -91,8 +91,8 @@ export function openImageLibraryPicker({
   context = null,
 } = {}) {
   const flags = features && typeof features === 'object' ? features : {};
-  const uploadsDisabled = !!flags.disableUploads;
-  const canAiAlt = !flags.disableAi && !!flags.aiAltText;
+  const uploadsDisabled = !flags.enableUploads;
+  const canAiAlt = !!flags.enableAi && !!flags.aiAltText;
 
   const backdrop = h('div', { class: 'modal-backdrop' });
   const modal = h('div', { class: 'modal image-library-modal' });

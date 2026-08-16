@@ -181,7 +181,7 @@ function openSourceChooser({ h, root, providers, onChoose }) {
  *
  * Enablement mirrors the historical per-call-site gating so no deployment loses
  * a source it had before:
- * - the native library is enabled unless `features.disableImageLibrary`
+ * - the native library is enabled when `features.enableImageLibrary`
  *   (which `IMAGEKIT_ONLY` already forces);
  * - the bundled gradients are enabled whenever their raw opener is provided
  *   (the caller resolves the `stockMedia.bundled.enabled` toggle);
@@ -206,7 +206,7 @@ export function createImagePickerSeam({
 } = {}) {
   const flags = features && typeof features === 'object' ? features : {};
   const providers = [];
-  if (!flags.disableImageLibrary && typeof openImageLibrary === 'function') {
+  if (flags.enableImageLibrary && typeof openImageLibrary === 'function') {
     providers.push(libraryProvider(openImageLibrary));
   }
   if (typeof openBundledGradients === 'function') {

@@ -7,6 +7,7 @@ import {
 } from './config/paths.js';
 import { loadDotEnv } from './config/env.js';
 import { authConfigError, authConfigWarnings } from './auth/auth.js';
+import { deprecatedFlagWarnings } from './config/features.js';
 import { ssoConfigError } from './config/sso.js';
 import { storageModeError } from './config/database.js';
 import { publicUrlWarnings, envStr, envBool, envInt } from './config/utils.js';
@@ -202,9 +203,14 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
-// Non-fatal configuration warnings (weak secret, missing public URL). These
-// don't block boot but should be fixed before exposing the instance.
-for (const w of [...authConfigWarnings(), ...publicUrlWarnings()]) {
+// Non-fatal configuration warnings (weak secret, missing public URL,
+// deprecated env vars). These don't block boot but should be fixed before
+// exposing the instance.
+for (const w of [
+  ...authConfigWarnings(),
+  ...publicUrlWarnings(),
+  ...deprecatedFlagWarnings(),
+]) {
   console.warn(`⚠️  CONFIG: ${w}`);
 }
 

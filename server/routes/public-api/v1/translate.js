@@ -39,7 +39,7 @@ async function handleTranslate(ctx, presentationId) {
 
   // Check if AI is disabled
   const flags = getFeatureFlags();
-  if (flags.disableAi) {
+  if (!flags.enableAi) {
     await apiError(ctx, 503, 'AI features are disabled');
     return true;
   }

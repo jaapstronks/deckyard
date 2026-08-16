@@ -3,9 +3,43 @@
  * read. Every flag is a call-time function (never a module-load constant) so
  * `.env` loading order can't bite; `config/flags-snapshot.js` aggregates
  * these into the client-facing snapshot.
+ *
+ * Naming: every on/off flag carries the enable form (`X_ENABLED`) — the
+ * default carries the resting state, the polarity never flips. See
+ * docs/reference/feature-flags.md (B68).
  */
 
-import { envBool } from './utils.js';
+import { envBool, envStr } from './utils.js';
+
+/**
+ * Legacy disable-form spellings of the three kill switches, recognized (with
+ * a boot warning — see {@link deprecatedFlagWarnings}) until the removal
+ * date. Removed in the first release after 2026-11-01; after that only the
+ * enable-form vars exist. Maps old var → canonical `*_ENABLED` var.
+ */
+const LEGACY_DISABLE_VARS = Object.freeze({
+  DISABLE_AI: 'AI_ENABLED',
+  DISABLE_UPLOADS: 'UPLOADS_ENABLED',
+  DISABLE_IMAGE_LIBRARY: 'IMAGE_LIBRARY_ENABLED',
+});
+
+/** Date after which the legacy `DISABLE_*` spellings stop being recognized. */
+const LEGACY_DISABLE_REMOVAL_DATE = '2026-11-01';
+
+/**
+ * Read an enable-form flag that still honors its legacy disable-form
+ * spelling. Precedence: the canonical `*_ENABLED` var wins when set; else a
+ * set legacy `DISABLE_*` var is respected (inverted); else the feature
+ * defaults to on.
+ * @param {string} name - Canonical enable-form env var
+ * @param {string} legacyName - Deprecated disable-form env var
+ * @returns {boolean}
+ */
+function envEnabledWithLegacy(name, legacyName) {
+  if (envStr(name)) return envBool(name, true);
+  if (envStr(legacyName)) return !envBool(legacyName);
+  return true;
+}
 
 /**
  * Multi-organization mode.
@@ -79,25 +113,51 @@ export function isImagekitOnly() {
 }
 
 /**
- * Kill switch for all AI features (generation, refinement, alt-text).
+ * AI features (generation, refinement, alt-text). Default: on; the env var
+ * is a kill switch (`AI_ENABLED=false`).
  * @returns {boolean}
  */
-export function isAiDisabled() {
-  return envBool('DISABLE_AI');
+export function isAiEnabled() {
+  return envEnabledWithLegacy('AI_ENABLED', 'DISABLE_AI');
 }
 
 /**
- * Kill switch for file uploads. @returns {boolean}
+ * Direct file uploads. Default: on; the env var is a kill switch
+ * (`UPLOADS_ENABLED=false`). @returns {boolean}
  */
-export function isUploadsDisabled() {
-  return envBool('DISABLE_UPLOADS');
+export function isUploadsEnabled() {
+  return envEnabledWithLegacy('UPLOADS_ENABLED', 'DISABLE_UPLOADS');
 }
 
 /**
- * Kill switch for the built-in image library. @returns {boolean}
+ * The built-in image library. Default: on; the env var is a kill switch
+ * (`IMAGE_LIBRARY_ENABLED=false`). @returns {boolean}
  */
-export function isImageLibraryDisabled() {
-  return envBool('DISABLE_IMAGE_LIBRARY');
+export function isImageLibraryEnabled() {
+  return envEnabledWithLegacy('IMAGE_LIBRARY_ENABLED', 'DISABLE_IMAGE_LIBRARY');
+}
+
+/**
+ * Non-fatal boot warnings for legacy `DISABLE_*` kill-switch spellings.
+ * The old vars are still respected (see {@link envEnabledWithLegacy}), but
+ * every set one gets a warning naming the canonical `*_ENABLED` replacement
+ * and the removal date. Returns [] when no legacy var is set.
+ * @returns {string[]}
+ */
+export function deprecatedFlagWarnings() {
+  const warnings = [];
+  for (const [legacyName, name] of Object.entries(LEGACY_DISABLE_VARS)) {
+    if (!envStr(legacyName)) continue;
+    const replacement = `${name}=${envBool(legacyName) ? 'false' : 'true'}`;
+    const overridden = envStr(name)
+      ? ` (${name} is also set and takes precedence)`
+      : '';
+    warnings.push(
+      `${legacyName} is deprecated and will be removed in the first release ` +
+        `after ${LEGACY_DISABLE_REMOVAL_DATE}; set ${replacement} instead${overridden}.`
+    );
+  }
+  return warnings;
 }
 
 /**
