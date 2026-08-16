@@ -1,12 +1,9 @@
 /* Icon card grid slide (2 columns × 3 rows) */
 .slide-icon-card-grid {
-  color: var(--t-icon-card-grid-text-color, #fff);
+  color: var(--slide-on-gradient);
   position: relative;
   overflow: hidden;
-  background: var(
-    --t-icon-card-grid-slide-bg,
-    var(--slide-surface)
-  );
+  background: var(--slide-surface);
   padding: var(--slide-space-12) var(--slide-padding) var(--slide-space-12);
   --g1x: 14%;
   --g1y: 82%;
@@ -65,20 +62,14 @@
   margin: var(--slide-space-3) 0 0;
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
-  color: var(
-    --t-icon-card-grid-subtitle-color,
-    rgba(255, 255, 255, var(--slide-opacity-prominent))
-  );
+  color: var(--slide-on-gradient-muted);
   max-width: 75ch;
 }
 /* Adjust subheading color on dark backgrounds. Moved out of
    01-layout-and-title/00-base.css: it is a type-owned override of the shared
    `.slide .subheading`, not part of the base slide vocabulary. */
 .slide-icon-card-grid .subheading {
-  color: var(
-    --t-icon-card-grid-subtitle-color,
-    var(--slide-text-light-muted)
-  );
+  color: var(--slide-on-gradient-muted);
 }
 /* When the subheading is empty it is not rendered, which makes the header
    shorter — the top card creeps up toward the title and align-content spreads

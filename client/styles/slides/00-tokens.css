@@ -131,6 +131,27 @@
   --slide-on-dark: var(--t-text-color-light, #ffffff);
   --slide-on-lime: var(--t-slide-bg-lime-text, var(--slide-on-light));
   --slide-on-mist: var(--t-slide-bg-mist-text, var(--slide-on-light));
+  /* The dark surface variant (quote, chapter-title): theme-normalize derives
+     --t-slide-bg-dark-text from that surface's luminance (white when gradient
+     branding paints over it). */
+  --slide-on-bg-dark: var(--t-slide-bg-dark-text, var(--slide-on-dark));
+  /* The gradient layer's text pair: theme-normalize emits the tokens only
+     when the gradient is on, so on solid themes these resolve to the plain
+     on-surface pair. */
+  --slide-on-gradient: var(--t-slide-gradient-text, var(--slide-on-surface));
+  --slide-on-gradient-muted: var(
+    --t-slide-gradient-text-muted,
+    var(--slide-on-surface-muted)
+  );
+  /* The display accent for dark grounds (quote attribution line): a theme
+     sets --t-color-accent-on-dark; the default is the same accent-lightening
+     the on-dark link uses. */
+  --slide-accent-on-dark: var(--t-color-accent-on-dark, var(--slide-link-on-dark));
+  /* The soft accent plane and its pair (icon blocks): derived by
+     theme-normalize (the theme's bright mist tint, or the accent when mist is
+     dark), theme-overridable via --t-color-accent-soft. */
+  --slide-accent-soft: var(--t-color-accent-soft, var(--slide-bg-mist));
+  --slide-on-accent-soft: var(--t-color-accent-soft-contrast, var(--slide-on-mist));
 
   /* Emphasis: the plane a type fills to make a band stand out — table header
      and label-column planes, kickers. Fed by the accent pair; a distinct role
@@ -139,9 +160,10 @@
   --slide-on-emphasis: var(--slide-on-accent);
 
   /* Raised surface: the opaque card/panel plane types paint on top of the
-     slide background (table soft body; the card patterns fold in during the
-     per-type phase). No theme feed yet — see slide-roles.md § Colour roles. */
-  --slide-surface-raised: #ffffff;
+     slide background (table soft body, icon-card bodies). Fed by
+     --t-color-surface-raised; text on it stays the fixed near-black the
+     carriers always had — the feed is expected to stay a light tint. */
+  --slide-surface-raised: var(--t-color-surface-raised, #ffffff);
 
   /* Series palette: the numbered accent colours (charts, poll bars, matrix
      planes; the KPI tiles joined this palette when their per-tile tokens were

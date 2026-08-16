@@ -67,7 +67,7 @@ export default function renderHtml(content, _slide, ctx) {
     // <img>: an <img>-loaded SVG is an isolated document and never inherits
     // the host `color`, so its `currentColor` fell back to the OS default
     // text color (black in light mode, white in dark) — making the themed
-    // --t-icon-card-grid-icon-fg dead code. iconSrc is always a vetted
+    // --slide-on-accent-soft dead code. iconSrc is always a vetted
     // /client/vendor/lucide-icons/<name>.svg (name matches /^[a-z0-9-]+$/),
     // so it is URL/CSS-safe inside url() with no escaping surprises.
     const iconHtml = iconSrc

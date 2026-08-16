@@ -38,7 +38,7 @@ test('the generated gradient is declared on the slide root, not on the stage', (
     label: 'Grad',
     gradient: { enabled: true },
     cssVars: {
-      '--t-quote-author-color': '#7dd3fc',
+      '--t-color-accent-on-dark': '#7dd3fc',
       '--t-color-accent': '#38bdf8',
       '--t-slide-bg-mist': '#27272a',
     },
@@ -74,7 +74,7 @@ test('the slide-root block is scoped to the caller-supplied stage selector', () 
     label: 'Grad',
     gradient: { enabled: true },
     cssVars: {
-      '--t-quote-author-color': '#7dd3fc',
+      '--t-color-accent-on-dark': '#7dd3fc',
       '--t-color-accent': '#38bdf8',
       '--t-slide-bg-mist': '#27272a',
     },

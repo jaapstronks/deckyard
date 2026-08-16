@@ -46,7 +46,7 @@ const PRE_MIGRATION_CSS_VARS = {
   // one of those as their own surface (see docs/reference/nested-surfaces.md).
   '--t-slide-bg-lime-text': '#1f2937',
   '--t-slide-bg-mist-text': '#1f2937',
-  '--t-quote-author-color': '#7c3aed',
+  '--t-color-accent-on-dark': '#7c3aed',
   '--t-radius': '16px',
   '--t-radius-sm': '12px',
   '--t-radius-lg': '20px',
@@ -57,7 +57,6 @@ const PRE_MIGRATION_CSS_VARS = {
     'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
   '--t-heading-transform': 'none',
   '--t-heading-weight': '700',
-  '--t-icon-card-grid-icon-bg': '#f7f4fa',
   '--t-chart-0': '#7c3aed',
   '--t-chart-1': '#996aea',
   '--t-chart-2': '#b69be5',

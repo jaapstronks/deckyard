@@ -3,13 +3,11 @@
   width: 44px;
   height: 44px;
   display: block;
-  /* Tint the icon by the container `color` (= --t-icon-card-grid-icon-fg) via a
+  /* Tint the icon by the container `color` (= --slide-on-accent-soft) via a
      CSS mask, so the icon color is theme-driven instead of OS-default. */
   background-color: currentColor;
   -webkit-mask: var(--icg-icon-url) center / contain no-repeat;
   mask: var(--icg-icon-url) center / contain no-repeat;
-  /* Retained for back-compat with themes that set an icon filter. */
-  filter: var(--t-icon-card-grid-icon-filter, none);
 }
 .slide-icon-card-grid .icon-card-icon-fallback {
   width: 44px;
@@ -20,9 +18,9 @@
 }
 .slide-icon-card-grid .icon-card-body {
   flex: 1 1 auto;
-  /* Themable so cards can stand off the slide background (e.g. a tinted body
-     on a white slide); text stays dark — the surface stays light. */
-  background: var(--t-icon-card-grid-body-bg, #fff);
+  /* The raised surface role, so cards stand off the slide background (e.g. a
+     tinted body on a white slide); text stays dark — the surface stays light. */
+  background: var(--slide-surface-raised);
   color: rgba(11, 11, 11, 0.92);
   padding: var(--slide-card-padding);
   min-width: 0;
@@ -34,10 +32,10 @@
   font-family: var(--font-heading);
   font-size: var(--slide-font-size-card-title);
   line-height: var(--slide-leading-snug);
-  font-weight: var(--t-icon-card-grid-card-title-weight, 400);
-  text-transform: var(--t-icon-card-grid-card-title-transform, none);
+  font-weight: 400;
+  text-transform: none;
   font-synthesis: none;
-  letter-spacing: var(--t-icon-card-grid-card-title-letter-spacing, -0.01em);
+  letter-spacing: -0.01em;
   margin-bottom: var(--slide-space-2);
   /* Long single words (URLs, compound nouns) must not run past the card edge:
      break within the word and hyphenate where the content language allows

@@ -53,40 +53,18 @@ test('is idempotent — normalizing twice changes nothing', () => {
   assert.deepEqual(twice, once);
 });
 
-test('derives readable text for table variant backgrounds (the drifted derivation)', () => {
-  const out = normalizeTheme({
-    ...baseTheme(),
-    cssVars: {
-      ...baseTheme().cssVars,
-      '--t-table-panel-header-bg': '#111111', // dark → light text
-      '--t-table-soft-firstcol-bg': '#fafafa', // light → dark text
-      '--t-table-panel-bg': '#000000', // body surface, slot-less pair
-    },
-  });
-
-  assert.equal(out.cssVars['--t-table-panel-header-text'], '#ffffff');
-  assert.equal(out.cssVars['--t-table-soft-firstcol-text'], '#212121');
-  assert.equal(out.cssVars['--t-table-panel-text'], '#ffffff');
-});
-
-test('an explicit table text token is never overwritten', () => {
+test('the per-type table token family is no longer derived', () => {
+  // The --t-table-* family was removed (B2/B3): table CSS composes the
+  // emphasis/surface roles, so normalize must not resurrect the family even
+  // when a stale theme still carries a table background token.
   const out = normalizeTheme({
     ...baseTheme(),
     cssVars: {
       ...baseTheme().cssVars,
       '--t-table-panel-header-bg': '#111111',
-      '--t-table-panel-header-text': '#ff0000',
     },
   });
-  assert.equal(out.cssVars['--t-table-panel-header-text'], '#ff0000');
-});
-
-test('table tokens stay absent when the theme sets no table backgrounds', () => {
-  const out = normalizeTheme(baseTheme());
-  const tableKeys = Object.keys(out.cssVars).filter((k) =>
-    k.startsWith('--t-table-')
-  );
-  assert.deepEqual(tableKeys, []);
+  assert.equal(out.cssVars['--t-table-panel-header-text'], undefined);
 });
 
 test('emits the legacy alias family derived from the theme', () => {
@@ -119,17 +97,25 @@ test('a theme that sets an alias explicitly still wins', () => {
   assert.equal(out.cssVars['--t-brand-1'], '#00ff00');
 });
 
-test('chapter and quote text derive from the dark surface, not the page text', () => {
-  // Regression guard: deriving from --t-color-text paints dark-on-dark here.
+test('the dark-surface text derives from the dark surface, not the page text', () => {
+  // Regression guard: deriving from --t-color-text paints dark-on-dark on the
+  // quote/chapter ground. --slide-on-bg-dark reads this token.
   const out = normalizeTheme(baseTheme());
-  assert.equal(out.cssVars['--t-chapter-text-color'], '#ffffff');
-  assert.equal(out.cssVars['--t-quote-text-color'], '#ffffff');
+  assert.equal(out.cssVars['--t-slide-bg-dark-text'], '#ffffff');
 
   const lightSurface = normalizeTheme({
     ...baseTheme(),
     cssVars: { ...baseTheme().cssVars, '--t-slide-bg-dark': '#fafafa' },
   });
-  assert.equal(lightSurface.cssVars['--t-chapter-text-color'], '#212121');
+  assert.equal(lightSurface.cssVars['--t-slide-bg-dark-text'], '#212121');
+});
+
+test('an explicit dark-surface text token is never overwritten', () => {
+  const out = normalizeTheme({
+    ...baseTheme(),
+    cssVars: { ...baseTheme().cssVars, '--t-slide-bg-dark-text': '#fafafa' },
+  });
+  assert.equal(out.cssVars['--t-slide-bg-dark-text'], '#fafafa');
 });
 
 test('an unparseable dark surface falls back to the CSS var expression', () => {
@@ -138,7 +124,7 @@ test('an unparseable dark surface falls back to the CSS var expression', () => {
     cssVars: { ...baseTheme().cssVars, '--t-slide-bg-dark': 'not-a-colour' },
   });
   assert.equal(
-    out.cssVars['--t-chapter-text-color'],
+    out.cssVars['--t-slide-bg-dark-text'],
     'var(--t-color-text, #0b0b0b)'
   );
 });
@@ -153,21 +139,33 @@ test('gradient on generates a background from the theme tokens', () => {
   const out = normalizeTheme({
     ...baseTheme(),
     gradient: { enabled: true },
-    cssVars: { ...baseTheme().cssVars, '--t-quote-author-color': '#c4b5fd' },
+    cssVars: { ...baseTheme().cssVars, '--t-color-accent-on-dark': '#c4b5fd' },
   });
 
   assert.equal(out.cssVars['--t-gradient-enabled'], '1');
   assert.match(out.cssVars['--t-slide-gradient-bg'], /^radial-gradient\(/);
   assert.ok(out.cssVars['--t-slide-gradient-bg'].endsWith('#06090b'));
-  // Gradient themes get white chapter text rather than a luminance pick.
-  assert.equal(out.cssVars['--t-chapter-text-color'], '#ffffff');
+  // Gradient themes force white on the deep gradient ground rather than a
+  // luminance pick, and emit the gradient text pair for --slide-on-gradient.
+  assert.equal(out.cssVars['--t-slide-bg-dark-text'], '#ffffff');
+  assert.equal(out.cssVars['--t-slide-gradient-text'], '#ffffff');
+  assert.equal(
+    out.cssVars['--t-slide-gradient-text-muted'],
+    'rgba(255, 255, 255, 0.82)'
+  );
+});
+
+test('gradient off emits no gradient text pair', () => {
+  const out = normalizeTheme(baseTheme());
+  assert.equal(out.cssVars['--t-slide-gradient-text'], undefined);
+  assert.equal(out.cssVars['--t-slide-gradient-text-muted'], undefined);
 });
 
 test('gradient generation is skipped when a source colour is unparseable', () => {
   const out = normalizeTheme({
     ...baseTheme(),
     gradient: { enabled: true },
-    cssVars: { ...baseTheme().cssVars, '--t-quote-author-color': 'garbage' },
+    cssVars: { ...baseTheme().cssVars, '--t-color-accent-on-dark': 'garbage' },
   });
   assert.equal(out.cssVars['--t-slide-gradient-bg'], undefined);
 });
@@ -225,24 +223,36 @@ test('slideBackgrounds become --t-slide-bg-<id> vars', () => {
   );
 });
 
-test('icon block prefers a real lime surface and picks a readable foreground', () => {
+test('the soft accent plane takes a bright mist and pairs a readable foreground', () => {
   const out = normalizeTheme(baseTheme());
-  assert.equal(out.cssVars['--t-icon-card-grid-icon-bg'], '#e2fe52');
-  assert.equal(out.cssVars['--t-icon-card-grid-icon-fg'], '#212121');
-  assert.equal(out.cssVars['--t-icon-card-grid-icon-filter'], 'none');
+  assert.equal(out.cssVars['--t-color-accent-soft'], '#e0e6e2');
+  assert.equal(out.cssVars['--t-color-accent-soft-contrast'], '#212121');
 });
 
-test('a white lime surface falls back to the accent, and inverts the icon filter', () => {
+test('a dark mist hands the soft accent plane to the accent itself', () => {
   const out = normalizeTheme({
     ...baseTheme(),
-    cssVars: { ...baseTheme().cssVars, '--t-slide-bg-lime': '#ffffff' },
+    cssVars: { ...baseTheme().cssVars, '--t-slide-bg-mist': '#27272a' },
   });
-  assert.equal(out.cssVars['--t-icon-card-grid-icon-bg'], '#7c3aed');
-  assert.equal(out.cssVars['--t-icon-card-grid-icon-fg'], '#ffffff');
-  assert.equal(
-    out.cssVars['--t-icon-card-grid-icon-filter'],
-    'brightness(0) invert(1)'
+  assert.equal(out.cssVars['--t-color-accent-soft'], '#7c3aed');
+  assert.equal(out.cssVars['--t-color-accent-soft-contrast'], '#ffffff');
+});
+
+test('an explicit soft accent plane is never overwritten', () => {
+  const out = normalizeTheme({
+    ...baseTheme(),
+    cssVars: { ...baseTheme().cssVars, '--t-color-accent-soft': '#123456' },
+  });
+  assert.equal(out.cssVars['--t-color-accent-soft'], '#123456');
+  assert.equal(out.cssVars['--t-color-accent-soft-contrast'], '#ffffff');
+});
+
+test('the per-type icon-card-grid token family is no longer derived', () => {
+  const out = normalizeTheme(baseTheme());
+  const icgKeys = Object.keys(out.cssVars).filter((k) =>
+    k.startsWith('--t-icon-card-grid-')
   );
+  assert.deepEqual(icgKeys, []);
 });
 
 test('custom text poles drive every contrast decision', () => {
