@@ -132,8 +132,8 @@ live session, where the acting party is the audience.
 `createdAt`, `presentation` (`id`, `title`, `editUrl`), `slide.id`, and `lead`
 (`name`, `email`, `submittedAt`). It carries a visitor's name and email address,
 which makes this the one webhook that ships personal data of a non-user off the
-instance — see [`analytics-privacy.md`](analytics-privacy.md) for what the lead
-capture stores.
+instance — see [`leads.md`](leads.md) for what the lead capture stores and how
+it is retained and erased.
 
 ## Flows
 

@@ -16,6 +16,10 @@ analytics-privacy work (decisions recorded in `docs/plans/done/decisions.md`
 [`tenant-isolation.md`](tenant-isolation.md); the wider data-subject-rights
 surface for logged-in people is the GDPR export/erase endpoint below.
 
+Analytics is one of **two** anonymous-visitor-PII surfaces: the lead-capture
+slide stores a visitor's name and e-mail with its own retention and GDPR
+flow — see [`leads.md`](leads.md).
+
 ## Module map
 
 - `server/routes/api/analytics-track.js` — the **public, unauthenticated**
