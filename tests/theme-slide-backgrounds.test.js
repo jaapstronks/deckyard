@@ -88,19 +88,19 @@ test('slideBackgroundsCssText generates guarded rules; contrast block only with 
   ]);
   const css = slideBackgroundsCssText(entries);
   assert.match(css, /\.slide\.slide-bg-calm \{/);
-  assert.match(css, /--slide-bg: var\(--t-slide-bg-calm, var\(--color-background\)\);/);
-  assert.match(css, /--color-text: var\(--slide-bg-text\);/);
-  // A text-flipping variant also redirects --color-link, derived from the
+  assert.match(css, /--slide-bg: var\(--t-slide-bg-calm, var\(--slide-surface\)\);/);
+  assert.match(css, /--slide-on-surface: var\(--slide-bg-text\);/);
+  // A text-flipping variant also redirects --slide-link, derived from the
   // accent mixed toward the variant's own text colour (no author declaration).
   assert.match(
     css,
-    /--color-link: var\(--t-slide-bg-calm-link, color-mix\(in srgb, var\(--color-accent\) 42%, var\(--slide-bg-text\)\)\);/
+    /--slide-link: var\(--t-slide-bg-calm-link, color-mix\(in srgb, var\(--slide-accent\) 42%, var\(--slide-bg-text\)\)\);/
   );
   assert.match(css, /\.slide\.slide-bg-tint \{/);
   // No contrast redirect for the textColor-less variant
   const tintRule = css.slice(css.indexOf('.slide.slide-bg-tint'));
-  assert.doesNotMatch(tintRule, /--color-text:/);
-  assert.doesNotMatch(tintRule, /--color-link:/);
+  assert.doesNotMatch(tintRule, /--slide-on-surface:/);
+  assert.doesNotMatch(tintRule, /--slide-link:/);
   assert.equal(slideBackgroundsCssText([]), '');
 });
 

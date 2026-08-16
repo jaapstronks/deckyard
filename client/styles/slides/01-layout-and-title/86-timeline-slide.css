@@ -9,12 +9,12 @@
   --timeline-card-surface: var(--slide-surface-white-solid);
   --timeline-card-border: var(--slide-border-light);
   --timeline-card-shadow: var(--slide-shadow-card);
-  --timeline-accent: var(--color-accent);
+  --timeline-accent: var(--slide-accent);
   --timeline-marker-ring: rgba(255, 255, 255, var(--slide-opacity-visible));
-  --timeline-text: var(--color-text);
+  --timeline-text: var(--slide-on-surface);
   --timeline-text-muted: color-mix(
     in srgb,
-    var(--color-text, #0b0b0b) calc(var(--slide-opacity-visible) * 100%),
+    var(--slide-on-surface, #0b0b0b) calc(var(--slide-opacity-visible) * 100%),
     transparent
   );
 }
@@ -27,7 +27,7 @@
   --timeline-card-surface: rgba(255, 255, 255, 0.1);
   --timeline-card-border: rgba(255, 255, 255, 0.18);
   --timeline-card-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-  --timeline-accent: var(--t-slide-bg-calm-accent, var(--color-accent));
+  --timeline-accent: var(--t-slide-bg-calm-accent, var(--slide-accent));
   --timeline-marker-ring: rgba(255, 255, 255, 0.85);
 }
 

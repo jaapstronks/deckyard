@@ -13,8 +13,8 @@
 
 @supports (color: color-mix(in srgb, white 50%, black)) {
   .slide-lead-capture {
-    --interaction-surface: color-mix(in srgb, white 94%, var(--color-background));
-    --interaction-surface-2: color-mix(in srgb, white 76%, var(--color-background));
+    --interaction-surface: color-mix(in srgb, white 94%, var(--slide-surface));
+    --interaction-surface-2: color-mix(in srgb, white 76%, var(--slide-surface));
     --interaction-border: color-mix(in srgb, currentColor 16%, transparent);
   }
 }
@@ -55,14 +55,14 @@
   font-size: var(--slide-text-3xl);
   line-height: var(--slide-leading-tight);
   margin: 0 0 var(--slide-space-4);
-  color: var(--color-text);
+  color: var(--slide-on-surface);
   text-align: center;
 }
 
 .slide-lead-capture .lead-capture-description {
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-normal);
-  color: var(--color-text);
+  color: var(--slide-on-surface);
   opacity: 0.85;
   max-width: 50ch;
   margin: 0 auto;
@@ -89,7 +89,7 @@
   font-family: var(--font-heading);
   font-size: var(--slide-text-base);
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--slide-on-surface);
   opacity: 0.9;
 }
 
@@ -102,22 +102,24 @@
   background: var(--interaction-surface-2);
   /* --interaction-surface-2 is ~white mixed with the slide background: a
      light surface whatever the variant did to the slide's text colour. */
-  --color-text: var(--t-text-color-dark, #212121);
-  color: var(--color-text);
+  --slide-on-surface: var(--t-text-color-dark, #212121);
+  color: var(--slide-on-surface);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   width: 100%;
   box-sizing: border-box;
 }
 
 .slide-lead-capture .lead-capture-input::placeholder {
-  color: var(--color-text);
+  color: var(--slide-on-surface);
   opacity: 0.4;
 }
 
 .slide-lead-capture .lead-capture-input:focus {
   outline: none;
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 4px rgba(var(--color-accent-rgb, 59, 77, 219), 0.15);
+  border-color: var(--slide-accent);
+  /* The old --color-accent-rgb was never defined anywhere, so this ring
+     always rendered its blue fallback; tint from the accent role instead. */
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--slide-accent) 15%, transparent);
 }
 
 /* Consent checkbox */
@@ -137,19 +139,19 @@
   width: 24px;
   height: 24px;
   margin-top: var(--slide-space-1);
-  accent-color: var(--color-accent);
+  accent-color: var(--slide-accent);
   cursor: pointer;
 }
 
 .slide-lead-capture .lead-capture-consent-text {
   font-size: var(--slide-text-base);
   line-height: var(--slide-leading-relaxed);
-  color: var(--color-text);
+  color: var(--slide-on-surface);
   opacity: 0.85;
 }
 
 .slide-lead-capture .lead-capture-privacy-link {
-  color: var(--color-accent, #3b4ddb);
+  color: var(--slide-accent, #3b4ddb);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -171,7 +173,7 @@
   padding: var(--slide-space-5) var(--slide-space-8);
   border: none;
   border-radius: var(--slide-radius-md);
-  background: var(--color-accent);
+  background: var(--slide-accent);
   color: var(--t-color-accent-contrast, var(--t-text-color-light, #fff));
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
@@ -217,7 +219,7 @@
 .slide-lead-capture .lead-capture-cookie-notice p {
   margin: 0;
   font-size: var(--slide-text-base);
-  color: var(--color-text);
+  color: var(--slide-on-surface);
   opacity: 0.7;
 }
 
@@ -239,7 +241,7 @@
 }
 
 .slide-lead-capture .lead-capture-thankyou-icon {
-  color: var(--color-accent);
+  color: var(--slide-accent);
   width: 88px;
   height: 88px;
 }
@@ -256,14 +258,14 @@
   font-size: var(--slide-text-3xl);
   line-height: var(--slide-leading-tight);
   margin: 0;
-  color: var(--color-text);
+  color: var(--slide-on-surface);
   text-align: center;
 }
 
 .slide-lead-capture .lead-capture-thankyou-message {
   font-size: var(--slide-text-lg);
   line-height: var(--slide-leading-relaxed);
-  color: var(--color-text);
+  color: var(--slide-on-surface);
   opacity: 0.85;
   max-width: 45ch;
 }

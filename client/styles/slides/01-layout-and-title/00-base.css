@@ -9,8 +9,8 @@
   height: 100%;
   box-sizing: border-box;
   padding: var(--slide-padding);
-  color: var(--color-text);
-  background: var(--slide-bg, var(--color-background));
+  color: var(--slide-on-surface);
+  background: var(--slide-bg, var(--slide-surface));
   display: flex;
   /* Override global site typography defaults (e.g. centered white h1/h2). */
   /* Using 'start' instead of 'left' for RTL language support. */
@@ -97,7 +97,7 @@
   font-size: var(--slide-text-sm, 16px);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-text-muted, rgba(11, 11, 11, 0.65));
+  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.65));
 }
 /* `.heading` has no global size — every type styles its own — so the
    placeholder has to bring one, or an archived slide's title renders at body
@@ -115,14 +115,14 @@
   margin: 0;
   font-size: var(--slide-text-md, 24px);
   line-height: var(--slide-leading-snug, 1.2);
-  color: var(--color-text-muted, rgba(11, 11, 11, 0.65));
+  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.65));
   max-width: 75ch;
 }
 .slide.slide-unresolved .unresolved-content {
   margin: 0;
   display: grid;
   gap: var(--slide-space-4, 16px);
-  border-top: 2px solid var(--color-text-muted, rgba(11, 11, 11, 0.25));
+  border-top: 2px solid var(--slide-on-surface-muted, rgba(11, 11, 11, 0.25));
   padding-top: var(--slide-space-5, 20px);
   min-height: 0;
   overflow: hidden;
@@ -136,7 +136,7 @@
 .slide.slide-unresolved .unresolved-row dt {
   font-family: var(--font-mono, monospace);
   font-size: var(--slide-text-sm, 16px);
-  color: var(--color-text-muted, rgba(11, 11, 11, 0.65));
+  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.65));
 }
 .slide.slide-unresolved .unresolved-row dd {
   margin: 0;
@@ -159,7 +159,7 @@
   font-size: var(--slide-text-xl);
   line-height: var(--slide-leading-snug);
   margin: var(--slide-space-3) 0 0;
-  color: var(--color-text-muted, rgba(11, 11, 11, 0.65));
+  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.65));
   max-width: 75ch;
 }
 
@@ -174,7 +174,7 @@
   margin-top: auto;
   margin-bottom: 0;
   padding-top: var(--slide-space-4);
-  color: var(--color-text-muted, rgba(11, 11, 11, 0.65));
+  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.65));
   max-width: 90ch;
 }
 
@@ -203,7 +203,7 @@
 /* In "fit (no crop)" mode the image is letterboxed; fill the gaps with the
    slide's own background colour rather than leaving it transparent. */
 .slide.has-slide-bg-contain > .slide-bg-layer {
-  background-color: var(--slide-bg, var(--color-background));
+  background-color: var(--slide-bg, var(--slide-surface));
 }
 .slide.has-slide-bg > .slide-bg-overlay {
   position: absolute;
@@ -253,7 +253,7 @@
 }
 
 /* Optional: readable text on background images.
-   The light/dark variants redirect the slide's --color-text / --color-text-muted
+   The light/dark variants redirect the slide's --slide-on-surface / --slide-on-surface-muted
    tokens to the theme's house-style contrast colours
    (--t-text-color-light / --t-text-color-dark, falling back to white /
    near-black). "auto" mode picks one at edit time by luminance sampling
@@ -264,23 +264,23 @@
 .slide.has-slide-bg-light-text {
   --slide-bg-text: var(--t-text-color-light, var(--slide-text-light, #fff));
   --slide-bg-text-muted: color-mix(in srgb, var(--slide-bg-text) 78%, transparent);
-  --color-text: var(--slide-bg-text);
-  --color-text-muted: var(--slide-bg-text-muted);
+  --slide-on-surface: var(--slide-bg-text);
+  --slide-on-surface-muted: var(--slide-bg-text-muted);
   /* The brand accent is tuned for light backgrounds, so links keeping the raw
      accent go near-invisible on a dark surface. Lighten whatever the accent is
      toward white (accent-agnostic, works for every theme). Themes can
      hard-override with --t-color-link-on-dark. */
-  --color-link: var(
+  --slide-link: var(
     --t-color-link-on-dark,
-    color-mix(in srgb, var(--color-accent) 42%, #ffffff)
+    color-mix(in srgb, var(--slide-accent) 42%, #ffffff)
   );
   color: var(--slide-bg-text);
 }
 .slide.has-slide-bg-dark-text {
   --slide-bg-text: var(--t-text-color-dark, #212121);
   --slide-bg-text-muted: color-mix(in srgb, var(--slide-bg-text) 70%, transparent);
-  --color-text: var(--slide-bg-text);
-  --color-text-muted: var(--slide-bg-text-muted);
+  --slide-on-surface: var(--slide-bg-text);
+  --slide-on-surface-muted: var(--slide-bg-text-muted);
   color: var(--slide-bg-text);
 }
 .slide.has-slide-bg-light-text .slide-inner,
@@ -308,7 +308,7 @@
    The rule: a block that paints its own background says which surface it is,
    with one class. The class redirects the text tokens the same way a
    background variant does at slide level, so every descendant that reads
-   --color-text follows without a per-element override.
+   --slide-on-surface follows without a per-element override.
 
      <div class="poll-results on-surface-light">
 
@@ -333,12 +333,12 @@
     .on-surface-lime,
     .on-surface-mist
   ) {
-  --color-text: var(--surface-text);
-  --color-text-muted: var(
+  --slide-on-surface: var(--surface-text);
+  --slide-on-surface-muted: var(
     --surface-text-muted,
     color-mix(in srgb, var(--surface-text) 70%, transparent)
   );
-  --color-link: var(--surface-link, var(--color-accent));
+  --slide-link: var(--surface-link, var(--slide-accent));
   color: var(--surface-text);
 }
 
@@ -352,7 +352,7 @@
      block does. */
   --surface-link: var(
     --t-color-link-on-dark,
-    color-mix(in srgb, var(--color-accent) 42%, #ffffff)
+    color-mix(in srgb, var(--slide-accent) 42%, #ffffff)
   );
 }
 .slide .on-surface-accent {
@@ -369,7 +369,7 @@
    -------------------------------
    A bullet dot carries the brand accent, and the accent does NOT follow a
    background variant — so on a dark variant the dots all but vanish while the
-   text beside them has flipped to white. Text has --color-text to follow;
+   text beside them has flipped to white. Text has --slide-on-surface to follow;
    a graphic needs its own token, because "readable" for a 12px disc is the
    3:1 of WCAG 1.4.11, not 4.5:1, and the answer is a colour rather than a
    pole.
@@ -383,13 +383,13 @@
    --t-color-accent-contrast, which is the pair that would break if the disc
    moved. */
 .slide {
-  --slide-marker-color: var(--color-accent);
+  --slide-marker-color: var(--slide-accent);
 }
 .slide.has-slide-bg-light-text,
 .slide.has-slide-bg-dark-text {
   --slide-marker-color: color-mix(
     in srgb,
-    var(--color-accent) 35%,
+    var(--slide-accent) 35%,
     var(--slide-bg-text)
   );
 }
@@ -402,11 +402,11 @@
    class yet; the ones that have are gone from this list, because the class
    covers background VARIANTS too and this block never did. */
 .slide.has-slide-bg-light-text :is(.icon-card-body, .matrix-cell) {
-  --color-text: rgba(11, 11, 11, 0.92);
-  --color-text-muted: rgba(11, 11, 11, 0.7);
+  --slide-on-surface: rgba(11, 11, 11, 0.92);
+  --slide-on-surface-muted: rgba(11, 11, 11, 0.7);
   /* These cards are light surfaces sitting on the dark background, so the
      lightened on-dark link would be low-contrast here — restore the accent. */
-  --color-link: var(--color-accent);
+  --slide-link: var(--slide-accent);
   color: rgba(11, 11, 11, 0.92);
 }
 

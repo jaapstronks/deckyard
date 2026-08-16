@@ -214,7 +214,7 @@ test('the guardrail parser flags a blurred literal and clears rings and tokens',
 
   // The composite the KPI tile uses: the ring layer clears, the blur layer flags.
   const composite = splitLayers(
-    '0 0 0 6px color-mix(in srgb, var(--color-accent) 18%, transparent), 0 18px 48px rgba(0, 0, 0, 0.12)',
+    '0 0 0 6px color-mix(in srgb, var(--slide-accent) 18%, transparent), 0 18px 48px rgba(0, 0, 0, 0.12)',
   );
   assert.equal(composite.length, 2, 'top-level comma splits two layers');
   assert.equal(isBlurredLiteral(composite[0]), false, 'ring layer');

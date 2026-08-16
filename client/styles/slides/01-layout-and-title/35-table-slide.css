@@ -59,20 +59,20 @@
 }
 .slide-table .md-table thead th {
   background: var(--table-header-bg, transparent);
-  color: var(--table-header-text, var(--color-text));
+  color: var(--table-header-text, var(--slide-on-surface));
 }
 .slide-table .md-table td:first-child,
 .slide-table .md-table thead th:first-child {
   background: var(--table-firstcol-bg, transparent);
-  color: var(--table-firstcol-text, var(--color-text));
+  color: var(--table-firstcol-text, var(--slide-on-surface));
 }
 /* Body cells pair their text with the table body surface (--table-text), not
-   the slide's --color-text. Without this, a filled panel/soft body on a dark
+   the slide's --slide-on-surface. Without this, a filled panel/soft body on a dark
    slide background keeps inheriting white text and goes invisible. plain leaves
-   --table-text unset, so it falls back to --color-text (historical look). The
+   --table-text unset, so it falls back to --slide-on-surface (historical look). The
    first-column rule above wins by specificity, keeping its own paired colour. */
 .slide-table .md-table td {
-  color: var(--table-text, var(--color-text));
+  color: var(--table-text, var(--slide-on-surface));
 }
 
 /* cornerCell: 'header' — the top-left corner cell joins the header band rather
@@ -83,7 +83,7 @@
    tableStyle (plain/soft/panel and any future one) without duplicating them. */
 .slide-table .md-table.md-table--corner-header thead th:first-child {
   background: var(--table-header-bg, transparent);
-  color: var(--table-header-text, var(--color-text));
+  color: var(--table-header-text, var(--slide-on-surface));
 }
 
 /* plain — all vars stay at their defaults → historical transparent look */
@@ -101,9 +101,9 @@
 .slide-table .md-table--panel {
   --table-bg: var(--t-table-panel-bg, var(--t-color-surface-muted, var(--slide-bg-mist, #e0e6e2)));
   --table-text: var(--t-table-panel-text, rgba(11, 11, 11, 0.92));
-  --table-header-bg: var(--t-table-panel-header-bg, var(--color-accent));
+  --table-header-bg: var(--t-table-panel-header-bg, var(--slide-accent));
   --table-header-text: var(--t-table-panel-header-text, var(--t-color-accent-contrast, #fff));
-  --table-firstcol-bg: var(--t-table-panel-firstcol-bg, var(--t-table-panel-header-bg, var(--color-accent)));
+  --table-firstcol-bg: var(--t-table-panel-firstcol-bg, var(--t-table-panel-header-bg, var(--slide-accent)));
   --table-firstcol-text: var(--t-table-panel-firstcol-text, var(--t-color-accent-contrast, #fff));
   --table-border: var(--t-table-panel-border, rgba(0, 0, 0, 0.14));
   --table-radius: var(--slide-radius-md);
@@ -113,16 +113,16 @@
 .slide-table .md-table--soft {
   --table-bg: var(--t-table-soft-bg, #fff);
   --table-text: var(--t-table-soft-text, rgba(11, 11, 11, 0.92));
-  --table-header-bg: var(--t-table-soft-header-bg, var(--color-accent));
+  --table-header-bg: var(--t-table-soft-header-bg, var(--slide-accent));
   --table-header-text: var(--t-table-soft-header-text, var(--t-color-accent-contrast, #fff));
   --table-firstcol-bg: var(
     --t-table-soft-firstcol-bg,
-    color-mix(in srgb, var(--color-accent) 10%, transparent)
+    color-mix(in srgb, var(--slide-accent) 10%, transparent)
   );
-  --table-firstcol-text: var(--t-table-soft-firstcol-text, var(--color-accent));
+  --table-firstcol-text: var(--t-table-soft-firstcol-text, var(--slide-accent));
   --table-border: var(
     --t-table-soft-border,
-    color-mix(in srgb, var(--color-accent) 20%, transparent)
+    color-mix(in srgb, var(--slide-accent) 20%, transparent)
   );
   --table-radius: var(--slide-radius-md);
 }

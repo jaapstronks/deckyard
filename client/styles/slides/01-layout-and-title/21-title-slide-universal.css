@@ -45,8 +45,8 @@
   /* Subtle gradient using theme's text color for contrast boost */
   background: linear-gradient(
     to top,
-    color-mix(in srgb, var(--color-text) 12%, transparent) 0%,
-    color-mix(in srgb, var(--color-text) 6%, transparent) 25%,
+    color-mix(in srgb, var(--slide-on-surface) 12%, transparent) 0%,
+    color-mix(in srgb, var(--slide-on-surface) 6%, transparent) 25%,
     transparent 50%
   );
 }
@@ -69,8 +69,8 @@
 .slide-title-universal.tsu-layout-top .tsu-overlay {
   background: linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--color-text) 12%, transparent) 0%,
-    color-mix(in srgb, var(--color-text) 6%, transparent) 25%,
+    color-mix(in srgb, var(--slide-on-surface) 12%, transparent) 0%,
+    color-mix(in srgb, var(--slide-on-surface) 6%, transparent) 25%,
     transparent 50%
   );
 }
@@ -86,10 +86,10 @@
 .slide-title-universal.tsu-layout-center .tsu-overlay {
   background: linear-gradient(
     to top,
-    color-mix(in srgb, var(--color-text) 10%, transparent) 0%,
+    color-mix(in srgb, var(--slide-on-surface) 10%, transparent) 0%,
     transparent 38%,
     transparent 62%,
-    color-mix(in srgb, var(--color-text) 8%, transparent) 100%
+    color-mix(in srgb, var(--slide-on-surface) 8%, transparent) 100%
   );
 }
 .slide-title-universal.tsu-layout-center.has-bg .tsu-overlay {
@@ -184,7 +184,7 @@
   font-weight: var(--heading-weight, 600);
   text-transform: var(--heading-transform, none);
   margin: 0;
-  color: var(--color-text);
+  color: var(--slide-on-surface);
   text-wrap: balance;
 }
 
@@ -198,7 +198,7 @@
   font-family: var(--font-body);
   font-size: var(--slide-text-xl);
   line-height: var(--slide-leading-snug);
-  color: var(--color-text-muted);
+  color: var(--slide-on-surface-muted);
   text-wrap: pretty;
 }
 
@@ -216,7 +216,7 @@
   line-height: var(--slide-leading-normal);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--color-text-muted);
+  color: var(--slide-on-surface-muted);
 }
 /* In the center layout the meta line is pinned to the bottom edge by the
    primary block's auto margins, so it needs no gap of its own. */

@@ -5,7 +5,7 @@
   overflow: hidden;
   background: var(
     --t-icon-card-grid-slide-bg,
-    var(--color-background)
+    var(--slide-surface)
   );
   padding: var(--slide-space-12) var(--slide-padding) var(--slide-space-12);
   --g1x: 14%;

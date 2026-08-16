@@ -11,7 +11,7 @@
   overflow: hidden;
   /* Fallback: when gradient layer fails to render (e.g. some print/export paths),
      keep contrast by using the theme’s dark base background. */
-  background: var(--t-slide-bg-dark, var(--color-background));
+  background: var(--t-slide-bg-dark, var(--slide-surface));
 }
 .slide-chapter-title::before {
   content: '';

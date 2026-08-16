@@ -6,8 +6,10 @@ tokens below all exist in `client/styles/slides/00-tokens.css`, and the four
 geometry/typography axes — leading, radius, font-size and spacing — are done,
 down to the private locals that feed them; the live figures are the per-file,
 per-category budgets in `slide-css-suppressions.json`, currently empty. What is
-*not* done is colour: the legacy alias families listed at the bottom still have
-live consumers, and phase 3 of the sweep is what removes them. The
+*not* done is colour: the colour roles below exist and carry the whole slide
+bundle (the `--color-*` alias spelling is gone), but the per-type `--t-<type>-*`
+families and the five `--t-*` legacy aliases listed at the bottom still have
+live consumers, and the rest of phase 3 is what removes them. The
 gate that ratchets adoption up is `tests/slide-css-tokens.test.js`; the sweep
 that raises it is tracked in the planning repo (`css-role-vocabulary.md`).
 
@@ -285,22 +287,27 @@ never outside the axis, only outside the measurement.
 
 ## Colour roles
 
-The role list; today's spellings fold into the `--slide-*` family during the
-theme-decoupling phase of the sweep:
+The role list. The text/accent/surface roles are minted in `00-tokens.css`,
+fed by the `--t-color-*` contract, and the old `--color-*` alias spelling is
+gone from the bundle:
 
-| Role | Exists today as |
+| Role | Token |
 | --- | --- |
-| `surface` | `--t-color-background` |
-| `surface-raised` | `--slide-surface-white(-solid)`, per-type card/table backgrounds |
-| `on-surface` / `on-surface-muted` | `--color-text` / `--color-text-muted` (alias layer in `theme.css`) |
-| `accent` / `on-accent` | `--t-color-accent` / `--t-color-accent-contrast` (derived) |
+| `surface` | `--slide-surface` ← `--t-color-background` |
+| `surface-raised` | `--slide-surface-white(-solid)`; per-type card/table backgrounds fold in during the per-type phase |
+| `on-surface` / `on-surface-muted` | `--slide-on-surface(-muted)` ← `--t-color-text(-muted)` |
+| `accent` / `on-accent` | `--slide-accent` / `--slide-on-accent` ← `--t-color-accent` / `--t-color-accent-contrast` |
+| link | `--slide-link` ← `--t-color-link`, defaulting to the accent |
 | `border` | `--slide-border-*` (opacity-derived) |
-| `emphasis` | table header/first-column planes, kickers |
+| `emphasis` | table header/first-column planes, kickers — not yet a token |
 | series palette | `--t-chart-{0..7}` (numbered accent colours; the only series palette) |
 
 The contextual rebinding mechanism in `00-patterns.css` (a surface class
 rebinds the text role for everything inside it) is correct and stays, including
-the contrast derivation in `theme-normalize.js` — only the spelling changes.
+the contrast derivation in `theme-normalize.js` — only the spelling changed:
+surface classes and background variants now rebind `--slide-on-surface`,
+`--slide-on-surface-muted` and `--slide-link` (see `00-base.css` and the
+generated variant rules in `shared/theme-slide-backgrounds.js`).
 
 ## Radius, shadow, opacity
 
@@ -440,8 +447,9 @@ new code:
 
 1. ~~`--font-size-title/subtitle/heading/body` + `--line-height-body`~~ —
    **done** (batch 2.2a): consumers migrated, family deleted from `theme.css`;
-2. the `--color-*` spelling of the text-colour alias layer (becomes
-   `--slide-*`);
+2. ~~the `--color-*` spelling of the text-colour alias layer~~ — **done**
+   (batch 2.2b): consumers migrated to the `--slide-*` colour roles, alias
+   definitions deleted from `theme.css`;
 3. the five `--t-*` legacy aliases (`--t-primary`, `--t-accent`,
    `--t-bg-dark`, `--t-brand-1/2`);
 4. ~~direct `var(--t-radius…)` reads in slide CSS~~ — **done** (batch 2.2a):

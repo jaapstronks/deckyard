@@ -58,14 +58,14 @@
    theme that says nothing about KPI tiles renders exactly as before. */
 .slide-kpi-metrics .kpi-metric {
   --kpi-tile-bg: rgba(255, 255, 255, 0.45);
-  --kpi-tile-fg: var(--color-text);
+  --kpi-tile-fg: var(--slide-on-surface);
   --kpi-tile-value: var(--kpi-tile-fg);
   --kpi-tile-border: rgba(0, 0, 0, 0.16);
   /* Deltas read against the tile, not the slide: a theme with dark tiles sets
      `--t-kpi-delta-pos/-neg` once and both stay legible on every fill. */
   --kpi-delta-pos: var(
     --t-kpi-delta-pos,
-    color-mix(in srgb, var(--color-accent) 75%, var(--kpi-tile-fg))
+    color-mix(in srgb, var(--slide-accent) 75%, var(--kpi-tile-fg))
   );
   --kpi-delta-neg: var(
     --t-kpi-delta-neg,
@@ -109,11 +109,11 @@
    reads as one colour block instead of a block with a stray outline.
    The two `-muted` tokens are deliberately written *without* a var() fallback:
    with no theme token they resolve to the guaranteed-invalid value, so every
-   use site falls through to the slide's own `--color-text-muted` and an
+   use site falls through to the slide's own `--slide-on-surface-muted` and an
    untokenised theme keeps its exact muted colour instead of a derived one. */
 .slide-kpi-metrics .kpi-metric:nth-child(1) {
   --kpi-tile-bg: var(--t-kpi-tile-1-bg, rgba(255, 255, 255, 0.45));
-  --kpi-tile-fg: var(--t-kpi-tile-1-fg, var(--color-text));
+  --kpi-tile-fg: var(--t-kpi-tile-1-fg, var(--slide-on-surface));
   --kpi-tile-value: var(--t-kpi-tile-1-value, var(--kpi-tile-fg));
   --kpi-tile-border: var(
     --t-kpi-tile-1-border,
@@ -133,7 +133,7 @@
 }
 .slide-kpi-metrics .kpi-metric:nth-child(2) {
   --kpi-tile-bg: var(--t-kpi-tile-2-bg, rgba(255, 255, 255, 0.45));
-  --kpi-tile-fg: var(--t-kpi-tile-2-fg, var(--color-text));
+  --kpi-tile-fg: var(--t-kpi-tile-2-fg, var(--slide-on-surface));
   --kpi-tile-value: var(--t-kpi-tile-2-value, var(--kpi-tile-fg));
   --kpi-tile-border: var(
     --t-kpi-tile-2-border,
@@ -153,7 +153,7 @@
 }
 .slide-kpi-metrics .kpi-metric:nth-child(3) {
   --kpi-tile-bg: var(--t-kpi-tile-3-bg, rgba(255, 255, 255, 0.45));
-  --kpi-tile-fg: var(--t-kpi-tile-3-fg, var(--color-text));
+  --kpi-tile-fg: var(--t-kpi-tile-3-fg, var(--slide-on-surface));
   --kpi-tile-value: var(--t-kpi-tile-3-value, var(--kpi-tile-fg));
   --kpi-tile-border: var(
     --t-kpi-tile-3-border,
@@ -173,7 +173,7 @@
 }
 .slide-kpi-metrics .kpi-metric:nth-child(4) {
   --kpi-tile-bg: var(--t-kpi-tile-4-bg, rgba(255, 255, 255, 0.45));
-  --kpi-tile-fg: var(--t-kpi-tile-4-fg, var(--color-text));
+  --kpi-tile-fg: var(--t-kpi-tile-4-fg, var(--slide-on-surface));
   --kpi-tile-value: var(--t-kpi-tile-4-value, var(--kpi-tile-fg));
   --kpi-tile-border: var(
     --t-kpi-tile-4-border,
@@ -234,7 +234,7 @@
   font-size: 40px;
   /* allowlist: single-line display glyph — the line box is the layout, not text rhythm (slide-roles.md) */
   line-height: 1;
-  color: var(--kpi-tile-value-muted, var(--color-text-muted));
+  color: var(--kpi-tile-value-muted, var(--slide-on-surface-muted));
 }
 
 .slide-kpi-metrics .kpi-grid[data-metric-count='1'] .kpi-value-num {
@@ -271,7 +271,7 @@
   font-family: var(--font-mono);
   font-size: var(--slide-font-size-card-body);
   line-height: var(--slide-leading-snug);
-  color: var(--kpi-tile-fg-muted, var(--color-text-muted));
+  color: var(--kpi-tile-fg-muted, var(--slide-on-surface-muted));
   /* `auto` is what takes the slack: value and label stay at the top edge, the
      note drops to the foot of the tile. In a short tile it collapses to the
      4px minimum, so nothing moves in the 3- and 4-up rows. */
@@ -299,11 +299,11 @@
 .slide-kpi-metrics.is-accent-best .kpi-metric.is-primary {
   border-color: color-mix(
     in srgb,
-    var(--color-accent) 55%,
+    var(--slide-accent) 55%,
     var(--kpi-tile-border)
   );
   box-shadow:
-    0 0 0 6px color-mix(in srgb, var(--color-accent) 18%, transparent),
+    0 0 0 6px color-mix(in srgb, var(--slide-accent) 18%, transparent),
     0 18px 48px rgba(0, 0, 0, 0.12);
 }
 .slide-kpi-metrics.is-accent-risk .kpi-metric.is-primary {
@@ -321,7 +321,7 @@
    a solid grey rectangle); keep the hard-edged accent ring. */
 @media print {
   .slide-kpi-metrics.is-accent-best .kpi-metric.is-primary {
-    box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-accent) 18%, transparent);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--slide-accent) 18%, transparent);
   }
   .slide-kpi-metrics.is-accent-risk .kpi-metric.is-primary {
     box-shadow: 0 0 0 6px color-mix(in srgb, var(--slide-color-danger) 16%, transparent);

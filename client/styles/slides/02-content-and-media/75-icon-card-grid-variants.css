@@ -2,7 +2,7 @@
   flex: 0 0 92px;
   background: var(
     --t-icon-card-grid-icon-bg,
-    var(--color-accent)
+    var(--slide-accent)
   );
   color: var(
     --t-icon-card-grid-icon-fg,
@@ -144,7 +144,7 @@
   height: auto;
   aspect-ratio: 1 / 1;
   border: none;
-  background: var(--t-icon-card-grid-icon-bg, var(--color-accent));
+  background: var(--t-icon-card-grid-icon-bg, var(--slide-accent));
 }
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-icon {
   flex: 1 1 auto;
