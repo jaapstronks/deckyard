@@ -2,8 +2,10 @@
  * The internal presentation-comments route layer (test-coverage gap map, B40 —
  * surface 6, "Comments-schrijfroutes").
  *
- * `server/routes/api/presentations/comments-{write,actions,list}.js` are the
- * comment endpoints the editor and the viewers drive. The comment services,
+ * `server/routes/api/presentations/comments-{write,actions}.js` carry the
+ * mutations this file pins; the read side (`comments-list.js`: list, get,
+ * counts, SSE events) shares the same comment-auth gate but is not driven
+ * here — a follow-up alongside the guest-session fixture below. The comment services,
  * storage and the permission *helpers* are tested elsewhere (a dozen
  * `tests/comment-*` files, and `tests/comment-delete-authz.test.js` for the
  * `canDeleteComment` helper); the public v1 mirror is `#759`. What was
