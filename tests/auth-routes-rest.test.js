@@ -50,6 +50,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 // Make sure no ambient SSO config leaks in from the environment; each SSO test
@@ -274,11 +275,39 @@ test('a callback with SSO on but no state cookie is refused and audited', async 
   assert.equal(failures[0].metadata.reason, 'missing_state');
 });
 
-test('a callback with a tampered state cookie is refused before any token exchange', async () => {
+// The state cookie is `base64url(payload).hmac`. These two forgeries are built
+// so that exactly one check can reject each: a well-formed, unexpired payload
+// with a wrong same-length signature isolates the HMAC comparison, and a
+// correctly signed but expired payload isolates the TTL check. (A garbage
+// cookie would be refused by parsing alone and prove neither.)
+function stateCookie({ exp, sig } = {}) {
+  const body = Buffer.from(
+    JSON.stringify({ state: 'def', nonce: 'n', codeVerifier: 'v', returnTo: '/', exp })
+  ).toString('base64url');
+  const realSig = crypto
+    .createHmac('sha256', String(process.env.AUTH_SECRET || ''))
+    .update(body)
+    .digest('base64url');
+  return `sb_oidc=${body}.${sig ?? realSig}`;
+}
+
+test('a callback with a forged state signature is refused before any token exchange', async () => {
   seed();
   await withSsoEnabled(async () => {
     const { res } = await call(handleSso, 'GET', '/api/auth/oidc/callback?code=abc&state=def', {
-      cookie: 'sb_oidc=forged.notasignature',
+      cookie: stateCookie({ exp: Date.now() + 60_000, sig: 'a'.repeat(43) }),
+    });
+
+    assert.equal(res.statusCode, 302);
+    assert.equal(res.headers.Location, '/login?error=sso_state');
+  });
+});
+
+test('a correctly signed but expired state cookie is refused', async () => {
+  seed();
+  await withSsoEnabled(async () => {
+    const { res } = await call(handleSso, 'GET', '/api/auth/oidc/callback?code=abc&state=def', {
+      cookie: stateCookie({ exp: Date.now() - 1000 }),
     });
 
     assert.equal(res.statusCode, 302);
@@ -315,6 +344,22 @@ test('search returns people in the caller’s organization, not others', async (
   assert.ok(emails.includes('viewer@example.com'), 'a same-org person is found');
   assert.ok(emails.includes('owner@example.com'));
   assert.ok(!emails.includes('otto@other.example'), 'a person in another org is not');
+});
+
+test('search scopes to the caller’s organization, not the default one', async () => {
+  seed();
+  // Otto's org is not DEFAULT_ORGANIZATION_ID, so a search that silently fell
+  // back to the default org would return the wrong people here.
+  const { res } = await call(handleUsers, 'GET', '/api/users/search?q=example', {
+    as: ACTORS.outsider,
+  });
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(
+    res.body.users.map((u) => u.email),
+    ['otto@other.example'],
+    'only the caller’s own organization is searched'
+  );
 });
 
 test('search with an empty query returns an empty list, no query', async () => {
@@ -419,6 +464,7 @@ test('an own-image upload without a media provider is a 400, not a crash', async
   });
 
   assert.equal(res.statusCode, 400, 'the media-provider guard short-circuits before Sharp');
+  assert.equal(res.body.message, 'Media provider not initialized', 'and it is that guard, not body validation');
 });
 
 test('an unsupported method on the own-image route is a 405', async () => {
@@ -465,4 +511,5 @@ test('an admin upload without a media provider is a 400, after the admin check',
   });
 
   assert.equal(res.statusCode, 400);
+  assert.equal(res.body.message, 'Media provider not initialized');
 });
