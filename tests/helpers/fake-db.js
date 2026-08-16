@@ -91,6 +91,9 @@ export const JSONB_COLUMNS = {
   present_sessions: ['state', 'follow_codes'],
   // Migration 061: `texts` is the per-language map of a question.
   questions: ['texts'],
+  // Migrations 017/041/043: a comment's proposed slide, create-time slide
+  // snapshot and parsed @-mentions are jsonb.
+  presentation_comments: ['proposed_slide', 'slide_snapshot', 'mentions'],
 };
 
 /**
