@@ -561,6 +561,49 @@ test('get report is a 404 when the report belongs to another deck', async () => 
   assert.equal(res.statusCode, 404, 'a report is only reachable under its own presentation');
 });
 
+// Write access on one deck must not reach another deck's reports: without the
+// belongs-to-presentation check, write access anywhere in the org would let a
+// caller rename, delete or even publish (regenerate sets is_public) any report
+// in the org. Same-deck coverage of these three lives in the writer tests below.
+test('update is a 404 when the report belongs to another deck', async () => {
+  await seed();
+  const { res } = await call(
+    handleUpdateReport,
+    'PATCH',
+    '/api/presentations/deck-owned/analytics/reports/r-pub',
+    { as: ACTORS.owner, args: ['deck-owned', 'r-pub'], body: { title: 'Hijacked' } }
+  );
+
+  assert.equal(res.statusCode, 404, 'a foreign report cannot be updated through this deck');
+  assert.equal(reportById('r-pub').title, 'Report r-pub', 'the report is untouched');
+});
+
+test('delete is a 404 when the report belongs to another deck', async () => {
+  await seed();
+  const { res } = await call(
+    handleDeleteReport,
+    'DELETE',
+    '/api/presentations/deck-owned/analytics/reports/r-pub',
+    { as: ACTORS.owner, args: ['deck-owned', 'r-pub'] }
+  );
+
+  assert.equal(res.statusCode, 404, 'a foreign report cannot be deleted through this deck');
+  assert.ok(reportById('r-pub'), 'the report survives');
+});
+
+test('regenerate is a 404 when the report belongs to another deck', async () => {
+  await seed();
+  const { res } = await call(
+    handleRegenerateToken,
+    'POST',
+    '/api/presentations/deck-owned/analytics/reports/r-pub/regenerate-token',
+    { as: ACTORS.owner, args: ['deck-owned', 'r-pub'] }
+  );
+
+  assert.equal(res.statusCode, 404, 'a foreign report cannot be re-tokenised through this deck');
+  assert.equal(reportById('r-pub').share_token, PUBLIC_TOKEN, 'the token did not rotate');
+});
+
 test('creating a report needs write access, not merely read', async () => {
   await seed();
   const { res } = await call(handleCreateReport, 'POST', '/api/presentations/deck-owned/analytics/reports', {
@@ -680,12 +723,6 @@ test('delete removes a report for a writer', async () => {
   assert.equal(reportById('r-1'), undefined, 'the report is gone');
 });
 
-// r-priv lives on deck-owned, so these two drive the intended same-deck pairing.
-// The cross-deck pairing (deck-owned + a deck-org report) is deliberately NOT
-// exercised here: update/delete/regenerate currently skip the
-// report-belongs-to-presentation check that handleGetReport performs, which is
-// a prod authz gap with its own follow-up — the fix will pin cross-deck
-// mutations as 404 alongside it.
 test('regenerating the share token needs write access', async () => {
   await seed();
   const { res } = await call(

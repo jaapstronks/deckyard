@@ -176,6 +176,26 @@ export async function handleCreateReport(ctx, presentationId) {
 }
 
 /**
+ * Load a report and require that it belongs to the given presentation.
+ * The deck authorization already granted covers only this deck's reports, so a
+ * report id from another deck is a 404 — for writes just as for reads.
+ * Writes the 404 and returns null when the report is missing or foreign.
+ *
+ * @param {Object} ctx - Route context (storageScope, res)
+ * @param {string} presentationId - The presentation the caller was authorized on
+ * @param {string} reportId - The report ID from the path
+ * @returns {Promise<Object|null>}
+ */
+async function requireReportOnPresentation(ctx, presentationId, reportId) {
+  const report = await getAnalyticsReport(ctx.storageScope, reportId);
+  if (!report || report.presentationId !== presentationId) {
+    notFound(ctx.res, 'Report not found');
+    return null;
+  }
+  return report;
+}
+
+/**
  * GET /api/presentations/:id/analytics/reports/:reportId - Get single report.
  */
 export async function handleGetReport(ctx, presentationId, reportId) {
@@ -190,16 +210,8 @@ export async function handleGetReport(ctx, presentationId, reportId) {
   });
   if (!pres) return true;
 
-  const report = await getAnalyticsReport(ctx.storageScope, reportId);
-
-  if (!report) {
-    return notFound(res, 'Report not found');
-  }
-
-  // Verify report belongs to the presentation
-  if (report.presentationId !== presentationId) {
-    return notFound(res, 'Report not found');
-  }
+  const report = await requireReportOnPresentation(ctx, presentationId, reportId);
+  if (!report) return true;
 
   return serveJson(res, 200, report), true;
 }
@@ -218,6 +230,8 @@ export async function handleUpdateReport(ctx, presentationId, reportId) {
     permission: 'write',
   });
   if (!pres) return true;
+
+  if (!(await requireReportOnPresentation(ctx, presentationId, reportId))) return true;
 
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
@@ -247,6 +261,8 @@ export async function handleDeleteReport(ctx, presentationId, reportId) {
   });
   if (!pres) return true;
 
+  if (!(await requireReportOnPresentation(ctx, presentationId, reportId))) return true;
+
   const result = await deleteAnalyticsReport(ctx.storageScope, reportId);
 
   if (!result.ok) {
@@ -270,6 +286,8 @@ export async function handleRegenerateToken(ctx, presentationId, reportId) {
     permission: 'write',
   });
   if (!pres) return true;
+
+  if (!(await requireReportOnPresentation(ctx, presentationId, reportId))) return true;
 
   const result = await regenerateShareToken(ctx.storageScope, reportId);
 
