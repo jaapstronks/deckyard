@@ -283,7 +283,7 @@ override — follows the slide's automatic, background-aware text colour),
 `muted` and `accent`. `muted` is derived from **`currentColor`** — the field's
 inherited text colour — dimmed to 72%, so it is band-aware: a mid-grey on a
 light slide, a dimmed white on a dark band (quote/chapter, whose text is white
-via `--quote-text-color` and which bypass the `--color-text` system). A fixed
+via the `--slide-on-bg-dark` role and which bypass the `--color-text` system). A fixed
 light-theme muted grey rendered ~1.5:1 (unreadable) there. `accent` is the
 brand accent (`--t-color-accent`); on a same-hue coloured band it can be
 low-contrast — a deliberate-choice caveat, not a bug. A former `inverse` =

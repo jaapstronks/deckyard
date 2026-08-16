@@ -315,6 +315,18 @@ test('pickTextColorForBg honours custom poles when measuring', () => {
   );
 });
 
+test('a textSwatch backed only by the brandColors fill survives', () => {
+  // Brand slots fill before swatch validation: a theme that declares
+  // brandColors but no explicit --t-color-brand-* still gets its swatch —
+  // the slot token resolves, so the swatch would not render as currentColor.
+  const out = normalizeTheme({
+    ...baseTheme(),
+    brandColors: ['#5b21b6'],
+    textSwatches: [{ id: 'brand-1' }, { id: 'brand-2' }],
+  });
+  assert.deepEqual(out.textSwatches, [{ id: 'brand-1' }]);
+});
+
 test('normalizeTheme keeps only valid, token-backed textSwatches', () => {
   const out = normalizeTheme({
     id: 't',

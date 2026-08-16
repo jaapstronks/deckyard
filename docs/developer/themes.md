@@ -408,36 +408,14 @@ three variants: `plain` (transparent, gridlines only — the default), `panel`
 (near-white panel with a coloured header and a faint accent label column).
 
 Both `panel` and `soft` resolve their colours from the theme's standard palette
-by default (`--t-color-accent`, its auto-derived `--t-color-accent-contrast`,
-`--t-radius`), so tables look designed on any theme with **zero per-theme work**.
-
-A theme can remap what colours a variant uses by declaring
-`--t-table-<variant>-*` tokens in `cssVars`. Only set the **backgrounds** — the
-header and label-column **text** auto-derive to a readable contrast colour (the
-same `pickTextColorForBg` pass used for `--t-color-accent-contrast`):
-
-```json
-{
-  "cssVars": {
-    "--t-table-panel-bg": "#e0e6e2",
-    "--t-table-panel-header-bg": "#385c5c",
-    "--t-table-panel-firstcol-bg": "#385c5c"
-  }
-}
-```
-
-Available tokens (each optional; unset falls back to the palette default):
-
-| Token | Controls |
-| --- | --- |
-| `--t-table-<v>-bg` | panel surface behind the whole table |
-| `--t-table-<v>-header-bg` | header-row background |
-| `--t-table-<v>-header-text` | header-row text (auto-derived if unset) |
-| `--t-table-<v>-firstcol-bg` | first/label-column background |
-| `--t-table-<v>-firstcol-text` | first/label-column text (auto-derived if unset) |
-| `--t-table-<v>-border` | gridline colour |
-
-`<v>` is `panel` or `soft`.
+(`--t-color-accent`, its auto-derived `--t-color-accent-contrast`, the mist and
+raised surfaces, `--t-radius`), so tables look designed on any theme with
+**zero per-theme work**. There are no table-specific theme tokens: the header
+and label-column planes follow the accent pair, and the panel/soft surfaces
+follow the shared surface roles (`docs/reference/slide-roles.md` § Colour
+roles). A theme that wants different table colours changes those palette
+tokens — the former `--t-table-<variant>-*` family was removed in the A7.9
+role-vocabulary consolidation and has no effect.
 
 ---
 

@@ -919,7 +919,7 @@ slide (no special handling needed).
 - The CSS is **scoped to the slide root** (`.custom-html-root[data-chr="<id>"]`)
   so it cannot restyle the deck chrome, and is filtered for `@import`,
   `expression()`, and `</style>` breakouts. Author CSS can read theme tokens
-  (`var(--t-accent)` …).
+  (`var(--t-color-accent)` …).
 
 **Authoring gate:** writing the raw markup requires the `canEditCustomHtml`
 capability. Resolution: a user is allowed if they are an admin, or their email

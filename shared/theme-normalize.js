@@ -103,6 +103,11 @@ export function normalizeTheme(theme) {
   out.slideBackgrounds = normalizeSlideBackgrounds(out.slideBackgrounds);
   Object.assign(vars, slideBackgroundCssVars(out.slideBackgrounds));
 
+  // Brand slots before swatch validation: normalizeTextSwatches keeps a
+  // swatch only when its slot token resolves, and brandColors-fed slots
+  // count as coloured.
+  applyBrandSlots(vars, out);
+
   // Extra on-brand text-colour swatches for the "This text" tab (beyond
   // default/muted/accent). Kept only for slots the theme actually coloured.
   out.textSwatches = normalizeTextSwatches(out.textSwatches, vars);
@@ -240,8 +245,6 @@ export function normalizeTheme(theme) {
       poles
     );
   }
-
-  applyBrandSlots(vars, out);
 
   return out;
 }

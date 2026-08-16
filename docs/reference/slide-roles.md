@@ -296,6 +296,7 @@ bundle:
 | `surface` | `--slide-surface` ← `--t-color-background` |
 | `surface-raised` | `--slide-surface-raised` ← `--t-color-surface-raised` (opaque card/panel plane: table soft body, icon-card bodies) beside the translucent `--slide-surface-white(-solid)` pair |
 | `on-surface` / `on-surface-muted` | `--slide-on-surface(-muted)` ← `--t-color-text(-muted)` |
+| `surface-inverted` / `on-inverted` | `--slide-surface-inverted` = the current `--slide-on-surface` (an element that fills itself with the text colour: primary action chip, `.text-block.is-black`); `--slide-on-inverted` = the page surface at root, rebound to the opposite pole wherever the ground flips (contrast classes, theme background variants) |
 | `accent` / `on-accent` | `--slide-accent` / `--slide-on-accent` ← `--t-color-accent` / `--t-color-accent-contrast` |
 | link | `--slide-link` ← `--t-color-link`, defaulting to the accent; `--slide-link-on-dark` ← `--t-color-link-on-dark`, defaulting to the accent lightened toward white |
 | pole / variant text | `--slide-on-light` / `--slide-on-dark` ← the theme's two poles (`--t-text-color-dark/-light`); `--slide-on-lime` / `--slide-on-mist` / `--slide-on-bg-dark` ← the derived per-surface answer (`--t-slide-bg-<id>-text`); `--slide-on-gradient(-muted)` ← the gradient layer's pair (`--t-slide-gradient-text(-muted)`, emitted only when the gradient is on) |
@@ -303,15 +304,16 @@ bundle:
 | `border` | `--slide-border-*` (opacity-derived) |
 | `emphasis` / `on-emphasis` | `--slide-emphasis` / `--slide-on-emphasis` — the filled band a type emphasises with (table header and label-column planes, kickers), fed by the accent pair |
 | series palette | `--slide-chart-{0..7}` ← `--t-chart-{0..7}` (numbered accent colours; the only series palette) |
-| brand swatches | `--slide-brand-{1..3}` ← `--t-color-brand-{1..3}`, currentColor when undeclared |
+| brand slots | `--slide-brand-{1..3}` ← `--t-color-brand-{1..3}` (filled from the theme's `brandColors`; an explicit slot wins), falling back to the accent when the theme declares no brand palette — countdown paints these as backgrounds, so the slot must always resolve to a visible colour |
 | gradient layer | `--slide-gradient-bg` / `--slide-gradient-opacity` ← `--t-slide-gradient-bg` / `--t-gradient-enabled` |
 
 The contextual rebinding mechanism in `00-patterns.css` (a surface class
 rebinds the text role for everything inside it) is correct and stays, including
 the contrast derivation in `theme-normalize.js` — only the spelling changed:
 surface classes and background variants now rebind `--slide-on-surface`,
-`--slide-on-surface-muted` and `--slide-link` (see `00-base.css` and the
-generated variant rules in `shared/theme-slide-backgrounds.js`).
+`--slide-on-surface-muted`, `--slide-link` and — where the ground flips its
+text pole — `--slide-on-inverted` (see `00-base.css` and the generated
+variant rules in `shared/theme-slide-backgrounds.js`).
 
 ## Radius, shadow, opacity
 

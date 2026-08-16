@@ -102,11 +102,11 @@
   outline-offset: 2px;
 }
 
-/* Primary style - inverted "chip": theme text colour as fill (see .text-block.is-black) */
+/* Primary style - inverted "chip": text colour as fill (see .text-block.is-black) */
 .slide-action--primary {
-  background: var(--slide-on-surface);
-  color: var(--slide-surface);
-  border: 2px solid var(--slide-on-surface);
+  background: var(--slide-surface-inverted);
+  color: var(--slide-on-inverted);
+  border: 2px solid var(--slide-surface-inverted);
 }
 
 .slide-action--primary:hover {
