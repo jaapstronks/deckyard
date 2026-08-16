@@ -4,6 +4,7 @@ import {
   resolveSlideTypeName,
   getSlideTypeId,
 } from '../../../shared/slide-types/registry.js';
+import { normalizeDataSource } from '../../../shared/data-source.js';
 import { ValidationError } from '../../utils/errors.js';
 
 // An example canonical id for the error message, read from the registry so it
@@ -66,9 +67,10 @@ export function normalizeSlides(slides) {
     if (typeof s?.duration === 'number' && s.duration >= 1 && s.duration <= 300) {
       normalized.duration = Math.round(s.duration);
     }
-    // Preserve data source binding config if present
+    // Preserve data source binding config if present, folding legacy refresh
+    // modes ('on-view' → 'manual') so nothing non-canonical is persisted.
     if (s?.dataSource && typeof s.dataSource === 'object' && s.dataSource.provider) {
-      normalized.dataSource = s.dataSource;
+      normalized.dataSource = normalizeDataSource(s.dataSource);
     }
     return normalized;
   });

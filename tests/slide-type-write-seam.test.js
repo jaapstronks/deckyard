@@ -75,3 +75,43 @@ test('MCP strict validation still rejects an unknown type', () => {
     /unknown slide type "text-slide"/
   );
 });
+
+test("a legacy 'on-view' refresh mode folds to 'manual' at the write seam", () => {
+  // B70 (2026-08-16): 'on-view' was removed from REFRESH_MODES — it never
+  // triggered a refresh. Stored decks may still carry it; the write seam
+  // folds it so nothing non-canonical is persisted on the next save.
+  const [slide] = normalizeSlides([
+    {
+      type: 'title-slide',
+      content: { title: 'Hi' },
+      dataSource: {
+        provider: 'csv-url',
+        config: { url: 'https://example.com/data.csv' },
+        bindings: [{ target: 'title', source: 'A1' }],
+        refresh: { mode: 'on-view' },
+        lastSync: '2026-01-01T00:00:00.000Z',
+      },
+    },
+  ]);
+  assert.equal(slide.dataSource.refresh.mode, 'manual');
+  assert.equal(slide.dataSource.provider, 'csv-url', 'rest of the dataSource preserved');
+  assert.equal(slide.dataSource.lastSync, '2026-01-01T00:00:00.000Z');
+});
+
+test('canonical refresh modes pass through the write seam unchanged', () => {
+  for (const mode of ['frozen', 'manual']) {
+    const [slide] = normalizeSlides([
+      {
+        type: 'title-slide',
+        content: { title: 'Hi' },
+        dataSource: {
+          provider: 'csv-url',
+          config: { url: 'https://example.com/data.csv' },
+          bindings: [],
+          refresh: { mode },
+        },
+      },
+    ]);
+    assert.equal(slide.dataSource.refresh.mode, mode);
+  }
+});

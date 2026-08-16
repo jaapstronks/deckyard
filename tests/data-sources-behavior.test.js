@@ -343,6 +343,20 @@ describe('refreshSlideData dispatcher', () => {
     );
   });
 
+  it("the retired 'on-view' mode is invalid, not silently tolerated", async () => {
+    // Removed 2026-08-16 (B70): it never triggered a refresh. Stored legacy
+    // values fold to 'manual' at the slide write seam (normalizeSlides);
+    // the refresh payload contract knows only 'frozen' and 'manual'.
+    stubFetch(() => {
+      throw new Error('fetch must not be reached');
+    });
+    await assert.rejects(
+      () => refreshSlideData(csvDataSource({ refresh: { mode: 'on-view' } }), {}),
+      (err) => err instanceof ValidationError && /Invalid refresh mode/.test(err.message)
+    );
+    assert.equal(fetchCalls.length, 0);
+  });
+
   it('an unknown provider on the preview path is a 400 ValidationError', async () => {
     await assert.rejects(
       () => fetchProviderData('no-such-provider', {}),

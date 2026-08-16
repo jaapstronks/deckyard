@@ -53,7 +53,7 @@ The `dataSource` object lives on the slide (validated by
   "provider": "notion-database | notion-block | csv-url",
   "config":   { "…provider-specific…" },
   "bindings": [ { "target": "metrics[0].value", "source": "row[0].Revenue" } ],
-  "refresh":  { "mode": "frozen | manual | on-view" },
+  "refresh":  { "mode": "frozen | manual" },
   "lastSync": "2026-08-16T12:00:00.000Z"
 }
 ```
@@ -70,8 +70,11 @@ The `dataSource` object lives on the slide (validated by
   - notion-block: `block[N]`, `block[N].text` or `block[N].type` (only blocks
     with text survive; empty blocks are skipped when counting).
 - **`refresh.mode`**: `frozen` returns the current content untouched without
-  fetching; `manual` fetches when the user asks; `on-view` is the declared
-  "live" mode (see *Implementation status*).
+  fetching; `manual` fetches when the user asks. The former `on-view` mode was
+  removed 2026-08-16 (it never triggered anything); stored legacy values fold
+  to `manual` at the slide write seam (`normalizeDataSource()` in
+  `shared/data-source.js`) on the next save — beta-window normalization, not a
+  format feature.
 - A binding whose source resolves to nothing produces an entry in the
   response's `errors` array; the other bindings still apply.
 
@@ -151,9 +154,10 @@ Where the code stands, as of 2026-08-16:
   providers go through the same factory, so error typing and binding
   application cannot drift per provider, and the csv-url guard cannot be
   bypassed by a new binding format.
-- **`on-view` mode does nothing yet.** It is selectable in the panel and valid
-  in the schema, but no code triggers a refresh when a slide is viewed — today
-  it behaves exactly like `manual`.
+- **There is no automatic refresh mode.** Every fetch is user-initiated
+  (`manual`) or skipped (`frozen`). The old `on-view` "Live (auto)" mode was
+  removed 2026-08-16 because nothing ever triggered it; auto-refreshing live
+  decks are a future track, not a half-wired option in this schema.
 - **There is no SSE broadcast.** An earlier version broadcast
   `datasource:refreshed` to the deck stream named by a body-supplied
   `presentationId`, without checking the caller was authorized on that deck —
