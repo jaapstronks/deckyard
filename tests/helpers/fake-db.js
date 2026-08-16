@@ -29,8 +29,9 @@
  *      between that and an explicit `null` is the whole subject of the
  *      partial-write tests, so the double drops `undefined` too.
  *   4. `sql` template values (the storage layer writes `sql`revision + 1``) are
- *      evaluated for the two shapes that layer uses — `<column> ± <number>` in a
- *      SET clause and a `CASE <column> WHEN … THEN <n> … END` rank in ORDER BY —
+ *      evaluated for the shapes that layer uses — `<column> ± <number>` and
+ *      `now()` in a SET clause and a `CASE <column> WHEN … THEN <n> … END` rank
+ *      in ORDER BY —
  *      and anything else throws rather than being silently ignored or stored as
  *      a builder object. An ORDER BY the double quietly dropped would make an
  *      ordering test pass on insertion order, which is the failure mode that
@@ -130,10 +131,11 @@ function isRawExpression(value) {
 /**
  * Evaluate a `sql` template against the row it updates.
  *
- * Only `<column> + <number>` and `<column> - <number>` are understood — the
- * shape the storage layer writes for `revision + 1`. Anything else throws, so
- * an unmodelled expression fails the test instead of landing in a row as a
- * builder object.
+ * Two shapes are understood: `<column> ± <number>` (the `revision + 1` write)
+ * and `now()` (the server-clock timestamp `writeUserSettings` stamps on
+ * `updated_at`), which resolves to an ISO string as PostgreSQL's `now()` would
+ * to a timestamp. Anything else throws, so an unmodelled expression fails the
+ * test instead of landing in a row as a builder object.
  *
  * @param {*} value - Raw expression from a SET object
  * @param {Object} row - Row being updated
@@ -144,6 +146,9 @@ function evaluateRawExpression(value, row, column) {
   const node = value.toOperationNode();
   const fragments = Array.isArray(node?.sqlFragments) ? node.sqlFragments : [];
   const text = fragments.join('').trim();
+  if ((node.parameters || []).length === 0 && /^now\(\)$/i.test(text)) {
+    return new Date().toISOString();
+  }
   const arithmetic = text.match(/^"?([a-z_]+)"?\s*([+-])\s*(\d+)$/i);
   if (arithmetic && (node.parameters || []).length === 0) {
     const [, operand, operator, amount] = arithmetic;
