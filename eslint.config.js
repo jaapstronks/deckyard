@@ -24,6 +24,7 @@ export default [
       'server/data/**',
       'server/uploads/**',
       'client/vendor/**',
+      'vendor/**',
       'assets/**',
       'themes/**',
       'custom/**',
