@@ -64,30 +64,21 @@ function rgba(hex, a) {
 const cssVar = (vars, key) => String(vars[key] || '').trim();
 
 /**
- * Emit the legacy `--t-<name>` alias family.
+ * Fill the brand colour slots from the theme's `brandColors` array.
  *
- * Countdown and end-slide CSS read `--t-primary`, `--t-accent`,
- * `--t-bg-dark`, `--t-brand-1` and `--t-brand-2`, but no theme file and no DB
- * theme has ever emitted them — those slides always painted the hardcoded
- * fallbacks in the stylesheet (a purple/teal that belongs to no current theme).
- * Deriving them here makes those slides follow the theme like everything else.
- *
- * Only fills gaps, so a theme that sets an alias explicitly still wins.
+ * `--t-color-brand-{1..3}` are the role-shaped brand slots (`--slide-brand-*`
+ * reads them: countdown's brand background variants, the tf-color-brand-*
+ * text styles). A theme may set a slot explicitly (playful does, and that
+ * always wins); for the rest, slot N is brandColors[N-1] — the same list the
+ * theme already declares, so the slots follow the theme without a second
+ * spelling. The legacy `--t-primary`/`--t-accent`/`--t-bg-dark`/`--t-brand-*`
+ * alias family this replaces is gone: nothing reads it.
  */
-function applyLegacyAliases(vars, theme) {
-  const accent = cssVar(vars, '--t-color-accent');
+function applyBrandSlots(vars, theme) {
   const brand = Array.isArray(theme.brandColors) ? theme.brandColors : [];
-  const brandAt = (i) => cleanStr(brand[i]);
-
-  const aliases = {
-    '--t-primary': accent,
-    '--t-accent': accent,
-    '--t-bg-dark': cssVar(vars, '--t-slide-bg-dark'),
-    '--t-brand-1': brandAt(1) || brandAt(0) || accent,
-    '--t-brand-2': brandAt(2) || brandAt(1) || accent,
-  };
-
-  for (const [key, value] of Object.entries(aliases)) {
+  for (let n = 1; n <= 3; n++) {
+    const key = `--t-color-brand-${n}`;
+    const value = cleanStr(brand[n - 1]);
     if (!vars[key] && value) vars[key] = value;
   }
 }
@@ -250,7 +241,7 @@ export function normalizeTheme(theme) {
     );
   }
 
-  applyLegacyAliases(vars, out);
+  applyBrandSlots(vars, out);
 
   return out;
 }

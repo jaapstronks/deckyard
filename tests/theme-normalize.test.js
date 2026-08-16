@@ -67,34 +67,42 @@ test('the per-type table token family is no longer derived', () => {
   assert.equal(out.cssVars['--t-table-panel-header-text'], undefined);
 });
 
-test('emits the legacy alias family derived from the theme', () => {
+test('brand slots fill from brandColors, slot N = brandColors[N-1]', () => {
   const out = normalizeTheme({
     ...baseTheme(),
     brandColors: ['#5b21b6', '#7c3aed', '#a78bfa', '#c4b5fd'],
   });
 
-  // Countdown / end-slide CSS reads these; nothing emitted them
-  // before, so those slides always painted the stylesheet's hardcoded purple.
-  assert.equal(out.cssVars['--t-primary'], '#7c3aed');
-  assert.equal(out.cssVars['--t-accent'], '#7c3aed');
-  assert.equal(out.cssVars['--t-bg-dark'], '#2e1065');
-  assert.equal(out.cssVars['--t-brand-1'], '#7c3aed');
-  assert.equal(out.cssVars['--t-brand-2'], '#a78bfa');
+  // Countdown's brand background variants and the tf-color-brand-* text
+  // styles read these through --slide-brand-{1..3}.
+  assert.equal(out.cssVars['--t-color-brand-1'], '#5b21b6');
+  assert.equal(out.cssVars['--t-color-brand-2'], '#7c3aed');
+  assert.equal(out.cssVars['--t-color-brand-3'], '#a78bfa');
 });
 
-test('aliases fall back to the accent when brandColors are missing', () => {
+test('brand slots stay absent without brandColors', () => {
   const out = normalizeTheme(baseTheme());
-  assert.equal(out.cssVars['--t-brand-1'], '#7c3aed');
-  assert.equal(out.cssVars['--t-brand-2'], '#7c3aed');
+  assert.equal(out.cssVars['--t-color-brand-1'], undefined);
 });
 
-test('a theme that sets an alias explicitly still wins', () => {
+test('an explicit brand slot always wins over the brandColors fill', () => {
   const out = normalizeTheme({
     ...baseTheme(),
     brandColors: ['#5b21b6', '#7c3aed', '#a78bfa'],
-    cssVars: { ...baseTheme().cssVars, '--t-brand-1': '#00ff00' },
+    cssVars: { ...baseTheme().cssVars, '--t-color-brand-1': '#00ff00' },
   });
-  assert.equal(out.cssVars['--t-brand-1'], '#00ff00');
+  assert.equal(out.cssVars['--t-color-brand-1'], '#00ff00');
+  assert.equal(out.cssVars['--t-color-brand-2'], '#7c3aed');
+});
+
+test('the legacy alias family is no longer emitted', () => {
+  const out = normalizeTheme({
+    ...baseTheme(),
+    brandColors: ['#5b21b6', '#7c3aed'],
+  });
+  for (const key of ['--t-primary', '--t-accent', '--t-bg-dark', '--t-brand-1', '--t-brand-2']) {
+    assert.equal(out.cssVars[key], undefined, `${key} must not be emitted`);
+  }
 });
 
 test('the dark-surface text derives from the dark surface, not the page text', () => {

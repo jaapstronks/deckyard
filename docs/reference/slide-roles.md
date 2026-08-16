@@ -5,13 +5,13 @@ vocabulary slide CSS is converging on. Implementation status, honestly: the
 tokens below all exist in `client/styles/slides/00-tokens.css`, and the four
 geometry/typography axes — leading, radius, font-size and spacing — are done,
 down to the private locals that feed them; the live figures are the per-file,
-per-category budgets in `slide-css-suppressions.json`, currently empty. What is
-*not* done is colour: the colour roles below exist and carry the whole slide
-bundle (the `--color-*` alias spelling is gone), but the per-type `--t-<type>-*`
-families and the five `--t-*` legacy aliases listed at the bottom still have
-live consumers, and the rest of phase 3 is what removes them. The
-gate that ratchets adoption up is `tests/slide-css-tokens.test.js`; the sweep
-that raises it is tracked in the planning repo (`css-role-vocabulary.md`).
+per-category budgets in `slide-css-suppressions.json`, currently empty. Colour is
+done too: the colour roles carry the whole slide bundle, the per-type
+`--t-<type>-*` families and the five `--t-*` legacy aliases are removed, and
+the contract is machine-checked — no `var(--t-…)` outside `00-tokens.css`,
+with the seam pinned as a snapshot (`tests/fixtures/theme-contract.json`).
+The gate is `tests/slide-css-tokens.test.js`; history in the planning repo
+(`css-role-vocabulary.md`).
 
 ## The system
 
@@ -460,8 +460,10 @@ new code:
 2. ~~the `--color-*` spelling of the text-colour alias layer~~ — **done**
    (batch 2.2b): consumers migrated to the `--slide-*` colour roles, alias
    definitions deleted from `theme.css`;
-3. the five `--t-*` legacy aliases (`--t-primary`, `--t-accent`,
-   `--t-bg-dark`, `--t-brand-1/2`);
+3. ~~the five `--t-*` legacy aliases (`--t-primary`, `--t-accent`,
+   `--t-bg-dark`, `--t-brand-1/2`)~~ — **done** (phase 3): consumers read
+   roles, `theme-normalize.js` fills `--t-color-brand-{1..3}` from
+   `brandColors` instead of emitting aliases;
 4. ~~direct `var(--t-radius…)` reads in slide CSS~~ — **done** (batch 2.2a):
    all reads go through `--slide-radius-*`.
 
@@ -486,8 +488,10 @@ already allowlisted categories. A literal *inside* such an expression is not
 covered by that allowlist: the multiplier is allowed, the number it multiplies
 is still a value on the axis.
 
-The same file carries the first slice of the end-state contract check: **no
-`var(--t-radius…)` anywhere in the slide bundle outside `00-tokens.css`**. That
-became true in batch 2.2a and is asserted from batch 2.3a on, so the direct
-path cannot reopen. Colour and typography still have direct reads; phase 3
-widens the check to all of `--t-*` and adds the seam table as a snapshot.
+The same file carries the end-state contract check: **no `var(--t-…)`
+anywhere in the slide bundle outside `00-tokens.css`** (grown from the
+batch-2.3a radius slice to the whole `--t-*` namespace in phase 3), plus the
+seam snapshot: the set of `--t-*` tokens the two contract files
+(`00-tokens.css`, `theme.css`) read is pinned in
+`tests/fixtures/theme-contract.json`, so a new theme dependency is a
+deliberate diff, never a side effect.
