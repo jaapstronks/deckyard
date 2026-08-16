@@ -43,7 +43,7 @@ export function openCreationView({
   preselect,
 } = {}) {
   const features = getFeatures() || {};
-  const aiDisabled = !!features.disableAi;
+  const aiDisabled = !features.enableAi;
   // Sandbox guests have no slide library of their own, so "From the library"
   // has nothing to compose from — hide the method entirely there.
   const libraryDisabled = !!features.sandboxMode;

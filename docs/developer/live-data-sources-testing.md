@@ -130,7 +130,6 @@ curl -b cookies.txt -X POST http://localhost:4177/api/data-sources/refresh \
 | Provider engine | `server/utils/data-source/` (index, provider-base, bindings, providers/) |
 | API routes | `server/routes/api/data-sources.js` |
 | Migration | `server/db/migrations/036_live_data_sources.js` |
-| SSE events | `server/services/comment-events.js` (DataSourceEventTypes) |
 | Slide storage | `server/storage/presentations/slides.js` (normalizeSlides preserves dataSource) |
 | Editor UI | `client/views/editor/data-source-panel.js`, `data-source-modal.js` |
 | Editor form | `client/views/editor/editor-form.js` (wires in the indicator) |

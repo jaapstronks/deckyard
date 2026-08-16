@@ -270,7 +270,7 @@ after a dependency bump), and downloads Google Fonts.
 chmod 755 server/uploads
 
 # Verify uploads aren't disabled
-# Remove DISABLE_UPLOADS=true if present
+# Remove UPLOADS_ENABLED=false (or legacy DISABLE_UPLOADS=true) if present
 ```
 
 ### Missing Translations

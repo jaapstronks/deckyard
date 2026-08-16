@@ -10,7 +10,7 @@ import {
   emailButton,
   emailWrapper,
   troubleClickingFooter,
-} from '../email-templates.js';
+} from '../email-templates/index.js';
 import { sendEmail } from './core.js';
 import { createLogger } from '../../utils/logger.js';
 

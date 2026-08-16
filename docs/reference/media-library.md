@@ -166,9 +166,9 @@ Feature flags (`server/config/flags-snapshot.js`):
 
 | Flag | Effect |
 |---|---|
-| `IMAGEKIT_ONLY` | Forces both `disableUploads` and `disableImageLibrary` — ImageKit becomes the only image source. |
-| `DISABLE_UPLOADS` | Blocks the upload paths (also implied by demo and sandbox mode). |
-| `DISABLE_IMAGE_LIBRARY` | `/api/image-library/*` answers 404. |
+| `IMAGEKIT_ONLY` | Forces both `enableUploads` and `enableImageLibrary` off — ImageKit becomes the only image source. |
+| `UPLOADS_ENABLED=false` | Blocks the upload paths (also forced by demo and sandbox mode). |
+| `IMAGE_LIBRARY_ENABLED=false` | `/api/image-library/*` answers 404. |
 | `DEMO_MODE` / sandbox mode | Library is read-only (GET only): no upload, no create, no edit, no delete, no alt-text generation. Sandbox additionally prepends `listSandboxMedia()` to the listing. |
 | `aiAltText` | Derived: alt-text generation needs AI enabled *and* OpenAI as the configured default vendor. |
 
@@ -198,7 +198,7 @@ stock-media import 20 MB (GIFs are large), in-place replace 10 MB.
   email.
 - **Uploads** (`/api/uploads`, `/api/media/presign`, `/api/media/confirm`) are
   refused in demo/sandbox mode, and `handleUploads` is skipped entirely by the
-  router when `flags.disableUploads` is set.
+  router when `flags.enableUploads` is off.
 - **Bytes are not tenant-scoped.** A `/uploads/<uuid>.<ext>` URL or a bucket
   object URL is a capability: anyone holding it can fetch it, which is what makes
   published decks and share links work. Isolation is on the *catalogue*, not on

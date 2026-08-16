@@ -198,9 +198,9 @@ export async function handleApi({ repoRoot, req, res, url }) {
   if (await handleSandbox(ctx)) return;
   if (await handlePresentations(ctx)) return;
   if (await handleNotion(ctx)) return;
-  if (!flags.disableAi && (await handleAi(ctx))) return;
-  if (!flags.disableAi && (await handleConvert(ctx))) return;
-  if (!flags.disableUploads && (await handleUploads(ctx))) return;
+  if (flags.enableAi && (await handleAi(ctx))) return;
+  if (flags.enableAi && (await handleConvert(ctx))) return;
+  if (flags.enableUploads && (await handleUploads(ctx))) return;
   if (await handleExports(ctx)) return;
   if (await handleBulkExport(ctx)) return;
   if (await handlePublish(ctx)) return;

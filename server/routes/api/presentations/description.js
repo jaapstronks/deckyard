@@ -69,7 +69,7 @@ export async function handlePresentationDescriptionGenerate(
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   const flags = getFeatureFlags();
-  if (flags.disableAi) return notFound(res);
+  if (!flags.enableAi) return notFound(res);
 
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
   if (!parsed.ok) return true;

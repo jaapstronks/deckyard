@@ -26,7 +26,7 @@ export function createFieldTitleBgImage(ctx) {
   } = ctx;
 
   const flags = features && typeof features === 'object' ? features : {};
-  const uploadsDisabled = !!flags.disableUploads;
+  const uploadsDisabled = !flags.enableUploads;
   const hasPicker =
     typeof openImagePicker === 'function' && (openImagePicker.providers?.length || 0) > 0;
 

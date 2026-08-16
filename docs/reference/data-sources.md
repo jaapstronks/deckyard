@@ -87,7 +87,7 @@ All of them sit behind login **and** the `LIVE_DATA_ENABLED` feature flag
 |---|---|---|
 | GET | `/api/data-sources/providers` | List provider ids and `BINDABLE_SLIDE_TYPES` (for the mapping UI). |
 | POST | `/api/data-sources/preview` | `{provider, config}` → `{data}`: the raw fetched data (CSV grid, Notion rows/blocks), no bindings applied. |
-| POST | `/api/data-sources/refresh` | `{dataSource, content}` → `{content, applied, errors, lastSync}`. Optionally `{presentationId, slideId}` to broadcast an SSE event. |
+| POST | `/api/data-sources/refresh` | `{dataSource, content}` → `{content, applied, errors, lastSync}`. A pure transform; it never touches a presentation or its event stream. |
 
 Provider/validation failures are 400; an unconfigured Notion is 501; upstream
 fetch failures surface as `data_source_error` with the upstream status, or 502
@@ -158,12 +158,14 @@ Where the code stands, as of 2026-08-16:
   (`manual`) or skipped (`frozen`). The old `on-view` "Live (auto)" mode was
   removed 2026-08-16 because nothing ever triggered it; auto-refreshing live
   decks are a future track, not a half-wired option in this schema.
-- **The SSE broadcast has no listener.** A refresh with `presentationId` +
-  `slideId` broadcasts `datasource:refreshed` to the deck's event stream, but
-  no client subscribes to it yet. Note also that the broadcast trusts the
-  caller's `presentationId` — any authenticated user can emit the event to any
-  deck's stream. Harmless while nothing listens, but it is an authorization
-  gap to close before a listener ships.
+- **There is no SSE broadcast.** An earlier version broadcast
+  `datasource:refreshed` to the deck stream named by a body-supplied
+  `presentationId`, without checking the caller was authorized on that deck —
+  and nothing ever listened for the event. The broadcast was removed (B69)
+  rather than patched: the refresh endpoint is a pure transform with no
+  presentation context. When a live listener ships, the broadcast returns
+  presentation-scoped and authz-checked (the same check the presentation
+  routes use), not body-trusted.
 - **No caching, no rate limit on CSV fetches.** Every refresh/preview is a
   live upstream fetch (Notion calls share the client's token-bucket; CSV has
   nothing). A busy deck refreshing on a slow source does the work every time.

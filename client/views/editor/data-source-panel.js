@@ -25,7 +25,6 @@ const MODE_LABELS = {
 export function buildDataSourceIndicator({
   h,
   slide,
-  pres,
   api,
   markDirty,
   editorState,
@@ -87,8 +86,6 @@ export function buildDataSourceIndicator({
             body: {
               dataSource: { ...ds, refresh: { mode: 'manual' } },
               content: slide.content,
-              presentationId: pres?.id,
-              slideId: slide.id,
             },
           });
           if (result?.content) {
@@ -163,7 +160,6 @@ export function buildDataSourceIndicator({
           h,
           root: document.body,
           slide,
-          pres,
           api,
           markDirty,
           editorState,
@@ -185,7 +181,6 @@ function openDataSourceModal({
   h,
   root,
   slide,
-  pres,
   api,
   markDirty,
   editorState,
@@ -197,7 +192,6 @@ function openDataSourceModal({
       h,
       root,
       slide,
-      pres,
       api,
       markDirty,
       editorState,

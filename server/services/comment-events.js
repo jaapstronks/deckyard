@@ -143,12 +143,6 @@ export const MaintenanceEventTypes = {
   CHANGED: 'maintenance:changed',
 };
 
-// Data source event types (for live data refresh)
-export const DataSourceEventTypes = {
-  REFRESHED: 'datasource:refreshed',
-  ERROR: 'datasource:error',
-};
-
 // Heartbeat interval (30 seconds keeps connections alive through most proxies)
 const HEARTBEAT_INTERVAL_MS = 30000;
 let heartbeatIntervalId = null;

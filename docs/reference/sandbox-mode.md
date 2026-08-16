@@ -40,7 +40,7 @@ isolation model in [`tenant-isolation.md`](tenant-isolation.md).
   `/og/sandbox.png` social preview.
 - `server/config/storage-paths.js` — redirects data/uploads dirs to sandbox
   variants when enabled.
-- `server/config/flags-snapshot.js` — forces `disableAi` and `disableUploads` on
+- `server/config/flags-snapshot.js` — forces `enableAi` and `enableUploads` off
   in sandbox.
 
 ## What changes when sandbox mode is on
@@ -49,8 +49,8 @@ Versus a normal instance:
 
 - **No login.** Every first HTML/API hit auto-provisions an ephemeral guest via
   an unguessable `sb_sandbox` cookie. Isolation between guests is per-cookie.
-- **AI off.** `disableAi` is forced true (open-ended LLM cost on a public URL).
-- **Direct uploads off.** `disableUploads` is forced true; guests instead pick
+- **AI off.** `enableAi` is forced false (open-ended LLM cost on a public URL).
+- **Direct uploads off.** `enableUploads` is forced false; guests instead pick
   from the curated `listSandboxMedia()` samples.
 - **Ephemeral decks.** Decks a guest creates get a TTL (default 24 h) and are
   hard-deleted after it. Curated `organization`-scope seed decks are exempt.
@@ -121,8 +121,8 @@ Central config: `server/config/sandbox.js` (all env-driven).
 | `SANDBOX_MAX_BYTES_PER_GUEST` | Per-guest stored-byte cap | 50 MB |
 | `SANDBOX_MAX_TOTAL_BYTES` | Global soft ceiling (warn only) | off |
 
-Setting `SANDBOX_MODE` also forces `disableAi` and `disableUploads` on
-(`server/config/flags-snapshot.js`), independent of `DISABLE_AI` / `DISABLE_UPLOADS`.
+Setting `SANDBOX_MODE` also forces `enableAi` and `enableUploads` off
+(`server/config/flags-snapshot.js`), independent of `AI_ENABLED` / `UPLOADS_ENABLED`.
 Not to be confused with `PUPPETEER_SANDBOX` — that is the Chromium OS sandbox for
 export rendering, unrelated to this feature.
 

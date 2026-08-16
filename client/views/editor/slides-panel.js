@@ -384,7 +384,7 @@ export function createSlidesPanel({
     // Escape hatch: when a search finds no matching type, offer to build it with
     // AI, seeded with the query. Lazy arrow — openAiAppendWizard is defined below
     // and only invoked at click time. Null when AI is disabled (button hidden).
-    requestAi: flags.disableAi
+    requestAi: !flags.enableAi
       ? null
       : ({ afterSlideId, query } = {}) =>
           openAiAppendWizard({ afterSlideId, initialPrompt: query || '' }),
@@ -548,7 +548,7 @@ export function createSlidesPanel({
     });
 
   const openAiAppendWizard = ({ afterSlideId, initialPrompt = '' } = {}) => {
-    if (flags.disableAi) return;
+    if (!flags.enableAi) return;
     return openAiAppendWizardModal({
       root,
       pres,

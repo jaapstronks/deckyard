@@ -5,7 +5,7 @@
 import {
   buildWeeklyDigestEmail,
   buildTeamDigestEmail,
-} from '../email-templates.js';
+} from '../email-templates/index.js';
 import { sendEmail, getSenderIdentity } from './core.js';
 
 /**

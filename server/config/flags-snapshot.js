@@ -16,9 +16,9 @@ import {
   isCollabLiveEditsEnabled,
   isDemoMode,
   isImagekitOnly,
-  isAiDisabled,
-  isUploadsDisabled,
-  isImageLibraryDisabled,
+  isAiEnabled,
+  isUploadsEnabled,
+  isImageLibraryEnabled,
   isNotionFeatureEnabled,
 } from './features.js';
 import { getBranding } from './branding.js';
@@ -30,10 +30,10 @@ export function getFeatureFlags() {
   // AI is off in sandbox: a public, anonymous playground plus per-prompt LLM
   // cost is an open-ended bill the moment the URL is found, and AI generation
   // isn't the reason to reach for Deckyard anyway. Matches demo mode.
-  const disableAi = demoMode || sandboxMode || isAiDisabled();
-  const disableUploads =
-    demoMode || sandboxMode || isUploadsDisabled() || imagekitOnly;
-  const disableImageLibrary = imagekitOnly || isImageLibraryDisabled();
+  const enableAi = !demoMode && !sandboxMode && isAiEnabled();
+  const enableUploads =
+    !demoMode && !sandboxMode && !imagekitOnly && isUploadsEnabled();
+  const enableImageLibrary = !imagekitOnly && isImageLibraryEnabled();
   // Whether the ImageKit DAM is actually usable (all IMAGEKIT_* keys present).
   // The image-source chooser gates its ImageKit option on this so an
   // unconfigured install never shows a button that only leads to an error.
@@ -42,7 +42,7 @@ export function getFeatureFlags() {
   const llm = getLlmStatus();
 
   const aiAltText =
-    !disableAi &&
+    enableAi &&
     llm?.defaultVendor === 'openai' &&
     Array.isArray(llm?.configuredVendors) &&
     llm.configuredVendors.includes('openai');
@@ -52,9 +52,9 @@ export function getFeatureFlags() {
     sandboxMode,
     imagekitOnly,
     imagekitConfigured,
-    disableAi,
-    disableUploads,
-    disableImageLibrary,
+    enableAi,
+    enableUploads,
+    enableImageLibrary,
     enableNotion,
     llm,
     aiAltText,
