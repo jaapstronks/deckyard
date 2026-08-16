@@ -93,6 +93,16 @@ test('follow/share failure reasons map to the intended statuses (C7g table-drive
   assert.equal(getErrorStatus('own_question'), 400);
 });
 
+test('analytics access failures answer via machine codes, not prose matching (C7h)', () => {
+  // `validatePresentationAccess` mints exactly two codes and the route answers
+  // through getErrorStatus() — these two rows are its whole status contract.
+  assert.equal(getErrorStatus('not_found'), 404);
+  assert.equal(getErrorStatus('forbidden'), 403);
+  // The pre-C7h route matched on the prose reason text; that must not return.
+  const src = readFileSync(path.join(repoRoot, 'server/routes/api/analytics-track.js'), 'utf8');
+  assert.doesNotMatch(src, /reason\?*\.includes\(/, 'no substring-matching on failure reasons');
+});
+
 test('the 403 machine code is `forbidden` — `permission_denied` must not come back', () => {
   // One machine code per meaning (A7.19-C7g): `permission_denied` was folded
   // into the existing `forbidden` code. Scan the first-party source trees so a

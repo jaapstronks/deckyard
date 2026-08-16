@@ -28,6 +28,7 @@ import { normalizeLang } from '../utils/i18n.js';
 import { sseWrite } from '../utils/sse.js';
 import { toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/db-guard.js';
+import { UUID_RE } from '../utils/uuid.js';
 
 // Note: questions are not auto-translated (explicit translation may be added later).
 
@@ -43,12 +44,8 @@ const sseSessions = new Map();
 /** Statuses a question is still visible and actionable in. */
 const ACTIVE_STATUSES = ['active', 'promoted'];
 
-/**
- * Question ids reach us straight from a URL path. The column is `uuid`, so a
- * non-uuid would make PostgreSQL raise `invalid input syntax` — a 500 where the
- * honest answer is "no such question".
- */
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Question ids reach us straight from a URL path; see utils/uuid.js for why
+// a non-uuid must short-circuit to "no such question" before the query.
 
 function now() {
   return Date.now();

@@ -5,7 +5,6 @@
 
 import {
   badRequest,
-  forbidden,
   getErrorStatus,
   jsonError,
   notFound,
@@ -14,6 +13,7 @@ import {
   serveJson,
   withErrorHandler,
 } from '../../utils/http.js';
+import { isUuid } from '../../utils/uuid.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { norm } from '../../utils/normalize.js';
 import { redactSecret } from '../../utils/log-redact.js';
@@ -53,15 +53,27 @@ const log = createLogger('analytics-track');
 /**
  * Validate presentation access for analytics tracking.
  * Ensures the viewer has legitimate access to the presentation.
+ *
+ * Failures carry a machine code from `ERROR_STATUS_MAP` (`not_found` /
+ * `forbidden`) plus a human `message` — the route answers with
+ * `jsonError(res, getErrorStatus(code), code, message)`, no prose matching
+ * (A7.19-C7h).
+ *
  * @param {Object} data - Request data
  * @param {string} data.presentationId - The presentation ID
  * @param {string} data.sourceType - The source type
  * @param {string} [data.sourceId] - The source ID (share token for share_link)
  * @param {Object} ctx - Request context
- * @returns {Promise<{ok: boolean, presentation?: Object, reason?: string}>}
+ * @returns {Promise<{ok: true, presentation: Object}|{ok: false, code: string, message: string}>}
  */
 async function validatePresentationAccess(data, ctx) {
   const { presentationId, sourceType, sourceId } = data;
+
+  // A non-uuid id cannot name a presentation; answer before the query would
+  // make the Postgres uuid parser 500 (22P02).
+  if (!isUuid(presentationId)) {
+    return { ok: false, code: 'not_found', message: 'Presentation not found' };
+  }
 
   // Get the presentation first
   const presentation = await getPresentation(
@@ -69,12 +81,12 @@ async function validatePresentationAccess(data, ctx) {
     presentationId
   );
   if (!presentation) {
-    return { ok: false, reason: 'Presentation not found' };
+    return { ok: false, code: 'not_found', message: 'Presentation not found' };
   }
 
   // Check if analytics is enabled for this presentation
   if (presentation.settings?.analyticsEnabled === false) {
-    return { ok: false, reason: 'Analytics disabled for this presentation' };
+    return { ok: false, code: 'forbidden', message: 'Analytics disabled for this presentation' };
   }
 
   // Validate access based on source type
@@ -82,7 +94,7 @@ async function validatePresentationAccess(data, ctx) {
     case SOURCE_TYPES.SHARE_LINK: {
       // Share link access requires a valid share token
       if (!sourceId) {
-        return { ok: false, reason: 'Share link token required' };
+        return { ok: false, code: 'forbidden', message: 'Share link token required' };
       }
 
       const validation = await validateShareLink(sourceId);
@@ -93,7 +105,7 @@ async function validatePresentationAccess(data, ctx) {
           presentationId,
           sourceType,
         });
-        return { ok: false, reason: 'Invalid or expired share link' };
+        return { ok: false, code: 'forbidden', message: 'Invalid or expired share link' };
       }
 
       // Verify the share link is for this presentation
@@ -104,7 +116,7 @@ async function validatePresentationAccess(data, ctx) {
           presentationId,
           shareLinkPresentationId: validation.shareLink.presentationId,
         });
-        return { ok: false, reason: 'Share link does not match presentation' };
+        return { ok: false, code: 'forbidden', message: 'Share link does not match presentation' };
       }
 
       return { ok: true, presentation };
@@ -135,7 +147,7 @@ async function validatePresentationAccess(data, ctx) {
         sourceType,
       });
 
-      return { ok: false, reason: 'No active follow session' };
+      return { ok: false, code: 'forbidden', message: 'No active follow session' };
     }
 
     case SOURCE_TYPES.EMBED: {
@@ -161,7 +173,7 @@ async function validatePresentationAccess(data, ctx) {
           presentationId,
           sourceType,
         });
-        return { ok: false, reason: 'Presentation is not published' };
+        return { ok: false, code: 'forbidden', message: 'Presentation is not published' };
       }
 
       // Optionally verify the sourceId matches the publish ID
@@ -173,14 +185,14 @@ async function validatePresentationAccess(data, ctx) {
           sourceId,
           actualPublishId: presentation.published.id,
         });
-        return { ok: false, reason: 'Invalid publish ID' };
+        return { ok: false, code: 'forbidden', message: 'Invalid publish ID' };
       }
 
       return { ok: true, presentation };
     }
 
     default:
-      return { ok: false, reason: 'Invalid source type' };
+      return { ok: false, code: 'forbidden', message: 'Invalid source type' };
   }
 }
 
@@ -235,9 +247,12 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
   );
 
   if (!accessValidation.ok) {
-    return accessValidation.reason?.includes('not found')
-      ? notFound(res, accessValidation.reason)
-      : forbidden(res, accessValidation.reason);
+    return jsonError(
+      res,
+      getErrorStatus(accessValidation.code),
+      accessValidation.code,
+      accessValidation.message
+    );
   }
 
   // Check app-level analytics settings

@@ -10,7 +10,8 @@
  */
 
 import { dispatchRoutes } from '../../utils/router.js';
-import { withErrorHandler } from '../../utils/http.js';
+import { notFound, withErrorHandler } from '../../utils/http.js';
+import { isUuid } from '../../utils/uuid.js';
 import { handleFollowState } from './follow/state.js';
 import {
   handleFollowCancel,
@@ -27,19 +28,37 @@ import {
   handleFollowInteractionFeedback,
 } from './follow/interactions.js';
 
+/**
+ * Every row captures the presentation id as its first segment, and the storage
+ * underneath queries Postgres `uuid` columns with it verbatim — so a non-uuid
+ * id would 500 out of the uuid parser (22P02) before any reason mapping.
+ * Shape-check it once, around every handler (A7.19-C7h): an id that cannot be
+ * a uuid cannot name a presentation, hence `not_found`.
+ *
+ * @param {(ctx: object, ...params: string[]) => unknown} handler
+ * @returns {(ctx: object, ...params: string[]) => unknown}
+ */
+const requireUuidId = (handler) => {
+  const wrapped = (ctx, presentationId, ...rest) =>
+    isUuid(presentationId) ? handler(ctx, presentationId, ...rest) : notFound(ctx.res);
+  // Keep the sub-handler's name visible on the row (the dispatch tests pin it).
+  Object.defineProperty(wrapped, 'name', { value: handler.name });
+  return wrapped;
+};
+
 /** @type {import('../../utils/router.js').Route[]} */
 export const ROUTES = [
-  { pattern: /^\/api\/follow\/([^/]+)\/state$/, handler: handleFollowState },
-  { pattern: /^\/api\/follow\/([^/]+)\/interactions\/current$/, handler: handleFollowInteractionsCurrent },
-  { pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/state$/, handler: handleFollowInteractionState },
-  { pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/vote$/, handler: handleFollowInteractionVote },
-  { pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/feedback$/, handler: handleFollowInteractionFeedback },
-  { pattern: /^\/api\/follow\/([^/]+)\/questions$/, handler: handleFollowQuestions },
-  { pattern: /^\/api\/follow\/([^/]+)\/questions\/events$/, handler: handleFollowQuestionsEvents },
-  { pattern: /^\/api\/follow\/([^/]+)\/questions\/([^/]+)\/upvote$/, handler: handleFollowUpvote },
-  { pattern: /^\/api\/follow\/([^/]+)\/questions\/([^/]+)\/cancel$/, handler: handleFollowCancel },
-  { pattern: /^\/api\/follow\/([^/]+)\/presentation$/, handler: handleFollowPresentation },
-  { pattern: /^\/api\/follow\/([^/]+)\/events$/, handler: handleFollowEvents },
+  { pattern: /^\/api\/follow\/([^/]+)\/state$/, handler: requireUuidId(handleFollowState) },
+  { pattern: /^\/api\/follow\/([^/]+)\/interactions\/current$/, handler: requireUuidId(handleFollowInteractionsCurrent) },
+  { pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/state$/, handler: requireUuidId(handleFollowInteractionState) },
+  { pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/vote$/, handler: requireUuidId(handleFollowInteractionVote) },
+  { pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/feedback$/, handler: requireUuidId(handleFollowInteractionFeedback) },
+  { pattern: /^\/api\/follow\/([^/]+)\/questions$/, handler: requireUuidId(handleFollowQuestions) },
+  { pattern: /^\/api\/follow\/([^/]+)\/questions\/events$/, handler: requireUuidId(handleFollowQuestionsEvents) },
+  { pattern: /^\/api\/follow\/([^/]+)\/questions\/([^/]+)\/upvote$/, handler: requireUuidId(handleFollowUpvote) },
+  { pattern: /^\/api\/follow\/([^/]+)\/questions\/([^/]+)\/cancel$/, handler: requireUuidId(handleFollowCancel) },
+  { pattern: /^\/api\/follow\/([^/]+)\/presentation$/, handler: requireUuidId(handleFollowPresentation) },
+  { pattern: /^\/api\/follow\/([^/]+)\/events$/, handler: requireUuidId(handleFollowEvents) },
 ];
 
 /**
