@@ -294,11 +294,12 @@ bundle:
 | Role | Token |
 | --- | --- |
 | `surface` | `--slide-surface` ← `--t-color-background` |
-| `surface-raised` | `--slide-surface-raised` (opaque card/panel plane; no theme feed yet) beside the translucent `--slide-surface-white(-solid)` pair; remaining per-type card backgrounds fold in during the per-type phase |
+| `surface-raised` | `--slide-surface-raised` ← `--t-color-surface-raised` (opaque card/panel plane: table soft body, icon-card bodies) beside the translucent `--slide-surface-white(-solid)` pair |
 | `on-surface` / `on-surface-muted` | `--slide-on-surface(-muted)` ← `--t-color-text(-muted)` |
 | `accent` / `on-accent` | `--slide-accent` / `--slide-on-accent` ← `--t-color-accent` / `--t-color-accent-contrast` |
 | link | `--slide-link` ← `--t-color-link`, defaulting to the accent; `--slide-link-on-dark` ← `--t-color-link-on-dark`, defaulting to the accent lightened toward white |
-| pole / variant text | `--slide-on-light` / `--slide-on-dark` ← the theme's two poles (`--t-text-color-dark/-light`); `--slide-on-lime` / `--slide-on-mist` ← the derived per-surface answer (`--t-slide-bg-<id>-text`) |
+| pole / variant text | `--slide-on-light` / `--slide-on-dark` ← the theme's two poles (`--t-text-color-dark/-light`); `--slide-on-lime` / `--slide-on-mist` / `--slide-on-bg-dark` ← the derived per-surface answer (`--t-slide-bg-<id>-text`); `--slide-on-gradient(-muted)` ← the gradient layer's pair (`--t-slide-gradient-text(-muted)`, emitted only when the gradient is on) |
+| accent companions | `--slide-accent-on-dark` ← `--t-color-accent-on-dark` (the display accent for dark grounds: quote attribution), defaulting to the on-dark link mix; `--slide-accent-soft` / `--slide-on-accent-soft` ← `--t-color-accent-soft(-contrast)` (the tinted plane icon blocks paint), derived mist-when-bright-else-accent |
 | `border` | `--slide-border-*` (opacity-derived) |
 | `emphasis` / `on-emphasis` | `--slide-emphasis` / `--slide-on-emphasis` — the filled band a type emphasises with (table header and label-column planes, kickers), fed by the accent pair |
 | series palette | `--slide-chart-{0..7}` ← `--t-chart-{0..7}` (numbered accent colours; the only series palette) |
@@ -345,11 +346,13 @@ chapter families) are **removed, not aliased** — the KPI tiles join the
 This is a deliberate breaking change during beta (see `versioning.md` § *The
 beta stance*): a theme that sets a removed token does not break — unknown
 tokens do nothing — but the deck renders with role-derived styling instead;
-the release notes name each family. Status: the KPI-tile
-(`--t-kpi-tile-{1..4}-*`, `--t-kpi-delta-*`), table (`--t-table-<variant>-*`)
-and list (`--t-list-item-title-letter-spacing`) families are gone from the
-CSS; the icon-card-grid, quote and chapter families still have live reads and
-go with the theme-derivation step.
+the release notes name each family. Status: every per-type family is gone —
+KPI-tile (`--t-kpi-tile-{1..4}-*`, `--t-kpi-delta-*`), table
+(`--t-table-<variant>-*`), list (`--t-list-item-title-letter-spacing`),
+icon-card-grid (`--t-icon-card-grid-*` → the accent-soft / surface-raised /
+on-gradient roles) and quote/chapter (`--t-quote-*`, `--t-chapter-*` → the
+dark-surface variant answer `--t-slide-bg-dark-text` + `--slide-accent-on-dark`).
+`theme-normalize.js` derives only role-shaped tokens.
 
 ## Markdown output is styled per surface
 

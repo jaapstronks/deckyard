@@ -1,6 +1,6 @@
 /* Chapter title slide (same gradient family as quote, but deterministic "random-ish" control points per slide) */
 .slide-chapter-title {
-  color: var(--t-chapter-text-color, #fff);
+  color: var(--slide-on-bg-dark);
   --g1x: 58%;
   --g1y: 14%;
   --g2x: 90%;

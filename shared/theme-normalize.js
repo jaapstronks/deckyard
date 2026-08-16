@@ -147,7 +147,7 @@ export function normalizeTheme(theme) {
   // theme's own tokens. Unparseable colours skip generation (CSS falls back to
   // the solid background).
   if (enabled && !vars['--t-slide-gradient-bg']) {
-    const c1 = cssVar(vars, '--t-quote-author-color');
+    const c1 = cssVar(vars, '--t-color-accent-on-dark');
     const c2 = cssVar(vars, '--t-color-accent');
     const c3 = cssVar(vars, '--t-slide-bg-mist');
     const base = '#06090b';
@@ -176,20 +176,28 @@ export function normalizeTheme(theme) {
   const darkText = cleanStr(out.textColorDark) || '#212121';
   const poles = { light: lightText, dark: darkText };
 
-  if (!enabled) {
-    // Chapter-title and quote slides render on the theme's dark surface
-    // (background: var(--t-slide-bg-dark)), NOT on the page background —
-    // defaulting to the regular text colour paints dark-on-dark there. Derive
-    // from that surface's luminance whenever we can parse it.
-    for (const key of ['--t-chapter-text-color', '--t-quote-text-color']) {
-      if (vars[key]) continue;
-      const surface = cssVar(vars, '--t-slide-bg-dark');
-      vars[key] = hexToRgb(surface)
+  // The dark surface's own text answer (--slide-on-bg-dark reads it): quote
+  // and chapter-title render on `--t-slide-bg-dark`, NOT on the page
+  // background — defaulting to the regular text colour paints dark-on-dark
+  // there. With gradient branding on, those types paint the (deep) gradient
+  // instead, so the answer is plain white; otherwise derive from the
+  // surface's luminance whenever we can parse it.
+  if (!vars['--t-slide-bg-dark-text']) {
+    const surface = cssVar(vars, '--t-slide-bg-dark');
+    vars['--t-slide-bg-dark-text'] = enabled
+      ? '#ffffff'
+      : hexToRgb(surface)
         ? pickTextColorForBg(surface, poles)
         : 'var(--t-color-text, #0b0b0b)';
-    }
-  } else if (!vars['--t-chapter-text-color']) {
-    vars['--t-chapter-text-color'] = '#ffffff';
+  }
+  // The gradient layer's text pair (--slide-on-gradient(-muted)): only emitted
+  // when the gradient is on, so the roles fall through to the plain
+  // on-surface pair on solid themes.
+  if (enabled) {
+    if (!vars['--t-slide-gradient-text'])
+      vars['--t-slide-gradient-text'] = '#ffffff';
+    if (!vars['--t-slide-gradient-text-muted'])
+      vars['--t-slide-gradient-text-muted'] = 'rgba(255, 255, 255, 0.82)';
   }
   vars['--t-text-color-light'] = lightText;
   vars['--t-text-color-dark'] = darkText;
@@ -221,52 +229,26 @@ export function normalizeTheme(theme) {
     if (hexToRgb(bgHex)) vars[key] = pickTextColorForBg(bgHex, poles);
   }
 
-  // Table style variants: when a theme overrides a variant's header, label-column
-  // or body background, auto-derive readable text for it — the same "set a bg
-  // token → get readable text for free" pattern as the accent contrast above.
-  // Themes that set no --t-table-* tokens get the CSS palette defaults, so this
-  // is a no-op for them.
-  for (const variant of ['panel', 'soft']) {
-    // '' is the body surface, which uses the slot-less token pair.
-    for (const slot of ['header', 'firstcol', '']) {
-      const suffix = slot ? `${slot}-` : '';
-      const bgKey = `--t-table-${variant}-${suffix}bg`;
-      const textKey = `--t-table-${variant}-${suffix}text`;
-      const bgHex = cssVar(vars, bgKey);
-      if (bgHex && !vars[textKey] && hexToRgb(bgHex)) {
-        vars[textKey] = pickTextColorForBg(bgHex, poles);
-      }
-    }
-  }
-
-  // Icon-card-grid header text follows the gradient/solid split.
-  vars['--t-icon-card-grid-text-color'] = enabled
-    ? '#ffffff'
-    : String(vars['--t-color-text'] || '#0b0b0b');
-  vars['--t-icon-card-grid-subtitle-color'] = enabled
-    ? 'rgba(255, 255, 255, 0.82)'
-    : String(vars['--t-color-text-muted'] || 'rgba(11, 11, 11, 0.65)');
-
-  // Icon block: prefer the theme's bright "lime" surface when it defines a real
-  // colour (white doesn't count — icons would sit on white), else the accent.
-  if (!vars['--t-icon-card-grid-icon-bg']) {
-    const limeHex = cssVar(vars, '--t-slide-bg-lime');
-    const limeLower = limeHex.toLowerCase();
-    const useLime =
-      !!hexToRgb(limeHex) && limeLower !== '#fff' && limeLower !== '#ffffff';
-    vars['--t-icon-card-grid-icon-bg'] = useLime
-      ? limeHex
+  // The soft accent plane (--slide-accent-soft reads it): the tinted block a
+  // type paints to carry icons or soft emphasis. Every shipped theme used its
+  // mist tint here when mist is bright, and the accent when it is not
+  // (midnight's mist is dark) — that is the generic rule, so themes no longer
+  // set it by hand. A theme can still override via --t-color-accent-soft.
+  if (!vars['--t-color-accent-soft']) {
+    const mistHex = cssVar(vars, '--t-slide-bg-mist');
+    const mistIsBright =
+      !!hexToRgb(mistHex) && pickTextColorForBg(mistHex, poles) === darkText;
+    vars['--t-color-accent-soft'] = mistIsBright
+      ? mistHex
       : cssVar(vars, '--t-color-accent') || '#385c5c';
   }
-
-  const iconFg = pickTextColorForBg(
-    cssVar(vars, '--t-icon-card-grid-icon-bg'),
-    poles
-  );
-  vars['--t-icon-card-grid-icon-fg'] = iconFg;
-  // Best-effort: recolor monochrome SVG <img> icons on icon-block backgrounds.
-  vars['--t-icon-card-grid-icon-filter'] =
-    iconFg === lightText ? 'brightness(0) invert(1)' : 'none';
+  // …and what reads on it — same derive-from-the-surface pattern as above.
+  if (!vars['--t-color-accent-soft-contrast']) {
+    vars['--t-color-accent-soft-contrast'] = pickTextColorForBg(
+      cssVar(vars, '--t-color-accent-soft'),
+      poles
+    );
+  }
 
   applyLegacyAliases(vars, out);
 

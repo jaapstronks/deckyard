@@ -1,13 +1,7 @@
 .slide-icon-card-grid .icon-card-icon {
   flex: 0 0 92px;
-  background: var(
-    --t-icon-card-grid-icon-bg,
-    var(--slide-accent)
-  );
-  color: var(
-    --t-icon-card-grid-icon-fg,
-    var(--t-color-accent-contrast, #ffffff)
-  );
+  background: var(--slide-accent-soft);
+  color: var(--slide-on-accent-soft);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -60,7 +54,7 @@
 /* Bottom subheading: caption-style line under the cards, light on the dark
    slide background and centered. Applies to both layouts. */
 .slide-icon-card-grid .bottom-subheading {
-  color: var(--t-icon-card-grid-text-color, #fff);
+  color: var(--slide-on-gradient);
   max-width: none;
 }
 /* Darken the bottom too (the base ::after only darkens the top for the header)
@@ -144,7 +138,7 @@
   height: auto;
   aspect-ratio: 1 / 1;
   border: none;
-  background: var(--t-icon-card-grid-icon-bg, var(--slide-accent));
+  background: var(--slide-accent-soft);
 }
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-icon {
   flex: 1 1 auto;
@@ -202,10 +196,7 @@
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-body {
   flex: 0 0 auto;
   background: transparent;
-  color: var(
-    --t-icon-card-grid-icon-fg,
-    var(--t-color-accent-contrast, #0b0b0b)
-  );
+  color: var(--slide-on-accent-soft);
   justify-content: flex-end;
   text-align: center;
 }

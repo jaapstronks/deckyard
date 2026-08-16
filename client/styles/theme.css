@@ -20,13 +20,6 @@
      roles (--slide-surface, --slide-on-surface, --slide-accent, …); the old
      --color-* alias spelling is gone (slide-roles.md § What disappears). */
 
-  /* Quote slide */
-  --quote-author-color: var(
-    --t-quote-author-color,
-    #7c3aed
-  );
-  --quote-text-color: var(--t-quote-text-color, #ffffff);
-
   /* Typography */
   --font-heading: var(--t-font-heading, Arial, sans-serif);
   --font-body: var(--t-font-body, Arial, sans-serif);

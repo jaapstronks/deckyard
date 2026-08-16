@@ -254,8 +254,8 @@ export function deriveThemeTokens({
       dark: textDark,
     }),
 
-    // Quote styling
-    '--t-quote-author-color': primary,
+    // The display accent for dark grounds (quote attribution line etc.)
+    '--t-color-accent-on-dark': primary,
 
     // Border radii (using sensible defaults)
     '--t-radius': '16px',
@@ -272,9 +272,6 @@ export function deriveThemeTokens({
     // Heading styling
     '--t-heading-transform': 'none',
     '--t-heading-weight': '700',
-
-    // Icon card grid
-    '--t-icon-card-grid-icon-bg': mistBg,
 
     // Chart colors
     '--t-chart-0': brandColors[0],

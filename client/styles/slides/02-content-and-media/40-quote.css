@@ -1,6 +1,6 @@
 /* Quote slide */
 .slide-quote {
-  color: var(--quote-text-color);
+  color: var(--slide-on-bg-dark);
   --g1x: 55%;
   --g1y: 12%;
   --g2x: 92%;
@@ -11,10 +11,7 @@
   overflow: hidden;
   /* Fallback: if the gradient layer isn't rendered (print/export quirks),
      keep white text readable by using the theme's dark base background. */
-  background: var(
-    --t-slide-bg-dark,
-    var(--slide-surface)
-  );
+  background: var(--slide-bg-dark);
 }
 .slide-quote::before {
   content: '';
@@ -55,7 +52,7 @@
   font-size: calc(1em * var(--tf-size-scale, 1));
 }
 .slide-quote .quote-author {
-  color: var(--quote-author-color);
+  color: var(--slide-accent-on-dark);
   font-family: var(--font-mono);
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
