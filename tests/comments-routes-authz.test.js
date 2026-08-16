@@ -305,6 +305,37 @@ test('someone in another organization cannot comment — the deck is absent to t
   assert.equal(res.statusCode, 404, 'a cross-org deck is not-found, not forbidden');
 });
 
+// The anonymous cells pin the wiring of the permission check itself: the
+// cross-org 404 above is produced by storage scoping alone, so without these
+// the create/edit/delete/resolve handlers would stay green with their
+// `withPresentationCommentAuth` checks short-circuited to allow.
+test('an anonymous visitor cannot comment', async () => {
+  await seed();
+  const { res } = await call(handlePresentationCommentsCreate, 'POST', {
+    body: { body: 'Drive-by' },
+    args: [DECK],
+  });
+
+  assert.equal(res.statusCode, 401, 'no session and no guest grant means no commenting');
+  assert.equal(comments().length, 3, 'nothing was written');
+});
+
+test('an anonymous visitor cannot edit, delete or resolve', async () => {
+  await seed();
+  const edit = await call(handlePresentationCommentUpdate, 'PUT', {
+    body: { body: 'Rewrite' },
+    args: [DECK, 'cm-open'],
+  });
+  const del = await call(handlePresentationCommentDelete, 'DELETE', { args: [DECK, 'cm-open'] });
+  const resolve = await call(handlePresentationCommentResolve, 'POST', { args: [DECK, 'cm-open'] });
+
+  assert.equal(edit.res.statusCode, 401);
+  assert.equal(del.res.statusCode, 401);
+  assert.equal(resolve.res.statusCode, 401);
+  assert.equal(commentById('cm-open').body, 'Body of cm-open', 'the comment is untouched');
+  assert.equal(commentById('cm-open').resolved_at, null, 'and not resolved');
+});
+
 test('create rejects an empty body with a 400', async () => {
   await seed();
   const { res } = await call(handlePresentationCommentsCreate, 'POST', {
