@@ -8,6 +8,7 @@
 import { getEffectiveMediaProvider } from './config.js';
 import { LocalProvider } from './local.js';
 import { createLogger } from '../utils/logger.js';
+import { envStr } from '../config/utils.js';
 
 const log = createLogger('media');
 
@@ -66,7 +67,7 @@ export function getMediaStatus() {
   return {
     mode: provider.name,
     presignedSupported: provider.supportsPresigned,
-    imagekitAvailable: !!process.env.IMAGEKIT_PUBLIC_KEY,
+    imagekitAvailable: !!envStr('IMAGEKIT_PUBLIC_KEY'),
   };
 }
 

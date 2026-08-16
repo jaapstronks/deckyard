@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { envStr, envBool } from '../config/utils.js';
 
 let browserPromise = null;
 
@@ -54,11 +55,7 @@ export function toNodeBuffer(bytes) {
  * @returns {Promise<string>} Absolute path to the browser, or '' if none found.
  */
 export async function resolveChromeExecutablePath() {
-  const envPath = String(
-    process.env.PUPPETEER_EXECUTABLE_PATH ||
-      process.env.CHROME_BIN ||
-      ''
-  ).trim();
+  const envPath = envStr('PUPPETEER_EXECUTABLE_PATH') || envStr('CHROME_BIN');
 
   return firstExistingPath([
     envPath,
@@ -111,9 +108,7 @@ export async function getPuppeteerBrowser({ featureName = 'Export' } = {}) {
     // Operators who harden the runtime (e.g. `--cap-add=SYS_ADMIN` or a
     // Chromium seccomp profile) can re-enable the in-browser sandbox for
     // defense-in-depth by setting PUPPETEER_SANDBOX=true.
-    const enableSandbox = /^(1|true|yes)$/i.test(
-      String(process.env.PUPPETEER_SANDBOX || '').trim()
-    );
+    const enableSandbox = envBool('PUPPETEER_SANDBOX');
     const args = ['--disable-dev-shm-usage'];
     if (!enableSandbox) {
       args.unshift('--no-sandbox', '--disable-setuid-sandbox');

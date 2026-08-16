@@ -9,6 +9,7 @@
 
 import { apiFetch, createConfigChecker } from '../utils/api-fetch.js';
 import { createLogger } from '../utils/logger.js';
+import { envStr } from '../config/utils.js';
 
 const log = createLogger('unsplash');
 
@@ -26,7 +27,7 @@ export const isUnsplashConfigured = createConfigChecker('UNSPLASH_ACCESS_KEY');
  */
 function getHeaders() {
   return {
-    Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`,
+    Authorization: `Client-ID ${envStr('UNSPLASH_ACCESS_KEY')}`,
     'Accept-Version': 'v1',
   };
 }

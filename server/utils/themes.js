@@ -6,6 +6,7 @@ import { getThemeRecord as getCustomTheme } from '../storage/themes.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { listAllFontFamiliesWithVariants } from '../storage/font-families.js';
 import { buildThemeConfig } from './theme-builder.js';
+import { envStr } from '../config/utils.js';
 import { slideBackgroundsCssText } from '../../shared/theme-slide-backgrounds.js';
 import { normalizeTheme } from '../../shared/theme-normalize.js';
 import { createLogger } from './logger.js';
@@ -18,7 +19,7 @@ const cache = new Map(); // id -> theme object
 const customThemeCache = new Map(); // uuid -> theme object
 
 // Default theme for OSS version (can be overridden via DEFAULT_THEME env var)
-const DEFAULT_THEME = process.env.DEFAULT_THEME || DEFAULT_THEME_ID;
+const DEFAULT_THEME = envStr('DEFAULT_THEME', DEFAULT_THEME_ID);
 
 export function resolveThemeId(raw) {
   const s = String(raw || '').trim();

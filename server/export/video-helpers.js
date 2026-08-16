@@ -3,6 +3,8 @@
  * Handles fetching Bunny videos and parsing video sources.
  */
 
+import { envStr } from '../config/utils.js';
+
 /**
  * Parse a video source string and determine the provider and ID.
  * @param {string} source - The video source (URL or Bunny UUID)
@@ -229,7 +231,7 @@ export async function fetchVideoBuffer(url, { timeoutMs = 60000, maxSizeMb = 100
  * @returns {{ pullZone: string | null, configured: boolean }}
  */
 export function getBunnyConfig() {
-  const pullZone = process.env.BUNNY_PULLZONE || null;
+  const pullZone = envStr('BUNNY_PULLZONE') || null;
   return {
     pullZone,
     configured: Boolean(pullZone),

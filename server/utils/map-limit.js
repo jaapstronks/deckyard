@@ -8,6 +8,8 @@
  * bounded limit while preserving result order.
  */
 
+import { envInt } from '../config/utils.js';
+
 /**
  * Map over items with bounded concurrency, preserving result order.
  * A rejecting `fn` rejects the whole call (matches `Promise.all` semantics),
@@ -43,6 +45,5 @@ export async function mapLimit(items, limit, fn) {
  * @returns {number} A positive integer concurrency limit
  */
 export function exportEmbedConcurrency() {
-  const raw = Number.parseInt(process.env.EXPORT_EMBED_CONCURRENCY || '', 10);
-  return Number.isFinite(raw) && raw > 0 ? raw : 8;
+  return envInt('EXPORT_EMBED_CONCURRENCY', 8, { min: 1 });
 }

@@ -6,7 +6,7 @@ import { normalizePresentationVisibility } from '../../../utils/presentation-aut
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { ConflictError, LockedError } from '../../../utils/errors.js';
 import { slideFingerprint } from '../../../../shared/slide-fingerprint.js';
-import { envBool } from '../../../config/utils.js';
+import { envBool, envInt } from '../../../config/utils.js';
 
 /**
  * Normalize presentation metadata.
@@ -74,8 +74,7 @@ const DEFAULT_MERGE_MAX_REVISION_GAP = 10;
  * @returns {number}
  */
 export function mergeMaxRevisionGap() {
-  const n = Number(process.env.MERGE_MAX_REVISION_GAP);
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : DEFAULT_MERGE_MAX_REVISION_GAP;
+  return envInt('MERGE_MAX_REVISION_GAP', DEFAULT_MERGE_MAX_REVISION_GAP, { min: 1 });
 }
 
 /**

@@ -24,6 +24,7 @@
  */
 
 import { repoRoot as defaultRepoRoot } from '../config/paths.js';
+import { envInt } from '../config/utils.js';
 import { normalizeEmail } from '../utils/normalize.js';
 import { listCollaborators } from '../storage/collaborators.js';
 import { listSubscriptions } from '../storage/presentation-subscriptions.js';
@@ -45,8 +46,7 @@ export const DECK_ACTIVITY_TYPE = 'deck_activity';
 
 /** Debounce window in minutes (env-configurable, default 60). */
 export function deckActivityWindowMinutes() {
-  const raw = parseInt(process.env.DECK_ACTIVITY_NOTIFY_WINDOW_MIN || '', 10);
-  return Number.isFinite(raw) && raw > 0 ? raw : 60;
+  return envInt('DECK_ACTIVITY_NOTIFY_WINDOW_MIN', 60, { min: 1 });
 }
 
 /**

@@ -18,13 +18,14 @@ import { getUserByEmailGlobal } from './identity.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
 import { sessionVersion } from '../utils/session-version.js';
 import { withDbGuard } from './utils/db-guard.js';
+import { envStr } from '../config/utils.js';
 
 /**
  * The AUTH_ADMIN_EMAIL bootstrap admin, lowercased, or '' when unset.
  * @returns {string}
  */
 function getAdminEmail() {
-  return String(process.env.AUTH_ADMIN_EMAIL || '').trim().toLowerCase();
+  return envStr('AUTH_ADMIN_EMAIL').toLowerCase();
 }
 
 /**

@@ -91,6 +91,7 @@
 
 import { getPuppeteerBrowser, toNodeBuffer } from '../utils/puppeteer-browser.js';
 import { debugLog } from '../utils/debug-log.js';
+import { envStr } from '../config/utils.js';
 
 /**
  * Width in CSS pixels of the rendered background bitmap; the height follows the
@@ -111,8 +112,10 @@ const GRADIENT_RASTER_WIDTH = 512;
  * @returns {number} Bitmap width, or `0` to disable.
  */
 function gradientRasterWidth() {
-  const raw = process.env.PDF_GRADIENT_RASTER_WIDTH;
-  if (raw == null || raw === '') return GRADIENT_RASTER_WIDTH;
+  // envStr rather than envInt: an oversized value clamps to 4096 instead of
+  // falling back, and `0` stays a valid "off" switch.
+  const raw = envStr('PDF_GRADIENT_RASTER_WIDTH');
+  if (raw === '') return GRADIENT_RASTER_WIDTH;
   const n = Number(raw);
   if (!Number.isFinite(n) || n < 0) return GRADIENT_RASTER_WIDTH;
   return Math.min(4096, Math.round(n));

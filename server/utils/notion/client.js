@@ -4,6 +4,7 @@
  */
 
 import { AppError, RateLimitError } from '../errors.js';
+import { envStr } from '../../config/utils.js';
 
 // Simple token bucket rate limiter for Notion API
 // Notion allows 3 requests/second average, we'll be conservative
@@ -34,7 +35,7 @@ function consumeNotionRateLimit() {
 }
 
 function getNotionSecret() {
-  return String(process.env.NOTION_SECRET || '').trim();
+  return envStr('NOTION_SECRET');
 }
 
 export function notionEnabled() {

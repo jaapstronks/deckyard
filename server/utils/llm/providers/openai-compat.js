@@ -5,6 +5,7 @@ import {
 } from '../provider-base.js';
 import { LlmError } from '../error.js';
 import { ValidationError } from '../../errors.js';
+import { envStr } from '../../../config/utils.js';
 
 /**
  * Request chat completion content from any OpenAI-compatible endpoint.
@@ -16,7 +17,7 @@ import { ValidationError } from '../../errors.js';
  * implements the OpenAI `/v1/chat/completions` contract.
  */
 export async function requestOpenAiCompatChatCompletionContent(params = {}) {
-  const endpoint = process.env.OPENAI_COMPAT_ENDPOINT?.trim();
+  const endpoint = envStr('OPENAI_COMPAT_ENDPOINT');
   if (!endpoint) {
     throw new ValidationError('OPENAI_COMPAT_ENDPOINT is not set in environment.');
   }

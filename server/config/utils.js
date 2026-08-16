@@ -78,8 +78,10 @@ export function envList(name) {
  * @returns {string} Absolute base URL (no trailing slash) or empty string
  */
 export function getAppBaseUrl() {
-  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/+$/, '');
-  if (process.env.DOMAIN) return `https://${process.env.DOMAIN}`;
+  const appUrl = envStr('APP_URL');
+  if (appUrl) return appUrl.replace(/\/+$/, '');
+  const domain = envStr('DOMAIN');
+  if (domain) return `https://${domain}`;
   return '';
 }
 

@@ -20,6 +20,7 @@
  */
 
 import { parseCookies } from './cookies.js';
+import { envStr } from '../config/utils.js';
 
 // Any of these cookies means the request is browser-session-authenticated and
 // therefore CSRF-able. sb_sandbox authenticates sandbox guests exactly like
@@ -50,11 +51,11 @@ export function allowedHosts(req) {
   const set = new Set();
   const reqHost = String(req.headers?.host || '').trim().toLowerCase();
   if (reqHost) set.add(reqHost);
-  for (const v of [process.env.APP_URL, process.env.DOMAIN]) {
+  for (const v of [envStr('APP_URL'), envStr('DOMAIN')]) {
     const h = hostOf(v);
     if (h) set.add(h);
   }
-  for (const o of String(process.env.CSRF_ALLOWED_ORIGINS || '')
+  for (const o of envStr('CSRF_ALLOWED_ORIGINS')
     .split(',')
     .map((x) => x.trim())
     .filter(Boolean)) {

@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { sandboxEnabled } from './sandbox.js';
+import { envStr } from './utils.js';
 
 function resolveMaybeRelative(repoRoot, raw) {
   const s = String(raw || '').trim();
@@ -11,12 +12,12 @@ function resolveMaybeRelative(repoRoot, raw) {
 
 export function dataDir(repoRoot) {
   // Explicit override (all modes)
-  const global = resolveMaybeRelative(repoRoot, process.env.DATA_DIR);
+  const global = resolveMaybeRelative(repoRoot, envStr('DATA_DIR'));
   if (global) return global;
 
   // Sandbox override
   if (sandboxEnabled()) {
-    const sb = resolveMaybeRelative(repoRoot, process.env.SANDBOX_DATA_DIR);
+    const sb = resolveMaybeRelative(repoRoot, envStr('SANDBOX_DATA_DIR'));
     if (sb) return sb;
     return path.join(repoRoot, 'server', 'data-sandbox');
   }
@@ -27,12 +28,12 @@ export function dataDir(repoRoot) {
 
 export function uploadsDir(repoRoot) {
   // Explicit override (all modes)
-  const global = resolveMaybeRelative(repoRoot, process.env.UPLOADS_DIR);
+  const global = resolveMaybeRelative(repoRoot, envStr('UPLOADS_DIR'));
   if (global) return global;
 
   // Sandbox override
   if (sandboxEnabled()) {
-    const sb = resolveMaybeRelative(repoRoot, process.env.SANDBOX_UPLOADS_DIR);
+    const sb = resolveMaybeRelative(repoRoot, envStr('SANDBOX_UPLOADS_DIR'));
     if (sb) return sb;
     return path.join(repoRoot, 'server', 'uploads-sandbox');
   }
