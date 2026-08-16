@@ -19,7 +19,7 @@ import {
   resolveTemplate,
 } from '../../integrations/email-template-resolver.js';
 import { sendEmail } from '../../integrations/brevo.js';
-import { EMAIL_STYLES, emailWrapper, emailButton, troubleClickingFooter } from '../../integrations/email-templates.js';
+import { EMAIL_STYLES, emailWrapper, emailButton, troubleClickingFooter } from '../../integrations/email-templates/index.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 
 /**

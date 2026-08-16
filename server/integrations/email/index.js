@@ -3,7 +3,7 @@
  *
  * API docs: https://developers.brevo.com/reference/sendtransacemail
  *
- * Templates are defined in ../email-templates.js
+ * Templates are defined in ../email-templates/index.js
  * Admin-customized templates are resolved via ../email-template-resolver.js
  *
  * Sender identity can be configured via:
