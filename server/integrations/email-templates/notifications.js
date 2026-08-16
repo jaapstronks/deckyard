@@ -4,7 +4,7 @@
  */
 
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
-import { EMAIL_STYLES, emailButton } from './helpers.js';
+import { EMAIL_STYLES, emailButton, emailWrapper, troubleClickingFooter } from './helpers.js';
 
 // ============================================================
 // COMMENT NOTIFICATION TEMPLATE
@@ -189,6 +189,62 @@ ${analyticsUrl ? `${buttonLabel}: ${analyticsUrl}` : ''}
 
 ---
 ${footerText}
+`.trim();
+
+  return { htmlContent, textContent };
+}
+
+// ============================================================
+// GDPR DATA-REQUEST VERIFICATION TEMPLATE
+// ============================================================
+
+/**
+ * Build the GDPR self-service verification email — the link a visitor follows
+ * to see (and then erase) the leads a deck collected about their address. The
+ * link carries a short-lived, single-use token; the shape mirrors the magic
+ * link email (verify-then-act, safe-to-ignore, trouble-clicking footer).
+ * @param {Object} options
+ * @param {Function} options.tr - Translator function
+ * @param {string} options.verifyUrl - Tokenized my-data URL
+ * @returns {{ htmlContent: string, textContent: string }}
+ */
+export function buildDataRequestEmail({ tr, verifyUrl }) {
+  const greeting = tr('email.common.greetingAnonymous', 'Hi there,');
+  const bodyText = tr(
+    'email.dataRequest.body',
+    'We received a request to access the personal data collected about this email address. Click the button below to view it:'
+  );
+  const buttonLabel = tr('email.dataRequest.button', 'View my data');
+  const expiryText = tr(
+    'email.dataRequest.expiry',
+    'This link expires in 15 minutes and can only be used once. From that page you can also erase the data.'
+  );
+  const safeToIgnore = tr(
+    'email.common.safeToIgnore',
+    "If you didn't request this, you can safely ignore this email."
+  );
+
+  const htmlContent = emailWrapper({
+    greeting,
+    body: `
+      <p>${escapeHtml(bodyText)}</p>
+      ${emailButton(verifyUrl, buttonLabel)}
+      <p style="${EMAIL_STYLES.mutedSmall}">${escapeHtml(expiryText)}</p>
+    `,
+    footer: `${escapeHtml(safeToIgnore)}<br><br>${troubleClickingFooter(verifyUrl, tr)}`,
+  });
+
+  const textContent = `
+${greeting}
+
+${bodyText}
+
+${verifyUrl}
+
+${expiryText}
+
+---
+${safeToIgnore}
 `.trim();
 
   return { htmlContent, textContent };

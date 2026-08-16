@@ -22,7 +22,7 @@ import {
   anonymizeLeadsByEmail,
 } from '../../storage/leads.js';
 import { maybeFireLeadWebhook } from '../../utils/webhooks.js';
-import { maybeSendLeadNotification } from '../../integrations/email/senders-leads.js';
+import { maybeSendLeadNotification, sendDataRequestVerificationEmail } from '../../integrations/email/senders-leads.js';
 import crypto from 'node:crypto';
 import { crossOrganizationScope } from '../../storage/scope.js';
 import { LEAD_RATE_LIMITS } from '../../config/rate-limits.js';
@@ -303,7 +303,7 @@ async function handleDeleteLead(ctx, leadId) {
 }
 
 async function handleRequestMyData(ctx) {
-  const { req, res } = ctx;
+  const { req, res, repoRoot } = ctx;
 
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
@@ -327,23 +327,47 @@ async function handleRequestMyData(ctx) {
     }
   }
 
-  // In a real implementation, send an email with the verification link
-  // For now, return the token in development mode
-  if (process.env.NODE_ENV === 'development') {
-    serveJson(res, 200, {
-      ok: true,
-      message: 'Verification token generated',
-      // Only include token in dev mode for testing
-      devToken: token,
-    });
-  } else {
-    // TODO: Send verification email
+  // Deliver the token by e-mail. Note we always attempt delivery for any
+  // well-formed address (no existence check) — that keeps the response the
+  // same whether or not leads exist, so it can't be used to probe which
+  // addresses are in the system.
+  const result = await sendDataRequestVerificationEmail({ email, token, repoRoot });
+
+  if (result.ok) {
     serveJson(res, 200, {
       ok: true,
       message: 'If that email exists in our system, you will receive a verification link.',
     });
+    return true;
   }
-  return true;
+
+  if (result.reason === 'not_configured') {
+    // No outgoing mail on this install: don't claim a link was sent. In
+    // development we echo the token instead so the flow stays testable
+    // without a mail provider; production answers an honest 501, the same
+    // shape as the email test-send and Notion routes.
+    if (process.env.NODE_ENV === 'development') {
+      serveJson(res, 200, {
+        ok: true,
+        message: 'Verification token generated (development: email is not configured)',
+        devToken: token,
+      });
+      return true;
+    }
+    return (
+      jsonError(
+        res,
+        501,
+        'email_not_configured',
+        'Outgoing email is not configured on this install (BREVO_API_KEY)'
+      ),
+      true
+    );
+  }
+
+  // The request was valid; the upstream provider failed. That is a 502, the
+  // same mapping the email test-send route uses for provider failures.
+  return jsonError(res, 502, 'internal_error', `Failed to send verification email: ${result.error}`), true;
 }
 
 async function handleGetMyData(ctx) {
