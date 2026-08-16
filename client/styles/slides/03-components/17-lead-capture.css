@@ -102,7 +102,7 @@
   background: var(--interaction-surface-2);
   /* --interaction-surface-2 is ~white mixed with the slide background: a
      light surface whatever the variant did to the slide's text colour. */
-  --slide-on-surface: var(--t-text-color-dark, #212121);
+  --slide-on-surface: var(--slide-on-light);
   color: var(--slide-on-surface);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   width: 100%;
@@ -174,7 +174,7 @@
   border: none;
   border-radius: var(--slide-radius-md);
   background: var(--slide-accent);
-  color: var(--t-color-accent-contrast, var(--t-text-color-light, #fff));
+  color: var(--slide-on-accent);
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
   box-shadow: var(--interaction-shadow-sm);

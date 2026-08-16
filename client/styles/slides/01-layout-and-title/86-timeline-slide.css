@@ -19,15 +19,15 @@
   );
 }
 
-/* Dark backgrounds: elevated glass card + a light-on-dark accent. Themes may
-   set --t-slide-bg-calm-accent (e.g. a bright brand colour); it falls back to
-   the regular accent for themes that don't. */
+/* Dark backgrounds: elevated glass card + the accent role. (The documented
+   --t-slide-bg-calm-accent hook was never emitted by any theme or generator —
+   a phantom token; variants theme their text/link, not a private accent.) */
 .slide-timeline.slide-bg-calm,
 .slide-timeline.slide-bg-dark {
   --timeline-card-surface: rgba(255, 255, 255, 0.1);
   --timeline-card-border: rgba(255, 255, 255, 0.18);
   --timeline-card-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-  --timeline-accent: var(--t-slide-bg-calm-accent, var(--slide-accent));
+  --timeline-accent: var(--slide-accent);
   --timeline-marker-ring: rgba(255, 255, 255, 0.85);
 }
 

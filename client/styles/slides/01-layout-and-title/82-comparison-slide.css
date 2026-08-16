@@ -150,7 +150,7 @@
   /* Use lime for badge to ensure contrast on any theme */
   background: var(--slide-bg-lime, #e2fe52);
   /* The verdict sits on the badge, not on the slide. */
-  --slide-on-surface: var(--t-slide-bg-lime-text, #0b0b0b);
+  --slide-on-surface: var(--slide-on-lime);
   color: var(--slide-on-surface);
   border-radius: var(--slide-radius-sm);
   box-shadow: var(--slide-shadow-md);
@@ -159,7 +159,7 @@
 /* On lime background, use accent color for badge to stand out */
 .slide-comparison.slide-bg-lime .comparison-verdict .badge {
   background: var(--slide-accent, #375c5d);
-  color: var(--t-color-accent-contrast, #ffffff);
+  color: var(--slide-on-accent);
 }
 
 /* When verdict is present, bottom subheading sits below it */

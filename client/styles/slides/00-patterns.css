@@ -109,7 +109,7 @@
   background: var(--slide-bg-lime, #e2fe52);
   /* The number sits on the lime disc, not on the slide, so it reads the
      surface's own text colour. See docs/reference/nested-surfaces.md. */
-  --slide-on-surface: var(--t-slide-bg-lime-text, #0b0b0b);
+  --slide-on-surface: var(--slide-on-lime);
   color: var(--slide-on-surface);
   font-family: var(--font-heading);
   font-size: var(--slide-step-font);
@@ -124,7 +124,7 @@
    number sits on. */
 .slide-bg-lime .slide-step-indicator {
   background: var(--slide-accent, #375c5d);
-  --slide-on-surface: var(--t-color-accent-contrast, var(--t-text-color-light, #ffffff));
+  --slide-on-surface: var(--slide-on-accent);
   color: var(--slide-on-surface);
 }
 

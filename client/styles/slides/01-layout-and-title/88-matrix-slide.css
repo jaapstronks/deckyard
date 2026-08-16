@@ -1,16 +1,16 @@
 /* Matrix/SWOT slide (2×2 quadrant grid) */
 
-/* Use theme chart colors for tone-based cells */
+/* Tone-based cells read the series palette roles */
 .slide-matrix {
-  /* Primary/positive tone uses first chart color (teal in the default palette) */
-  --matrix-positive-bg: var(--t-chart-0, var(--slide-accent, #375c5d));
-  --matrix-positive-text: var(--t-chart-0, var(--slide-accent, #375c5d));
-  /* Negative tone uses third chart color (olive/amber in the default palette) */
-  --matrix-negative-bg: var(--t-chart-2, #848f52);
-  --matrix-negative-text: var(--t-chart-2, #6b7342);
-  /* Neutral tone uses fifth chart color (muted gray) */
-  --matrix-neutral-bg: var(--t-chart-4, #a2afa7);
-  --matrix-neutral-text: var(--t-chart-4, #6b7378);
+  /* Primary/positive tone uses first series color (teal in the default palette) */
+  --matrix-positive-bg: var(--slide-chart-0);
+  --matrix-positive-text: var(--slide-chart-0);
+  /* Negative tone uses third series color (olive/amber in the default palette) */
+  --matrix-negative-bg: var(--slide-chart-2);
+  --matrix-negative-text: var(--slide-chart-2);
+  /* Neutral tone uses fifth series color (muted gray) */
+  --matrix-neutral-bg: var(--slide-chart-4);
+  --matrix-neutral-text: var(--slide-chart-4);
 }
 
 .slide-matrix .slide-inner {

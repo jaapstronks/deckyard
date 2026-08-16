@@ -1,14 +1,15 @@
 /* --- Chart slide --- */
 .slide-chart {
-  /* Theme-driven chart palette (8 colors, cycles). */
-  --chart-0: var(--t-chart-0, var(--slide-accent));
-  --chart-1: var(--t-chart-1, #5d989a);
-  --chart-2: var(--t-chart-2, #848f52);
-  --chart-3: var(--t-chart-3, #aebd63);
-  --chart-4: var(--t-chart-4, #a2afa7);
-  --chart-5: var(--t-chart-5, #e0e6e2);
-  --chart-6: var(--t-chart-6, #2c4a4b);
-  --chart-7: var(--t-chart-7, #cfd887);
+  /* The series palette roles (8 colors, cycles), under the type's private
+     shorthand. */
+  --chart-0: var(--slide-chart-0);
+  --chart-1: var(--slide-chart-1);
+  --chart-2: var(--slide-chart-2);
+  --chart-3: var(--slide-chart-3);
+  --chart-4: var(--slide-chart-4);
+  --chart-5: var(--slide-chart-5);
+  --chart-6: var(--slide-chart-6);
+  --chart-7: var(--slide-chart-7);
 }
 .slide-chart .slide-inner {
   justify-content: flex-start;
@@ -187,7 +188,7 @@
   fill-opacity: 1;
 }
 .slide-chart .chart-pie-label.is-invert {
-  fill: var(--t-text-color-light, rgba(255, 255, 255, 0.96));
+  fill: var(--slide-on-dark);
   paint-order: stroke;
   stroke: rgba(0, 0, 0, 0.28);
   stroke-width: 2px;
