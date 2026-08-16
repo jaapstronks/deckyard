@@ -1,10 +1,9 @@
 import { notFound, unauthorized, forbidden, jsonError, serveJson, methodNotAllowed } from '../../utils/http.js';
 import { isCsrfSafe } from '../../utils/csrf.js';
 import {
+  MaintenanceWriteError,
+  assertWritable,
   getMaintenanceState,
-  isMaintenanceActive,
-  isWriteMethod,
-  maintenanceRetryAfterSeconds,
 } from '../../config/maintenance.js';
 import { authEnabled, getUserFromRequestAsync } from '../../auth/auth.js';
 import { getFeatureFlags } from '../../config/flags-snapshot.js';
@@ -102,16 +101,21 @@ export async function handleApi({ repoRoot, req, res, url }) {
   // instead of letting them hit a database that is mid-migration or a process
   // that is mid-shutdown. Reads stay open: a read-only Deckyard still serves
   // viewers and presenters, and blocking GETs would turn a restart into an
-  // outage for people who are not writing anything.
-  if (isMaintenanceActive() && isWriteMethod(req.method)) {
+  // outage for people who are not writing anything. The decision itself lives
+  // in assertWritable — the shared choke-point every write surface (this
+  // dispatcher, the MCP tool dispatch) goes through.
+  try {
+    assertWritable(req.method);
+  } catch (err) {
+    if (!(err instanceof MaintenanceWriteError)) throw err;
     return jsonError(
       res,
       503,
       'maintenance',
       'Deckyard is briefly unavailable for maintenance. Your work is kept in the browser and will save when it is back.',
       {
-        details: getMaintenanceState(),
-        headers: { 'Retry-After': String(maintenanceRetryAfterSeconds()) },
+        details: err.state,
+        headers: { 'Retry-After': String(err.retryAfter) },
       }
     );
   }

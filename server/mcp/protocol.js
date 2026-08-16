@@ -5,6 +5,8 @@
  * Supports stdio transport (primary) and SSE transport (future).
  */
 
+import { MaintenanceWriteError, assertWritable } from '../config/maintenance.js';
+
 const PROTOCOL_VERSION = '2024-11-05';
 const SERVER_NAME = 'deckyard';
 const SERVER_VERSION = '1.0.0';
@@ -96,13 +98,19 @@ export class McpServer {
    * @param {string} description - Human-readable description
    * @param {Object} inputSchema - JSON Schema for parameters
    * @param {Function} handler - async (params) => result
+   * @param {Object} [options]
+   * @param {boolean} [options.readOnly] - Declare the tool read-only so it
+   *   stays available during maintenance mode. Tools that do not declare it
+   *   are treated as writes and refused while maintenance is active — fail
+   *   closed, so a new (or fork-registered custom) tool that forgets the flag
+   *   is blocked rather than slipping past the write-gate.
    */
-  tool(name, description, inputSchema, handler) {
+  tool(name, description, inputSchema, handler, { readOnly = false } = {}) {
     const { inputSchema: schema, handler: wrapped } = withPresentationIdAlias(
       inputSchema,
       handler
     );
-    this.tools.set(name, { name, description, inputSchema: schema, handler: wrapped });
+    this.tools.set(name, { name, description, inputSchema: schema, handler: wrapped, readOnly });
   }
 
   /**
@@ -179,11 +187,13 @@ export class McpServer {
   _handleToolsList(id) {
     const tools = [];
     for (const tool of this.tools.values()) {
-      tools.push({
+      const entry = {
         name: tool.name,
         description: tool.description,
         inputSchema: tool.inputSchema,
-      });
+      };
+      if (tool.readOnly) entry.annotations = { readOnlyHint: true };
+      tools.push(entry);
     }
     return jsonRpcResponse(id, { tools });
   }
@@ -196,6 +206,25 @@ export class McpServer {
     }
 
     const tool = this.tools.get(name);
+
+    // Maintenance write-gate — the same choke-point the HTTP API dispatcher
+    // goes through (server/routes/api/index.js). A mutating tool call is a
+    // write; refuse it protocol-cleanly (a tool error result, not a raw 503)
+    // while reads keep working.
+    if (!tool.readOnly) {
+      try {
+        assertWritable();
+      } catch (err) {
+        if (!(err instanceof MaintenanceWriteError)) throw err;
+        return jsonRpcResponse(id, {
+          content: [{
+            type: 'text',
+            text: `Error: ${err.message} Writes are refused until maintenance ends; retry in ${err.retryAfter} seconds. Read tools keep working.`,
+          }],
+          isError: true,
+        });
+      }
+    }
 
     try {
       const result = await tool.handler(args || {}, context);

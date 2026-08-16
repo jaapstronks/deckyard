@@ -240,7 +240,8 @@ export function registerTools(
         exampleLang: lang,
         globalOptions: GLOBAL_SLIDE_OPTIONS,
       };
-    }
+    },
+    { readOnly: true }
   );
 
   // ─── list_presentations ─────────────────────────────────────────────────
@@ -322,7 +323,8 @@ export function registerTools(
         ownerFilter: owner || null,
         scope: validScope,
       };
-    }
+    },
+    { readOnly: true }
   );
 
   // ─── get_presentation ───────────────────────────────────────────────────
@@ -354,7 +356,8 @@ export function registerTools(
         })),
         slideCount: pres.slides?.length || 0,
       };
-    }
+    },
+    { readOnly: true }
   );
 
   // ─── create_presentation ────────────────────────────────────────────────
@@ -849,7 +852,8 @@ export function registerTools(
         warnings,
         isValid: warnings.length === 0,
       };
-    }
+    },
+    { readOnly: true }
   );
 
   // ─── list_themes ────────────────────────────────────────────────────────
@@ -880,7 +884,8 @@ export function registerTools(
       }
 
       return { themes };
-    }
+    },
+    { readOnly: true }
   );
 
   // ─── delete_presentation ────────────────────────────────────────────────
@@ -1136,7 +1141,8 @@ export function registerTools(
           } : null,
         })),
       };
-    }
+    },
+    { readOnly: true }
   );
 
   // ─── duplicate_presentation ─────────────────────────────────────────────
@@ -1202,7 +1208,8 @@ export function registerTools(
         editUrl: presentationUrl(presentationId, 'edit'),
         presentUrl: presentationUrl(presentationId, 'present'),
       };
-    }
+    },
+    { readOnly: true }
   );
 
   // ─── export_presentation ────────────────────────────────────────────────
@@ -1266,7 +1273,8 @@ export function registerTools(
         downloadUrl,
         note: 'Open this URL in a browser signed in to Deckyard to download the file. PDF/PPTX/PNG are rendered on demand and may take a few seconds for large decks.',
       };
-    }
+    },
+    { readOnly: true }
   );
 
   // ─── preview_slide ──────────────────────────────────────────────────────
@@ -1298,7 +1306,8 @@ export function registerTools(
 
       // Return HTML directly as text — Claude Desktop will render it as an artifact
       return html;
-    }
+    },
+    { readOnly: true }
   );
 
   // ─── preview_presentation ───────────────────────────────────────────────
@@ -1348,7 +1357,8 @@ export function registerTools(
 
       // Return HTML directly as text — Claude Desktop will render it as an artifact
       return html;
-    }
+    },
+    { readOnly: true }
   );
 
   // ─── list_comments ──────────────────────────────────────────────────────
@@ -1412,7 +1422,8 @@ export function registerTools(
         comments: enriched,
         total: enriched.length,
       };
-    }
+    },
+    { readOnly: true }
   );
 
   // ─── list_recent_comments ───────────────────────────────────────────────
@@ -1493,7 +1504,8 @@ export function registerTools(
         scope,
         ownerFilter: owner || null,
       };
-    }
+    },
+    { readOnly: true }
   );
 
   // ─── comment write tools (shared plumbing) ──────────────────────────────

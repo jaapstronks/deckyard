@@ -89,6 +89,40 @@ export function isWriteMethod(method) {
 }
 
 /**
+ * Thrown by {@link assertWritable} when a write must be refused because
+ * maintenance is active. Carries everything a surface needs to phrase the
+ * refusal in its own protocol: HTTP maps it to a 503 with `Retry-After`,
+ * MCP to a tool error result.
+ */
+export class MaintenanceWriteError extends Error {
+  constructor() {
+    super('Deckyard is briefly unavailable for maintenance.');
+    this.name = 'MaintenanceWriteError';
+    this.code = 'maintenance';
+    this.status = 503;
+    this.retryAfter = maintenanceRetryAfterSeconds();
+    this.state = getMaintenanceState();
+  }
+}
+
+/**
+ * The one write-gate choke-point. Every surface that mutates state — the HTTP
+ * API dispatcher, the MCP tool dispatch, any future write surface — calls this
+ * before doing the work, so the maintenance gate cannot be missed by one
+ * dispatcher while another honors it.
+ *
+ * @param {string} [method] - HTTP method; safe methods pass untouched. Omit it
+ *   for surfaces without a method (an MCP tool call that mutates is a write by
+ *   definition).
+ * @throws {MaintenanceWriteError} When maintenance is active and the call writes.
+ */
+export function assertWritable(method) {
+  if (method !== undefined && !isWriteMethod(method)) return;
+  if (!isMaintenanceActive()) return;
+  throw new MaintenanceWriteError();
+}
+
+/**
  * Reset to the environment-seeded state. Tests only.
  */
 export function resetMaintenanceForTests() {
