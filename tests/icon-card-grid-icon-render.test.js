@@ -1,8 +1,8 @@
 /**
  * Tests for how icon-card-grid-slide renders its icons.
  *
- * The icon is a CSS mask tinted by the container `color` (theme token
- * --t-icon-card-grid-icon-fg), NOT an <img>. An <img>-loaded SVG is an
+ * The icon is a CSS mask tinted by the container `color` (the
+ * --slide-on-accent-soft role), NOT an <img>. An <img>-loaded SVG is an
  * isolated document that ignores the host `color`, so its `currentColor`
  * followed the OS color scheme (black in light mode, white in dark) instead
  * of the theme. Rendering as a mask keeps the icon color deterministic.

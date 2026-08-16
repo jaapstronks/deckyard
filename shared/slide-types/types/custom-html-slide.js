@@ -152,7 +152,7 @@ export default {
       maxLength: HTML_MAX,
       capability: 'customHtml',
       helpText:
-        'Raw HTML for this slide. Scripts, iframes and forms are removed; structural HTML and SVG are kept. Theme tokens (var(--t-accent), …) are available.',
+        'Raw HTML for this slide. Scripts, iframes and forms are removed; structural HTML and SVG are kept. Theme tokens (var(--t-color-accent), …) are available.',
     },
     {
       key: 'css',

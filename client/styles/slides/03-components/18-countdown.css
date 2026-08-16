@@ -11,11 +11,11 @@
   color: var(--slide-on-accent);
 }
 .slide-countdown.slide-bg-brand-1 {
-  background-color: var(--t-brand-1, #7c3aed);
+  background-color: var(--slide-brand-1);
   color: var(--slide-on-dark);
 }
 .slide-countdown.slide-bg-brand-2 {
-  background-color: var(--t-brand-2, #375c5d);
+  background-color: var(--slide-brand-2);
   color: var(--slide-on-dark);
 }
 

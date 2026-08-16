@@ -38,9 +38,10 @@ export const BACKGROUND_FIELD = {
 /**
  * Named table style variants for the structured Table slide type.
  * Each variant maps to a `md-table--<value>` class whose colours resolve from
- * the theme palette by default (see `client/styles/slides/.../35-table-slide.css`),
- * so a table looks designed on any theme with zero per-theme work. A theme may
- * remap a variant's colours via `--t-table-<variant>-*` tokens.
+ * the theme palette (see `client/styles/slides/.../35-table-slide.css`), so a
+ * table looks designed on any theme with zero per-theme work — the planes
+ * follow the accent pair and the shared surface roles; there are no
+ * table-specific theme tokens.
  *  - `plain`: transparent surface, gridlines only (the historical look).
  *  - `panel`: filled panel with an emphasized header row + first (label) column.
  *  - `soft` : near-white panel with a coloured header and a faint label column.

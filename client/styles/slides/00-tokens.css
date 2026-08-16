@@ -103,6 +103,14 @@
   --slide-surface: var(--t-color-background, var(--slide-bg-lime, #e2fe52));
   --slide-on-surface: var(--t-color-text, #0b0b0b);
   --slide-on-surface-muted: var(--t-color-text-muted, rgba(11, 11, 11, 0.65));
+  /* Inverted plane: an element that fills itself with the current text
+     colour (primary action chip, .text-block.is-black). The fill re-resolves
+     per element, so it follows every --slide-on-surface rebind; the
+     on-colour must be rebound alongside on-surface wherever the ground flips
+     (00-base.css contrast classes, theme-slide-backgrounds.js variants) —
+     the root pairing with the page surface only holds on default grounds. */
+  --slide-surface-inverted: var(--slide-on-surface);
+  --slide-on-inverted: var(--slide-surface);
   --slide-accent: var(--t-color-accent, #385c5c);
   --slide-on-accent: var(
     --t-color-accent-contrast,
@@ -178,13 +186,16 @@
   --slide-chart-6: var(--t-chart-6, #2c4a4b);
   --slide-chart-7: var(--t-chart-7, #cfd887);
 
-  /* Brand text swatches: the on-brand text colours a theme offers beyond
-     default/muted/accent (shared/slide-types/text-styles.js slots). The
-     currentColor fallback keeps an undeclared slot a no-op, exactly as the
-     text-style CSS behaved when it read the theme token directly. */
-  --slide-brand-1: var(--t-color-brand-1, currentColor);
-  --slide-brand-2: var(--t-color-brand-2, currentColor);
-  --slide-brand-3: var(--t-color-brand-3, currentColor);
+  /* Brand slots: the theme's brand colours beyond the accent
+     (shared/slide-types/text-styles.js swatch slots; countdown's brand
+     background planes). The accent fallback keeps an undeclared slot a
+     visible colour — countdown paints these as backgrounds, and a
+     currentColor background computes to the text colour (invisible digits).
+     Text swatches on a brandless theme render accent instead of plain, the
+     same degradation the legacy --t-brand-* aliases had. */
+  --slide-brand-1: var(--t-color-brand-1, var(--slide-accent));
+  --slide-brand-2: var(--t-color-brand-2, var(--slide-accent));
+  --slide-brand-3: var(--t-color-brand-3, var(--slide-accent));
 
   /* Theme gradient layer (quote, chapter-title, icon-card-grid headers).
      `--t-gradient-enabled` is emitted as numeric 0/1 by theme-normalize so it

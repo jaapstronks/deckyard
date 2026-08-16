@@ -101,7 +101,25 @@ test('slideBackgroundsCssText generates guarded rules; contrast block only with 
   const tintRule = css.slice(css.indexOf('.slide.slide-bg-tint'));
   assert.doesNotMatch(tintRule, /--slide-on-surface:/);
   assert.doesNotMatch(tintRule, /--slide-link:/);
+  assert.doesNotMatch(tintRule, /--slide-on-inverted:/);
   assert.equal(slideBackgroundsCssText([]), '');
+});
+
+test('a text-flipping variant pairs the inverted plane with the opposite pole', () => {
+  // The inverted plane (primary action chip, .text-block.is-black) fills with
+  // --slide-on-surface, which the variant rule redirects to its text colour —
+  // so the on-colour must be the opposite pole, not the root page surface.
+  // Light text → light fill → dark pole, and vice versa.
+  const css = slideBackgroundsCssText(
+    normalizeSlideBackgrounds([
+      { id: 'calm', value: '#140a26', textColor: '#ffffff' },
+      { id: 'paper', value: '#f5f3ef', textColor: '#1c1917' },
+    ])
+  );
+  const calmRule = css.slice(css.indexOf('.slide.slide-bg-calm'), css.indexOf('.slide.slide-bg-paper'));
+  const paperRule = css.slice(css.indexOf('.slide.slide-bg-paper'));
+  assert.match(calmRule, /--slide-on-inverted: var\(--slide-on-light\);/);
+  assert.match(paperRule, /--slide-on-inverted: var\(--slide-on-dark\);/);
 });
 
 test('bgClass maps theme variant ids to slide-bg-<id> and falls back to lime', () => {

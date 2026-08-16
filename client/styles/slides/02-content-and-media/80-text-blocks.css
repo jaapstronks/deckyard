@@ -105,8 +105,8 @@
   color: var(--slide-on-accent);
 }
 .slide-text-blocks .text-block.is-black {
-  background: var(--slide-on-surface);
-  color: var(--slide-surface);
+  background: var(--slide-surface-inverted);
+  color: var(--slide-on-inverted);
 }
 
 /* Block title */

@@ -24,6 +24,8 @@
 // appends these entries to the base lime/mist options; swatches resolve via
 // the existing `--t-slide-bg-<id>` convention.
 
+import { pickTextColorForBg } from './color-utils.js';
+
 /** Valid variant ids: css-class-safe slugs. */
 export const SLIDE_BG_ID_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
 
@@ -155,6 +157,18 @@ export function slideBackgroundsCssText(entries) {
         // know which it is. `--t-slide-bg-<id>-link` (from `linkColor`) is the
         // theme author's explicit override on top.
         `  --slide-link: var(--t-slide-bg-${e.id}-link, color-mix(in srgb, var(--slide-accent) 42%, var(--slide-bg-text)));`,
+        // The inverted plane (primary action chip, .text-block.is-black)
+        // fills with --slide-on-surface, which this rule just redirected to
+        // the variant's text colour — so its on-colour is the opposite pole,
+        // picked by the text colour's own luminance. The root pairing
+        // (page-surface text) would be same-on-same here. Unparseable
+        // textColor (non-hex) lands on the dark pole, matching
+        // pickTextColorForBg's fallback.
+        `  --slide-on-inverted: ${
+          pickTextColorForBg(e.textColor) === '#ffffff'
+            ? 'var(--slide-on-dark)'
+            : 'var(--slide-on-light)'
+        };`,
         '  color: var(--slide-bg-text);'
       );
     }

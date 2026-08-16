@@ -135,6 +135,14 @@ and a stored config is always safe to merge without further checking.
 - Values are stripped of `;{}<>`, so a value cannot terminate its declaration
   and open a new rule — the same guard `shared/theme-slide-backgrounds.js`
   applies to variant values.
+- **Only contract tokens do anything.** Slide CSS reads the theme exclusively
+  through the role layer, so an override outside the contract set — pinned in
+  `tests/fixtures/theme-contract.json` and documented in
+  `docs/reference/slide-roles.md` § *The theme seam* — is accepted but has no
+  effect. The per-type `--t-<slide-type>-*` families were removed during beta
+  (see the release notes); their former meanings live on the role tokens
+  (`--t-color-accent-soft`, `--t-color-surface-raised`,
+  `--t-color-accent-on-dark`, `--t-slide-bg-dark-text`, `--t-chart-*`).
 
 ## Merge order
 

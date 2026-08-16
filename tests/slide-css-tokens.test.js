@@ -433,22 +433,24 @@ describe('slide css tokens', () => {
     );
   });
 
-  it('reads no --t-radius token outside 00-tokens.css', async () => {
+  it('reads no --t-* token outside 00-tokens.css', async () => {
     // The end-state contract check (phase 3 step 6 of the role-vocabulary
-    // brief) is "no var(--t-…) in slides/** outside 00-tokens.css". Colour and
-    // typography still have direct reads and get there in phase 3, but radius
-    // arrived early: batch 2.2a routed all 31 of them through
-    // `--slide-radius-*`. Asserting the radius family now locks that win in,
-    // so the next sheet cannot quietly reopen the direct path.
+    // brief): **no `var(--t-…)` anywhere in the slide bundle outside
+    // `00-tokens.css`**. Radius arrived first (batch 2.2a); colour and the
+    // per-type families followed in phase 3 steps 2-3; the legacy aliases were
+    // the last reads. Every theme lever now enters slide CSS through a
+    // `--slide-*` role minted in `00-tokens.css` (or, for the background
+    // surfaces and typography locals, `client/styles/theme.css` — outside the
+    // bundle and covered by the contract snapshot below).
     //
     // Scope is every sheet in the bundle, presenter chrome included: chrome
-    // draws its rounding from `--app-*`, so a `--t-radius` read there is just
-    // as wrong as one in slide CSS.
+    // draws its styling from `--app-*`/`--ps-*`, so a `--t-*` read there is
+    // just as wrong as one in slide CSS.
     const reads = [];
     for (const rel of allSheets) {
       if (/\/00-tokens\.css$/.test(rel)) continue;
       const clean = stripComments(await fs.readFile(path.join(repoRoot, rel), 'utf8'));
-      for (const m of clean.matchAll(/var\(\s*(--t-radius[\w-]*)/g)) {
+      for (const m of clean.matchAll(/var\(\s*(--t-[\w-]*)/g)) {
         const line = clean.slice(0, m.index).split('\n').length;
         reads.push(`${rel}:${line}  ${m[1]}`);
       }
@@ -456,10 +458,48 @@ describe('slide css tokens', () => {
     assert.deepStrictEqual(
       reads.sort(),
       [],
-      `${reads.length} direct theme-radius read(s) in the slide bundle.\n` +
-        'Radius reaches slide CSS through --slide-radius-{sm,md,lg,full}; only\n' +
-        '00-tokens.css binds those to the theme. Add a role there if the four\n' +
-        'steps do not cover the case — do not read --t-radius* directly.'
+      `${reads.length} direct theme-token read(s) in the slide bundle.\n` +
+        'Theme influence reaches slide CSS through the --slide-* roles; only\n' +
+        '00-tokens.css binds those to the theme contract. Add a role there if\n' +
+        'the existing ones do not cover the case — do not read --t-* directly.'
+    );
+  });
+
+  it('the theme contract matches the committed seam snapshot', async () => {
+    // The seam table as a machine check (phase 3 step 6): the theme contract
+    // IS the set of `--t-*` tokens the two contract files read —
+    // `00-tokens.css` (the roles) and `client/styles/theme.css` (background
+    // surfaces, typography locals, logo). A new theme dependency therefore
+    // shows up as a diff of `tests/fixtures/theme-contract.json` and has to be
+    // a deliberate decision, never a side effect of styling one slide type.
+    //
+    // Not in the static snapshot, by design: the per-variant
+    // `--t-slide-bg-<id>[-text|-text-muted|-link]` tokens generated from a
+    // theme's own `slideBackgrounds` (shared/theme-slide-backgrounds.js), and
+    // the `--t-ui-*` namespace, which never reaches slide CSS.
+    const contractFiles = [
+      path.join(slidesDir, '00-tokens.css'),
+      path.join(repoRoot, 'client', 'styles', 'theme.css'),
+    ];
+    const found = new Set();
+    for (const file of contractFiles) {
+      const clean = stripComments(await fs.readFile(file, 'utf8'));
+      for (const m of clean.matchAll(/var\(\s*(--t-[\w-]*)/g)) found.add(m[1]);
+    }
+    const snapshotFile = path.join(repoRoot, 'tests', 'fixtures', 'theme-contract.json');
+    const actual = [...found].sort();
+    if (updating) {
+      await fs.writeFile(snapshotFile, JSON.stringify(actual, null, 2) + '\n');
+      return;
+    }
+    const expected = JSON.parse(await fs.readFile(snapshotFile, 'utf8'));
+    assert.deepStrictEqual(
+      actual,
+      expected,
+      'The set of --t-* tokens the contract files read changed. If the new\n' +
+        'contract is intended, regenerate the snapshot:\n' +
+        '  UPDATE_SLIDE_CSS_SUPPRESSIONS=1 node --test tests/slide-css-tokens.test.js\n' +
+        'and account for it in docs/reference/slide-roles.md § The theme seam.'
     );
   });
 

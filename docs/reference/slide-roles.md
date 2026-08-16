@@ -5,13 +5,13 @@ vocabulary slide CSS is converging on. Implementation status, honestly: the
 tokens below all exist in `client/styles/slides/00-tokens.css`, and the four
 geometry/typography axes — leading, radius, font-size and spacing — are done,
 down to the private locals that feed them; the live figures are the per-file,
-per-category budgets in `slide-css-suppressions.json`, currently empty. What is
-*not* done is colour: the colour roles below exist and carry the whole slide
-bundle (the `--color-*` alias spelling is gone), but the per-type `--t-<type>-*`
-families and the five `--t-*` legacy aliases listed at the bottom still have
-live consumers, and the rest of phase 3 is what removes them. The
-gate that ratchets adoption up is `tests/slide-css-tokens.test.js`; the sweep
-that raises it is tracked in the planning repo (`css-role-vocabulary.md`).
+per-category budgets in `slide-css-suppressions.json`, currently empty. Colour is
+done too: the colour roles carry the whole slide bundle, the per-type
+`--t-<type>-*` families and the five `--t-*` legacy aliases are removed, and
+the contract is machine-checked — no `var(--t-…)` outside `00-tokens.css`,
+with the seam pinned as a snapshot (`tests/fixtures/theme-contract.json`).
+The gate is `tests/slide-css-tokens.test.js`; history in the planning repo
+(`css-role-vocabulary.md`).
 
 ## The system
 
@@ -296,6 +296,7 @@ bundle:
 | `surface` | `--slide-surface` ← `--t-color-background` |
 | `surface-raised` | `--slide-surface-raised` ← `--t-color-surface-raised` (opaque card/panel plane: table soft body, icon-card bodies) beside the translucent `--slide-surface-white(-solid)` pair |
 | `on-surface` / `on-surface-muted` | `--slide-on-surface(-muted)` ← `--t-color-text(-muted)` |
+| `surface-inverted` / `on-inverted` | `--slide-surface-inverted` = the current `--slide-on-surface` (an element that fills itself with the text colour: primary action chip, `.text-block.is-black`); `--slide-on-inverted` = the page surface at root, rebound to the opposite pole wherever the ground flips (contrast classes, theme background variants) |
 | `accent` / `on-accent` | `--slide-accent` / `--slide-on-accent` ← `--t-color-accent` / `--t-color-accent-contrast` |
 | link | `--slide-link` ← `--t-color-link`, defaulting to the accent; `--slide-link-on-dark` ← `--t-color-link-on-dark`, defaulting to the accent lightened toward white |
 | pole / variant text | `--slide-on-light` / `--slide-on-dark` ← the theme's two poles (`--t-text-color-dark/-light`); `--slide-on-lime` / `--slide-on-mist` / `--slide-on-bg-dark` ← the derived per-surface answer (`--t-slide-bg-<id>-text`); `--slide-on-gradient(-muted)` ← the gradient layer's pair (`--t-slide-gradient-text(-muted)`, emitted only when the gradient is on) |
@@ -303,15 +304,16 @@ bundle:
 | `border` | `--slide-border-*` (opacity-derived) |
 | `emphasis` / `on-emphasis` | `--slide-emphasis` / `--slide-on-emphasis` — the filled band a type emphasises with (table header and label-column planes, kickers), fed by the accent pair |
 | series palette | `--slide-chart-{0..7}` ← `--t-chart-{0..7}` (numbered accent colours; the only series palette) |
-| brand swatches | `--slide-brand-{1..3}` ← `--t-color-brand-{1..3}`, currentColor when undeclared |
+| brand slots | `--slide-brand-{1..3}` ← `--t-color-brand-{1..3}` (filled from the theme's `brandColors`; an explicit slot wins), falling back to the accent when the theme declares no brand palette — countdown paints these as backgrounds, so the slot must always resolve to a visible colour |
 | gradient layer | `--slide-gradient-bg` / `--slide-gradient-opacity` ← `--t-slide-gradient-bg` / `--t-gradient-enabled` |
 
 The contextual rebinding mechanism in `00-patterns.css` (a surface class
 rebinds the text role for everything inside it) is correct and stays, including
 the contrast derivation in `theme-normalize.js` — only the spelling changed:
 surface classes and background variants now rebind `--slide-on-surface`,
-`--slide-on-surface-muted` and `--slide-link` (see `00-base.css` and the
-generated variant rules in `shared/theme-slide-backgrounds.js`).
+`--slide-on-surface-muted`, `--slide-link` and — where the ground flips its
+text pole — `--slide-on-inverted` (see `00-base.css` and the generated
+variant rules in `shared/theme-slide-backgrounds.js`).
 
 ## Radius, shadow, opacity
 
@@ -460,8 +462,10 @@ new code:
 2. ~~the `--color-*` spelling of the text-colour alias layer~~ — **done**
    (batch 2.2b): consumers migrated to the `--slide-*` colour roles, alias
    definitions deleted from `theme.css`;
-3. the five `--t-*` legacy aliases (`--t-primary`, `--t-accent`,
-   `--t-bg-dark`, `--t-brand-1/2`);
+3. ~~the five `--t-*` legacy aliases (`--t-primary`, `--t-accent`,
+   `--t-bg-dark`, `--t-brand-1/2`)~~ — **done** (phase 3): consumers read
+   roles, `theme-normalize.js` fills `--t-color-brand-{1..3}` from
+   `brandColors` instead of emitting aliases;
 4. ~~direct `var(--t-radius…)` reads in slide CSS~~ — **done** (batch 2.2a):
    all reads go through `--slide-radius-*`.
 
@@ -486,8 +490,10 @@ already allowlisted categories. A literal *inside* such an expression is not
 covered by that allowlist: the multiplier is allowed, the number it multiplies
 is still a value on the axis.
 
-The same file carries the first slice of the end-state contract check: **no
-`var(--t-radius…)` anywhere in the slide bundle outside `00-tokens.css`**. That
-became true in batch 2.2a and is asserted from batch 2.3a on, so the direct
-path cannot reopen. Colour and typography still have direct reads; phase 3
-widens the check to all of `--t-*` and adds the seam table as a snapshot.
+The same file carries the end-state contract check: **no `var(--t-…)`
+anywhere in the slide bundle outside `00-tokens.css`** (grown from the
+batch-2.3a radius slice to the whole `--t-*` namespace in phase 3), plus the
+seam snapshot: the set of `--t-*` tokens the two contract files
+(`00-tokens.css`, `theme.css`) read is pinned in
+`tests/fixtures/theme-contract.json`, so a new theme dependency is a
+deliberate diff, never a side effect.

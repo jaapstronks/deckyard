@@ -266,6 +266,9 @@
   --slide-bg-text-muted: color-mix(in srgb, var(--slide-bg-text) 78%, transparent);
   --slide-on-surface: var(--slide-bg-text);
   --slide-on-surface-muted: var(--slide-bg-text-muted);
+  /* Inverted plane fills with the (light) text colour, so its on-colour is
+     the dark pole. */
+  --slide-on-inverted: var(--slide-on-light);
   /* The brand accent is tuned for light backgrounds, so links keeping the raw
      accent go near-invisible on a dark surface — the on-dark link role
      lightens it (00-tokens.css). */
@@ -277,6 +280,7 @@
   --slide-bg-text-muted: color-mix(in srgb, var(--slide-bg-text) 70%, transparent);
   --slide-on-surface: var(--slide-bg-text);
   --slide-on-surface-muted: var(--slide-bg-text-muted);
+  --slide-on-inverted: var(--slide-on-dark);
   color: var(--slide-bg-text);
 }
 .slide.has-slide-bg-light-text .slide-inner,
