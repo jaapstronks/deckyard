@@ -2,7 +2,7 @@
  * Lead capture email senders.
  */
 
-import { buildLeadNotificationEmail } from '../email-templates.js';
+import { buildLeadNotificationEmail } from '../email-templates/index.js';
 import { sendEmail, getSenderIdentity } from './core.js';
 import { getUserSettings } from '../../storage/settings.js';
 import { resolveTemplate, interpolatePlaceholders } from '../email-template-resolver.js';

@@ -3,7 +3,7 @@
  */
 
 import { createTranslator } from '../../i18n/index.js';
-import { buildExportReadyEmail } from '../email-templates.js';
+import { buildExportReadyEmail } from '../email-templates/index.js';
 import { sendEmail, getSenderIdentity } from './core.js';
 
 /**

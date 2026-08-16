@@ -8,7 +8,7 @@ import {
   buildGuestVerificationEmail,
   buildCollaboratorInviteEmail,
   buildGuestInvitationEmail,
-} from '../email-templates.js';
+} from '../email-templates/index.js';
 import { sendEmail, getSenderIdentity } from './core.js';
 import { trySendCustomTemplate } from './template-builder.js';
 
