@@ -51,9 +51,30 @@ info:
     - `401` - Unauthorized
     - `403` - Forbidden
     - `404` - Not Found
+    - `405` - Method Not Allowed (the `Allow` header lists the accepted methods)
+    - `413` - Payload Too Large (request body over the configured size cap)
     - `423` - Locked (a changed slide is locked by the author or being edited by another user)
     - `429` - Rate Limited
     - `500` - Server Error
+    - `502` - Bad Gateway (the upstream LLM vendor failed or returned unusable output)
+    - `503` - Service Unavailable (database or AI backend not available)
+
+    Error responses carry a JSON envelope:
+
+    ```
+    { "error": "<what went wrong>", "message": "<optional detail>", "details": { } }
+    ```
+
+    **Implementation status (beta, honest note):** the envelope above is the
+    normative target, but today `error` carries a human-readable sentence on
+    most endpoint-specific errors, while cross-cutting rejections (unknown
+    route `404`, `405`, missing-permission `403`, per-minute `429`) answer
+    with the internal envelope `{ "ok": false, "error": "<machine_code>",
+    "message": "..." }` (stable snake_case codes: `not_found`,
+    `method_not_allowed`, `forbidden`, `rate_limited`). During the beta these
+    converge on one envelope with a machine code in `error` and prose in
+    `message`; until then, branch on the HTTP status code, not on either
+    error string.
 
   version: '1.0.0'
   contact:
@@ -68,6 +89,8 @@ security:
   - bearerAuth: []
 
 tags:
+  - name: Meta
+    description: API info, documentation and format schemas (no authentication required)
   - name: Presentations
     description: Create, read, update, and delete presentations
   - name: Slides
@@ -88,6 +111,108 @@ tags:
     description: Themes, slide types, and other resources
 
 paths:
+  /:
+    get:
+      tags:
+        - Meta
+      summary: API info
+      description: Returns API name, version and the main endpoint groups. Health-check friendly.
+      security: []
+      responses:
+        '200':
+          description: API info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: Deckyard Public API
+                  version:
+                    type: string
+                    example: v1
+                  documentation:
+                    type: string
+                    example: /api/v1/docs
+                  endpoints:
+                    type: object
+                    additionalProperties:
+                      type: string
+
+  /docs:
+    get:
+      tags:
+        - Meta
+      summary: API documentation (Swagger UI)
+      description: Serves an interactive Swagger UI for this specification.
+      security: []
+      responses:
+        '200':
+          description: Documentation page
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /openapi.yaml:
+    get:
+      tags:
+        - Meta
+      summary: OpenAPI specification
+      description: Serves this specification as YAML.
+      security: []
+      responses:
+        '200':
+          description: The OpenAPI specification
+          content:
+            text/yaml:
+              schema:
+                type: string
+
+  /schema/deck.json:
+    get:
+      tags:
+        - Meta
+      summary: Deck format JSON Schema
+      description: |
+        The generated JSON Schema for the portable deck format. Generated live
+        from the slide-type registry, so it always matches this install's
+        actual types (including custom ones). Its `$defs` hold one content
+        schema per slide type, selected by a `type` discriminator.
+      security: []
+      responses:
+        '200':
+          description: JSON Schema for the deck format
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /schema/slide-types/{type}.json:
+    get:
+      tags:
+        - Meta
+      summary: Slide-type content JSON Schema
+      description: The generated JSON Schema for one slide type's content shape.
+      security: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          description: Slide type name (registry key, e.g. content-slide)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: JSON Schema for the slide type's content
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /presentations:
     get:
       tags:
@@ -132,6 +257,8 @@ paths:
                     $ref: '#/components/schemas/Pagination'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
 
@@ -182,6 +309,10 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /presentations/{id}:
     get:
@@ -213,6 +344,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
     put:
       tags:
@@ -264,6 +397,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '423':
           $ref: '#/components/responses/SlideLocked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
     delete:
       tags:
@@ -295,6 +430,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /presentations/{id}/duplicate:
     post:
@@ -326,166 +463,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-
-  /presentations/{id}/versions:
-    get:
-      tags:
-        - Presentations
-      summary: List presentation versions
-      description: Returns a list of version snapshots for a presentation, sorted by creation date (newest first).
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Presentation ID
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: List of versions
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      format: uuid
-                    created:
-                      type: string
-                      format: date-time
-                    createdById:
-                      type: string
-                      format: uuid
-                      nullable: true
-                      description: >-
-                        The stable user id of whoever took the snapshot. Null
-                        for an external or legacy author with no user record —
-                        a defined absence, not an error.
-                    createdBy:
-                      type: string
-                      nullable: true
-                    reason:
-                      type: string
-                      enum: [session_end, manual, restore, pre_restore, autosave, snapshot]
-                    label:
-                      type: string
-                    revision:
-                      type: integer
-                      nullable: true
-                    title:
-                      type: string
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-    post:
-      tags:
-        - Presentations
-      summary: Create a manual version snapshot
-      description: Creates a labeled version snapshot of the current presentation state.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Presentation ID
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                label:
-                  type: string
-                  description: Optional label for the snapshot
-      responses:
-        '201':
-          description: Version created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                  version:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        format: uuid
-                      created:
-                        type: string
-                        format: date-time
-                      createdById:
-                        type: string
-                        format: uuid
-                        nullable: true
-                        description: >-
-                          The stable user id of whoever took the snapshot. Null
-                          for an external or legacy author with no user record —
-                          a defined absence, not an error.
-                      createdBy:
-                        type: string
-                        nullable: true
-                      reason:
-                        type: string
-                      revision:
-                        type: integer
-                        nullable: true
-                      title:
-                        type: string
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /presentations/{id}/session-end:
-    post:
-      tags:
-        - Presentations
-      summary: Signal editing session end
-      description: |
-        Internal endpoint called by the editor when an editing session ends.
-        Creates a session-end snapshot if one hasn't been created recently (throttled to 60 seconds).
-        Used for reliable snapshot creation on tab close via sendBeacon API.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Presentation ID
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                beacon:
-                  type: boolean
-                  description: Indicates request is from sendBeacon (for logging)
-      responses:
-        '204':
-          description: Session end acknowledged (snapshot created or throttled)
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /presentations/{id}/slides:
     post:
@@ -523,6 +502,9 @@ paths:
                 notes:
                   type: string
                   description: Speaker notes
+                visibility:
+                  type: object
+                  description: Per-context visibility flags
                 atIndex:
                   type: integer
                   description: Insert at this index (0-based)
@@ -558,6 +540,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /presentations/{id}/slides/{slideId}:
     get:
@@ -598,6 +582,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
     put:
       tags:
@@ -638,6 +624,9 @@ paths:
                 notes:
                   type: string
                   description: Speaker notes
+                visibility:
+                  type: object
+                  description: Per-context visibility flags
       responses:
         '200':
           description: Slide updated
@@ -667,6 +656,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '423':
           $ref: '#/components/responses/SlideLocked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
     delete:
       tags:
@@ -717,6 +708,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '423':
           $ref: '#/components/responses/SlideLocked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /presentations/{id}/slides/reorder:
     post:
@@ -780,6 +773,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /presentations/{id}/slides/from-library:
     post:
@@ -849,6 +844,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /presentations/{id}/publish:
     get:
@@ -891,6 +888,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
     post:
       tags:
@@ -927,6 +926,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
     delete:
       tags:
@@ -957,6 +958,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /presentations/{id}/translate:
     post:
@@ -1027,6 +1030,10 @@ paths:
           $ref: '#/components/responses/NotFound'
         '429':
           $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 
   /translate/languages:
     get:
@@ -1053,6 +1060,10 @@ paths:
                           type: string
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /slide-library:
     get:
@@ -1095,6 +1106,10 @@ paths:
                     $ref: '#/components/schemas/Pagination'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /slide-library/{itemId}:
     get:
@@ -1122,8 +1137,12 @@ paths:
                     $ref: '#/components/schemas/SlideLibraryItem'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /slide-types/{slideType}/schema:
     get:
@@ -1180,8 +1199,12 @@ paths:
                     $ref: '#/components/schemas/Slide'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /presentations/{id}/export/json:
     get:
@@ -1245,6 +1268,10 @@ paths:
                 type: string
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
 
@@ -1284,6 +1311,10 @@ paths:
                 format: binary
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
 
@@ -1316,6 +1347,10 @@ paths:
                 type: string
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
 
@@ -1324,7 +1359,7 @@ paths:
       tags:
         - AI
       summary: Get available AI vendors
-      description: Returns the list of configured LLM providers.
+      description: Returns the LLM vendor status of this install.
       responses:
         '200':
           description: Available vendors
@@ -1335,15 +1370,32 @@ paths:
                 properties:
                   vendors:
                     type: object
-                    additionalProperties:
-                      type: object
-                      properties:
-                        available:
-                          type: boolean
-                        name:
+                    properties:
+                      knownVendors:
+                        type: array
+                        items:
                           type: string
+                        description: Every vendor id this build can talk to
+                      configuredVendors:
+                        type: array
+                        items:
+                          type: string
+                        description: The subset with credentials configured on this install
+                      defaultVendor:
+                        type: string
+                        nullable: true
+                        description: The vendor used when a request names none; null when nothing is configured
+                      vendorLabels:
+                        type: object
+                        additionalProperties:
+                          type: string
+                        description: Human-readable labels, keyed by vendor id
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /ai/wizard:
     post:
@@ -1405,8 +1457,14 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 
   /ai/append-slides:
     post:
@@ -1458,8 +1516,14 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 
   /themes:
     get:
@@ -1483,6 +1547,10 @@ paths:
                     type: integer
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /slide-types:
     get:
@@ -1506,6 +1574,10 @@ paths:
                     type: integer
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /image-library:
     get:
@@ -1581,6 +1653,10 @@ paths:
                     $ref: '#/components/schemas/Pagination'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /presentations/{id}/comments:
     get:
@@ -1650,6 +1726,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
     post:
       tags:
@@ -1707,6 +1785,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 
   /comments/{commentId}/status:
     post:
@@ -1758,6 +1840,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           description: Transition not allowed from the comment's current status
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
 components:
   securitySchemes:
@@ -1874,6 +1958,15 @@ components:
         notes:
           type: string
           description: Speaker notes
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Parent slide id for nested (vertical) slides; null for top-level slides.
+        visibility:
+          type: object
+          description: Per-context visibility flags for the slide (empty object = visible everywhere).
+          additionalProperties: true
 
     Comment:
       type: object
@@ -2196,7 +2289,12 @@ components:
             $ref: '#/components/schemas/Error'
 
     RateLimited:
-      description: Rate limit exceeded
+      description: >-
+        Rate limit exceeded. Two limiters answer with this status: the
+        per-minute request limiter (sets `Retry-After` only) and the daily
+        AI/export limiters (set the `X-RateLimit-*` headers and include
+        `limit`, `used` and `resetAt` in the body). All headers are therefore
+        optional.
       headers:
         X-RateLimit-Limit:
           schema:
@@ -2210,6 +2308,36 @@ components:
         Retry-After:
           schema:
             type: integer
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Error'
+              - type: object
+                properties:
+                  limit:
+                    type: integer
+                    description: Daily limit (daily limiters only)
+                  used:
+                    type: integer
+                    description: Requests used today (daily limiters only)
+                  resetAt:
+                    type: integer
+                    description: Unix timestamp when the limit resets (daily limiters only)
+
+    BadGateway:
+      description: >-
+        Bad gateway — the upstream LLM vendor failed or returned output the
+        server could not use.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    ServiceUnavailable:
+      description: >-
+        Service unavailable — the database backend is down or a required
+        backend (AI, comment store) is not configured on this install.
       content:
         application/json:
           schema:
