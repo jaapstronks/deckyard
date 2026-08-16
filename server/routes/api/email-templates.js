@@ -189,6 +189,17 @@ async function handleEmailTemplateTest({ repoRoot, req, res, authedUser: user },
   });
 
   if (!result.ok) {
+    // Misconfiguration is not an upstream failure: no key means nothing was
+    // attempted, and the fix is an operator action, not a retry. Same shape
+    // as the Notion routes (501 <feature>_not_configured).
+    if (result.reason === 'not_configured') {
+      return jsonError(
+        res,
+        501,
+        'email_not_configured',
+        'Outgoing email is not configured on this install (BREVO_API_KEY)'
+      );
+    }
     // The request was valid; the upstream email provider failed. That is a
     // 502, not a 400 — same status the AI routes use for provider failures
     // (LlmError default), same generic-5xx machine code (A7.19-C7h).
