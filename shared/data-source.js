@@ -9,7 +9,30 @@
 export const DATA_SOURCE_PROVIDERS = ['notion-database', 'notion-block', 'csv-url'];
 
 /** Refresh mode controls when data is fetched */
-export const REFRESH_MODES = ['frozen', 'manual', 'on-view'];
+export const REFRESH_MODES = ['frozen', 'manual'];
+
+/**
+ * Legacy refresh modes folded to their canonical replacement at the slide
+ * write seam. `on-view` ("Live (auto)") was removed 2026-08-16: it was
+ * selectable and schema-valid but never triggered a refresh anywhere, so it
+ * behaved exactly like `manual`. This is the single place that knows the
+ * mapping (beta-window input normalization, not a format feature — see
+ * docs/reference/versioning.md § The beta stance).
+ */
+const LEGACY_REFRESH_MODES = { 'on-view': 'manual' };
+
+/**
+ * Fold a legacy refresh mode onto its canonical replacement.
+ * Returns the dataSource unchanged when nothing needs folding.
+ *
+ * @param {object|undefined} ds
+ * @returns {object|undefined}
+ */
+export function normalizeDataSource(ds) {
+  const canonical = LEGACY_REFRESH_MODES[ds?.refresh?.mode];
+  if (!canonical) return ds;
+  return { ...ds, refresh: { ...ds.refresh, mode: canonical } };
+}
 
 /** Human-readable labels for data source providers */
 export const PROVIDER_LABELS = {

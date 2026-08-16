@@ -6,12 +6,16 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { REFRESH_MODES, BINDABLE_SLIDE_TYPES, PROVIDER_LABELS } from '../../../shared/data-source.js';
+import {
+  REFRESH_MODES,
+  BINDABLE_SLIDE_TYPES,
+  PROVIDER_LABELS,
+  normalizeDataSource,
+} from '../../../shared/data-source.js';
 
 const MODE_LABELS = {
   frozen: 'Snapshot',
   manual: 'Manual refresh',
-  'on-view': 'Live (auto)',
 };
 
 /**
@@ -31,7 +35,9 @@ export function buildDataSourceIndicator({
   const flags = features && typeof features === 'object' ? features : {};
   if (!flags.enableLiveData) return null;
 
-  const ds = slide?.dataSource;
+  // Fold legacy refresh modes so a stored `on-view` deck reads as `manual`
+  // (the write seam persists the fold on the next save).
+  const ds = normalizeDataSource(slide?.dataSource);
   const slideType = slide?.type;
   const isBindable = !!(slideType && BINDABLE_SLIDE_TYPES[slideType]);
 

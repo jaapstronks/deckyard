@@ -52,7 +52,6 @@ Easiest to test without any external account.
 
 **Mode switching:**
 - Change the mode dropdown from "Snapshot" to "Manual refresh" — the status dot should turn green.
-- Change to "Live (auto)" — same green dot.
 - Change back to "Snapshot" — dot turns gray, shows "Snapshot from [date]".
 
 **Disconnect:**
