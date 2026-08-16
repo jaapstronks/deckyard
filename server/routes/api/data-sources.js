@@ -11,7 +11,6 @@ import { badRequest, methodNotAllowed, serveJson, unauthorized, forbidden, jsonE
 import { isLiveDataEnabled } from '../../config/features.js';
 import { validateDataSource, DATA_SOURCE_PROVIDERS, BINDABLE_SLIDE_TYPES } from '../../../shared/data-source.js';
 import { refreshSlideData, fetchProviderData } from '../../utils/data-source/index.js';
-import { broadcastToPresentation, DataSourceEventTypes } from '../../services/comment-events.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 // GET /api/data-sources/providers — list available providers and bindable slide types
@@ -47,7 +46,14 @@ async function handleDataSourcePreview({ req, res }) {
   }
 }
 
-// POST /api/data-sources/refresh — refresh a slide's data from its source
+// POST /api/data-sources/refresh — refresh a slide's data from its source.
+//
+// Deliberately a pure transform: `{dataSource, content}` in, refreshed content
+// out. It has no presentation context and MUST NOT broadcast to a deck's SSE
+// stream — the old body-supplied `presentationId` broadcast let any
+// authenticated user emit `datasource:refreshed` onto any deck's stream (B69).
+// When a listener ships, the broadcast returns presentation-scoped and
+// authz-checked, not body-trusted.
 async function handleDataSourceRefresh({ req, res }) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
@@ -63,15 +69,6 @@ async function handleDataSourceRefresh({ req, res }) {
 
   try {
     const result = await refreshSlideData(body.dataSource, body.content);
-
-    // Broadcast update via SSE if a presentationId is provided
-    if (body.presentationId && body.slideId) {
-      broadcastToPresentation(body.presentationId, DataSourceEventTypes.REFRESHED, {
-        slideId: body.slideId,
-        content: result.content,
-        lastSync: result.lastSync,
-      });
-    }
 
     serveJson(res, 200, {
       content: result.content,

@@ -257,7 +257,7 @@ export function createRerenderEditor({
     // Data source indicator (shown for bindable slide types when live data is enabled)
     if (!contentOnly) {
       const dsBar = buildDataSourceIndicator({
-        h, slide, pres, api, markDirty, editorState, features, openOverlayClosers,
+        h, slide, api, markDirty, editorState, features, openOverlayClosers,
       });
       if (dsBar) editorMount.append(dsBar);
     }
