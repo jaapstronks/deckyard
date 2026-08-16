@@ -199,6 +199,7 @@ nothing is discoverable only by `ls`.
 | [`sandbox-mode.md`](reference/sandbox-mode.md) | The public anonymous try-it playground: guest identity, ephemeral decks, TTL cleanup |
 | [`security-posture.md`](reference/security-posture.md) | Server-side hardening controls, what each blocks, and where it lives |
 | [`webhooks.md`](reference/webhooks.md) | The eight outgoing events, their payload contract, the SSRF guard and the admin config |
+| [`data-sources.md`](reference/data-sources.md) | Live slide data sources (Notion/CSV): the fetch/bind pipeline, the csv-url SSRF sink, and the config |
 | [`analytics.md`](reference/analytics.md) | View analytics end to end: tracking routes, aggregations, reports, retention job |
 | [`analytics-privacy.md`](reference/analytics-privacy.md) | What view analytics stores per viewer, the two erase routes, retention |
 | [`email-infrastructure.md`](reference/email-infrastructure.md) | The Brevo transport, the senders, and the admin-customizable templates |
