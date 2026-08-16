@@ -4,6 +4,29 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.19.0](https://github.com/jaapstronks/deckyard/compare/v1.18.0...v1.19.0) (2026-08-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* Themes no longer have per-slide-type tokens; every theme lever is a role token. Per family: --t-kpi-tile-{1..4}-*/--t-kpi-delta-* — removed, tiles render the neutral defaults; a coloured series comes from --t-chart-*. --t-table-<variant>-* — removed, table planes follow --t-color-accent(+contrast) and the mist/raised surfaces. --t-icon-card-grid-* — removed; the icon plane derives from mist/accent (override: --t-color-accent-soft), card bodies read --t-color-surface-raised, header text follows the gradient/on-surface roles. --t-quote-text-color/--t-chapter-text-color — replaced by --t-slide-bg-dark-text; --t-quote-author-color — renamed --t-color-accent-on-dark. --t-list-item-title-letter-spacing — removed. The legacy aliases --t-primary/--t-accent/--t-bg-dark/--t-brand-1/2 are no longer emitted; brand slots --t-color-brand-{1..3} fill from brandColors. Unknown tokens in existing themes are harmless (they do nothing); decks render with role-derived styling.
+* retire the legacy theme aliases and close the --t-* contract (A7.9 phase 3 steps 4-6) ([#750](https://github.com/jaapstronks/deckyard/issues/750))
+
+### Fixed
+
+* DELETE /api/leads/my-data reaches the erasure handler instead of the :id row ([#710](https://github.com/jaapstronks/deckyard/issues/710)) ([c2f90aa](https://github.com/jaapstronks/deckyard/commit/c2f90aa7f65511e58847869fa9b76c02004c6c10))
+* fresh invitations no longer show 'expired' in the admin user list ([#706](https://github.com/jaapstronks/deckyard/issues/706)) ([6fc6108](https://github.com/jaapstronks/deckyard/commit/6fc6108c3d251daaa1c7f268941b2cd6cd70eeea))
+* queued exports read the export type from the job name ([#712](https://github.com/jaapstronks/deckyard/issues/712)) ([bd88ed5](https://github.com/jaapstronks/deckyard/commit/bd88ed5f60f63bcc58112b99133bd1ab5756ae92))
+* route error stragglers onto the canonical envelope (C7a) ([#723](https://github.com/jaapstronks/deckyard/issues/723)) ([1d463cb](https://github.com/jaapstronks/deckyard/commit/1d463cb963ed048e1dadbd60261887ea271c32a4))
+* stub out the unused, unpatched image-size transitive dependency (B59) ([#747](https://github.com/jaapstronks/deckyard/issues/747)) ([df884c5](https://github.com/jaapstronks/deckyard/commit/df884c51e8425aeb2698d968e8e4040244ce33ae))
+* type sendEmail failures — misconfig answers 501, upstream stays 502 (B60) ([#751](https://github.com/jaapstronks/deckyard/issues/751)) ([b2b994d](https://github.com/jaapstronks/deckyard/commit/b2b994d5387b24d63f35b8efbf38c597f2eb6833))
+
+
+### Changed
+
+* release note for the phase-3 theme-token consolidation ([#746](https://github.com/jaapstronks/deckyard/issues/746), [#748](https://github.com/jaapstronks/deckyard/issues/748)-[#750](https://github.com/jaapstronks/deckyard/issues/750)) ([cf5081c](https://github.com/jaapstronks/deckyard/commit/cf5081c09653f250476ac5bae8dc58f12b051fa4))
+* retire the legacy theme aliases and close the --t-* contract (A7.9 phase 3 steps 4-6) ([#750](https://github.com/jaapstronks/deckyard/issues/750)) ([ba13785](https://github.com/jaapstronks/deckyard/commit/ba13785f2e97749b2d41134e43a77c91c795e8d0))
+
 ## [1.18.0](https://github.com/jaapstronks/deckyard/compare/v1.17.0...v1.18.0) (2026-08-10)
 
 
