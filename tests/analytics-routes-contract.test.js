@@ -38,7 +38,10 @@
  * shapes are a `.pgtest.js`/e2e concern, the same class as the browser-only
  * PPTX path and the LLM vendor seam already opted out in the brief. The report
  * CRUD, the public report viewer and the session list use only simple queries
- * and are pinned end to end.
+ * and are pinned end to end. Two further scope notes: `realtime.js` (SSE) is
+ * left out with the other stream endpoints, and the handlers are driven
+ * directly, so the module-level dispatch table and the `analytics:auth` rate
+ * limit in `index.js` are not pinned here.
  *
  * House shape (see `tests/collaborators-permission-model.test.js`): the exported
  * handler is called directly with a req/res double over `tests/helpers/fake-db.js`,
@@ -472,6 +475,18 @@ for (const [name, handler] of READERS) {
   });
 }
 
+test('org visibility stops at the org boundary: an outsider cannot read metrics', async () => {
+  await seed();
+  const { res } = await call(handleOverview, 'GET', '/api/presentations/deck-org/analytics/overview', {
+    as: ACTORS.outsider,
+    args: ['deck-org'],
+  });
+
+  // The outsider's storage scope is their own organization, so the deck does
+  // not resolve at all: a 404, which also refuses to confirm the deck exists.
+  assert.equal(res.statusCode, 404, 'organization visibility never crosses into another organization');
+});
+
 test('sessions returns the deck’s sessions with the session token stripped', async () => {
   await seed();
   const { res } = await call(handleSessions, 'GET', '/api/presentations/deck-owned/analytics/sessions', {
@@ -665,13 +680,19 @@ test('delete removes a report for a writer', async () => {
   assert.equal(reportById('r-1'), undefined, 'the report is gone');
 });
 
+// r-priv lives on deck-owned, so these two drive the intended same-deck pairing.
+// The cross-deck pairing (deck-owned + a deck-org report) is deliberately NOT
+// exercised here: update/delete/regenerate currently skip the
+// report-belongs-to-presentation check that handleGetReport performs, which is
+// a prod authz gap with its own follow-up — the fix will pin cross-deck
+// mutations as 404 alongside it.
 test('regenerating the share token needs write access', async () => {
   await seed();
   const { res } = await call(
     handleRegenerateToken,
     'POST',
-    '/api/presentations/deck-owned/analytics/reports/r-pub/regenerate-token',
-    { as: ACTORS.viewer, args: ['deck-owned', 'r-pub'] }
+    '/api/presentations/deck-owned/analytics/reports/r-priv/regenerate-token',
+    { as: ACTORS.viewer, args: ['deck-owned', 'r-priv'] }
   );
 
   assert.equal(res.statusCode, 401);
@@ -679,12 +700,12 @@ test('regenerating the share token needs write access', async () => {
 
 test('regenerate mints a fresh token for a writer', async () => {
   await seed();
-  const before = reportById('r-pub').share_token;
+  const before = reportById('r-priv').share_token;
   const { res } = await call(
     handleRegenerateToken,
     'POST',
-    '/api/presentations/deck-owned/analytics/reports/r-pub/regenerate-token',
-    { as: ACTORS.owner, args: ['deck-owned', 'r-pub'] }
+    '/api/presentations/deck-owned/analytics/reports/r-priv/regenerate-token',
+    { as: ACTORS.owner, args: ['deck-owned', 'r-priv'] }
   );
 
   assert.equal(res.statusCode, 200);
