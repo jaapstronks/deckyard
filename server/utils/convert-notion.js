@@ -18,6 +18,7 @@ import { createSessionLogger, generateSessionId } from './ai/logging.js';
 import { cryptoUuid } from '../../shared/slide-types/helpers.js';
 import { DECK_FORMAT_ID } from '../../shared/slide-types/deck-format-id.js';
 import { uploadImageKitUrl, getImageKitConfigFromEnv } from '../media/imagekit.js';
+import { getMediaProvider, isMediaProviderInitialized } from '../media/index.js';
 import { createLogger } from './logger.js';
 
 const log = createLogger('convert-notion');
@@ -142,25 +143,88 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
 }
 
 /**
- * Process Notion images by uploading them to ImageKit.
+ * Re-host a single Notion image through Deckyard's own media library.
+ *
+ * Notion's file-hosted image URLs are signed and expire (~1h), so keeping them
+ * verbatim leaves an imported deck broken shortly after import. When ImageKit is
+ * not configured this fetches the bytes and stores them via the configured media
+ * provider (local `/uploads` or Scaleway), yielding a durable URL. On any failure
+ * it returns the original URL so the import still succeeds (just non-durable).
+ * @param {{ url: string }} img
+ * @returns {Promise<string>} A durable media-library URL, or the original URL on failure.
+ */
+async function rehostImageToMediaLibrary(img) {
+  if (!isMediaProviderInitialized()) {
+    // No provider (e.g. outside the server request path) — nothing to re-host to.
+    return img.url;
+  }
+
+  const response = await fetch(img.url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image: ${response.status}`);
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  // Strip any charset/parameters — the provider matches on the bare MIME type.
+  const contentType = String(response.headers.get('content-type') || 'image/jpeg')
+    .split(';')[0]
+    .trim()
+    .toLowerCase();
+
+  const provider = getMediaProvider();
+  const { publicUrl } = await provider.uploadBuffer({
+    buffer,
+    filename: `notion-${img.blockId || cryptoUuid()}`,
+    contentType,
+    // Notion exports can be large; allow the same ceiling as stock media (20MB).
+    maxBytes: 20 * 1024 * 1024,
+  });
+
+  return publicUrl || img.url;
+}
+
+/**
+ * Process Notion images, re-hosting them so an imported deck stays durable.
+ *
+ * When ImageKit is configured images are re-hosted there (unchanged). Otherwise
+ * they are re-hosted through Deckyard's own media library, because Notion's
+ * signed URLs expire (~1h) and would leave the deck broken. Both paths fall back
+ * to the original URL when an individual image cannot be re-hosted.
  * @param {Array} images - Array of { url, caption, blockId }
  * @param {object} options - Options
  * @returns {Promise<Array<{originalUrl: string, uploadedUrl: string, caption: string}>>}
  */
-async function processNotionImages(images, options = {}) {
+export async function processNotionImages(images, options = {}) {
   const results = [];
 
   // Check if ImageKit is configured
   const imagekitConfig = getImageKitConfigFromEnv();
   if (!imagekitConfig.configured) {
-    log.info('ImageKit not configured, using original URLs');
-    // Return original URLs if ImageKit is not configured
-    return images.map((img) => ({
-      originalUrl: img.url,
-      uploadedUrl: img.url, // Use original URL
-      caption: img.caption || '',
-      blockId: img.blockId,
-    }));
+    log.info('ImageKit not configured, re-hosting via the media library');
+    // Fallback: re-host each image through the own media library so imported
+    // decks survive Notion's ~1h signed-URL expiry.
+    for (const img of images) {
+      try {
+        const uploadedUrl = await rehostImageToMediaLibrary(img);
+        results.push({
+          originalUrl: img.url,
+          uploadedUrl,
+          caption: img.caption || '',
+          blockId: img.blockId,
+        });
+      } catch (e) {
+        log.error(`Failed to re-host image via media library: ${e.message}`);
+        // Fall back to the original (expiring) URL rather than dropping the image.
+        results.push({
+          originalUrl: img.url,
+          uploadedUrl: img.url,
+          caption: img.caption || '',
+          blockId: img.blockId,
+        });
+      }
+    }
+    return results;
   }
 
   for (let i = 0; i < images.length; i++) {
