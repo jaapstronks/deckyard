@@ -58,7 +58,7 @@ The conversion step:
   images, format for the AI, run outline → refine → validate, return a deck plus
   a report.
 
-The routes (`server/routes/api/notion/`, 7 modules, 798 lines) behind one
+The routes (`server/routes/api/notion/`, 7 modules, ~770 lines) behind one
 dispatcher:
 
 - `server/routes/api/notion.js` — the dispatcher: status, fetch and publish
