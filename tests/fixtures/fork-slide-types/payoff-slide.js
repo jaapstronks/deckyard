@@ -32,9 +32,9 @@
  * that is deliberate: `tests/custom-imports-resolvable.test.js` is the gate that
  * catches a fork whose imports into core stopped resolving after an upstream
  * reorganisation, and with import-free fixtures the fork lane never ran that
- * resolution on a single specifier. `esc` is what core's own `payoff-slide`
- * imports, so this is the realistic shape of the breakage as well as a live
- * exercise of the checker.
+ * resolution on a single specifier. `escapeHtml` is what core's own
+ * `payoff-slide` imports, so this is the realistic shape of the breakage as
+ * well as a live exercise of the checker.
  *
  * The specifier is written for the file's *runtime* home, `custom/slide-types/`
  * (two levels below the repo root), not for its tracked home three levels down
@@ -43,7 +43,7 @@
  */
 
 // eslint-disable-next-line import-x/no-unresolved -- written for custom/slide-types/, see above
-import { esc } from '../../shared/slide-types/helpers.js';
+import { escapeHtml } from '../../shared/slide-types/helpers.js';
 
 /** The marker the client render path proves it received (core emits `slide-payoff`). */
 const PAYOFF_MARK = 'Fork payoff';
@@ -62,7 +62,7 @@ export default {
   renderHtml: () => `
     <div class="slide fork-payoff">
       <div class="slide-inner">
-        <p class="fork-payoff-mark">${esc(PAYOFF_MARK)}</p>
+        <p class="fork-payoff-mark">${escapeHtml(PAYOFF_MARK)}</p>
       </div>
     </div>
   `,
