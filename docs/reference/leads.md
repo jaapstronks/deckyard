@@ -21,9 +21,9 @@ the public submit path deliberately looks the deck up across organizations.
 - `shared/slide-types/types/lead-capture-slide.js` — the slide type;
   `client/lib/slide-runtime/lead-capture-runtime.js` posts the form from the
   public viewer.
-- `server/routes/api/leads.js` (408 lines) — the whole route surface: the
-  public submit, the per-deck reads, the GDPR self-service, the admin delete,
-  and the in-memory GDPR token store.
+- `server/routes/api/leads.js` (484 lines) — the whole route surface: the
+  public submit, the public token-gated GDPR self-service, the per-deck reads,
+  the admin delete, and the in-memory GDPR token store.
 - `server/storage/leads.js` (433) — storage: create/read/export plus the four
   anonymizers (single lead, by e-mail, retention-expired, old IPs).
 - `server/jobs/analytics-cleanup.js` — the retention sweep. Leads have no job
@@ -52,12 +52,22 @@ survives for counting; the person is gone from it.
 
 **Public** (no session; mounted before the auth gate):
 
-| Method | Path | Does |
-|---|---|---|
-| POST | `/api/leads` | Submit a lead. Rate-limited per IP and globally (`LEAD_RATE_LIMITS`), consent required, deck must exist. Fires the webhook and the owner e-mail best-effort. |
+| Method | Path | Gate | Does |
+|---|---|---|---|
+| POST | `/api/leads` | consent + valid e-mail | Submit a lead. Rate-limited per IP and globally (`LEAD_RATE_LIMITS`), deck must exist. Fires the webhook and the owner e-mail best-effort. |
+| POST | `/api/leads/my-data/request` | none (mails a token) | Mint a GDPR verification token for an e-mail address and mail the link. Rate-limited per IP + per-target-email + globally (`GDPR_RATE_LIMITS`). |
+| GET | `/api/leads/my-data` | token | Export every non-anonymized lead for that e-mail. Rate-limited per IP (`AUTH_RATE_LIMITS.expensive`). |
+| DELETE | `/api/leads/my-data` | token | Anonymize every lead for that e-mail; the delete burns the token. Rate-limited per IP (`AUTH_RATE_LIMITS.expensive`). |
 
-**Authenticated** (session required — including, today, the my-data routes;
-see *Implementation status*):
+The three `my-data` routes are **public** because the data subject is an
+anonymous visitor with no account — the emailed `crypto.randomBytes(32)` token,
+not a session, is the proof of identity (the same shape as the public anonymous
+erase at `POST /api/track/my-data/erase`). Being in `PUBLIC_ROUTES`, dispatched
+before the authed table, the literal `DELETE /api/leads/my-data` is matched
+ahead of the authed `DELETE /api/leads/:id` — the `:id`-swallows-`my-data`
+hazard is now structurally gone, no ordering discipline needed.
+
+**Authenticated** (session required):
 
 | Method | Path | Permission | Does |
 |---|---|---|---|
@@ -65,13 +75,6 @@ see *Implementation status*):
 | GET | `/api/presentations/:id/leads/count` | deck **read** | Count. |
 | GET | `/api/presentations/:id/leads/export` | deck **write** | CSV download — export is more sensitive than reading on screen. |
 | DELETE | `/api/leads/:id` | deck **write** | Anonymize one lead. |
-| POST | `/api/leads/my-data/request` | (session) | Mint a GDPR verification token for an e-mail address. |
-| GET | `/api/leads/my-data` | token | Export every non-anonymized lead for that e-mail. |
-| DELETE | `/api/leads/my-data` | token | Anonymize every lead for that e-mail; the token is single-use. |
-
-The `my-data` literal routes are registered before the `DELETE /api/leads/:id`
-pattern on purpose — `:id` matches any segment, so the reverse order would
-swallow the erasure route.
 
 ## Where the data leaves the instance
 
@@ -92,17 +95,20 @@ Two outbound paths fire on every submit, both best-effort:
   anonymizes rows past their retention date, and lead IP addresses are
   additionally nulled after the *analytics* `ipAnonymizationDays` window —
   the same policy as view sessions, on the same schedule.
-- Self-service (GDPR art. 15/17): `POST /api/leads/my-data/request` mints a
-  `crypto.randomBytes(32)` token for the e-mail, valid 15 minutes, held in an
-  **in-memory Map** (per-process; a code comment already notes multi-instance
-  would need Redis). `GET`/`DELETE /api/leads/my-data` verify e-mail + token;
-  the delete anonymizes everything for that address and burns the token.
+- Self-service (GDPR art. 15/17), **public and token-gated**:
+  `POST /api/leads/my-data/request` mints a `crypto.randomBytes(32)` token for
+  the e-mail, valid 15 minutes, held in an **in-memory Map** (`gdprTokens`,
+  per-process — see the single-process constraint below). `GET`/`DELETE
+  /api/leads/my-data` verify e-mail + token; the `GET` deliberately does *not*
+  consume the token (a subject views, then erases with the same token), the
+  `DELETE` anonymizes everything for that address and burns the token.
 
 ## Implementation status
 
 Normative target: **a visitor can see and erase what a deck collected about
 them, without help from the instance operator.** Where the code stands, as of
-2026-08-16 — the self-service flow does **not** deliver that today:
+2026-08-17 — the flow is reachable anonymously, but the friendly landing page is
+still missing:
 
 - **Token delivery is wired (B63, done).** `handleRequestMyData` now sends the
   verification link through the `sendEmail` seam
@@ -113,17 +119,29 @@ them, without help from the instance operator.** Where the code stands, as of
   mail provider it still echoes `devToken` so the flow stays testable locally.
   Delivery is attempted for any well-formed address with no existence check, so
   the response can't be used to probe which addresses are on file.
-- **The my-data routes still sit behind the login gate (open).** `handleLeads`
-  requires a session, but the data subject is an anonymous visitor with no
-  account. Token delivery is fixed, but the flow still only works for people
-  who happen to have an instance login; compare the analytics anon-erase, which
-  is deliberately public. Moving the my-data routes public (with their own rate
-  limit) is the remaining half — deliberately left out of the B63 mail fix.
+- **The my-data routes are now public (B63b, done).** All three moved from the
+  authed table to `PUBLIC_ROUTES`, dispatched before the login gate, so a
+  logged-out data subject can complete request → view → erase with only the
+  emailed token. The session check is gone — not "also supported": the token is
+  the single gate. New rate limits guard the public surface: the request route
+  is capped per IP + per-target-email + globally (`GDPR_RATE_LIMITS`, the
+  per-email bucket caps e-mail bombing), the destructive GET/DELETE reuse
+  `AUTH_RATE_LIMITS.expensive` keyed by IP. A 429 stays non-enumerable — keyed on
+  the supplied address, never on whether leads exist for it.
+- **Single-process token store (constraint, open).** `gdprTokens` is an
+  in-memory per-process `Map`. Now that the public path is the primary one, this
+  is a live limitation, not a footnote: under horizontal scaling a token minted
+  on node A will not validate on node B (unlike the analytics track-erase, whose
+  token is a DB `view_sessions` row). Deckyard runs single-process today, so this
+  is documented rather than fixed; backing the store with Redis or a short-lived
+  DB row is the follow-up (paired with the landing-page item, Jaap-in-the-loop).
 - **The verification link lands on the raw JSON API (open).** The e-mail points
   at `GET /api/leads/my-data?email=…&token=…`, which returns the data as JSON
   and has no companion erase button — erasure is a `DELETE` a plain link can't
   issue. A friendly HTML landing page that renders the data and offers erase is
-  future UI work, tracked with the login-gate item.
+  the remaining UI work — now the *only* thing between the current state and the
+  normative target, since the routes went public. Paired with the token-store
+  durability decision above as the Jaap-in-the-loop follow-up.
 - **Leads retention has no admin UI.** `leads.retentionDays` exists, is
   normalized and enforced, but the admin settings tab only exposes the
   *analytics* retention knobs — the leads value can only be changed via

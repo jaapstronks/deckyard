@@ -25,7 +25,7 @@ import { maybeFireLeadWebhook } from '../../utils/webhooks.js';
 import { maybeSendLeadNotification, sendDataRequestVerificationEmail } from '../../integrations/email/senders-leads.js';
 import crypto from 'node:crypto';
 import { crossOrganizationScope } from '../../storage/scope.js';
-import { LEAD_RATE_LIMITS } from '../../config/rate-limits.js';
+import { LEAD_RATE_LIMITS, GDPR_RATE_LIMITS, AUTH_RATE_LIMITS } from '../../config/rate-limits.js';
 
 // GDPR verification tokens (in-memory, short-lived)
 // In production, use Redis or similar for multi-instance support
@@ -128,10 +128,21 @@ async function handleLeadSubmit({ repoRoot, req, res }) {
 
 /**
  * Public lead-capture routes (mounted before the auth gate).
+ *
+ * The three `my-data` self-service routes are public on purpose: the data
+ * subject is an anonymous visitor with no account, and the emailed
+ * `crypto.randomBytes(32)` token — not a session — is the proof of identity.
+ * They sit before the authed `DELETE /api/leads/:id` in the mount order, so the
+ * literal `DELETE /api/leads/my-data` is matched here and never resolves as
+ * `leadId='my-data'`. This mirrors the public, token-gated anonymous erase at
+ * `POST /api/track/my-data/erase` (`analytics-track.js`).
  * @type {import('../../utils/router.js').Route[]}
  */
 export const PUBLIC_ROUTES = [
   { method: 'POST', pattern: '/api/leads', handler: handleLeadSubmit },
+  { method: 'POST', pattern: '/api/leads/my-data/request', handler: handleRequestMyData },
+  { method: 'GET', pattern: '/api/leads/my-data', handler: handleGetMyData },
+  { method: 'DELETE', pattern: '/api/leads/my-data', handler: handleDeleteMyData },
 ];
 
 /**
@@ -144,20 +155,17 @@ export const handleLeadsPublic = withErrorHandler('leads', async (ctx) => {
 });
 
 /**
- * Authenticated lead routes: the three presentation-scoped reads, then the
- * GDPR self-service paths, then `DELETE /api/leads/:id`. The literal
- * `my-data` rows must precede the `:id` row — `:id` matches any segment, so
- * the reverse order would resolve `DELETE /api/leads/my-data` as
- * `leadId='my-data'` and the erasure handler would never run.
+ * Authenticated lead routes: the three presentation-scoped reads, then
+ * `DELETE /api/leads/:id`. The `my-data` self-service routes used to live here
+ * ahead of the `:id` row to dodge the `:id`-swallows-`my-data` hazard; they are
+ * now in `PUBLIC_ROUTES` (dispatched before this table), which removes the
+ * hazard structurally — no literal remains for `:id` to shadow.
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
   { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/leads$/, handler: handleGetLeads },
   { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/leads\/count$/, handler: handleGetLeadCount },
   { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/leads\/export$/, handler: handleExportLeads },
-  { method: 'POST', pattern: '/api/leads/my-data/request', handler: handleRequestMyData },
-  { method: 'GET', pattern: '/api/leads/my-data', handler: handleGetMyData },
-  { method: 'DELETE', pattern: '/api/leads/my-data', handler: handleDeleteMyData },
   { method: 'DELETE', pattern: /^\/api\/leads\/([^/]+)$/, handler: handleDeleteLead },
 ];
 
@@ -305,6 +313,21 @@ async function handleDeleteLead(ctx, leadId) {
 async function handleRequestMyData(ctx) {
   const { req, res, repoRoot } = ctx;
 
+  // This route is public and mails a token to any well-formed address, so it is
+  // rate-limited on three axes. Per-IP + global cap the raw volume and are
+  // checked before the body is read (mirrors the lead-submit handler); the
+  // per-target-email bucket, checked once the address is known, is the bucket
+  // that actually caps e-mail bombing of one address. Every refusal is the same
+  // constant `rate_limited` 429 — a 429 must not reveal whether the address is
+  // on file any more than the 200 path does.
+  const ip = getClientIp(req);
+  if (!(await allowRequest(`leads:mydata:ip:${ip}`, GDPR_RATE_LIMITS.perIp))) {
+    return jsonError(res, 429, 'rate_limited'), true;
+  }
+  if (!(await allowRequest('leads:mydata:global', GDPR_RATE_LIMITS.global))) {
+    return jsonError(res, 429, 'rate_limited'), true;
+  }
+
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -312,6 +335,12 @@ async function handleRequestMyData(ctx) {
 
   if (!email || !email.includes('@')) {
     return badRequest(res, 'Valid email required'), true;
+  }
+
+  // Per-target-email throttle: keyed on the supplied address only (not on
+  // whether leads exist for it), so it stays non-enumerable.
+  if (!(await allowRequest(`leads:mydata:email:${email}`, GDPR_RATE_LIMITS.perEmail))) {
+    return jsonError(res, 429, 'rate_limited'), true;
   }
 
   // Generate a verification token
@@ -380,7 +409,14 @@ async function handleRequestMyData(ctx) {
 }
 
 async function handleGetMyData(ctx) {
-  const { url, res } = ctx;
+  const { req, url, res } = ctx;
+
+  // Destructive-adjacent and public: gate token-guessing with the strict
+  // expensive-op tier keyed by IP (no principal here), like the track-erase.
+  const ip = getClientIp(req);
+  if (!(await allowRequest(`leads:mydata:view:${ip}`, AUTH_RATE_LIMITS.expensive))) {
+    return jsonError(res, 429, 'rate_limited'), true;
+  }
 
   const email = url.searchParams.get('email')?.toLowerCase().trim();
   const token = url.searchParams.get('token');
@@ -413,7 +449,14 @@ async function handleGetMyData(ctx) {
 }
 
 async function handleDeleteMyData(ctx) {
-  const { url, res } = ctx;
+  const { req, url, res } = ctx;
+
+  // Same strict IP-keyed expensive-op tier as the read (and the track-erase):
+  // the token is the real gate, this only caps brute-forcing it.
+  const ip = getClientIp(req);
+  if (!(await allowRequest(`leads:mydata:erase:${ip}`, AUTH_RATE_LIMITS.expensive))) {
+    return jsonError(res, 429, 'rate_limited'), true;
+  }
 
   const email = url.searchParams.get('email')?.toLowerCase().trim();
   const token = url.searchParams.get('token');
