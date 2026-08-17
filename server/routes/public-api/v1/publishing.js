@@ -11,11 +11,10 @@ import {
 import { updatePresentation } from '../../../storage/presentations/index.js';
 import { getUserSettings } from '../../../storage/settings.js';
 import { pickOgImageUrlFromPresentation } from '../../../render/og-image.js';
-import { methodNotAllowed } from '../../../utils/http.js';
 import { loadThemeAssets } from '../../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../../render/preview-image.js';
 import { isMediaProviderInitialized } from '../../../media/index.js';
-import { requirePermission, getPresentationWithAccess, apiSuccess } from './middleware.js';
+import { requirePermission, v1MethodNotAllowed, withV1ErrorHandler, getPresentationWithAccess, apiSuccess } from './middleware.js';
 
 // ============================================================
 // ROUTE HANDLERS
@@ -177,7 +176,7 @@ async function handleUnpublish(ctx, id) {
 /**
  * Main handler for /api/v1/presentations/:id/publish routes.
  */
-export async function handlePublishing(ctx) {
+export const handlePublishing = withV1ErrorHandler('public-api-v1:publishing', async (ctx) => {
   const { req, res, url } = ctx;
 
   const publishMatch = url.pathname.match(
@@ -193,5 +192,5 @@ export async function handlePublishing(ctx) {
   if (req.method === 'GET') return handleGetPublishStatus(ctx, id);
   if (req.method === 'DELETE') return handleUnpublish(ctx, id);
 
-  return methodNotAllowed(res, ['GET', 'POST', 'DELETE']);
-}
+  return v1MethodNotAllowed(res, ['GET', 'POST', 'DELETE']);
+});

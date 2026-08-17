@@ -5,8 +5,20 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { notFound, methodNotAllowed, serveJson } from '../../../utils/http.js';
-import { authenticateApiKey, checkRequestRateLimit, trackRequest } from './middleware.js';
+import { serveJson } from '../../../utils/http.js';
+import {
+  MaintenanceWriteError,
+  assertWritable,
+} from '../../../config/maintenance.js';
+import {
+  authenticateApiKey,
+  checkRequestRateLimit,
+  trackRequest,
+  sendV1Error,
+  v1MethodNotAllowed,
+  v1NotFound,
+  withV1ErrorHandler,
+} from './middleware.js';
 
 // Feature handlers
 import { handlePresentations } from './presentations.js';
@@ -41,7 +53,7 @@ async function handleApiInfo(ctx) {
   }
 
   if (req.method !== 'GET') {
-    return methodNotAllowed(res, ['GET']);
+    return v1MethodNotAllowed(res, ['GET']);
   }
 
   serveJson(res, 200, {
@@ -73,7 +85,7 @@ async function handleOpenApiSpec(ctx) {
   }
 
   if (req.method !== 'GET') {
-    return methodNotAllowed(res, ['GET']);
+    return v1MethodNotAllowed(res, ['GET']);
   }
 
   try {
@@ -86,7 +98,7 @@ async function handleOpenApiSpec(ctx) {
     res.end(spec);
     return true;
   } catch {
-    return notFound(res, 'OpenAPI specification not found');
+    return v1NotFound(res, 'OpenAPI specification not found');
   }
 }
 
@@ -101,7 +113,7 @@ async function handleDocs(ctx) {
   }
 
   if (req.method !== 'GET') {
-    return methodNotAllowed(res, ['GET']);
+    return v1MethodNotAllowed(res, ['GET']);
   }
 
   const html = `<!DOCTYPE html>
@@ -163,7 +175,7 @@ async function handleSchema(ctx) {
   const { req, res, url } = ctx;
 
   if (!url.pathname.startsWith('/api/v1/schema/')) return false;
-  if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+  if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
 
   const headers = { 'Cache-Control': 'public, max-age=3600' };
 
@@ -178,12 +190,12 @@ async function handleSchema(ctx) {
   if (typeMatch) {
     const name = typeMatch[1];
     const def = SLIDE_TYPES[name];
-    if (!def) return notFound(res, `Slide type '${name}' not found`);
+    if (!def) return v1NotFound(res, `Slide type '${name}' not found`);
     serveJson(res, 200, slideTypeContentSchema(name, def, { withMeta: true }), headers);
     return true;
   }
 
-  return notFound(res, 'Unknown schema');
+  return v1NotFound(res, 'Unknown schema');
 }
 
 // ============================================================
@@ -193,15 +205,39 @@ async function handleSchema(ctx) {
 /**
  * Main handler for all /api/v1/* routes.
  * Authenticates API key and routes to feature handlers.
+ *
+ * Wrapped in withV1ErrorHandler itself, on top of the per-module wraps: a
+ * throw from the pre-dispatch phase (auth, rate limiting, the meta endpoints)
+ * must answer the v1 envelope too, not the internal one the outer /api
+ * dispatcher would emit.
  * @param {Object} ctx - Request context { repoRoot, req, res, url }
  * @returns {Promise<boolean>} - True if handled
  */
-export async function handlePublicApiV1(ctx) {
-  const { res, url } = ctx;
+export const handlePublicApiV1 = withV1ErrorHandler('public-api-v1', async (ctx) => {
+  const { url } = ctx;
 
   // Only handle /api/v1/ routes
   if (!url.pathname.startsWith('/api/v1')) {
     return false;
+  }
+
+  // Maintenance write gate. The v1 surface runs the shared choke-point itself
+  // (like the MCP tool dispatch) so the refusal answers this surface's own
+  // envelope, not the internal `{ ok:false, … }` one the /api dispatcher emits.
+  try {
+    assertWritable(ctx.req.method);
+  } catch (err) {
+    if (!(err instanceof MaintenanceWriteError)) throw err;
+    return sendV1Error(
+      ctx.res,
+      503,
+      'Deckyard is briefly unavailable for maintenance. Retry after the moment named in Retry-After.',
+      {
+        code: 'maintenance',
+        details: err.state,
+        headers: { 'Retry-After': String(err.retryAfter) },
+      }
+    );
   }
 
   // API info endpoint doesn't require auth
@@ -228,7 +264,9 @@ export async function handlePublicApiV1(ctx) {
   // Track the request (don't await - fire and forget)
   trackRequest(ctx).catch(() => {});
 
-  // Route to feature handlers
+  // Route to feature handlers. Each module entry is wrapped in
+  // withV1ErrorHandler, so a throw from any sub-handler answers the v1
+  // envelope rather than leaking the internal `{ ok:false, … }` shape.
   if (await handlePublishing(ctx)) return true;
   if (await handleTranslation(ctx)) return true;
   if (await handleSlideLibrary(ctx)) return true;
@@ -239,5 +277,5 @@ export async function handlePublicApiV1(ctx) {
   if (await handleAi(ctx)) return true;
   if (await handleResources(ctx)) return true;
 
-  return notFound(res);
-}
+  return v1NotFound(ctx.res);
+});

@@ -7,7 +7,6 @@ import {
   createPresentation,
   updatePresentation,
 } from '../../../storage/presentations/index.js';
-import { methodNotAllowed } from '../../../utils/http.js';
 import {
   generateDeckJsonFromRawContent,
   generateSlidesToAppendFromRawContent,
@@ -21,6 +20,8 @@ import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('ai');
 import {
   requirePermission,
+  v1MethodNotAllowed,
+  withV1ErrorHandler,
   readApiV1Body,
   checkAiLimit,
   trackAiRequest,
@@ -246,26 +247,26 @@ async function handleAppendSlides(ctx) {
 /**
  * Main handler for /api/v1/ai/* routes.
  */
-export async function handleAi(ctx) {
+export const handleAi = withV1ErrorHandler('public-api-v1:ai', async (ctx) => {
   const { req, res, url } = ctx;
 
   // GET /api/v1/ai/vendors
   if (url.pathname === '/api/v1/ai/vendors') {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
     return handleVendors(ctx);
   }
 
   // POST /api/v1/ai/wizard
   if (url.pathname === '/api/v1/ai/wizard') {
-    if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+    if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
     return handleWizard(ctx);
   }
 
   // POST /api/v1/ai/append-slides
   if (url.pathname === '/api/v1/ai/append-slides') {
-    if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+    if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
     return handleAppendSlides(ctx);
   }
 
   return false;
-}
+});

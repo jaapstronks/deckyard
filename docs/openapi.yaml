@@ -59,22 +59,31 @@ info:
     - `502` - Bad Gateway (the upstream LLM vendor failed or returned unusable output)
     - `503` - Service Unavailable (database or AI backend not available)
 
-    Error responses carry a JSON envelope:
+    Every error response — from a validation 400 to an unexpected 500 — carries
+    the same JSON envelope, and only this envelope:
 
     ```
-    { "error": "<what went wrong>", "message": "<optional detail>", "details": { } }
+    { "error": "<machine_code>", "message": "<human-readable detail>", "details": { } }
     ```
 
-    **Implementation status (beta, honest note):** the envelope above is the
-    normative target, but today `error` carries a human-readable sentence on
-    most endpoint-specific errors, while cross-cutting rejections (unknown
-    route `404`, `405`, missing-permission `403`, per-minute `429`) answer
-    with the internal envelope `{ "ok": false, "error": "<machine_code>",
-    "message": "..." }` (stable snake_case codes: `not_found`,
-    `method_not_allowed`, `forbidden`, `rate_limited`). During the beta these
-    converge on one envelope with a machine code in `error` and prose in
-    `message`; until then, branch on the HTTP status code, not on either
-    error string.
+    - **`error`** is a stable, lowercase `snake_case` **machine code**. Branch on
+      this, never on the prose. It is the field that stays put across releases;
+      the codes are the same vocabulary the internal surface uses, e.g.
+      `bad_request`, `unauthorized`, `forbidden`, `not_found`,
+      `method_not_allowed`, `rate_limited`, `payload_too_large`, `bad_gateway`,
+      `service_unavailable`, `internal_error` (plus domain codes such as
+      `locked` for a 423, or `maintenance` for a 503 during a deploy window).
+      By default one code answers per HTTP status.
+    - **`message`** is human-readable text, safe to show a user. Never a stack
+      trace or internal detail — 5xx responses stay generic.
+    - **`details`** is optional structured extra, omitted when absent. The daily
+      AI/export limiters, for example, put `limit`, `used` and `resetAt` here.
+
+    The public surface deliberately omits the internal envelope's `ok:false`
+    discriminator — the HTTP status is the discriminator here. There is no second
+    error shape: cross-cutting rejections (unknown route, wrong method, missing
+    permission, rate limit) and endpoint-specific errors all answer this one
+    envelope.
 
   version: '1.0.0'
   contact:
@@ -2239,13 +2248,23 @@ components:
 
     Error:
       type: object
+      required:
+        - error
       properties:
         error:
           type: string
+          description: >-
+            Stable lowercase snake_case machine code. Branch on this, not on
+            `message`. One code answers per HTTP status by default (e.g.
+            `not_found`, `forbidden`, `rate_limited`), with domain codes such as
+            `locked` where a status carries more than one meaning.
+          example: not_found
         message:
           type: string
+          description: Human-readable detail, safe to display. Never leaks internals.
         details:
           type: object
+          description: Optional structured extra, omitted when absent.
 
   responses:
     BadRequest:
@@ -2290,11 +2309,11 @@ components:
 
     RateLimited:
       description: >-
-        Rate limit exceeded. Two limiters answer with this status: the
-        per-minute request limiter (sets `Retry-After` only) and the daily
-        AI/export limiters (set the `X-RateLimit-*` headers and include
-        `limit`, `used` and `resetAt` in the body). All headers are therefore
-        optional.
+        Rate limit exceeded (`error: rate_limited`). Two limiters answer with
+        this status: the per-minute request limiter (sets `Retry-After` only)
+        and the daily AI/export limiters (set the `X-RateLimit-*` headers and
+        carry `limit`, `used` and `resetAt` inside `details`). All headers are
+        therefore optional.
       headers:
         X-RateLimit-Limit:
           schema:
@@ -2315,15 +2334,19 @@ components:
               - $ref: '#/components/schemas/Error'
               - type: object
                 properties:
-                  limit:
-                    type: integer
-                    description: Daily limit (daily limiters only)
-                  used:
-                    type: integer
-                    description: Requests used today (daily limiters only)
-                  resetAt:
-                    type: integer
-                    description: Unix timestamp when the limit resets (daily limiters only)
+                  details:
+                    type: object
+                    description: Present for the daily limiters.
+                    properties:
+                      limit:
+                        type: integer
+                        description: Daily limit
+                      used:
+                        type: integer
+                        description: Requests used today
+                      resetAt:
+                        type: integer
+                        description: Unix timestamp when the limit resets
 
     BadGateway:
       description: >-
@@ -2337,7 +2360,10 @@ components:
     ServiceUnavailable:
       description: >-
         Service unavailable — the database backend is down or a required
-        backend (AI, comment store) is not configured on this install.
+        backend (AI, comment store) is not configured on this install
+        (`error: service_unavailable`), or a maintenance window is briefly
+        refusing writes (`error: maintenance`, with a `Retry-After` header
+        naming when to come back).
       content:
         application/json:
           schema:

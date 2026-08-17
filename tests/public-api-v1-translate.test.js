@@ -199,9 +199,11 @@ test('POST /translate answers 429 with limit details when the daily AI budget is
   await handleTranslation(ctx);
 
   assert.equal(ctx.res.statusCode, 429);
-  assert.equal(ctx.res.body.limit, 10);
-  assert.equal(ctx.res.body.used, 10);
-  assert.ok(ctx.res.body.resetAt, 'the body names the reset moment');
+  // B61: the one v1 envelope — machine code in `error`, limit facts in `details`.
+  assert.equal(ctx.res.body.error, 'rate_limited');
+  assert.equal(ctx.res.body.details.limit, 10);
+  assert.equal(ctx.res.body.details.used, 10);
+  assert.ok(ctx.res.body.details.resetAt, 'the details name the reset moment');
   assert.equal(ctx.res.headers['X-RateLimit-Limit'], '10');
   assert.equal(ctx.res.headers['X-RateLimit-Remaining'], '0');
   assert.ok(ctx.res.headers['X-RateLimit-Reset']);

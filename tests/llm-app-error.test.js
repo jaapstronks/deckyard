@@ -43,9 +43,12 @@ test('LlmError is an AppError with the canonical envelope', () => {
   assert.equal(err.name, 'LlmError');
 
   const body = err.toJSON();
+  // B61 mapped 502 → `bad_gateway` in the shared status→code table (it used to
+  // fall through to the >=500 `internal_error`); the raw provider payload still
+  // never reaches the envelope, which is what this test guards.
   assert.deepEqual(body, {
     ok: false,
-    error: 'internal_error',
+    error: 'bad_gateway',
     message: 'upstream failed',
   });
   // Debug fields stay on the instance for logging…

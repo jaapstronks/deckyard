@@ -10,9 +10,8 @@ import {
   getTagsForSlideLibraryItem,
 } from '../../../storage/slide-library/index.js';
 import { updatePresentation } from '../../../storage/presentations/index.js';
-import { methodNotAllowed } from '../../../utils/http.js';
 import { newSlide } from '../../../../shared/slide-types.js';
-import { requirePermission, getPresentationWithAccess, readApiV1Body, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
+import { requirePermission, v1MethodNotAllowed, withV1ErrorHandler, getPresentationWithAccess, readApiV1Body, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
 import { getNonNegativeNumber } from '../../../utils/request-validators.js';
 
 /**
@@ -167,19 +166,10 @@ async function handleAddFromLibrary(ctx, presentationId) {
   // Insert the new slide
   slides.splice(insertIndex, 0, newSlideObj);
 
-  // Update presentation
-  let updated;
-  try {
-    updated = await updatePresentation(storageScope, presentationId, { slides }, {
-      actorEmail: apiKey.ownerEmail,
-    });
-  } catch (e) {
-    if (e?.statusCode) {
-      await apiError(ctx, e.statusCode, e.message, { details: e.details || null });
-      return true;
-    }
-    throw e;
-  }
+  // Update presentation (throws answered in the v1 envelope by the wrap).
+  const updated = await updatePresentation(storageScope, presentationId, { slides }, {
+    actorEmail: apiKey.ownerEmail,
+  });
 
   await apiCreated(ctx, {
     slide: newSlideObj,
@@ -204,7 +194,7 @@ async function handleAddFromLibrary(ctx, presentationId) {
 /**
  * Main handler for /api/v1/slide-library routes.
  */
-export async function handleSlideLibrary(ctx) {
+export const handleSlideLibrary = withV1ErrorHandler('public-api-v1:slide-library', async (ctx) => {
   const { req, res, url } = ctx;
 
   // POST /api/v1/presentations/:id/slides/from-library
@@ -212,22 +202,22 @@ export async function handleSlideLibrary(ctx) {
     /^\/api\/v1\/presentations\/([^/]+)\/slides\/from-library$/
   );
   if (fromLibraryMatch) {
-    if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+    if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
     return handleAddFromLibrary(ctx, fromLibraryMatch[1]);
   }
 
   // GET /api/v1/slide-library/:itemId
   const itemMatch = url.pathname.match(/^\/api\/v1\/slide-library\/([^/]+)$/);
   if (itemMatch) {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
     return handleGet(ctx, itemMatch[1]);
   }
 
   // GET /api/v1/slide-library
   if (url.pathname === '/api/v1/slide-library') {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
     return handleList(ctx);
   }
 
   return false;
-}
+});

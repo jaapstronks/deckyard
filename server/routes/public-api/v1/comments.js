@@ -10,7 +10,6 @@
  */
 
 import { getAppBaseUrl } from '../../../config/utils.js';
-import { methodNotAllowed } from '../../../utils/http.js';
 import {
   listComments,
   getComment,
@@ -42,6 +41,8 @@ import { getTrimmedString } from '../../../utils/request-validators.js';
 import { broadcastCommentCounts, MAX_COMMENT_LENGTH } from '../../api/presentations/comments-shared.js';
 import {
   requirePermission,
+  v1MethodNotAllowed,
+  withV1ErrorHandler,
   getPresentationWithAccess,
   readApiV1Body,
   apiSuccess,
@@ -314,7 +315,7 @@ async function handleCommentStatus(ctx, commentId) {
 /**
  * Main handler for public API v1 comment routes.
  */
-export async function handleComments(ctx) {
+export const handleComments = withV1ErrorHandler('public-api-v1:comments', async (ctx) => {
   const { req, res, url } = ctx;
 
   // GET/POST /api/v1/presentations/:id/comments
@@ -324,15 +325,15 @@ export async function handleComments(ctx) {
   if (collectionMatch) {
     if (req.method === 'GET') return handleListComments(ctx, collectionMatch[1]);
     if (req.method === 'POST') return handleCreateComment(ctx, collectionMatch[1]);
-    return methodNotAllowed(res, ['GET', 'POST']);
+    return v1MethodNotAllowed(res, ['GET', 'POST']);
   }
 
   // POST /api/v1/comments/:commentId/status
   const statusMatch = url.pathname.match(/^\/api\/v1\/comments\/([^/]+)\/status$/);
   if (statusMatch) {
     if (req.method === 'POST') return handleCommentStatus(ctx, statusMatch[1]);
-    return methodNotAllowed(res, ['POST']);
+    return v1MethodNotAllowed(res, ['POST']);
   }
 
   return false;
-}
+});

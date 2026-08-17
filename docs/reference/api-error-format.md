@@ -89,7 +89,12 @@ here. That upgrade is additive; it never renames a field a client reads.
 
 - The public **`/api/v1/*`** surface keeps its own openapi-documented error schema
   (`{ error, message?, details? }`, see `docs/openapi.yaml`) and is **not** part of
-  this envelope. Don't change it here.
+  this envelope. It carries the *same* snake_case machine-code vocabulary in
+  `error`, minus this envelope's `ok:false` discriminator (the HTTP status is the
+  public surface's discriminator). Produced through `sendV1Error`/`apiError` and
+  the `withV1ErrorHandler` wrap in
+  `server/routes/public-api/v1/middleware.js` — B61 converged the three shapes it
+  used to speak into this one. Don't change it here.
 - Enforced/covered by `tests/api-error-envelope.test.js`.
 - A handful of ad-hoc `serveJson(res, status, { error: err.message })` sites (AI,
   media, uploads, notion) still put prose in `error`; the client tolerates both,

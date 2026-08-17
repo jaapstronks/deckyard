@@ -14,7 +14,9 @@ import { resolveIdentityByEmail } from '../../../storage/identity-resolver.js';
 import { incrementUsage, getRateLimitHeaders, checkAiRateLimit, checkExportRateLimit } from '../../../storage/api-usage.js';
 import { allowRequest } from '../../../utils/rate-limit.js';
 import { apiTierBucket } from '../../../config/rate-limits.js';
-import { serveJson, forbidden, rateLimited as sendRateLimited, readRequestBody, isJsonObject } from '../../../utils/http.js';
+import { serveJson, readRequestBody, isJsonObject } from '../../../utils/http.js';
+import { codeForStatus, getStatusCode } from '../../../utils/errors.js';
+import { logError } from '../../../utils/logger.js';
 import { getPresentation } from '../../../storage/presentations/index.js';
 
 // ============================================================
@@ -45,22 +47,19 @@ export async function authenticateApiKey(ctx) {
 
   const token = extractBearerToken(req);
   if (!token) {
-    serveJson(res, 401, {
-      error: 'Unauthorized',
-      message: 'Missing or invalid Authorization header. Use: Bearer <api_key>',
+    sendV1Error(res, 401, 'Missing or invalid Authorization header. Use: Bearer <api_key>', {
+      code: 'unauthorized',
     });
     return { ok: false, reason: 'missing_auth' };
   }
 
   const result = await validateApiKey(token);
   if (!result.ok) {
-    const statusCode = result.reason === 'unavailable' ? 503 : 401;
-    serveJson(res, statusCode, {
-      error: result.reason === 'unavailable' ? 'Service Unavailable' : 'Unauthorized',
-      message: result.reason === 'unavailable'
-        ? 'Database unavailable'
-        : 'Invalid or revoked API key',
-    });
+    if (result.reason === 'unavailable') {
+      sendV1Error(res, 503, 'Database unavailable', { code: 'service_unavailable' });
+    } else {
+      sendV1Error(res, 401, 'Invalid or revoked API key', { code: 'unauthorized' });
+    }
     return { ok: false, reason: result.reason };
   }
 
@@ -107,12 +106,12 @@ export function requirePermission(ctx, permission) {
   const { res, apiKey } = ctx;
 
   if (!apiKey) {
-    forbidden(res, 'Authentication required');
+    sendV1Error(res, 403, 'Authentication required', { code: 'forbidden' });
     return false;
   }
 
   if (!hasPermission(apiKey.permissions, permission)) {
-    forbidden(res, `API key lacks required permission: ${permission}`);
+    sendV1Error(res, 403, `API key lacks required permission: ${permission}`, { code: 'forbidden' });
     return false;
   }
 
@@ -274,7 +273,10 @@ export async function checkRequestRateLimit(ctx) {
   const allowed = await allowRequest(key, apiTierBucket(limits.requestsPerMinute));
 
   if (!allowed) {
-    sendRateLimited(res, 60, 'Rate limit exceeded. Please slow down your requests.');
+    sendV1Error(res, 429, 'Rate limit exceeded. Please slow down your requests.', {
+      code: 'rate_limited',
+      headers: { 'Retry-After': '60' },
+    });
     return false;
   }
 
@@ -293,18 +295,17 @@ export async function checkAiLimit(ctx) {
 
   const result = await checkAiRateLimit(apiKey.id, apiKey.tier);
   if (!result.ok) {
-    serveJson(res, 503, { error: 'Service unavailable' });
+    sendV1Error(res, 503, 'Service unavailable', { code: 'service_unavailable' });
     return false;
   }
 
   if (result.limited) {
     const headers = await getRateLimitHeaders(apiKey.id, apiKey.tier, 'ai');
-    serveJson(res, 429, {
-      error: 'Daily AI request limit exceeded',
-      limit: result.limit,
-      used: result.used,
-      resetAt: headers['X-RateLimit-Reset'],
-    }, headers);
+    sendV1Error(res, 429, 'Daily AI request limit exceeded', {
+      code: 'rate_limited',
+      headers,
+      details: { limit: result.limit, used: result.used, resetAt: headers['X-RateLimit-Reset'] },
+    });
     return false;
   }
 
@@ -323,18 +324,17 @@ export async function checkExportLimit(ctx) {
 
   const result = await checkExportRateLimit(apiKey.id, apiKey.tier);
   if (!result.ok) {
-    serveJson(res, 503, { error: 'Service unavailable' });
+    sendV1Error(res, 503, 'Service unavailable', { code: 'service_unavailable' });
     return false;
   }
 
   if (result.limited) {
     const headers = await getRateLimitHeaders(apiKey.id, apiKey.tier, 'exports');
-    serveJson(res, 429, {
-      error: 'Daily export limit exceeded',
-      limit: result.limit,
-      used: result.used,
-      resetAt: headers['X-RateLimit-Reset'],
-    }, headers);
+    sendV1Error(res, 429, 'Daily export limit exceeded', {
+      code: 'rate_limited',
+      headers,
+      details: { limit: result.limit, used: result.used, resetAt: headers['X-RateLimit-Reset'] },
+    });
     return false;
   }
 
@@ -415,13 +415,136 @@ export async function apiCreated(ctx, data) {
   await apiResponse(ctx, 201, data);
 }
 
+// ============================================================
+// ERROR ENVELOPE (the one public /api/v1 error shape)
+// ============================================================
+
 /**
- * Send an error response.
- * @param {Object} ctx - Request context
- * @param {number} status - HTTP status code
- * @param {string} error - Error message
- * @param {Object} [details] - Additional error details
+ * Emit the canonical public-API v1 error envelope, synchronously:
+ *
+ *   { "error": "<machine_code>", "message": "<human text>", "details"?: … }
+ *
+ * `error` is a stable snake_case machine code clients branch on (the same
+ * A7.19 vocabulary the internal `/api/*` layer uses — `not_found`, `forbidden`,
+ * `rate_limited`, … — minus the internal envelope's `ok:false`, which the
+ * public surface never carried). `message` is the human-readable text; safe to
+ * show a user, never a stack trace. `details` is optional structured extra.
+ *
+ * This is the single low-level emitter: `apiError` layers rate-limit headers on
+ * top of it, and the pre-dispatch guards (auth, permission, method, 404) call
+ * it directly. One envelope, produced one way — see docs/openapi.yaml § Errors
+ * and docs/reference/api-error-format.md § Scope.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {number} status - HTTP status code.
+ * @param {string} [message] - Human-readable message.
+ * @param {Object} [opts]
+ * @param {string} [opts.code] - Machine code; defaults from the HTTP status.
+ * @param {*} [opts.details] - Structured extra (omitted when null/undefined).
+ * @param {Object} [opts.headers] - Extra response headers (e.g. Retry-After).
+ * @returns {true}
  */
-export async function apiError(ctx, status, error, details = {}) {
-  await apiResponse(ctx, status, { error, ...details });
+export function sendV1Error(res, status, message, { code, details, headers } = {}) {
+  const body = { error: code || codeForStatus(status) };
+  if (message != null && message !== '') body.message = message;
+  if (details != null) body.details = details;
+  serveJson(res, status, body, headers || {});
+  return true;
+}
+
+/**
+ * 405 for the v1 surface: the canonical envelope plus the `Allow` header.
+ * @param {import('node:http').ServerResponse} res
+ * @param {string[]} allowed - Accepted methods.
+ * @returns {true}
+ */
+export function v1MethodNotAllowed(res, allowed) {
+  return sendV1Error(res, 405, 'Method not allowed', {
+    code: 'method_not_allowed',
+    headers: { Allow: allowed.join(', ') },
+  });
+}
+
+/**
+ * 404 for the v1 surface in the canonical envelope.
+ * @param {import('node:http').ServerResponse} res
+ * @param {string} [message]
+ * @returns {true}
+ */
+export function v1NotFound(res, message = 'Not found') {
+  return sendV1Error(res, 404, message, { code: 'not_found' });
+}
+
+/**
+ * Send an error response with rate-limit headers, in the canonical v1 envelope.
+ * The endpoint-facing helper (the sub-handlers call this); `error` is derived
+ * from the status unless `code` is passed.
+ *
+ * @param {Object} ctx - Request context.
+ * @param {number} status - HTTP status code.
+ * @param {string} [message] - Human-readable message.
+ * @param {Object} [opts]
+ * @param {string} [opts.code] - Machine code; defaults from the HTTP status.
+ * @param {*} [opts.details] - Structured extra (omitted when null/undefined).
+ * @param {Object} [opts.headers] - Extra response headers.
+ */
+export async function apiError(ctx, status, message, { code, details, headers } = {}) {
+  const { res, apiKey } = ctx;
+  const merged = {};
+  if (apiKey) {
+    Object.assign(merged, await getRateLimitHeaders(apiKey.id, apiKey.tier, 'requests'));
+  }
+  Object.assign(merged, headers || {});
+  sendV1Error(res, status, message, { code, details, headers: merged });
+}
+
+/**
+ * Wrap the v1 feature dispatch so every *un*handled throw still answers in the
+ * canonical v1 envelope — never the internal `{ ok:false, … }` one the
+ * top-level server handler would otherwise emit for the public surface.
+ *
+ * This is the v1 analogue of `withErrorHandler` (server/utils/http.js): the
+ * public API had zero wrappers and hand-rolled try/catch per handler (B39 deel
+ * 3, bevinding 11 — the "third envelope grows back" risk). Wrapping the
+ * mount-level dispatch covers every sub-handler it routes to (including any
+ * that forgot a catch). A thrown `AppError`/status-bearing error keeps its
+ * status, machine code and details; anything ≥500 answers a generic
+ * `internal_error` without leaking internals.
+ *
+ * @param {string} moduleName - Label for the error log.
+ * @param {Function} handler - Async dispatch function `(ctx, …) => Promise<boolean>`.
+ * @returns {Function}
+ */
+export function withV1ErrorHandler(moduleName, handler) {
+  return async (ctx, ...args) => {
+    try {
+      return await handler(ctx, ...args);
+    } catch (err) {
+      const { res } = ctx;
+      const reqCtx = [ctx?.req?.method, ctx?.url?.pathname].filter(Boolean).join(' ');
+      logError(moduleName, reqCtx ? `Error handling ${reqCtx}:` : 'Error:', err);
+
+      // Headers already flushed (e.g. a streaming export): just close.
+      if (res.headersSent || res.writableEnded) {
+        try {
+          res.end();
+        } catch {
+          // ignore close errors
+        }
+        return true;
+      }
+
+      const status = getStatusCode(err);
+      if (status >= 500) {
+        // Never leak internal detail on a server-side failure.
+        sendV1Error(res, status, 'Internal server error', { code: codeForStatus(status) });
+      } else {
+        sendV1Error(res, status, err?.message, {
+          code: err?.code || codeForStatus(status),
+          details: err?.details ?? undefined,
+        });
+      }
+      return true;
+    }
+  };
 }

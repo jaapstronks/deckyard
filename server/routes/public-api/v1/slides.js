@@ -4,10 +4,9 @@
  */
 
 import { updatePresentation } from '../../../storage/presentations/index.js';
-import { methodNotAllowed } from '../../../utils/http.js';
 import { newSlide, validateSlide, resolveSlideTypeName, canonicalSlideType } from '../../../../shared/slide-types.js';
 import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
-import { requirePermission, getPresentationWithAccess, readApiV1Body, apiSuccess, apiCreated, apiError } from './middleware.js';
+import { requirePermission, v1MethodNotAllowed, withV1ErrorHandler, getPresentationWithAccess, readApiV1Body, apiSuccess, apiCreated, apiError } from './middleware.js';
 import { emailCanEditCustomHtml, customHtmlEditViolation } from '../../../utils/route-middleware.js';
 import { getOptionalString, getOptionalObject, getNonNegativeNumber } from '../../../utils/request-validators.js';
 
@@ -123,19 +122,11 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
   // Replace slide in array
   slides[index] = updatedSlide;
 
-  // Update presentation
-  let updated;
-  try {
-    updated = await updatePresentation(storageScope, presentationId, { slides }, {
-      actorEmail: apiKey.ownerEmail,
-    });
-  } catch (e) {
-    if (e?.statusCode) {
-      await apiError(ctx, e.statusCode, e.message, { details: e.details || null });
-      return true;
-    }
-    throw e;
-  }
+  // Update presentation (a thrown storage error — 423 lock, 400 validation — is
+  // answered in the v1 envelope by the mount-level withV1ErrorHandler wrap).
+  const updated = await updatePresentation(storageScope, presentationId, { slides }, {
+    actorEmail: apiKey.ownerEmail,
+  });
 
   await apiSuccess(ctx, {
     slide: sanitizeSlide(updatedSlide),
@@ -240,19 +231,11 @@ async function handleCreateSlide(ctx, presentationId) {
   // Insert the new slide
   slides.splice(insertIndex, 0, newSlideObj);
 
-  // Update presentation
-  let updated;
-  try {
-    updated = await updatePresentation(storageScope, presentationId, { slides }, {
-      actorEmail: apiKey.ownerEmail,
-    });
-  } catch (e) {
-    if (e?.statusCode) {
-      await apiError(ctx, e.statusCode, e.message, { details: e.details || null });
-      return true;
-    }
-    throw e;
-  }
+  // Update presentation (a thrown storage error — 423 lock, 400 validation — is
+  // answered in the v1 envelope by the mount-level withV1ErrorHandler wrap).
+  const updated = await updatePresentation(storageScope, presentationId, { slides }, {
+    actorEmail: apiKey.ownerEmail,
+  });
 
   await apiCreated(ctx, {
     slide: sanitizeSlide(newSlideObj),
@@ -294,19 +277,11 @@ async function handleDeleteSlide(ctx, presentationId, slideId) {
   // Remove the slide
   slides.splice(index, 1);
 
-  // Update presentation
-  let updated;
-  try {
-    updated = await updatePresentation(storageScope, presentationId, { slides }, {
-      actorEmail: apiKey.ownerEmail,
-    });
-  } catch (e) {
-    if (e?.statusCode) {
-      await apiError(ctx, e.statusCode, e.message, { details: e.details || null });
-      return true;
-    }
-    throw e;
-  }
+  // Update presentation (a thrown storage error — 423 lock, 400 validation — is
+  // answered in the v1 envelope by the mount-level withV1ErrorHandler wrap).
+  const updated = await updatePresentation(storageScope, presentationId, { slides }, {
+    actorEmail: apiKey.ownerEmail,
+  });
 
   await apiSuccess(ctx, {
     deleted: true,
@@ -367,19 +342,10 @@ async function handleReorderSlides(ctx, presentationId) {
     }
   }
 
-  // Update presentation
-  let updated;
-  try {
-    updated = await updatePresentation(storageScope, presentationId, { slides: reorderedSlides }, {
-      actorEmail: apiKey.ownerEmail,
-    });
-  } catch (e) {
-    if (e?.statusCode) {
-      await apiError(ctx, e.statusCode, e.message, { details: e.details || null });
-      return true;
-    }
-    throw e;
-  }
+  // Update presentation (throws answered in the v1 envelope by the wrap).
+  const updated = await updatePresentation(storageScope, presentationId, { slides: reorderedSlides }, {
+    actorEmail: apiKey.ownerEmail,
+  });
 
   // Return summary of new order
   const slidesSummary = reorderedSlides.map((s, idx) => ({
@@ -405,7 +371,7 @@ async function handleReorderSlides(ctx, presentationId) {
 /**
  * Main handler for /api/v1/presentations/:id/slides routes.
  */
-export async function handleSlides(ctx) {
+export const handleSlides = withV1ErrorHandler('public-api-v1:slides', async (ctx) => {
   const { req, res, url } = ctx;
 
   // POST /api/v1/presentations/:id/slides/reorder
@@ -413,7 +379,7 @@ export async function handleSlides(ctx) {
     /^\/api\/v1\/presentations\/([^/]+)\/slides\/reorder$/
   );
   if (reorderMatch) {
-    if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+    if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
     return handleReorderSlides(ctx, reorderMatch[1]);
   }
 
@@ -432,7 +398,7 @@ export async function handleSlides(ctx) {
     if (req.method === 'GET') return handleGetSlide(ctx, presentationId, slideId);
     if (req.method === 'PUT') return handleUpdateSlide(ctx, presentationId, slideId);
     if (req.method === 'DELETE') return handleDeleteSlide(ctx, presentationId, slideId);
-    return methodNotAllowed(res, ['GET', 'PUT', 'DELETE']);
+    return v1MethodNotAllowed(res, ['GET', 'PUT', 'DELETE']);
   }
 
   // Collection: POST /api/v1/presentations/:id/slides
@@ -441,8 +407,8 @@ export async function handleSlides(ctx) {
   );
   if (collectionMatch) {
     if (req.method === 'POST') return handleCreateSlide(ctx, collectionMatch[1]);
-    return methodNotAllowed(res, ['POST']);
+    return v1MethodNotAllowed(res, ['POST']);
   }
 
   return false;
-}
+});

@@ -130,6 +130,8 @@ describe('getPresentationWithAccess', () => {
     const { ok } = await getPresentationWithAccess(ctx, viewOnlyId, { access: 'write' });
     assert.equal(ok, false);
     assert.equal(ctx.res.statusCode, 403);
-    assert.match(ctx.res.body.error, /read-only/);
+    // B61: the machine code is `forbidden`; the human prose moved to `message`.
+    assert.equal(ctx.res.body.error, 'forbidden');
+    assert.match(ctx.res.body.message, /read-only/);
   });
 });
