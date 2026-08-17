@@ -68,6 +68,12 @@ export function assertPublishingEnabled() {
  * (and on any render failure) falls back down the ladder to a picked content
  * image, then the bundled default. Never throws — a preview is best-effort.
  *
+ * Exported because the internal preview-regenerate route
+ * (`server/routes/api/publish.js`) renders the same image and must share this
+ * one renderer, author overlay and fallback ladder rather than keep its own copy
+ * (B73). That route keeps its own guards and its own entry write — it reuses the
+ * image build, not the whole {@link publishPresentation} flow.
+ *
  * @param {object} params
  * @param {string} params.repoRoot
  * @param {object} params.storageScope
@@ -76,7 +82,7 @@ export function assertPublishingEnabled() {
  * @param {string} params.publishId - The publish id (names the rendered file).
  * @returns {Promise<string>} The OG image URL.
  */
-async function buildPublishOgImage({ repoRoot, storageScope, pres, actorEmail, publishId }) {
+export async function buildPublishOgImage({ repoRoot, storageScope, pres, actorEmail, publishId }) {
   let ogImageUrl = DEFAULT_OG_IMAGE;
   try {
     // First slide that isn't a follow-invite-slide (those are internal).
