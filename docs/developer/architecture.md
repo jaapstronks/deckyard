@@ -397,8 +397,8 @@ server/storage/presentations/
   …
 ```
 
-A domain that is still a single module stays a flat file (`server/storage/foo.js`);
-promote it to `server/storage/foo/` only when the second member appears. Inside
+A domain that is still a single module stays a flat file; it graduates to its own
+folder only when a second member appears. Inside
 the folder, `index.js` holds the domain's primary facade; other members are
 imported directly by path (`storage/presentations/i18n.js`) — the folder groups
 the domain, it does not force everything through one re-export barrel. What is
