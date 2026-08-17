@@ -3,7 +3,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { formatDuration, formatNumber, formatPercent } from '../../lib/format/analytics-format.js';
+import { formatDuration, formatCount, formatPercent } from '../../lib/format/analytics-format.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 
 /**
@@ -21,12 +21,12 @@ export function createOverviewPanel({ h, data }) {
   const cards = {
     views: createCard(h, {
       label: t('analytics.totalViews', 'Total Views'),
-      value: formatNumber(data?.totalViews || 0),
+      value: formatCount(data?.totalViews || 0),
       icon: 'eye',
     }),
     viewers: createCard(h, {
       label: t('analytics.uniqueViewers', 'Unique Viewers'),
-      value: formatNumber(data?.uniqueViewers || 0),
+      value: formatCount(data?.uniqueViewers || 0),
       icon: 'user',
     }),
     duration: createCard(h, {
@@ -45,8 +45,8 @@ export function createOverviewPanel({ h, data }) {
   el.append(cardsContainer);
 
   function update(newData) {
-    cards.views.update(formatNumber(newData?.totalViews || 0));
-    cards.viewers.update(formatNumber(newData?.uniqueViewers || 0));
+    cards.views.update(formatCount(newData?.totalViews || 0));
+    cards.viewers.update(formatCount(newData?.uniqueViewers || 0));
     cards.duration.update(formatDuration(newData?.avgDurationSeconds || 0));
     cards.completion.update(formatPercent(newData?.completionRate || 0));
   }

@@ -63,12 +63,24 @@ export function formatDate(dateStr, { short = false, ...intlOptions } = {}) {
 }
 
 /**
- * Format number with thousands separator.
+ * Format a whole-number count with thousands separators (e.g. "1,234").
  * @param {number} n - Number to format
  * @returns {string}
  */
-export function formatNumber(n) {
+export function formatCount(n) {
   return Number(n || 0).toLocaleString();
+}
+
+/**
+ * Format a large number compactly with a K/M suffix (e.g. "1.2K", "3.4M").
+ * @param {number} num - Number to format
+ * @returns {string}
+ */
+export function formatCompact(num) {
+  if (!num) return '0';
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+  return String(num);
 }
 
 /**
