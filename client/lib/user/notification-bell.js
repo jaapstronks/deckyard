@@ -4,7 +4,7 @@
  */
 
 import { h, installDismissOnOutside } from '../dom.js';
-import { withBackoff } from '../net/reconnect.js';
+import { createSSEConnection, LONG_LIVED_STREAM } from '../net/sse-connection.js';
 import { t } from '../ui-i18n.js';
 import { createAvatar } from './avatar.js';
 import { getUserProfile, prefetchProfiles } from './user-profiles.js';
@@ -457,72 +457,72 @@ export function createNotificationBell({ api, onNavigate }) {
     }
   }
 
-  const stream = withBackoff(({ onOpen, onError }) => {
-    const eventSource = new EventSource('/api/notifications/events');
-
-    eventSource.addEventListener('connected', (e) => {
-      onOpen();
-      try {
-        const data = JSON.parse(e.data);
-        if (typeof data.unreadCount === 'number') {
-          unreadCount = data.unreadCount;
-          updateBadge();
+  // The notification stream is long-lived: it reconnects for the life of the
+  // session (LONG_LIVED_STREAM) because a backgrounded tab silently drops SSE
+  // and must recover. The helper owns the reopen timer, so it dies with stop().
+  const stream = createSSEConnection({
+    url: '/api/notifications/events',
+    // `connected` is delivered to onEvent by the helper itself, so it is not
+    // listed here (listing it would dispatch it twice).
+    events: ['notification:new', 'notification:counts'],
+    onEvent: (e) => {
+      switch (e.type) {
+        case 'connected': {
+          try {
+            const data = JSON.parse(e.data);
+            if (typeof data.unreadCount === 'number') {
+              unreadCount = data.unreadCount;
+              updateBadge();
+            }
+          } catch {
+            // ignore parse errors
+          }
+          break;
         }
-      } catch {
-        // ignore parse errors
-      }
-    });
-
-    eventSource.addEventListener('notification:new', (e) => {
-      try {
-        const notif = JSON.parse(e.data);
-        // Add to the list when it belongs in the current lens (a new
-        // item is never archived; mentions lens wants mentions only).
-        const belongs = filter === 'all'
-          || filter === 'unread'
-          || (filter === 'mentions' && notif.notificationType === 'comment_mention');
-        // Coalesced bundles (e.g. deck_activity) re-send the SAME id with a
-        // bumped count. Replace the existing row and move it to the top
-        // instead of adding a duplicate, and don't re-increment the badge —
-        // an authoritative notification:counts follows for those.
-        const existingIdx = notifications.findIndex((n) => n.id === notif.id);
-        if (existingIdx !== -1) {
-          notifications.splice(existingIdx, 1);
-          if (belongs) notifications.unshift(notif);
-        } else {
-          if (belongs) notifications.unshift(notif);
-          unreadCount++;
-          updateBadge();
+        case 'notification:new': {
+          try {
+            const notif = JSON.parse(e.data);
+            // Add to the list when it belongs in the current lens (a new
+            // item is never archived; mentions lens wants mentions only).
+            const belongs = filter === 'all'
+              || filter === 'unread'
+              || (filter === 'mentions' && notif.notificationType === 'comment_mention');
+            // Coalesced bundles (e.g. deck_activity) re-send the SAME id with a
+            // bumped count. Replace the existing row and move it to the top
+            // instead of adding a duplicate, and don't re-increment the badge —
+            // an authoritative notification:counts follows for those.
+            const existingIdx = notifications.findIndex((n) => n.id === notif.id);
+            if (existingIdx !== -1) {
+              notifications.splice(existingIdx, 1);
+              if (belongs) notifications.unshift(notif);
+            } else {
+              if (belongs) notifications.unshift(notif);
+              unreadCount++;
+              updateBadge();
+            }
+            if (isOpen) {
+              renderNotifications();
+            }
+          } catch {
+            // ignore parse errors
+          }
+          break;
         }
-        if (isOpen) {
-          renderNotifications();
+        case 'notification:counts': {
+          try {
+            const data = JSON.parse(e.data);
+            if (typeof data.unreadCount === 'number') {
+              unreadCount = data.unreadCount;
+              updateBadge();
+            }
+          } catch {
+            // ignore parse errors
+          }
+          break;
         }
-      } catch {
-        // ignore parse errors
       }
-    });
-
-    eventSource.addEventListener('notification:counts', (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        if (typeof data.unreadCount === 'number') {
-          unreadCount = data.unreadCount;
-          updateBadge();
-        }
-      } catch {
-        // ignore parse errors
-      }
-    });
-
-    eventSource.onerror = () => onError();
-
-    return () => {
-      try {
-        eventSource.close();
-      } catch {
-        // ignore
-      }
-    };
+    },
+    ...LONG_LIVED_STREAM,
   });
 
   // Event handlers
@@ -533,7 +533,7 @@ export function createNotificationBell({ api, onNavigate }) {
 
   // Initialize
   fetchUnreadCount();
-  stream.start();
+  stream.connect();
 
   return {
     el: container,

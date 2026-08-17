@@ -1,4 +1,4 @@
-import { withBackoff } from '../../lib/net/reconnect.js';
+import { createSSEConnection, LONG_LIVED_STREAM } from '../../lib/net/sse-connection.js';
 
 export function createNotesSessionSse({
   sessionId,
@@ -7,43 +7,43 @@ export function createNotesSessionSse({
   onDeckUpdated,
   onStatus,
 } = {}) {
-  let es = null;
-
-  const connector = withBackoff(
-    ({ onOpen, onError }) => {
-      es = new EventSource(`/api/live-sessions/${sessionId}/events`);
-      es.addEventListener('open', () => onOpen?.());
-      es.addEventListener('error', () => onError?.());
-      es.addEventListener('state', (ev) => {
-        try {
-          const data = JSON.parse(ev.data || '{}');
-          onState?.(data);
-        } catch {
-          // ignore
+  const connection = createSSEConnection({
+    url: `/api/live-sessions/${sessionId}/events`,
+    events: ['state', 'controlEnabled', 'deckUpdated'],
+    onEvent: (ev) => {
+      switch (ev.type) {
+        case 'state': {
+          try {
+            onState?.(JSON.parse(ev.data || '{}'));
+          } catch {
+            // ignore
+          }
+          break;
         }
-      });
-      es.addEventListener('controlEnabled', (ev) => {
-        try {
-          const data = JSON.parse(ev.data || '{}');
-          onControlEnabled?.(data);
-        } catch {
-          // ignore
+        case 'controlEnabled': {
+          try {
+            onControlEnabled?.(JSON.parse(ev.data || '{}'));
+          } catch {
+            // ignore
+          }
+          break;
         }
-      });
-      es.addEventListener('deckUpdated', () => onDeckUpdated?.());
-      es.addEventListener('close', () => onError?.());
-      return () => {
-        try {
-          es?.close?.();
-        } catch {}
-        es = null;
-      };
+        case 'deckUpdated':
+          onDeckUpdated?.();
+          break;
+      }
     },
-    { onStatus }
-  );
+    // The consumer only cares that the stream dropped (to show a reconnecting
+    // hint); RECONNECTING is that signal. The server ends the response after a
+    // `close` event, so the helper's native onerror path reopens the stream.
+    onStateChange: (state) => {
+      if (state === connection.STATE.RECONNECTING) onStatus?.({ kind: 'error' });
+    },
+    ...LONG_LIVED_STREAM,
+  });
 
   return {
-    start: () => connector.start(),
-    stop: () => connector.stop(),
+    start: () => connection.connect(),
+    stop: () => connection.stop(),
   };
 }

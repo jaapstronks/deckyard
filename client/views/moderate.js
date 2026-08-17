@@ -1,6 +1,7 @@
 import { api } from '../lib/api.js';
 import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
+import { createSSEConnection, LONG_LIVED_STREAM } from '../lib/net/sse-connection.js';
 
 export async function renderModerate(root, presentationId, { user } = {}) {
   const pid = String(presentationId || '').trim();
@@ -26,7 +27,7 @@ export async function renderModerate(root, presentationId, { user } = {}) {
   panel.append(title, help, status, list);
 
   let questions = [];
-  let es = null;
+  let connection = null;
 
   const render = () => {
     list.innerHTML = '';
@@ -101,44 +102,49 @@ export async function renderModerate(root, presentationId, { user } = {}) {
   await refresh();
 
   const connect = () => {
-    if (es) return;
-    es = new EventSource(`/api/follow/${encodeURIComponent(pid)}/questions/events`);
-    es.addEventListener('questions', (ev) => {
-      try {
-        const data = JSON.parse(ev.data || '{}');
-        questions = Array.isArray(data?.questions) ? data.questions : [];
-        render();
-      } catch {
-        // ignore
-      }
-    });
-    es.addEventListener('status', (ev) => {
-      try {
-        const data = JSON.parse(ev.data || '{}');
-        if (data?.status !== 'live') {
-          questions = [];
-          render();
+    if (connection) return;
+    connection = createSSEConnection({
+      url: `/api/follow/${encodeURIComponent(pid)}/questions/events`,
+      events: ['questions', 'status', 'close'],
+      onEvent: (ev) => {
+        switch (ev.type) {
+          case 'questions': {
+            try {
+              const data = JSON.parse(ev.data || '{}');
+              questions = Array.isArray(data?.questions) ? data.questions : [];
+              render();
+            } catch {
+              // ignore
+            }
+            break;
+          }
+          case 'status': {
+            try {
+              const data = JSON.parse(ev.data || '{}');
+              if (data?.status !== 'live') {
+                questions = [];
+                render();
+              }
+            } catch {
+              // ignore
+            }
+            break;
+          }
+          case 'close':
+            // Session ended server-side: close for good, don't reopen.
+            connection.disconnect();
+            break;
         }
-      } catch {
-        // ignore
-      }
+      },
+      ...LONG_LIVED_STREAM,
     });
-    es.addEventListener('close', () => {
-      try {
-        es?.close?.();
-      } catch {}
-      es = null;
-    });
+    connection.connect();
   };
 
   connect();
 
   return () => {
-    if (es) {
-      try {
-        es.close();
-      } catch {}
-      es = null;
-    }
+    connection?.stop();
+    connection = null;
   };
 }

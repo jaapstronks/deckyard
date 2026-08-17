@@ -6,6 +6,8 @@
 // companion does subscribe (`client/views/notes/session-sse.js`) — there it is
 // a different tab, so it carries information.
 
+import { createSSEConnection, LONG_LIVED_STREAM } from '../../lib/net/sse-connection.js';
+
 export async function startPresenterSession({
   api,
   presentationId,
@@ -21,53 +23,63 @@ export async function startPresenterSession({
     body: JSON.stringify({ presentationId }),
   });
   const sessionId = created?.sessionId || null;
-  let es = null;
+  let connection = null;
 
   if (sessionId) {
-    es = new EventSource(`/api/live-sessions/${sessionId}/events`);
-    es.addEventListener('control', (ev) => {
-      try {
-        const data = JSON.parse(ev.data || '{}');
-        const action = String(data?.action || '');
-        if (action === 'next') onNext?.();
-        else if (action === 'prev') onPrev?.();
-        else if (action === 'goto') onGoto?.(Number(data?.slideIndex));
-      } catch {
-        // ignore
-      }
+    connection = createSSEConnection({
+      url: `/api/live-sessions/${sessionId}/events`,
+      events: ['control', 'deckUpdated', 'interactionState', 'branch'],
+      onEvent: (ev) => {
+        switch (ev.type) {
+          case 'control': {
+            try {
+              const data = JSON.parse(ev.data || '{}');
+              const action = String(data?.action || '');
+              if (action === 'next') onNext?.();
+              else if (action === 'prev') onPrev?.();
+              else if (action === 'goto') onGoto?.(Number(data?.slideIndex));
+            } catch {
+              // ignore
+            }
+            break;
+          }
+          case 'deckUpdated': {
+            try {
+              const data = JSON.parse(ev.data || '{}');
+              onDeckUpdated?.(data);
+            } catch {
+              // ignore
+            }
+            break;
+          }
+          case 'interactionState': {
+            try {
+              const data = JSON.parse(ev.data || '{}');
+              onInteractionState?.(data);
+            } catch (err) {
+              console.error('[presenter] SSE interactionState parse error:', err.message, 'Raw:', ev.data?.slice?.(0, 200));
+            }
+            break;
+          }
+          case 'branch': {
+            try {
+              const data = JSON.parse(ev.data || '{}');
+              onBranch?.(data);
+            } catch {
+              // ignore
+            }
+            break;
+          }
+        }
+      },
+      ...LONG_LIVED_STREAM,
     });
-    es.addEventListener('deckUpdated', (ev) => {
-      try {
-        const data = JSON.parse(ev.data || '{}');
-        onDeckUpdated?.(data);
-      } catch {
-        // ignore
-      }
-    });
-    es.addEventListener('interactionState', (ev) => {
-      try {
-        const data = JSON.parse(ev.data || '{}');
-        onInteractionState?.(data);
-      } catch (err) {
-        console.error('[presenter] SSE interactionState parse error:', err.message, 'Raw:', ev.data?.slice?.(0, 200));
-      }
-    });
-    es.addEventListener('branch', (ev) => {
-      try {
-        const data = JSON.parse(ev.data || '{}');
-        onBranch?.(data);
-      } catch {
-        // ignore
-      }
-    });
+    connection.connect();
   }
 
   const close = () => {
-    if (!es) return;
-    try {
-      es.close();
-    } catch {}
-    es = null;
+    connection?.stop();
+    connection = null;
   };
 
   return { sessionId, followCodes: created?.followCodes, close };
