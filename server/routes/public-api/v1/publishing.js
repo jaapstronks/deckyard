@@ -4,16 +4,10 @@
  */
 
 import {
-  newPublishId,
   removePublishedEntry,
-  upsertPublishedEntry,
 } from '../../../storage/published/index.js';
 import { updatePresentation } from '../../../storage/presentations/index.js';
-import { getUserSettings } from '../../../storage/settings.js';
-import { pickOgImageUrlFromPresentation } from '../../../render/og-image.js';
-import { loadThemeAssets } from '../../../utils/themes.js';
-import { generateAndSaveOgPreview } from '../../../render/preview-image.js';
-import { isMediaProviderInitialized } from '../../../media/index.js';
+import { publishPresentation, assertPublishingEnabled } from '../../../services/publish-presentation.js';
 import { requirePermission, v1MethodNotAllowed, withV1ErrorHandler, getPresentationWithAccess, apiSuccess } from './middleware.js';
 
 // ============================================================
@@ -24,92 +18,23 @@ import { requirePermission, v1MethodNotAllowed, withV1ErrorHandler, getPresentat
  * POST /api/v1/presentations/:id/publish - Publish a presentation.
  */
 async function handlePublish(ctx, id) {
-  const { repoRoot, storageScope, apiKey } = ctx;
+  const { repoRoot, storageScope, req, authedUser } = ctx;
+
+  // Refuse in sandbox before loading the deck (the shared policy gate). A
+  // thrown ForbiddenError renders in the v1 envelope via withV1ErrorHandler.
+  assertPublishingEnabled();
 
   if (!requirePermission(ctx, 'write')) return true;
 
   const { ok, pres } = await getPresentationWithAccess(ctx, id, { access: 'write' });
   if (!ok) return true;
 
-  // Generate or reuse publish ID
-  const publishId =
-    typeof pres?.published?.id === 'string' && pres.published.id
-      ? pres.published.id
-      : newPublishId();
-
-  // Generate OG preview image from the first meaningful slide
-  let ogImageUrl = '/assets/images/slides-previewimage.png';
-  try {
-    const firstSlide = Array.isArray(pres?.slides)
-      ? pres.slides.find((s) => s?.type !== 'follow-invite-slide')
-      : null;
-
-    if (firstSlide && isMediaProviderInitialized()) {
-      const theme = await loadThemeAssets(repoRoot, pres.theme);
-
-      // Check if author overlay should be shown
-      const showAuthor = pres?.settings?.ogPreview?.showAuthor === true;
-      let authorInfo = null;
-
-      if (showAuthor) {
-        const ownerEmail = pres?.ownerEmail || pres?.createdBy || apiKey.ownerEmail;
-        if (ownerEmail) {
-          try {
-            const userSettings = await getUserSettings(storageScope, ownerEmail);
-            authorInfo = {
-              name: userSettings?.profile?.name || ownerEmail.split('@')[0],
-              imageUrl: userSettings?.profile?.imageUrl || '',
-            };
-          } catch {
-            authorInfo = { name: ownerEmail.split('@')[0], imageUrl: '' };
-          }
-        }
-      }
-
-      ogImageUrl = await generateAndSaveOgPreview(
-        repoRoot,
-        firstSlide,
-        theme,
-        `og-${publishId}`,
-        { showAuthor, authorInfo }
-      );
-    } else {
-      ogImageUrl = pickOgImageUrlFromPresentation(pres) || ogImageUrl;
-    }
-  } catch (err) {
-    // Fall back to existing behavior
-    ogImageUrl = pickOgImageUrlFromPresentation(pres) || ogImageUrl;
-  }
-
-  // Upsert published entry
-  const entry = await upsertPublishedEntry(storageScope, {
-    publishId,
-    presentationId: pres.id,
-    title: pres.title,
-    ogImageUrl,
-  });
-
-  // Persist onto the presentation document
-  const nextPres = {
-    ...pres,
-    published: {
-      id: entry.publishId,
-      slug: entry.slug,
-      ogImageUrl: entry.ogImageUrl || '',
-      created: entry.created,
-      modified: entry.modified,
-    },
-  };
-  await updatePresentation(storageScope, id, nextPres, {
-    actorEmail: apiKey.ownerEmail,
-  });
-
-  await apiSuccess(ctx, {
-    publishId: entry.publishId,
-    slug: entry.slug,
-    path: `/p/${entry.publishId}-${entry.slug}`,
-    ogImageUrl: entry.ogImageUrl || '',
-  });
+  // The publish flow (sandbox refusal, OG preview, entry upsert, thumbnail
+  // warm, webhook) is shared with the internal route — one canonical form. A
+  // sandbox refusal surfaces as a thrown ForbiddenError; withV1ErrorHandler
+  // renders it in the v1 envelope.
+  const result = await publishPresentation({ repoRoot, storageScope, req, pres, actor: authedUser });
+  await apiSuccess(ctx, result);
   return true;
 }
 
