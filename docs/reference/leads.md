@@ -155,7 +155,8 @@ view → erase on the `/my-data` landing page, and the token store is durable:
 - **The retention sweep is a tenant of the analytics job.** It runs and is
   logged, but a leads sweep living in `analytics-cleanup.js` is easy to lose
   when analytics scheduling changes; noted here so it is a known oddity, not
-  a surprise.
+  a surprise. Leaving it there is a deliberate decision (2026-08-17): move it
+  opportunistically whenever analytics scheduling is touched anyway.
 - **Deletion is anonymization.** No path hard-deletes a `lead_submissions`
   row. That is a deliberate counting choice, but "delete" in the UI and API
   names should be read as "remove the person, keep the event".

@@ -45,15 +45,22 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
 - **`scope` still legitimately exists** for the storage-scope concept
   (`server/storage/scope.js` — the module and its prose; variables say
   `storageScope`).
-- **Known remaining homonyms, deliberately not folded here** (each needs its
-  own decision): the slide-library/collections shelf axis
-  (`scope: 'personal' | 'team'`, DB columns `slide_library.scope`,
-  `slide_collections.scope`), the listing *filters* named `scope` on the MCP
-  tools (`list_presentations`, `list_recent_comments`: `owned/shared/all`) and
-  the client presentations view, and the comments-panel's local
-  `'slide' | 'deck'` view toggle. These are filter/shelf meanings, not the
-  visibility meaning; renaming the MCP fields would be its own breaking
-  decision.
+- **Remaining homonyms — decided 2026-08-17, sweeps pending.** The normative
+  targets are now fixed; the code has not been swept yet:
+  - The listing *filters* named `scope` on the MCP tools
+    (`list_presentations`, `list_recent_comments`: `owned/shared/all`) and
+    the client presentations view become **`ownership`**. This is a breaking
+    change to the MCP tool schema — deliberate; MCP clients re-read the
+    schema each session.
+  - The slide-library/collections shelf axis (`scope: 'personal' | 'team'`,
+    DB columns `slide_library.scope`, `slide_collections.scope`) becomes
+    **`shelf: 'personal' | 'organization'`** — internal rename plus
+    migration; this field does not appear in the public v1 API.
+- **Local, non-persisted use of the word "scope" is not a homonym defect.**
+  A view-local variable using "scope" in its ordinary English sense (the
+  comments panel's `'slide' | 'deck'` toggle, prose like "scoped to") makes
+  no vocabulary claim: it names nothing in storage, the API, or a schema.
+  The register above governs *persisted and contract-level* names only.
 - The physical table `present_sessions` keeps its name (renaming is a
   migration with no behavioural payoff; see the note in
   `tests/live-session-vocabulary.test.js`).

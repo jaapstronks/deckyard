@@ -266,7 +266,9 @@ and Redis optional throughout.** Where the code stands, as of 2026-08-05:
   balancer share the *queue* but not the *results*: a poll or download that
   lands on the instance that did not run the job finds nothing. Single-instance
   deployments — every supported shape today — are unaffected, but the queue's
-  distribution promise stops at the result boundary.
+  distribution promise stops at the result boundary. Leaving this as-is is a
+  deliberate decision (2026-08-17), to be revisited with the first
+  multi-instance deployment plan.
 - **Interval jobs run on every instance.** Each is idempotent and delete-shaped,
   so concurrent runs waste work rather than corrupt it. There is no leader
   election, and none is needed at the current deployment shapes.
