@@ -30,8 +30,9 @@
  *      partial-write tests, so the double drops `undefined` too.
  *   4. `sql` template values (the storage layer writes `sql`revision + 1``) are
  *      evaluated for the shapes that layer uses — `<column> ± <number>` and
- *      `now()` in a SET clause and a `CASE <column> WHEN … THEN <n> … END` rank
- *      in ORDER BY —
+ *      `now()` in a SET clause, and in ORDER BY a `CASE <column> WHEN … THEN
+ *      <n> … END` rank, a `<column> = '<literal>'` boolean flag, and
+ *      `cardinality(<column>)` array length —
  *      and anything else throws rather than being silently ignored or stored as
  *      a builder object. An ORDER BY the double quietly dropped would make an
  *      ordering test pass on insertion order, which is the failure mode that
