@@ -6,7 +6,7 @@
  * - slide-library-state.js - State management
  * - slide-library-api.js - API operations
  * - slide-library-modals.js - Lightbox and use-slide modals
- * - slide-library-controls.js - UI controls (scope, view, search, filters)
+ * - slide-library-controls.js - UI controls (shelf, view, search, filters)
  */
 
 import { t } from '../ui-i18n.js';
@@ -37,7 +37,7 @@ export function createSlideLibraryPicker({
   SLIDE_TYPES = null,
   insertFromLibraryItem,
   allowInsert = true,
-  initialScope = 'team',
+  initialShelf = 'organization',
   initialQuery = '',
   initialLang = 'nl',
   showLanguageSwitch = false,
@@ -52,7 +52,7 @@ export function createSlideLibraryPicker({
   compose = false,
   onSelectionChange = null,
   // Optional: when provided, the card more-menu gains an "Add to collection"
-  // action. Called with (item, scope); the host owns the chooser UI.
+  // action. Called with (item, shelf); the host owns the chooser UI.
   onAddToCollection = null,
 } = {}) {
   const themeIdNorm = cleanStr(themeId);
@@ -64,7 +64,7 @@ export function createSlideLibraryPicker({
 
   // Initialize state
   const state = createSlideLibraryState({
-    initialScope,
+    initialShelf,
     initialQuery,
     initialLang,
   });
@@ -132,8 +132,8 @@ export function createSlideLibraryPicker({
     return th;
   };
 
-  const renderList = async (mount, scope, { afterSlideId, onPicked, rerender } = {}) => {
-    const items = state.getCache(scope);
+  const renderList = async (mount, shelf, { afterSlideId, onPicked, rerender } = {}) => {
+    const items = state.getCache(shelf);
     const activeView = state.getView();
     const activeLang = state.getLang();
     const activeTypeFilter = state.getTypeFilter();
@@ -177,7 +177,7 @@ export function createSlideLibraryPicker({
           text:
             activeView === 'trash'
               ? t('slideLibrary.empty.trash', 'Trash is empty.')
-              : scope === 'team'
+              : shelf === 'organization'
                 ? t('slideLibrary.empty.team', 'No slides in the team library yet.')
                 : t('slideLibrary.empty.personal', 'No slides in your personal library yet.'),
         })
@@ -187,14 +187,14 @@ export function createSlideLibraryPicker({
 
     const grid = h('div', { class: 'ps-lib-grid' });
     for (const it of filtered) {
-      const card = await renderCard(it, scope, { afterSlideId, onPicked, rerender });
+      const card = await renderCard(it, shelf, { afterSlideId, onPicked, rerender });
       grid.append(card);
     }
     mount.append(grid);
   };
 
-  const renderCard = async (it, scope, { afterSlideId, onPicked, rerender } = {}) => {
-    const fav = scope === 'team' ? !!it?.isFavorite : !!it?.favorite;
+  const renderCard = async (it, shelf, { afterSlideId, onPicked, rerender } = {}) => {
+    const fav = shelf === 'organization' ? !!it?.isFavorite : !!it?.favorite;
     const type = cleanStr(it?.slideType);
     const insertDisabled = type === 'follow-invite-slide';
     const isSelected = state.isSelected(it.id);
@@ -220,21 +220,21 @@ export function createSlideLibraryPicker({
 
     // Overlay for buttons on the thumbnail
     if (activeView !== 'trash') {
-      const overlay = renderCardOverlay(it, scope, card, { rerender });
+      const overlay = renderCardOverlay(it, shelf, card, { rerender });
       thumbWrap.append(overlay);
     }
 
     card.append(thumbWrap);
 
     // Card content
-    const content = renderCardContent(it, scope, type, { afterSlideId, onPicked, insertDisabled, rerender });
+    const content = renderCardContent(it, shelf, type, { afterSlideId, onPicked, insertDisabled, rerender });
     card.append(content);
 
     return card;
   };
 
-  const renderCardOverlay = (it, scope, card, { rerender } = {}) => {
-    const fav = scope === 'team' ? !!it?.isFavorite : !!it?.favorite;
+  const renderCardOverlay = (it, shelf, card, { rerender } = {}) => {
+    const fav = shelf === 'organization' ? !!it?.isFavorite : !!it?.favorite;
     const isSelected = state.isSelected(it.id);
     const overlay = h('div', { class: 'ps-lib-thumb-overlay' });
 
@@ -266,19 +266,19 @@ export function createSlideLibraryPicker({
       text: fav ? '★' : '☆',
       onclick: (e) => {
         e.stopPropagation();
-        apiOps.toggleFavorite(scope, it, { rerender });
+        apiOps.toggleFavorite(shelf, it, { rerender });
       },
     });
     overlay.append(favBtn);
 
     // More menu
-    const moreDetails = renderMoreMenu(it, scope, { rerender });
+    const moreDetails = renderMoreMenu(it, shelf, { rerender });
     overlay.append(moreDetails);
 
     return overlay;
   };
 
-  const renderMoreMenu = (it, scope, { rerender } = {}) => {
+  const renderMoreMenu = (it, shelf, { rerender } = {}) => {
     const moreDetails = h('details', { class: 'dropdown ps-lib-more-dropdown' });
     const moreSummary = h('summary', {
       class: 'ps-lib-overlay-btn ps-lib-more-btn dropdown-trigger',
@@ -289,8 +289,8 @@ export function createSlideLibraryPicker({
 
     const moreMenu = h('div', { class: 'dropdown-menu' });
 
-    // Add to team library (only for personal scope)
-    if (scope === 'personal') {
+    // Add to team library (only for personal shelf)
+    if (shelf === 'personal') {
       const pushBtn = h('button', {
         class: 'dropdown-item',
         type: 'button',
@@ -311,7 +311,7 @@ export function createSlideLibraryPicker({
         text: t('slideLibrary.action.addToCollection', 'Add to collection'),
         onclick: () => {
           moreDetails.open = false;
-          onAddToCollection(it, scope);
+          onAddToCollection(it, shelf);
         },
       });
       moreMenu.append(addToCollectionBtn);
@@ -331,7 +331,7 @@ export function createSlideLibraryPicker({
           danger: true,
         });
         if (!ok) return;
-        await apiOps.setTrashed(scope, it, true, { rerender });
+        await apiOps.setTrashed(shelf, it, true, { rerender });
       },
     });
     moreMenu.append(trashBtn);
@@ -365,7 +365,7 @@ export function createSlideLibraryPicker({
     return moreDetails;
   };
 
-  const renderCardContent = (it, scope, type, { afterSlideId, onPicked, insertDisabled, rerender } = {}) => {
+  const renderCardContent = (it, shelf, type, { afterSlideId, onPicked, insertDisabled, rerender } = {}) => {
     const activeView = state.getView();
     const content = h('div', { class: 'ps-lib-card-content' });
     const meta = h('div', { class: 'ps-lib-meta' });
@@ -429,7 +429,7 @@ export function createSlideLibraryPicker({
         class: 'btn btn-secondary is-compact ps-lib-action-btn',
         type: 'button',
         text: t('slideLibrary.action.restore', 'Restore'),
-        onclick: () => apiOps.setTrashed(scope, it, false, { rerender }),
+        onclick: () => apiOps.setTrashed(shelf, it, false, { rerender }),
       });
       content.append(restoreBtn);
     }
@@ -509,7 +509,7 @@ export function createSlideLibraryPicker({
       }
 
       // Add to team library
-      if (state.getScope() === 'personal' && state.getView() !== 'trash') {
+      if (state.getShelf() === 'personal' && state.getView() !== 'trash') {
         const pushToTeamBtn = h('button', {
           class: 'btn btn-secondary is-compact',
           type: 'button',
@@ -540,7 +540,7 @@ export function createSlideLibraryPicker({
             });
             if (!ok) return;
             for (const item of items) {
-              await apiOps.setTrashed(state.getScope(), item, true, {});
+              await apiOps.setTrashed(state.getShelf(), item, true, {});
             }
             state.clearSelection();
             rerender();
@@ -557,12 +557,12 @@ export function createSlideLibraryPicker({
 
   const renderSlideLibraryPicker = async (
     mount,
-    { afterSlideId, onPicked, scope: scopeOverride } = {}
+    { afterSlideId, onPicked, shelf: shelfOverride } = {}
   ) => {
-    // Optional one-shot scope override (e.g. the insert picker's per-scope
-    // "See all"): switch the active scope before rendering, then let the
+    // Optional one-shot shelf override (e.g. the insert picker's per-shelf
+    // "See all"): switch the active shelf before rendering, then let the
     // picker's own state drive subsequent re-renders.
-    if (scopeOverride === 'team' || scopeOverride === 'personal') state.setScope(scopeOverride);
+    if (shelfOverride === 'organization' || shelfOverride === 'personal') state.setShelf(shelfOverride);
     mount.innerHTML = '';
 
     const header = h('div', { class: 'ps-lib-header' });
@@ -579,27 +579,27 @@ export function createSlideLibraryPicker({
     // List-only rerender
     const rerenderList = async () => {
       listContainer.innerHTML = '';
-      const scope = state.getScope();
-      if (state.isLoading(scope)) {
+      const shelf = state.getShelf();
+      if (state.isLoading(shelf)) {
         listContainer.append(h('div', { class: 'help', text: t('common.loading', 'Loading…') }));
         return;
       }
-      await renderList(listContainer, scope, { afterSlideId, onPicked, rerender });
+      await renderList(listContainer, shelf, { afterSlideId, onPicked, rerender });
     };
 
     // Header controls
-    controls.renderScopeControls(headerRow, rerender);
+    controls.renderShelfControls(headerRow, rerender);
     // Trash is a management view; hide it when composing a new deck.
     if (!compose) controls.renderViewControls(headerRow, rerender);
     controls.renderLangControls(headerRow, { rerenderList });
     controls.renderSearch(headerRow, { rerenderList });
 
-    const scope = state.getScope();
+    const shelf = state.getShelf();
     header.append(headerRow);
 
     // Filters row
     if (state.getView() !== 'trash') {
-      controls.renderTypeFilters(filtersRow, scope, { rerenderList });
+      controls.renderTypeFilters(filtersRow, shelf, { rerenderList });
       if (filtersRow.children.length > 0) {
         header.append(filtersRow);
       }
@@ -609,7 +609,7 @@ export function createSlideLibraryPicker({
     // bar, so we skip the built-in one (and its management actions).
     if (compose) {
       mount.append(header, listContainer);
-      // Scope/view rerenders clear the selection; keep the host in sync.
+      // Shelf/view rerenders clear the selection; keep the host in sync.
       notifySelection();
     } else {
       const selectionBar = renderSelectionBar(mount, { afterSlideId, onPicked, rerender });
@@ -618,28 +618,28 @@ export function createSlideLibraryPicker({
     }
 
     // Load data if needed
-    if (!state.getCache(scope).length && !state.isLoading(scope)) {
+    if (!state.getCache(shelf).length && !state.isLoading(shelf)) {
       try {
-        await apiOps.fetchScope(scope);
+        await apiOps.fetchShelf(shelf);
       } catch {
         // ignore
       }
     }
 
-    if (state.isLoading(scope)) {
+    if (state.isLoading(shelf)) {
       listContainer.append(h('div', { class: 'help', text: t('common.loading', 'Loading…') }));
       return;
     }
 
-    await renderList(listContainer, scope, { afterSlideId, onPicked, rerender });
+    await renderList(listContainer, shelf, { afterSlideId, onPicked, rerender });
   };
 
-  const openSlideById = async (scope, slideId) => {
-    const s = scope === 'team' ? 'team' : 'personal';
-    state.setScope(s);
+  const openSlideById = async (shelf, slideId) => {
+    const s = shelf === 'organization' ? 'organization' : 'personal';
+    state.setShelf(s);
 
     if (!state.getCache(s).length && !state.isLoading(s)) {
-      await apiOps.fetchScope(s);
+      await apiOps.fetchShelf(s);
     }
 
     const item = state.getCache(s).find((it) => it.id === slideId);

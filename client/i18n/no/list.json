@@ -66,8 +66,8 @@
   "slideLibrary.empty.team": "Ingen lysbilder i team-biblioteket ennå.",
   "slideLibrary.modal.help": "Ditt personlige bibliotek er kun for deg. Team-biblioteket deles med alle.",
   "slideLibrary.modal.title": "Lysbilde-bibliotek",
-  "slideLibrary.scope.personal": "Personlig",
-  "slideLibrary.scope.team": "Team",
+  "slideLibrary.shelf.personal": "Personlig",
+  "slideLibrary.shelf.organization": "Team",
   "slideLibrary.search.aria": "Søk i lysbilde-bibliotek",
   "slideLibrary.search.placeholder": "Søk i lysbilde-bibliotek…",
   "slideLibrary.filter.all": "Alle"

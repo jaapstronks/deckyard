@@ -727,7 +727,7 @@
   "editor.slideLibrary.saveModal.onlyOneLang": "This slide only has content in {lang}. Consider translating it first to save both versions.",
   "editor.slideLibrary.saveModal.save": "Save to library",
   "editor.slideLibrary.saveModal.saveTo": "Save to",
-  "editor.slideLibrary.saveModal.scopeHint": "Personal slides are only visible to you. Team slides are shared with your organization.",
+  "editor.slideLibrary.saveModal.shelfHint": "Personal slides are only visible to you. Team slides are shared with your organization.",
   "editor.slideLibrary.saveModal.tags": "Tags",
   "editor.slideLibrary.saveModal.tagsHint": "Optional. Use tags to organize your slides.",
   "editor.slideLibrary.saveModal.tagsPlaceholder": "Add tags...",

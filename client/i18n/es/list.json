@@ -66,8 +66,8 @@
   "slideLibrary.empty.team": "Aún no hay diapositivas en la biblioteca del equipo.",
   "slideLibrary.modal.help": "Su biblioteca personal es solo para usted. La biblioteca del equipo se comparte con todos.",
   "slideLibrary.modal.title": "Biblioteca de diapositivas",
-  "slideLibrary.scope.personal": "Personal",
-  "slideLibrary.scope.team": "Equipo",
+  "slideLibrary.shelf.personal": "Personal",
+  "slideLibrary.shelf.organization": "Equipo",
   "slideLibrary.search.aria": "Buscar en la biblioteca de diapositivas",
   "slideLibrary.search.placeholder": "Buscar en la biblioteca…",
   "slideLibrary.filter.all": "Todos"

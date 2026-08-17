@@ -46,16 +46,17 @@ used to be split between starter kits and the slide library:
 ### Collections
 
 A collection references existing `slide_library` items in an explicit order; it
-does not copy content. Fields: `id`, `name`, `description?`, `scope`
-(personal/team, mirroring the library split), `ownerEmail`, ordered
-`slideIds[]`, timestamps.
+does not copy content. Fields: `id`, `name`, `description?`, `shelf`
+(`'personal' | 'organization'`, mirroring the library split), `ownerEmail`,
+ordered `slideIds[]`, timestamps.
 
 - **Storage**: migration `046_slide_collections.js` (`slide_collections` +
   ordered `slide_collection_items`) with the Postgres `withCollections` mixin.
   Facade `server/storage/collections/index.js` applies the personal-owner and
   team-creator/admin guards.
 - **API:** `/api/slide-collections` (GET/POST/PATCH/DELETE + reorder), same
-  scope/authz conventions as `server/routes/api/slide-library.js`.
+  shelf/authz conventions as `server/routes/api/slide-library.js` (the shared
+  shelf lives under the `/organization` segment).
 - **Manage** from the library sidebar (`client/lib/slide-collections/`): a
   collections bar (create/rename/delete + chips), a manage-membership modal
   (drag-reorder + remove), and add-to-collection off the card more-menu.

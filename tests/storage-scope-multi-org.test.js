@@ -154,7 +154,7 @@ function libraryRow({ id, org }) {
   return {
     id,
     organization_id: org,
-    scope: 'team',
+    shelf: 'organization',
     owner_email: null,
     name: id,
     description: '',
@@ -176,7 +176,7 @@ function collectionRow({ id, org }) {
   return {
     id,
     organization_id: org,
-    scope: 'team',
+    shelf: 'organization',
     owner_email: null,
     name: id,
     description: '',
@@ -311,7 +311,7 @@ test('the team slide library is per organization', async () => {
   assert.equal(
     (await getTeamLibraryItem({ organizationId: ORG_A }, 'lib-alpha'))?.id,
     'lib-alpha',
-    'a team item resolves on its own shelf (the shelf axis is item.scope)'
+    'a team item resolves on its own shelf (the shelf axis is item.shelf)'
   );
   assert.equal(
     await getTeamLibraryItem({ organizationId: ORG_B }, 'lib-alpha'),

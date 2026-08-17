@@ -32,7 +32,7 @@ export function mapImageRow(row) {
 export function mapSlideLibraryRow(row) {
   return {
     id: row.id,
-    scope: row.scope,
+    shelf: row.shelf,
     ownerEmail: row.owner_email,
     name: row.name,
     description: row.description || '',
@@ -64,7 +64,7 @@ export function mapSlideLibraryRow(row) {
 export function mapSlideCollectionRow(row, slideIds = []) {
   return {
     id: row.id,
-    scope: row.scope,
+    shelf: row.shelf,
     ownerEmail: row.owner_email,
     name: row.name,
     description: row.description || '',

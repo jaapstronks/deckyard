@@ -11,15 +11,15 @@ import { h } from '../dom.js';
 import { createModal } from '../dom/modal.js';
 import { toast } from '../dom/toast.js';
 
-const SCOPES = ['personal', 'team'];
+const SHELVES = ['personal', 'organization'];
 
 /**
- * Create or edit a collection's name, description and (on create) scope.
+ * Create or edit a collection's name, description and (on create) shelf.
  * @param {object} opts
  * @param {HTMLElement} opts.root
  * @param {'create'|'edit'} opts.mode
  * @param {object} [opts.collection] - existing collection (edit mode)
- * @param {string} [opts.scope] - initial scope (create mode)
+ * @param {string} [opts.shelf] - initial shelf (create mode)
  * @param {string[]} [opts.seedSlideIds] - members to seed a new collection with
  * @param {object} opts.collectionsApi
  * @param {(collection: object) => void} opts.onSaved
@@ -28,13 +28,13 @@ export function openCollectionEditModal({
   root,
   mode = 'create',
   collection = null,
-  scope = 'personal',
+  shelf = 'personal',
   seedSlideIds = [],
   collectionsApi,
   onSaved,
 }) {
   const isEdit = mode === 'edit';
-  const initialScope = isEdit ? collection?.scope || 'personal' : scope;
+  const initialShelf = isEdit ? collection?.shelf || 'personal' : shelf;
 
   const modal = createModal(h, {
     title: isEdit
@@ -65,30 +65,30 @@ export function openCollectionEditModal({
     descInput,
   ]);
 
-  // Scope is fixed once created (personal vs team live in different places).
-  let scopeValue = initialScope;
+  // Shelf is fixed once created (personal vs team live in different places).
+  let shelfValue = initialShelf;
   if (!isEdit) {
-    const scopeRow = h('div', { class: 'sb-segmented collection-scope-select' });
-    const scopeBtns = new Map();
-    for (const s of SCOPES) {
+    const shelfRow = h('div', { class: 'sb-segmented collection-shelf-select' });
+    const shelfBtns = new Map();
+    for (const s of SHELVES) {
       const btn = h('button', {
         type: 'button',
-        class: `sb-segmented-btn ${s === scopeValue ? 'is-active' : ''}`,
+        class: `sb-segmented-btn ${s === shelfValue ? 'is-active' : ''}`,
         text:
-          s === 'team'
-            ? t('slideLibrary.scope.team', 'Team')
-            : t('slideLibrary.scope.personal', 'Personal'),
+          s === 'organization'
+            ? t('slideLibrary.shelf.organization', 'Team')
+            : t('slideLibrary.shelf.personal', 'Personal'),
         onclick: () => {
-          scopeValue = s;
-          for (const [key, b] of scopeBtns) b.classList.toggle('is-active', key === s);
+          shelfValue = s;
+          for (const [key, b] of shelfBtns) b.classList.toggle('is-active', key === s);
         },
       });
-      scopeBtns.set(s, btn);
-      scopeRow.append(btn);
+      shelfBtns.set(s, btn);
+      shelfRow.append(btn);
     }
     fields.append(
-      h('label', { class: 'field-label', text: t('slideLibrary.collections.scopeLabel', 'Where') }),
-      scopeRow
+      h('label', { class: 'field-label', text: t('slideLibrary.collections.shelfLabel', 'Where') }),
+      shelfRow
     );
   }
 
@@ -119,9 +119,9 @@ export function openCollectionEditModal({
     try {
       let saved;
       if (isEdit) {
-        saved = await collectionsApi.update(collection.scope, collection.id, { name, description });
+        saved = await collectionsApi.update(collection.shelf, collection.id, { name, description });
       } else {
-        saved = await collectionsApi.create(scopeValue, {
+        saved = await collectionsApi.create(shelfValue, {
           name,
           description,
           slideIds: Array.isArray(seedSlideIds) ? seedSlideIds : [],
@@ -250,7 +250,7 @@ export function openManageMembersModal({ root, collection, resolveItem, collecti
       modal.setBusy(true);
       status.textContent = t('common.saving', 'Saving…');
       try {
-        const saved = await collectionsApi.update(collection.scope, collection.id, { slideIds: order });
+        const saved = await collectionsApi.update(collection.shelf, collection.id, { slideIds: order });
         modal.close();
         onSaved?.(saved);
       } catch (e) {
@@ -314,9 +314,9 @@ export function openAddToCollectionModal({ root, item, collections, collectionsA
         class: 'collection-add-item-meta',
         text: isMember
           ? t('slideLibrary.collections.addTo.alreadyIn', 'Already in')
-          : (col.scope === 'team'
-              ? t('slideLibrary.scope.team', 'Team')
-              : t('slideLibrary.scope.personal', 'Personal')),
+          : (col.shelf === 'organization'
+              ? t('slideLibrary.shelf.organization', 'Team')
+              : t('slideLibrary.shelf.personal', 'Personal')),
       })
     );
     btn.addEventListener('click', async () => {
@@ -344,7 +344,7 @@ export function openAddToCollectionModal({ root, item, collections, collectionsA
       openCollectionEditModal({
         root,
         mode: 'create',
-        scope: item?._scope === 'team' ? 'team' : 'personal',
+        shelf: item?._shelf === 'organization' ? 'organization' : 'personal',
         seedSlideIds: [item.id],
         collectionsApi,
         onSaved: () => {

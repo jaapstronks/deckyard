@@ -10,9 +10,9 @@
  * the subject of a personal-collection operation, not who the write is
  * attributed to.
  *
- * Note the two meanings of the word "scope" in this file: the storage scope
- * (which organization) and a collection's own `scope: 'personal' | 'team'`
- * (who may see it). They are unrelated.
+ * Two unrelated axes live here, and they no longer share a word: the storage
+ * scope (which organization) and a collection's own `shelf: 'personal' |
+ * 'organization'` (which shelf it lives on — a person's or the shared one).
  */
 
 import { getStorage } from '../adapters/index.js';
@@ -30,7 +30,7 @@ export async function listPersonalCollections(storageScope, userEmail) {
   const ctx = toStorageContext(storageScope, 'listPersonalCollections', { userEmail });
   const storage = getStorage();
   const items = await storage.listSlideCollections(ctx, {
-    scope: 'personal',
+    shelf: 'personal',
     ownerEmail: String(userEmail || '').toLowerCase(),
   });
   return { items };
@@ -40,7 +40,7 @@ export async function getPersonalCollection(storageScope, userEmail, id) {
   const ctx = toStorageContext(storageScope, 'getPersonalCollection', { userEmail });
   const storage = getStorage();
   const item = await storage.getSlideCollection(id, ctx);
-  if (!item || item.scope !== 'personal') return null;
+  if (!item || item.shelf !== 'personal') return null;
   const owner = String(userEmail || '').toLowerCase();
   if (String(item.ownerEmail || '').toLowerCase() !== owner) return null;
   return item;
@@ -55,7 +55,7 @@ export async function createPersonalCollection(storageScope, userEmail, input, {
       name: cleanName(input),
       description: input?.description,
       slideIds: input?.slideIds,
-      scope: 'personal',
+      shelf: 'personal',
       ownerEmail: String(userEmail || '').toLowerCase(),
     },
     ctx
@@ -72,7 +72,7 @@ export async function updatePersonalCollection(storageScope, userEmail, id, patc
   const owner = String(userEmail || '').toLowerCase();
   if (
     !existing ||
-    existing.scope !== 'personal' ||
+    existing.shelf !== 'personal' ||
     String(existing.ownerEmail || '').toLowerCase() !== owner
   ) {
     return { ok: false, reason: 'not_found' };
@@ -89,7 +89,7 @@ export async function deletePersonalCollection(storageScope, userEmail, id) {
   const owner = String(userEmail || '').toLowerCase();
   if (
     !existing ||
-    existing.scope !== 'personal' ||
+    existing.shelf !== 'personal' ||
     String(existing.ownerEmail || '').toLowerCase() !== owner
   ) {
     return { ok: false, reason: 'not_found' };
@@ -106,7 +106,7 @@ export async function deletePersonalCollection(storageScope, userEmail, id) {
 export async function listTeamCollections(storageScope, { userEmail = '' } = {}) {
   const ctx = toStorageContext(storageScope, 'listTeamCollections', { userEmail });
   const storage = getStorage();
-  const items = await storage.listSlideCollections(ctx, { scope: 'team' });
+  const items = await storage.listSlideCollections(ctx, { shelf: 'organization' });
   return { items };
 }
 
@@ -114,7 +114,7 @@ export async function getTeamCollection(storageScope, id, { userEmail = '' } = {
   const ctx = toStorageContext(storageScope, 'getTeamCollection', { userEmail });
   const storage = getStorage();
   const item = await storage.getSlideCollection(id, ctx);
-  if (!item || item.scope !== 'team') return null;
+  if (!item || item.shelf !== 'organization') return null;
   return item;
 }
 
@@ -127,7 +127,7 @@ export async function createTeamCollection(storageScope, input, { actorEmail } =
       name: cleanName(input),
       description: input?.description,
       slideIds: input?.slideIds,
-      scope: 'team',
+      shelf: 'organization',
     },
     ctx
   );
@@ -139,7 +139,7 @@ export async function updateTeamCollection(storageScope, id, patch, { actorEmail
   const ctx = toStorageContext(storageScope, 'updateTeamCollection', { actorEmail });
   const storage = getStorage();
   const existing = await storage.getSlideCollection(id, ctx);
-  if (!existing || existing.scope !== 'team') return { ok: false, reason: 'not_found' };
+  if (!existing || existing.shelf !== 'organization') return { ok: false, reason: 'not_found' };
   if (typeof allowMutate === 'function') {
     const ok = await allowMutate(existing, { actorEmail });
     if (!ok) return { ok: false, reason: 'forbidden' };
@@ -153,7 +153,7 @@ export async function deleteTeamCollection(storageScope, id, { actorEmail, allow
   const ctx = toStorageContext(storageScope, 'deleteTeamCollection', { actorEmail });
   const storage = getStorage();
   const existing = await storage.getSlideCollection(id, ctx);
-  if (!existing || existing.scope !== 'team') return { ok: false, reason: 'not_found' };
+  if (!existing || existing.shelf !== 'organization') return { ok: false, reason: 'not_found' };
   if (typeof allowMutate === 'function') {
     const ok = await allowMutate(existing, { actorEmail });
     if (!ok) return { ok: false, reason: 'forbidden' };

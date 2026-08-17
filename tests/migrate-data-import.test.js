@@ -196,7 +196,7 @@ describe('migrateSlideCollections', () => {
     assert.strictEqual(db.__tables.slide_collection_items.length, 2);
 
     const col1 = db.__tables.slide_collections.find((r) => r.id === 'col-1');
-    assert.strictEqual(col1.scope, 'team');
+    assert.strictEqual(col1.shelf, 'organization');
     assert.strictEqual(col1.organization_id, ORG);
 
     const second = await migrateSlideCollections(db, dataPath, {

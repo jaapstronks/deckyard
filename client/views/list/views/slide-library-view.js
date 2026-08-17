@@ -114,11 +114,11 @@ export function createSlideLibraryView({ api, nav }) {
         initialLang: 'nl', // Default to Dutch
         onCopySlide: copySlide,
         onNewPresentation: createNewPresentation,
-        onAddToCollection: (item, scope) =>
-          collectionsBar?.openAddTo({ ...item, _scope: scope }),
+        onAddToCollection: (item, shelf) =>
+          collectionsBar?.openAddTo({ ...item, _shelf: shelf }),
         // Permalink support: update URL when slide opens/closes
-        onSlideOpen: ({ scope, slideId }) => {
-          const url = `/app/slide-library/${scope}/${slideId}`;
+        onSlideOpen: ({ shelf, slideId }) => {
+          const url = `/app/slide-library/${shelf}/${slideId}`;
           history.pushState(null, '', url);
         },
         onSlideClose: () => {
@@ -140,13 +140,13 @@ export function createSlideLibraryView({ api, nav }) {
 
   /**
    * Open a specific slide by ID (for permalink navigation)
-   * @param {string} scope - 'team' or 'personal'
+   * @param {string} shelf - 'organization' or 'personal'
    * @param {string} slideId - The slide ID to open
    */
-  async function openSlide(scope, slideId) {
+  async function openSlide(shelf, slideId) {
     await load();
     if (picker?.openSlideById) {
-      await picker.openSlideById(scope, slideId);
+      await picker.openSlideById(shelf, slideId);
     }
   }
 

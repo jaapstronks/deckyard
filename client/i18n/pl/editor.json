@@ -191,7 +191,7 @@
   "editor.slideLibrary.saveModal.namePlaceholder": "Np. Slajd kontaktowy",
   "editor.slideLibrary.saveModal.nameRequired": "Wprowadź nazwę.",
   "editor.slideLibrary.saveModal.saveTo": "Zapisz w",
-  "editor.slideLibrary.saveModal.scopeHint": "Slajdy osobiste są widoczne tylko dla Ciebie. Slajdy zespołowe są udostępniane w organizacji.",
+  "editor.slideLibrary.saveModal.shelfHint": "Slajdy osobiste są widoczne tylko dla Ciebie. Slajdy zespołowe są udostępniane w organizacji.",
   "editor.slideLibrary.saveModal.save": "Zapisz w bibliotece",
   "editor.slideLibrary.saveModal.donePersonal": "Zapisano w osobistej bibliotece slajdów.",
   "editor.slideLibrary.saveModal.doneTeam": "Zapisano w bibliotece slajdów zespołu.",

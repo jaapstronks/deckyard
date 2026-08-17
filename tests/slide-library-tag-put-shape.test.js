@@ -1,7 +1,7 @@
 /**
  * B55 — the slide-library tag PUTs take one canonical body shape.
  *
- * `PUT /api/slide-library/{personal,team}/:id/tags` accepts `{ tags: [...] }`
+ * `PUT /api/slide-library/{personal,organization}/:id/tags` accepts `{ tags: [...] }`
  * and nothing else. The historical bare-array body (`["a","b"]`) is a 400 from
  * the entry's object guarantee, and a present-but-non-array `tags` is a 400
  * from the handler — both before any storage call, which is what keeps these
@@ -44,23 +44,23 @@ function putCtx(path, rawBody) {
   };
 }
 
-for (const scope of ['personal', 'team']) {
-  test(`${scope} tags PUT: a bare array body is a 400 (object guarantee, no opt-out)`, async () => {
-    const { ctx, res } = putCtx(`/api/slide-library/${scope}/item-1/tags`, '["a","b"]');
+for (const shelf of ['personal', 'organization']) {
+  test(`${shelf} tags PUT: a bare array body is a 400 (object guarantee, no opt-out)`, async () => {
+    const { ctx, res } = putCtx(`/api/slide-library/${shelf}/item-1/tags`, '["a","b"]');
     assert.equal(await handleSlideLibrary(ctx), true);
     assert.equal(res.statusCode, 400);
     assert.equal(res.payload.message, 'Request body must be a JSON object');
   });
 
-  test(`${scope} tags PUT: a non-array tags field is a 400`, async () => {
-    const { ctx, res } = putCtx(`/api/slide-library/${scope}/item-1/tags`, '{"tags":"a"}');
+  test(`${shelf} tags PUT: a non-array tags field is a 400`, async () => {
+    const { ctx, res } = putCtx(`/api/slide-library/${shelf}/item-1/tags`, '{"tags":"a"}');
     assert.equal(await handleSlideLibrary(ctx), true);
     assert.equal(res.statusCode, 400);
     assert.equal(res.payload.message, 'Expected { tags: [...] }');
   });
 
-  test(`${scope} tags PUT: a missing tags field is a 400`, async () => {
-    const { ctx, res } = putCtx(`/api/slide-library/${scope}/item-1/tags`, '{}');
+  test(`${shelf} tags PUT: a missing tags field is a 400`, async () => {
+    const { ctx, res } = putCtx(`/api/slide-library/${shelf}/item-1/tags`, '{}');
     assert.equal(await handleSlideLibrary(ctx), true);
     assert.equal(res.statusCode, 400);
     assert.equal(res.payload.message, 'Expected { tags: [...] }');

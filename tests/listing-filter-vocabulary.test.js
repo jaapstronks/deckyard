@@ -18,9 +18,10 @@
  * re-read the tool schema each session) — no back-compat alias.
  *
  * NOT covered here: sweep (b) (the slide-library/collections `scope` shelf
- * axis → `shelf`) and sweep (c) (the comments panel's local slide/deck
- * toggle, which stays). `scope` remains legitimate elsewhere — this gate
- * only scans the surfaces that carry the ownership filter.
+ * axis → `shelf`), which shipped separately and has its own gate
+ * (`tests/shelf-vocabulary.test.js`); and sweep (c) (the comments panel's
+ * local slide/deck toggle, which stays). `scope` remains legitimate elsewhere
+ * — this gate only scans the surfaces that carry the ownership filter.
  *
  * Run with: node --test tests/listing-filter-vocabulary.test.js
  */

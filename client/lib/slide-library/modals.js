@@ -48,11 +48,11 @@ export function createSlideLibraryModals({
   const openLightbox = async (it, { rerender, updateUrl = true } = {}) => {
     const slide = makeSlideObj(it);
     const thTheme = await resolveThemeForItem(it);
-    const scope = state.getScope();
+    const shelf = state.getShelf();
 
     // Notify URL change for permalink support
     if (updateUrl && onSlideOpen) {
-      onSlideOpen({ scope, slideId: it.id });
+      onSlideOpen({ shelf, slideId: it.id });
     }
 
     const backdrop = h('div', { class: 'modal-backdrop ps-modal-overlay' });
@@ -75,7 +75,7 @@ export function createSlideLibraryModals({
         openEditModal({
           h,
           item: it,
-          scope,
+          shelf,
           apiOps,
           resolveThemeForItem,
           rerender,
@@ -130,7 +130,7 @@ export function createSlideLibraryModals({
     descInput.addEventListener('blur', async () => {
       const newDesc = String(descInput.value || '').trim();
       if (newDesc === (it?.description || '')) return;
-      const result = await apiOps.saveDescription(scope, it, newDesc);
+      const result = await apiOps.saveDescription(shelf, it, newDesc);
       if (!result.ok) {
         toast.error(t('slideLibrary.descriptionSaveError', 'Failed to save description'));
       }
@@ -145,7 +145,7 @@ export function createSlideLibraryModals({
       initialTags: initialTagNames,
       placeholder: t('slideLibrary.tagsPlaceholder', 'Add tags...'),
       onChange: async (newTags) => {
-        const result = await apiOps.saveTags(scope, it, newTags);
+        const result = await apiOps.saveTags(shelf, it, newTags);
         if (!result.ok) {
           toast.error(t('slideLibrary.tagsSaveError', 'Failed to save tags'));
         }

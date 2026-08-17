@@ -17,6 +17,7 @@ zero so they cannot creep back.
 | Who can see a deck besides owner/creator/collaborators | **`visibility`**, values **`'private' \| 'organization'`** | `scope` as a field name; `'workspace'` as a value |
 | The org+actor context a storage call runs under | **`storageScope`** (type `StorageScope`, `server/storage/scope.js`) | a bare `scope` variable in mixed contexts |
 | Which decks a listing includes by source (`owned`/`shared`/`all`) | **`ownership`** — MCP list filters, the client presentations view | `scope` (that's storage-scope); `visibility` (that's deck audience) |
+| Where a saved slide/collection lives (a person's shelf or the shared one) | **`shelf`**, values **`'personal' \| 'organization'`** — `slide_library`/`slide_collections`, storage, internal API, client | `scope` as the field name (that's storage-scope); `'team'` as the stored value |
 | What an API key may do (`['read','write','ai',…]`) | **`permissions`** | `scopes` |
 | What a collaborator may do on one deck (`view/comment/edit/admin`) | **`permission`** (singular, per deck) | — distinct from API-key `permissions` |
 | The presenter/audience live domain | **`live-session`** | `present-session` |
@@ -43,8 +44,10 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
   visibility API names to zero in code; `tests/live-session-vocabulary.test.js`
   does the same for the live-session domain;
   `tests/listing-filter-vocabulary.test.js` pins the deck-source listing
-  filter to `ownership` (never `scope`/`visibility`). `server/db/migrations/`
-  is excluded as the historical record.
+  filter to `ownership` (never `scope`/`visibility`);
+  `tests/shelf-vocabulary.test.js` pins the slide-library/collections axis to
+  `shelf` (never `scope`). `server/db/migrations/` is excluded as the
+  historical record.
 - **`scope` still legitimately exists** for the storage-scope concept
   (`server/storage/scope.js` — the module and its prose; variables say
   `storageScope`).
@@ -57,12 +60,15 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
   concept — was renamed with it. This was a breaking change to the MCP tool
   schema, shipped deliberately with no back-compat alias; MCP clients re-read
   the schema each session.
-- **Remaining homonyms — decided 2026-08-17, sweeps pending.** The normative
-  targets are fixed; these are not swept yet:
-  - The slide-library/collections shelf axis (`scope: 'personal' | 'team'`,
-    DB columns `slide_library.scope`, `slide_collections.scope`) becomes
-    **`shelf: 'personal' | 'organization'`** — internal rename plus
-    migration; this field does not appear in the public v1 API.
+- **Shelf axis — done (B53 sweep (b), 2026-08-17).** The slide-library /
+  slide-collections axis that says where a saved slide or collection lives is
+  **`shelf`**, values **`'personal' | 'organization'`**. The stored-data half
+  is migration 076 (`slide_library.scope` / `slide_collections.scope` → `shelf`,
+  `'team'` → `'organization'`, indexes renamed); the field flows through
+  storage, the internal API (the route segment `/team` became `/organization`)
+  and the client. It never appeared in the public v1 API
+  (`sanitizeLibraryItem` omits it) and still does not. "Team" survives only as a
+  UI label. Deploying this requires migration 076 to run.
 - **Local, non-persisted use of the word "scope" is not a homonym defect.**
   A view-local variable using "scope" in its ordinary English sense (the
   comments panel's `'slide' | 'deck'` toggle, prose like "scoped to") makes

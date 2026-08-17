@@ -177,7 +177,7 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
       api,
       allowInsert: false,
       compose: true,
-      initialScope: 'team',
+      initialShelf: 'organization',
       onSelectionChange: (items) => reconcileSelection(items),
     });
     try {
@@ -205,9 +205,9 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
   const ensureSlideIndex = async () => {
     if (slideIndexCache) return slideIndexCache;
     const index = new Map();
-    for (const scope of ['personal', 'team']) {
+    for (const shelf of ['personal', 'organization']) {
       try {
-        const r = await api(`/api/slide-library/${scope}`);
+        const r = await api(`/api/slide-library/${shelf}`);
         for (const it of Array.isArray(r?.items) ? r.items : []) {
           const trashed = !!(it?.isTrashed || it?.trashedAt);
           if (it?.id && !trashed && !index.has(it.id)) index.set(it.id, it);
@@ -265,8 +265,8 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
         h('span', { class: 'creation-collection-card-name', text: col.name || t('slideLibrary.preview.untitled', 'Untitled') })
       );
       const meta = h('span', { class: 'creation-collection-card-meta' });
-      if (col.scope === 'team') {
-        meta.append(h('span', { class: 'creation-collection-card-badge', text: t('slideLibrary.scope.team', 'Team') }));
+      if (col.shelf === 'organization') {
+        meta.append(h('span', { class: 'creation-collection-card-badge', text: t('slideLibrary.shelf.organization', 'Team') }));
       }
       meta.append(
         h('span', {

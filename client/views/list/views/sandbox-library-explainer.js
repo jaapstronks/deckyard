@@ -22,12 +22,12 @@ export function createSandboxLibraryExplainer({ h }) {
     {
       icon: 'users',
       name: t('sandbox.library.sample.team', 'Team overview'),
-      meta: t('slideLibrary.scope.team', 'Team'),
+      meta: t('slideLibrary.shelf.organization', 'Team'),
     },
     {
       icon: 'chart-bar',
       name: t('sandbox.library.sample.results', 'Latest quarterly figures'),
-      meta: t('slideLibrary.scope.team', 'Team'),
+      meta: t('slideLibrary.shelf.organization', 'Team'),
     },
     {
       icon: 'presentation',
@@ -37,7 +37,7 @@ export function createSandboxLibraryExplainer({ h }) {
     {
       icon: 'file-text',
       name: t('sandbox.library.sample.legal', 'Standard disclaimer'),
-      meta: t('slideLibrary.scope.team', 'Team'),
+      meta: t('slideLibrary.shelf.organization', 'Team'),
     },
   ];
 

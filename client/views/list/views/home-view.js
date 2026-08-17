@@ -310,7 +310,7 @@ export function createHomeView({
         const collectionsApi = createCollectionsApi({ api });
         [collections, teamResp, usageResp] = await Promise.all([
           collectionsApi.listAll().catch(() => ({ personal: [], team: [] })),
-          api('/api/slide-library/team').catch(() => ({ items: [] })),
+          api('/api/slide-library/organization').catch(() => ({ items: [] })),
           api('/api/slide-library/usage').catch(() => ({ items: [] })),
         ]);
       }
@@ -323,9 +323,9 @@ export function createHomeView({
           .map((u) => `${u?.itemType}:${u?.itemId}`)
       );
       // The badge is a per-user "you haven't tried this team item yet" nudge, so
-      // it only makes sense on team-scope items (you made your personal ones).
+      // it only makes sense on team-shelf items (you made your personal ones).
       const isNewCollection = (col) =>
-        col?.scope === 'team' && !usedSet.has(`collection:${col.id}`);
+        col?.shelf === 'organization' && !usedSet.has(`collection:${col.id}`);
       const isNewSlide = (item) => !usedSet.has(`slide:${item.id}`);
 
       const cols = [...(collections?.team || []), ...(collections?.personal || [])];
@@ -413,15 +413,15 @@ function renderBlankBlockCard(h, onCreate) {
 /**
  * Collection card — clicking opens the creation view seeded from the collection.
  * @param {Function} h
- * @param {object} col - collection ({ id, scope, name, slideIds, slideCount })
+ * @param {object} col - collection ({ id, shelf, name, slideIds, slideCount })
  * @param {Function} [onComposeFrom]
  * @param {boolean} [isNew] - show a "new to you" badge (team item, never used).
  */
 function renderCollectionBlockCard(h, col, onComposeFrom, isNew = false) {
   const count = col.slideCount ?? (Array.isArray(col.slideIds) ? col.slideIds.length : 0);
   const meta = h('span', { class: 'home-block-meta' });
-  if (col.scope === 'team') {
-    meta.append(h('span', { class: 'home-block-badge', text: t('slideLibrary.scope.team', 'Team') }));
+  if (col.shelf === 'organization') {
+    meta.append(h('span', { class: 'home-block-badge', text: t('slideLibrary.shelf.organization', 'Team') }));
   }
   meta.append(
     h('span', {

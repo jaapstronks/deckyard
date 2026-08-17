@@ -96,7 +96,7 @@ function createFieldEditor(h, field, value, onChange) {
 export function openEditModal({
   h,
   item,
-  scope,
+  shelf,
   apiOps,
   resolveThemeForItem,
   onClose,
@@ -248,7 +248,7 @@ export function openEditModal({
       content: workingContent,
     };
 
-    const result = await apiOps.saveSlide(scope, item, patch, { rerender });
+    const result = await apiOps.saveSlide(shelf, item, patch, { rerender });
 
     if (result.ok) {
       toast.success(t('slideLibrary.edit.saved', 'Slide saved.'));

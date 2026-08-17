@@ -3,7 +3,7 @@
  *
  * The PostgreSQL counterpart of tests/slide-collections-storage.test.js. Same
  * facade (server/storage/collections/index.js), same concerns — personal
- * CRUD + ordered membership, personal scope isolation, team create/list and the
+ * CRUD + ordered membership, personal shelf isolation, team create/list and the
  * creator/admin mutate guard — but on the backend PR G keeps.
  *
  * One real difference the file backend could not show: `slide_collection_items`
@@ -77,7 +77,7 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
       { actorEmail: ALICE }
     );
     assert.ok(created.ok, 'create ok');
-    assert.strictEqual(created.item.scope, 'personal');
+    assert.strictEqual(created.item.shelf, 'personal');
     assert.strictEqual(created.item.ownerEmail, ALICE);
     assert.strictEqual(created.item.slideCount, 3);
     assert.deepStrictEqual(created.item.slideIds, [sA, sB, sC]);
@@ -180,7 +180,7 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
       { actorEmail: ALICE }
     );
     assert.ok(created.ok);
-    assert.strictEqual(created.item.scope, 'team');
+    assert.strictEqual(created.item.shelf, 'organization');
     assert.strictEqual(created.item.createdBy, ALICE);
 
     const { items } = await listTeamCollections(storageScope, { userEmail: BOB });

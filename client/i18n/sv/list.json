@@ -66,8 +66,8 @@
   "slideLibrary.empty.team": "Inga slides i team-biblioteket ännu.",
   "slideLibrary.modal.help": "Ditt personliga bibliotek är endast för dig. Team-biblioteket delas med alla.",
   "slideLibrary.modal.title": "Slide-bibliotek",
-  "slideLibrary.scope.personal": "Personligt",
-  "slideLibrary.scope.team": "Team",
+  "slideLibrary.shelf.personal": "Personligt",
+  "slideLibrary.shelf.organization": "Team",
   "slideLibrary.search.aria": "Sök i slide-bibliotek",
   "slideLibrary.search.placeholder": "Sök i slide-bibliotek…",
   "slideLibrary.filter.all": "Alla"

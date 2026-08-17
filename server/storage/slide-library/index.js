@@ -20,7 +20,7 @@ import { nowIso } from '../../utils/normalize.js';
 export async function listPersonalLibrary(storageScope, userEmail, { themeId = '' } = {}) {
   const ctx = toStorageContext(storageScope, 'listPersonalLibrary', { userEmail });
   const storage = getStorage();
-  const items = await storage.listSlideLibrary(ctx, { scope: 'personal', ownerEmail: userEmail, themeId });
+  const items = await storage.listSlideLibrary(ctx, { shelf: 'personal', ownerEmail: userEmail, themeId });
   return { items };
 }
 
@@ -33,7 +33,7 @@ export async function createPersonalLibraryItem(storageScope, userEmail, input, 
   if (!slideType) return { ok: false, reason: 'slideType_required' };
   const result = await storage.createSlideLibraryItem({
     ...input,
-    scope: 'personal',
+    shelf: 'personal',
     ownerEmail: userEmail,
   }, ctx);
   if (!result) return { ok: false, reason: 'create_failed' };
@@ -67,7 +67,7 @@ export async function deletePersonalLibraryItem(storageScope, userEmail, id) {
 export async function listTeamLibrary(storageScope, { themeId = '', userEmail = '' } = {}) {
   const ctx = toStorageContext(storageScope, 'listTeamLibrary', { userEmail });
   const storage = getStorage();
-  const items = await storage.listSlideLibrary(ctx, { scope: 'team', themeId });
+  const items = await storage.listSlideLibrary(ctx, { shelf: 'organization', themeId });
   return { items };
 }
 
@@ -75,7 +75,7 @@ export async function getTeamLibraryItem(storageScope, id, { userEmail = '' } = 
   const ctx = toStorageContext(storageScope, 'getTeamLibraryItem', { userEmail });
   const storage = getStorage();
   const item = await storage.getSlideLibraryItem(id, ctx);
-  if (!item || item.scope !== 'team') return null;
+  if (!item || item.shelf !== 'organization') return null;
   return item;
 }
 
@@ -88,7 +88,7 @@ export async function createTeamLibraryItem(storageScope, input, { actorEmail } 
   if (!slideType) return { ok: false, reason: 'slideType_required' };
   const result = await storage.createSlideLibraryItem({
     ...input,
-    scope: 'team',
+    shelf: 'organization',
   }, ctx);
   if (!result) return { ok: false, reason: 'create_failed' };
   return { ok: true, item: result };
@@ -106,7 +106,7 @@ export async function setTeamLibraryItemTrashed(storageScope, id, { trashed, act
   const ctx = toStorageContext(storageScope, 'setTeamLibraryItemTrashed', { actorEmail });
   const storage = getStorage();
   if (typeof allowTrash === 'function') {
-    const items = await storage.listSlideLibrary(ctx, { scope: 'team' });
+    const items = await storage.listSlideLibrary(ctx, { shelf: 'organization' });
     const item = items.find((x) => String(x?.id || '') === String(id || ''));
     if (!item) return { ok: false, reason: 'not_found' };
     const ok = await allowTrash(item, { actorEmail });
@@ -124,7 +124,7 @@ export async function deleteTeamLibraryItem(storageScope, id, { actorEmail, allo
   const ctx = toStorageContext(storageScope, 'deleteTeamLibraryItem', { actorEmail });
   const storage = getStorage();
   if (typeof allowDelete === 'function') {
-    const items = await storage.listSlideLibrary(ctx, { scope: 'team' });
+    const items = await storage.listSlideLibrary(ctx, { shelf: 'organization' });
     const item = items.find((x) => String(x?.id || '') === String(id || ''));
     if (!item) return { ok: false, reason: 'not_found' };
     const ok = await allowDelete(item, { actorEmail });

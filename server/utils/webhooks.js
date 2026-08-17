@@ -200,8 +200,8 @@ function buildSlideLibraryPayload({
   const slideId = typeof slideItem?.id === 'string' ? slideItem.id : '';
   const libraryPath = '/app/slide-library';
   const libraryUrl = toAbsoluteUrl(origin, libraryPath);
-  // Permalink to the specific slide (team library since that's where slides are added)
-  const slidePath = slideId ? `/app/slide-library/team/${slideId}` : '';
+  // Permalink to the specific slide (organization shelf since that's where shared slides live)
+  const slidePath = slideId ? `/app/slide-library/organization/${slideId}` : '';
   const slideUrl = slidePath ? toAbsoluteUrl(origin, slidePath) : null;
 
   const email = String(authedUser?.email || '').trim().toLowerCase();

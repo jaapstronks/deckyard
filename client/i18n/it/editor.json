@@ -191,7 +191,7 @@
   "editor.slideLibrary.saveModal.namePlaceholder": "Es. Slide contatti",
   "editor.slideLibrary.saveModal.nameRequired": "Inserisci un nome.",
   "editor.slideLibrary.saveModal.saveTo": "Salva in",
-  "editor.slideLibrary.saveModal.scopeHint": "Le slide personali sono visibili solo a te. Le slide team sono condivise con la tua organizzazione.",
+  "editor.slideLibrary.saveModal.shelfHint": "Le slide personali sono visibili solo a te. Le slide team sono condivise con la tua organizzazione.",
   "editor.slideLibrary.saveModal.save": "Salva nella libreria",
   "editor.slideLibrary.saveModal.donePersonal": "Salvato nella libreria slide personale.",
   "editor.slideLibrary.saveModal.doneTeam": "Salvato nella libreria slide team.",
