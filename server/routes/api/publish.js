@@ -4,13 +4,14 @@ import {
   upsertPublishedEntry,
 } from '../../storage/published/index.js';
 import { updatePresentation } from '../../storage/presentations/index.js';
-import { getUserSettings } from '../../storage/settings.js';
 import { serveJson, serverError, badRequest, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
-import { loadThemeAssets } from '../../utils/themes.js';
-import { generateAndSaveOgPreview } from '../../render/preview-image.js';
 import { isMediaProviderInitialized } from '../../media/index.js';
-import { publishPresentation, assertPublishingEnabled } from '../../services/publish-presentation.js';
+import {
+  publishPresentation,
+  assertPublishingEnabled,
+  buildPublishOgImage,
+} from '../../services/publish-presentation.js';
 import { createLogger } from '../../utils/logger.js';
 import { dispatchRoutes } from '../../utils/router.js';
 const log = createLogger('publish');
@@ -100,12 +101,16 @@ async function handlePreviewRegenerate({ repoRoot, storageScope, res, authedUser
     return true;
   }
 
+  // Regenerate insists on a live media provider and reports its absence, where
+  // the publish flow would silently fall back to a picked/default image: this
+  // route exists to re-render, so "nothing to render with" is an error, not a
+  // quiet no-op.
   if (!isMediaProviderInitialized()) {
     serverError(res, 'Media provider not available');
     return true;
   }
 
-  // Find first meaningful slide
+  // Nothing to render a preview from (every slide is an internal follow-invite).
   const firstSlide = Array.isArray(pres?.slides)
     ? pres.slides.find((s) => s?.type !== 'follow-invite-slide')
     : null;
@@ -116,34 +121,17 @@ async function handlePreviewRegenerate({ repoRoot, storageScope, res, authedUser
   }
 
   try {
-    const theme = await loadThemeAssets(repoRoot, pres.theme);
-
-    // Check if author overlay should be shown
-    const showAuthor = pres?.settings?.ogPreview?.showAuthor === true;
-    let authorInfo = null;
-
-    if (showAuthor) {
-      const ownerEmail = pres?.ownerEmail || pres?.createdBy || authedUser?.email;
-      if (ownerEmail) {
-        try {
-          const userSettings = await getUserSettings(storageScope, ownerEmail);
-          authorInfo = {
-            name: userSettings?.profile?.name || ownerEmail.split('@')[0],
-            imageUrl: userSettings?.profile?.imageUrl || '',
-          };
-        } catch {
-          authorInfo = { name: ownerEmail.split('@')[0], imageUrl: '' };
-        }
-      }
-    }
-
-    const ogImageUrl = await generateAndSaveOgPreview(
+    // Same renderer, author overlay and fallback ladder as POST /publish — the
+    // one canonical OG-preview build (B73). Regenerate keeps its own entry
+    // upsert + document write below: it is only a fresh image, not the full
+    // publish flow (no webhook, no deck-grid thumbnail warm).
+    const ogImageUrl = await buildPublishOgImage({
       repoRoot,
-      firstSlide,
-      theme,
-      `og-${publishId}`,
-      { showAuthor, authorInfo }
-    );
+      storageScope,
+      pres,
+      actorEmail: authedUser?.email || null,
+      publishId,
+    });
 
     // Update the published entry
     await upsertPublishedEntry(storageScope, {
