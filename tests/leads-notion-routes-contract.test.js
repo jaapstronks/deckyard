@@ -614,6 +614,76 @@ test('the GDPR self-service round-trip is anonymous: request → read → erase'
   }
 });
 
+test('the erase burns the token: a second use of the same link is refused', async () => {
+  await seed();
+  process.env.NODE_ENV = 'development';
+  try {
+    const request = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
+      body: { email: 'lead@example.com' },
+    });
+    const token = request.res.body.devToken;
+
+    const firstErase = await call(
+      handleLeadsPublic,
+      'DELETE',
+      `/api/leads/my-data?email=lead@example.com&token=${token}`
+    );
+    assert.equal(firstErase.res.statusCode, 200, 'the first erase succeeds');
+
+    // The token was spent by the erase — reusing it must not read or re-erase.
+    const reread = await call(
+      handleLeadsPublic,
+      'GET',
+      `/api/leads/my-data?email=lead@example.com&token=${token}`
+    );
+    assert.equal(reread.res.statusCode, 401, 'the burned token no longer reads');
+
+    const reErase = await call(
+      handleLeadsPublic,
+      'DELETE',
+      `/api/leads/my-data?email=lead@example.com&token=${token}`
+    );
+    assert.equal(reErase.res.statusCode, 401, 'and it no longer erases');
+  } finally {
+    delete process.env.NODE_ENV;
+  }
+});
+
+test('a fresh request replaces the previous token for the same address', async () => {
+  await seed();
+  process.env.NODE_ENV = 'development';
+  try {
+    const first = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
+      body: { email: 'lead@example.com' },
+    });
+    const oldToken = first.res.body.devToken;
+
+    const second = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
+      body: { email: 'lead@example.com' },
+    });
+    const newToken = second.res.body.devToken;
+    assert.notEqual(oldToken, newToken, 'each request mints a distinct token');
+
+    // The store holds one active token per address (upsert), so the superseded
+    // token must no longer validate — only the latest link works.
+    const stale = await call(
+      handleLeadsPublic,
+      'GET',
+      `/api/leads/my-data?email=lead@example.com&token=${oldToken}`
+    );
+    assert.equal(stale.res.statusCode, 401, 'the superseded token is dead');
+
+    const current = await call(
+      handleLeadsPublic,
+      'GET',
+      `/api/leads/my-data?email=lead@example.com&token=${newToken}`
+    );
+    assert.equal(current.res.statusCode, 200, 'the latest token still reads');
+  } finally {
+    delete process.env.NODE_ENV;
+  }
+});
+
 // --- rate limits: the new public surface ----------------------------------
 
 test('the request route is capped per target-email, and a 429 does not reveal existence', async () => {

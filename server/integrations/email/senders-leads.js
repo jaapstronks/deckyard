@@ -148,7 +148,11 @@ export async function sendDataRequestVerificationEmail({ email, token, requestOr
   const senderOverride = await getSenderIdentity(repoRoot);
 
   const base = envStr('BASE_URL') || requestOrigin;
-  const verifyUrl = `${base}/api/leads/my-data?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
+  // Land on the friendly HTML page (client/my-data.html), which renders the data
+  // and offers erase; the page calls GET/DELETE /api/leads/my-data itself with
+  // these params. Linking straight at the JSON API would drop a logged-out
+  // subject on a raw blob with no way to click "erase".
+  const verifyUrl = `${base}/my-data?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
 
   const subject = tr('email.dataRequest.subject', 'Your data request');
   const { htmlContent, textContent } = buildDataRequestEmail({ tr, verifyUrl });

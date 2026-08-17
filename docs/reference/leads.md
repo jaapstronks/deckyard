@@ -97,18 +97,21 @@ Two outbound paths fire on every submit, both best-effort:
   the same policy as view sessions, on the same schedule.
 - Self-service (GDPR art. 15/17), **public and token-gated**:
   `POST /api/leads/my-data/request` mints a `crypto.randomBytes(32)` token for
-  the e-mail, valid 15 minutes, held in an **in-memory Map** (`gdprTokens`,
-  per-process — see the single-process constraint below). `GET`/`DELETE
-  /api/leads/my-data` verify e-mail + token; the `GET` deliberately does *not*
-  consume the token (a subject views, then erases with the same token), the
-  `DELETE` anonymizes everything for that address and burns the token.
+  the e-mail, valid 15 minutes, stored as a **DB row**
+  (`gdpr_verification_tokens`, one active token per address; migration 075 —
+  see `server/storage/gdpr-tokens.js`). The e-mailed link lands on the friendly
+  HTML page at `/my-data` (`client/my-data.html`), not the raw API. `GET`/`DELETE
+  /api/leads/my-data` verify e-mail + token with a constant-time compare; the
+  `GET` deliberately does *not* consume the token (a subject views, then erases
+  with the same token), the `DELETE` anonymizes everything for that address and
+  burns the token.
 
 ## Implementation status
 
 Normative target: **a visitor can see and erase what a deck collected about
 them, without help from the instance operator.** Where the code stands, as of
-2026-08-17 — the flow is reachable anonymously, but the friendly landing page is
-still missing:
+2026-08-17 — the target is **met**: a logged-out subject completes request →
+view → erase on the `/my-data` landing page, and the token store is durable:
 
 - **Token delivery is wired (B63, done).** `handleRequestMyData` now sends the
   verification link through the `sendEmail` seam
@@ -128,20 +131,22 @@ still missing:
   per-email bucket caps e-mail bombing), the destructive GET/DELETE reuse
   `AUTH_RATE_LIMITS.expensive` keyed by IP. A 429 stays non-enumerable — keyed on
   the supplied address, never on whether leads exist for it.
-- **Single-process token store (constraint, open).** `gdprTokens` is an
-  in-memory per-process `Map`. Now that the public path is the primary one, this
-  is a live limitation, not a footnote: under horizontal scaling a token minted
-  on node A will not validate on node B (unlike the analytics track-erase, whose
-  token is a DB `view_sessions` row). Deckyard runs single-process today, so this
-  is documented rather than fixed; backing the store with Redis or a short-lived
-  DB row is the follow-up (paired with the landing-page item, Jaap-in-the-loop).
-- **The verification link lands on the raw JSON API (open).** The e-mail points
-  at `GET /api/leads/my-data?email=…&token=…`, which returns the data as JSON
-  and has no companion erase button — erasure is a `DELETE` a plain link can't
-  issue. A friendly HTML landing page that renders the data and offers erase is
-  the remaining UI work — now the *only* thing between the current state and the
-  normative target, since the routes went public. Paired with the token-store
-  durability decision above as the Jaap-in-the-loop follow-up.
+- **Durable token store (B63b-rest, done).** The GDPR tokens now live in the
+  `gdpr_verification_tokens` DB table (migration 075,
+  `server/storage/gdpr-tokens.js`), not a per-process `Map` — one active token
+  per address (upsert), surviving a restart and validating across a scaled-out
+  deployment, the same shape as the analytics track-erase token. The
+  verification compare is constant-time (`crypto.timingSafeEqual`) so a timing
+  side channel cannot recover the token. The delete burns the row; a superseded
+  or expired token never validates.
+- **The verification link lands on a friendly HTML page (B63b-rest, done).** The
+  e-mail now points at `/my-data?email=…&token=…` (`client/my-data.html` +
+  `client/my-data.js`, a standalone public page served like `/go`), which
+  fetches the data, renders it, and offers a confirmed erase that issues the
+  `DELETE` — a logged-out subject completes the whole loop without touching raw
+  JSON. Server-derived strings render via `h()`'s `text` attribute (no
+  innerHTML). A bare `/my-data` visit with no token falls back to a
+  request-a-link form, so the page is the single self-service entry point.
 - **Leads retention has no admin UI.** `leads.retentionDays` exists, is
   normalized and enforced, but the admin settings tab only exposes the
   *analytics* retention knobs — the leads value can only be changed via

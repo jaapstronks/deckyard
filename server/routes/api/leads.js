@@ -26,10 +26,16 @@ import { maybeSendLeadNotification, sendDataRequestVerificationEmail } from '../
 import crypto from 'node:crypto';
 import { crossOrganizationScope } from '../../storage/scope.js';
 import { LEAD_RATE_LIMITS, GDPR_RATE_LIMITS, AUTH_RATE_LIMITS } from '../../config/rate-limits.js';
+import {
+  storeGdprToken,
+  verifyGdprToken,
+  consumeGdprToken,
+  deleteExpiredGdprTokens,
+} from '../../storage/gdpr-tokens.js';
 
-// GDPR verification tokens (in-memory, short-lived)
-// In production, use Redis or similar for multi-instance support
-const gdprTokens = new Map();
+// GDPR verification tokens live in the `gdpr_verification_tokens` DB table
+// (see server/storage/gdpr-tokens.js) — durable across restarts and scale-out,
+// the same shape as the analytics track-erase token.
 const GDPR_TOKEN_EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
 
 /**
@@ -347,14 +353,10 @@ async function handleRequestMyData(ctx) {
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = Date.now() + GDPR_TOKEN_EXPIRY_MS;
 
-  gdprTokens.set(email, { token, expiresAt });
+  await storeGdprToken({ email, token, expiresAt });
 
-  // Clean up expired tokens periodically
-  for (const [e, v] of gdprTokens) {
-    if (v.expiresAt < Date.now()) {
-      gdprTokens.delete(e);
-    }
-  }
+  // Sweep expired tokens opportunistically (as the old in-memory store did).
+  await deleteExpiredGdprTokens();
 
   // Deliver the token by e-mail. Note we always attempt delivery for any
   // well-formed address (no existence check) — that keeps the response the
@@ -425,9 +427,8 @@ async function handleGetMyData(ctx) {
     return badRequest(res, 'Email and token required'), true;
   }
 
-  // Verify token
-  const stored = gdprTokens.get(email);
-  if (!stored || stored.token !== token || stored.expiresAt < Date.now()) {
+  // Verify token (constant-time compare inside the store)
+  if (!(await verifyGdprToken({ email, token }))) {
     return unauthorized(res, 'Invalid or expired token'), true;
   }
 
@@ -465,16 +466,15 @@ async function handleDeleteMyData(ctx) {
     return badRequest(res, 'Email and token required'), true;
   }
 
-  // Verify token
-  const stored = gdprTokens.get(email);
-  if (!stored || stored.token !== token || stored.expiresAt < Date.now()) {
+  // Verify token (constant-time compare inside the store)
+  if (!(await verifyGdprToken({ email, token }))) {
     return unauthorized(res, 'Invalid or expired token'), true;
   }
 
   const result = await anonymizeLeadsByEmail(email);
 
-  // Invalidate the token after use
-  gdprTokens.delete(email);
+  // Burn the token after use
+  await consumeGdprToken(email);
 
   serveJson(res, 200, {
     ok: true,
