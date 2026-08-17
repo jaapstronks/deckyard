@@ -25,6 +25,11 @@ import {
   withV1ErrorHandler,
 } from '../server/routes/public-api/v1/middleware.js';
 import { LockedError, ValidationError } from '../server/utils/errors.js';
+import { handleApi } from '../server/routes/api/index.js';
+import {
+  setMaintenanceActive,
+  resetMaintenanceForTests,
+} from '../server/config/maintenance.js';
 
 /** A minimal response double that records status, headers and the JSON body. */
 function makeRes() {
@@ -181,4 +186,48 @@ test('every feature handler mounted in the v1 router is withV1ErrorHandler-wrapp
     if (!wrapped.test(src)) unwrapped.push(`${name} (${file})`);
   }
   assert.deepEqual(unwrapped, [], `these v1 module entries must be withV1ErrorHandler-wrapped:\n  ${unwrapped.join('\n  ')}`);
+
+  // The router entry itself is wrapped too: a throw from the pre-dispatch
+  // phase (auth, rate limiting, meta endpoints) must answer the v1 envelope,
+  // not the internal one the outer /api dispatcher would emit.
+  assert.match(
+    indexSrc,
+    /export const handlePublicApiV1 = withV1ErrorHandler\(/,
+    'the v1 router entry (handlePublicApiV1) must be withV1ErrorHandler-wrapped'
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Above the mount — the maintenance write refusal keys on the surface
+// ---------------------------------------------------------------------------
+
+test('a maintenance write refusal on /api/v1 answers the v1 envelope; internal keeps ok:false', async (t) => {
+  t.after(() => resetMaintenanceForTests());
+  setMaintenanceActive(true, { reason: 'deploy' });
+
+  // Storage-free: the refusal happens before any auth or storage call.
+  const v1 = makeRes();
+  await handleApi({
+    repoRoot: '/tmp',
+    req: { method: 'POST', headers: {} },
+    res: v1,
+    url: new URL('http://x/api/v1/presentations'),
+  });
+  assert.equal(v1.statusCode, 503);
+  const v1Body = bodyOf(v1);
+  assert.equal(v1Body.error, 'maintenance');
+  assert.ok(!('ok' in v1Body), 'the v1 surface never carries the internal `ok` discriminator');
+  assert.ok(v1.headers['Retry-After'], 'the refusal names a retry moment');
+
+  const internal = makeRes();
+  await handleApi({
+    repoRoot: '/tmp',
+    req: { method: 'POST', headers: {} },
+    res: internal,
+    url: new URL('http://x/api/presentations'),
+  });
+  assert.equal(internal.statusCode, 503);
+  const internalBody = bodyOf(internal);
+  assert.equal(internalBody.ok, false, 'the internal surface keeps its own envelope');
+  assert.equal(internalBody.error, 'maintenance');
 });

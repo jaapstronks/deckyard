@@ -72,7 +72,8 @@ info:
       `bad_request`, `unauthorized`, `forbidden`, `not_found`,
       `method_not_allowed`, `rate_limited`, `payload_too_large`, `bad_gateway`,
       `service_unavailable`, `internal_error` (plus domain codes such as
-      `locked` for a 423). By default one code answers per HTTP status.
+      `locked` for a 423, or `maintenance` for a 503 during a deploy window).
+      By default one code answers per HTTP status.
     - **`message`** is human-readable text, safe to show a user. Never a stack
       trace or internal detail — 5xx responses stay generic.
     - **`details`** is optional structured extra, omitted when absent. The daily
@@ -2359,7 +2360,10 @@ components:
     ServiceUnavailable:
       description: >-
         Service unavailable — the database backend is down or a required
-        backend (AI, comment store) is not configured on this install.
+        backend (AI, comment store) is not configured on this install
+        (`error: service_unavailable`), or a maintenance window is briefly
+        refusing writes (`error: maintenance`, with a `Retry-After` header
+        naming when to come back).
       content:
         application/json:
           schema:

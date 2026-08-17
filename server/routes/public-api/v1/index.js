@@ -7,11 +7,17 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { serveJson } from '../../../utils/http.js';
 import {
+  MaintenanceWriteError,
+  assertWritable,
+} from '../../../config/maintenance.js';
+import {
   authenticateApiKey,
   checkRequestRateLimit,
   trackRequest,
+  sendV1Error,
   v1MethodNotAllowed,
   v1NotFound,
+  withV1ErrorHandler,
 } from './middleware.js';
 
 // Feature handlers
@@ -199,15 +205,39 @@ async function handleSchema(ctx) {
 /**
  * Main handler for all /api/v1/* routes.
  * Authenticates API key and routes to feature handlers.
+ *
+ * Wrapped in withV1ErrorHandler itself, on top of the per-module wraps: a
+ * throw from the pre-dispatch phase (auth, rate limiting, the meta endpoints)
+ * must answer the v1 envelope too, not the internal one the outer /api
+ * dispatcher would emit.
  * @param {Object} ctx - Request context { repoRoot, req, res, url }
  * @returns {Promise<boolean>} - True if handled
  */
-export async function handlePublicApiV1(ctx) {
+export const handlePublicApiV1 = withV1ErrorHandler('public-api-v1', async (ctx) => {
   const { url } = ctx;
 
   // Only handle /api/v1/ routes
   if (!url.pathname.startsWith('/api/v1')) {
     return false;
+  }
+
+  // Maintenance write gate. The v1 surface runs the shared choke-point itself
+  // (like the MCP tool dispatch) so the refusal answers this surface's own
+  // envelope, not the internal `{ ok:false, … }` one the /api dispatcher emits.
+  try {
+    assertWritable(ctx.req.method);
+  } catch (err) {
+    if (!(err instanceof MaintenanceWriteError)) throw err;
+    return sendV1Error(
+      ctx.res,
+      503,
+      'Deckyard is briefly unavailable for maintenance. Retry after the moment named in Retry-After.',
+      {
+        code: 'maintenance',
+        details: err.state,
+        headers: { 'Retry-After': String(err.retryAfter) },
+      }
+    );
   }
 
   // API info endpoint doesn't require auth
@@ -248,4 +278,4 @@ export async function handlePublicApiV1(ctx) {
   if (await handleResources(ctx)) return true;
 
   return v1NotFound(ctx.res);
-}
+});

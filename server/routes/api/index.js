@@ -103,7 +103,14 @@ export async function handleApi({ repoRoot, req, res, url }) {
   // viewers and presenters, and blocking GETs would turn a restart into an
   // outage for people who are not writing anything. The decision itself lives
   // in assertWritable — the shared choke-point every write surface (this
-  // dispatcher, the MCP tool dispatch) goes through.
+  // dispatcher, the MCP tool dispatch, the v1 dispatcher above) goes through.
+  // Public API v1 routes (API key authentication, separate from session-based
+  // auth). The module carries its own /api/v1 prefix guard and declines
+  // everything else. Mounted above the maintenance write gate on purpose: the
+  // v1 surface is its own write surface with its own error envelope (B61), so
+  // it runs assertWritable itself and answers the refusal in that envelope.
+  if (await handlePublicApiV1({ repoRoot, req, res, url })) return;
+
   try {
     assertWritable(req.method);
   } catch (err) {
@@ -119,11 +126,6 @@ export async function handleApi({ repoRoot, req, res, url }) {
       }
     );
   }
-
-  // Public API v1 routes (API key authentication, separate from session-based
-  // auth). The module carries its own /api/v1 prefix guard and declines
-  // everything else.
-  if (await handlePublicApiV1({ repoRoot, req, res, url })) return;
 
   // Auth routes are special: some of them are allowed without a prior session.
   if (await handleAuth({ repoRoot, req, res, url })) return;
