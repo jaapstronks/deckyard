@@ -239,20 +239,16 @@ never offers a button that can only 501.
 ## Implementation status
 
 Normative target: **one import path, one client, one barrel.** Where the code
-stands, as of 2026-08-05:
+stands, as of 2026-08-17:
 
 - **The import path works as described** and is the only Notion surface the app
   actually drives, together with publish and status.
-- **Both import routes are broken by a dropped parameter.**
-  `handleNotionImport` and `handleNotionImportStream` destructure
-  `storageScope`, but the dispatcher passes only
-  `{ req, res, url, authedUser, repoRoot }`
-  (`server/routes/api/notion.js:40` and `:44`), so the handlers receive
-  `undefined` and `createPresentation(undefined, …)` throws the storage-scope
-  `TypeError` from `server/storage/scope.js`. The non-streaming route turns that
-  into a 500 `notion_error`; the streaming one emits an SSE `error`. No test
-  covers either route. This is a defect, recorded in the reference-doc-gaps
-  brief rather than fixed here.
+- **The dropped-parameter defect is fixed and pinned.** An earlier dispatcher
+  passed only `{ req, res, url, authedUser, repoRoot }` to the import handlers,
+  so `storageScope` arrived `undefined` and `createPresentation(undefined, …)`
+  threw. The route-table dispatch (#686) forwards the full context, and
+  `tests/c8-routes-notion-dispatch.test.js` pins that the exact `storageScope`
+  reaches the import handler (#784).
 - **Four endpoints have no caller.** `fetch`, `subjects`, `compose` and
   `suggest` are not called from any client module; only `status`,
   `import/stream`, `import` and `publish` are. `suggest` additionally describes

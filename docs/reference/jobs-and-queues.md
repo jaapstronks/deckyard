@@ -260,7 +260,8 @@ and Redis optional throughout.** Where the code stands, as of 2026-08-05:
   routes (`server/routes/api/presentations/translate.js`,
   `translate-missing.js`) do the work inline in the request. The queue, the
   worker and its result store are therefore dead code today. Finish-or-strip is
-  a decision, not a doc note — recorded in the reference-doc-gaps brief.
+  a decision, not a doc note — it sits on the internal dead-code worklist until
+  it is made.
 - **Result stores are per-process, not shared.** Two app instances behind a load
   balancer share the *queue* but not the *results*: a poll or download that
   lands on the instance that did not run the job finds nothing. Single-instance
