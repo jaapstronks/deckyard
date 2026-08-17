@@ -2,13 +2,14 @@
  * Lead capture email senders.
  */
 
-import { buildLeadNotificationEmail } from '../email-templates/index.js';
+import { buildLeadNotificationEmail, buildDataRequestEmail } from '../email-templates/index.js';
 import { sendEmail, getSenderIdentity } from './core.js';
 import { getUserSettings } from '../../storage/settings.js';
 import { resolveTemplate, interpolatePlaceholders } from '../email-template-resolver.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 import { createLogger } from '../../utils/logger.js';
 import { envStr } from '../../config/utils.js';
+import { createTranslator } from '../../i18n/index.js';
 
 const log = createLogger('email');
 
@@ -121,6 +122,39 @@ async function sendLeadNotificationEmail({
 
   return sendEmail({
     to: recipientEmail,
+    subject,
+    htmlContent,
+    textContent,
+    senderOverride,
+  });
+}
+
+/**
+ * Send the GDPR self-service verification email to the address that requested
+ * access. The token is embedded in the link; the caller (leads route) inspects
+ * the returned `reason` — `not_configured` becomes a 501, `upstream` a 502 —
+ * so the endpoint is honest instead of claiming a link was sent.
+ * @param {Object} options
+ * @param {string} options.email - The address that requested its data
+ * @param {string} options.token - The verification token
+ * @param {string} [options.requestOrigin] - Scheme+host of the incoming request,
+ *   used when BASE_URL is unset so the emailed link is always absolute
+ * @param {string} [options.locale] - Locale for the email copy
+ * @param {string|null} [options.repoRoot] - Repository root for sender resolution
+ * @returns {Promise<{ok: boolean, status?: number, error?: string, reason?: 'not_configured'|'upstream'}>}
+ */
+export async function sendDataRequestVerificationEmail({ email, token, requestOrigin = '', locale = 'en', repoRoot = null }) {
+  const tr = createTranslator(locale);
+  const senderOverride = await getSenderIdentity(repoRoot);
+
+  const base = envStr('BASE_URL') || requestOrigin;
+  const verifyUrl = `${base}/api/leads/my-data?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
+
+  const subject = tr('email.dataRequest.subject', 'Your data request');
+  const { htmlContent, textContent } = buildDataRequestEmail({ tr, verifyUrl });
+
+  return sendEmail({
+    to: email,
     subject,
     htmlContent,
     textContent,

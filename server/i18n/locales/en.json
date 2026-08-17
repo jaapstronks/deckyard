@@ -64,6 +64,11 @@
   "email.leadNotification.button": "View All Leads",
   "email.leadNotification.footer": "You received this notification because you have lead email notifications enabled.",
 
+  "email.dataRequest.subject": "Your data request",
+  "email.dataRequest.body": "We received a request to access the personal data collected about this email address. Click the button below to view it:",
+  "email.dataRequest.button": "View my data",
+  "email.dataRequest.expiry": "This link expires in 15 minutes. From that page you can also erase the data.",
+
   "api.error.invalidEmailPassword": "Invalid email/password",
   "api.error.authNotEnabled": "Authentication is not enabled",
   "api.error.validEmailRequired": "Valid email is required",

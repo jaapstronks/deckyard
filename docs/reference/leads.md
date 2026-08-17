@@ -104,19 +104,26 @@ Normative target: **a visitor can see and erase what a deck collected about
 them, without help from the instance operator.** Where the code stands, as of
 2026-08-16 — the self-service flow does **not** deliver that today:
 
-- **No production token delivery (B63).** The verification e-mail is a `TODO`
-  in `handleRequestMyData`; the token is only returned in the response when
-  `NODE_ENV === 'development'`. In production the endpoint answers "…you will
-  receive a verification link" and no link is ever sent — the my-data path is
-  unreachable exactly where it legally matters. B63 is the open work item:
-  wire the mail through the `sendEmail` seam, or answer an honest 501 when
-  e-mail is unconfigured. Until then, a real request has to be handled by the
-  operator (admin delete, or SQL).
-- **The my-data routes sit behind the login gate.** `handleLeads` requires a
-  session, but the data subject is an anonymous visitor with no account. Even
-  with B63 fixed, the flow only works for people who happen to have an
-  instance login; compare the analytics anon-erase, which is deliberately
-  public. Part of the same B63 repair.
+- **Token delivery is wired (B63, done).** `handleRequestMyData` now sends the
+  verification link through the `sendEmail` seam
+  (`sendDataRequestVerificationEmail`). When outgoing mail is unconfigured the
+  endpoint answers an honest **501 `email_not_configured`** instead of claiming
+  a link was sent — the same shape as the email test-send and Notion routes; an
+  upstream provider failure is a 502. In `NODE_ENV === 'development'` with no
+  mail provider it still echoes `devToken` so the flow stays testable locally.
+  Delivery is attempted for any well-formed address with no existence check, so
+  the response can't be used to probe which addresses are on file.
+- **The my-data routes still sit behind the login gate (open).** `handleLeads`
+  requires a session, but the data subject is an anonymous visitor with no
+  account. Token delivery is fixed, but the flow still only works for people
+  who happen to have an instance login; compare the analytics anon-erase, which
+  is deliberately public. Moving the my-data routes public (with their own rate
+  limit) is the remaining half — deliberately left out of the B63 mail fix.
+- **The verification link lands on the raw JSON API (open).** The e-mail points
+  at `GET /api/leads/my-data?email=…&token=…`, which returns the data as JSON
+  and has no companion erase button — erasure is a `DELETE` a plain link can't
+  issue. A friendly HTML landing page that renders the data and offers erase is
+  future UI work, tracked with the login-gate item.
 - **Leads retention has no admin UI.** `leads.retentionDays` exists, is
   normalized and enforced, but the admin settings tab only exposes the
   *analytics* retention knobs — the leads value can only be changed via

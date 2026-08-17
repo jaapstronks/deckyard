@@ -18,7 +18,7 @@ export { EMAIL_STYLES, emailButton, emailWrapper, troubleClickingFooter } from '
 export { buildPasswordResetEmail, buildUserInvitationEmail, buildActivationReminderEmail, buildMagicLinkEmail } from './auth.js';
 
 // Notification templates
-export { buildCommentNotificationEmail, buildLeadNotificationEmail } from './notifications.js';
+export { buildCommentNotificationEmail, buildLeadNotificationEmail, buildDataRequestEmail } from './notifications.js';
 
 // Export templates
 export { buildExportReadyEmail } from './export.js';

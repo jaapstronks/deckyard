@@ -538,6 +538,29 @@ test('my-data read refuses a missing or wrong token', async () => {
   assert.equal(wrongToken.res.statusCode, 401, 'a token that was never issued is refused');
 });
 
+test('my-data request is an honest 501 when outgoing email is not configured', async () => {
+  await seed();
+  const previousEnv = process.env.NODE_ENV;
+  delete process.env.NODE_ENV; // outside development, no dev-token fallback
+  const previousKey = process.env.BREVO_API_KEY;
+  delete process.env.BREVO_API_KEY; // no mail provider on this install
+  try {
+    const { res } = await call(handleLeads, 'POST', '/api/leads/my-data/request', {
+      as: ACTORS.owner,
+      body: { email: 'lead@example.com' },
+    });
+
+    assert.equal(res.statusCode, 501, 'production without mail cannot deliver the token, so it must not pretend');
+    assert.equal(res.body.error, 'email_not_configured');
+    assert.ok(!res.body.devToken, 'the token is never echoed outside development');
+  } finally {
+    if (previousEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousEnv;
+    if (previousKey === undefined) delete process.env.BREVO_API_KEY;
+    else process.env.BREVO_API_KEY = previousKey;
+  }
+});
+
 test('the GDPR self-service round-trip: request → read → erase', async () => {
   await seed();
   process.env.NODE_ENV = 'development'; // the dev branch echoes the verification token
