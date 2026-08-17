@@ -1,4 +1,4 @@
-import { esc } from './helpers.js';
+import { escapeHtml } from './helpers.js';
 
 /**
  * Shared actions field definition for slide types.
@@ -80,13 +80,13 @@ export function renderActionsHtml(actions) {
       const styleClass = getActionStyleClass(action.style);
       return `
         <a
-          href="${esc(url)}"
+          href="${escapeHtml(url)}"
           class="slide-action ${styleClass}"
           target="_blank"
           rel="noopener noreferrer"
           data-action-track="${idx}"
-          data-action-label="${esc(label)}"
-        >${esc(label)}</a>
+          data-action-label="${escapeHtml(label)}"
+        >${escapeHtml(label)}</a>
       `;
     })
     .join('');

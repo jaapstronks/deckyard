@@ -1,4 +1,4 @@
-import { bgClass, esc, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
+import { bgClass, escapeHtml, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 
 function optionsFromContent(content) {
@@ -186,7 +186,7 @@ export default {
               <span class="likert-num" aria-hidden="true">${
                 i + 1
               }</span>
-              <span class="likert-text" data-inline-field="${t.key}" dir="auto">${esc(t.text)}</span>
+              <span class="likert-text" data-inline-field="${t.key}" dir="auto">${escapeHtml(t.text)}</span>
             </div>
           </li>
         `
@@ -205,16 +205,16 @@ export default {
     return `
       <div class="slide slide-likert ${bg}" data-interaction="likert" data-likert="1" style="--likert-axis-count:${n};--likert-axis-denom:${denom};">
         <div class="slide-inner">
-          <h2 class="heading" data-inline-field="question" dir="auto">${esc(content?.question)}</h2>
+          <h2 class="heading" data-inline-field="question" dir="auto">${escapeHtml(content?.question)}</h2>
           <div class="poll-layout likert-layout">
             <div class="poll-left">
-              <ol class="likert-options" aria-label="${esc(copy.likertScaleLabel)}">
+              <ol class="likert-options" aria-label="${escapeHtml(copy.likertScaleLabel)}">
                 ${optsHtml}
               </ol>
             </div>
             <div class="poll-right">
-              <div class="poll-results likert-results on-surface-light" aria-label="${esc(copy.likertResultsLabel)}">
-                <div class="poll-results-title">${esc(copy.likertResultsTitle)}</div>
+              <div class="poll-results likert-results on-surface-light" aria-label="${escapeHtml(copy.likertResultsLabel)}">
+                <div class="poll-results-title">${escapeHtml(copy.likertResultsTitle)}</div>
                 <div class="likert-hill" data-likert-hill="1"></div>
                 <div class="likert-axis" data-likert-axis="1">${axisHtml}</div>
                 <div class="poll-total" data-poll-total="1"></div>

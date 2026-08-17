@@ -1,4 +1,4 @@
-import { esc } from '../../helpers.js';
+import { escapeHtml } from '../../helpers.js';
 import { svgText } from './svg.js';
 import { pieLabelInvertClass } from './palette.js';
 
@@ -51,7 +51,7 @@ export function renderPieSvg(
     const next = angle + frac * 360;
     const d = describeArc(cx, cy, r, angle, next);
 
-    let frag = `<path class="chart-slice chart-slice-${i % 8}" d="${esc(
+    let frag = `<path class="chart-slice chart-slice-${i % 8}" d="${escapeHtml(
       d
     )}"></path>`;
     if (pieLabelMode !== 'none') {

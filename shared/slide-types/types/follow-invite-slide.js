@@ -1,4 +1,4 @@
-import { esc } from '../helpers.js';
+import { escapeHtml } from '../helpers.js';
 import { normalizeLang } from '../../i18n-utils.js';
 
 const COPY = {
@@ -92,36 +92,36 @@ export default {
         <div class="slide-inner">
           <div class="sfi">
             <div>
-              <div class="sfi-title" dir="auto">${esc(
+              <div class="sfi-title" dir="auto">${escapeHtml(
                 copy.title
               )}</div>
-              <div class="sfi-body" dir="auto">${esc(copy.body)}</div>
+              <div class="sfi-body" dir="auto">${escapeHtml(copy.body)}</div>
             </div>
 
-            <div class="sfi-methods" role="group" aria-label="${esc(base.followMethodsLabel)}">
+            <div class="sfi-methods" role="group" aria-label="${escapeHtml(base.followMethodsLabel)}">
               <div class="sfi-card on-surface-light">
-                <div class="sfi-card-kicker">${esc(
+                <div class="sfi-card-kicker">${escapeHtml(
                   base.methodScan
                 )}</div>
                 <div class="sfi-qr-wrap">
-                  <canvas class="sfi-qr" data-follow-qr="1" data-follow-url="${esc(
+                  <canvas class="sfi-qr" data-follow-qr="1" data-follow-url="${escapeHtml(
                     relFollow
-                  )}" role="img" aria-label="${esc(base.qrCodeLabel)}"></canvas>
+                  )}" role="img" aria-label="${escapeHtml(base.qrCodeLabel)}"></canvas>
                 </div>
               </div>
 
               <div class="sfi-card on-surface-light">
-                <div class="sfi-card-kicker">${esc(
+                <div class="sfi-card-kicker">${escapeHtml(
                   base.methodType
                 )}</div>
-                <div class="sfi-go" data-follow-go-url="1">${esc(
+                <div class="sfi-go" data-follow-go-url="1">${escapeHtml(
                   goHref
                 )}</div>
                 <div class="sfi-code-row">
-                  <div class="sfi-row-label">${esc(
+                  <div class="sfi-row-label">${escapeHtml(
                     base.codeLabel
                   )}</div>
-                  <div class="sfi-code" aria-label="${esc(base.accessCodeLabel)}">${esc(
+                  <div class="sfi-code" aria-label="${escapeHtml(base.accessCodeLabel)}">${escapeHtml(
                     code || '----'
                   )}</div>
                 </div>

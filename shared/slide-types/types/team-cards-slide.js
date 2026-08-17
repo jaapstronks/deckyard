@@ -1,5 +1,5 @@
 import {
-  esc,
+  escapeHtml,
   pickAltText,
   clampInt,
   getSubheadingText,
@@ -385,7 +385,7 @@ export default {
       const photoHtml = img
         ? `
           <div class="team-card-photo"${photoAttr}>
-            <img src="${esc(img)}" alt="${esc(alt)}"${focusStyle ? ` ${focusStyle}` : ''} />
+            <img src="${escapeHtml(img)}" alt="${escapeHtml(alt)}"${focusStyle ? ` ${focusStyle}` : ''} />
           </div>
         `
         : `
@@ -395,15 +395,15 @@ export default {
       const namePath = `members.${idx}.name`;
       const bylinePath = `members.${idx}.byline`;
       const nameHtml = name
-        ? `<div class="team-card-name" data-inline-field="${namePath}" dir="auto">${esc(name)}</div>`
+        ? `<div class="team-card-name" data-inline-field="${namePath}" dir="auto">${escapeHtml(name)}</div>`
         : '';
       const bylineHtml = byline
-        ? `<div class="team-card-byline" data-inline-field="${bylinePath}" dir="auto">${esc(byline)}</div>`
+        ? `<div class="team-card-byline" data-inline-field="${bylinePath}" dir="auto">${escapeHtml(byline)}</div>`
         : '';
 
       const linkedinUrl = normalizeLinkedinUrl(member.linkedin);
       const linkedinHtml = linkedinUrl
-        ? `<a class="team-card-linkedin" href="${esc(linkedinUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(
+        ? `<a class="team-card-linkedin" href="${escapeHtml(linkedinUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(
             name ? `LinkedIn - ${name}` : 'LinkedIn'
           )}">${LINKEDIN_ICON_SVG}</a>`
         : '';
@@ -423,7 +423,7 @@ export default {
 
       const itemAttrs = ` data-inline-item="members" data-inline-item-index="${idx}"`;
       return `
-        <div class="team-card" role="group" aria-label="${esc(
+        <div class="team-card" role="group" aria-label="${escapeHtml(
           name || `Block ${idx + 1}`
         )}"${itemAttrs}>
           ${cardContent}
@@ -473,17 +473,17 @@ export default {
       const headerHtml = title
         ? `
           <div class="header">
-            <h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(title)}</h2>
+            <h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(title)}</h2>
           </div>
         `
         : '';
 
       // Subheadings go inside each group for proper alignment
       const leftSubheadingHtml = subheading
-        ? `<p class="team-cards-group-subheading" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(subheading)}</p>`
+        ? `<p class="team-cards-group-subheading" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${escapeHtml(subheading)}</p>`
         : '';
       const rightSubheadingHtml = subheading2
-        ? `<p class="team-cards-group-subheading" data-inline-field="subheading2" dir="auto">${esc(subheading2)}</p>`
+        ? `<p class="team-cards-group-subheading" data-inline-field="subheading2" dir="auto">${escapeHtml(subheading2)}</p>`
         : '';
 
       return `
@@ -519,7 +519,7 @@ export default {
       title || subheading
         ? `
           <div class="header">
-            ${title ? `<h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(title)}</h2>` : ''}
+            ${title ? `<h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(title)}</h2>` : ''}
             ${renderSubheadingHtml(content, 'subheading', 'subtitle')}
           </div>
         `

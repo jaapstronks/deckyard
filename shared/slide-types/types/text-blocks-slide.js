@@ -1,5 +1,5 @@
 import {
-  esc,
+  escapeHtml,
   renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
@@ -415,7 +415,7 @@ export default {
   },
 
   renderHtml: (content) => {
-    const title = esc(content?.title || '');
+    const title = escapeHtml(content?.title || '');
     const subheading = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const bottomSubheading = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);
@@ -437,7 +437,7 @@ export default {
       let rowTitleHtml = '';
       if (rowIdx > 0 && row.title) {
         const rowTitlePath = useRows ? `rows.${rowIdx}.title` : `row${rowIdx + 1}Title`;
-        rowTitleHtml = `<h3 class="text-blocks-row-title text-blocks-step" data-inline-field="${rowTitlePath}" dir="auto">${esc(row.title)}</h3>`;
+        rowTitleHtml = `<h3 class="text-blocks-row-title text-blocks-step" data-inline-field="${rowTitlePath}" dir="auto">${escapeHtml(row.title)}</h3>`;
       }
 
       const blockCount = row.blocks.length || 1;
@@ -449,7 +449,7 @@ export default {
           ? `rows.${rowIdx}.blocks.${bIdx}.body`
           : `row${rowIdx + 1}Block${bIdx + 1}Body`;
         const titleHtml = block.title
-          ? `<div class="text-block-title" data-inline-field="${blockTitlePath}" dir="auto">${esc(block.title)}</div>`
+          ? `<div class="text-block-title" data-inline-field="${blockTitlePath}" dir="auto">${escapeHtml(block.title)}</div>`
           : '';
         const bodyHtml = block.body
           ? `<div class="text-block-body" data-inline-field="${blockBodyPath}">${markdownToSafeHtml(block.body)}</div>`

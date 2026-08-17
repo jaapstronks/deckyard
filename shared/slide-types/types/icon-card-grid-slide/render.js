@@ -8,7 +8,7 @@
  */
 
 import {
-  esc,
+  escapeHtml,
   renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
@@ -71,7 +71,7 @@ export default function renderHtml(content, _slide, ctx) {
     // /client/vendor/lucide-icons/<name>.svg (name matches /^[a-z0-9-]+$/),
     // so it is URL/CSS-safe inside url() with no escaping surprises.
     const iconHtml = iconSrc
-      ? `<span class="icon-card-icon-img" aria-hidden="true" style="--icg-icon-url:url(${esc(iconSrc)})"></span>`
+      ? `<span class="icon-card-icon-img" aria-hidden="true" style="--icg-icon-url:url(${escapeHtml(iconSrc)})"></span>`
       : `<div class="icon-card-icon-fallback" aria-hidden="true"></div>`;
 
     // Optional click behavior: a full-card overlay anchor (shared helper).
@@ -87,7 +87,7 @@ export default function renderHtml(content, _slide, ctx) {
               ${iconHtml}
             </div>
             <div class="icon-card-body">
-              <h3 class="icon-card-title"${isEmpty ? '' : ` data-inline-field="${titlePath}"`} dir="auto">${esc(title || 'Title')}</h3>
+              <h3 class="icon-card-title"${isEmpty ? '' : ` data-inline-field="${titlePath}"`} dir="auto">${escapeHtml(title || 'Title')}</h3>
               <div class="icon-card-text"${isEmpty ? '' : ` data-inline-field="${bodyPath}"`}>
                 ${markdownToSafeHtml(bodyRaw)}
               </div>
@@ -101,7 +101,7 @@ export default function renderHtml(content, _slide, ctx) {
         <div class="slide slide-icon-card-grid${hasBottom ? ' has-bottom-subheading' : ''}" data-layout="${layout}">
           <div class="slide-inner">
             <div class="header">
-              <h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h2>
+              <h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content?.title)}</h2>
               ${subheading}
             </div>
             <div class="icon-card-grid" data-layout="${layout}" data-card-count="${count}">

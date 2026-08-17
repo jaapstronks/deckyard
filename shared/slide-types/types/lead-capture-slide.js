@@ -1,5 +1,5 @@
-import { bgClass, esc, nonEmpty, BACKGROUND_FIELD, cryptoUuid } from '../helpers.js';
-import { renderMarkdown } from '../../markdown.js';
+import { bgClass, escapeHtml, nonEmpty, BACKGROUND_FIELD, cryptoUuid } from '../helpers.js';
+import { markdownToSafeHtml } from '../../markdown.js';
 
 export default {
   structure: 'singleton',
@@ -185,57 +185,57 @@ export default {
     const errorGeneric = nonEmpty(content?.errorGeneric) || 'Something went wrong. Please try again.';
 
     // Render markdown for description and thank you message
-    const descriptionHtml = description ? renderMarkdown(description) : '';
-    const thankYouHtml = thankYouMessage ? renderMarkdown(thankYouMessage) : '';
+    const descriptionHtml = description ? markdownToSafeHtml(description) : '';
+    const thankYouHtml = thankYouMessage ? markdownToSafeHtml(thankYouMessage) : '';
 
     // Build privacy label with optional link
-    let privacyLabelHtml = esc(privacyText);
+    let privacyLabelHtml = escapeHtml(privacyText);
     if (privacyUrl) {
-      privacyLabelHtml += ` <a href="${esc(privacyUrl)}" target="_blank" rel="noopener noreferrer" class="lead-capture-privacy-link">${esc(privacyLinkText)}</a>`;
+      privacyLabelHtml += ` <a href="${escapeHtml(privacyUrl)}" target="_blank" rel="noopener noreferrer" class="lead-capture-privacy-link">${escapeHtml(privacyLinkText)}</a>`;
     }
 
     return `
-      <div class="slide slide-lead-capture ${bg}" data-interaction="lead-capture" data-slide-id="${esc(slideId)}"
-        data-error-accept-cookies="${esc(errorAcceptCookies)}"
-        data-error-enter-name="${esc(errorEnterName)}"
-        data-error-valid-email="${esc(errorValidEmail)}"
-        data-error-accept-terms="${esc(errorAcceptTerms)}"
-        data-error-generic="${esc(errorGeneric)}">
+      <div class="slide slide-lead-capture ${bg}" data-interaction="lead-capture" data-slide-id="${escapeHtml(slideId)}"
+        data-error-accept-cookies="${escapeHtml(errorAcceptCookies)}"
+        data-error-enter-name="${escapeHtml(errorEnterName)}"
+        data-error-valid-email="${escapeHtml(errorValidEmail)}"
+        data-error-accept-terms="${escapeHtml(errorAcceptTerms)}"
+        data-error-generic="${escapeHtml(errorGeneric)}">
         <div class="slide-inner">
           <div class="lead-capture-container">
             <!-- Form state -->
             <div class="lead-capture-form-state on-surface-light" data-lead-state="form">
               <div class="lead-capture-header">
-                <h2 class="lead-capture-title" data-inline-field="title" dir="auto">${esc(title)}</h2>
+                <h2 class="lead-capture-title" data-inline-field="title" dir="auto">${escapeHtml(title)}</h2>
                 ${descriptionHtml ? `<div class="lead-capture-description" data-inline-field="description">${descriptionHtml}</div>` : ''}
               </div>
 
               <form class="lead-capture-form" data-lead-form="1" autocomplete="on">
                 <div class="lead-capture-field">
-                  <label for="lead-name-${esc(slideId)}" class="lead-capture-label" data-inline-field="nameLabel">${esc(nameLabel)}</label>
+                  <label for="lead-name-${escapeHtml(slideId)}" class="lead-capture-label" data-inline-field="nameLabel">${escapeHtml(nameLabel)}</label>
                   <input
                     type="text"
-                    id="lead-name-${esc(slideId)}"
+                    id="lead-name-${escapeHtml(slideId)}"
                     name="name"
                     class="lead-capture-input"
                     required
                     autocomplete="name"
                     maxlength="200"
-                    placeholder="${esc(nameLabel)}"
+                    placeholder="${escapeHtml(nameLabel)}"
                   />
                 </div>
 
                 <div class="lead-capture-field">
-                  <label for="lead-email-${esc(slideId)}" class="lead-capture-label" data-inline-field="emailLabel">${esc(emailLabel)}</label>
+                  <label for="lead-email-${escapeHtml(slideId)}" class="lead-capture-label" data-inline-field="emailLabel">${escapeHtml(emailLabel)}</label>
                   <input
                     type="email"
-                    id="lead-email-${esc(slideId)}"
+                    id="lead-email-${escapeHtml(slideId)}"
                     name="email"
                     class="lead-capture-input"
                     required
                     autocomplete="email"
                     maxlength="320"
-                    placeholder="${esc(emailLabel)}"
+                    placeholder="${escapeHtml(emailLabel)}"
                   />
                 </div>
 
@@ -251,12 +251,12 @@ export default {
                   </label>
                 </div>
 
-                <input type="hidden" name="consentText" value="${esc(privacyText)}" />
-                <input type="hidden" name="privacyUrl" value="${esc(privacyUrl)}" />
+                <input type="hidden" name="consentText" value="${escapeHtml(privacyText)}" />
+                <input type="hidden" name="privacyUrl" value="${escapeHtml(privacyUrl)}" />
 
                 <div class="lead-capture-actions">
                   <button type="submit" class="lead-capture-submit btn btn-primary" data-inline-field="submitLabel">
-                    ${esc(submitLabel)}
+                    ${escapeHtml(submitLabel)}
                   </button>
                 </div>
 
@@ -265,7 +265,7 @@ export default {
 
               <!-- Cookie consent required message -->
               <div class="lead-capture-cookie-notice on-surface-light" data-lead-cookie-notice="1" hidden>
-                <p>${esc(cookieNoticeText)}</p>
+                <p>${escapeHtml(cookieNoticeText)}</p>
               </div>
             </div>
 
@@ -278,7 +278,7 @@ export default {
                     <path d="M20 32L28 40L44 24" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </div>
-                <h2 class="lead-capture-thankyou-title" dir="auto">${esc(thankYouTitle)}</h2>
+                <h2 class="lead-capture-thankyou-title" dir="auto">${escapeHtml(thankYouTitle)}</h2>
                 ${thankYouHtml ? `<div class="lead-capture-thankyou-message">${thankYouHtml}</div>` : ''}
               </div>
             </div>

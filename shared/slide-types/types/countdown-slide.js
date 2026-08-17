@@ -2,7 +2,7 @@ import {
   bgClassExtended,
   BACKGROUND_FIELD_EXTENDED,
   clampInt,
-  esc,
+  escapeHtml,
 } from '../helpers.js';
 
 /**
@@ -139,13 +139,13 @@ export default {
     const titleText =
       typeof content?.title === 'string' ? content.title.trim() : '';
     const title = titleText
-      ? `<h2 class="cd-title heading" data-inline-field="title" dir="auto">${esc(titleText)}</h2>`
+      ? `<h2 class="cd-title heading" data-inline-field="title" dir="auto">${escapeHtml(titleText)}</h2>`
       : '';
 
     const zeroText =
       typeof content?.zeroText === 'string' ? content.zeroText.trim() : '';
     const zeroEl = zeroText
-      ? `<div class="cd-zero-text" aria-hidden="true">${esc(zeroText)}</div>`
+      ? `<div class="cd-zero-text" aria-hidden="true">${escapeHtml(zeroText)}</div>`
       : '';
 
     return `

@@ -1,5 +1,5 @@
 import {
-  esc,
+  escapeHtml,
   pickAltText,
   nonEmpty,
   cardLinkOverlayHtml,
@@ -236,8 +236,8 @@ export default {
       title || subtitle
         ? `
           <div class="header">
-            ${title ? `<h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(title)}</h2>` : ''}
-            ${subtitle ? `<p class="subtitle" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(subtitle)}</p>` : ''}
+            ${title ? `<h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(title)}</h2>` : ''}
+            ${subtitle ? `<p class="subtitle" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${escapeHtml(subtitle)}</p>` : ''}
           </div>
         `
         : '';
@@ -261,7 +261,7 @@ export default {
       // matching logos[i] to write to.
       const photoAttr = ` data-inline-photo="${i}"`;
       const imgHtml = img
-        ? `<img class="logo-wall-img"${photoAttr} src="${esc(img)}" alt="${esc(alt)}" />`
+        ? `<img class="logo-wall-img"${photoAttr} src="${escapeHtml(img)}" alt="${escapeHtml(alt)}" />`
         : imagePlaceholderHtml({ className: 'logo-wall-placeholder', label: copy.logoPlaceholder, attrs: photoAttr });
 
       // Optional click behavior: a full-item overlay anchor (shared helper).
@@ -269,7 +269,7 @@ export default {
       const linkHtml = cardLinkOverlayHtml(logo.link, mode, name || `Logo ${i + 1}`);
 
       items.push(`
-        <div class="logo-wall-item${linkHtml ? ' has-link' : ''}" role="group" data-inline-item="logos" data-inline-item-index="${i}" aria-label="${esc(
+        <div class="logo-wall-item${linkHtml ? ' has-link' : ''}" role="group" data-inline-item="logos" data-inline-item-index="${i}" aria-label="${escapeHtml(
           name || `Logo ${i + 1}`
         )}">
           <div class="logo-wall-frame">

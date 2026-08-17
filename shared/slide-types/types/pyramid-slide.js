@@ -1,6 +1,6 @@
 import {
   bgClass,
-  esc,
+  escapeHtml,
   renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
@@ -18,10 +18,10 @@ function levelHtml(level, idx, total) {
   const levelNum = idx + 1;
 
   const labelHtml = label
-    ? `<div class="level-label" data-inline-field="levels.${idx}.label" dir="auto">${esc(label)}</div>`
+    ? `<div class="level-label" data-inline-field="levels.${idx}.label" dir="auto">${escapeHtml(label)}</div>`
     : '';
   const textHtml = text
-    ? `<div class="level-text" data-inline-field="levels.${idx}.text" dir="auto">${esc(text)}</div>`
+    ? `<div class="level-text" data-inline-field="levels.${idx}.text" dir="auto">${escapeHtml(text)}</div>`
     : '';
 
   // Calculate width percentage for pyramid effect (widening from top to bottom)
@@ -154,7 +154,7 @@ export default {
     const bg = bgClass(content?.background);
     const title =
       typeof content?.title === 'string' && content.title.trim()
-        ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
+        ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
     const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);

@@ -1,4 +1,4 @@
-import { bgClass, esc, BACKGROUND_FIELD } from '../helpers.js';
+import { bgClass, escapeHtml, BACKGROUND_FIELD } from '../helpers.js';
 import { resolveTitleSlideBackground } from './title-slide/background.js';
 import { TITLE_LAYOUTS, DEFAULT_TITLE_LAYOUT } from '../../theme-config-schema.js';
 import { alignGroup, groupAlignClass } from '../field-groups.js';
@@ -128,18 +128,18 @@ export default {
     const bgAlt = resolvedBg.source === 'legacy' ? resolvedBg.alt : '';
     const bgImgHtml = legacyBg
       ? bgAlt
-        ? `<img class="slide-bg" src="${esc(legacyBg)}" alt="${esc(bgAlt)}" />`
-        : `<img class="slide-bg" src="${esc(
+        ? `<img class="slide-bg" src="${escapeHtml(legacyBg)}" alt="${escapeHtml(bgAlt)}" />`
+        : `<img class="slide-bg" src="${escapeHtml(
             legacyBg
           )}" alt="" aria-hidden="true" />`
       : '';
     const subtitle =
       typeof content?.subheading === 'string' && content.subheading.trim()
-        ? `<p class="tsu-subtitle" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(content.subheading)}</p>`
+        ? `<p class="tsu-subtitle" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${escapeHtml(content.subheading)}</p>`
         : '';
     const meta =
       typeof content?.meta === 'string' && content.meta.trim()
-        ? `<p class="tsu-meta" data-morph-role="meta" data-inline-field="meta" dir="auto">${esc(content.meta)}</p>`
+        ? `<p class="tsu-meta" data-morph-role="meta" data-inline-field="meta" dir="auto">${escapeHtml(content.meta)}</p>`
         : '';
     const theme =
       ctx?.theme && typeof ctx.theme === 'object'
@@ -181,11 +181,11 @@ export default {
             ${bgImgHtml}
             <div class="tsu-overlay" aria-hidden="true"></div>
             <div class="tsu-logo" data-morph-role="logo">
-              <img class="tsu-logo-img" src="${esc(logoSrc)}" alt="${esc(logoAlt)}" />
+              <img class="tsu-logo-img" src="${escapeHtml(logoSrc)}" alt="${escapeHtml(logoAlt)}" />
             </div>
             <div class="tsu-content">
               <div class="tsu-primary">
-                <h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h2>
+                <h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content?.title)}</h2>
                 ${subtitle}
               </div>
               ${meta}

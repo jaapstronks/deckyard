@@ -1,5 +1,5 @@
 import {
-  esc,
+  escapeHtml,
   gradientVarsForSlide,
   styleAttrFromVars,
 } from '../helpers.js';
@@ -86,14 +86,14 @@ export default {
     const alignClass = groupAlignClass(TITLE_BLOCK.group, content);
     const subtitle =
       typeof content?.subheading === 'string' && content.subheading.trim()
-        ? `<p class="subtitle" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(content.subheading)}</p>`
+        ? `<p class="subtitle" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${escapeHtml(content.subheading)}</p>`
         : '';
     return `
         <div class="slide slide-chapter-title is-layout-${layout}${
           alignClass ? ` ${alignClass}` : ''
         }"${styleAttrFromVars(vars)}>
           <div class="slide-inner">
-            <h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h2>
+            <h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content?.title)}</h2>
             ${subtitle}
           </div>
         </div>

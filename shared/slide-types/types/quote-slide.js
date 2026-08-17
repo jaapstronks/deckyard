@@ -1,6 +1,6 @@
 import {
   curlyQuote,
-  esc,
+  escapeHtml,
   gradientVarsForSlide,
   pickAltText,
   styleAttrFromVars,
@@ -42,7 +42,7 @@ function portraitHtml(src, alt, inlineIdx) {
   const idxAttr = inlineIdx != null ? ` data-inline-photo="${inlineIdx}"` : '';
   return `
               <div class="quote-portrait"${idxAttr}>
-                <img src="${esc(src)}" alt="${esc(alt)}" />
+                <img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />
               </div>`;
 }
 
@@ -81,15 +81,15 @@ function quoteBlockInnerHtml({
   const morphAuthor = morph ? ' data-morph-role="quote-author"' : '';
   return `
             <blockquote class="quote-text"${morphQuote} dir="auto">
-              <p data-inline-field="${quoteField}">${esc(curlyQuote(quote))}</p>
+              <p data-inline-field="${quoteField}">${escapeHtml(curlyQuote(quote))}</p>
             </blockquote>
             <footer class="quote-author${portraitsHtml ? ' has-portraits' : ''}"${morphAuthor}>
               ${portraitsHtml}
               <div>
-                <div class="name" data-inline-field="${nameField}" dir="auto">${esc(
+                <div class="name" data-inline-field="${nameField}" dir="auto">${escapeHtml(
                   authorName
                 )}</div>
-                <div class="role" data-inline-field="${titleField}" dir="auto">${esc(
+                <div class="role" data-inline-field="${titleField}" dir="auto">${escapeHtml(
                   authorTitle
                 )}</div>
               </div>

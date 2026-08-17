@@ -1,6 +1,6 @@
 import {
   bgClass,
-  esc,
+  escapeHtml,
   imagePlaceholderHtml,
   objectPositionStyleAttrFromFocus,
   pickAltText,
@@ -473,7 +473,7 @@ export default {
     // and the runtime adds is-compact if the body overflows.
     const densityClass = density === 'compact' ? ' is-compact' : '';
     const caption = content?.caption
-      ? `<figcaption class="caption" data-inline-field="caption" dir="auto">${esc(
+      ? `<figcaption class="caption" data-inline-field="caption" dir="auto">${escapeHtml(
           content.caption
         )}</figcaption>`
       : '';
@@ -507,7 +507,7 @@ export default {
       // data-inline-photo: clicking the image in the editor opens the
       // media popover (image + alt); inert on every other surface.
       const inner = item.src
-        ? `<img src="${esc(item.src)}" alt="${esc(
+        ? `<img src="${escapeHtml(item.src)}" alt="${escapeHtml(
             alt
           )}" data-inline-photo="${idx}"${ariaDecorative}${focusStyle} />`
         : imagePlaceholderHtml({ label: copy.imagePlaceholder, index: idx });
@@ -529,7 +529,7 @@ export default {
                 ${mediaCells}
               </div>
               <div class="copy">
-                <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(
+                <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(
                   content?.title
                 )}</h2>
                 <div class="body" data-morph-role="body" data-inline-field="body" data-inline-kind="markdown">${markdownToSafeHtml(

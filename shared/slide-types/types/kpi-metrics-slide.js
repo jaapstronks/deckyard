@@ -1,6 +1,6 @@
 import {
   bgClass,
-  esc,
+  escapeHtml,
   clampInt,
   isNonEmptyString,
   renderSubheadingHtml,
@@ -269,7 +269,7 @@ export default {
   renderHtml: (content, slide, ctx) => {
     const bg = bgClass(content?.background || 'mist');
     const title = isNonEmptyString(content?.title)
-      ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
+      ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
       : '';
     const subheading = renderSubheadingHtml(content);
     const bottomSubheading = renderBottomSubheadingHtml(content);
@@ -310,12 +310,12 @@ export default {
 
       const { tone, highlight, rest } = parseNoteTone(effectiveNote);
 
-      const aria = esc(label || `Metric ${i}`);
+      const aria = escapeHtml(label || `Metric ${i}`);
       const meta = effectiveNote
         ? `
               <div class="kpi-meta">
-                ${highlight ? `<span class="kpi-delta ${tone}">${esc(highlight)}</span>` : ''}
-                ${rest ? `<span dir="auto">${esc(rest)}</span>` : ''}
+                ${highlight ? `<span class="kpi-delta ${tone}">${escapeHtml(highlight)}</span>` : ''}
+                ${rest ? `<span dir="auto">${escapeHtml(rest)}</span>` : ''}
               </div>
             `
         : '';
@@ -323,9 +323,9 @@ export default {
       cards.push(`
           <div class="kpi-metric${i === 0 ? ' is-primary' : ''}" data-morph-role="kpi-${i}" role="group" aria-label="${aria}" data-inline-item="metrics" data-inline-item-index="${i}">
             <div class="kpi-value">
-              <span class="kpi-value-num" data-inline-field="metrics.${i}.value" ${countUpOn ? 'data-kpi-countup="1"' : ''}>${esc(value || '0')}</span>${unit ? `<span class="kpi-unit" data-inline-field="metrics.${i}.unit">${esc(unit)}</span>` : ''}
+              <span class="kpi-value-num" data-inline-field="metrics.${i}.value" ${countUpOn ? 'data-kpi-countup="1"' : ''}>${escapeHtml(value || '0')}</span>${unit ? `<span class="kpi-unit" data-inline-field="metrics.${i}.unit">${escapeHtml(unit)}</span>` : ''}
             </div>
-            <div class="kpi-label" data-inline-field="metrics.${i}.label" dir="auto">${esc(label || 'Label')}</div>
+            <div class="kpi-label" data-inline-field="metrics.${i}.label" dir="auto">${escapeHtml(label || 'Label')}</div>
             ${meta}
           </div>
         `);

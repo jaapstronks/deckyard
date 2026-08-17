@@ -1,6 +1,6 @@
 import {
   bgClass,
-  esc,
+  escapeHtml,
   renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
@@ -38,17 +38,17 @@ function itemHtml(item, idx, total) {
   const tone = idx % 2 === 0 ? 'accent' : 'lime';
 
   const dateHtml = date
-    ? `<div class="timeline-date" data-inline-field="items.${idx}.date" dir="auto">${esc(date)}</div>`
+    ? `<div class="timeline-date" data-inline-field="items.${idx}.date" dir="auto">${escapeHtml(date)}</div>`
     : '';
   const titleHtml = title
-    ? `<div class="timeline-title" data-inline-field="items.${idx}.title" dir="auto">${esc(title)}</div>`
+    ? `<div class="timeline-title" data-inline-field="items.${idx}.title" dir="auto">${escapeHtml(title)}</div>`
     : '';
   const textHtml = text
-    ? `<div class="timeline-text" data-inline-field="items.${idx}.text" dir="auto">${esc(text)}</div>`
+    ? `<div class="timeline-text" data-inline-field="items.${idx}.text" dir="auto">${escapeHtml(text)}</div>`
     : '';
 
   return `
-    <li class="timeline-item ${isTop ? 'is-top' : 'is-bottom'}" data-index="${idx + 1}" data-tone="${esc(tone)}" data-inline-item="items" data-inline-item-index="${idx}">
+    <li class="timeline-item ${isTop ? 'is-top' : 'is-bottom'}" data-index="${idx + 1}" data-tone="${escapeHtml(tone)}" data-inline-item="items" data-inline-item-index="${idx}">
       <div class="timeline-marker" aria-hidden="true"></div>
       <div class="timeline-connector" aria-hidden="true"></div>
       ${dateHtml}
@@ -187,7 +187,7 @@ export default {
     const copy = getSlideCopy(ctx?.lang);
     const title =
       typeof content?.title === 'string' && content.title.trim()
-        ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
+        ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
     const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);
@@ -206,7 +206,7 @@ export default {
       <div class="slide slide-timeline ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}">
         <div class="slide-inner">
           ${hasHeader ? `<div class="header">${title}${subheadingHtml}</div>` : ''}
-          <ol class="timeline-container" data-count="${count}" aria-label="${esc(copy.timelineLabel)}">
+          <ol class="timeline-container" data-count="${count}" aria-label="${escapeHtml(copy.timelineLabel)}">
             <li class="timeline-track" aria-hidden="true"></li>
             ${itemsHtml}
           </ol>

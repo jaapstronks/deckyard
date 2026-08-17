@@ -16,7 +16,7 @@
  *   {{this.key}}        - Access item property inside {{#each}}
  */
 
-import { esc } from '../../shared/slide-types/helpers.js';
+import { escapeHtml } from '../../shared/slide-types/helpers.js';
 
 /**
  * Whether a markdown link URL uses a safe, navigable protocol. Anything else
@@ -45,7 +45,7 @@ function simpleMarkdownToHtml(md) {
     return `\x00LINK${idx}\x00`;
   });
   // Escape remaining text
-  html = esc(html);
+  html = escapeHtml(html);
   // Bold
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   // Italic
@@ -54,8 +54,8 @@ function simpleMarkdownToHtml(md) {
   // text so a `[x](javascript:…)` payload can't become a live href.
   html = html.replace(/\x00LINK(\d+)\x00/g, (_, idx) => {
     const link = links[Number(idx)];
-    const label = esc(link.label);
-    return isSafeLinkUrl(link.url) ? `<a href="${esc(link.url)}">${label}</a>` : label;
+    const label = escapeHtml(link.label);
+    return isSafeLinkUrl(link.url) ? `<a href="${escapeHtml(link.url)}">${label}</a>` : label;
   });
   // Line breaks → paragraphs
   html = html
@@ -238,7 +238,7 @@ function evaluate(nodes, data, loopCtx) {
         out += node.value;
         break;
       case T.ESC:
-        out += esc(String(resolvePath(node.field, data, loopCtx) ?? ''));
+        out += escapeHtml(String(resolvePath(node.field, data, loopCtx) ?? ''));
         break;
       case T.RAW:
         out += String(resolvePath(node.field, data, loopCtx) ?? '');
@@ -252,7 +252,7 @@ function evaluate(nodes, data, loopCtx) {
         out += bgClass(resolvePath(node.field, data, loopCtx));
         break;
       case T.VAR:
-        out += esc(String(resolvePath(node.field, data, loopCtx) ?? ''));
+        out += escapeHtml(String(resolvePath(node.field, data, loopCtx) ?? ''));
         break;
       case 'if': {
         const val = resolvePath(node.field, data, loopCtx);

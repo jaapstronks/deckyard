@@ -1,4 +1,4 @@
-import { bgClass, esc, BACKGROUND_FIELD } from '../helpers.js';
+import { bgClass, escapeHtml, BACKGROUND_FIELD } from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 
 export default {
@@ -144,19 +144,19 @@ export default {
     const hasSocial = (social1Label && social1Url) || (social2Label && social2Url);
 
     const contactLines = [];
-    if (name) contactLines.push(`<div class="end-contact-name" data-inline-field="contactName" dir="auto">${esc(name)}</div>`);
-    if (email) contactLines.push(`<div class="end-contact-item" data-inline-field="contactEmail"><a href="mailto:${esc(email)}">${esc(email)}</a></div>`);
-    if (phone) contactLines.push(`<div class="end-contact-item" data-inline-field="contactPhone"><a href="tel:${esc(phone)}">${esc(phone)}</a></div>`);
-    if (url) contactLines.push(`<div class="end-contact-item"><a href="${esc(url)}" target="_blank" rel="noopener">${esc(url.replace(/^https?:\/\//, ''))}</a></div>`);
+    if (name) contactLines.push(`<div class="end-contact-name" data-inline-field="contactName" dir="auto">${escapeHtml(name)}</div>`);
+    if (email) contactLines.push(`<div class="end-contact-item" data-inline-field="contactEmail"><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></div>`);
+    if (phone) contactLines.push(`<div class="end-contact-item" data-inline-field="contactPhone"><a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a></div>`);
+    if (url) contactLines.push(`<div class="end-contact-item"><a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(url.replace(/^https?:\/\//, ''))}</a></div>`);
 
     const socialLinks = [];
-    if (social1Label && social1Url) socialLinks.push(`<a class="end-social-link" href="${esc(social1Url)}" target="_blank" rel="noopener">${esc(social1Label)}</a>`);
-    if (social2Label && social2Url) socialLinks.push(`<a class="end-social-link" href="${esc(social2Url)}" target="_blank" rel="noopener">${esc(social2Label)}</a>`);
+    if (social1Label && social1Url) socialLinks.push(`<a class="end-social-link" href="${escapeHtml(social1Url)}" target="_blank" rel="noopener">${escapeHtml(social1Label)}</a>`);
+    if (social2Label && social2Url) socialLinks.push(`<a class="end-social-link" href="${escapeHtml(social2Url)}" target="_blank" rel="noopener">${escapeHtml(social2Label)}</a>`);
 
     return `
       <div class="slide slide-end ${bg}">
         <div class="slide-inner">
-          <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h2>
+          <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content?.title)}</h2>
           ${body ? `<div class="body" data-inline-field="body" dir="auto">${markdownToSafeHtml(body)}</div>` : ''}
           ${hasContact ? `<div class="end-contact">${contactLines.join('\n')}</div>` : ''}
           ${hasSocial ? `<div class="end-social">${socialLinks.join('\n')}</div>` : ''}

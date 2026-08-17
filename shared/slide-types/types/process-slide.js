@@ -1,6 +1,6 @@
 import {
   bgClass,
-  esc,
+  escapeHtml,
   renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
@@ -17,10 +17,10 @@ function stepHtml(step, idx, total, direction, colKey = 'items') {
   const isLast = idx === total - 1;
 
   const titleHtml = title
-    ? `<div class="step-title" data-inline-field="${colKey}.${idx}.title" dir="auto">${esc(title)}</div>`
+    ? `<div class="step-title" data-inline-field="${colKey}.${idx}.title" dir="auto">${escapeHtml(title)}</div>`
     : '';
   const textHtml = text
-    ? `<div class="step-text" data-inline-field="${colKey}.${idx}.text" dir="auto">${esc(text)}</div>`
+    ? `<div class="step-text" data-inline-field="${colKey}.${idx}.text" dir="auto">${escapeHtml(text)}</div>`
     : '';
 
   // Arrow between steps (not after the last one)
@@ -198,7 +198,7 @@ export default {
     const bg = bgClass(content?.background);
     const title =
       typeof content?.title === 'string' && content.title.trim()
-        ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
+        ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
     const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);

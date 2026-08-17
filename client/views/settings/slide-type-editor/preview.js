@@ -5,7 +5,7 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { esc as escapeHtml } from '../../../../shared/slide-types/helpers.js';
+import { escapeHtml } from '../../../../shared/slide-types/helpers.js';
 
 /**
  * Create a slide type preview component.

@@ -1,6 +1,6 @@
 import {
   bgClass,
-  esc,
+  escapeHtml,
   renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
@@ -26,7 +26,7 @@ function imageHtml(image, idx, copy) {
     return `
       <div class="gallery-item" data-item="${imageNum}" data-inline-item="images" data-inline-item-index="${idx}">
         ${imagePlaceholderHtml({ className: 'gallery-image-placeholder', label: `${copy.imagePlaceholder} ${imageNum}`, index: idx })}
-        ${caption ? `<div class="gallery-caption" data-inline-field="images.${idx}.caption" dir="auto">${esc(caption)}</div>` : ''}
+        ${caption ? `<div class="gallery-caption" data-inline-field="images.${idx}.caption" dir="auto">${escapeHtml(caption)}</div>` : ''}
       </div>
     `;
   }
@@ -45,8 +45,8 @@ function imageHtml(image, idx, copy) {
 
   return `
     <div class="gallery-item" data-item="${imageNum}" data-inline-item="images" data-inline-item-index="${idx}">
-      <img class="gallery-image" data-inline-photo="${idx}" src="${esc(src)}" alt="${esc(alt)}" loading="lazy"${focusStyle ? ` ${focusStyle}` : ''} />
-      ${caption ? `<div class="gallery-caption" data-inline-field="images.${idx}.caption" dir="auto">${esc(caption)}</div>` : ''}
+      <img class="gallery-image" data-inline-photo="${idx}" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" loading="lazy"${focusStyle ? ` ${focusStyle}` : ''} />
+      ${caption ? `<div class="gallery-caption" data-inline-field="images.${idx}.caption" dir="auto">${escapeHtml(caption)}</div>` : ''}
     </div>
   `;
 }
@@ -198,7 +198,7 @@ export default {
     const bg = bgClass(content?.background);
     const title =
       typeof content?.title === 'string' && content.title.trim()
-        ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
+        ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
     const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);

@@ -1,6 +1,6 @@
 import {
   bgClass,
-  esc,
+  escapeHtml,
   renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
@@ -215,7 +215,7 @@ export default {
       ctx?.theme && typeof ctx.theme === 'object' ? ctx.theme : null;
     const palette = themeChartPalette(theme);
 
-    const title = esc(content?.title);
+    const title = escapeHtml(content?.title);
     const bottomSubheading = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);
 
@@ -254,10 +254,10 @@ export default {
         Array.isArray(ds?.y2) && ds.y2.some((v) => v != null);
       if (showLegend) {
         legendHtml = `
-          <div class="chart-legend-block" aria-label="${esc(copy.chartLegendLabel)}">
+          <div class="chart-legend-block" aria-label="${escapeHtml(copy.chartLegendLabel)}">
             <div class="chart-legend-item">
               <span class="chart-legend-swatch chart-swatch-1" aria-hidden="true"></span>
-              <span class="chart-legend-name" dir="auto">${esc(
+              <span class="chart-legend-name" dir="auto">${escapeHtml(
                 series1Name
               )}</span>
             </div>
@@ -266,7 +266,7 @@ export default {
                 ? `
               <div class="chart-legend-item">
                 <span class="chart-legend-swatch chart-swatch-2" aria-hidden="true"></span>
-                <span class="chart-legend-name" dir="auto">${esc(
+                <span class="chart-legend-name" dir="auto">${escapeHtml(
                   series2Name
                 )}</span>
               </div>
@@ -321,12 +321,12 @@ export default {
                 }" aria-hidden="true"></span>
                 ${
                   legendStat(e)
-                    ? `<span class="chart-legend-stat">${esc(
+                    ? `<span class="chart-legend-stat">${escapeHtml(
                         legendStat(e)
                       )}</span>`
                     : ''
                 }
-                <span class="chart-legend-name" dir="auto">${esc(
+                <span class="chart-legend-name" dir="auto">${escapeHtml(
                   truncateLabel(e.label, 40)
                 )}</span>
               </div>
@@ -334,7 +334,7 @@ export default {
           )
           .join('');
         legendHtml = `
-          <div class="chart-legend-block" aria-label="${esc(copy.chartLegendLabel)}">
+          <div class="chart-legend-block" aria-label="${escapeHtml(copy.chartLegendLabel)}">
             ${items}
           </div>
         `;
@@ -349,7 +349,7 @@ export default {
     // Note: we keep SVG inline for export safety.
     const alignClass = groupAlignClass(HEADER_BLOCK.group, content);
     return `
-      <div class="slide slide-chart ${bg}${hasBottom ? ' has-bottom-subheading' : ''}${alignClass ? ` ${alignClass}` : ''}" data-chart-type="${esc(
+      <div class="slide slide-chart ${bg}${hasBottom ? ' has-bottom-subheading' : ''}${alignClass ? ` ${alignClass}` : ''}" data-chart-type="${escapeHtml(
         chartType
       )}">
         <div class="slide-inner">
@@ -360,10 +360,10 @@ export default {
             ${renderSubheadingHtml(content)}
           </div>
           ${legendHtml}
-          <div class="chart-area" data-inline-field="data" role="group" aria-label="${esc(a11yTitle)}">
+          <div class="chart-area" data-inline-field="data" role="group" aria-label="${escapeHtml(a11yTitle)}">
             <div class="sr-only">
-              <div>${esc(a11yTitle)}</div>
-              ${desc ? `<div>${esc(desc)}</div>` : ''}
+              <div>${escapeHtml(a11yTitle)}</div>
+              ${desc ? `<div>${escapeHtml(desc)}</div>` : ''}
             </div>
             ${svg}
           </div>

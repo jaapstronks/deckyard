@@ -2,7 +2,7 @@
 
 import { SLIDE_BG_ID_RE } from '../theme-slide-backgrounds.js';
 
-export function esc(s) {
+export function escapeHtml(s) {
   return String(s || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -10,9 +10,6 @@ export function esc(s) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
-
-// Alias for escapeHtml - use this when "escapeHtml" reads more clearly in context
-export { esc as escapeHtml };
 
 /**
  * Normalize a string value: trim whitespace and return empty string if falsy.
@@ -464,7 +461,7 @@ export function renderSubheadingHtml(content, className = 'subheading', morphRol
   const text = getSubheadingText(content);
   if (!text) return '';
   const morphAttr = morphRole ? ` data-morph-role="${morphRole}"` : '';
-  return `<p class="${className}"${morphAttr} data-inline-field="subheading" dir="auto">${esc(text)}</p>`;
+  return `<p class="${className}"${morphAttr} data-inline-field="subheading" dir="auto">${escapeHtml(text)}</p>`;
 }
 
 /**
@@ -476,7 +473,7 @@ export function renderBottomSubheadingHtml(content) {
   const text = typeof content?.bottomSubheading === 'string'
     ? content.bottomSubheading.trim()
     : '';
-  return text ? `<p class="bottom-subheading" data-inline-field="bottomSubheading" dir="auto">${esc(text)}</p>` : '';
+  return text ? `<p class="bottom-subheading" data-inline-field="bottomSubheading" dir="auto">${escapeHtml(text)}</p>` : '';
 }
 
 /**
@@ -614,12 +611,12 @@ function resolveCardLink(raw, mode) {
 export function cardLinkOverlayHtml(raw, mode, ariaLabel) {
   const info = resolveCardLink(raw, mode);
   if (!info) return '';
-  const aria = esc(ariaLabel || 'Card link');
+  const aria = escapeHtml(ariaLabel || 'Card link');
   if (info.kind === 'nav')
     return `<a class="card-link" data-card-nav="${info.index}" href="#" aria-label="${aria}"></a>`;
   if (info.kind === 'nav-id')
-    return `<a class="card-link" data-card-nav-id="${esc(info.id)}" href="#" aria-label="${aria}"></a>`;
-  return `<a class="card-link" href="${esc(info.href)}" target="_blank" rel="noopener noreferrer" aria-label="${aria}"></a>`;
+    return `<a class="card-link" data-card-nav-id="${escapeHtml(info.id)}" href="#" aria-label="${aria}"></a>`;
+  return `<a class="card-link" href="${escapeHtml(info.href)}" target="_blank" rel="noopener noreferrer" aria-label="${aria}"></a>`;
 }
 
 /**
@@ -648,7 +645,7 @@ const IMAGE_PLACEHOLDER_ICON =
  */
 export function imagePlaceholderInnerHtml(label) {
   const text = nonEmpty(label)
-    ? `<div class="image-placeholder-text">${esc(label)}</div>`
+    ? `<div class="image-placeholder-text">${escapeHtml(label)}</div>`
     : '';
   return `<div class="image-placeholder-inner">${IMAGE_PLACEHOLDER_ICON}${text}</div>`;
 }
@@ -685,10 +682,10 @@ export function imagePlaceholderHtml({
   const classes = ['image-placeholder', className, compact ? 'is-compact' : '', 'is-empty']
     .filter(Boolean)
     .join(' ');
-  // String() first: esc() collapses falsy input to '', which would silently
+  // String() first: escapeHtml() collapses falsy input to '', which would silently
   // drop index 0 — the first slot of every deck.
   const photoAttr =
-    index === undefined || index === null ? '' : ` data-inline-photo="${esc(String(index))}"`;
+    index === undefined || index === null ? '' : ` data-inline-photo="${escapeHtml(String(index))}"`;
   const inner = imagePlaceholderInnerHtml(compact ? '' : label);
   return `<div class="${classes}"${photoAttr}${attrs} aria-hidden="true">${inner}</div>`;
 }

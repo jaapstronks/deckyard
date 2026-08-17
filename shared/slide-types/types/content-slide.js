@@ -1,4 +1,4 @@
-import { bgClass, esc, renderSubheadingHtml, BACKGROUND_FIELD } from '../helpers.js';
+import { bgClass, escapeHtml, renderSubheadingHtml, BACKGROUND_FIELD } from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 import { ACTIONS_FIELD, renderActionsHtml } from '../actions-field.js';
 
@@ -189,7 +189,7 @@ export default {
     return `
         <div class="slide slide-content ${layout}${densityClass} ${bg}" data-density="${density}">
           <div class="slide-inner">
-            <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h2>
+            <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content?.title)}</h2>
             ${subheading}
             <div class="body" data-morph-role="body" data-inline-field="body" data-inline-kind="markdown">${markdownToSafeHtml(content?.body || '')}</div>
             ${actionsHtml}

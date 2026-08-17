@@ -1,4 +1,4 @@
-import { esc } from '../helpers.js';
+import { escapeHtml } from '../helpers.js';
 
 export default {
   structure: 'chrome',
@@ -28,7 +28,7 @@ export default {
     return `
         <div class="slide slide-payoff slide-bg-lime">
           <div class="slide-inner">
-            <img class="payoff-logo" data-morph-role="logo" src="${esc(logo)}" alt="${esc(alt)}" />
+            <img class="payoff-logo" data-morph-role="logo" src="${escapeHtml(logo)}" alt="${escapeHtml(alt)}" />
           </div>
         </div>
       `;

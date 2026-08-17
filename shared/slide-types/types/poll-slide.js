@@ -1,4 +1,4 @@
-import { bgClass, esc, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
+import { bgClass, escapeHtml, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 
 function optionsFromContent(content) {
@@ -136,7 +136,7 @@ export default {
           <li class="poll-option">
             <div class="poll-option-inner on-surface-light">
               <span class="poll-letter" aria-hidden="true">${letterForIdx(i)}</span>
-              <span class="poll-text" data-inline-field="${t.key}" dir="auto">${esc(t.text)}</span>
+              <span class="poll-text" data-inline-field="${t.key}" dir="auto">${escapeHtml(t.text)}</span>
             </div>
           </li>
         `
@@ -147,7 +147,7 @@ export default {
       .map(
         (t, i) => `
           <div class="poll-bar-row" data-poll-bar-row="${i}">
-            <div class="poll-bar-name">${esc(letterForIdx(i))}</div>
+            <div class="poll-bar-name">${escapeHtml(letterForIdx(i))}</div>
             <div class="poll-bar-track" aria-hidden="true">
               <div class="poll-bar-fill" data-poll-bar-fill="${i}"></div>
             </div>
@@ -164,8 +164,8 @@ export default {
       followCodes?.nl || followCodes?.en
         ? `
           <div class="help poll-follow-codes">
-            <div><strong>NL</strong>: ${esc(followCodes?.nl || '')}</div>
-            <div><strong>EN</strong>: ${esc(followCodes?.en || '')}</div>
+            <div><strong>NL</strong>: ${escapeHtml(followCodes?.nl || '')}</div>
+            <div><strong>EN</strong>: ${escapeHtml(followCodes?.en || '')}</div>
           </div>
         `
         : '';
@@ -173,25 +173,25 @@ export default {
     return `
       <div class="slide slide-poll ${bg}" data-interaction="poll">
         <div class="slide-inner">
-          <h2 class="heading" data-inline-field="question" dir="auto">${esc(content?.question)}</h2>
+          <h2 class="heading" data-inline-field="question" dir="auto">${escapeHtml(content?.question)}</h2>
           <div class="poll-layout">
             <div class="poll-left">
-              <ol class="poll-options poll-options-grid" aria-label="${esc(copy.pollOptionsLabel)}">
+              <ol class="poll-options poll-options-grid" aria-label="${escapeHtml(copy.pollOptionsLabel)}">
                 ${optsHtml}
               </ol>
-              <div class="poll-results on-surface-light" aria-label="${esc(copy.pollResultsLabel)}">
-                <div class="poll-results-title">${esc(copy.pollResultsTitle)}</div>
+              <div class="poll-results on-surface-light" aria-label="${escapeHtml(copy.pollResultsLabel)}">
+                <div class="poll-results-title">${escapeHtml(copy.pollResultsTitle)}</div>
                 <div class="poll-bars" data-poll-bars="1">
                   ${barsHtml}
                 </div>
-                <div class="poll-total" data-poll-total="1">${esc(copy.pollTotal)} 0</div>
+                <div class="poll-total" data-poll-total="1">${escapeHtml(copy.pollTotal)} 0</div>
                 <div class="help" data-poll-status="1"></div>
               </div>
             </div>
             <div class="poll-right">
               <div class="poll-scan on-surface-light">
-                <div class="poll-scan-title">${esc(copy.pollJoinTitle)}</div>
-                <div class="help">${esc(joinHelp)}</div>
+                <div class="poll-scan-title">${escapeHtml(copy.pollJoinTitle)}</div>
+                <div class="help">${escapeHtml(joinHelp)}</div>
                 ${codesHtml}
               </div>
             </div>

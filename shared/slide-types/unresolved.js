@@ -30,7 +30,7 @@
  * @see ./removed.js — the tombstone record this reads.
  */
 
-import { esc } from './helpers.js';
+import { escapeHtml } from './helpers.js';
 import { getRemovedSlideType } from './removed.js';
 import { SLIDE_TYPES } from './registry.js';
 
@@ -250,7 +250,7 @@ export function renderUnresolvedSlideHtml(slide) {
   const info = describeUnresolvedType(slide?.type);
   const heading = placeholderHeading(content, info);
   const notes = unresolvedNotes(info)
-    .map((line) => `<p class="unresolved-note">${esc(line)}</p>`)
+    .map((line) => `<p class="unresolved-note">${escapeHtml(line)}</p>`)
     .join('');
 
   // The field promoted to the heading is not repeated as a row.
@@ -260,24 +260,24 @@ export function renderUnresolvedSlideHtml(slide) {
   const rows = shown
     .map(
       (entry) => `<div class="unresolved-row">
-            <dt>${esc(entry.label)}</dt>
-            <dd>${esc(truncate(entry.lines.join(' · '), CANVAS_VALUE_LIMIT))}</dd>
+            <dt>${escapeHtml(entry.label)}</dt>
+            <dd>${escapeHtml(truncate(entry.lines.join(' · '), CANVAS_VALUE_LIMIT))}</dd>
           </div>`
     )
     .join('');
   const list = rows ? `<dl class="unresolved-content">${rows}</dl>` : '';
   const more =
     hidden > 0
-      ? `<p class="unresolved-more">${esc(
+      ? `<p class="unresolved-more">${escapeHtml(
           `+${hidden} more field${hidden === 1 ? '' : 's'} — open the reader view for the full content.`
         )}</p>`
       : '';
 
   return `
-      <div class="slide slide-unresolved" data-slide-type="${esc(info.type)}" data-unresolved-state="${esc(info.state)}">
+      <div class="slide slide-unresolved" data-slide-type="${escapeHtml(info.type)}" data-unresolved-state="${escapeHtml(info.state)}">
         <div class="slide-inner">
           <p class="unresolved-kicker">${info.state === 'removed' ? 'Archived slide type' : 'Unavailable slide type'}</p>
-          <div class="heading">${esc(heading.text)}</div>
+          <div class="heading">${escapeHtml(heading.text)}</div>
           ${notes}
           ${list}
           ${more}
@@ -303,15 +303,15 @@ export function renderUnresolvedSlideSemanticHtml(slide, { headingKey = null } =
   const content = slide?.content && typeof slide.content === 'object' ? slide.content : {};
   const info = describeUnresolvedType(slide?.type);
   const notes = unresolvedNotes(info)
-    .map((line) => `<p class="reader-archived">${esc(line)}</p>`)
+    .map((line) => `<p class="reader-archived">${escapeHtml(line)}</p>`)
     .join('\n');
 
   const rows = unresolvedContentEntries(content)
     .filter((entry) => entry.key !== headingKey)
     .map(
       (entry) => `<div class="reader-field">
-          <dt>${esc(entry.label)}</dt>
-          <dd>${entry.lines.map((line) => `<p>${esc(line)}</p>`).join('')}</dd>
+          <dt>${escapeHtml(entry.label)}</dt>
+          <dd>${entry.lines.map((line) => `<p>${escapeHtml(line)}</p>`).join('')}</dd>
         </div>`
     )
     .join('\n');

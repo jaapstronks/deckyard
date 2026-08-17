@@ -1,4 +1,4 @@
-import { bgClass, esc, BACKGROUND_FIELD, TABLE_STYLE_FIELD, tableStyleClass } from '../helpers.js';
+import { bgClass, escapeHtml, BACKGROUND_FIELD, TABLE_STYLE_FIELD, tableStyleClass } from '../helpers.js';
 import { inlineMarkdownToSafeHtml } from '../../markdown.js';
 
 export const MAX_COLS = 10;
@@ -226,13 +226,13 @@ export default {
 
     const caption = String(content?.caption || '').trim();
     const captionHtml = caption
-      ? `<div class="table-caption" data-inline-field="caption" dir="auto">${esc(caption)}</div>`
+      ? `<div class="table-caption" data-inline-field="caption" dir="auto">${escapeHtml(caption)}</div>`
       : '';
 
     return `
       <div class="slide slide-table ${bg}">
         <div class="slide-inner">
-          <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h2>
+          <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content?.title)}</h2>
           <div class="md-table-wrap">
             <table class="md-table ${tableStyle}${cornerClass}">
               ${thead}
