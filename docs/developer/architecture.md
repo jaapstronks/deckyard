@@ -368,6 +368,54 @@ export function attachSlideRuntime(slideEl) {
 
 ---
 
+## Module Structure Conventions
+
+Two rules keep server modules from drifting into "similar things in arbitrarily
+different places". They are the server counterpart of the client-structure
+convention; apply them to `server/` and, by extension, anywhere the same shapes
+recur.
+
+### One noun, one form — a folder as soon as a domain has ≥ 2 members
+
+A domain is expressed **either** as a single flat file **or** as a folder with an
+`index.js` barrel — never as a folder living next to flat siblings of the same
+noun. The moment a domain grows a second module, it becomes a folder and the
+flat siblings move in.
+
+```
+# Wrong — folder next to flat siblings of the same noun
+server/storage/presentations/          # crud/, slides.js, ownership.js, …
+server/storage/presentation-cache.js   # same noun, arbitrarily left flat
+server/storage/presentation-locks.js
+
+# Right — one form for the domain
+server/storage/presentations/
+  index.js                             # the single barrel
+  cache.js
+  locks.js
+  slides.js
+  …
+```
+
+A domain that is still a single module stays a flat file (`server/storage/foo.js`);
+promote it to `server/storage/foo/` only when the second member appears. The
+barrel (`index.js`) is the **only** public surface — importers reach the domain
+through one layer, never through a flat re-export shim that forwards into a
+folder barrel (that is two barrels for one thing; collapse it).
+
+### Config accessors live only in `server/config/`
+
+Anything that reads environment or derives configuration (an accessor, a parsed
+list, a resolved path, a feature-flag read) belongs in `server/config/`. Other
+directories consume config; they do not define their own config-reading helper.
+A `config.js` under `utils/`, `media/`, or `llm/` that reaches into `process.env`
+is a second home for the same responsibility — fold it into `server/config/`.
+
+Shared parsers back this up: use `envList` from `server/config/` for
+comma-separated env values rather than hand-rolling another split/trim/filter.
+
+---
+
 ## Key Architectural Decisions
 
 | Decision | Rationale |
