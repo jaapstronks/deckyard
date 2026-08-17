@@ -79,10 +79,10 @@ export function createEraseMyDataButton({
       // and tell the caller so a later re-render doesn't resurrect it.
       btn.remove();
       onErased?.();
-      toast(labels.done, { type: 'success' });
+      toast.success(labels.done);
     } else {
       btn.disabled = false;
-      toast(labels.failed, { type: 'error' });
+      toast.error(labels.failed);
     }
   });
 
