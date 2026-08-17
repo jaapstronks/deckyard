@@ -144,7 +144,7 @@ async function exportPdf({ id, getLang, title, button, fallbackWrap }) {
     );
     fallbackWrap.hidden = false;
     if (err?.name !== 'AbortError') {
-      toast(t('editor.export.pdfError', 'Could not generate the PDF.'), 'error');
+      toast.error(t('editor.export.pdfError', 'Could not generate the PDF.'));
     }
   } finally {
     clearTimeout(timer);
