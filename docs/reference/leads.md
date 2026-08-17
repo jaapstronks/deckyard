@@ -147,11 +147,11 @@ view → erase on the `/my-data` landing page, and the token store is durable:
   JSON. Server-derived strings render via `h()`'s `text` attribute (no
   innerHTML). A bare `/my-data` visit with no token falls back to a
   request-a-link form, so the page is the single self-service entry point.
-- **Leads retention has no admin UI.** `leads.retentionDays` exists, is
-  normalized and enforced, but the admin settings tab only exposes the
-  *analytics* retention knobs — the leads value can only be changed via
-  `PUT /api/settings/app` by hand. Same gap shape as the `lead.submitted`
-  webhook field (see [`webhooks.md`](webhooks.md) § Implementation status).
+- **Leads retention is editable in the admin UI.** `leads.retentionDays`
+  (normalized and enforced, 1–730 days, default 365) has a "Lead capture" card
+  in the admin settings tab that round-trips it through `PUT /api/settings/app`,
+  alongside the analytics retention knobs. (Closed B82; it used to be settable
+  only by hand.)
 - **The retention sweep is a tenant of the analytics job.** It runs and is
   logged, but a leads sweep living in `analytics-cleanup.js` is easy to lose
   when analytics scheduling changes; noted here so it is a known oddity, not
