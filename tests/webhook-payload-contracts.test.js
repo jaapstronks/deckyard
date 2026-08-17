@@ -23,6 +23,7 @@
 
 import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -53,7 +54,14 @@ const URLS = {
 };
 
 const REQ = { headers: { host: 'decks.example.test' } };
-const ACTOR = { email: 'Actor@Example.com', name: 'Actor Name', isAdmin: true };
+// `id` is the stable users.id the async auth path carries; the payload keys
+// actor identity on it (B81), the email travels beside it as a contact value.
+const ACTOR = {
+  id: 'usr_0af1c2',
+  email: 'Actor@Example.com',
+  name: 'Actor Name',
+  isAdmin: true,
+};
 
 const originalFetch = globalThis.fetch;
 let fetchCalls;
@@ -107,8 +115,10 @@ describe('the delivered request', () => {
     assert.equal(options.method, 'POST');
     assert.equal(options.headers['x-sb-event'], 'presentation.published');
     assert.equal(options.headers['content-type'], 'application/json; charset=utf-8');
-    assert.equal(options.headers['user-agent'], 'presentation-system-webhook/1');
+    assert.equal(options.headers['user-agent'], 'Deckyard-Webhook/1');
     assert.equal(options.redirect, 'error', 'a 30x must not walk into private space');
+    // Unsigned by default: no secret configured means no signature header.
+    assert.equal(options.headers['x-sb-signature'], undefined);
   });
 
   it('an unset URL is the off switch: no request leaves the process', async () => {
@@ -149,9 +159,9 @@ describe('common payload shape', () => {
     assert.equal(payload.event, 'presentation.published');
     assert.ok(!Number.isNaN(Date.parse(payload.createdAt)));
 
-    // actor.id is the email — a documented pre-user-id contract (webhooks.md).
+    // actor.id is the stable users.id; email is lowercased beside it (B81).
     assert.deepEqual(payload.actor, {
-      id: 'actor@example.com',
+      id: 'usr_0af1c2',
       email: 'actor@example.com',
       name: 'Actor Name',
       role: 'admin',
@@ -190,6 +200,10 @@ describe('common payload shape', () => {
     const { url, payload } = delivered();
     assert.equal(url, URLS.presentationMovedToOrganizationUrl);
     assert.equal(payload.actor.role, 'user');
+    // No users.id on this actor (file mode / legacy row) → id is null, not the
+    // email; email still travels as the contact value (B81).
+    assert.equal(payload.actor.id, null);
+    assert.equal(payload.actor.email, 'user@example.com');
     assert.equal(payload.presentation.published, null);
     assert.equal(payload.presentation.visibility, 'private', 'defaults to private');
     assert.equal(payload.links.publicPath, null);
@@ -383,5 +397,80 @@ describe('best-effort fire', () => {
     await settle();
     assert.equal(fetchCalls.length, 0, 'blocked before fetch');
     await writeAppSettings(testScope(REPO_ROOT), { webhooks: URLS });
+  });
+});
+
+// ─── opt-in HMAC signing (B81) ─────────────────────────────────────────────
+
+describe('HMAC signing', () => {
+  const SECRET = 'whsec_test_0123456789abcdef';
+
+  afterEach(async () => {
+    // Restore the unsigned baseline for the other suites.
+    await writeAppSettings(testScope(REPO_ROOT), { webhooks: URLS });
+  });
+
+  it('no signature header when no secret is configured', async () => {
+    await maybeFireWebhook(REPO_ROOT, REQ, {
+      event: 'presentation.published',
+      pres: { id: 'pres-1', title: 'T' },
+      authedUser: ACTOR,
+    });
+    await settle();
+    const { options } = delivered();
+    assert.equal(options.headers['x-sb-signature'], undefined);
+  });
+
+  it('signs the exact request body with HMAC-SHA256 when a secret is set', async () => {
+    await writeAppSettings(testScope(REPO_ROOT), {
+      webhooks: { ...URLS, signingSecret: SECRET },
+    });
+    stubFetch();
+    await maybeFireWebhook(REPO_ROOT, REQ, {
+      event: 'presentation.published',
+      pres: { id: 'pres-1', title: 'T' },
+      authedUser: ACTOR,
+    });
+    await settle();
+
+    const { options } = delivered();
+    const body = options.body;
+    const expected =
+      'sha256=' + createHmac('sha256', SECRET).update(body, 'utf8').digest('hex');
+    assert.equal(options.headers['x-sb-signature'], expected);
+    // The signature is over the bytes actually sent, and lands beside x-sb-event.
+    assert.equal(options.headers['x-sb-event'], 'presentation.published');
+  });
+
+  it('signs lead and interaction deliveries too', async () => {
+    await writeAppSettings(testScope(REPO_ROOT), {
+      webhooks: { ...URLS, signingSecret: SECRET },
+    });
+
+    stubFetch();
+    await maybeFireLeadWebhook(REPO_ROOT, REQ, {
+      presentation: { id: 'pres-1', title: 'T' },
+      slideId: 'slide-7',
+      lead: { name: 'V', email: 'v@example.org', submittedAt: '2026-08-16T10:00:00.000Z' },
+    });
+    await settle();
+    const lead = delivered();
+    assert.equal(
+      lead.options.headers['x-sb-signature'],
+      'sha256=' + createHmac('sha256', SECRET).update(lead.options.body, 'utf8').digest('hex')
+    );
+
+    stubFetch();
+    await maybeFireInteractionWebhook(REPO_ROOT, {
+      event: 'interaction.poll_closed',
+      sessionId: 's',
+      interaction: { type: 'poll', slideId: 'x', totals: [], total: 0, status: 'closed' },
+    });
+    await settle();
+    const interaction = delivered();
+    assert.equal(
+      interaction.options.headers['x-sb-signature'],
+      'sha256=' + createHmac('sha256', SECRET).update(interaction.options.body, 'utf8').digest('hex')
+    );
   });
 });

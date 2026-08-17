@@ -4,7 +4,7 @@
  *
  * The assertions here are the ones that hold whatever the comment store holds:
  * an unknown or missing owner resolves to no accessible decks and therefore no
- * comments, a missing scope throws, and odd inputs (bad visibility/status,
+ * comments, a missing scope throws, and odd inputs (bad ownership/status,
  * oversized limit) never throw. The richer behaviour (ordering, author filter,
  * limit, owned+shared union, title enrichment) needs a live Postgres and is
  * exercised as a local integration step, matching this repo's "integration
@@ -67,13 +67,13 @@ describe('listAccessiblePresentationRefs', () => {
     assert.deepStrictEqual(refs, []);
   });
 
-  it('accepts every visibility without throwing', async () => {
-    for (const visibility of ['owned', 'shared', 'all', 'bogus']) {
+  it('accepts every ownership value without throwing', async () => {
+    for (const ownership of ['owned', 'shared', 'all', 'bogus']) {
       const refs = await listAccessiblePresentationRefs(
         { ...ORG, actorEmail: NOBODY },
-        visibility
+        ownership
       );
-      assert.ok(Array.isArray(refs), `visibility ${visibility} should return an array`);
+      assert.ok(Array.isArray(refs), `ownership ${ownership} should return an array`);
     }
   });
 });
@@ -95,10 +95,10 @@ describe('listRecentCommentsForOwner', () => {
     assert.deepStrictEqual(result, { comments: [], total: 0 });
   });
 
-  it('tolerates odd options (bad visibility/status, oversized limit) without throwing', async () => {
+  it('tolerates odd options (bad ownership/status, oversized limit) without throwing', async () => {
     const result = await listRecentCommentsForOwner(
       { ...ORG, actorEmail: NOBODY },
-      { visibility: 'nonsense', status: 'weird', limit: 100000, authorEmail: 'x@y.z' }
+      { ownership: 'nonsense', status: 'weird', limit: 100000, authorEmail: 'x@y.z' }
     );
     assert.deepStrictEqual(result, { comments: [], total: 0 });
   });

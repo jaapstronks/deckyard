@@ -1,4 +1,9 @@
-export function fmtDate(iso) {
+/**
+ * Format an ISO timestamp as a full local date-and-time string.
+ * @param {string} iso - ISO 8601 timestamp
+ * @returns {string}
+ */
+export function formatDateTime(iso) {
   try {
     return new Date(iso).toLocaleString();
   } catch {

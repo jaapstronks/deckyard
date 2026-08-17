@@ -54,7 +54,6 @@
   "list.time.hoursAgo": "vor {count} Std.",
   "list.time.justNow": "gerade eben",
   "list.time.minutesAgo": "vor {count} Min.",
-  "list.time.secondsAgo": "vor {count} Sek.",
   "list.visibility.private": "Private",
   "list.visibility.published": "Published",
   "list.visibility.shared": "Shared with {count} people",

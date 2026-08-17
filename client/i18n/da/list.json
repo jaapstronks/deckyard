@@ -54,7 +54,6 @@
   "list.time.hoursAgo": "{count}t siden",
   "list.time.justNow": "lige nu",
   "list.time.minutesAgo": "{count} min siden",
-  "list.time.secondsAgo": "{count}s siden",
   "list.visibility.private": "Privat",
   "list.visibility.published": "Offentliggjort",
   "list.visibility.shared": "Delt med {count} personer",

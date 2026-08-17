@@ -1,4 +1,4 @@
-import { fmtDate } from '../../../lib/format/format.js';
+import { formatDateTime } from '../../../lib/format/format.js';
 import { displayNameFromEmail } from '../../../lib/user/user-format.js';
 import {
   createModal,
@@ -98,7 +98,7 @@ export function openVersionsModal({
       }
       for (const v of arr) {
         const who = displayNameFromEmail(v?.createdBy);
-        const when = fmtDate(v?.created);
+        const when = formatDateTime(v?.created);
         const reason = String(v?.reason || '').trim() || 'snapshot';
         const label = String(v?.label || '').trim();
         const slideCount = typeof v?.slideCount === 'number' ? v.slideCount : null;

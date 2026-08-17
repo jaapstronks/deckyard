@@ -4,13 +4,8 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { formatRelativeTime as _formatRelativeTime } from '../../lib/format/format-time.js';
+import { formatRelativeTime } from '../../lib/format/format-time.js';
 import { iconUrl } from '../../../shared/icon-names.js';
-
-/** Wrap shared formatter to pass `t` automatically. */
-function formatRelativeTime(date) {
-  return _formatRelativeTime(date, t);
-}
 
 /**
  * Get initials from a name or email.

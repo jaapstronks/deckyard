@@ -5,7 +5,7 @@
 
 import { createModal } from '../../../lib/dom/modal.js';
 import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
-import { fmtDate } from '../../../lib/format/format.js';
+import { formatDateTime } from '../../../lib/format/format.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 /**
@@ -28,7 +28,7 @@ export function openVersionPreviewModal({
   theme,
   openOverlayClosers,
 } = {}) {
-  const versionDate = fmtDate(version?.created);
+  const versionDate = formatDateTime(version?.created);
   const versionLabel = version?.label || '';
   const titleText = versionLabel
     ? `${versionLabel} (${versionDate})`

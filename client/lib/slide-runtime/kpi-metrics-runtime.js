@@ -1,4 +1,5 @@
 import { prefersReducedMotion } from '../dom/motion.js';
+import { getUiLocale } from '../ui-i18n.js';
 
 /**
  * Parse a KPI value string and extract the numeric part along with
@@ -101,10 +102,10 @@ function parseKpiValue(raw) {
   };
 }
 
-function formatNumber(n, decimals) {
+function formatDecimal(n, decimals) {
   try {
-    // Force European-style separators regardless of browser locale.
-    return new Intl.NumberFormat('nl-NL', {
+    // Follow the UI locale so KPI numbers match the rest of the interface.
+    return new Intl.NumberFormat(getUiLocale(), {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     }).format(n);
@@ -127,7 +128,7 @@ function initCountUpForMetric(metricEl, valueNumEl) {
   let running = false;
 
   // Helper to build the full display string with prefix and suffix preserved
-  const buildDisplay = (n) => prefix + formatNumber(n, decimals) + suffix;
+  const buildDisplay = (n) => prefix + formatDecimal(n, decimals) + suffix;
 
   // Keep original in dataset for safety.
   valueNumEl.dataset.kpiTargetText = original;
