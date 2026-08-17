@@ -398,10 +398,12 @@ server/storage/presentations/
 ```
 
 A domain that is still a single module stays a flat file (`server/storage/foo.js`);
-promote it to `server/storage/foo/` only when the second member appears. The
-barrel (`index.js`) is the **only** public surface — importers reach the domain
-through one layer, never through a flat re-export shim that forwards into a
-folder barrel (that is two barrels for one thing; collapse it).
+promote it to `server/storage/foo/` only when the second member appears. Inside
+the folder, `index.js` holds the domain's primary facade; other members are
+imported directly by path (`storage/presentations/i18n.js`) — the folder groups
+the domain, it does not force everything through one re-export barrel. What is
+ruled out is a **flat re-export shim next to the folder** that forwards into the
+folder's `index.js` (two barrels for one thing); collapse those into one.
 
 ### Config accessors live only in `server/config/`
 
