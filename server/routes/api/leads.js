@@ -330,8 +330,17 @@ async function handleRequestMyData(ctx) {
   // Deliver the token by e-mail. Note we always attempt delivery for any
   // well-formed address (no existence check) — that keeps the response the
   // same whether or not leads exist, so it can't be used to probe which
-  // addresses are in the system.
-  const result = await sendDataRequestVerificationEmail({ email, token, repoRoot });
+  // addresses are in the system. The request origin backs up BASE_URL so the
+  // emailed link is absolute even on installs that never set it (same
+  // derivation as the magic-link route).
+  const host = req.headers?.host || 'localhost:3000';
+  const protocol = req.headers?.['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  const result = await sendDataRequestVerificationEmail({
+    email,
+    token,
+    requestOrigin: `${protocol}://${host}`,
+    repoRoot,
+  });
 
   if (result.ok) {
     serveJson(res, 200, {

@@ -137,15 +137,17 @@ async function sendLeadNotificationEmail({
  * @param {Object} options
  * @param {string} options.email - The address that requested its data
  * @param {string} options.token - The verification token
+ * @param {string} [options.requestOrigin] - Scheme+host of the incoming request,
+ *   used when BASE_URL is unset so the emailed link is always absolute
  * @param {string} [options.locale] - Locale for the email copy
  * @param {string|null} [options.repoRoot] - Repository root for sender resolution
  * @returns {Promise<{ok: boolean, status?: number, error?: string, reason?: 'not_configured'|'upstream'}>}
  */
-export async function sendDataRequestVerificationEmail({ email, token, locale = 'en', repoRoot = null }) {
+export async function sendDataRequestVerificationEmail({ email, token, requestOrigin = '', locale = 'en', repoRoot = null }) {
   const tr = createTranslator(locale);
   const senderOverride = await getSenderIdentity(repoRoot);
 
-  const base = envStr('BASE_URL') || '';
+  const base = envStr('BASE_URL') || requestOrigin;
   const verifyUrl = `${base}/api/leads/my-data?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
 
   const subject = tr('email.dataRequest.subject', 'Your data request');

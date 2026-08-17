@@ -217,7 +217,7 @@ export function buildDataRequestEmail({ tr, verifyUrl }) {
   const buttonLabel = tr('email.dataRequest.button', 'View my data');
   const expiryText = tr(
     'email.dataRequest.expiry',
-    'This link expires in 15 minutes and can only be used once. From that page you can also erase the data.'
+    'This link expires in 15 minutes. From that page you can also erase the data.'
   );
   const safeToIgnore = tr(
     'email.common.safeToIgnore',

@@ -64,6 +64,11 @@
   "email.leadNotification.button": "Bekijk alle leads",
   "email.leadNotification.footer": "Je ontvangt deze melding omdat je e-mailnotificaties voor leads hebt ingeschakeld.",
 
+  "email.dataRequest.subject": "Je gegevensverzoek",
+  "email.dataRequest.body": "We hebben een verzoek ontvangen om inzage in de persoonsgegevens die over dit e-mailadres zijn verzameld. Klik op de knop hieronder om ze te bekijken:",
+  "email.dataRequest.button": "Mijn gegevens bekijken",
+  "email.dataRequest.expiry": "Deze link verloopt over 15 minuten. Op die pagina kun je de gegevens ook laten wissen.",
+
   "api.error.invalidEmailPassword": "Ongeldig e-mailadres/wachtwoord",
   "api.error.authNotEnabled": "Authenticatie is niet ingeschakeld",
   "api.error.validEmailRequired": "Geldig e-mailadres vereist",
