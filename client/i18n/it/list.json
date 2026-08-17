@@ -77,7 +77,6 @@
   "list.time.hoursAgo": "{count}h fa",
   "list.time.justNow": "adesso",
   "list.time.minutesAgo": "{count} min fa",
-  "list.time.secondsAgo": "{count}s fa",
   "list.visibility.private": "Privato",
   "list.visibility.published": "Pubblicato",
   "list.visibility.shared": "Condiviso con {count} persone",

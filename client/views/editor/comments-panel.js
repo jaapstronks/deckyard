@@ -109,7 +109,7 @@ export function createCommentsPanel({
   }
 
   function formatTime(isoString) {
-    return formatRelativeTime(isoString, t);
+    return formatRelativeTime(isoString);
   }
 
   // ========================================

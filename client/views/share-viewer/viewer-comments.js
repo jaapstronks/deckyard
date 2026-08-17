@@ -291,7 +291,7 @@ export function createShareViewerCommentsSection({
   }
 
   function formatCommentTime(isoString) {
-    return formatRelativeTime(isoString, t);
+    return formatRelativeTime(isoString);
   }
 
   function show() {

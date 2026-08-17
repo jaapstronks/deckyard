@@ -104,7 +104,7 @@ Read (shipped earlier, now enriched with `slide` context, `slideSnapshot`,
 slide-anchored `editUrl`, and a `since` filter):
 
 - `list_comments` — one deck, filters `status`/`slideId`/`since`.
-- `list_recent_comments` — cross-deck, filters `scope`/`authorEmail`/`status`/`since`.
+- `list_recent_comments` — cross-deck, filters `ownership`/`authorEmail`/`status`/`since`.
 
 Write (this release):
 

@@ -133,8 +133,9 @@ both structurally and as a pipe-delimited text rendering; images are lifted into
    - `extractRichContentFromPage()` — one `GET /pages/{id}` for the title, then
      paginated `GET /blocks/{id}/children` up to 600 blocks, recursing into
      children up to depth 3.
-   - Upload every extracted image to ImageKit when it is configured; otherwise
-     keep the original URL (see *Implementation status*).
+   - Re-host every extracted image so the deck stays durable: to ImageKit when it
+     is configured, otherwise through Deckyard's own media library (see
+     *Implementation status*).
    - `formatNotionContentForAi()` — flatten to the `NOTION PAGE: …` /
      `=== CONTENT ===` text block.
    - Run the two-phase pipeline: `generateOutline` →
@@ -254,11 +255,13 @@ stands, as of 2026-08-17:
   `import/stream`, `import` and `publish` are. `suggest` additionally describes
   itself as backwards-compatible with a shape nothing sends. They are candidates
   for the finish-or-strip list, not documented promises.
-- **Imported images can rot.** Notion's file-hosted image URLs are signed and
-  expire (roughly an hour). When ImageKit is configured they are re-hosted and
-  the deck is durable; when it is not, `processNotionImages` keeps the original
-  URL by design, so an imported deck's images break shortly after import.
-  Deckyard's own media library is not used on this path.
+- **Imported images are durable on both paths.** Notion's file-hosted image URLs
+  are signed and expire (roughly an hour), so `processNotionImages` re-hosts every
+  image: to ImageKit when it is configured, otherwise through Deckyard's own media
+  library (the configured media provider — local `/uploads` or Scaleway). Either
+  way the block URL is rewritten to a durable one before the deck is saved. If an
+  individual image cannot be fetched or stored, that one image falls back to the
+  original (expiring) URL rather than failing the import (B80, D29-1).
 - **Import is synchronous and unbounded in wall-clock.** The conversion runs
   inside the request (an SSE stream held open), not on the job queue, and the
   only limits are the block caps (600 blocks, depth 3) and the AI pipeline's own

@@ -1,4 +1,4 @@
-import { fmtDate } from '../../../lib/format/format.js';
+import { formatDateTime } from '../../../lib/format/format.js';
 import { createModal } from '../../../lib/dom/modal.js';
 import { copyToClipboard, showCopyFallbackModal } from '../../../lib/util/clipboard.js';
 import { t } from '../../../lib/ui-i18n.js';
@@ -34,7 +34,7 @@ export function openConflictModal({
 } = {}) {
   const who = safeString(conflictDetails?.updatedBy || '');
   const when = conflictDetails?.modified
-    ? fmtDate(conflictDetails.modified)
+    ? formatDateTime(conflictDetails.modified)
     : '';
 
   const hintText =

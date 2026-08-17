@@ -5,6 +5,15 @@
 
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
+import { formatDate } from '../../lib/format/analytics-format.js';
+
+/** Full weekday+date label for a chart tooltip. */
+const formatDateLong = (dateStr) =>
+  formatDate(dateStr, { weekday: 'short', month: 'short', day: 'numeric' });
+
+/** Compact month+day label for a chart axis tick. */
+const formatDateShort = (dateStr) =>
+  formatDate(dateStr, { month: 'short', day: 'numeric' });
 
 /**
  * Create dashboard timeline chart.
@@ -38,7 +47,7 @@ export function createDashboardChart({ timeline, period }) {
       h('div', {
         class: 'dashboard-chart-bar',
         style: `height: ${heightPercent}%`,
-        title: `${formatDate(day.date)}: ${day.views} views`,
+        title: `${formatDateLong(day.date)}: ${day.views} views`,
       }),
     ]);
     barsWrap.append(bar);
@@ -59,22 +68,4 @@ export function createDashboardChart({ timeline, period }) {
   card.append(chartWrap);
 
   return card;
-}
-
-function formatDate(dateStr) {
-  try {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-  } catch {
-    return dateStr;
-  }
-}
-
-function formatDateShort(dateStr) {
-  try {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  } catch {
-    return dateStr;
-  }
 }

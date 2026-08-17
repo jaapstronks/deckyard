@@ -16,6 +16,7 @@ zero so they cannot creep back.
 | What the UI calls an organization | **"Workspace"** — user-visible label strings only (i18n values, `t()` fallbacks) | leaking the label into code |
 | Who can see a deck besides owner/creator/collaborators | **`visibility`**, values **`'private' \| 'organization'`** | `scope` as a field name; `'workspace'` as a value |
 | The org+actor context a storage call runs under | **`storageScope`** (type `StorageScope`, `server/storage/scope.js`) | a bare `scope` variable in mixed contexts |
+| Which decks a listing includes by source (`owned`/`shared`/`all`) | **`ownership`** — MCP list filters, the client presentations view | `scope` (that's storage-scope); `visibility` (that's deck audience) |
 | What an API key may do (`['read','write','ai',…]`) | **`permissions`** | `scopes` |
 | What a collaborator may do on one deck (`view/comment/edit/admin`) | **`permission`** (singular, per deck) | — distinct from API-key `permissions` |
 | The presenter/audience live domain | **`live-session`** | `present-session` |
@@ -40,18 +41,24 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
 - **Enforced**: `tests/organization-vocabulary.test.js` pins `'workspace'`
   as a quoted value, the workspace-flag spellings, and the old scope-as-
   visibility API names to zero in code; `tests/live-session-vocabulary.test.js`
-  does the same for the live-session domain. `server/db/migrations/` is
-  excluded as the historical record.
+  does the same for the live-session domain;
+  `tests/listing-filter-vocabulary.test.js` pins the deck-source listing
+  filter to `ownership` (never `scope`/`visibility`). `server/db/migrations/`
+  is excluded as the historical record.
 - **`scope` still legitimately exists** for the storage-scope concept
   (`server/storage/scope.js` — the module and its prose; variables say
   `storageScope`).
+- **Listing filter — done (B53 sweep (a), 2026-08-17).** The MCP
+  `list_presentations` / `list_recent_comments` filter and the client
+  presentations view now spell the owned/shared/all source filter
+  **`ownership`**. The storage helper's `visibility` option
+  (`listAccessiblePresentationRefs`, `listRecentCommentsForOwner` in
+  `server/storage/presentation-comments.js`) — a second homonym for the same
+  concept — was renamed with it. This was a breaking change to the MCP tool
+  schema, shipped deliberately with no back-compat alias; MCP clients re-read
+  the schema each session.
 - **Remaining homonyms — decided 2026-08-17, sweeps pending.** The normative
-  targets are now fixed; the code has not been swept yet:
-  - The listing *filters* named `scope` on the MCP tools
-    (`list_presentations`, `list_recent_comments`: `owned/shared/all`) and
-    the client presentations view become **`ownership`**. This is a breaking
-    change to the MCP tool schema — deliberate; MCP clients re-read the
-    schema each session.
+  targets are fixed; these are not swept yet:
   - The slide-library/collections shelf axis (`scope: 'personal' | 'team'`,
     DB columns `slide_library.scope`, `slide_collections.scope`) becomes
     **`shelf: 'personal' | 'organization'`** — internal rename plus
