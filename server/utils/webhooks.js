@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { getAppSettings, getUserSettings } from '../storage/settings.js';
 import { getRequestOrigin, toAbsoluteUrl } from './request-url.js';
 import { nowIso } from './normalize.js';
@@ -6,6 +7,26 @@ import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from './logger.js';
 
 const log = createLogger('webhook');
+
+/** Outgoing user-agent for every webhook delivery (Deckyard-branded, B81). */
+const WEBHOOK_USER_AGENT = 'Deckyard-Webhook/1';
+
+/** Header carrying the opt-in HMAC signature, alongside `x-sb-event`. */
+const SIGNATURE_HEADER = 'x-sb-signature';
+
+/**
+ * The webhook actor identity. Prefer the stable `users.id` carried by the async
+ * auth path (the key every ownership decision keys on); fall back to null for
+ * the shapes that have no id — file mode, external/legacy rows, the auth-off
+ * operator. The email travels beside it as a display/contact value, no longer
+ * as the identity (B81 — this was the last outward contract on email identity).
+ * @param {{ id?: string } | null} authedUser
+ * @returns {string|null}
+ */
+function resolveActorId(authedUser) {
+  const id = authedUser?.id;
+  return typeof id === 'string' && id.trim() ? id.trim() : null;
+}
 
 /** Webhook config reads run outside any request: instance-level settings. */
 function webhookSettingsScope(repoRoot) {
@@ -24,7 +45,11 @@ function pickDisplayName({ authedUser, userSettings }) {
   return String(authName || '').trim();
 }
 
-export async function postJson(url, payload, { timeoutMs = 4500, headers = {} } = {}) {
+export async function postJson(
+  url,
+  payload,
+  { timeoutMs = 4500, headers = {}, signingSecret = '' } = {}
+) {
   const u = String(url || '').trim();
   if (!u) return { ok: false, status: 0, error: 'Missing URL' };
 
@@ -36,17 +61,31 @@ export async function postJson(url, payload, { timeoutMs = 4500, headers = {} } 
     return { ok: false, status: 0, error: 'Blocked non-public webhook URL' };
   }
 
+  // Serialize once so the signature is computed over the exact bytes sent.
+  const body = JSON.stringify(payload || {});
+  const outHeaders = {
+    'content-type': 'application/json; charset=utf-8',
+    'user-agent': WEBHOOK_USER_AGENT,
+    ...headers,
+  };
+
+  // Opt-in HMAC signing: when a shared secret is configured, sign the request
+  // body with HMAC-SHA256 so a receiver can verify the POST came from this
+  // instance. The signature rides in `x-sb-signature` alongside `x-sb-event`;
+  // absent entirely when no secret is set.
+  const secret = String(signingSecret || '');
+  if (secret) {
+    const sig = createHmac('sha256', secret).update(body, 'utf8').digest('hex');
+    outHeaders[SIGNATURE_HEADER] = `sha256=${sig}`;
+  }
+
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), timeoutMs);
   try {
     const resp = await fetch(u, {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json; charset=utf-8',
-        'user-agent': 'presentation-system-webhook/1',
-        ...headers,
-      },
-      body: JSON.stringify(payload || {}),
+      headers: outHeaders,
+      body,
       signal: ac.signal,
       redirect: 'error', // don't follow a 30x into private space
     });
@@ -116,8 +155,7 @@ function buildCommonPayload({
     event: String(event || '').trim(),
     createdAt: now,
     actor: {
-      // This app currently keys users by email; treat email as the stable id.
-      id: email || null,
+      id: resolveActorId(authedUser),
       email: email || null,
       name: name || null,
       role: authedUser?.isAdmin ? 'admin' : 'user',
@@ -173,7 +211,7 @@ function buildSlideLibraryPayload({
     event: String(event || '').trim(),
     createdAt: now,
     actor: {
-      id: email || null,
+      id: resolveActorId(authedUser),
       email: email || null,
       name: name || null,
       role: authedUser?.isAdmin ? 'admin' : 'user',
@@ -249,6 +287,7 @@ export async function maybeFireWebhook(
   // Best-effort: never block the API response on webhook delivery.
   void postJson(url, payload, {
     headers: { 'x-sb-event': e },
+    signingSecret: String(wh.signingSecret || ''),
   }).then((r) => {
     if (!r.ok) {
       log.warn(
@@ -309,6 +348,7 @@ export async function maybeFireLeadWebhook(
   // Best-effort: never block the API response on webhook delivery.
   void postJson(url, payload, {
     headers: { 'x-sb-event': 'lead.submitted' },
+    signingSecret: String(wh.signingSecret || ''),
   }).then((r) => {
     if (!r.ok) {
       log.warn(
@@ -351,6 +391,7 @@ export async function maybeFireInteractionWebhook(
   // Best-effort: never block the API response on webhook delivery.
   void postJson(url, payload, {
     headers: { 'x-sb-event': e },
+    signingSecret: String(wh.signingSecret || ''),
   }).then((r) => {
     if (!r.ok) {
       log.warn(

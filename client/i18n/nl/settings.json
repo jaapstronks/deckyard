@@ -335,6 +335,8 @@
   "settings.admin.webhooks.movedToOrganization.title": "Wanneer een presentatie is gedeeld naar de workspace",
   "settings.admin.webhooks.published.hint": "Event: presentation.published",
   "settings.admin.webhooks.published.title": "Wanneer een presentatie is gepubliceerd",
+  "settings.admin.webhooks.signingSecret.hint": "Indien ingesteld wordt elke aflevering ondertekend met HMAC-SHA256 over de request body en de handtekening meegestuurd in de x-sb-signature-header als sha256=<hex>. Laat leeg om ongetekend te versturen.",
+  "settings.admin.webhooks.signingSecret.title": "Ondertekeningssleutel (optioneel)",
   "settings.admin.webhooks.slideAddedToTeamLibrary.hint": "Event: slide.added_to_team_library",
   "settings.admin.webhooks.slideAddedToTeamLibrary.title": "Wanneer een slide is toegevoegd aan de teambibliotheek",
   "settings.admin.webhooks.title": "Admin: webhooks",
