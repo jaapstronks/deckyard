@@ -115,7 +115,7 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
           : err?.statusCode === 429
             ? t('notes.edit.tooFast', 'Too many changes at once — try again in a moment.')
             : t('notes.edit.failed', 'Could not save the notes.');
-      toast(msg, { type: 'error', id: 'notes-save' });
+      toast.error(msg, { id: 'notes-save' });
       if (targetSlideId === slideId) setStatus(msg);
     } finally {
       saving = false;
