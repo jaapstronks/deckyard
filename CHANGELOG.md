@@ -4,6 +4,26 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.20.0](https://github.com/jaapstronks/deckyard/compare/v1.19.0...v1.20.0) (2026-08-17)
+
+
+### Added
+
+* deliver GDPR my-data verification token by email (B63) ([#779](https://github.com/jaapstronks/deckyard/issues/779)) ([8b100c9](https://github.com/jaapstronks/deckyard/commit/8b100c9e401724069aa2139211f4d8b8d1088b62))
+* remove the unimplemented on-view refresh mode ([#776](https://github.com/jaapstronks/deckyard/issues/776)) ([68eab89](https://github.com/jaapstronks/deckyard/commit/68eab89c1727eca30ff781d70bcf078cc8bc1d90))
+* rename DISABLE_* kill switches to *_ENABLED enable polarity ([#778](https://github.com/jaapstronks/deckyard/issues/778)) ([6ec2856](https://github.com/jaapstronks/deckyard/commit/6ec28564102690c32a801fcfea8f8da0fa4c29df))
+
+
+### Fixed
+
+* route MCP tool writes through the maintenance gate ([#771](https://github.com/jaapstronks/deckyard/issues/771)) ([0a38026](https://github.com/jaapstronks/deckyard/commit/0a380261ea551f809bdfcf1fcf9c7a2764ec560b))
+
+
+### Security
+
+* drop the unauthorized datasource:refreshed SSE broadcast ([#777](https://github.com/jaapstronks/deckyard/issues/777)) ([72f4fa9](https://github.com/jaapstronks/deckyard/commit/72f4fa99279040193c3efb3f3529b33761418e69))
+* scope analytics report mutations to their own presentation ([#766](https://github.com/jaapstronks/deckyard/issues/766)) ([d4c3103](https://github.com/jaapstronks/deckyard/commit/d4c3103fb2e8c9169fd80f7c57a988ac83bfbe88))
+
 ## [1.19.0](https://github.com/jaapstronks/deckyard/compare/v1.18.0...v1.19.0) (2026-08-16)
 
 
