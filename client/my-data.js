@@ -12,6 +12,7 @@
  */
 
 import { h } from './lib/dom.js';
+import { formatDate } from './lib/format/analytics-format.js';
 
 function $id(id) {
   return document.getElementById(id);
@@ -38,13 +39,6 @@ const confirmNo = $id('mdConfirmNo');
 const doneEl = $id('mdDone');
 
 const API = '/api/leads/my-data';
-
-/** Format an ISO timestamp as a short local date, defensively. */
-function fmtDate(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? String(iso) : d.toLocaleDateString();
-}
 
 function show(el) {
   if (el) el.hidden = false;
@@ -115,7 +109,7 @@ function renderData(data) {
 
   listEl.replaceChildren();
   for (const lead of data.leads || []) {
-    const date = fmtDate(lead.submittedAt);
+    const date = formatDate(lead.submittedAt);
     listEl.appendChild(
       h('li', { class: 'md-item' }, [
         h('div', { class: 'md-item-title', text: lead.name || data.email || '(record)' }),

@@ -252,7 +252,6 @@
   "list.time.hoursAgo": "{count} uur geleden",
   "list.time.justNow": "zojuist",
   "list.time.minutesAgo": "{count} min geleden",
-  "list.time.secondsAgo": "{count}s geleden",
   "list.trash.empty": "De prullenbak is leeg.",
   "list.trash.hint": "Items in de prullenbak worden na 30 dagen definitief verwijderd. Je kunt ze daarvoor nog herstellen.",
   "list.trash.loadError": "Kon prullenbak niet laden.",

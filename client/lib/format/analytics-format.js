@@ -10,9 +10,11 @@ import { t } from '../ui-i18n.js';
  * @param {number} seconds - Duration in seconds
  * @param {Object} [options] - Formatting options
  * @param {boolean} [options.short] - Use short format (e.g., "3s" instead of "0:03")
+ * @param {boolean} [options.dashIfZero] - Render a falsy / sub-second value as "—"
  * @returns {string} Formatted duration (e.g., "3:45" or "1:23:45")
  */
-export function formatDuration(seconds, { short = false } = {}) {
+export function formatDuration(seconds, { short = false, dashIfZero = false } = {}) {
+  if (dashIfZero && (!seconds || seconds < 1)) return '—';
   const s = Math.max(0, Math.floor(seconds || 0));
   const hours = Math.floor(s / 3600);
   const mins = Math.floor((s % 3600) / 60);
@@ -31,17 +33,28 @@ export function formatDuration(seconds, { short = false } = {}) {
 }
 
 /**
- * Format a date string for display.
+ * Format a date string for display. The single canonical date formatter.
+ *
+ * `short` renders the compact numeric "M/D" form. Any other
+ * `Intl.DateTimeFormat` options are passed straight through to
+ * `toLocaleDateString`, so views that need a weekday, month name or a time
+ * component request it explicitly instead of defining their own formatter.
+ *
  * @param {string} dateStr - ISO date string or date
  * @param {Object} [options] - Formatting options
- * @param {boolean} [options.short] - Use short format (e.g., "1/15" instead of full date)
+ * @param {boolean} [options.short] - Use compact numeric format (e.g., "1/15"); takes precedence
+ * @param {...Intl.DateTimeFormatOptions} [options] - Passed through to toLocaleDateString
  * @returns {string} Formatted date
  */
-export function formatDate(dateStr, { short = false } = {}) {
+export function formatDate(dateStr, { short = false, ...intlOptions } = {}) {
   try {
     const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return String(dateStr || '');
     if (short) {
       return `${date.getMonth() + 1}/${date.getDate()}`;
+    }
+    if (Object.keys(intlOptions).length) {
+      return date.toLocaleDateString(undefined, intlOptions);
     }
     return date.toLocaleDateString();
   } catch {

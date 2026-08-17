@@ -256,7 +256,7 @@ export function createCardRenderer({
     const authorEmail = authorEmailForPresentation(p);
     const profile = authorEmail ? getUserProfile(authorEmail) : null;
     const authorName = profile?.name || displayNameFromEmail(authorEmail);
-    const when = formatRelativeTime(p?.modified, t);
+    const when = formatRelativeTime(p?.modified);
 
     // Create avatar with profile image support
     const avatar = createAvatar({

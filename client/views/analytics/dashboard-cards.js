@@ -4,16 +4,7 @@
 
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
-import { formatDuration as formatDurationBase } from '../../lib/format/analytics-format.js';
-
-/**
- * Format duration in seconds to human readable (short form).
- * @param {number} seconds - Duration in seconds
- * @returns {string}
- */
-function formatDuration(seconds) {
-  return formatDurationBase(seconds, { short: true });
-}
+import { formatDuration } from '../../lib/format/analytics-format.js';
 
 /**
  * Format large numbers with K/M suffix.
@@ -57,7 +48,7 @@ export function createDashboardCards({ summary, trend }) {
     }),
     createCard({
       label: t('dashboard.cards.avgDuration', 'Avg Duration'),
-      value: formatDuration(summary.avgDurationSeconds),
+      value: formatDuration(summary.avgDurationSeconds, { short: true }),
     }),
     createCard({
       label: t('dashboard.cards.completionRate', 'Completion Rate'),
