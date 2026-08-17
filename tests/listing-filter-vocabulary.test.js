@@ -10,7 +10,7 @@
  *     filters and the client presentations view — `scope` is reserved for
  *     the storage-scope concept (`server/storage/scope.js`).
  *   - `visibility` as the owned/shared/all option inside
- *     `server/storage/presentation-comments.js` — `visibility` is reserved
+ *     `server/storage/presentations/comments.js` — `visibility` is reserved
  *     for a deck's audience (`'private' | 'organization'`).
  *
  * Both are pinned to zero here, per file, so they cannot creep back. The
@@ -56,7 +56,7 @@ const CHECKS = [
     required: [/ownership:\s*\{/],
   },
   {
-    file: 'server/storage/presentation-comments.js',
+    file: 'server/storage/presentations/comments.js',
     // Every use of "visibility" in this comments module was the ownership
     // homonym; the real visibility concept lives elsewhere.
     forbidden: [

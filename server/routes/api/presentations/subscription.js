@@ -24,7 +24,7 @@ import {
   getSubscription,
   setSubscription,
   SUBSCRIPTION_LEVELS,
-} from '../../../storage/presentation-subscriptions.js';
+} from '../../../storage/presentations/subscriptions.js';
 import { getUserSettings } from '../../../storage/settings.js';
 
 export async function handlePresentationSubscription(

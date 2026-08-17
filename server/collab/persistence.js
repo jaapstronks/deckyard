@@ -32,7 +32,7 @@ import {
 import {
   getYDocState as defaultGetYDocState,
   setYDocState as defaultSetYDocState,
-} from '../storage/presentation-ydocs.js';
+} from '../storage/presentations/ydocs.js';
 import { canEditCustomHtml } from '../utils/route-middleware.js';
 import { singleOrganizationScope } from '../storage/scope.js';
 import { extractCustomHtml, guardCustomHtml } from './custom-html-guard.js';

@@ -1,7 +1,7 @@
 /**
  * `setSubscription` against real PostgreSQL.
  *
- * Per-deck notification overrides (server/storage/presentation-subscriptions.js)
+ * Per-deck notification overrides (server/storage/presentations/subscriptions.js)
  * upsert with ON CONFLICT (presentation_id, user_email) DO UPDATE SET level.
  * The conflict target is the table's composite PRIMARY KEY (migration 044),
  * and `presentation_id` is a NOT NULL FK to `presentations(id)` — so a real
@@ -20,7 +20,7 @@ import {
   getSubscription,
   listSubscriptions,
   setSubscription,
-} from '../../server/storage/presentation-subscriptions.js';
+} from '../../server/storage/presentations/subscriptions.js';
 
 const ctx = testScope();
 const ALICE = 'alice@example.com';

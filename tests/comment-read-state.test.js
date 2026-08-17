@@ -20,7 +20,7 @@ import {
   threadWaitsFor,
   collectUnreadThreadIds,
 } from '../client/views/editor/comments-read-state.js';
-import { markThreadsRead } from '../server/storage/presentation-comments.js';
+import { markThreadsRead } from '../server/storage/presentations/comments.js';
 
 const ME = 'me@example.com';
 

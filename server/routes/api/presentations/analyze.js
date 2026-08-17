@@ -11,7 +11,7 @@ import {
   requireJsonBody,
 } from '../../../utils/http.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
-import { createComment } from '../../../storage/presentation-comments.js';
+import { createComment } from '../../../storage/presentations/comments.js';
 import {
   analyzePresentation,
   suggestionToCommentData,

@@ -110,6 +110,10 @@ const TUTORIAL_PLACEHOLDERS = {
     'contributing.md example route for a feature the reader is adding',
   'server/storage/X/index.js':
     'AGENTS.md placeholder for the folder/index.js seam a decomposed store ships as',
+  'server/storage/foo.js':
+    'architecture.md module-structure rule: the flat-file form of an illustrative domain',
+  'server/storage/foo/':
+    'architecture.md module-structure rule: the folder form of the same illustrative domain',
   'shared/slide-types/types/my-slide.js':
     'contributing.md example slide-type registry entry the reader is adding',
 };

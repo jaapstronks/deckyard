@@ -36,7 +36,7 @@ const { maybeAttachCollab, shutdownCollab } = await import('../server/collab/mou
 const { createPresentation, getPresentation, updatePresentation } = await import(
   '../server/storage/presentations/index.js'
 );
-const { getYDocState } = await import('../server/storage/presentation-ydocs.js');
+const { getYDocState } = await import('../server/storage/presentations/ydocs.js');
 const { createPresenceSession } = await import('../client/lib/collab/presence-session.js');
 const { Y } = await import('../client/vendor/collab.js');
 const { createDeckYdocCodec } = await import('../shared/collab/deck-ydoc.js');

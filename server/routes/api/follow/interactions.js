@@ -9,7 +9,7 @@ import {
 } from '../../../utils/http.js';
 import { getFollowStateForPresentation } from '../../../storage/live-sessions/index.js';
 import { getString } from '../../../utils/request-validators.js';
-import { getPresentationCached } from '../../../storage/presentation-cache.js';
+import { getPresentationCached } from '../../../storage/presentations/cache.js';
 import { normalizeLang } from '../../../utils/translation-status.js';
 import {
   computeAudienceCapabilitiesFromState,

@@ -21,7 +21,7 @@ import {
   reopenComment,
   dismissComment,
   markThreadsRead,
-} from '../../../storage/presentation-comments.js';
+} from '../../../storage/presentations/comments.js';
 import {
   recordCommentResolved,
   recordCommentReopened,
