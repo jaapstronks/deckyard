@@ -61,9 +61,17 @@ function itemCapacity(size, twoCol, shape) {
   const hasText = longestText > 0;
 
   if (twoCol) {
-    // Two columns at the default or small size never overflowed anywhere in
-    // the sweep, up to the schema maximum of 8 items.
-    if (size !== 'comfortable') return 8;
+    // Compact two columns clear the schema maximum of 8 items of any shape.
+    // Normal two columns clear 8 too, with one measured exception (headless
+    // Chrome, 1600×900, 2026-08-17, B54): when a subheading takes a row AND the
+    // titles wrap to a third line (past ~79 half-width chars), the eighth — and
+    // seventh — item spills ~11px past the bottom padding edge (847 vs 836).
+    // The subheading is the row the comfortable branch already docks; a 3-line
+    // title is what tips it over here. Everything else still clears 8.
+    if (size !== 'comfortable') {
+      if (size === 'normal' && hasSubheading && longestTitle > 79) return 6;
+      return 8;
+    }
     // Half-width wrap points (measured, current sizes): title → 2 lines past 40
     // and → 3 past 79; body text → 2 lines past 45 and → 3 past 89.
     const titleLines = longestTitle > 79 ? 3 : longestTitle > 40 ? 2 : 1;

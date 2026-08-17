@@ -145,6 +145,56 @@ describe('list-slide: capacity re-measured on the current sizes (A7.9 batch 2.5 
   });
 });
 
+describe('list-slide: normal two-column holds 8 except with a subheading + 3-line titles (B54)', () => {
+  // Re-measured 2026-08-17 in headless Chrome at 1600×900 (D28 mandate): normal
+  // two columns clear the schema maximum of 8 for every shape but one. When a
+  // subheading takes a row AND the titles wrap to a third line (past ~79
+  // half-width chars), the last item spills ~11px past the bottom padding edge
+  // (847 vs 836), and 7 items overflow the same way as 8. So that one
+  // combination caps normal two columns at 6, stepping a longer list to compact
+  // (which clears 8 of anything). Every other shape still holds 8.
+  //
+  // 80 chars (the schema maximum, and past the ~79 half-width wrap point), so
+  // the item title wraps to a third line.
+  const TITLE_3LINE =
+    'An item heading long enough to wrap onto a third line in this half-width column!';
+
+  it('steps an 8-item list to compact once a subheading meets 3-line titles', () => {
+    const r = resolve({
+      n: 8, density: 'auto', layout: 'two-column',
+      title: TITLE_3LINE, text: LONG_TEXT, subheading: 'Intro line',
+    });
+    assert.equal(r.twoCol, true);
+    assert.equal(r.size, 'compact', 'normal no longer holds 8 here, so it steps to compact');
+  });
+
+  it('still holds 8 at normal without a subheading, even with 3-line titles', () => {
+    const r = resolve({
+      n: 8, density: 'auto', layout: 'two-column', title: TITLE_3LINE, text: LONG_TEXT,
+    });
+    assert.equal(r.size, 'normal');
+  });
+
+  it('still holds 8 at normal with a subheading when titles stay under three lines', () => {
+    // LONG_TITLE wraps to two lines (past 40, under 79), so it is not the case
+    // that overflows — the cap must not shrink here.
+    const r = resolve({
+      n: 8, density: 'auto', layout: 'two-column',
+      title: LONG_TITLE, text: LONG_TEXT, subheading: 'Intro line',
+    });
+    assert.equal(r.size, 'normal');
+  });
+
+  it('holds 6 at normal with the subheading + 3-line title, and 7 steps down', () => {
+    const opts = {
+      density: 'auto', layout: 'two-column',
+      title: TITLE_3LINE, text: LONG_TEXT, subheading: 'Intro line',
+    };
+    assert.equal(resolve({ ...opts, n: 6 }).size, 'normal', 'six still clear the edge');
+    assert.equal(resolve({ ...opts, n: 7 }).size, 'compact', 'seven overflow, like eight');
+  });
+});
+
 describe('list-slide: an explicit text size is not thrown away', () => {
   // The regression this suite was rewritten for: `density: 'comfortable'` used
   // to be dropped outright past 6 items, so a 7-item table of contents of short
