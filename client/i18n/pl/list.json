@@ -77,7 +77,6 @@
   "list.time.hoursAgo": "{count} godz. temu",
   "list.time.justNow": "przed chwilą",
   "list.time.minutesAgo": "{count} min temu",
-  "list.time.secondsAgo": "{count} s temu",
   "list.visibility.private": "Prywatne",
   "list.visibility.published": "Opublikowane",
   "list.visibility.shared": "Udostępnione {count} osobom",

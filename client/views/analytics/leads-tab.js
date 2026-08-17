@@ -5,7 +5,8 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { confirmModal } from '../../lib/dom/modal.js';
-import { fmtRelativeTime } from '../../lib/user/user-format.js';
+import { formatRelativeTime } from '../../lib/format/format-time.js';
+import { formatDate } from '../../lib/format/analytics-format.js';
 import { api } from '../../lib/api.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 
@@ -100,8 +101,17 @@ export function createLeadsTab({ h, presentationId, leads = [], total = 0, onDel
         h('a', { href: `mailto:${lead.email}`, class: 'analytics-lead-email', text: lead.email }),
       ]),
       h('div', { class: 'analytics-lead-cell analytics-lead-cell-date', role: 'gridcell', 'data-label': t('analytics.submitted', 'Submitted') }, [
-        h('span', { class: 'analytics-lead-date', text: fmtRelativeTime(lead.submittedAt) }),
-        h('span', { class: 'analytics-lead-date-full', text: formatDate(lead.submittedAt) }),
+        h('span', { class: 'analytics-lead-date', text: formatRelativeTime(lead.submittedAt) }),
+        h('span', {
+          class: 'analytics-lead-date-full',
+          text: formatDate(lead.submittedAt, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+        }),
       ]),
       h('div', { class: 'analytics-lead-cell analytics-lead-cell-actions', role: 'gridcell', 'data-label': '' }, [
         h('button', {
@@ -231,24 +241,4 @@ export function createLeadsTab({ h, presentationId, leads = [], total = 0, onDel
     refresh,
     getCount: () => currentTotal,
   };
-}
-
-/**
- * Format date for display.
- * @param {string} isoDate - ISO date string
- * @returns {string} Formatted date
- */
-function formatDate(isoDate) {
-  if (!isoDate) return '-';
-  try {
-    return new Date(isoDate).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return '-';
-  }
 }
