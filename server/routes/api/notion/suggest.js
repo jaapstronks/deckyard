@@ -9,7 +9,7 @@ import {
   getPlainTextFromPage,
   notionEnabled,
   searchRecentPages,
-} from '../../../utils/notion.js';
+} from '../../../utils/notion/index.js';
 
 /**
  * Handle POST /api/notion/suggest

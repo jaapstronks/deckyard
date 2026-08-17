@@ -9,7 +9,7 @@ import {
   getOptionalString,
   getLangOrAuto,
 } from '../../../utils/request-validators.js';
-import { extractPageId, notionEnabled } from '../../../utils/notion.js';
+import { extractPageId, notionEnabled } from '../../../utils/notion/index.js';
 import { convertNotionPage } from '../../../utils/convert-notion.js';
 import {
   createPresentation,

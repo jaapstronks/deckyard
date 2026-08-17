@@ -5,7 +5,7 @@
 
 import { serveJson } from '../../../utils/http.js';
 import { getFeatureFlags } from '../../../config/flags-snapshot.js';
-import { notionEnabled } from '../../../utils/notion.js';
+import { notionEnabled } from '../../../utils/notion/index.js';
 
 /**
  * Handle GET /api/notion/status

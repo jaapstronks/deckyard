@@ -12,7 +12,7 @@ import {
   notionEnabled,
   searchPages,
   searchRecentPages,
-} from '../../../utils/notion.js';
+} from '../../../utils/notion/index.js';
 import { looksLikeUsableDoc, pickKeywordForPage } from './utils.js';
 
 /**
