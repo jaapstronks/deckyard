@@ -1,6 +1,6 @@
 import { debugLog } from '../../lib/util/debug.js';
 import { t } from '../../lib/ui-i18n.js';
-import { withBackoff } from '../../lib/net/reconnect.js';
+import { createSSEConnection, LONG_LIVED_STREAM } from '../../lib/net/sse-connection.js';
 
 export function createNotesQaController({
   api,
@@ -194,55 +194,59 @@ export function createNotesQaController({
     }
   };
 
-  // Reopening on error is owned by withBackoff so the pending retry dies with
-  // destroy(); a bare setTimeout here outlived the view and resurrected the
-  // stream into a detached controller.
-  const qaStream = withBackoff(({ onOpen, onError, onDone }) => {
+  // Reopening on error is owned by the SSE helper so the pending retry dies
+  // with destroy(); a bare setTimeout here outlived the view and resurrected
+  // the stream into a detached controller. Built lazily so the presentation id
+  // is read at connect time, matching the previous per-open evaluation.
+  let qaStream = null;
+
+  const buildStream = () => {
     const presId = getPresentationId?.() || '';
-    const es = new EventSource(
-      `/api/follow/${encodeURIComponent(presId)}/questions/events`
-    );
-    es.addEventListener('questions', (ev) => {
-      onOpen();
-      try {
-        const data = JSON.parse(ev.data || '{}');
-        questions = Array.isArray(data?.questions) ? data.questions : [];
-        renderQuestions();
-      } catch (e) {
-        debugLog('[notes][qa] bad questions event', { data: ev?.data, e });
-      }
-    });
-    es.addEventListener('status', (ev) => {
-      onOpen();
-      try {
-        const data = JSON.parse(ev.data || '{}');
-        if (data?.capabilities) {
-          const canUseQa = !!data.capabilities.canUseQa;
-          qaEnabled = canUseQa;
-          qaWrap.style.display = canUseQa ? '' : 'none';
-          if (!canUseQa) {
-            questions = [];
-            renderQuestions();
+    return createSSEConnection({
+      url: `/api/follow/${encodeURIComponent(presId)}/questions/events`,
+      events: ['questions', 'status', 'close'],
+      onEvent: (ev) => {
+        switch (ev.type) {
+          case 'questions': {
+            try {
+              const data = JSON.parse(ev.data || '{}');
+              questions = Array.isArray(data?.questions) ? data.questions : [];
+              renderQuestions();
+            } catch (e) {
+              debugLog('[notes][qa] bad questions event', { data: ev?.data, e });
+            }
+            break;
           }
+          case 'status': {
+            try {
+              const data = JSON.parse(ev.data || '{}');
+              if (data?.capabilities) {
+                const canUseQa = !!data.capabilities.canUseQa;
+                qaEnabled = canUseQa;
+                qaWrap.style.display = canUseQa ? '' : 'none';
+                if (!canUseQa) {
+                  questions = [];
+                  renderQuestions();
+                }
+              }
+            } catch (e) {
+              debugLog('[notes][qa] bad status event', { data: ev?.data, e });
+            }
+            break;
+          }
+          case 'close':
+            // Server-side end of stream: close for good, don't reopen.
+            qaStream?.disconnect();
+            break;
         }
-      } catch (e) {
-        debugLog('[notes][qa] bad status event', { data: ev?.data, e });
-      }
+      },
+      ...LONG_LIVED_STREAM,
     });
-    // Server-side end of stream: close for good, don't reopen.
-    es.addEventListener('close', () => onDone());
-    es.addEventListener('error', () => onError());
-    return () => {
-      try {
-        es.close();
-      } catch {
-        // ignore
-      }
-    };
-  });
+  };
 
   const connect = () => {
-    qaStream.start();
+    if (!qaStream) qaStream = buildStream();
+    qaStream.connect();
 
     // Start polling fallback (for robustness if SSE misses events)
     if (!qaRefreshTid) {
@@ -254,7 +258,7 @@ export function createNotesQaController({
   };
 
   const destroy = () => {
-    qaStream.stop();
+    qaStream?.stop();
     if (qaRefreshTid) {
       try {
         clearInterval(qaRefreshTid);

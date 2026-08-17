@@ -1,6 +1,6 @@
 import { debugLog } from '../../lib/util/debug.js';
 import { promptModal } from '../../lib/dom/modal.js';
-import { withBackoff } from '../../lib/net/reconnect.js';
+import { createSSEConnection, LONG_LIVED_STREAM } from '../../lib/net/sse-connection.js';
 
 export function createFollowQaController({
   h,
@@ -191,53 +191,51 @@ export function createFollowQaController({
   };
 
   // Some browsers/mobile contexts silently drop SSE when backgrounded, so the
-  // stream reopens on error — through withBackoff, which owns the pending
-  // retry and cancels it on stop(). A bare setTimeout here would survive
-  // destroy() and resurrect the stream after the view is gone.
-  const qaStream = withBackoff(({ onOpen, onError, onDone }) => {
-    const es = new EventSource(
-      `/api/follow/${encodeURIComponent(presentationId)}/questions/events`
-    );
-    es.addEventListener('questions', (ev) => {
-      onOpen();
-      try {
-        const data = JSON.parse(ev.data || '{}');
-        questions = Array.isArray(data?.questions) ? data.questions : [];
-        renderQuestions();
-      } catch (e) {
-        debugLog('[follow][qa] bad questions event', { data: ev?.data, e });
-      }
-    });
-    es.addEventListener('status', (ev) => {
-      onOpen();
-      try {
-        const data = JSON.parse(ev.data || '{}');
-        if (data?.capabilities && onCapabilities)
-          onCapabilities(data.capabilities);
-        if (data?.status !== 'live') {
-          questions = [];
-          renderQuestions();
+  // stream reopens on error — the helper owns the pending retry and cancels it
+  // on stop(). A bare setTimeout here would survive destroy() and resurrect the
+  // stream after the view is gone.
+  const qaStream = createSSEConnection({
+    url: `/api/follow/${encodeURIComponent(presentationId)}/questions/events`,
+    events: ['questions', 'status', 'close'],
+    onEvent: (ev) => {
+      switch (ev.type) {
+        case 'questions': {
+          try {
+            const data = JSON.parse(ev.data || '{}');
+            questions = Array.isArray(data?.questions) ? data.questions : [];
+            renderQuestions();
+          } catch (e) {
+            debugLog('[follow][qa] bad questions event', { data: ev?.data, e });
+          }
+          break;
         }
-      } catch (e) {
-        debugLog('[follow][qa] bad status event', { data: ev?.data, e });
+        case 'status': {
+          try {
+            const data = JSON.parse(ev.data || '{}');
+            if (data?.capabilities && onCapabilities)
+              onCapabilities(data.capabilities);
+            if (data?.status !== 'live') {
+              questions = [];
+              renderQuestions();
+            }
+          } catch (e) {
+            debugLog('[follow][qa] bad status event', { data: ev?.data, e });
+          }
+          break;
+        }
+        case 'close':
+          // Server-side end of stream: close for good, don't reopen.
+          qaStream.disconnect();
+          break;
       }
-    });
-    // Server-side end of stream: close for good, don't reopen.
-    es.addEventListener('close', () => onDone());
-    es.addEventListener('error', () => onError());
-    return () => {
-      try {
-        es.close();
-      } catch {
-        // ignore
-      }
-    };
+    },
+    ...LONG_LIVED_STREAM,
   });
 
   const connectQa = () => {
     // If Q&A is currently disabled, don't connect (setCapabilities will reconnect when enabled).
     if (capabilities && capabilities.canUseQa === false) return;
-    qaStream.start();
+    qaStream.connect();
   };
 
   const setCapabilities = (next) => {

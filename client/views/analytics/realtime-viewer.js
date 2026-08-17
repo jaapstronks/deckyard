@@ -3,6 +3,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
+import { createSSEConnection } from '../../lib/net/sse-connection.js';
 
 /**
  * Create real-time viewer count component.
@@ -12,7 +13,7 @@ import { t } from '../../lib/ui-i18n.js';
  * @returns {Object} Component API with el and destroy method
  */
 export function createRealtimeViewer({ h, presentationId }) {
-  let eventSource = null;
+  let connection = null;
   let count = 0;
 
   const el = h('div', { class: 'analytics-card analytics-realtime' }, [
@@ -29,15 +30,13 @@ export function createRealtimeViewer({ h, presentationId }) {
   const iconEl = el.querySelector('.analytics-realtime-icon');
   const dotEl = el.querySelector('.analytics-realtime-dot');
 
-  // Connect to SSE
-  let reconnectAttempts = 0;
-  const maxReconnectAttempts = 5;
-
+  // Connect to SSE. This card is a nice-to-have, so it gives up after a few
+  // failed attempts (maxReconnectAttempts) rather than reconnecting forever.
   function connect() {
-    try {
-      eventSource = new EventSource(`/api/presentations/${presentationId}/analytics/realtime`);
-
-      eventSource.addEventListener('viewerCount', (event) => {
+    connection = createSSEConnection({
+      url: `/api/presentations/${presentationId}/analytics/realtime`,
+      events: ['viewerCount'],
+      onEvent: (event) => {
         try {
           const data = JSON.parse(event.data);
           count = Number(data?.count) || 0;
@@ -45,32 +44,26 @@ export function createRealtimeViewer({ h, presentationId }) {
         } catch (err) {
           console.warn('[analytics] Failed to parse viewer count data:', err.message);
         }
-      });
-
-      eventSource.onerror = (event) => {
-        console.warn('[analytics] SSE connection error:', event);
-        dotEl.classList.add('is-disconnected');
-
-        // EventSource will auto-reconnect for most errors, but we track attempts
-        reconnectAttempts++;
-        if (reconnectAttempts >= maxReconnectAttempts) {
-          iconEl.title = t('analytics.connectionFailed', 'Connection failed');
-          eventSource?.close();
-        } else {
-          iconEl.title = t('analytics.reconnecting', 'Reconnecting...');
-        }
-      };
-
-      eventSource.onopen = () => {
-        reconnectAttempts = 0; // Reset on successful connection
+      },
+      onConnected: () => {
         dotEl.classList.remove('is-disconnected');
         iconEl.title = t('analytics.connected', 'Connected');
-      };
-    } catch (err) {
-      console.error('[analytics] Failed to create SSE connection:', err);
-      dotEl.classList.add('is-disconnected');
-      iconEl.title = t('analytics.sseNotSupported', 'Live updates unavailable');
-    }
+      },
+      onStateChange: (state) => {
+        if (state === connection.STATE.RECONNECTING) {
+          dotEl.classList.add('is-disconnected');
+          iconEl.title = t('analytics.reconnecting', 'Reconnecting...');
+        } else if (state === connection.STATE.FAILED) {
+          dotEl.classList.add('is-disconnected');
+          iconEl.title = t('analytics.connectionFailed', 'Connection failed');
+        }
+      },
+      onError: () => {
+        dotEl.classList.add('is-disconnected');
+      },
+      maxReconnectAttempts: 5,
+    });
+    connection.connect();
   }
 
   function updateDisplay() {
@@ -79,10 +72,8 @@ export function createRealtimeViewer({ h, presentationId }) {
   }
 
   function destroy() {
-    if (eventSource) {
-      eventSource.close();
-      eventSource = null;
-    }
+    connection?.stop();
+    connection = null;
   }
 
   // Initial connection
