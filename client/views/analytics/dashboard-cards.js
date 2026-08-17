@@ -4,19 +4,7 @@
 
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
-import { formatDuration } from '../../lib/format/analytics-format.js';
-
-/**
- * Format large numbers with K/M suffix.
- * @param {number} num - Number to format
- * @returns {string}
- */
-function formatNumber(num) {
-  if (!num) return '0';
-  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-  return String(num);
-}
+import { formatDuration, formatCompact } from '../../lib/format/analytics-format.js';
 
 /**
  * Create dashboard summary cards.
@@ -38,13 +26,13 @@ export function createDashboardCards({ summary, trend }) {
   const cards = h('div', { class: 'dashboard-cards' }, [
     createCard({
       label: t('dashboard.cards.totalViews', 'Total Views'),
-      value: formatNumber(summary.totalViews),
+      value: formatCompact(summary.totalViews),
       trend: trendText,
       trendClass,
     }),
     createCard({
       label: t('dashboard.cards.uniqueViewers', 'Unique Viewers'),
-      value: formatNumber(summary.uniqueViewers),
+      value: formatCompact(summary.uniqueViewers),
     }),
     createCard({
       label: t('dashboard.cards.avgDuration', 'Avg Duration'),
