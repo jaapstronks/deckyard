@@ -8,7 +8,6 @@ import { buildStandaloneHtml } from '../../../export/html.js';
 import { buildPrintHtml } from '../../../export/print.js';
 import { buildPptxBuffer } from '../../../export/pptx.js';
 import { presentationToDeck } from '../../../../shared/slide-types.js';
-import { methodNotAllowed } from '../../../utils/http.js';
 import { safeFilename } from '../../../utils/filename.js';
 import { stripLiveOnlySlidesFromPresentation } from '../../../utils/public-output.js';
 import { normalizeLang, projectPresentationForLang } from '../../../utils/i18n.js';
@@ -16,6 +15,8 @@ import { loadThemeAssets } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
   requirePermission,
+  v1MethodNotAllowed,
+  withV1ErrorHandler,
   checkExportLimit,
   trackExportRequest,
   apiError,
@@ -247,36 +248,36 @@ async function handlePptxExport(ctx, id) {
 /**
  * Main handler for /api/v1/presentations/:id/export/* routes.
  */
-export async function handleExports(ctx) {
+export const handleExports = withV1ErrorHandler('public-api-v1:exports', async (ctx) => {
   const { req, res, url } = ctx;
 
   // JSON export
   const jsonMatch = url.pathname.match(/^\/api\/v1\/presentations\/([^/]+)\/export\/json$/);
   if (jsonMatch) {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
     return handleJsonExport(ctx, jsonMatch[1]);
   }
 
   // HTML export
   const htmlMatch = url.pathname.match(/^\/api\/v1\/presentations\/([^/]+)\/export\/html$/);
   if (htmlMatch) {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
     return handleHtmlExport(ctx, htmlMatch[1]);
   }
 
   // PDF export
   const pdfMatch = url.pathname.match(/^\/api\/v1\/presentations\/([^/]+)\/export\/pdf$/);
   if (pdfMatch) {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
     return handlePdfExport(ctx, pdfMatch[1]);
   }
 
   // PPTX export
   const pptxMatch = url.pathname.match(/^\/api\/v1\/presentations\/([^/]+)\/export\/pptx$/);
   if (pptxMatch) {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
     return handlePptxExport(ctx, pptxMatch[1]);
   }
 
   return false;
-}
+});

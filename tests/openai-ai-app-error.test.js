@@ -51,9 +51,13 @@ test('raw LLM content stays out of the envelope for upstream failures', () => {
   });
   assert.ok(isAppError(err));
   assert.equal(err.statusCode, 502);
+  // B61 filled the 502 gap in the status→code map: an upstream failure is
+  // `bad_gateway` (what docs/openapi.yaml documents for 502), not the old
+  // >=500 `internal_error` fallback. The raw model output still never leaves
+  // the server — that is what this test guards.
   assert.deepEqual(err.toJSON(), {
     ok: false,
-    error: 'internal_error',
+    error: 'bad_gateway',
     message: 'openai did not return valid deck JSON.',
   });
   assert.equal(err.response, 'raw model output that must never leave the server');

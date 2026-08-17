@@ -18,6 +18,7 @@ const STATUS_CODE_NAME = {
   423: 'locked',
   429: 'rate_limited',
   500: 'internal_error',
+  502: 'bad_gateway',
   503: 'service_unavailable',
 };
 

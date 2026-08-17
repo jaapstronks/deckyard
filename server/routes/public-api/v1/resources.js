@@ -3,12 +3,11 @@
  * Provides access to themes, slide types, and image library.
  */
 
-import { methodNotAllowed } from '../../../utils/http.js';
 import { listThemeIds, loadThemeAssets } from '../../../utils/themes.js';
 import { sandboxEnabled } from '../../../config/sandbox.js';
 import { listThemes } from '../../../storage/themes.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
-import { requirePermission, parsePaginationParams, apiSuccess, apiError } from './middleware.js';
+import { requirePermission, v1MethodNotAllowed, withV1ErrorHandler, parsePaginationParams, apiSuccess, apiError } from './middleware.js';
 
 // ============================================================
 // ROUTE HANDLERS
@@ -234,33 +233,33 @@ async function handleImageLibrary(ctx) {
 /**
  * Main handler for /api/v1/themes, /api/v1/slide-types, /api/v1/image-library routes.
  */
-export async function handleResources(ctx) {
+export const handleResources = withV1ErrorHandler('public-api-v1:resources', async (ctx) => {
   const { req, res, url } = ctx;
 
   // GET /api/v1/themes
   if (url.pathname === '/api/v1/themes') {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
     return handleThemes(ctx);
   }
 
   // GET /api/v1/slide-types
   if (url.pathname === '/api/v1/slide-types') {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
     return handleSlideTypes(ctx);
   }
 
   // GET /api/v1/slide-types/:slideType/schema
   const schemaMatch = url.pathname.match(/^\/api\/v1\/slide-types\/([^/]+)\/schema$/);
   if (schemaMatch) {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
     return handleSlideTypeSchema(ctx, schemaMatch[1]);
   }
 
   // GET /api/v1/image-library
   if (url.pathname === '/api/v1/image-library') {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
     return handleImageLibrary(ctx);
   }
 
   return false;
-}
+});

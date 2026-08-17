@@ -13,9 +13,10 @@
  * with only `{ repoRoot, req, res, url }` — authentication is the subject
  * here, not a pre-authenticated seam.
  *
- * Negative assertions pin the status code, not the error envelope: v1's
- * envelope split is a recorded finding (B39 deel 3 bevinding 11) scheduled to
- * converge, and pinning the shapes would cement it.
+ * Negative assertions pin the status code *and* the one converged error
+ * envelope (B61): `{ error: '<machine_code>', message }`, snake_case code in
+ * `error`, never the internal `{ ok:false, … }` shape. The former split (B39
+ * deel 3 bevinding 11) is closed, so the shapes are pinned on purpose.
  *
  * Run with: node --test tests/public-api-v1-router.test.js
  */
@@ -108,6 +109,21 @@ function jsonBody(res) {
   return JSON.parse(String(res.body));
 }
 
+/**
+ * Assert a response carries the one converged v1 error envelope: a snake_case
+ * machine code in `error`, and crucially NOT the internal `ok:false` shape.
+ * @param {Object} res - recorded response
+ * @param {number} status - expected HTTP status
+ * @param {string} code - expected machine code
+ */
+function assertV1Error(res, status, code) {
+  assert.equal(res.statusCode, status, `expected ${status}, got ${res.statusCode}`);
+  const body = jsonBody(res);
+  assert.equal(body.error, code, `error code should be ${code}`);
+  assert.ok(!('ok' in body), 'v1 envelope must not carry the internal `ok` discriminator');
+  assert.match(body.error, /^[a-z][a-z0-9_]*$/, 'error is a snake_case machine code');
+}
+
 // ---------------------------------------------------------------------------
 // Meta endpoints — no authentication required
 // ---------------------------------------------------------------------------
@@ -170,19 +186,20 @@ test('GET /api/v1/schema/slide-types/:name.json serves one content schema, 404 u
 
   const unknown = makeCtx('GET', '/api/v1/schema/slide-types/never-a-type.json');
   await handlePublicApiV1(unknown);
-  assert.equal(unknown.res.statusCode, 404);
+  assertV1Error(unknown.res, 404, 'not_found');
 
   const junk = makeCtx('GET', '/api/v1/schema/otherwise');
   await handlePublicApiV1(junk);
-  assert.equal(junk.res.statusCode, 404);
+  assertV1Error(junk.res, 404, 'not_found');
 });
 
-test('POST on a meta endpoint answers 405', async () => {
+test('POST on a meta endpoint answers 405 in the v1 envelope with Allow', async () => {
   await installDb();
   for (const pathname of ['/api/v1/', '/api/v1/docs', '/api/v1/openapi.yaml', '/api/v1/schema/deck.json']) {
     const ctx = makeCtx('POST', pathname);
     await handlePublicApiV1(ctx);
-    assert.equal(ctx.res.statusCode, 405, `${pathname} must refuse POST`);
+    assertV1Error(ctx.res, 405, 'method_not_allowed');
+    assert.ok(ctx.res.headers['Allow'], `${pathname} names the accepted methods`);
   }
 });
 
@@ -194,7 +211,7 @@ test('a request without an Authorization header is refused with 401', async () =
   await installDb();
   const ctx = makeCtx('GET', '/api/v1/presentations');
   assert.equal(await handlePublicApiV1(ctx), true);
-  assert.equal(ctx.res.statusCode, 401);
+  assertV1Error(ctx.res, 401, 'unauthorized');
 });
 
 test('a malformed, unknown or revoked key is refused with 401', async () => {
@@ -202,7 +219,7 @@ test('a malformed, unknown or revoked key is refused with 401', async () => {
   for (const bearer of ['not-a-key', 'dk_live_unknown-key-00000000000000000', REVOKED_KEY]) {
     const ctx = makeCtx('GET', '/api/v1/presentations', { bearer });
     await handlePublicApiV1(ctx);
-    assert.equal(ctx.res.statusCode, 401, `${bearer.slice(0, 16)}… must be refused`);
+    assertV1Error(ctx.res, 401, 'unauthorized');
   }
 });
 
@@ -216,11 +233,11 @@ test('a valid key reaches the feature handlers with its own organization scope',
   assert.equal(body.count, Object.keys(SLIDE_TYPES).length);
 });
 
-test('a valid key on an unknown v1 route answers 404', async () => {
+test('a valid key on an unknown v1 route answers 404 in the v1 envelope', async () => {
   await installDb();
   const ctx = makeCtx('GET', '/api/v1/never-a-route', { bearer: VALID_KEY });
   assert.equal(await handlePublicApiV1(ctx), true);
-  assert.equal(ctx.res.statusCode, 404);
+  assertV1Error(ctx.res, 404, 'not_found');
 });
 
 test('authentication stamps last_used_at on the key row', async () => {
@@ -251,7 +268,7 @@ test('the 61st request within a minute is refused with 429 and Retry-After', asy
     }
   }
 
-  assert.equal(last.res.statusCode, 429);
+  assertV1Error(last.res, 429, 'rate_limited');
   assert.ok(last.res.headers['Retry-After'], 'the limiter names a retry moment');
 });
 

@@ -252,9 +252,11 @@ test('exports answer 429 with limit details when the daily export budget is spen
 
   assert.equal(ctx.res.statusCode, 429);
   const body = parseJsonBody(ctx.res);
-  assert.equal(body.limit, 50);
-  assert.equal(body.used, 50);
-  assert.ok(body.resetAt, 'the body names the reset moment');
+  // B61: the one v1 envelope — machine code in `error`, limit facts in `details`.
+  assert.equal(body.error, 'rate_limited');
+  assert.equal(body.details.limit, 50);
+  assert.equal(body.details.used, 50);
+  assert.ok(body.details.resetAt, 'the details name the reset moment');
   assert.equal(ctx.res.headers['X-RateLimit-Remaining'], '0');
 });
 

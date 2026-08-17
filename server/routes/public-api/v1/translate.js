@@ -5,14 +5,13 @@
 
 import { updatePresentation } from '../../../storage/presentations/index.js';
 import { translatePresentationStrings } from '../../../utils/ai.js';
-import { methodNotAllowed } from '../../../utils/http.js';
 import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import {
   normalizeTranslationLang,
   normalizeLang,
   TRANSLATION_LANGS,
 } from '../../../storage/presentations/i18n.js';
-import { requirePermission, getPresentationWithAccess, readApiV1Body, checkAiLimit, trackAiRequest, apiSuccess, apiError } from './middleware.js';
+import { requirePermission, v1MethodNotAllowed, withV1ErrorHandler, getPresentationWithAccess, readApiV1Body, checkAiLimit, trackAiRequest, apiSuccess, apiError } from './middleware.js';
 
 // ============================================================
 // ROUTE HANDLERS
@@ -113,26 +112,18 @@ async function handleTranslate(ctx, presentationId) {
     ? pres.i18n.versions[targetLang]
     : null;
 
-  // Perform translation
-  let translated;
-  try {
-    translated = await translatePresentationStrings(
-      { title: src.title, slides: src.slides },
-      {
-        from: sourceLang,
-        to: targetLang,
-        existingTarget,
-        fillMissing: !!fillMissing && !overwrite,
-        vendor,
-      }
-    );
-  } catch (e) {
-    if (e?.statusCode) {
-      await apiError(ctx, e.statusCode, e.message, { details: e.details || null });
-      return true;
+  // Perform translation (a thrown LLM/status error is answered in the v1
+  // envelope by the mount-level withV1ErrorHandler wrap).
+  const translated = await translatePresentationStrings(
+    { title: src.title, slides: src.slides },
+    {
+      from: sourceLang,
+      to: targetLang,
+      existingTarget,
+      fillMissing: !!fillMissing && !overwrite,
+      vendor,
     }
-    throw e;
-  }
+  );
 
   // Store translation
   pres.i18n.versions[targetLang] = { title: translated.title, slides: translated.slides };
@@ -145,19 +136,10 @@ async function handleTranslate(ctx, presentationId) {
     updatedAt: new Date().toISOString(),
   };
 
-  // Persist
-  let updated;
-  try {
-    updated = await updatePresentation(storageScope, presentationId, pres, {
-      actorEmail: apiKey.ownerEmail,
-    });
-  } catch (e) {
-    if (e?.statusCode) {
-      await apiError(ctx, e.statusCode, e.message, { details: e.details || null });
-      return true;
-    }
-    throw e;
-  }
+  // Persist (throws answered in the v1 envelope by the wrap).
+  const updated = await updatePresentation(storageScope, presentationId, pres, {
+    actorEmail: apiKey.ownerEmail,
+  });
 
   // Track AI usage
   trackAiRequest(ctx).catch(() => {});
@@ -219,12 +201,12 @@ function getLangLabel(code) {
 /**
  * Main handler for /api/v1/presentations/:id/translate routes.
  */
-export async function handleTranslation(ctx) {
+export const handleTranslation = withV1ErrorHandler('public-api-v1:translate', async (ctx) => {
   const { req, res, url } = ctx;
 
   // GET /api/v1/translate/languages
   if (url.pathname === '/api/v1/translate/languages') {
-    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
     return handleListLanguages(ctx);
   }
 
@@ -233,9 +215,9 @@ export async function handleTranslation(ctx) {
     /^\/api\/v1\/presentations\/([^/]+)\/translate$/
   );
   if (translateMatch) {
-    if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+    if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
     return handleTranslate(ctx, translateMatch[1]);
   }
 
   return false;
-}
+});

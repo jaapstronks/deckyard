@@ -12,10 +12,9 @@ import {
   duplicatePresentation,
 } from '../../../storage/presentations/index.js';
 import { getTagsForPresentations, getTagsForPresentation } from '../../../storage/tags/index.js';
-import { methodNotAllowed } from '../../../utils/http.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { canonicalSlideType } from '../../../../shared/slide-types.js';
-import { requirePermission, canAccessPresentation, getPresentationWithAccess, readApiV1Body, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
+import { requirePermission, v1MethodNotAllowed, withV1ErrorHandler, canAccessPresentation, getPresentationWithAccess, readApiV1Body, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -205,18 +204,11 @@ async function handleUpdate(ctx, id) {
   delete body.ownerEmail;
   delete body.createdBy;
 
-  let updated;
-  try {
-    updated = await updatePresentation(storageScope, id, body, {
-      actorEmail: apiKey.ownerEmail,
-    });
-  } catch (e) {
-    if (e?.statusCode) {
-      await apiError(ctx, e.statusCode, e.message, { details: e.details || null });
-      return true;
-    }
-    throw e;
-  }
+  // A thrown storage error (423 lock, 400 validation) is answered in the v1
+  // envelope by the mount-level withV1ErrorHandler wrap.
+  const updated = await updatePresentation(storageScope, id, body, {
+    actorEmail: apiKey.ownerEmail,
+  });
 
   if (!updated) {
     await apiError(ctx, 404, 'Presentation not found');
@@ -299,14 +291,14 @@ async function handleDuplicate(ctx, id) {
 /**
  * Main handler for /api/v1/presentations routes.
  */
-export async function handlePresentations(ctx) {
+export const handlePresentations = withV1ErrorHandler('public-api-v1:presentations', async (ctx) => {
   const { req, res, url } = ctx;
 
   // Duplicate endpoint
   const dupMatch = url.pathname.match(/^\/api\/v1\/presentations\/([^/]+)\/duplicate$/);
   if (dupMatch) {
     if (req.method !== 'POST') {
-      return methodNotAllowed(res, ['POST']);
+      return v1MethodNotAllowed(res, ['POST']);
     }
     return handleDuplicate(ctx, dupMatch[1]);
   }
@@ -318,15 +310,15 @@ export async function handlePresentations(ctx) {
     if (req.method === 'GET') return handleGet(ctx, id);
     if (req.method === 'PUT') return handleUpdate(ctx, id);
     if (req.method === 'DELETE') return handleDelete(ctx, id);
-    return methodNotAllowed(res, ['GET', 'PUT', 'DELETE']);
+    return v1MethodNotAllowed(res, ['GET', 'PUT', 'DELETE']);
   }
 
   // Collection routes
   if (url.pathname === '/api/v1/presentations') {
     if (req.method === 'GET') return handleList(ctx);
     if (req.method === 'POST') return handleCreate(ctx);
-    return methodNotAllowed(res, ['GET', 'POST']);
+    return v1MethodNotAllowed(res, ['GET', 'POST']);
   }
 
   return false;
-}
+});
