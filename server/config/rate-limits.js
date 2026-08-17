@@ -96,6 +96,24 @@ export const LEAD_RATE_LIMITS = {
 };
 
 /**
+ * Public GDPR self-service data-request (`POST /api/leads/my-data/request`).
+ * This route mails a verification token to any well-formed address, so the new
+ * attack surface is e-mail bombing — hence a per-target-email bucket on top of
+ * the per-IP + global volume caps. The per-email bucket is keyed on the
+ * *supplied* address alone (never on whether leads exist for it), so a 429 from
+ * it leaks nothing the 200 path doesn't: the route stays non-enumerable. The
+ * destructive `GET`/`DELETE /api/leads/my-data` routes are token-gated and reuse
+ * `AUTH_RATE_LIMITS.expensive` keyed by IP, exactly like the analytics
+ * track-erase (`POST /api/track/my-data/erase`). Security-relevant — do not
+ * loosen without a review.
+ */
+export const GDPR_RATE_LIMITS = {
+  perIp: { capacity: 5, refillPerSec: 5 / 60 }, // burst 5, then ~5/min per IP
+  perEmail: { capacity: 3, refillPerSec: 3 / 3600 }, // burst 3, then ~3/hour per address
+  global: { capacity: 50, refillPerSec: 50 / 60 }, // burst 50, then ~50/min globally
+};
+
+/**
  * Follow-code endpoints. Token buckets sized to the former fixed-window
  * limits (create 10/hour, resolve 60/hour per IP): same hourly ceiling,
  * burst equal to the old window maximum.

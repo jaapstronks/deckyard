@@ -63,7 +63,9 @@ const { invalidatePermission } = await import(
   '../server/storage/cache/permission-cache.js'
 );
 const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
-const { LEAD_RATE_LIMITS } = await import('../server/config/rate-limits.js');
+const { LEAD_RATE_LIMITS, GDPR_RATE_LIMITS, AUTH_RATE_LIMITS } = await import(
+  '../server/config/rate-limits.js'
+);
 const { handleLeads, handleLeadsPublic } = await import('../server/routes/api/leads.js');
 const { handleNotion } = await import('../server/routes/api/notion.js');
 
@@ -508,13 +510,18 @@ test('deleting an unknown lead is a 404', async () => {
 });
 
 // ===========================================================================
-// leads.js — the GDPR self-service path is token-gated
+// leads.js — the GDPR self-service path is PUBLIC and token-gated (B63b)
+//
+// The data subject is an anonymous visitor with no account; the emailed token,
+// not a session, is the proof of identity. So the three my-data routes live in
+// PUBLIC_ROUTES and are driven here through `handleLeadsPublic` with no `as:`.
+// Making them public must not expose the authed lead surface — the boundary
+// tests at the end pin that `DELETE /api/leads/:id` stays behind the gate.
 // ===========================================================================
 
-test('my-data request rejects a malformed email with a 400', async () => {
+test('my-data request rejects a malformed email with a 400 (anonymous)', async () => {
   await seed();
-  const { res } = await call(handleLeads, 'POST', '/api/leads/my-data/request', {
-    as: ACTORS.owner,
+  const { res } = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
     body: { email: 'nope' },
   });
 
@@ -522,31 +529,44 @@ test('my-data request rejects a malformed email with a 400', async () => {
   assert.match(res.body.message, /Valid email required/);
 });
 
-test('my-data read refuses a missing or wrong token', async () => {
+test('my-data read refuses a missing or wrong token (anonymous)', async () => {
   await seed();
-  const noToken = await call(handleLeads, 'GET', '/api/leads/my-data?email=lead@example.com', {
-    as: ACTORS.owner,
-  });
+  const noToken = await call(handleLeadsPublic, 'GET', '/api/leads/my-data?email=lead@example.com');
   assert.equal(noToken.res.statusCode, 400, 'email and token are both required');
 
   const wrongToken = await call(
-    handleLeads,
+    handleLeadsPublic,
     'GET',
-    '/api/leads/my-data?email=lead@example.com&token=deadbeef',
-    { as: ACTORS.owner }
+    '/api/leads/my-data?email=lead@example.com&token=deadbeef'
   );
   assert.equal(wrongToken.res.statusCode, 401, 'a token that was never issued is refused');
+  assert.equal(wrongToken.res.body.error, 'unauthorized');
 });
 
-test('my-data request is an honest 501 when outgoing email is not configured', async () => {
+test('an unknown token refuses identically for a seeded and an unseeded email (no enumeration)', async () => {
+  await seed();
+  const onFile = await call(
+    handleLeadsPublic,
+    'GET',
+    '/api/leads/my-data?email=lead@example.com&token=deadbeef'
+  );
+  const notOnFile = await call(
+    handleLeadsPublic,
+    'GET',
+    '/api/leads/my-data?email=ghost@nowhere.example&token=deadbeef'
+  );
+  assert.equal(onFile.res.statusCode, notOnFile.res.statusCode, 'same status either way');
+  assert.deepEqual(onFile.res.body, notOnFile.res.body, 'and a byte-identical body — a wrong token cannot probe existence');
+});
+
+test('my-data request is an honest 501 when outgoing email is not configured (anonymous)', async () => {
   await seed();
   const previousEnv = process.env.NODE_ENV;
   delete process.env.NODE_ENV; // outside development, no dev-token fallback
   const previousKey = process.env.BREVO_API_KEY;
   delete process.env.BREVO_API_KEY; // no mail provider on this install
   try {
-    const { res } = await call(handleLeads, 'POST', '/api/leads/my-data/request', {
-      as: ACTORS.owner,
+    const { res } = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
       body: { email: 'lead@example.com' },
     });
 
@@ -561,32 +581,30 @@ test('my-data request is an honest 501 when outgoing email is not configured', a
   }
 });
 
-test('the GDPR self-service round-trip: request → read → erase', async () => {
+test('the GDPR self-service round-trip is anonymous: request → read → erase', async () => {
   await seed();
   process.env.NODE_ENV = 'development'; // the dev branch echoes the verification token
   try {
-    const request = await call(handleLeads, 'POST', '/api/leads/my-data/request', {
-      as: ACTORS.owner,
+    const request = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
       body: { email: 'lead@example.com' },
     });
-    assert.equal(request.res.statusCode, 200);
+    assert.equal(request.res.statusCode, 200, 'a logged-out subject can request their token');
     const token = request.res.body.devToken;
     assert.ok(token, 'a verification token is issued in development');
 
     const read = await call(
-      handleLeads,
+      handleLeadsPublic,
       'GET',
-      `/api/leads/my-data?email=lead@example.com&token=${token}`,
-      { as: ACTORS.owner }
+      `/api/leads/my-data?email=lead@example.com&token=${token}`
     );
     assert.equal(read.res.statusCode, 200);
     assert.equal(read.res.body.leadCount, 1, 'the one lead for this email is returned');
 
+    // The GET deliberately does NOT consume the token — erase still needs it.
     const erase = await call(
-      handleLeads,
+      handleLeadsPublic,
       'DELETE',
-      `/api/leads/my-data?email=lead@example.com&token=${token}`,
-      { as: ACTORS.owner }
+      `/api/leads/my-data?email=lead@example.com&token=${token}`
     );
     assert.equal(erase.res.statusCode, 200);
     assert.equal(erase.res.body.anonymized, 1, 'the lead is anonymized by email');
@@ -594,6 +612,114 @@ test('the GDPR self-service round-trip: request → read → erase', async () =>
   } finally {
     delete process.env.NODE_ENV;
   }
+});
+
+// --- rate limits: the new public surface ----------------------------------
+
+test('the request route is capped per target-email, and a 429 does not reveal existence', async () => {
+  await seed();
+  process.env.NODE_ENV = 'development';
+  const cap = GDPR_RATE_LIMITS.perEmail.capacity;
+  try {
+    // Fix the target email, vary the IP so the per-IP bucket never trips first:
+    // the per-target-email bucket is the one under test.
+    for (let i = 0; i < cap; i++) {
+      const { res } = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
+        body: { email: 'victim@example.com' },
+        ip: `198.51.100.${i + 1}`,
+      });
+      assert.equal(res.statusCode, 200, `request ${i + 1} within the per-email burst is served`);
+    }
+    const blocked = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
+      body: { email: 'victim@example.com' },
+      ip: '198.51.100.250',
+    });
+    assert.equal(blocked.res.statusCode, 429, 'the request past the per-email burst is refused');
+    assert.equal(blocked.res.body.error, 'rate_limited');
+
+    // The same target-email bucket caps a NON-existent address identically, so
+    // the 429 leaks nothing about whether the address is on file.
+    for (let i = 0; i < cap; i++) {
+      await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
+        body: { email: 'ghost@nowhere.example' },
+        ip: `203.0.113.${i + 1}`,
+      });
+    }
+    const ghostBlocked = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
+      body: { email: 'ghost@nowhere.example' },
+      ip: '203.0.113.250',
+    });
+    assert.equal(ghostBlocked.res.statusCode, blocked.res.statusCode, 'same 429 for an unseeded address');
+    assert.deepEqual(ghostBlocked.res.body, blocked.res.body, 'and a byte-identical body');
+  } finally {
+    delete process.env.NODE_ENV;
+  }
+});
+
+test('the request route is capped per IP across different targets', async () => {
+  await seed();
+  process.env.NODE_ENV = 'development';
+  const cap = GDPR_RATE_LIMITS.perIp.capacity;
+  try {
+    // Fix the IP, vary the email so each per-email bucket stays fresh: now the
+    // per-IP bucket is the limiting factor.
+    for (let i = 0; i < cap; i++) {
+      const { res } = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
+        body: { email: `subject-${i}@example.com` },
+        ip: '198.51.100.77',
+      });
+      assert.equal(res.statusCode, 200, `request ${i + 1} within the per-IP burst is served`);
+    }
+    const { res } = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
+      body: { email: 'subject-last@example.com' },
+      ip: '198.51.100.77',
+    });
+    assert.equal(res.statusCode, 429, 'the request past the per-IP burst is refused before the body matters');
+    assert.equal(res.body.error, 'rate_limited');
+  } finally {
+    delete process.env.NODE_ENV;
+  }
+});
+
+test('the my-data read is rate-limited per IP with the expensive tier', async () => {
+  await seed();
+  const cap = AUTH_RATE_LIMITS.expensive.capacity;
+  // Within the burst each token-less read is a 400 (gate open, non-vacuous);
+  // past it the limiter answers first with a 429.
+  for (let i = 0; i < cap; i++) {
+    const { res } = await call(handleLeadsPublic, 'GET', '/api/leads/my-data', {
+      ip: '198.51.100.88',
+    });
+    assert.equal(res.statusCode, 400, `read ${i + 1} within the burst reaches the missing-token check`);
+  }
+  const { res } = await call(handleLeadsPublic, 'GET', '/api/leads/my-data', {
+    ip: '198.51.100.88',
+  });
+  assert.equal(res.statusCode, 429, 'the read past the burst is refused before the token check');
+  assert.equal(res.body.error, 'rate_limited');
+});
+
+// --- route boundary: making my-data public did not expose the authed surface --
+
+test('DELETE /api/leads/:id is NOT reachable through the public mount', async () => {
+  await seed();
+  const { handled, res } = await call(handleLeadsPublic, 'DELETE', '/api/leads/lead-1');
+
+  assert.equal(handled, false, 'only the literal my-data delete is public; :id falls through to the gate');
+  assert.equal(res.statusCode, null, 'the public table writes nothing for a bare lead id');
+  assert.equal(leadById('lead-1').anonymized_at, null, 'and the lead is untouched');
+});
+
+test('the authed my-data routes no longer dispatch through the authed mount', async () => {
+  await seed();
+  // The routes moved to PUBLIC_ROUTES, so the authed table must not answer them
+  // anymore — even for a logged-in caller. (It never should have; the token is
+  // the gate.) A fall-through here proves the move, not a second accepted shape.
+  const { handled, res } = await call(handleLeads, 'GET', '/api/leads/my-data?email=lead@example.com', {
+    as: ACTORS.owner,
+  });
+  assert.equal(handled, false, 'the authed table no longer carries the my-data routes');
+  assert.equal(res.statusCode, null, 'and writes nothing');
 });
 
 // ===========================================================================
