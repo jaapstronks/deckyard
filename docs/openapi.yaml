@@ -1909,6 +1909,13 @@ components:
             Who can see the deck besides its owner, creator, and collaborators:
             'private' (default) or 'organization' (every member of the deck's
             organization).
+        isViewOnly:
+          type: boolean
+          description: >-
+            Whether an organization-visible deck is view-only: readable and
+            commentable by other members, but not editable. Always false for
+            private decks. This is the property the `?viewOnly=true` list filter
+            matches on.
         themeId:
           type: string
         language:

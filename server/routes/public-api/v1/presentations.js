@@ -62,6 +62,10 @@ export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
     updatedById: pres.updatedById || null,
     ownerEmail,
     visibility: pres.visibility || 'private',
+    // A view-only organization deck is comment-only for everyone but its
+    // owner. Exposed so the documented `?viewOnly=true` list filter reads a
+    // property a consumer can also see in the payload (B62 vondst 12).
+    isViewOnly: !!pres.isViewOnly,
     themeId: pres.themeId || null,
     language: pres.language || 'en-GB',
     slideCount: Array.isArray(pres.slides) ? pres.slides.length : 0,
