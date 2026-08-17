@@ -2,6 +2,7 @@ import { cleanStr } from '../../shared/string-utils.js';
 import { AppError, ValidationError } from '../utils/errors.js';
 import { createLogger } from '../utils/logger.js';
 import { envStr } from '../config/utils.js';
+import { assertPublicHttpUrl } from '../utils/ssrf-guard.js';
 
 const log = createLogger('imagekit');
 
@@ -305,6 +306,10 @@ export async function uploadImageKitUrl(imageUrl, fileName, options = {}) {
   }
 
   try {
+    // SSRF guard: image URLs come from Notion blocks (an `external` image URL
+    // is attacker-controllable), so refuse any that resolves to a non-public
+    // address before fetching. Throwing here falls back to the original URL.
+    await assertPublicHttpUrl(imageUrl);
     // Fetch the image
     const response = await fetch(imageUrl);
     if (!response.ok) {

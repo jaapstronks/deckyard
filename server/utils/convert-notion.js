@@ -19,6 +19,7 @@ import { cryptoUuid } from '../../shared/slide-types/helpers.js';
 import { DECK_FORMAT_ID } from '../../shared/slide-types/deck-format-id.js';
 import { uploadImageKitUrl, getImageKitConfigFromEnv } from '../media/imagekit.js';
 import { getMediaProvider, isMediaProviderInitialized } from '../media/index.js';
+import { assertPublicHttpUrl } from './ssrf-guard.js';
 import { createLogger } from './logger.js';
 
 const log = createLogger('convert-notion');
@@ -158,6 +159,11 @@ async function rehostImageToMediaLibrary(img) {
     // No provider (e.g. outside the server request path) — nothing to re-host to.
     return img.url;
   }
+
+  // SSRF guard: a Notion `external` image URL is attacker-controllable, so
+  // refuse any that resolves to a non-public address before fetching. Throwing
+  // here is caught by processNotionImages, which falls back to the original URL.
+  await assertPublicHttpUrl(img.url);
 
   const response = await fetch(img.url);
   if (!response.ok) {
