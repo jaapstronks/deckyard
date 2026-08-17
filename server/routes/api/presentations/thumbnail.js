@@ -26,7 +26,7 @@ import {
   readStaleThumbnail,
   requestThumbnailGeneration,
 } from '../../../render/deck-thumbnail.js';
-import { scheduleThumbnailWarm } from '../../../render/thumbnail-warm-queue.js';
+import { scheduleThumbnailWarm, warmOnSaveEnabled } from '../../../render/thumbnail-warm-queue.js';
 import { methodNotAllowed, notFound, unauthorized } from '../../../utils/http.js';
 
 /**
@@ -38,11 +38,18 @@ import { methodNotAllowed, notFound, unauthorized } from '../../../utils/http.js
  * regenerate later. Uses slide 1, matching what
  * {@link handlePresentationThumbnail} serves.
  *
+ * Honors the same gate as the save-path queue ({@link warmOnSaveEnabled}) so
+ * *every* background warm — debounced or direct — is off under the test
+ * runner: a warm launches the process-lifetime headless-Chrome singleton
+ * (server/utils/puppeteer-browser.js), which outlives a test process and
+ * hangs the suite wherever Chrome is installed.
+ *
  * @param {import('../../../storage/scope.js').StorageScope} scope - The request's storage scope
  * @param {object} pres - Full presentation, post-save.
  * @returns {Promise<void>}
  */
 export async function warmDeckThumbnail(scope, pres) {
+  if (!warmOnSaveEnabled()) return;
   try {
     const slide = Array.isArray(pres?.slides) ? pres.slides[0] : null;
     if (!slide || typeof slide !== 'object') return;

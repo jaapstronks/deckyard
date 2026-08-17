@@ -34,12 +34,15 @@ export const WARM_DEBOUNCE_MS = 5000;
 const pending = new Map();
 
 /**
- * Whether saves may schedule a warm at all.
+ * Whether background thumbnail warms may run at all. Consulted here at
+ * schedule time and by `warmDeckThumbnail` itself, so the direct post-publish
+ * warm is gated identically to the debounced save path.
  *
  * Default is on, *except* under the node test runner: an unattended suite that
- * saves decks would otherwise spend its wall-clock launching Chrome for rasters
- * nobody looks at. `DECK_THUMBNAIL_WARM_ON_SAVE=1|0` overrides in either
- * direction (the queue's own tests opt in explicitly, with a stub task).
+ * saves or publishes decks would otherwise spend its wall-clock launching
+ * Chrome for rasters nobody looks at — and the browser singleton it launches
+ * outlives the test process. `DECK_THUMBNAIL_WARM_ON_SAVE=1|0` overrides in
+ * either direction (the queue's own tests opt in explicitly, with a stub task).
  *
  * @returns {boolean}
  */
