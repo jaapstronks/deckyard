@@ -258,6 +258,45 @@ function compileCaseRank(value) {
   };
 }
 
+/**
+ * Rank function for a raw `sql` expression handed to `orderBy`. Handles the
+ * three shapes the storage layer sorts by, and defers to {@link compileCaseRank}
+ * for the CASE form:
+ *
+ *   - `<column> = '<literal>'` — a boolean flag (true sorts as 1), the way
+ *     `listQuestions` floats promoted questions to the top.
+ *   - `cardinality(<column>)` — the length of an array column, how the same
+ *     query ranks questions by their upvoter count.
+ *
+ * Anything else throws, so an unmodelled ORDER BY fails loudly rather than
+ * silently leaving rows in insertion order.
+ *
+ * @param {*} value - Raw expression handed to `orderBy`
+ * @returns {(row: Object) => number} Rank for a row context
+ */
+function compileRawOrder(value) {
+  const node = value.toOperationNode();
+  const fragments = Array.isArray(node?.sqlFragments) ? node.sqlFragments : [];
+  const text = fragments.join('').replace(/\s+/g, ' ').trim();
+
+  const boolEq = text.match(/^(\w+)\s*=\s*'([^']*)'$/);
+  if (boolEq && !(node.parameters || []).length) {
+    const [, column, literal] = boolEq;
+    return (row) => (readColumn(row, column) === literal ? 1 : 0);
+  }
+
+  const cardinality = text.match(/^cardinality\(\s*(\w+)\s*\)$/i);
+  if (cardinality && !(node.parameters || []).length) {
+    const [, column] = cardinality;
+    return (row) => {
+      const v = readColumn(row, column);
+      return Array.isArray(v) ? v.length : 0;
+    };
+  }
+
+  return compileCaseRank(value);
+}
+
 /** Error shaped like a pg unique violation, so callers can recognise it. */
 class UniqueViolationError extends Error {
   constructor(table, columns, value) {
@@ -494,7 +533,7 @@ export function createFakeDb(seed = {}) {
 
       for (const { column, direction } of [...state.orderBy].reverse()) {
         const read = isRawExpression(column)
-          ? compileCaseRank(column)
+          ? compileRawOrder(column)
           : (row) => readColumn(row, column);
         list.sort((a, b) => {
           const left = read(a);
