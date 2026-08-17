@@ -1,5 +1,5 @@
 import {
-  esc,
+  escapeHtml,
   imagePlaceholderHtml,
   objectPositionStyleAttrFromFocus,
   pickAltText,
@@ -263,7 +263,7 @@ export default {
     // controls and the conversion seam share.
     const { fit, bleed } = resolveImageSlideImage(content);
     const title = content?.title
-      ? `<h2 class="img-title" data-inline-field="title" dir="auto">${esc(content.title)}</h2>`
+      ? `<h2 class="img-title" data-inline-field="title" dir="auto">${escapeHtml(content.title)}</h2>`
       : '';
     const subheading = renderSubheadingHtml(content);
     const heading =
@@ -299,13 +299,13 @@ export default {
           const focusStyle = objectPositionStyleAttrFromFocus(content);
           const ariaDecorative =
             imageRole === 'decorative' ? ' aria-hidden="true"' : '';
-          return `<img class="image" data-inline-photo="0" src="${esc(content.image)}" alt="${esc(
+          return `<img class="image" data-inline-photo="0" src="${escapeHtml(content.image)}" alt="${escapeHtml(
             alt
           )}"${ariaDecorative}${focusStyle} />`;
         })()
       : imagePlaceholderHtml({ label: copy.imagePlaceholder, index: 0 });
     const caption = content?.caption
-      ? `<figcaption class="caption" data-inline-field="caption" dir="auto">${esc(content.caption)}</figcaption>`
+      ? `<figcaption class="caption" data-inline-field="caption" dir="auto">${escapeHtml(content.caption)}</figcaption>`
       : '';
     // Zoom step configuration for presenter mode
     const zoomSteps = content?.zoomSteps || '';
@@ -313,8 +313,8 @@ export default {
       typeof content?.zoomLevel === 'number' ? content.zoomLevel : 2;
     const zoomPositions = content?.zoomPositions || '';
     const zoomAttrs = zoomSteps
-      ? ` data-zoom-steps="${esc(zoomSteps)}" data-zoom-level="${zoomLevel}"${
-          zoomPositions ? ` data-zoom-positions="${esc(zoomPositions)}"` : ''
+      ? ` data-zoom-steps="${escapeHtml(zoomSteps)}" data-zoom-level="${zoomLevel}"${
+          zoomPositions ? ` data-zoom-positions="${escapeHtml(zoomPositions)}"` : ''
         }`
       : '';
     return `

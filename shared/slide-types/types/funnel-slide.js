@@ -1,6 +1,6 @@
 import {
   bgClass,
-  esc,
+  escapeHtml,
   renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
@@ -17,13 +17,13 @@ function stageHtml(stage, idx, total, colKey = 'items') {
   const stageNum = idx + 1;
 
   const labelHtml = label
-    ? `<div class="stage-label" data-inline-field="${colKey}.${idx}.label" dir="auto">${esc(label)}</div>`
+    ? `<div class="stage-label" data-inline-field="${colKey}.${idx}.label" dir="auto">${escapeHtml(label)}</div>`
     : '';
   const valueHtml = value
-    ? `<div class="stage-value" data-inline-field="${colKey}.${idx}.value" dir="auto">${esc(value)}</div>`
+    ? `<div class="stage-value" data-inline-field="${colKey}.${idx}.value" dir="auto">${escapeHtml(value)}</div>`
     : '';
   const textHtml = text
-    ? `<div class="stage-text" data-inline-field="${colKey}.${idx}.text" dir="auto">${esc(text)}</div>`
+    ? `<div class="stage-text" data-inline-field="${colKey}.${idx}.text" dir="auto">${escapeHtml(text)}</div>`
     : '';
 
   // Calculate width percentage for funnel effect (narrowing from top to bottom)
@@ -200,7 +200,7 @@ export default {
     const bg = bgClass(content?.background);
     const title =
       typeof content?.title === 'string' && content.title.trim()
-        ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
+        ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
     const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);

@@ -1,6 +1,6 @@
 import {
   bgClass,
-  esc,
+  escapeHtml,
   renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
@@ -115,7 +115,7 @@ export default {
     const bg = bgClass(content?.background);
     const title =
       typeof content?.title === 'string' && content.title.trim()
-        ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
+        ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
     const subheadingHtml = renderSubheadingHtml(content);
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);
@@ -129,21 +129,21 @@ export default {
     const verdict = typeof content?.verdict === 'string' ? content.verdict.trim() : '';
 
     const leftTitleHtml = leftTitle
-      ? `<h3 class="side-title" data-inline-field="leftTitle" dir="auto">${esc(leftTitle)}</h3>`
+      ? `<h3 class="side-title" data-inline-field="leftTitle" dir="auto">${escapeHtml(leftTitle)}</h3>`
       : '';
     const leftBodyHtml = leftBody
       ? `<div class="body" data-inline-field="leftBody">${markdownToSafeHtml(leftBody)}</div>`
       : '';
 
     const rightTitleHtml = rightTitle
-      ? `<h3 class="side-title" data-inline-field="rightTitle" dir="auto">${esc(rightTitle)}</h3>`
+      ? `<h3 class="side-title" data-inline-field="rightTitle" dir="auto">${escapeHtml(rightTitle)}</h3>`
       : '';
     const rightBodyHtml = rightBody
       ? `<div class="body" data-inline-field="rightBody">${markdownToSafeHtml(rightBody)}</div>`
       : '';
 
     const verdictHtml = verdict
-      ? `<div class="comparison-verdict"><span class="badge" data-inline-field="verdict" dir="auto">${esc(verdict)}</span></div>`
+      ? `<div class="comparison-verdict"><span class="badge" data-inline-field="verdict" dir="auto">${escapeHtml(verdict)}</span></div>`
       : '';
 
     return `

@@ -530,6 +530,3 @@ export function parseMarkdownTable(markdown) {
   }
   return null;
 }
-
-// Alias for backwards compatibility
-export { markdownToSafeHtml as renderMarkdown };

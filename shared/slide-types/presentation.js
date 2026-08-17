@@ -3,7 +3,7 @@ import {
   isNonEmptyString,
   isUuid,
   cryptoUuid,
-  esc,
+  escapeHtml,
 } from './helpers.js';
 import { pickBackgroundPreset } from '../theme-background-presets.js';
 import { applyLocksToContent } from '../theme-locks.js';
@@ -218,7 +218,7 @@ function injectSlideLogo(html, content, ctx) {
     String(theme?.assets?.logo || '/assets/images/logo.svg')
   );
   if (!src) return html;
-  const alt = esc(String(theme?.assets?.logoAlt || 'Logo'));
+  const alt = escapeHtml(String(theme?.assets?.logoAlt || 'Logo'));
   const node =
     `<div class="slide-logo-corner slide-logo-top-right" data-morph-role="corner-logo">` +
     `<img class="slide-logo-corner-img" src="${src}" alt="${alt}" /></div>`;

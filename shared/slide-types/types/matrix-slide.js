@@ -1,6 +1,6 @@
 import {
   bgClass,
-  esc,
+  escapeHtml,
   renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
@@ -23,14 +23,14 @@ function cellHtml(cell, idx) {
   const tone = VALID_TONES.includes(toneRaw) ? toneRaw : 'default';
 
   const titleHtml = title
-    ? `<h3 class="cell-title" data-inline-field="cells.${idx}.title" dir="auto">${esc(title)}</h3>`
+    ? `<h3 class="cell-title" data-inline-field="cells.${idx}.title" dir="auto">${escapeHtml(title)}</h3>`
     : '';
   const bodyHtml = body
     ? `<div class="cell-body" data-inline-field="cells.${idx}.body">${markdownToSafeHtml(body)}</div>`
     : '';
 
   return `
-    <div class="matrix-cell" data-position="${position}" data-tone="${tone}" role="region" aria-label="${esc(title || `Cell ${idx + 1}`)}" data-inline-item="cells" data-inline-item-index="${idx}">
+    <div class="matrix-cell" data-position="${position}" data-tone="${tone}" role="region" aria-label="${escapeHtml(title || `Cell ${idx + 1}`)}" data-inline-item="cells" data-inline-item-index="${idx}">
       ${titleHtml}
       ${bodyHtml}
     </div>
@@ -206,7 +206,7 @@ export default {
     const bg = bgClass(content?.background);
     const title =
       typeof content?.title === 'string' && content.title.trim()
-        ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
+        ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
     const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);

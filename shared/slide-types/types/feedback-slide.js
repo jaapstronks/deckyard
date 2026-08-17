@@ -1,4 +1,4 @@
-import { bgClass, esc, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
+import { bgClass, escapeHtml, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 
 export default {
@@ -62,32 +62,32 @@ export default {
         <div class="slide-inner">
           <div class="sfi">
             <div>
-              <div class="sfi-title" data-inline-field="question" dir="auto">${esc(question)}</div>
-              <div class="sfi-body">${esc(copy.feedbackHelp)}</div>
+              <div class="sfi-title" data-inline-field="question" dir="auto">${escapeHtml(question)}</div>
+              <div class="sfi-body">${escapeHtml(copy.feedbackHelp)}</div>
             </div>
 
-            <div class="sfi-methods" role="group" aria-label="${esc(copy.feedbackMethodsLabel)}">
+            <div class="sfi-methods" role="group" aria-label="${escapeHtml(copy.feedbackMethodsLabel)}">
               <div class="sfi-card on-surface-light">
-                <div class="sfi-card-kicker">${esc(copy.feedbackScan)}</div>
+                <div class="sfi-card-kicker">${escapeHtml(copy.feedbackScan)}</div>
                 <div class="sfi-qr-wrap">
-                  <canvas class="sfi-qr" data-follow-qr="1" data-follow-url="${esc(
+                  <canvas class="sfi-qr" data-follow-qr="1" data-follow-url="${escapeHtml(
                     relFollowNl || relFollowEn
-                  )}" role="img" aria-label="${esc(copy.feedbackQrCodeLabel)}"></canvas>
+                  )}" role="img" aria-label="${escapeHtml(copy.feedbackQrCodeLabel)}"></canvas>
                 </div>
               </div>
 
               <div class="sfi-card on-surface-light">
-                <div class="sfi-card-kicker">${esc(copy.feedbackOrGoTo)}</div>
+                <div class="sfi-card-kicker">${escapeHtml(copy.feedbackOrGoTo)}</div>
                 <div class="sfi-go" data-follow-go-url="1">/go</div>
                 <div class="sfi-code-row">
                   <div class="sfi-row-label">NL</div>
-                  <div class="sfi-code" aria-label="${esc(copy.feedbackAccessCodeNlLabel)}">${esc(
+                  <div class="sfi-code" aria-label="${escapeHtml(copy.feedbackAccessCodeNlLabel)}">${escapeHtml(
                     followCodes?.nl || '----'
                   )}</div>
                 </div>
                 <div class="sfi-code-row">
                   <div class="sfi-row-label">EN</div>
-                  <div class="sfi-code" aria-label="${esc(copy.feedbackAccessCodeEnLabel)}">${esc(
+                  <div class="sfi-code" aria-label="${escapeHtml(copy.feedbackAccessCodeEnLabel)}">${escapeHtml(
                     followCodes?.en || '----'
                   )}</div>
                 </div>

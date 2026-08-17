@@ -10,7 +10,7 @@
 
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
 import { compileTemplate } from './slide-template-compiler.js';
-import { esc } from '../../shared/slide-types/helpers.js';
+import { escapeHtml } from '../../shared/slide-types/helpers.js';
 import { sanitizeSlideHtmlSync } from '../../shared/sanitize.js';
 import { filterCssText } from '../../shared/css-filter.js';
 import { listPublishedCustomSlideTypes } from '../storage/custom-slide-types.js';
@@ -60,8 +60,8 @@ export function toRuntimeSlideType(ct) {
   } else {
     // Last resort: render a basic content block
     def.renderHtml = (content) => {
-      const title = esc(String(content?.title || ct.label || ''));
-      const body = esc(String(content?.body || ''));
+      const title = escapeHtml(String(content?.title || ct.label || ''));
+      const body = escapeHtml(String(content?.body || ''));
       return `
         <div class="slide is-lime">
           <div class="slide-inner">

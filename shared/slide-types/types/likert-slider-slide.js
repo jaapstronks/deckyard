@@ -1,4 +1,4 @@
-import { bgClass, esc, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
+import { bgClass, escapeHtml, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 
 export default {
@@ -70,26 +70,26 @@ export default {
     return `
       <div class="slide slide-likert slide-likert-slider ${bg}" data-interaction="likert" data-likert="1" style="--likert-axis-count:${n};--likert-axis-denom:${denom};">
         <div class="slide-inner">
-          <h2 class="heading" data-inline-field="question" dir="auto">${esc(content?.question)}</h2>
+          <h2 class="heading" data-inline-field="question" dir="auto">${escapeHtml(content?.question)}</h2>
           <div class="poll-layout likert-layout">
             <div class="poll-left">
-              <div class="likert-slider-scale on-surface-light" aria-label="${esc(copy.likertSliderScaleLabel)}">
+              <div class="likert-slider-scale on-surface-light" aria-label="${escapeHtml(copy.likertSliderScaleLabel)}">
                 <div class="likert-slider-labels">
                   <div class="likert-slider-label">
                     <span class="likert-slider-num" aria-hidden="true">1</span>
-                    <span class="likert-slider-text" data-inline-field="minLabel" dir="auto">${esc(minLabel || '')}</span>
+                    <span class="likert-slider-text" data-inline-field="minLabel" dir="auto">${escapeHtml(minLabel || '')}</span>
                   </div>
                   <div class="likert-slider-label is-right">
                     <span class="likert-slider-num" aria-hidden="true">10</span>
-                    <span class="likert-slider-text" data-inline-field="maxLabel" dir="auto">${esc(maxLabel || '')}</span>
+                    <span class="likert-slider-text" data-inline-field="maxLabel" dir="auto">${escapeHtml(maxLabel || '')}</span>
                   </div>
                 </div>
-                <div class="help likert-slider-help">${esc(copy.likertSliderHelp)}</div>
+                <div class="help likert-slider-help">${escapeHtml(copy.likertSliderHelp)}</div>
               </div>
             </div>
             <div class="poll-right">
-              <div class="poll-results likert-results on-surface-light" aria-label="${esc(copy.likertResultsLabel)}">
-                <div class="poll-results-title">${esc(copy.likertResultsTitle)}</div>
+              <div class="poll-results likert-results on-surface-light" aria-label="${escapeHtml(copy.likertResultsLabel)}">
+                <div class="poll-results-title">${escapeHtml(copy.likertResultsTitle)}</div>
                 <div class="likert-hill" data-likert-hill="1"></div>
                 <div class="likert-axis" data-likert-axis="1">${axisHtml}</div>
                 <div class="poll-total" data-poll-total="1"></div>

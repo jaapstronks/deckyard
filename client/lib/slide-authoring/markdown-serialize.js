@@ -275,21 +275,21 @@ export function serializeMarkdownDom(root) {
  * sides come from the same renderer, so equality is well-defined).
  *
  * @param {string} raw - the stored markdown
- * @param {Function} renderMarkdown - shared/markdown.js markdownToSafeHtml
+ * @param {Function} markdownToSafeHtml - shared/markdown.js markdownToSafeHtml
  * @param {Document} [doc] - document to parse with (defaults to global)
  * @returns {boolean}
  */
-export function canInlineEditMarkdown(raw, renderMarkdown, doc = globalThis.document) {
+export function canInlineEditMarkdown(raw, markdownToSafeHtml, doc = globalThis.document) {
   const s = String(raw || '');
   if (!s.trim()) return true; // empty: nothing to lose
   if (markdownNeedsModal(s)) return false;
-  if (typeof renderMarkdown !== 'function' || !doc) return false;
+  if (typeof markdownToSafeHtml !== 'function' || !doc) return false;
   try {
-    const html = renderMarkdown(s);
+    const html = markdownToSafeHtml(s);
     const scratch = doc.createElement('div');
     scratch.innerHTML = html;
     const md2 = serializeMarkdownDom(scratch);
-    return renderMarkdown(md2) === html;
+    return markdownToSafeHtml(md2) === html;
   } catch {
     return false;
   }

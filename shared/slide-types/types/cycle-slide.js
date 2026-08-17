@@ -1,6 +1,6 @@
 import {
   bgClass,
-  esc,
+  escapeHtml,
   renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
@@ -16,10 +16,10 @@ function stageHtml(stage, idx, total, colKey = 'items') {
   const stageNum = idx + 1;
 
   const labelHtml = label
-    ? `<div class="cycle-label" data-inline-field="${colKey}.${idx}.label" dir="auto">${esc(label)}</div>`
+    ? `<div class="cycle-label" data-inline-field="${colKey}.${idx}.label" dir="auto">${escapeHtml(label)}</div>`
     : '';
   const textHtml = text
-    ? `<div class="cycle-text" data-inline-field="${colKey}.${idx}.text" dir="auto">${esc(text)}</div>`
+    ? `<div class="cycle-text" data-inline-field="${colKey}.${idx}.text" dir="auto">${escapeHtml(text)}</div>`
     : '';
 
   // Calculate position angle for circular arrangement
@@ -201,7 +201,7 @@ export default {
     const bg = bgClass(content?.background);
     const title =
       typeof content?.title === 'string' && content.title.trim()
-        ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
+        ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
     const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);
@@ -210,7 +210,7 @@ export default {
 
     const centerLabel = typeof content?.centerLabel === 'string' ? content.centerLabel.trim() : '';
     const centerHtml = centerLabel
-      ? `<div class="cycle-center on-surface-mist"><span class="center-label" data-inline-field="centerLabel" dir="auto">${esc(centerLabel)}</span></div>`
+      ? `<div class="cycle-center on-surface-mist"><span class="center-label" data-inline-field="centerLabel" dir="auto">${escapeHtml(centerLabel)}</span></div>`
       : '<div class="cycle-center on-surface-mist"></div>';
 
     // DEPRECATED: 'stages' fallback - Remove after April 2026

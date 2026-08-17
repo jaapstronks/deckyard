@@ -1,4 +1,4 @@
-import { bgClass, cryptoUuid, esc, BACKGROUND_FIELD } from '../helpers.js';
+import { bgClass, cryptoUuid, escapeHtml, BACKGROUND_FIELD } from '../helpers.js';
 
 function normalizeEmbedUrl(raw) {
   const s = String(raw || '').trim();
@@ -91,7 +91,7 @@ export default {
     const bg = bgClass(content?.background || 'lime');
     const title =
       typeof content?.title === 'string' && content.title.trim()
-        ? `<h2 class="heading" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
+        ? `<h2 class="heading" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
 
     const embedUrl = normalizeEmbedUrl(content?.embedUrl);
@@ -108,7 +108,7 @@ export default {
             ? 'embed-aspect-auto'
             : 'embed-aspect-16-9';
 
-    const iframeId = `embed-${esc(slide?.id || cryptoUuid())}`;
+    const iframeId = `embed-${escapeHtml(slide?.id || cryptoUuid())}`;
     const iframeTitle =
       typeof content?.title === 'string' && content.title.trim()
         ? content.title.trim()
@@ -120,15 +120,15 @@ export default {
             <iframe
               id="${iframeId}"
               class="embed-iframe"
-              src="${esc(embedUrl)}"
-              title="${esc(iframeTitle)}"
+              src="${escapeHtml(embedUrl)}"
+              title="${escapeHtml(iframeTitle)}"
               frameborder="0"
               loading="lazy"
-              sandbox="${esc(sandboxAttr)}"
+              sandbox="${escapeHtml(sandboxAttr)}"
               allow="fullscreen"
               allowfullscreen
-              data-embed-url="${esc(embedUrl)}"
-              data-sandbox-mode="${esc(sandboxMode)}"
+              data-embed-url="${escapeHtml(embedUrl)}"
+              data-sandbox-mode="${escapeHtml(sandboxMode)}"
             ></iframe>
           </div>
         `

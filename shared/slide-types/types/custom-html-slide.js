@@ -20,7 +20,7 @@
  *   still view/present/export the rendered slide read-only.
  */
 
-import { esc, bgClass, BACKGROUND_FIELD } from '../helpers.js';
+import { escapeHtml, bgClass, BACKGROUND_FIELD } from '../helpers.js';
 import { sanitizeSlideHtmlSync } from '../../sanitize.js';
 import { filterCssText } from '../../css-filter.js';
 
@@ -186,6 +186,6 @@ export default {
 
     const inner = safeHtml || '<div class="custom-html-empty">Custom HTML</div>';
 
-    return `<div class="slide slide-custom-html ${bg}">${styleBlock}<div class="custom-html-root" data-chr="${esc(safeId)}">${inner}</div></div>`;
+    return `<div class="slide slide-custom-html ${bg}">${styleBlock}<div class="custom-html-root" data-chr="${escapeHtml(safeId)}">${inner}</div></div>`;
   },
 };

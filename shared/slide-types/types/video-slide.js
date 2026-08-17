@@ -4,7 +4,7 @@ import {
   BUNNY_PLAYER_COLORS,
   bunnyEmbedUrlFromInput,
   cryptoUuid,
-  esc,
+  escapeHtml,
   pickAltText,
   vimeoEmbedUrl,
   youtubeEmbedUrl,
@@ -82,7 +82,7 @@ export default {
     const autoplayOn = !isThumb && content?.autoplay === 'on';
     const title =
       typeof content?.title === 'string' && content.title.trim()
-        ? `<h2 class="heading" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
+        ? `<h2 class="heading" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
 
     const sourceRaw = String(content?.source || '').trim();
@@ -135,7 +135,7 @@ export default {
     // So we always render a non-autoplay src, and store the desired autoplay src in data-*.
     embed = isThumb ? embedNoAutoplay : embedNoAutoplay;
 
-    const iframeId = `video-${esc(slide?.id || cryptoUuid())}`;
+    const iframeId = `video-${escapeHtml(slide?.id || cryptoUuid())}`;
     const allow = isThumb
       ? 'accelerometer; gyroscope; encrypted-media; picture-in-picture; fullscreen'
       : 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen';
@@ -150,15 +150,15 @@ export default {
               <iframe
                 id="${iframeId}"
                 class="video-iframe"
-                src="${esc(embed)}"
-                title="${esc(iframeTitle)}"
+                src="${escapeHtml(embed)}"
+                title="${escapeHtml(iframeTitle)}"
                 frameborder="0"
                 loading="lazy"
                 allow="${allow}"
                 allowfullscreen
-                data-video-provider="${esc(provider)}"
-                data-video-src-noautoplay="${esc(embedNoAutoplay)}"
-                ${autoplayOn && embedAutoplay ? `data-video-src-autoplay="${esc(embedAutoplay)}"` : ''}
+                data-video-provider="${escapeHtml(provider)}"
+                data-video-src-noautoplay="${escapeHtml(embedNoAutoplay)}"
+                ${autoplayOn && embedAutoplay ? `data-video-src-autoplay="${escapeHtml(embedAutoplay)}"` : ''}
                 ${autoplayOn && embedAutoplay ? 'data-video-autoplay="1"' : 'data-video-autoplay="0"'}
                 ${needsPlayerJs ? 'data-bunny-playerjs="1"' : ''}
               ></iframe>

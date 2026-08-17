@@ -1,4 +1,4 @@
-import { bgClass, esc, renderSubheadingHtml, BACKGROUND_FIELD } from '../helpers.js';
+import { bgClass, escapeHtml, renderSubheadingHtml, BACKGROUND_FIELD } from '../helpers.js';
 import { alignGroup, groupAlignClass } from '../field-groups.js';
 
 /**
@@ -430,13 +430,13 @@ export default {
       // leaving an unclickable empty div. The renderer still emits it when the
       // ghost-spawn sentinel (zero-width space) is present, so editing works.
       const textHtml = x
-        ? `<div class="item-text" data-inline-field="items.${idx}.text" dir="auto">${esc(x)}</div>`
+        ? `<div class="item-text" data-inline-field="items.${idx}.text" dir="auto">${escapeHtml(x)}</div>`
         : '';
       return `
         <li class="lijst-item" data-inline-item="items" data-inline-item-index="${idx}">
           ${marker}
           <div class="lijst-item-body">
-            <div class="item-title" data-inline-field="items.${idx}.title" dir="auto">${esc(t)}</div>
+            <div class="item-title" data-inline-field="items.${idx}.title" dir="auto">${escapeHtml(t)}</div>
             ${textHtml}
           </div>
         </li>
@@ -472,7 +472,7 @@ export default {
         alignClass ? ` ${alignClass}` : ''
       }">
         <div class="slide-inner">
-          <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h2>
+          <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content?.title)}</h2>
           ${subheading}
           ${listHtml}
         </div>
