@@ -113,3 +113,30 @@ test('notion: GET /api/notion/status dispatches to the status handler (storage-f
   assert.equal(await handleNotion(c), true);
   assert.equal(res.statusCode, 200, 'status endpoint answers 200');
 });
+
+test('notion: the dispatcher forwards storageScope to the import handler (B62 vondst 2 regression)', async () => {
+  // Before the ROUTES-table migration (#686) the notion dispatcher hand-built a
+  // partial ctx `{ req, res, url, authedUser, repoRoot }` and dropped
+  // `storageScope`, so `createPresentation(undefined, …)` threw the scope
+  // TypeError and every import 500'd. dispatchRoutes forwards the whole ctx;
+  // pin that the import handler still receives the exact scope the auth gate
+  // put on ctx, so a future hand-rolled ctx cannot silently drop it again.
+  const importRoute = ROUTES.find((r) => r.pattern === '/api/notion/import');
+  assert.ok(importRoute, 'the import route is present');
+  const realHandler = importRoute.handler;
+  let seen = null;
+  importRoute.handler = (received) => {
+    seen = received;
+    return true;
+  };
+  try {
+    const scope = { organizationId: 'org-sentinel', actorEmail: 'a@b.test' };
+    const { ctx: c } = ctx('POST', '/api/notion/import');
+    c.storageScope = scope;
+    assert.equal(await handleNotion(c), true);
+    assert.ok(seen, 'the import handler was invoked');
+    assert.equal(seen.storageScope, scope, 'the exact storageScope reached the handler');
+  } finally {
+    importRoute.handler = realHandler;
+  }
+});
