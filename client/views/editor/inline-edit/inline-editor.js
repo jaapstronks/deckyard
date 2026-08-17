@@ -1054,9 +1054,7 @@ export function createInlineEditor({
    *  through the same dirty/save/rerender path as a popover pick. */
   async function handleDroppedImage(photoEl, file) {
     if (!file.type?.startsWith('image/')) {
-      toast(t('editor.inline.media.dropInvalid', 'That is not an image file.'), {
-        type: 'error',
-      });
+      toast.error(t('editor.inline.media.dropInvalid', 'That is not an image file.'));
       return;
     }
     const target = resolveMediaTarget(photoEl);
@@ -1076,9 +1074,7 @@ export function createInlineEditor({
       rerenderEditor?.();
       rerenderPreview?.();
     } catch {
-      toast(t('editor.inline.media.dropFailed', 'Upload failed. Please try again.'), {
-        type: 'error',
-      });
+      toast.error(t('editor.inline.media.dropFailed', 'Upload failed. Please try again.'));
     } finally {
       uploading?.dismiss?.();
     }

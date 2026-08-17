@@ -169,7 +169,7 @@ export function createOrganizationSection({
               'You cannot switch to this organization.'
             )
           : t('common.organizationSwitchFailed', 'Could not switch organization.');
-      toast(message, { type: 'error' });
+      toast.error(message);
       return;
     }
     reload();

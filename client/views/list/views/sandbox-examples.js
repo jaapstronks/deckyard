@@ -70,9 +70,7 @@ export function createSandboxExamplesSection({ h, api, nav, detachThumbs }) {
         throw new Error('no id');
       }
     } catch {
-      toast(t('sandbox.examples.error', 'Could not open that example. Please try again.'), {
-        type: 'error',
-      });
+      toast.error(t('sandbox.examples.error', 'Could not open that example. Please try again.'));
       busy = false;
     }
   }
