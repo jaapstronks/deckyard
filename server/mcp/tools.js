@@ -248,7 +248,7 @@ export function registerTools(
 
   server.tool(
     'list_presentations',
-    'List presentations you can access. Returns id, title, theme, creation date, and slide count for each. Use `scope` to include decks shared with you (collaborator access): "owned" (default), "shared", or "all".',
+    'List presentations you can access. Returns id, title, theme, creation date, and slide count for each. Use `ownership` to include decks shared with you (collaborator access): "owned" (default), "shared", or "all".',
     {
       type: 'object',
       properties: {
@@ -256,7 +256,7 @@ export function registerTools(
           type: 'number',
           description: 'Max results (default: 50)',
         },
-        scope: {
+        ownership: {
           type: 'string',
           description:
             'Which decks to include: "owned" (default), "shared" (decks shared with you), or "all" (union). Shared decks require the DB storage backend.',
@@ -264,9 +264,9 @@ export function registerTools(
         },
       },
     },
-    async ({ limit = 50, scope = 'owned' } = {}, context) => {
+    async ({ limit = 50, ownership = 'owned' } = {}, context) => {
       const owner = getOwner(context);
-      const validScope = ['owned', 'shared', 'all'].includes(scope) ? scope : 'owned';
+      const validOwnership = ['owned', 'shared', 'all'].includes(ownership) ? ownership : 'owned';
       const ctx = storageScopeOf(context);
 
       // Collect owned and/or shared decks, de-duplicated by id (a deck could
@@ -275,7 +275,7 @@ export function registerTools(
       const decks = [];
       const seen = new Set();
 
-      if (validScope === 'owned' || validScope === 'all') {
+      if (validOwnership === 'owned' || validOwnership === 'all') {
         const all = await listPresentations(storageScopeOf(context));
         const owned = owner ? all.filter((p) => p.ownerEmail === owner) : all;
         for (const p of owned) {
@@ -286,7 +286,7 @@ export function registerTools(
         }
       }
 
-      if ((validScope === 'shared' || validScope === 'all') && owner) {
+      if ((validOwnership === 'shared' || validOwnership === 'all') && owner) {
         const shared = await listPresentationsSharedWithUser(ctx, owner);
         for (const p of shared) {
           if (!seen.has(p.id)) {
@@ -321,7 +321,7 @@ export function registerTools(
         presentations: items,
         total: decks.length,
         ownerFilter: owner || null,
-        scope: validScope,
+        ownership: validOwnership,
       };
     },
     { readOnly: true }
@@ -1434,7 +1434,7 @@ export function registerTools(
     {
       type: 'object',
       properties: {
-        scope: {
+        ownership: {
           type: 'string',
           description: 'Which decks to include: owned, shared, or all (default: all)',
           enum: ['owned', 'shared', 'all'],
@@ -1458,10 +1458,10 @@ export function registerTools(
         },
       },
     },
-    async ({ scope = 'all', authorEmail, status = 'all', since, limit = 50 } = {}, context) => {
+    async ({ ownership = 'all', authorEmail, status = 'all', since, limit = 50 } = {}, context) => {
       const owner = getOwner(context);
       const { comments, total } = await listRecentCommentsForOwner(storageScopeOf(context), {
-        visibility: scope,
+        ownership,
         authorEmail: authorEmail || null,
         status,
         since: parseSince(since) || null,
@@ -1501,7 +1501,7 @@ export function registerTools(
       return {
         comments: items,
         total,
-        scope,
+        ownership,
         ownerFilter: owner || null,
       };
     },

@@ -340,12 +340,12 @@
 }
 
 /* ============================================================
-   SCOPE FILTER (segmented source chips for the Presentations view)
+   OWNERSHIP FILTER (segmented source chips for the Presentations view)
    The primary source filter that replaced the Recent/Workspace/Shared tabs,
    so — unlike the old visibility filter — it stays visible on every viewport.
    ============================================================ */
 
-.scope-filter {
+.ownership-filter {
   display: inline-flex;
   align-items: stretch;
   border: 1px solid hsl(var(--app-border-default));
@@ -354,7 +354,7 @@
   background: hsl(var(--app-bg-elevated));
 }
 
-.scope-filter-btn {
+.ownership-filter-btn {
   display: inline-flex;
   align-items: center;
   gap: var(--ps-space-1);
@@ -369,35 +369,35 @@
   white-space: nowrap;
 }
 
-.scope-filter-btn:last-child {
+.ownership-filter-btn:last-child {
   border-right: none;
 }
 
-.scope-filter-btn:hover {
+.ownership-filter-btn:hover {
   background: hsl(var(--app-bg-hover));
   color: hsl(var(--app-text-primary));
 }
 
-.scope-filter-btn.is-active {
+.ownership-filter-btn.is-active {
   background: hsl(var(--app-accent-soft));
   color: hsl(var(--app-accent-text));
   font-weight: 600;
 }
 
-.scope-filter-btn:focus-visible {
+.ownership-filter-btn:focus-visible {
   outline: 2px solid hsl(var(--app-accent-primary));
   outline-offset: -2px;
 }
 
 /* Count pill inside each chip. */
-.scope-filter-count {
+.ownership-filter-count {
   font-size: var(--ps-text-xs);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: hsl(var(--app-text-tertiary));
 }
 
-.scope-filter-btn.is-active .scope-filter-count {
+.ownership-filter-btn.is-active .ownership-filter-count {
   color: hsl(var(--app-accent-text));
 }
 
