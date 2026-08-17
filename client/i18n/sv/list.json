@@ -54,7 +54,6 @@
   "list.time.hoursAgo": "{count}h sedan",
   "list.time.justNow": "just nu",
   "list.time.minutesAgo": "{count} min sedan",
-  "list.time.secondsAgo": "{count}s sedan",
   "list.visibility.private": "Privat",
   "list.visibility.published": "Publicerad",
   "list.visibility.shared": "Delad med {count} personer",

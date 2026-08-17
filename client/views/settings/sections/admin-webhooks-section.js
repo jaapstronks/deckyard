@@ -124,6 +124,34 @@ export function createAdminWebhooksSection({ h }) {
     elements.push(label, input, inputHint);
   }
 
+  // Optional HMAC signing secret. Not per-event: one secret signs every
+  // delivery, sent in the `x-sb-signature` header (B81). A password field so
+  // the value is not shoulder-surfed in the admin UI.
+  const secretLabel = h('div', {
+    class: 'field-label',
+    style: 'margin-top:10px;',
+    text: t('settings.admin.webhooks.signingSecret.title', 'Signing secret (optional)'),
+  });
+
+  const secretInput = h('input', {
+    class: 'form-input',
+    type: 'password',
+    autocomplete: 'off',
+    placeholder: '',
+    value: '',
+  });
+
+  const secretHint = h('div', {
+    class: 'help',
+    text: t(
+      'settings.admin.webhooks.signingSecret.hint',
+      'When set, each delivery is signed with HMAC-SHA256 over the request body and the signature is sent in the x-sb-signature header as sha256=<hex>. Leave empty to send unsigned.'
+    ),
+  });
+
+  inputs.signingSecret = secretInput;
+  elements.push(secretLabel, secretInput, secretHint);
+
   return {
     elements,
     inputs,
@@ -137,6 +165,7 @@ export function createAdminWebhooksSection({ h }) {
       for (const config of WEBHOOK_CONFIGS) {
         values[config.settingsKey] = String(inputs[config.key].value || '').trim();
       }
+      values.signingSecret = String(inputs.signingSecret.value || '').trim();
       return values;
     },
     setValues: (webhooks) => {
@@ -144,6 +173,7 @@ export function createAdminWebhooksSection({ h }) {
       for (const config of WEBHOOK_CONFIGS) {
         inputs[config.key].value = String(wh[config.settingsKey] || '');
       }
+      inputs.signingSecret.value = String(wh.signingSecret || '');
     },
   };
 }

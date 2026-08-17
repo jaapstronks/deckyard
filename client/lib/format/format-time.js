@@ -2,13 +2,19 @@
  * Shared time formatting utilities.
  */
 
+import { t } from '../ui-i18n.js';
+
 /**
- * Format an ISO timestamp as a relative time string.
+ * Format an ISO timestamp as a relative time string (e.g. "5 min ago").
+ *
+ * The single canonical relative-time formatter. It reads translations from the
+ * ambient UI `t` itself, so callers pass only the timestamp — there is no `t`
+ * parameter and no per-view wrapper.
+ *
  * @param {string} isoString - ISO 8601 timestamp
- * @param {Function} t - Translation function
  * @returns {string} Formatted relative time
  */
-export function formatRelativeTime(isoString, t) {
+export function formatRelativeTime(isoString) {
   if (!isoString) return '';
   try {
     const date = new Date(isoString);

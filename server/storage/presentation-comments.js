@@ -262,16 +262,16 @@ export async function markThreadsRead(scope, presentationId, commentIds) {
  *
  * @param {import('./scope.js').StorageScope} scope - `actorEmail`/`ownerEmail`
  *   is the acting user, `organizationId` scopes shared lookups.
- * @param {'owned'|'shared'|'all'} [visibility='all'] - Which decks to include.
+ * @param {'owned'|'shared'|'all'} [ownership='all'] - Which decks to include.
  * @returns {Promise<Array<{ id: string, title: string }>>}
  */
-export async function listAccessiblePresentationRefs(scope, visibility = 'all') {
+export async function listAccessiblePresentationRefs(scope, ownership = 'all') {
   toStorageContext(scope, 'listAccessiblePresentationRefs');
   const owner = normalizeEmail(scope?.actorEmail || scope?.ownerEmail);
   if (!owner) return [];
 
-  const wantOwned = visibility === 'owned' || visibility === 'all';
-  const wantShared = visibility === 'shared' || visibility === 'all';
+  const wantOwned = ownership === 'owned' || ownership === 'all';
+  const wantShared = ownership === 'shared' || ownership === 'all';
 
   const titleById = new Map();
 
@@ -302,7 +302,7 @@ export async function listAccessiblePresentationRefs(scope, visibility = 'all') 
  *
  * @param {import('./scope.js').StorageScope} scope - Acting user + org, as above.
  * @param {Object} [opts]
- * @param {'owned'|'shared'|'all'} [opts.visibility='all'] - Which decks to include.
+ * @param {'owned'|'shared'|'all'} [opts.ownership='all'] - Which decks to include.
  * @param {string|null} [opts.authorEmail=null] - Filter to one comment author.
  * @param {'open'|'resolved'|'dismissed'|'all'} [opts.status='all']
  * @param {string|null} [opts.since=null] - Only comments created at/after this ISO timestamp.
@@ -312,8 +312,8 @@ export async function listAccessiblePresentationRefs(scope, visibility = 'all') 
  */
 export async function listRecentCommentsForOwner(scope, opts = {}) {
   toStorageContext(scope, 'listRecentCommentsForOwner');
-  const visibility = ['owned', 'shared', 'all'].includes(opts?.visibility)
-    ? opts.visibility
+  const ownership = ['owned', 'shared', 'all'].includes(opts?.ownership)
+    ? opts.ownership
     : 'all';
   const authorEmail = opts?.authorEmail ? normalizeEmail(opts.authorEmail) : null;
   const status = ['open', 'resolved', 'dismissed', 'all'].includes(opts?.status)
@@ -321,7 +321,7 @@ export async function listRecentCommentsForOwner(scope, opts = {}) {
     : 'all';
   const limit = Math.max(1, Math.min(200, Number(opts?.limit) || 50));
 
-  const refs = await listAccessiblePresentationRefs(scope, visibility);
+  const refs = await listAccessiblePresentationRefs(scope, ownership);
   if (refs.length === 0) return { comments: [], total: 0 };
 
   const titleById = new Map(refs.map((r) => [r.id, r.title]));

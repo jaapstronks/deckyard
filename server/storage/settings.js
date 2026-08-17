@@ -116,6 +116,9 @@ export function defaultAppSettings() {
       interactionFeedbackSubmittedUrl: '',
       interactionLikertClosedUrl: '',
       leadSubmittedUrl: '',
+      // Optional HMAC-SHA256 signing secret. Empty = deliveries are unsigned.
+      // When set, every delivery carries an `x-sb-signature` header (B81).
+      signingSecret: '',
     },
     notifications: {
       emailEnabled: false,
@@ -198,6 +201,13 @@ function normalizeWebhookUrl(v) {
   } catch {
     return '';
   }
+}
+
+/** The HMAC signing secret: a trimmed opaque string, capped, '' when unset. */
+function normalizeWebhookSecret(v) {
+  const s = String(v || '').trim();
+  if (!s || s.length > 512) return '';
+  return s;
 }
 
 function normalizeString(v, maxLen = 255) {
@@ -326,6 +336,7 @@ export async function getAppSettings(scope) {
     interactionFeedbackSubmittedUrl: normalizeWebhookUrl(wh?.interactionFeedbackSubmittedUrl),
     interactionLikertClosedUrl: normalizeWebhookUrl(wh?.interactionLikertClosedUrl),
     leadSubmittedUrl: normalizeWebhookUrl(wh?.leadSubmittedUrl),
+    signingSecret: normalizeWebhookSecret(wh?.signingSecret),
   };
   const notif = obj?.notifications && typeof obj.notifications === 'object' ? obj.notifications : {};
   const notifications = {
@@ -456,6 +467,7 @@ export async function writeAppSettings(scope, next) {
         leadSubmittedUrl: normalizeWebhookUrl(
           nextWh?.leadSubmittedUrl
         ),
+        signingSecret: normalizeWebhookSecret(nextWh?.signingSecret),
       }
     : null;
   const nextNotif =
