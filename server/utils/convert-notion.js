@@ -10,7 +10,7 @@ import {
   extractRichContentFromPage,
   formatNotionContentForAi,
   notionEnabled,
-} from './notion.js';
+} from './notion/index.js';
 import { generateOutline, separateSlidesForProcessing } from './ai/generate-outline.js';
 import { refineAllSlideGroups } from './ai/refine-slides.js';
 import { validateAndFixRefinedSlides } from './ai/validate-slides.js';

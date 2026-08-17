@@ -49,9 +49,8 @@ The client and parser (`server/utils/notion/`, 5 modules, 772 lines):
 - `server/utils/notion/blocks.js` — block *writers*: divider, heading,
   paragraph, embed, callout, `appendBlocksToPage`, and
   `publishEmbedToNotionPage`.
-- `server/utils/notion/index.js` — the barrel.
-- `server/utils/notion.js` — a second barrel that re-exports the first. Its own
-  header calls it a compatibility re-export; see *Implementation status*.
+- `server/utils/notion/index.js` — the barrel (the sole public seam; every
+  importer goes through it).
 
 The conversion step:
 
@@ -82,7 +81,7 @@ The second consumer:
 - `server/utils/data-source/providers/notion.js` — the `notion-database` and
   `notion-block` data-source providers. It imports
   `server/utils/notion/client.js` and `parser.js` **directly**, not through
-  either barrel, and never touches the import routes.
+  the barrel, and never touches the import routes.
 
 Client surfaces:
 
@@ -254,13 +253,6 @@ stands, as of 2026-08-05:
   into a 500 `notion_error`; the streaming one emits an SSE `error`. No test
   covers either route. This is a defect, recorded in the reference-doc-gaps
   brief rather than fixed here.
-- **There are two barrels for one module.** `server/utils/notion.js` re-exports
-  `server/utils/notion/index.js` and calls itself a compatibility layer, and
-  three modules still import through it (`routes/api/notion/*`,
-  `utils/convert-notion.js`) while the data-source provider imports the split
-  modules directly. Two accepted spellings for one import is exactly the
-  tolerance the beta doctrine says to collapse: the re-export should go and its
-  importers move to `notion/index.js`.
 - **Four endpoints have no caller.** `fetch`, `subjects`, `compose` and
   `suggest` are not called from any client module; only `status`,
   `import/stream`, `import` and `publish` are. `suggest` additionally describes

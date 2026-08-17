@@ -10,7 +10,7 @@ import {
   fetchNotionPage,
   notionEnabled,
   publishEmbedToNotionPage,
-} from '../../../utils/notion.js';
+} from '../../../utils/notion/index.js';
 import { handleNotionError } from './utils.js';
 
 /**
