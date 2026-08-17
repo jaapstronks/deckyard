@@ -1,135 +1,32 @@
 import {
-  newPublishId,
   removePublishedEntry,
   updatePublishedSlug,
   upsertPublishedEntry,
 } from '../../storage/published/index.js';
 import { updatePresentation } from '../../storage/presentations/index.js';
 import { getUserSettings } from '../../storage/settings.js';
-import { pickOgImageUrlFromPresentation } from '../../render/og-image.js';
-import { serveJson, forbidden, serverError, badRequest, requireJsonBody, withErrorHandler } from '../../utils/http.js';
-import { sandboxEnabled } from '../../config/sandbox.js';
+import { serveJson, serverError, badRequest, requireJsonBody, withErrorHandler } from '../../utils/http.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
-import { maybeFireWebhook } from '../../utils/webhooks.js';
 import { loadThemeAssets } from '../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../render/preview-image.js';
-import { warmDeckThumbnail } from './presentations/thumbnail.js';
 import { isMediaProviderInitialized } from '../../media/index.js';
+import { publishPresentation, assertPublishingEnabled } from '../../services/publish-presentation.js';
 import { createLogger } from '../../utils/logger.js';
 import { dispatchRoutes } from '../../utils/router.js';
 const log = createLogger('publish');
 
 // POST /api/presentations/:id/publish — publish (public share link)
 async function handlePublishCreate({ repoRoot, storageScope, req, res, authedUser }, id) {
-  // Sandbox stance: no public published URLs. A guest owns their own private
-  // deck and could otherwise publish arbitrary content onto the public
-  // domain. Mirrors canChangePresentationVisibility() returning false in sandbox.
-  if (sandboxEnabled()) {
-    forbidden(res, 'Publishing is disabled in sandbox mode');
-    return true;
-  }
+  // Refuse in sandbox before loading the deck (the shared policy gate).
+  assertPublishingEnabled();
 
   const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
   if (!pres) return true;
 
-  const publishId =
-    typeof pres?.published?.id === 'string' && pres.published.id
-      ? pres.published.id
-      : newPublishId();
-
-  // Generate OG preview image from the first meaningful slide
-  let ogImageUrl = '/assets/images/slides-previewimage.png';
-  try {
-    // Find first slide that's not a follow-invite-slide (those are internal)
-    const firstSlide = Array.isArray(pres?.slides)
-      ? pres.slides.find((s) => s?.type !== 'follow-invite-slide')
-      : null;
-
-    if (firstSlide && isMediaProviderInitialized()) {
-      const theme = await loadThemeAssets(repoRoot, pres.theme);
-
-      // Check if author overlay should be shown
-      const showAuthor = pres?.settings?.ogPreview?.showAuthor === true;
-      let authorInfo = null;
-
-      if (showAuthor) {
-        const ownerEmail = pres?.ownerEmail || pres?.createdBy || authedUser?.email;
-        if (ownerEmail) {
-          try {
-            const userSettings = await getUserSettings(storageScope, ownerEmail);
-            authorInfo = {
-              name: userSettings?.profile?.name || ownerEmail.split('@')[0],
-              imageUrl: userSettings?.profile?.imageUrl || '',
-            };
-          } catch {
-            // Fall back to email-derived name
-            authorInfo = { name: ownerEmail.split('@')[0], imageUrl: '' };
-          }
-        }
-      }
-
-      ogImageUrl = await generateAndSaveOgPreview(
-        repoRoot,
-        firstSlide,
-        theme,
-        `og-${publishId}`,
-        { showAuthor, authorInfo }
-      );
-    } else {
-      // Fall back to picking an image from presentation content
-      ogImageUrl = pickOgImageUrlFromPresentation(pres) || ogImageUrl;
-    }
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    log.warn('[publish] Preview generation failed:', err.message);
-    // Fall back to existing behavior
-    ogImageUrl = pickOgImageUrlFromPresentation(pres) || ogImageUrl;
-  }
-
-  const entry = await upsertPublishedEntry(storageScope, {
-    publishId,
-    presentationId: pres.id,
-    title: pres.title,
-    ogImageUrl,
-  });
-
-  // Persist back onto the presentation document as well (handy for exports/UI).
-  const nextPres = {
-    ...pres,
-    published: {
-      id: entry.publishId,
-      slug: entry.slug,
-      ogImageUrl: entry.ogImageUrl || '',
-      created: entry.created,
-      modified: entry.modified,
-    },
-  };
-  const updated = await updatePresentation(storageScope, id, nextPres, {
-    actorEmail: authedUser?.email || null,
-  });
-
-  // Warm the deck-grid thumbnail for the post-publish revision so the next
-  // list view shows the raster immediately (fire-and-forget, non-blocking).
-  warmDeckThumbnail(storageScope, updated || nextPres);
-
-  await maybeFireWebhook(repoRoot, req, {
-    event: 'presentation.published',
-    pres: nextPres,
-    authedUser,
-    extra: {
-      publishId: entry.publishId,
-      slug: entry.slug,
-      path: `/p/${entry.publishId}-${entry.slug}`,
-      ogImageUrl: entry.ogImageUrl || '',
-    },
-  });
-
-  serveJson(res, 200, {
-    publishId: entry.publishId,
-    slug: entry.slug,
-    path: `/p/${entry.publishId}-${entry.slug}`,
-    ogImageUrl: entry.ogImageUrl || '',
-  });
+  // The publish flow (sandbox refusal, OG preview, entry upsert, thumbnail
+  // warm, webhook) is shared with the v1 route — one canonical form.
+  const result = await publishPresentation({ repoRoot, storageScope, req, pres, actor: authedUser });
+  serveJson(res, 200, result);
   return true;
 }
 

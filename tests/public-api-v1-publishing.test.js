@@ -12,14 +12,14 @@
  * media provider is not initialized under test, so the OG-image path takes
  * the documented fallback ladder instead of rendering a preview.
  *
- * The known divergence from the internal publish route — no sandbox refusal,
- * no presentation.published webhook — is already recorded in the B39 brief
- * (§ Vondsten, item 8) and deliberately not pinned here: these tests describe
- * the contract, not the divergence.
+ * The publish route now shares one core with the internal route
+ * (server/services/publish-presentation.js) — the sandbox refusal and the
+ * presentation.published webhook are converged, and pinned in
+ * tests/publish-convergence.test.js (B62 vondst 8). These tests describe the
+ * happy-path contract; the convergence assertions live next door.
  *
- * Negative assertions pin the status code, not the error envelope: the v1
- * envelope split is a recorded finding (B39 deel 3 bevinding 11) scheduled to
- * converge, and pinning both shapes would cement it.
+ * Negative assertions here pin the status code; the v1 error envelope itself is
+ * covered by tests/public-api-v1-error-envelope.test.js.
  *
  * Run with: node --test tests/public-api-v1-publishing.test.js
  */
