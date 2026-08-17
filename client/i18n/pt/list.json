@@ -54,7 +54,6 @@
   "list.time.hoursAgo": "há {count} h",
   "list.time.justNow": "agora mesmo",
   "list.time.minutesAgo": "há {count} min",
-  "list.time.secondsAgo": "há {count} s",
   "list.visibility.private": "Private",
   "list.visibility.published": "Published",
   "list.visibility.shared": "Shared with {count} people",

@@ -4,17 +4,7 @@
 
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
-import { formatDuration as formatDurationBase } from '../../lib/format/analytics-format.js';
-
-/**
- * Format duration in seconds to human readable.
- * @param {number} seconds - Duration in seconds
- * @returns {string}
- */
-function formatDuration(seconds) {
-  if (!seconds || seconds < 1) return '—';
-  return formatDurationBase(seconds, { short: true });
-}
+import { formatDuration } from '../../lib/format/analytics-format.js';
 
 /**
  * Create top presentations table.
@@ -60,7 +50,7 @@ export function createTopPresentations({ presentations, nav }) {
         }),
       ]),
       h('td', { class: 'dashboard-top-num', text: String(pres.views || 0) }),
-      h('td', { class: 'dashboard-top-num', text: formatDuration(pres.avgDurationSeconds) }),
+      h('td', { class: 'dashboard-top-num', text: formatDuration(pres.avgDurationSeconds, { short: true, dashIfZero: true }) }),
       h('td', { class: 'dashboard-top-num', text: pres.completionRate > 0 ? `${Math.round(pres.completionRate * 100)}%` : '—' }),
     ]);
     tbody.append(row);

@@ -3,7 +3,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { fmtRelativeTime } from '../../lib/user/user-format.js';
+import { formatRelativeTime } from '../../lib/format/format-time.js';
 import { formatDuration, getSourceLabel } from '../../lib/format/analytics-format.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 
@@ -213,7 +213,7 @@ function createSessionRow(h, session) {
 
   // Time display
   const when = session.startedAt
-    ? fmtRelativeTime(session.startedAt)
+    ? formatRelativeTime(session.startedAt)
     : '-';
 
   const row = h('div', { class: 'analytics-viewer-row', role: 'row' }, [
