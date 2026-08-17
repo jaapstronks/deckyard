@@ -213,13 +213,9 @@ the admin UI.** Where the code stands, as of 2026-08-05:
 - **The transport and the guard are canonical.** Every one of the eight events
   goes through the same `postJson`, so the SSRF guard, the timeout and the
   redirect refusal cannot be bypassed by adding an event.
-- **`lead.submitted` has no admin field.** The setting
-  (`webhooks.leadSubmittedUrl`) exists, is normalized and is read at fire time,
-  but `admin-webhooks-section.js` defines seven fields and this is not one of
-  them — so the only way to enable it is to `PUT /api/settings/app` by hand. One
-  event that is real in the backend and invisible in the UI is the same shape of
-  gap as the email-template types in TODO B45. Recorded in the
-  reference-doc-gaps brief.
+- **Every event is configurable in the admin UI.** `admin-webhooks-section.js`
+  defines one text field per event, `lead.submitted` included (B72) — no event is
+  wired in the backend while invisible in the UI.
 - **Deliveries are unsigned.** There is no HMAC and no shared secret: a receiver
   cannot verify that a POST came from this instance, only that it arrived at a
   URL it chose. `x-sb-event` is a convenience header, not authentication. Any

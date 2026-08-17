@@ -326,6 +326,8 @@
   "settings.admin.webhooks.commentCreated.hint": "Event: comment.created",
   "settings.admin.webhooks.commentCreated.title": "When a comment is posted",
   "settings.admin.webhooks.hint": "Configure webhook URLs to receive POSTed JSON payloads when certain events happen.",
+  "settings.admin.webhooks.leadSubmitted.hint": "Event: lead.submitted",
+  "settings.admin.webhooks.leadSubmitted.title": "When a lead is submitted",
   "settings.admin.webhooks.movedToOrganization.hint": "Event: presentation.moved_to_organization",
   "settings.admin.webhooks.movedToOrganization.title": "When a presentation is shared to the workspace",
   "settings.admin.webhooks.published.hint": "Event: presentation.published",
