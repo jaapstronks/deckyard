@@ -1,5 +1,6 @@
 import http from 'node:http';
 import fs from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
 import {
   CLIENT_DIR,
   SHARED_PUBLIC_DIRS,
@@ -61,7 +62,16 @@ async function ensureUploadsDir() {
   await fs.mkdir(uploadsDir(repoRoot), { recursive: true });
 }
 
-const server = http.createServer(async (req, res) => {
+/**
+ * The full request-dispatch pipeline — security headers, health check,
+ * demo/sandbox rate limiting, MCP SSE, then `/api/*` → {@link handleApi} and
+ * everything else → {@link handleStatic}. Pure request handling: no boot side
+ * effects, so it answers dependency-free routes (notably `/health`) the moment
+ * a server carrying it is listening.
+ * @param {import('node:http').IncomingMessage} req
+ * @param {import('node:http').ServerResponse} res
+ */
+async function handleRequest(req, res) {
   try {
     const url = getUrl(req);
 
@@ -155,152 +165,185 @@ const server = http.createServer(async (req, res) => {
       res.end();
     } catch {}
   }
-});
+}
 
-await loadDotEnv(repoRoot);
+/**
+ * Construct the HTTP server carrying {@link handleRequest}, with no boot side
+ * effects (no storage, no jobs, no queues, no collab, no `listen`). This is the
+ * factory the boot sequence and the boot smoke test share: importing server.js
+ * and calling `buildServer()` exercises the module's entire dependency graph
+ * without needing a database, so a broken import anywhere in that graph fails
+ * loudly instead of only at deploy (the #717 gap).
+ * @returns {import('node:http').Server}
+ */
+export function buildServer() {
+  return http.createServer(handleRequest);
+}
 
-// Security check: warn if AUTH_DEV_BYPASS is enabled in production
-if (process.env.NODE_ENV === 'production') {
-  if (envBool('AUTH_DEV_BYPASS')) {
+/**
+ * The full boot sequence: load env, run the fail-loud config guards, open
+ * storage, start recurring jobs and queues, attach collab, and listen. Runs
+ * only when server.js is executed as the entrypoint (see the guard at the
+ * bottom); importing the module for {@link buildServer} does not trigger it.
+ * @returns {Promise<void>}
+ */
+async function main() {
+  const server = buildServer();
+
+  await loadDotEnv(repoRoot);
+
+  // Security check: warn if AUTH_DEV_BYPASS is enabled in production
+  if (process.env.NODE_ENV === 'production') {
+    if (envBool('AUTH_DEV_BYPASS')) {
+      console.error(
+        '\n⚠️  SECURITY WARNING: AUTH_DEV_BYPASS is enabled in production!\n' +
+        '   This allows passwordless admin access. Set AUTH_DEV_BYPASS=false immediately.\n'
+      );
+      process.exit(1);
+    }
+  }
+
+  // Security check: refuse to fail OPEN. A missing AUTH_SECRET makes auth fall
+  // back to anonymous admin; that is only allowed when auth is explicitly
+  // disabled (AUTH_ENABLED=false) or in sandbox/demo mode. See security 3b.
+  {
+    const authErr = authConfigError();
+    if (authErr) {
+      console.error(`\n⚠️  SECURITY: ${authErr}\n`);
+      process.exit(1);
+    }
+  }
+
+  // Security check: refuse to start with a half-configured SSO. An operator who
+  // set SSO_ENABLED=true expects SSO to work; silently disabling it (or failing
+  // only at first login) is worse than failing loudly at boot.
+  {
+    const ssoErr = ssoConfigError();
+    if (ssoErr) {
+      console.error(`\n⚠️  SSO: ${ssoErr}\n`);
+      process.exit(1);
+    }
+  }
+
+  // Configuration check: STORAGE_MODE must name a backend that exists. An
+  // unknown value used to fall through to file storage, which is the one
+  // outcome an operator asking for Postgres must never get.
+  {
+    const modeErr = storageModeError();
+    if (modeErr) {
+      console.error(`\n⚠️  STORAGE: ${modeErr}\n`);
+      process.exit(1);
+    }
+  }
+
+  // Non-fatal configuration warnings (weak secret, missing public URL,
+  // deprecated env vars). These don't block boot but should be fixed before
+  // exposing the instance.
+  for (const w of [
+    ...authConfigWarnings(),
+    ...publicUrlWarnings(),
+    ...deprecatedFlagWarnings(),
+  ]) {
+    console.warn(`⚠️  CONFIG: ${w}`);
+  }
+
+  await ensureUploadsDir();
+  await initializeStorage();
+
+  // Data check: an empty database next to a populated file-storage data
+  // directory means this install predates the Postgres default and has not been
+  // imported yet. Serving an empty organization over it is indistinguishable from
+  // data loss, so stop with the commands that fix it.
+  {
+    const strandedErr = await strandedFileDataError(repoRoot);
+    if (strandedErr) {
+      console.error(`\n⚠️  STORAGE: ${strandedErr}\n`);
+      await closeStorage();
+      process.exit(1);
+    }
+  }
+  await initializeMediaProvider(repoRoot);
+  await initSanitizer(); // Enable sync HTML sanitization for markdown rendering
+  // Recurring background work starts here and only here: every schedule…()
+  // returns { stop() }, every handle lands in runningJobs, and shutdown()
+  // walks the array. No route and no module-load starts a timer.
+  startCommentHeartbeat(); // SSE broadcast heartbeat for real-time comment updates
+  startNotificationHeartbeat(); // SSE broadcast heartbeat for the notification bell
+  const runningJobs = [
+    scheduleSandboxCleanup(), // TTL sweep for expired sandbox decks
+    scheduleLiveSessionCleanup(), // TTL sweep for live sessions + follow codes
+    scheduleMcpSessionSweep(), // TTL sweep for expired MCP SSE sessions
+    scheduleAuthCleanup(), // Clean expired tokens hourly
+    scheduleDigestEmailJob({ repoRoot }), // Weekly digest emails
+    scheduleAnalyticsCleanup(), // Clean old analytics daily
+    scheduleRetentionCleanup(), // Trim usage/share-links/activity/slide-locks daily
+    { stop: stopCommentHeartbeat },
+    { stop: stopNotificationHeartbeat },
+  ];
+
+  // Initialize background job queue (Redis-based, with fallback)
+  await initializeQueues();
+  await initializeWorkers();
+
+  // Real-time collaboration (presence) WebSocket endpoint, gated by COLLAB_ENABLED
+  await maybeAttachCollab(server, { repoRoot });
+
+  const PORT = envInt('PORT', 4177, { min: 1, max: 65535 });
+  const HOST = envStr('HOST', '127.0.0.1');
+  server.on('error', (err) => {
+    // eslint-disable-next-line no-console
     console.error(
-      '\n⚠️  SECURITY WARNING: AUTH_DEV_BYPASS is enabled in production!\n' +
-      '   This allows passwordless admin access. Set AUTH_DEV_BYPASS=false immediately.\n'
+      `Server failed to start (${String(
+        err?.code || 'ERR'
+      )}): ${String(err?.message || err)}`
     );
     process.exit(1);
-  }
-}
-
-// Security check: refuse to fail OPEN. A missing AUTH_SECRET makes auth fall
-// back to anonymous admin; that is only allowed when auth is explicitly
-// disabled (AUTH_ENABLED=false) or in sandbox/demo mode. See security 3b.
-{
-  const authErr = authConfigError();
-  if (authErr) {
-    console.error(`\n⚠️  SECURITY: ${authErr}\n`);
-    process.exit(1);
-  }
-}
-
-// Security check: refuse to start with a half-configured SSO. An operator who
-// set SSO_ENABLED=true expects SSO to work; silently disabling it (or failing
-// only at first login) is worse than failing loudly at boot.
-{
-  const ssoErr = ssoConfigError();
-  if (ssoErr) {
-    console.error(`\n⚠️  SSO: ${ssoErr}\n`);
-    process.exit(1);
-  }
-}
-
-// Configuration check: STORAGE_MODE must name a backend that exists. An
-// unknown value used to fall through to file storage, which is the one
-// outcome an operator asking for Postgres must never get.
-{
-  const modeErr = storageModeError();
-  if (modeErr) {
-    console.error(`\n⚠️  STORAGE: ${modeErr}\n`);
-    process.exit(1);
-  }
-}
-
-// Non-fatal configuration warnings (weak secret, missing public URL,
-// deprecated env vars). These don't block boot but should be fixed before
-// exposing the instance.
-for (const w of [
-  ...authConfigWarnings(),
-  ...publicUrlWarnings(),
-  ...deprecatedFlagWarnings(),
-]) {
-  console.warn(`⚠️  CONFIG: ${w}`);
-}
-
-await ensureUploadsDir();
-await initializeStorage();
-
-// Data check: an empty database next to a populated file-storage data
-// directory means this install predates the Postgres default and has not been
-// imported yet. Serving an empty organization over it is indistinguishable from
-// data loss, so stop with the commands that fix it.
-{
-  const strandedErr = await strandedFileDataError(repoRoot);
-  if (strandedErr) {
-    console.error(`\n⚠️  STORAGE: ${strandedErr}\n`);
-    await closeStorage();
-    process.exit(1);
-  }
-}
-await initializeMediaProvider(repoRoot);
-await initSanitizer(); // Enable sync HTML sanitization for markdown rendering
-// Recurring background work starts here and only here: every schedule…()
-// returns { stop() }, every handle lands in runningJobs, and shutdown()
-// walks the array. No route and no module-load starts a timer.
-startCommentHeartbeat(); // SSE broadcast heartbeat for real-time comment updates
-startNotificationHeartbeat(); // SSE broadcast heartbeat for the notification bell
-const runningJobs = [
-  scheduleSandboxCleanup(), // TTL sweep for expired sandbox decks
-  scheduleLiveSessionCleanup(), // TTL sweep for live sessions + follow codes
-  scheduleMcpSessionSweep(), // TTL sweep for expired MCP SSE sessions
-  scheduleAuthCleanup(), // Clean expired tokens hourly
-  scheduleDigestEmailJob({ repoRoot }), // Weekly digest emails
-  scheduleAnalyticsCleanup(), // Clean old analytics daily
-  scheduleRetentionCleanup(), // Trim usage/share-links/activity/slide-locks daily
-  { stop: stopCommentHeartbeat },
-  { stop: stopNotificationHeartbeat },
-];
-
-// Initialize background job queue (Redis-based, with fallback)
-await initializeQueues();
-await initializeWorkers();
-
-// Real-time collaboration (presence) WebSocket endpoint, gated by COLLAB_ENABLED
-await maybeAttachCollab(server, { repoRoot });
-
-const PORT = envInt('PORT', 4177, { min: 1, max: 65535 });
-const HOST = envStr('HOST', '127.0.0.1');
-server.on('error', (err) => {
-  // eslint-disable-next-line no-console
-  console.error(
-    `Server failed to start (${String(
-      err?.code || 'ERR'
-    )}): ${String(err?.message || err)}`
-  );
-  process.exit(1);
-});
-server.listen(PORT, HOST, () => {
-  // eslint-disable-next-line no-console
-  console.log(
-    `Slide Deck Builder running at http://${HOST}:${PORT}`
-  );
-});
-
-// Graceful shutdown
-async function shutdown(signal) {
-  log.info(`Received ${signal}, shutting down...`);
-  // Tell open editors before anything closes: go read-only, pause autosave,
-  // keep the work in the browser. This is the moment a deploy actually hurts —
-  // a container booting with MAINTENANCE_MODE set would be announcing it to
-  // nobody, because the connections are all on the container going down.
-  try {
-    const { notified } = announceMaintenance(true, { reason: 'shutdown' });
-    if (notified > 0) log.info(`Maintenance announced to ${notified} client(s)`);
-  } catch {
-    // Never let the announcement block the shutdown it precedes.
-  }
-  await shutdownCollab(); // Close collab WebSocket connections
-  for (const job of runningJobs) job.stop(); // Stop every recurring job
-  server.close(async () => {
-    await closeQueues(); // Close job queues and workers
-    await closeStorage();
-    await closeRedis(); // Close Redis connection
-    log.info('Shutdown complete');
-    process.exit(0);
   });
-  // Force exit after 10s if graceful shutdown hangs
-  setTimeout(() => {
-    log.error('Forced shutdown after timeout');
-    process.exit(1);
-  }, 10000);
+  server.listen(PORT, HOST, () => {
+    // eslint-disable-next-line no-console
+    console.log(
+      `Slide Deck Builder running at http://${HOST}:${PORT}`
+    );
+  });
+
+  // Graceful shutdown
+  async function shutdown(signal) {
+    log.info(`Received ${signal}, shutting down...`);
+    // Tell open editors before anything closes: go read-only, pause autosave,
+    // keep the work in the browser. This is the moment a deploy actually hurts —
+    // a container booting with MAINTENANCE_MODE set would be announcing it to
+    // nobody, because the connections are all on the container going down.
+    try {
+      const { notified } = announceMaintenance(true, { reason: 'shutdown' });
+      if (notified > 0) log.info(`Maintenance announced to ${notified} client(s)`);
+    } catch {
+      // Never let the announcement block the shutdown it precedes.
+    }
+    await shutdownCollab(); // Close collab WebSocket connections
+    for (const job of runningJobs) job.stop(); // Stop every recurring job
+    server.close(async () => {
+      await closeQueues(); // Close job queues and workers
+      await closeStorage();
+      await closeRedis(); // Close Redis connection
+      log.info('Shutdown complete');
+      process.exit(0);
+    });
+    // Force exit after 10s if graceful shutdown hangs
+    setTimeout(() => {
+      log.error('Forced shutdown after timeout');
+      process.exit(1);
+    }, 10000);
+  }
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+// Boot only when run as the entrypoint (`node server/server.js`). Importing the
+// module — as tests/server-boot-smoke.test.js does for buildServer() — loads
+// the full dependency graph without opening a database or binding a port. The
+// pathToFileURL comparison (not a raw string) matches the idiom in
+// scripts/generate-slide-type-docs.js and survives paths containing spaces.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main();
+}
