@@ -86,6 +86,17 @@ export function getAppBaseUrl() {
 }
 
 /**
+ * Allowed hosts for request-URL generation and Host-header validation, read
+ * from `ALLOWED_HOSTS`. Unset or blank → `[]`, which callers read as "allow any
+ * host". Hostnames are case-insensitive (DNS), so the list is lowercased via
+ * `envList`; compare request hosts lowercased too.
+ * @returns {string[]} Lowercased, de-duplicated allowed hosts
+ */
+export function getAllowedHosts() {
+  return envList('ALLOWED_HOSTS');
+}
+
+/**
  * Non-fatal startup warnings about public-URL configuration. When neither
  * APP_URL nor DOMAIN is set, getAppBaseUrl() returns '' and every absolute
  * link the server emits (share URLs, OG/social tags, e-mail links) ends up

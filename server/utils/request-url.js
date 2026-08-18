@@ -3,8 +3,7 @@
  * Consolidates duplicated request origin logic across the codebase.
  */
 
-import { getAllowedHosts } from './config.js';
-import { envBool } from '../config/utils.js';
+import { getAllowedHosts, envBool } from '../config/utils.js';
 
 /**
  * Extract the origin URL from a request, handling reverse proxy headers.
@@ -71,7 +70,9 @@ function getRequestHost(req) {
  * @returns {boolean} True if the host is allowed
  */
 function isHostAllowed(req) {
-  const host = getRequestHost(req);
+  // Lowercased both sides: getAllowedHosts() lowercases the allow-list (DNS
+  // hostnames are case-insensitive), so the request host must match in kind.
+  const host = getRequestHost(req).toLowerCase();
   const allowedHosts = getAllowedHosts();
 
   // If no allowed hosts configured, allow any
