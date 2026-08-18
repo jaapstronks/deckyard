@@ -15,6 +15,7 @@ import { anonymizeExpiredLeads, anonymizeOldLeadIpAddresses } from '../storage/l
 import { getAnalyticsRetention } from '../storage/settings.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from '../utils/logger.js';
+import { createIntervalJob } from './interval-job.js';
 
 const log = createLogger('analytics-cleanup');
 
@@ -91,7 +92,6 @@ async function runAnalyticsCleanup(overrides = {}) {
 export function scheduleAnalyticsCleanup({
   intervalMs = 24 * 60 * 60 * 1000, // 24 hours
 } = {}) {
-  let intervalId = null;
   let isRunning = false;
 
   async function runJob() {
@@ -110,21 +110,8 @@ export function scheduleAnalyticsCleanup({
     }
   }
 
-  // Run immediately on start
-  runJob();
-
-  // Schedule recurring runs
-  intervalId = setInterval(runJob, intervalMs);
-  intervalId.unref?.(); // Don't keep process alive just for this
-
-  return {
-    stop() {
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
-      }
-    },
-  };
+  // Run immediately on start, then every intervalMs.
+  return createIntervalJob(runJob, { intervalMs, immediate: true });
 }
 
 // CLI support: run directly with `node analytics-cleanup.js`

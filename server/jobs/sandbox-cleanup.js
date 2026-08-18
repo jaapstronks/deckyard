@@ -6,6 +6,7 @@ import {
   sandboxMaxTotalBytes,
 } from '../storage/presentations/sandbox-quota.js';
 import { createLogger } from '../utils/logger.js';
+import { createIntervalJob } from './interval-job.js';
 
 const log = createLogger('sandbox-cleanup');
 
@@ -86,18 +87,15 @@ export function scheduleSandboxCleanup({ intervalMs = 10 * 60 * 1000 } = {}) {
   }
 
   // Run immediately, then on interval — the first synchronous sweep collects
-  // what a crash left behind.
-  sweep();
-  const t = setInterval(sweep, Math.max(30_000, Number(intervalMs) || 10 * 60 * 1000));
-  t.unref?.(); // Don't keep process alive just for this
+  // what a crash left behind. The floor guards against a mistyped interval.
+  const handle = createIntervalJob(sweep, {
+    intervalMs: Math.max(30_000, Number(intervalMs) || 10 * 60 * 1000),
+    immediate: true,
+  });
   return {
     stop() {
-      stopped = true;
-      try {
-        clearInterval(t);
-      } catch {
-        // ignore
-      }
+      stopped = true; // Also short-circuit a sweep already past its guard.
+      handle.stop();
     },
   };
 }

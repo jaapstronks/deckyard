@@ -20,6 +20,7 @@ import { getAppSettings } from '../storage/settings.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from '../utils/logger.js';
 import { envStr } from '../config/utils.js';
+import { createIntervalJob } from './interval-job.js';
 
 const log = createLogger('digest-email');
 
@@ -221,7 +222,7 @@ export function scheduleDigestEmailJob({
   intervalMs = 24 * 60 * 60 * 1000, // 24 hours
   runAtHour = 8, // 8 AM
 } = {}) {
-  let intervalId = null;
+  let intervalHandle = null;
   let timeoutId = null;
   let isRunning = false;
 
@@ -260,10 +261,8 @@ export function scheduleDigestEmailJob({
   log.info(`Scheduling first run in ${Math.round(initialDelay / 1000 / 60)} minutes`);
 
   timeoutId = setTimeout(() => {
-    runJob();
-    // Then run every 24 hours
-    intervalId = setInterval(runJob, intervalMs);
-    intervalId.unref?.();
+    // Align the first run to runAtHour, then run once and every intervalMs.
+    intervalHandle = createIntervalJob(runJob, { intervalMs, immediate: true });
   }, initialDelay);
 
   timeoutId.unref?.();
@@ -274,10 +273,7 @@ export function scheduleDigestEmailJob({
         clearTimeout(timeoutId);
         timeoutId = null;
       }
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
-      }
+      intervalHandle?.stop();
     },
 
     // For testing: run immediately
