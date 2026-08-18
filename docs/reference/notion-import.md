@@ -100,7 +100,7 @@ no token per user. Two things persist:
 
 | Where | What |
 |---|---|
-| `presentations.notion_source_page_id` (migration 001) | The normalized 32-hex page id a deck was imported from. Written by both import routes and by the AI wizard when it carries one; exposed as `notionSourcePageId` (`server/storage/mappers.js`). It exists for exactly one feature: knowing which page to append the embed to. |
+| `presentations.notion_source_page_id` (migration 001) | The normalized 32-hex page id a deck was imported from. Written by both import routes and by the AI wizard when it carries one; exposed as `notionSourcePageId` (`mapPresentationRow` in `server/storage/presentations/index.js`). It exists for exactly one feature: knowing which page to append the embed to. |
 | `NOTION_SECRET` (environment) | The integration token. Not in the database, not per organization. |
 
 The intermediate shape that never persists is worth naming, because three

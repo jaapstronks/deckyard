@@ -2,7 +2,7 @@
  * Partial writes must not erase deck-level columns the caller never mentioned.
  *
  * The public API's slide handlers save with `{ slides }` and nothing else. The
- * Postgres adapter built its UPDATE unconditionally, and `jsonb(undefined)`
+ * Postgres store built its UPDATE unconditionally, and `jsonb(undefined)`
  * answered an explicit `null`, so one `POST /api/v1/presentations/:id/slides`
  * wiped `i18n`, `settings`, `published` and `description` on a production deck.
  * `title` survived, because Kysely leaves a bare `undefined` out of the SET
@@ -27,9 +27,9 @@ import { Readable } from 'node:stream';
 
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
-// The bug is Postgres-only, so the facade has to dispatch to the Postgres
-// adapter. `initializeDatabase()` hands back the double installed by
-// `__setTestDb` instead of dialling a server, so no live database is involved.
+// The bug is Postgres-only. The presentations store reaches the database
+// through `getDb()`, which hands back the double installed by `__setTestDb`
+// instead of dialling a server, so no live database is involved.
 process.env.STORAGE_MODE = 'postgres';
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -40,11 +40,9 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/adapters/index.js');
 const { handleSlides } = await import('../server/routes/public-api/v1/slides.js');
-const { withPresentations } = await import(
-  '../server/storage/adapters/postgres/presentations.js'
+const { __store } = await import(
+  '../server/storage/presentations/index.js'
 );
-
-const PresentationsAdapter = withPresentations(class {});
 
 /**
  * Install a freshly seeded double and point the storage facade at Postgres.
@@ -211,8 +209,7 @@ test('POST /slides/reorder leaves untouched deck columns alone', async () => {
 test('an explicit null still clears the column', async () => {
   const db = await installDb();
 
-  const adapter = new PresentationsAdapter();
-  await adapter.updatePresentation(
+  await __store.updatePresentationRow(
     DECK_ID,
     { description: null, settings: null, i18n: null, published: null },
     { organizationId: ORG, actorEmail: OWNER }
@@ -229,8 +226,7 @@ test('an explicit null still clears the column', async () => {
 test('a body that mentions nothing but the title moves nothing but the title', async () => {
   const db = await installDb();
 
-  const adapter = new PresentationsAdapter();
-  await adapter.updatePresentation(
+  await __store.updatePresentationRow(
     DECK_ID,
     { title: 'Andere titel' },
     { organizationId: ORG, actorEmail: OWNER }

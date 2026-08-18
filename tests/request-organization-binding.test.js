@@ -42,11 +42,9 @@ const { hashPassword } = await import('../server/utils/password-hash.js');
 const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const auth = await import('../server/auth/auth.js');
 const { createStorageScope } = await import('../server/utils/context.js');
-const { withPresentations } = await import(
-  '../server/storage/adapters/postgres/presentations.js'
+const { __store } = await import(
+  '../server/storage/presentations/index.js'
 );
-
-const PresentationsAdapter = withPresentations(class {});
 
 let passwordHash;
 
@@ -183,13 +181,12 @@ test('contexts built without an authenticated user are unchanged', () => {
 
 test('storage still scopes on the default organization', async () => {
   const db = seedSingleOrg();
-  const adapter = new PresentationsAdapter();
   const { ctx } = await resolveContext();
 
-  const listed = await adapter.listPresentations(ctx);
+  const listed = await __store.listPresentationRows(ctx);
   assert.deepEqual(listed.map((p) => p.id), ['deck-1']);
 
-  const created = await adapter.createPresentation({ title: 'New' }, ctx);
+  const created = await __store.createPresentationRow({ title: 'New' }, ctx);
   assert.equal(
     db.__tables.presentations.find((p) => p.id === created.id).organization_id,
     DEFAULT_ORG

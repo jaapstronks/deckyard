@@ -12,7 +12,7 @@
  * The ones that do fail live in authz-organization-scope-multi-org.test.js.
  *
  * The chain is walked the way a request does: session cookie →
- * `getUserFromRequestAsync` → the Postgres presentations adapter →
+ * `getUserFromRequestAsync` → the Postgres presentations store query →
  * `mapPresentationRow` → the authorization functions. That matters, because the
  * organization now has to survive the mapper to reach the check.
  *
@@ -51,11 +51,9 @@ const {
 const { checkActorAccess } = await import(
   '../server/utils/presentation-authz/actor-access.js'
 );
-const { withPresentations } = await import(
-  '../server/storage/adapters/postgres/presentations.js'
+const { __store } = await import(
+  '../server/storage/presentations/index.js'
 );
-
-const PresentationsAdapter = withPresentations(class {});
 
 let passwordHash;
 
@@ -146,10 +144,9 @@ async function sessionUser() {
   return auth.getUserFromRequestAsync(requestWithSession(login), {});
 }
 
-/** Read a deck the way a route does, through the adapter and the mapper. */
+/** Read a deck the way a route does, through the scoped store query and the mapper. */
 async function loadDeck(id) {
-  const adapter = new PresentationsAdapter();
-  return adapter.getPresentation(id, { organizationId: DEFAULT_ORG });
+  return __store.getPresentationRow(id, { organizationId: DEFAULT_ORG });
 }
 
 // ---------------------------------------------------------------------------
