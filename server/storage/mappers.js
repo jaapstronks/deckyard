@@ -56,32 +56,6 @@ export function mapSlideLibraryRow(row) {
 }
 
 /**
- * Map a slide collection database row to an API object.
- * @param {object} row - Database row from slide_collections
- * @param {string[]} [slideIds] - Ordered member slide-library ids
- * @returns {object}
- */
-export function mapSlideCollectionRow(row, slideIds = []) {
-  return {
-    id: row.id,
-    shelf: row.shelf,
-    ownerEmail: row.owner_email,
-    name: row.name,
-    description: row.description || '',
-    slideIds: Array.isArray(slideIds) ? slideIds : [],
-    slideCount: Array.isArray(slideIds) ? slideIds.length : 0,
-    // Identity pair (T10 PR F2): the team-collection mutate guard matches on
-    // `createdById`, with the e-mail as the fallback. See shared/identity-match.js.
-    createdById: row.created_by_user_id || null,
-    createdBy: row.created_by,
-    updatedById: row.updated_by_user_id || null,
-    updatedBy: row.updated_by,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
-/**
  * Map a presentation version database row to an API object (list view).
  * @param {object} row - Database row
  * @returns {object}

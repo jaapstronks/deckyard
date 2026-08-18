@@ -58,14 +58,6 @@ const CHECKS = [
     required: [/where\('shelf'/],
   },
   {
-    file: 'server/storage/adapters/postgres/collections.js',
-    forbidden: [
-      { label: "WHERE on a 'scope' column (use 'shelf')", re: /where\('scope'/ },
-      { label: 'INSERT scope value (use shelf)', re: /scope:\s*data\.scope/ },
-    ],
-    required: [/where\('shelf'/],
-  },
-  {
     file: 'server/storage/slide-library/index.js',
     forbidden: [
       { label: 'shelf option/field spelled scope (use shelf)', re: /\bscope:/ },
@@ -74,12 +66,16 @@ const CHECKS = [
     required: [/shelf:\s*'organization'/, /shelf:\s*'personal'/],
   },
   {
+    // B79/D34 folded the Kysely queries here from the deleted
+    // adapters/postgres/collections.js, so this file now also carries the
+    // where('shelf') / no-where('scope') guard the adapter used to.
     file: 'server/storage/collections/index.js',
     forbidden: [
       { label: 'shelf option/field spelled scope (use shelf)', re: /\bscope:/ },
       { label: 'existing.scope / item.scope shelf read (use .shelf)', re: /\.scope\b/ },
+      { label: "WHERE on a 'scope' column (use 'shelf')", re: /where\('scope'/ },
     ],
-    required: [/shelf:\s*'organization'/, /shelf:\s*'personal'/],
+    required: [/shelf:\s*'organization'/, /shelf:\s*'personal'/, /where\('shelf'/],
   },
   // ─── internal API route segments: /team became /organization ─────────────
   {
