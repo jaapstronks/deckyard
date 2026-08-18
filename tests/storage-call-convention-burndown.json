@@ -11,10 +11,6 @@
   "server/storage/interactions.js :: resetPollInteraction :: mutation-returns-null-via-resetInteraction",
   "server/storage/interactions.js :: setLikertInteractionStatus :: mutation-returns-null-via-setInteractionStatus",
   "server/storage/interactions.js :: setPollInteractionStatus :: mutation-returns-null-via-setInteractionStatus",
-  "server/storage/live-sessions/control.js :: setLiveSessionControlEnabled :: mutation-returns-null",
-  "server/storage/live-sessions/sessions.js :: createLiveSession :: mutation-returns-null",
-  "server/storage/live-sessions/sessions.js :: touchLiveSession :: mutation-returns-null",
-  "server/storage/live-sessions/sse.js :: updateLiveSessionState :: mutation-returns-null",
   "server/storage/presentations/index.js :: duplicatePresentation :: mutation-returns-null-via-duplicatePresentationRow",
   "server/storage/presentations/index.js :: restorePresentation :: mutation-returns-null-via-restorePresentationRow"
 ]

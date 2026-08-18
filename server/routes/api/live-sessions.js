@@ -95,9 +95,13 @@ async function handleLiveSessionCreate({ storageScope, req, res, authedUser }) {
   const created = await createLiveSession(storageScope, {
     presentationId: presentationId.trim(),
   });
-  if (!created)
+  if (!created.ok)
     return badRequest(res, 'Expected { presentationId: string }');
-  serveJson(res, 201, created);
+  serveJson(res, 201, {
+    sessionId: created.sessionId,
+    joinPath: created.joinPath,
+    followCodes: created.followCodes,
+  });
   return true;
 }
 
@@ -146,6 +150,9 @@ async function handleLiveSessionStatePush({ storageScope, req, res, authedUser }
       stepParagraphs,
       updatedAt,
     });
+    // The session was there when this handler started; it can still expire
+    // mid-request. Answering 404 beats serving `null` as the new state.
+    if (!next.ok) return notFound(res);
 
     // If this is a live slide, eagerly ensure interaction state exists so the
     // presenter can show live results immediately (even before the first vote).
@@ -180,7 +187,7 @@ async function handleLiveSessionStatePush({ storageScope, req, res, authedUser }
       // ignore
     }
 
-    serveJson(res, 200, next);
+    serveJson(res, 200, next.state);
     return true;
   }
   return methodNotAllowed(res, ['GET', 'POST']);
@@ -352,7 +359,8 @@ async function handleLiveSessionControlEnable({ storageScope, res, authedUser },
   });
   if (!pres) return true;
   const next = setLiveSessionControlEnabled(storageScope, sessionId, true);
-  serveJson(res, 200, next);
+  if (!next.ok) return notFound(res);
+  serveJson(res, 200, { controlEnabled: next.controlEnabled });
   return true;
 }
 
@@ -368,7 +376,8 @@ async function handleLiveSessionControlDisable({ storageScope, res, authedUser }
   });
   if (!pres) return true;
   const next = setLiveSessionControlEnabled(storageScope, sessionId, false);
-  serveJson(res, 200, next);
+  if (!next.ok) return notFound(res);
+  serveJson(res, 200, { controlEnabled: next.controlEnabled });
   return true;
 }
 

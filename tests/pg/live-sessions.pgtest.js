@@ -27,6 +27,7 @@ import {
   createLiveSession,
   getLiveSession,
   findMostRecentSessionForPresentation,
+  touchLiveSession,
 } from '../../server/storage/live-sessions/sessions.js';
 import { getFollowStateForPresentation } from '../../server/storage/live-sessions/follow-state.js';
 import { updateLiveSessionState } from '../../server/storage/live-sessions/sse.js';
@@ -240,5 +241,76 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
     assert.equal(await getLiveSession(testScope(), created.sessionId), null);
     const state = await getFollowStateForPresentation(testScope(), presentationId);
     assert.equal(state.status, 'not_started');
+  });
+
+  // ─── the mutation failure shape (B86) ──────────────────────────────────────
+  //
+  // These four are mutations, so every non-throwing failure branch answers
+  // `{ ok: false, reason }` — never `null`. See docs/reference/storage-layer.md
+  // § Failure signalling; tests/storage-call-convention.test.js gates it.
+
+  it('createLiveSession rejects a blank deck id with { ok: false }', async () => {
+    assert.deepEqual(await createLiveSession(testScope(), { presentationId: '  ' }), {
+      ok: false,
+      reason: 'invalid',
+    });
+  });
+
+  it('createLiveSession marks the success payload with ok', async () => {
+    const created = await createLiveSession(testScope(), { presentationId });
+    assert.equal(created.ok, true);
+    assert.equal(created.joinPath, `/notes/${created.sessionId}`);
+  });
+
+  it('touchLiveSession answers not_found for an unknown session', async () => {
+    assert.deepEqual(await touchLiveSession(testScope(), 'no-such-session'), {
+      ok: false,
+      reason: 'not_found',
+    });
+  });
+
+  it('touchLiveSession hands the session back under ok', async () => {
+    const created = await createLiveSession(testScope(), { presentationId });
+    const touched = await touchLiveSession(testScope(), created.sessionId);
+    assert.equal(touched.ok, true);
+    assert.equal(touched.session.sessionId, created.sessionId);
+  });
+
+  it('updateLiveSessionState answers not_found for an unknown session', async () => {
+    assert.deepEqual(
+      await updateLiveSessionState(testScope(), 'no-such-session', { slideId: 's1' }),
+      { ok: false, reason: 'not_found' }
+    );
+  });
+
+  it('updateLiveSessionState returns the new state under ok', async () => {
+    const created = await createLiveSession(testScope(), { presentationId });
+    const next = await updateLiveSessionState(testScope(), created.sessionId, {
+      slideId: 's4',
+      slideIndex: 3,
+      updatedAt: Date.now(),
+    });
+    assert.equal(next.ok, true);
+    assert.equal(next.state.slideId, 's4');
+    assert.equal(next.state.slideIndex, 3);
+  });
+
+  it('setLiveSessionControlEnabled answers not_found for an unknown session', () => {
+    assert.deepEqual(setLiveSessionControlEnabled(testScope(), 'no-such-session', true), {
+      ok: false,
+      reason: 'not_found',
+    });
+  });
+
+  it('setLiveSessionControlEnabled returns the new flag under ok', async () => {
+    const created = await createLiveSession(testScope(), { presentationId });
+    assert.deepEqual(setLiveSessionControlEnabled(testScope(), created.sessionId, true), {
+      ok: true,
+      controlEnabled: true,
+    });
+    assert.deepEqual(setLiveSessionControlEnabled(testScope(), created.sessionId, false), {
+      ok: true,
+      controlEnabled: false,
+    });
   });
 });

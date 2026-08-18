@@ -105,7 +105,10 @@ ON DELETE CASCADE`, so closing a session cascades them away.
 - **Create** — presenter (deck-write) `POST /api/live-sessions
   {presentationId}`. `createLiveSession` reuses a non-expired session for that
   deck (idempotent per deck) or mints a new UUID, mints per-language follow
-  codes, and returns `{sessionId, joinPath, followCodes}`.
+  codes, and answers `{ok: true, sessionId, joinPath, followCodes}` — the
+  mutation shape ([`storage-layer.md`](storage-layer.md) § *Failure
+  signalling*). The route unwraps it and serves
+  `{sessionId, joinPath, followCodes}` with 201.
 - **Join** — audience connects with only the session id (companion) or the
   presentation id via a follow code (follow-along). No login.
 - **Advance** — presenter `POST /api/live-sessions/:id/state` pushes the
