@@ -12,7 +12,7 @@ import {
   getPresentationVersion,
 } from '../storage/presentations/index.js';
 import { listImageLibrary } from '../storage/image-library/index.js';
-import { listPersonalLibrary, listTeamLibrary } from '../storage/slide-library/index.js';
+import { listPersonalLibrary, listOrganizationLibrary } from '../storage/slide-library/index.js';
 import { listThemes } from '../storage/themes.js';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
@@ -356,11 +356,11 @@ export async function buildBulkExport(opts) {
     }
 
     try {
-      const team = await listTeamLibrary(storageScope, { userEmail });
-      zip.file('slide-library/team.json', JSON.stringify(team, null, 2));
-      manifest.stats.teamSlideLibraryItems = team?.items?.length || 0;
+      const organization = await listOrganizationLibrary(storageScope, { userEmail });
+      zip.file('slide-library/organization.json', JSON.stringify(organization, null, 2));
+      manifest.stats.organizationSlideLibraryItems = organization?.items?.length || 0;
     } catch (err) {
-      manifest.warnings.push(`Team slide library: ${err.message}`);
+      manifest.warnings.push(`Organization slide library: ${err.message}`);
     }
   }
   await onProgress(50);

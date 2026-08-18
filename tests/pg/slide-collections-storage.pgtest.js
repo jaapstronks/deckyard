@@ -34,10 +34,10 @@ import {
   createPersonalCollection,
   updatePersonalCollection,
   deletePersonalCollection,
-  listTeamCollections,
-  createTeamCollection,
-  updateTeamCollection,
-  deleteTeamCollection,
+  listOrganizationCollections,
+  createOrganizationCollection,
+  updateOrganizationCollection,
+  deleteOrganizationCollection,
 } from '../../server/storage/collections/index.js';
 
 const storageScope = testScope();
@@ -174,7 +174,7 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
   // --- team collections ---
 
   it('creates and lists a team collection', async () => {
-    const created = await createTeamCollection(
+    const created = await createOrganizationCollection(
       storageScope,
       { name: 'Team starter', slideIds: [sA] },
       { actorEmail: ALICE }
@@ -183,17 +183,17 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
     assert.strictEqual(created.item.shelf, 'organization');
     assert.strictEqual(created.item.createdBy, ALICE);
 
-    const { items } = await listTeamCollections(storageScope, { userEmail: BOB });
+    const { items } = await listOrganizationCollections(storageScope, { userEmail: BOB });
     assert.ok(items.some((c) => c.id === created.item.id), 'visible to any user');
   });
 
   it('enforces the mutate guard: only creator or admin', async () => {
-    const created = await createTeamCollection(storageScope, { name: 'Guarded' }, { actorEmail: ALICE });
+    const created = await createOrganizationCollection(storageScope, { name: 'Guarded' }, { actorEmail: ALICE });
     const allowMutate = (collection, { actorEmail }) =>
       String(collection?.createdBy || '').toLowerCase() === String(actorEmail || '').toLowerCase();
 
     // Bob (non-creator, non-admin) is blocked.
-    const blocked = await updateTeamCollection(
+    const blocked = await updateOrganizationCollection(
       storageScope,
       created.item.id,
       { name: 'nope' },
@@ -203,7 +203,7 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
     assert.strictEqual(blocked.reason, 'forbidden');
 
     // Alice (creator) may mutate and delete.
-    const ok = await updateTeamCollection(
+    const ok = await updateOrganizationCollection(
       storageScope,
       created.item.id,
       { name: 'Renamed' },
@@ -212,7 +212,7 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
     assert.ok(ok.ok);
     assert.strictEqual(ok.item.name, 'Renamed');
 
-    const del = await deleteTeamCollection(storageScope, created.item.id, { actorEmail: ALICE, allowMutate });
+    const del = await deleteOrganizationCollection(storageScope, created.item.id, { actorEmail: ALICE, allowMutate });
     assert.ok(del.ok);
   });
 });

@@ -65,7 +65,7 @@ export function openCollectionEditModal({
     descInput,
   ]);
 
-  // Shelf is fixed once created (personal vs team live in different places).
+  // Shelf is fixed once created (personal vs organization live in different places).
   let shelfValue = initialShelf;
   if (!isEdit) {
     const shelfRow = h('div', { class: 'sb-segmented collection-shelf-select' });
@@ -276,7 +276,7 @@ export function openManageMembersModal({ root, collection, resolveItem, collecti
  * @param {object} opts
  * @param {HTMLElement} opts.root
  * @param {object} opts.item - the library item being added
- * @param {{personal: object[], team: object[]}} opts.collections
+ * @param {{personal: object[], organization: object[]}} opts.collections
  * @param {object} opts.collectionsApi
  * @param {() => void} [opts.onChanged] - called after a successful add/create
  */
@@ -287,7 +287,7 @@ export function openAddToCollectionModal({ root, item, collections, collectionsA
     closeOnBackdrop: true,
   });
 
-  const all = [...(collections?.personal || []), ...(collections?.team || [])];
+  const all = [...(collections?.personal || []), ...(collections?.organization || [])];
 
   const listWrap = h('div', { class: 'collection-add-list' });
   const status = h('div', { class: 'help modal-status', text: '' });

@@ -144,7 +144,7 @@ that one has no id beside it yet.
   `crossOrganizationScope(repoRoot, reason, …)` — the mandatory `reason` string
   makes `grep -r crossOrganization` a complete census of every unscoped path.
 - **A list read.** The list facades (`listPresentations`,
-  `listTrashedPresentations`, `listPresentationVersions`, `listTeamLibrary`/
+  `listTrashedPresentations`, `listPresentationVersions`, `listOrganizationLibrary`/
   `listPersonalLibrary`, `getPublishedIndex`, `listImageLibrary`) return the
   **full organization-scoped set**, ordered but unpaginated. Pagination is the
   caller's concern: the public-api v1 routes slice `{limit, offset}` over the

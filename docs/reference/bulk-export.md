@@ -44,7 +44,7 @@ presentations/<id>.json           full presentation documents (always included)
 versions/<presId>/<versionId>.json   (includeVersions)
 image-library/index.json          (includeImageLibrary)
 slide-library/personal.json       (includeSlideLibrary)
-slide-library/team.json           (includeSlideLibrary)
+slide-library/organization.json   (includeSlideLibrary)
 themes/<id>.json                  (includeThemes; org-scoped theme list)
 assets/<sha256-16><ext>           referenced images, deduplicated by content hash
 assets/url-map.json               original URL → assets/<file> mapping

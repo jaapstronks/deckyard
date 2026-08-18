@@ -7,7 +7,7 @@
  *   - `popular`       — popular presentations (same as `/api/presentations/popular`)
  *   - `activity`      — the "from others" feed ({ events, total, limit, offset },
  *                       same shape + access filtering as `/api/activity`)
- *   - `buildingBlocks`— slide collections (personal + team) and recent team
+ *   - `buildingBlocks`— slide collections (personal + organization) and recent organization
  *                       library slides for the shelf
  *   - `usage`         — the current user's slide-library usage set (powers the
  *                       "new to you" badge)
@@ -31,11 +31,11 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import { getPopularPresentations } from './presentations/popular.js';
 import { getEnrichedActivity } from './activity.js';
-import { listTeamLibrary } from '../../storage/slide-library/index.js';
+import { listOrganizationLibrary } from '../../storage/slide-library/index.js';
 import { listSlideLibraryUsage } from '../../storage/slide-library-usage/index.js';
 import {
   listPersonalCollections,
-  listTeamCollections,
+  listOrganizationCollections,
 } from '../../storage/collections/index.js';
 
 /**
@@ -97,7 +97,7 @@ async function handleHomeGet({ storageScope, res, url, authedUser }) {
   // Fire every section's storage read in parallel — the whole point of the
   // aggregation. Each piece degrades to an empty result so one failing section
   // never takes down the rest of Home.
-  const [popular, activity, personalCols, teamCols, teamLib, usage] =
+  const [popular, activity, personalCols, organizationCols, organizationLib, usage] =
     await Promise.all([
       getPopularPresentations({ user: authedUser, organizationId: storageScope?.organizationId }).catch(
         () => []
@@ -106,8 +106,8 @@ async function handleHomeGet({ storageScope, res, url, authedUser }) {
         () => ({ events: [], total: 0, limit: activityOpts.limit, offset: 0 })
       ),
       listPersonalCollections(storageScope, email).catch(() => ({ items: [] })),
-      listTeamCollections(storageScope, { userEmail: email }).catch(() => ({ items: [] })),
-      listTeamLibrary(storageScope, { userEmail: email }).catch(() => ({ items: [] })),
+      listOrganizationCollections(storageScope, { userEmail: email }).catch(() => ({ items: [] })),
+      listOrganizationLibrary(storageScope, { userEmail: email }).catch(() => ({ items: [] })),
       listSlideLibraryUsage(storageScope, email).catch(() => ({ items: [] })),
     ]);
 
@@ -120,9 +120,9 @@ async function handleHomeGet({ storageScope, res, url, authedUser }) {
     buildingBlocks: {
       collections: {
         personal: asItems(personalCols),
-        team: asItems(teamCols),
+        organization: asItems(organizationCols),
       },
-      teamSlides: asItems(teamLib),
+      organizationSlides: asItems(organizationLib),
     },
     usage: { items: asItems(usage) },
   });

@@ -21,10 +21,10 @@ export function createCollectionsApi({ api }) {
     return Array.isArray(r?.items) ? r.items : [];
   };
 
-  /** Fetch both shelves at once. @returns {Promise<{personal: object[], team: object[]}>} */
+  /** Fetch both shelves at once. @returns {Promise<{personal: object[], organization: object[]}>} */
   const listAll = async () => {
-    const [personal, team] = await Promise.all([list('personal'), list('organization')]);
-    return { personal, team };
+    const [personal, organization] = await Promise.all([list('personal'), list('organization')]);
+    return { personal, organization };
   };
 
   const create = (shelf, data) =>

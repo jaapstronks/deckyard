@@ -2,7 +2,7 @@
  * Slide collections API.
  *
  * A collection is a named, ordered, scoped set of slide-library item ids.
- * Personal collections are private to their owner; team collections are
+ * Personal collections are private to their owner; organization collections are
  * organization-wide and mutable by their creator or an admin (mirroring the
  * slide library's authz model).
  */
@@ -23,17 +23,17 @@ import {
   createPersonalCollection,
   updatePersonalCollection,
   deletePersonalCollection,
-  listTeamCollections,
-  getTeamCollection,
-  createTeamCollection,
-  updateTeamCollection,
-  deleteTeamCollection,
+  listOrganizationCollections,
+  getOrganizationCollection,
+  createOrganizationCollection,
+  updateOrganizationCollection,
+  deleteOrganizationCollection,
 } from '../../storage/collections/index.js';
 import { matchesIdentity } from '../../../shared/identity-match.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 /**
- * Team collections may only be mutated by an admin or the creator.
+ * Organization-shelf collections may only be mutated by an admin or the creator.
  *
  * Identity is matched through shared/identity-match.js (id-first, e-mail
  * fallback) rather than raw lowercased e-mail, so the creator keeps their
@@ -41,7 +41,7 @@ import { dispatchRoutes } from '../../utils/router.js';
  * @param {object} authedUser
  * @returns {(collection: object) => boolean}
  */
-function teamMutateGuard(authedUser) {
+function organizationMutateGuard(authedUser) {
   return (collection) => {
     if (authedUser?.isAdmin) return true;
     return matchesIdentity(authedUser, {
@@ -109,40 +109,40 @@ async function handlePersonalDelete({ storageScope, res, authedUser }, id) {
 }
 
 // GET /api/slide-collections/organization
-async function handleTeamList({ storageScope, res, authedUser }) {
-  const out = await listTeamCollections(storageScope, { userEmail: actorEmail(authedUser) });
+async function handleOrganizationList({ storageScope, res, authedUser }) {
+  const out = await listOrganizationCollections(storageScope, { userEmail: actorEmail(authedUser) });
   serveJson(res, 200, out);
   return true;
 }
 
 // POST /api/slide-collections/organization
-async function handleTeamCreate({ storageScope, req, res, authedUser }) {
+async function handleOrganizationCreate({ storageScope, req, res, authedUser }) {
   const email = actorEmail(authedUser);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const r = await createTeamCollection(storageScope, body, { actorEmail: email });
+  const r = await createOrganizationCollection(storageScope, body, { actorEmail: email });
   if (!r.ok) return badRequest(res, r.reason);
   serveJson(res, 201, r.item);
   return true;
 }
 
 // GET /api/slide-collections/organization/:id
-async function handleTeamGet({ storageScope, res, authedUser }, id) {
-  const item = await getTeamCollection(storageScope, id, { userEmail: actorEmail(authedUser) });
+async function handleOrganizationGet({ storageScope, res, authedUser }, id) {
+  const item = await getOrganizationCollection(storageScope, id, { userEmail: actorEmail(authedUser) });
   if (!item) return notFound(res);
   serveJson(res, 200, item);
   return true;
 }
 
 // PATCH /api/slide-collections/organization/:id
-async function handleTeamUpdate({ storageScope, req, res, authedUser }, id) {
+async function handleOrganizationUpdate({ storageScope, req, res, authedUser }, id) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const r = await updateTeamCollection(storageScope, id, body, {
+  const r = await updateOrganizationCollection(storageScope, id, body, {
     actorEmail: actorEmail(authedUser),
-    allowMutate: teamMutateGuard(authedUser),
+    allowMutate: organizationMutateGuard(authedUser),
   });
   if (!r.ok) return mutationError(res, r.reason);
   serveJson(res, 200, r.item);
@@ -150,10 +150,10 @@ async function handleTeamUpdate({ storageScope, req, res, authedUser }, id) {
 }
 
 // DELETE /api/slide-collections/organization/:id
-async function handleTeamDelete({ storageScope, res, authedUser }, id) {
-  const r = await deleteTeamCollection(storageScope, id, {
+async function handleOrganizationDelete({ storageScope, res, authedUser }, id) {
+  const r = await deleteOrganizationCollection(storageScope, id, {
     actorEmail: actorEmail(authedUser),
-    allowMutate: teamMutateGuard(authedUser),
+    allowMutate: organizationMutateGuard(authedUser),
   });
   if (!r.ok) return mutationError(res, r.reason);
   serveJson(res, 200, { ok: true });
@@ -175,12 +175,12 @@ export const ROUTES = [
   { method: 'PATCH', pattern: /^\/api\/slide-collections\/personal\/([^/]+)$/, handler: handlePersonalUpdate },
   { method: 'DELETE', pattern: /^\/api\/slide-collections\/personal\/([^/]+)$/, handler: handlePersonalDelete },
   { pattern: /^\/api\/slide-collections\/personal\/([^/]+)$/, handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH', 'DELETE']) },
-  { method: 'GET', pattern: '/api/slide-collections/organization', handler: handleTeamList },
-  { method: 'POST', pattern: '/api/slide-collections/organization', handler: handleTeamCreate },
+  { method: 'GET', pattern: '/api/slide-collections/organization', handler: handleOrganizationList },
+  { method: 'POST', pattern: '/api/slide-collections/organization', handler: handleOrganizationCreate },
   { pattern: '/api/slide-collections/organization', handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']) },
-  { method: 'GET', pattern: /^\/api\/slide-collections\/organization\/([^/]+)$/, handler: handleTeamGet },
-  { method: 'PATCH', pattern: /^\/api\/slide-collections\/organization\/([^/]+)$/, handler: handleTeamUpdate },
-  { method: 'DELETE', pattern: /^\/api\/slide-collections\/organization\/([^/]+)$/, handler: handleTeamDelete },
+  { method: 'GET', pattern: /^\/api\/slide-collections\/organization\/([^/]+)$/, handler: handleOrganizationGet },
+  { method: 'PATCH', pattern: /^\/api\/slide-collections\/organization\/([^/]+)$/, handler: handleOrganizationUpdate },
+  { method: 'DELETE', pattern: /^\/api\/slide-collections\/organization\/([^/]+)$/, handler: handleOrganizationDelete },
   { pattern: /^\/api\/slide-collections\/organization\/([^/]+)$/, handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH', 'DELETE']) },
 ];
 

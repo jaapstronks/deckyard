@@ -166,7 +166,7 @@ export function createHomeView({
   );
 
   // Building-blocks shelf — the create affordance, backed by reusable slide
-  // collections + individual team slides. Replaces the theme-picker "start
+  // collections + individual organization slides. Replaces the theme-picker "start
   // something new" zone: on a returning Home, "start from a building block" is
   // the more useful create path now that starter kits are gone.
   const homeBlocksSection = h('div', { class: 'presentation-section', 'data-section': 'building-blocks' });
@@ -292,44 +292,44 @@ export function createHomeView({
     }
   }
 
-  // Building-blocks shelf loading. Collections (team first) come first as the
-  // richest reusable unit; we top up the shelf with the most recent individual
-  // team slides so it never looks empty when a workspace has few collections.
+  // Building-blocks shelf loading. Collections (organization first) come first as
+  // the richest reusable unit; we top up the shelf with the most recent individual
+  // organization slides so it never looks empty when a workspace has few collections.
   // A blank-start card is always present so Home keeps a create affordance.
   async function loadBuildingBlocks() {
     try {
       const agg = await fetchHomeAggregate();
       let collections;
-      let teamResp;
+      let organizationResp;
       let usageResp;
       if (agg) {
-        collections = agg.buildingBlocks?.collections || { personal: [], team: [] };
-        teamResp = { items: agg.buildingBlocks?.teamSlides || [] };
+        collections = agg.buildingBlocks?.collections || { personal: [], organization: [] };
+        organizationResp = { items: agg.buildingBlocks?.organizationSlides || [] };
         usageResp = agg.usage || { items: [] };
       } else {
         const collectionsApi = createCollectionsApi({ api });
-        [collections, teamResp, usageResp] = await Promise.all([
-          collectionsApi.listAll().catch(() => ({ personal: [], team: [] })),
+        [collections, organizationResp, usageResp] = await Promise.all([
+          collectionsApi.listAll().catch(() => ({ personal: [], organization: [] })),
           api('/api/slide-library/organization').catch(() => ({ items: [] })),
           api('/api/slide-library/usage').catch(() => ({ items: [] })),
         ]);
       }
       homeBlocksLoading.remove();
 
-      // Set of {itemType}:{itemId} the current user has already used, so team
+      // Set of {itemType}:{itemId} the current user has already used, so organization
       // building blocks they've never started from get a "new to you" badge.
       const usedSet = new Set(
         (Array.isArray(usageResp?.items) ? usageResp.items : [])
           .map((u) => `${u?.itemType}:${u?.itemId}`)
       );
-      // The badge is a per-user "you haven't tried this team item yet" nudge, so
-      // it only makes sense on team-shelf items (you made your personal ones).
+      // The badge is a per-user "you haven't tried this shared item yet" nudge, so
+      // it only makes sense on organization-shelf items (you made your personal ones).
       const isNewCollection = (col) =>
         col?.shelf === 'organization' && !usedSet.has(`collection:${col.id}`);
       const isNewSlide = (item) => !usedSet.has(`slide:${item.id}`);
 
-      const cols = [...(collections?.team || []), ...(collections?.personal || [])];
-      const teamSlides = (Array.isArray(teamResp?.items) ? teamResp.items : [])
+      const cols = [...(collections?.organization || []), ...(collections?.personal || [])];
+      const organizationSlides = (Array.isArray(organizationResp?.items) ? organizationResp.items : [])
         .filter((it) => it?.id && !it.isTrashed && !it.trashedAt)
         .sort((a, b) => blockTimestamp(b) - blockTimestamp(a));
 
@@ -341,12 +341,12 @@ export function createHomeView({
       for (const col of shownCols) {
         homeBlocksList.append(renderCollectionBlockCard(h, col, onComposeFrom, isNewCollection(col)));
       }
-      for (const item of teamSlides.slice(0, slideBudget)) {
+      for (const item of organizationSlides.slice(0, slideBudget)) {
         homeBlocksList.append(renderSlideBlockCard(h, item, onComposeFrom, isNewSlide(item)));
       }
       homeBlocksSection.append(homeBlocksList);
 
-      if (!cols.length && !teamSlides.length) {
+      if (!cols.length && !organizationSlides.length) {
         homeBlocksSection.append(
           h('div', {
             class: 'help',
@@ -415,7 +415,7 @@ function renderBlankBlockCard(h, onCreate) {
  * @param {Function} h
  * @param {object} col - collection ({ id, shelf, name, slideIds, slideCount })
  * @param {Function} [onComposeFrom]
- * @param {boolean} [isNew] - show a "new to you" badge (team item, never used).
+ * @param {boolean} [isNew] - show a "new to you" badge (shared item, never used).
  */
 function renderCollectionBlockCard(h, col, onComposeFrom, isNew = false) {
   const count = col.slideCount ?? (Array.isArray(col.slideIds) ? col.slideIds.length : 0);
@@ -452,7 +452,7 @@ function renderCollectionBlockCard(h, col, onComposeFrom, isNew = false) {
  * @param {Function} h
  * @param {object} item - library item ({ id, name, slideType })
  * @param {Function} [onComposeFrom]
- * @param {boolean} [isNew] - show a "new to you" badge (team item, never used).
+ * @param {boolean} [isNew] - show a "new to you" badge (shared item, never used).
  */
 function renderSlideBlockCard(h, item, onComposeFrom, isNew = false) {
   const card = h('button', {
@@ -471,7 +471,7 @@ function renderSlideBlockCard(h, item, onComposeFrom, isNew = false) {
 }
 
 /**
- * The "new to you" badge — a subtle corner flag on a team building block the
+ * The "new to you" badge — a subtle corner flag on a shared building block the
  * current user has never started a deck from.
  * @param {Function} h
  * @returns {HTMLElement}

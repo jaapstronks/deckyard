@@ -1,11 +1,11 @@
 /**
  * Public API v1 - Slide Library endpoints.
- * Provides read-only access to team slide library and ability to add library slides to presentations.
+ * Provides read-only access to the organization slide library and ability to add library slides to presentations.
  */
 
 import {
-  listTeamLibrary,
-  getTeamLibraryItem,
+  listOrganizationLibrary,
+  getOrganizationLibraryItem,
   getTagsForSlideLibraryItems,
   getTagsForSlideLibraryItem,
 } from '../../../storage/slide-library/index.js';
@@ -36,7 +36,7 @@ function sanitizeLibraryItem(item, tags = []) {
 // ============================================================
 
 /**
- * GET /api/v1/slide-library - List team library items.
+ * GET /api/v1/slide-library - List organization-library items.
  */
 async function handleList(ctx) {
   const { storageScope, apiKey, url } = ctx;
@@ -46,7 +46,7 @@ async function handleList(ctx) {
   const themeId = url.searchParams.get('themeId') || '';
   const { limit, offset } = parsePaginationParams(url);
 
-  const { items: allItems } = await listTeamLibrary(storageScope, {
+  const { items: allItems } = await listOrganizationLibrary(storageScope, {
     themeId,
     userEmail: apiKey.ownerEmail,
   });
@@ -88,7 +88,7 @@ async function handleGet(ctx, itemId) {
 
   if (!requirePermission(ctx, 'read')) return true;
 
-  const item = await getTeamLibraryItem(storageScope, itemId, {
+  const item = await getOrganizationLibraryItem(storageScope, itemId, {
     userEmail: apiKey.ownerEmail,
   });
 
@@ -129,7 +129,7 @@ async function handleAddFromLibrary(ctx, presentationId) {
   if (!ok) return true;
 
   // Load library item
-  const libraryItem = await getTeamLibraryItem(storageScope, libraryItemId, {
+  const libraryItem = await getOrganizationLibraryItem(storageScope, libraryItemId, {
     userEmail: apiKey.ownerEmail,
   });
 

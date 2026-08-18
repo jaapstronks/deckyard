@@ -301,29 +301,29 @@ test('the image library is per organization', async () => {
 });
 
 test('the team slide library is per organization', async () => {
-  const { listTeamLibrary, getTeamLibraryItem } = await import(
+  const { listOrganizationLibrary, getOrganizationLibraryItem } = await import(
     '../server/storage/slide-library/index.js'
   );
-  const { items: alpha } = await listTeamLibrary({ organizationId: ORG_A });
-  const { items: beta } = await listTeamLibrary({ organizationId: ORG_B });
+  const { items: alpha } = await listOrganizationLibrary({ organizationId: ORG_A });
+  const { items: beta } = await listOrganizationLibrary({ organizationId: ORG_B });
   assert.deepEqual(alpha.map((i) => i.id), ['lib-alpha']);
   assert.deepEqual(beta.map((i) => i.id), ['lib-beta']);
   assert.equal(
-    (await getTeamLibraryItem({ organizationId: ORG_A }, 'lib-alpha'))?.id,
+    (await getOrganizationLibraryItem({ organizationId: ORG_A }, 'lib-alpha'))?.id,
     'lib-alpha',
     'a team item resolves on its own shelf (the shelf axis is item.shelf)'
   );
   assert.equal(
-    await getTeamLibraryItem({ organizationId: ORG_B }, 'lib-alpha'),
+    await getOrganizationLibraryItem({ organizationId: ORG_B }, 'lib-alpha'),
     null,
     "a team shelf is an organization's own shelf"
   );
 });
 
 test('team collections are per organization', async () => {
-  const { listTeamCollections } = await import('../server/storage/collections/index.js');
-  const { items: alpha } = await listTeamCollections({ organizationId: ORG_A });
-  const { items: beta } = await listTeamCollections({ organizationId: ORG_B });
+  const { listOrganizationCollections } = await import('../server/storage/collections/index.js');
+  const { items: alpha } = await listOrganizationCollections({ organizationId: ORG_A });
+  const { items: beta } = await listOrganizationCollections({ organizationId: ORG_B });
   assert.deepEqual(alpha.map((c) => c.id), ['col-alpha']);
   assert.deepEqual(beta.map((c) => c.id), ['col-beta']);
 });

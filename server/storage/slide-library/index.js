@@ -3,7 +3,7 @@
  *
  * Every function takes a **storage scope** rather than a bare `repoRoot`, so the
  * organization comes from the caller instead of a hardcoded default — see
- * server/storage/scope.js. A team library is an organization's shared shelf, so
+ * server/storage/scope.js. The organization library is an organization's shared shelf, so
  * reading it out of the wrong organization is exactly what this removes.
  *
  * `userEmail` stays a separate argument where it appears: it names the *subject*
@@ -49,7 +49,7 @@ function mapSlideLibraryRow(row) {
     favorites: row.favorites || [],
     trashedAt: row.trashed_at,
     // Identity travels as a pair (T10 PR F2): the stable `users.id`
-    // (migration 070) beside the display/fallback e-mail. The team-library
+    // (migration 070) beside the display/fallback e-mail. The organization-library
     // trash/delete guard matches on `createdById`; see shared/identity-match.js.
     trashedBy: row.trashed_by,
     createdById: row.created_by_user_id || null,
@@ -127,7 +127,7 @@ async function createSlideLibraryRow(data, ctx) {
 
   // Dual-key (T10 PR F2): resolve the id once and stamp it beside both the
   // created_by and updated_by e-mail (the same actor at create), so the
-  // team-library authz guard can match on the stable id.
+  // organization-library authz guard can match on the stable id.
   const actorEmail = ctx?.actorEmail || null;
   const actorResolution = actorEmail ? await resolveIdentityByEmail(actorEmail) : null;
   const actorUserId = actorResolution?.userId ?? null;
@@ -249,23 +249,23 @@ export async function deletePersonalLibraryItem(storageScope, userEmail, id) {
   return { ok: true };
 }
 
-// Team library functions
+// Organization-shelf library functions
 
-export async function listTeamLibrary(storageScope, { themeId = '', userEmail = '' } = {}) {
-  const ctx = toStorageContext(storageScope, 'listTeamLibrary', { userEmail });
+export async function listOrganizationLibrary(storageScope, { themeId = '', userEmail = '' } = {}) {
+  const ctx = toStorageContext(storageScope, 'listOrganizationLibrary', { userEmail });
   const items = await listSlideLibraryRows(ctx, { shelf: 'organization', themeId });
   return { items };
 }
 
-export async function getTeamLibraryItem(storageScope, id, { userEmail = '' } = {}) {
-  const ctx = toStorageContext(storageScope, 'getTeamLibraryItem', { userEmail });
+export async function getOrganizationLibraryItem(storageScope, id, { userEmail = '' } = {}) {
+  const ctx = toStorageContext(storageScope, 'getOrganizationLibraryItem', { userEmail });
   const item = await getSlideLibraryRow(id, ctx);
   if (!item || item.shelf !== 'organization') return null;
   return item;
 }
 
-export async function createTeamLibraryItem(storageScope, input, { actorEmail } = {}) {
-  const ctx = toStorageContext(storageScope, 'createTeamLibraryItem', { actorEmail });
+export async function createOrganizationLibraryItem(storageScope, input, { actorEmail } = {}) {
+  const ctx = toStorageContext(storageScope, 'createOrganizationLibraryItem', { actorEmail });
   const name = typeof input?.name === 'string' ? input.name.trim() : '';
   const slideType = typeof input?.slideType === 'string' ? input.slideType.trim() : '';
   if (!name) return { ok: false, reason: 'name_required' };
@@ -278,20 +278,20 @@ export async function createTeamLibraryItem(storageScope, input, { actorEmail } 
   return { ok: true, item: result };
 }
 
-export async function updateTeamLibraryItem(storageScope, id, patch, { actorEmail } = {}) {
-  const ctx = toStorageContext(storageScope, 'updateTeamLibraryItem', { actorEmail });
+export async function updateOrganizationLibraryItem(storageScope, id, patch, { actorEmail } = {}) {
+  const ctx = toStorageContext(storageScope, 'updateOrganizationLibraryItem', { actorEmail });
   const result = await updateSlideLibraryRow(id, patch, ctx);
   if (!result) return { ok: false, reason: 'not_found' };
   return { ok: true, item: result };
 }
 
-export async function setTeamLibraryItemTrashed(storageScope, id, { trashed, actorEmail, allowTrash } = {}) {
-  const ctx = toStorageContext(storageScope, 'setTeamLibraryItemTrashed', { actorEmail });
+export async function setOrganizationLibraryItemTrashed(storageScope, id, { trashed, actorEmail, allowTrash } = {}) {
+  const ctx = toStorageContext(storageScope, 'setOrganizationLibraryItemTrashed', { actorEmail });
   if (typeof allowTrash === 'function') {
     // Resolve the guard's target directly by id, never through the org list:
     // that list was capped at 100 rows (B85), so an item past the newest page
     // would have failed the authz guard with a false not_found. A non-org-shelf
-    // id is not a team item, so it stays not_found here.
+    // id is not an organization-shelf item, so it stays not_found here.
     const item = await getSlideLibraryRow(id, ctx);
     if (!item || item.shelf !== 'organization') return { ok: false, reason: 'not_found' };
     const ok = await allowTrash(item, { actorEmail });
@@ -305,13 +305,13 @@ export async function setTeamLibraryItemTrashed(storageScope, id, { trashed, act
   return { ok: true, item: result };
 }
 
-export async function deleteTeamLibraryItem(storageScope, id, { actorEmail, allowDelete } = {}) {
-  const ctx = toStorageContext(storageScope, 'deleteTeamLibraryItem', { actorEmail });
+export async function deleteOrganizationLibraryItem(storageScope, id, { actorEmail, allowDelete } = {}) {
+  const ctx = toStorageContext(storageScope, 'deleteOrganizationLibraryItem', { actorEmail });
   if (typeof allowDelete === 'function') {
     // Resolve the guard's target directly by id, never through the org list:
     // that list was capped at 100 rows (B85), so an item past the newest page
     // would have failed the authz guard with a false not_found. A non-org-shelf
-    // id is not a team item, so it stays not_found here.
+    // id is not an organization-shelf item, so it stays not_found here.
     const item = await getSlideLibraryRow(id, ctx);
     if (!item || item.shelf !== 'organization') return { ok: false, reason: 'not_found' };
     const ok = await allowDelete(item, { actorEmail });
