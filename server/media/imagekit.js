@@ -2,7 +2,7 @@ import { cleanStr } from '../../shared/string-utils.js';
 import { AppError, ValidationError } from '../utils/errors.js';
 import { createLogger } from '../utils/logger.js';
 import { envStr } from '../config/utils.js';
-import { assertPublicHttpUrl } from '../utils/ssrf-guard.js';
+import { safeFetchRemoteImage } from '../utils/ssrf-guard.js';
 
 const log = createLogger('imagekit');
 
@@ -306,24 +306,21 @@ export async function uploadImageKitUrl(imageUrl, fileName, options = {}) {
   }
 
   try {
-    // SSRF guard: image URLs come from Notion blocks (an `external` image URL
-    // is attacker-controllable), so refuse any that resolves to a non-public
-    // address before fetching. Throwing here falls back to the original URL.
-    await assertPublicHttpUrl(imageUrl);
-    // Fetch the image
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.status}`);
+    // SSRF-guarded fetch: image URLs come from Notion blocks (an `external`
+    // image URL is attacker-controllable). safeFetchRemoteImage refuses
+    // non-public addresses, refuses redirects (which could hop into private
+    // space after the check), times out, and caps the body size. A null
+    // return throws here, falling back to the original URL.
+    const fetched = await safeFetchRemoteImage(imageUrl, { maxBytes: 20 * 1024 * 1024 });
+    if (!fetched) {
+      throw new Error('Blocked or failed to fetch image');
     }
-
-    // Get the buffer and mime type
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    const contentType =
+      fetched.contentType === 'application/octet-stream' ? 'image/jpeg' : fetched.contentType;
 
     // Upload to ImageKit
     const result = await uploadImageKitBuffer({
-      buffer,
+      buffer: fetched.buffer,
       fileName: cleanStr(fileName) || 'image.jpg',
       mimeType: contentType,
       folder: options.folder || '',

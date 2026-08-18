@@ -39,6 +39,29 @@ test('SSRF: a private-range image URL is refused before fetch and the original U
   assert.equal(result, METADATA_URL, 'falls back to the original URL when blocked');
 });
 
+test('the image fetch goes through the hardened helper: no redirects, with a timeout', async () => {
+  // A redirect from a public host into private space would bypass a
+  // check-then-plain-fetch sequence, so the call site must use
+  // safeFetchRemoteImage, which fetches with redirect: 'error' and a signal.
+  let imageFetchOpts;
+  globalThis.fetch = async (url, opts) => {
+    if (imageFetchOpts === undefined) imageFetchOpts = opts;
+    return {
+      ok: true,
+      headers: { get: (h) => (h.toLowerCase() === 'content-type' ? 'image/png' : null) },
+      arrayBuffer: async () => new ArrayBuffer(4),
+    };
+  };
+
+  await uploadImageKitUrl(
+    'https://prod-files-secure.s3.us-west-2.amazonaws.com/abc/img.png',
+    'notion-z.png'
+  );
+
+  assert.equal(imageFetchOpts?.redirect, 'error', 'the image fetch must refuse redirects');
+  assert.ok(imageFetchOpts?.signal, 'the image fetch must carry a timeout signal');
+});
+
 test('SSRF: a loopback URL is refused too', async () => {
   let fetched = false;
   globalThis.fetch = async () => {

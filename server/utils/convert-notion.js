@@ -19,7 +19,7 @@ import { cryptoUuid } from '../../shared/slide-types/helpers.js';
 import { DECK_FORMAT_ID } from '../../shared/slide-types/deck-format-id.js';
 import { uploadImageKitUrl, getImageKitConfigFromEnv } from '../media/imagekit.js';
 import { getMediaProvider, isMediaProviderInitialized } from '../media/index.js';
-import { assertPublicHttpUrl } from './ssrf-guard.js';
+import { safeFetchRemoteImage } from './ssrf-guard.js';
 import { createLogger } from './logger.js';
 
 const log = createLogger('convert-notion');
@@ -160,27 +160,21 @@ async function rehostImageToMediaLibrary(img) {
     return img.url;
   }
 
-  // SSRF guard: a Notion `external` image URL is attacker-controllable, so
-  // refuse any that resolves to a non-public address before fetching. Throwing
-  // here is caught by processNotionImages, which falls back to the original URL.
-  await assertPublicHttpUrl(img.url);
-
-  const response = await fetch(img.url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch image: ${response.status}`);
+  // SSRF-guarded fetch: a Notion `external` image URL is attacker-controllable.
+  // safeFetchRemoteImage refuses non-public addresses, refuses redirects (which
+  // could hop into private space after the check), times out, and caps the body
+  // at maxBytes. A null return throws here, and processNotionImages falls back
+  // to the original URL for this one image.
+  const fetched = await safeFetchRemoteImage(img.url, { maxBytes: 20 * 1024 * 1024 });
+  if (!fetched) {
+    throw new Error('Blocked or failed to fetch image');
   }
-
-  const arrayBuffer = await response.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  // Strip any charset/parameters — the provider matches on the bare MIME type.
-  const contentType = String(response.headers.get('content-type') || 'image/jpeg')
-    .split(';')[0]
-    .trim()
-    .toLowerCase();
+  const contentType =
+    fetched.contentType === 'application/octet-stream' ? 'image/jpeg' : fetched.contentType;
 
   const provider = getMediaProvider();
   const { publicUrl } = await provider.uploadBuffer({
-    buffer,
+    buffer: fetched.buffer,
     filename: `notion-${img.blockId || cryptoUuid()}`,
     contentType,
     // Notion exports can be large; allow the same ceiling as stock media (20MB).
