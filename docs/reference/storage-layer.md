@@ -12,8 +12,8 @@ never touch SQL directly; they call a per-domain facade
 as the first argument, and the facade runs its own Kysely queries.
 
 This document maps the layer: the module inventory, the query seam, the
-config (there is only one backend choice), and how the scope threads
-org-isolation through every call. It does not re-document the deck data format
+config (there is only one backend choice), how a facade signals failure, and
+how the scope threads org-isolation through every call. It does not re-document the deck data format
 ([`deck-format.md`](deck-format.md)) or the isolation rules
 ([`tenant-isolation.md`](tenant-isolation.md)); it points at them.
 
@@ -179,6 +179,75 @@ Storage selection lives in `server/config/database.js`:
 - `DEFAULT_ORGANIZATION_ID` — single-organization default org
   (`00000000-0000-0000-0000-000000000001`), used only where a scope is legitimately
   org-less (see below).
+
+## Failure signalling
+
+A storage facade answers in exactly one of three shapes, decided by what the
+call *is* — not by what it happens to have returned since it was written.
+
+**Reads** — an export that answers a question about stored state (`get*`,
+`find*`, `list*`, `count*`, `search*`, `aggregate*`) returns the value it was
+asked for, `null` when there is no such thing, and `[]` for an empty
+collection. Absence is not a failure; it is an answer, and the caller branches
+on the value itself.
+
+**Mutations** — an export that changes stored state returns
+`{ ok: true, … }` on success and `{ ok: false, reason }` for **every**
+non-throwing failure branch, including the trivial ones (a blank id, a missing
+row, a lost race). It never signals failure with `null`, `undefined` or a bare
+`false`. The success payload rides along on the same object
+(`{ ok: true, question }`, `{ ok: true, controlEnabled }`), so a caller reads
+one field to branch and one to use.
+
+`reason` is a short snake_case token, drawn from the layer-wide vocabulary
+before a domain-specific one is minted:
+
+| `reason` | Means |
+| --- | --- |
+| `not_found` | The target row does not exist (or is not visible in this scope). |
+| `invalid` | The caller's input is malformed — blank id, unparseable field. |
+| `forbidden` | The row exists but this scope may not change it. |
+| `conflict` | Another writer got there first, or a uniqueness rule bites. |
+| `unavailable` | The database is not reachable; the `withDbGuard` fallback. |
+
+Domain-specific reasons are fine where they carry information a route or UI
+acts on (`slug_exists`, `last_owner`, `limit_exceeded`, `expired`). What is not
+fine is a second spelling for a meaning that already has one.
+
+**Throws** — programmer errors (a missing scope, an impossible argument) and
+infrastructure failures raise. `toStorageContext()` throwing on an absent scope
+is the canonical case. A caller is not expected to catch these; they are bugs
+or outages, not outcomes. The one softened edge is `withDbGuard(fallback, fn)`
+(`server/storage/utils/db-guard.js`), which returns `fallback` instead of
+throwing when the pool is down — pass `null`/`[]` from a read and
+`{ ok: false, reason: 'unavailable' }` from a mutation, so the guard hands back
+that call kind's own failure shape.
+
+### Implementation status: failure shapes
+
+The convention above is the target, and it is where the layer already mostly
+sits. Measured on 2026-08-18: 386 `return { ok …` statements against 106
+`return null` statements, and nearly all of the latter are in reads, where
+`null` is correct.
+
+**Nine mutation exports still signal failure with `null`**, and they are one
+cluster rather than scattered drift: the live-session
+surface (`live-sessions/sessions.js`, `live-sessions/sse.js`,
+`live-sessions/control.js`) and the interaction/feedback surface
+(`interaction-slides.js`, `feedback.js`). They are carried in
+[`tests/storage-call-convention-burndown.json`](../../tests/storage-call-convention-burndown.json),
+a shrink-only allowlist; `tests/storage-call-convention.test.js` fails on a
+tenth. The list may only get shorter.
+
+Two shapes the gate cannot see, so they are stated here instead of pretended
+away. It does not follow delegation, so an export that tail-calls a private
+helper returning `null` reads as clean — the poll and likert exports in
+`interactions.js` are exactly that, and belong to the same cluster. And it
+cannot judge `return false`, because a boolean is as often the payload as the
+verdict (`toggleImageFavorite` returns the *new* favourite state, not "it
+worked"); `removePublishedEntry` is a real boolean-shaped failure the gate will
+not catch. Both are drift the burndown does not cover, not drift that is
+allowed.
 
 ## Authz & tenancy
 

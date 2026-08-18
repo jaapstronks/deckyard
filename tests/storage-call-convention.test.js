@@ -1,9 +1,11 @@
 /**
- * The storage call convention (A7.20): burndown gate.
+ * The storage call convention (A7.20, B86): burndown gate.
  *
- * One convention for `server/storage/**`: every exported function that touches
- * storage takes a `StorageScope` as its **first** parameter, named `scope`,
- * and validates it via `toStorageContext(scope, '<fn>')` before doing anything
+ * Two rules for `server/storage/**`, one allowlist.
+ *
+ * **The signature rule (A7.20).** Every exported function that touches storage
+ * takes a `StorageScope` as its **first** parameter, named `scope`, and
+ * validates it via `toStorageContext(scope, '<fn>')` before doing anything
  * else. The normative statement lives in `docs/reference/storage-scope.md`;
  * `tests/storage-scope-contract.test.js` pins the runtime behaviour of the
  * scope itself. This file pins the *signatures*: it enumerates every export
@@ -12,17 +14,36 @@
  *   (a) `repoRoot` (or `_repoRoot`) as the first parameter, and
  *   (b) a parameter named `ctx`/`context` on any position other than 1.
  *
+ * **The failure-shape rule (B86).** A mutation — an export whose name starts
+ * with a state-changing verb — signals failure with `{ ok: false, reason }`,
+ * never with `null` or `undefined`. Reads keep `null`/`[]`: absence is not a
+ * failure. The normative statement lives in `docs/reference/storage-layer.md`
+ * § *Failure signalling*. This file refuses
+ *
+ *   (c) a top-level `return null` / `return undefined` inside a mutation-named
+ *       export.
+ *
+ * Rule (c) is deliberately shallow in three ways, and the doc says so. It reads
+ * only the export's **own** body, so a `return null` in a nested closure that
+ * the export converts to `{ ok, reason }` is not a violation — `createQuestion`
+ * in `questions.js` is exactly that shape. It does not follow delegation, so an
+ * export that tail-calls a private helper returning `null` reads as clean. And
+ * it cannot judge `return false`, because a boolean is as often the payload as
+ * the verdict. It is a drift stop, not a proof.
+ *
  * Existing violations are carried in `storage-call-convention-burndown.json`,
  * an allowlist that may only shrink (the `eslint-suppressions.json` pattern):
  * fixing an export means deleting its line, and adding a new export in either
- * old shape fails this test. Six exports are permanently exempt because they
- * genuinely take a disk path, not a scope; they are listed here with reasons.
+ * old shape fails this test. Six exports are permanently exempt from rule (a)
+ * because they genuinely take a disk path, not a scope; they are listed here
+ * with reasons.
  *
  * Run with: node --test tests/storage-call-convention.test.js
  */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { parse } from 'acorn';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -101,6 +122,109 @@ function grabParens(text, start) {
   return null;
 }
 
+// ─── failure-shape scanner (rule c) ──────────────────────────────
+
+/**
+ * Verb prefixes that make an export a **mutation**: it changes stored state, so
+ * every non-throw failure branch must read `{ ok: false, reason }`.
+ *
+ * A whitelist on purpose. Prefixes deliberately left out, with why:
+ * `get`/`find`/`list`/`count`/`search`/`aggregate`/`has`/`is`/`load`/`read` are
+ * reads, where `null`/`[]` *is* the canonical miss; `hydrate` fills the
+ * in-process session map on the way to answering "give me this session", so its
+ * `null` is a read miss too; `attach`/`detach`/`broadcast` wire up process-local
+ * SSE sockets rather than rows; `assert`/`enforce` throw on failure (the third
+ * canonical shape); `normalize`/`build`/`prepare` are pure helpers that never
+ * reach the database.
+ */
+const MUTATION_VERBS =
+  /^(accept|activate|add|append|approve|archive|assign|bump|cancel|claim|clear|consume|create|deactivate|decline|delete|disable|downvote|duplicate|enable|ensure|expire|grant|increment|insert|invalidate|invite|link|lock|mark|migrate|move|persist|pin|prune|publish|purge|record|regenerate|reject|release|remove|rename|replace|reset|restore|revoke|rotate|save|seed|set|store|sync|toggle|touch|unlink|unlock|unpin|unpublish|update|upsert|upvote|vote|write)(?=[A-Z_]|$)/;
+
+const FUNCTION_NODES = new Set([
+  'FunctionDeclaration',
+  'FunctionExpression',
+  'ArrowFunctionExpression',
+]);
+
+/** Every `export function f()` / `export const f = () => …` in one module, as [name, fnNode]. */
+function exportedFunctions(ast) {
+  const out = [];
+  for (const node of ast.body) {
+    if (node.type !== 'ExportNamedDeclaration' || !node.declaration) continue;
+    const decl = node.declaration;
+    if (decl.type === 'FunctionDeclaration') {
+      out.push([decl.id.name, decl]);
+    } else if (decl.type === 'VariableDeclaration') {
+      for (const d of decl.declarations) {
+        if (d.init && FUNCTION_NODES.has(d.init.type) && d.id.type === 'Identifier') {
+          out.push([d.id.name, d.init]);
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * The return statements belonging to `fn` itself. Nested functions — the
+ * callbacks handed to `withDbGuard`, `try`-wrapped closures — have their own
+ * contract with their caller and are skipped.
+ */
+function ownReturnStatements(fn) {
+  const found = [];
+  (function visit(node, nested) {
+    if (!node || typeof node.type !== 'string') return;
+    const inNested = nested || (node !== fn && FUNCTION_NODES.has(node.type));
+    if (!inNested && node.type === 'ReturnStatement') found.push(node);
+    for (const key of Object.keys(node)) {
+      if (key === 'type' || key === 'start' || key === 'end' || key === 'loc') continue;
+      const value = node[key];
+      if (Array.isArray(value)) {
+        for (const child of value) {
+          if (child && typeof child.type === 'string') visit(child, inNested);
+        }
+      } else if (value && typeof value.type === 'string') {
+        visit(value, inNested);
+      }
+    }
+  })(fn.body, false);
+  return found;
+}
+
+/**
+ * `null` or `undefined` — the two failure signals a mutation must not use, or
+ * `null` when the return statement is fine.
+ *
+ * A bare `return;` is not a failure encoding: in a void function it is an early
+ * exit. `return false` is not judged either — a boolean is as often the payload
+ * as the verdict (`toggleImageFavorite` returns the *new* favourite state), so
+ * it cannot be decided from syntax.
+ */
+function forbiddenFailureLiteral(argument) {
+  if (!argument) return null;
+  if (argument.type === 'Literal' && argument.value === null) return 'null';
+  if (argument.type === 'Identifier' && argument.name === 'undefined') return 'undefined';
+  return null;
+}
+
+/** Rule (c) violations in one module. */
+function scanFailureShapes(rel, text) {
+  const violations = [];
+  const ast = parse(text, { ecmaVersion: 'latest', sourceType: 'module' });
+  for (const [name, fn] of exportedFunctions(ast)) {
+    if (!MUTATION_VERBS.test(name)) continue;
+    const kinds = new Set();
+    for (const ret of ownReturnStatements(fn)) {
+      const kind = forbiddenFailureLiteral(ret.argument);
+      if (kind) kinds.add(kind);
+    }
+    for (const kind of [...kinds].sort()) {
+      violations.push(`${rel} :: ${name} :: mutation-returns-${kind}`);
+    }
+  }
+  return violations;
+}
+
 /**
  * Scan every export under server/storage/** and return the violation lines,
  * each shaped `<file> :: <export> :: <kind>`.
@@ -130,6 +254,7 @@ function scanViolations() {
         }
       });
     }
+    violations.push(...scanFailureShapes(rel, text));
   }
   return violations.sort();
 }
@@ -147,8 +272,10 @@ test('no storage export takes a new pre-convention shape', () => {
   assert.deepEqual(
     fresh,
     [],
-    'new storage exports must take `fn(scope, …)` — a StorageScope first, ' +
-      'validated via toStorageContext(scope, …). See docs/reference/storage-scope.md. ' +
+    'storage exports obey two rules: `fn(scope, …)` takes a StorageScope first, ' +
+      'validated via toStorageContext(scope, …) (docs/reference/storage-scope.md), and ' +
+      'a mutation signals failure with `{ ok: false, reason }`, never `null`/`undefined` ' +
+      '(docs/reference/storage-layer.md § Failure signalling). ' +
       'Do not add lines to the burndown list; it only shrinks.'
   );
 });

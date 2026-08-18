@@ -1,1 +1,11 @@
-[]
+[
+  "server/storage/feedback.js :: ensureFeedbackForSlide :: mutation-returns-null",
+  "server/storage/feedback.js :: resetFeedback :: mutation-returns-null",
+  "server/storage/feedback.js :: setFeedbackStatus :: mutation-returns-null",
+  "server/storage/interaction-slides.js :: ensureInteractionSlide :: mutation-returns-null",
+  "server/storage/interaction-slides.js :: updateInteractionSlide :: mutation-returns-null",
+  "server/storage/live-sessions/control.js :: setLiveSessionControlEnabled :: mutation-returns-null",
+  "server/storage/live-sessions/sessions.js :: createLiveSession :: mutation-returns-null",
+  "server/storage/live-sessions/sessions.js :: touchLiveSession :: mutation-returns-null",
+  "server/storage/live-sessions/sse.js :: updateLiveSessionState :: mutation-returns-null"
+]
