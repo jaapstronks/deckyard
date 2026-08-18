@@ -1,24 +1,21 @@
 /**
  * PostgreSQL storage adapter using Kysely.
- * Implements multi-tenant storage with organization isolation.
  *
- * This module composes several focused adapters:
- * - presentations.js - Presentations and versions
- * - images.js - Image library
- * - slides.js - Slide library
- * - published.js - Published presentations
+ * Every storage domain now reaches Postgres through direct Kysely on `getDb()`
+ * (B79 / D34); no domain mixins remain. What is left here is connection
+ * lifecycle only — `initialize()`/`close()` around the shared database handle —
+ * which the storage facades still bootstrap via `initializeStorage()`. The
+ * whole adapter directory is removed in the final strip PR once that lifecycle
+ * seam moves to its own module.
  */
 
 import { initializeDatabase, closeDatabase } from '../../../db/client.js';
 
-import { withPresentations } from './presentations.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('postgres');
 
 /**
- * Base adapter with connection management. The domain methods are layered on
- * by the `with*()` mixins below; the data shapes they exchange with the
- * storage facades are documented in `../types.js`.
+ * Connection lifecycle for the PostgreSQL backend.
  */
 class BasePostgresAdapter {
   async initialize() {
@@ -32,6 +29,7 @@ class BasePostgresAdapter {
 }
 
 /**
- * Full PostgreSQL adapter composed from all mixins.
+ * The PostgreSQL adapter — connection lifecycle only, now that every domain
+ * reaches the database through direct Kysely.
  */
-export const PostgresAdapter = withPresentations(BasePostgresAdapter);
+export const PostgresAdapter = BasePostgresAdapter;
