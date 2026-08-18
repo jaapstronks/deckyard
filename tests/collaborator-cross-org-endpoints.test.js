@@ -70,7 +70,7 @@ import { callArguments, walkJsFiles } from './helpers/call-sites.js';
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/adapters/index.js'
+  '../server/storage/lifecycle.js'
 );
 const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const { createStorageScope } = await import('../server/utils/context.js');

@@ -85,7 +85,7 @@ before(async () => {
   const { createFakeDb } = await import('./helpers/fake-db.js');
   const { __setTestDb } = await import('../server/db/client.js');
   const { initializeStorage, __resetStorageForTests } = await import(
-    '../server/storage/adapters/index.js'
+    '../server/storage/lifecycle.js'
   );
   const { createPresentation } = await import(
     '../server/storage/presentations/index.js'

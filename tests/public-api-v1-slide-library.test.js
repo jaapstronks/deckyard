@@ -34,7 +34,7 @@ const FOREIGN_DECK_ID = 'deck-of-someone-else';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/adapters/index.js');
+const { initializeStorage } = await import('../server/storage/lifecycle.js');
 const { handleSlideLibrary } = await import('../server/routes/public-api/v1/slide-library.js');
 
 /**

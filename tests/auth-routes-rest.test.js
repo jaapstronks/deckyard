@@ -65,7 +65,7 @@ const OTHER_ORG = '00000000-0000-0000-0000-0000000000bb';
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/adapters/index.js'
+  '../server/storage/lifecycle.js'
 );
 const { createStorageScope } = await import('../server/utils/context.js');
 const { handleSso } = await import('../server/routes/api/sso.js');

@@ -27,7 +27,7 @@ import { registerTools } from './tools.js';
 import { loadCustomToolsRegistrar } from './custom-tools-loader.js';
 import { registerPrompts } from './prompts.js';
 import { loadDotEnv } from '../config/env.js';
-import { initializeStorage } from '../storage/adapters/index.js';
+import { initializeStorage } from '../storage/lifecycle.js';
 import { strandedFileDataError } from '../storage/boot-check.js';
 import { storageModeError } from '../config/database.js';
 import { repoRoot } from '../config/paths.js';

@@ -71,13 +71,13 @@ and mandatory in another.
   `server/utils/ai/slide-catalog/custom-catalog-loader.js` — fork drop-in AI
   prompts and catalog entries.
 
-### Storage adapter loading
+### Storage lifecycle loading
 
-`server/storage/adapters/index.js` loads the `PostgresAdapter` lazily at
-`initializeStorage()`, keeping kysely and pg out of the module graph of
-scripts that never touch storage. The scope-to-context reduction
-(`toStorageContext`) lives in `server/storage/scope.js` next to the scope
-validation it wraps.
+`server/storage/lifecycle.js` loads `server/db/client.js` (and through it kysely
+and pg) lazily inside `initializeStorage()` / `closeStorage()`, keeping the
+database driver out of the module graph of scripts that never touch storage. The
+scope-to-context reduction (`toStorageContext`) lives in
+`server/storage/scope.js` next to the scope validation it wraps.
 
 
 ### Real cycle-breakers — do not make these static

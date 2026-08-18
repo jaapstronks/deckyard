@@ -37,7 +37,7 @@ const LIMIT_KEY = 'dk_live_limit-key-000000000000000000';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/adapters/index.js');
+const { initializeStorage } = await import('../server/storage/lifecycle.js');
 const { hashToken } = await import('../server/utils/secure-tokens.js');
 const { handlePublicApiV1 } = await import('../server/routes/public-api/v1/index.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');

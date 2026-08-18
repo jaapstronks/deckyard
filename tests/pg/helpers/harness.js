@@ -17,17 +17,18 @@
  * The database seam is the same `__setTestDb()` the double uses
  * (server/db/client.js): once a handle is installed, every getDb()/
  * withDbGuard() caller in the storage layer transparently talks to it. Here
- * that handle is a live connection.
+ * that handle is a live connection. Every storage facade now reaches the
+ * database through `getDb()` directly (B79/D34 stripped the adapter class), so a
+ * facade under test is wired the moment the handle is installed.
  *
  *  - **Storage-module tests** (api-usage, slide-locks) import a storage
  *    function directly and only need the db handle installed. Use
  *    {@link openTestDb} / {@link closeTestDb}.
  *  - **Facade tests** (tags, collections, …) drive the public storage facade
- *    (`server/storage/<domain>/index.js`), which dispatches to whichever
- *    adapter `getStorage()` returns. To exercise the PostgreSQL adapter through
- *    that facade — the coverage that must survive the file adapter's removal
- *    (PR G) — use {@link installFacadeStorage} / {@link uninstallFacadeStorage}
- *    around the db handle.
+ *    (`server/storage/<domain>/index.js`) against real PostgreSQL. Use
+ *    {@link installFacadeStorage} / {@link uninstallFacadeStorage} around the db
+ *    handle — thin wrappers over the storage lifecycle, kept for symmetry now
+ *    that `getDb()` is the whole wiring.
  *
  * ## The DATABASE_URL gate
  *
@@ -58,7 +59,7 @@ import { __setTestDb } from '../../../server/db/client.js';
 import {
   initializeStorage,
   __resetStorageForTests,
-} from '../../../server/storage/adapters/index.js';
+} from '../../../server/storage/lifecycle.js';
 
 const { Pool } = pg;
 
@@ -137,28 +138,28 @@ export async function closeTestDb(db) {
 }
 
 /**
- * Point the storage facade at the PostgreSQL adapter, wired to the already-open
- * test handle. Call after {@link openTestDb}: the adapter's initialize() finds
- * the injected handle and reuses it instead of opening a second pool.
+ * Put the storage layer in `STORAGE_MODE=postgres` and run its lifecycle init,
+ * so a facade under test drives its real path against real PostgreSQL — the same
+ * path the running server uses. Call after {@link openTestDb}: the handle is
+ * already injected, so `initializeStorage()` finds it and opens no second pool.
  *
- * Facade functions (`listTags(scope)`, …) then run their real dispatch path
- * against real PostgreSQL — the same path the running server uses in
- * `STORAGE_MODE=postgres`.
+ * Facade functions (`listTags(scope)`, …) reach the database through `getDb()`,
+ * which returns that injected handle, so this is now a thin formality kept for
+ * symmetry with {@link uninstallFacadeStorage}.
  *
  * @returns {Promise<void>}
  */
 export async function installFacadeStorage() {
-  // getStorageMode() reads this fresh; the PostgresAdapter branch of
-  // initializeStorage() is what wires the facade to the injected handle.
+  // getStorageMode() reads this fresh; initializeStorage() is idempotent and
+  // reuses the handle openTestDb() already installed.
   process.env.STORAGE_MODE = 'postgres';
-  // repoRoot is unused by the PostgreSQL adapter; pass a harmless placeholder.
   await initializeStorage();
 }
 
 /**
- * Drop the facade's adapter singleton without closing the shared handle (the
- * test owns it, and {@link closeTestDb} destroys it). Pair with
- * {@link installFacadeStorage}.
+ * Reset the storage lifecycle without closing the shared handle (the test owns
+ * it, and {@link closeTestDb} destroys it). A no-op now that no adapter
+ * singleton remains, kept to pair with {@link installFacadeStorage}.
  * @returns {void}
  */
 export function uninstallFacadeStorage() {

@@ -35,7 +35,7 @@ const KEY_ID = 'key-1';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/adapters/index.js');
+const { initializeStorage } = await import('../server/storage/lifecycle.js');
 const { handleAi } = await import('../server/routes/public-api/v1/ai.js');
 const { getLlmStatus } = await import('../server/utils/llm/config.js');
 

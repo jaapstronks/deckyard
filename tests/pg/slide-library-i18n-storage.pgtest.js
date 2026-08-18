@@ -6,7 +6,7 @@
  * tests/slide-library-i18n-storage.test.js. What that suite could *not* cover —
  * it says so in its own header — is the Postgres **write** path: migration 049's
  * `i18n` jsonb column and the create/update round-trip through
- * postgres/slides.js. This is that test: create a personal library item with
+ * server/storage/slide-library/index.js. This is that test: create a personal library item with
  * two languages, and assert both survive create, read-back, and update on real
  * PostgreSQL.
  */

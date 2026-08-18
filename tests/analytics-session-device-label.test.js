@@ -65,7 +65,7 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/adapters/index.js'
+  '../server/storage/lifecycle.js'
 );
 const { publicDeviceLabel, deviceLabelKeySource } = await import(
   '../server/analytics/helpers.js'
