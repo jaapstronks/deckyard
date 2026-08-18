@@ -4,6 +4,7 @@
  */
 
 import { h } from '../../../lib/dom.js';
+import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { getAppName } from '../../../lib/theme/branding.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
@@ -67,14 +68,8 @@ export function createAdminTab({ user }) {
   });
 
   const langOptions = h('div', { class: 'admin-checkbox-list' });
-  const chkNl = h('label', { class: 'admin-checkbox-item' }, [
-    h('input', { type: 'checkbox' }),
-    h('span', { text: 'Nederlands (NL)' }),
-  ]);
-  const chkEn = h('label', { class: 'admin-checkbox-item' }, [
-    h('input', { type: 'checkbox' }),
-    h('span', { text: 'English (EN-GB)' }),
-  ]);
+  const { element: chkNl } = labeledCheckbox({ text: 'Nederlands (NL)' });
+  const { element: chkEn } = labeledCheckbox({ text: 'English (EN-GB)' });
   langOptions.append(chkNl, chkEn);
   langCard.append(langHint, langOptions);
 
@@ -208,11 +203,10 @@ export function createAdminTab({ user }) {
   // detailed-opt-in and external-viewer toggles gated a distinction the data
   // never carried; they were removed with the internal/external chain
   // (done/decisions.md § analytics-privacy-naden).
-  const analyticsEnabledCheck = h('input', { type: 'checkbox', checked: true });
-  const analyticsEnabledLabel = h('label', { class: 'admin-checkbox-item' }, [
-    analyticsEnabledCheck,
-    h('span', { text: t('settings.admin.analytics.enabled', 'Enable engagement insights') }),
-  ]);
+  const { element: analyticsEnabledLabel, input: analyticsEnabledCheck } = labeledCheckbox({
+    text: t('settings.admin.analytics.enabled', 'Enable engagement insights'),
+    checked: true,
+  });
 
   // Retention settings
   const retentionSessionSelect = h('select', { class: 'select', 'aria-label': t('settings.admin.analytics.retentionDays', 'Keep session data for') }, [
@@ -264,13 +258,9 @@ export function createAdminTab({ user }) {
 
   // Bundled gradients toggle. No key to check, so no status span: the assets
   // ship with the app and are always "configured".
-  const bundledEnabledCheck = h('input', { type: 'checkbox' });
-  const bundledLabel = h('label', { class: 'admin-checkbox-item' }, [
-    bundledEnabledCheck,
-    h('span', {
-      text: t('settings.admin.stockMedia.bundled', 'Enable bundled gradients'),
-    }),
-  ]);
+  const { element: bundledLabel, input: bundledEnabledCheck } = labeledCheckbox({
+    text: t('settings.admin.stockMedia.bundled', 'Enable bundled gradients'),
+  });
   const bundledHint = h('div', {
     class: 'help',
     text: t(
@@ -280,22 +270,22 @@ export function createAdminTab({ user }) {
   });
 
   // Unsplash toggle
-  const unsplashEnabledCheck = h('input', { type: 'checkbox' });
   const unsplashStatusSpan = h('span', { class: 'help stock-media-status' });
-  const unsplashLabel = h('label', { class: 'admin-checkbox-item' }, [
-    unsplashEnabledCheck,
-    h('span', { text: t('settings.admin.stockMedia.unsplash', 'Enable Unsplash photos') }),
-    unsplashStatusSpan,
-  ]);
+  const { element: unsplashLabel, input: unsplashEnabledCheck } = labeledCheckbox({
+    content: [
+      h('span', { text: t('settings.admin.stockMedia.unsplash', 'Enable Unsplash photos') }),
+      unsplashStatusSpan,
+    ],
+  });
 
   // Giphy toggle
-  const giphyEnabledCheck = h('input', { type: 'checkbox' });
   const giphyStatusSpan = h('span', { class: 'help stock-media-status' });
-  const giphyLabel = h('label', { class: 'admin-checkbox-item' }, [
-    giphyEnabledCheck,
-    h('span', { text: t('settings.admin.stockMedia.giphy', 'Enable Giphy GIFs') }),
-    giphyStatusSpan,
-  ]);
+  const { element: giphyLabel, input: giphyEnabledCheck } = labeledCheckbox({
+    content: [
+      h('span', { text: t('settings.admin.stockMedia.giphy', 'Enable Giphy GIFs') }),
+      giphyStatusSpan,
+    ],
+  });
 
   const stockMediaOptions = h('div', { class: 'stack gap-2' }, [
     bundledLabel,
