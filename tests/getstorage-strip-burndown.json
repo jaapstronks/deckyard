@@ -1,6 +1,5 @@
 [
   "server/storage/image-library/index.js",
   "server/storage/presentations/index.js",
-  "server/storage/presentations/ydocs.js",
-  "server/storage/slide-library/index.js"
+  "server/storage/presentations/ydocs.js"
 ]

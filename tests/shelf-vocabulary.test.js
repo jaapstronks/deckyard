@@ -44,38 +44,32 @@ const CHECKS = [
   // ─── server data layer: precise needles (these files legitimately say
   //     "storage scope" in prose and take a storageScope argument) ───────────
   {
-    file: 'server/storage/mappers.js',
-    forbidden: [{ label: 'shelf mapped as scope (use shelf: row.shelf)', re: /scope:\s*row\.scope/ }],
-    required: [/shelf:\s*row\.shelf/],
-  },
-  {
-    file: 'server/storage/adapters/postgres/slides.js',
-    forbidden: [
-      { label: "WHERE on a 'scope' column (use 'shelf')", re: /where\('scope'/ },
-      { label: 'opts.scope shelf filter (use opts.shelf)', re: /opts\?\.scope\b/ },
-      { label: 'INSERT scope value (use shelf)', re: /scope:\s*data\.scope/ },
-    ],
-    required: [/where\('shelf'/],
-  },
-  {
+    // B79/D34 folded both the Kysely queries and the row mapper here from the
+    // deleted adapters/postgres/slides.js (+ its mapSlideLibraryRow, which left
+    // mappers.js), so this file now carries the where('shelf') /
+    // no-where('scope') and shelf:row.shelf mapper guards the adapter used to.
     file: 'server/storage/slide-library/index.js',
     forbidden: [
       { label: 'shelf option/field spelled scope (use shelf)', re: /\bscope:/ },
-      { label: 'item.scope shelf read (use item.shelf)', re: /\.scope\b/ },
+      { label: 'item.scope / opts.scope shelf read (use .shelf)', re: /\.scope\b/ },
+      { label: "WHERE on a 'scope' column (use 'shelf')", re: /where\('scope'/ },
+      { label: 'shelf mapped as scope (use shelf: row.shelf)', re: /scope:\s*row\.scope/ },
     ],
-    required: [/shelf:\s*'organization'/, /shelf:\s*'personal'/],
+    required: [/shelf:\s*'organization'/, /shelf:\s*'personal'/, /where\('shelf'/, /shelf:\s*row\.shelf/],
   },
   {
-    // B79/D34 folded the Kysely queries here from the deleted
-    // adapters/postgres/collections.js, so this file now also carries the
-    // where('shelf') / no-where('scope') guard the adapter used to.
+    // B79/D34 folded both the Kysely queries and the row mapper here from the
+    // deleted adapters/postgres/collections.js (+ its mapSlideCollectionRow,
+    // which left mappers.js), so this file now carries the where('shelf') /
+    // no-where('scope') and shelf:row.shelf mapper guards the adapter used to.
     file: 'server/storage/collections/index.js',
     forbidden: [
       { label: 'shelf option/field spelled scope (use shelf)', re: /\bscope:/ },
       { label: 'existing.scope / item.scope shelf read (use .shelf)', re: /\.scope\b/ },
       { label: "WHERE on a 'scope' column (use 'shelf')", re: /where\('scope'/ },
+      { label: 'shelf mapped as scope (use shelf: row.shelf)', re: /scope:\s*row\.scope/ },
     ],
-    required: [/shelf:\s*'organization'/, /shelf:\s*'personal'/, /where\('shelf'/],
+    required: [/shelf:\s*'organization'/, /shelf:\s*'personal'/, /where\('shelf'/, /shelf:\s*row\.shelf/],
   },
   // ─── internal API route segments: /team became /organization ─────────────
   {
