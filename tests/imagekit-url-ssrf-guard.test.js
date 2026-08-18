@@ -9,7 +9,7 @@
  * Run with: node --test tests/imagekit-url-ssrf-guard.test.js
  */
 
-import { test, before, after } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert';
 
 // Configure ImageKit so uploadImageKitUrl takes the fetch-and-upload path
