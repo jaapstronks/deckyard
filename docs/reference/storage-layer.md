@@ -142,6 +142,21 @@ that one has no id beside it yet.
   codes are authorized by the *token*, not the org. These go through
   `crossOrganizationScope(repoRoot, reason, …)` — the mandatory `reason` string
   makes `grep -r crossOrganization` a complete census of every unscoped path.
+- **A list read.** The list facades (`listPresentations`,
+  `listTrashedPresentations`, `listPresentationVersions`, `listTeamLibrary`/
+  `listPersonalLibrary`, `getPublishedIndex`, `listImageLibrary`) return the
+  **full organization-scoped set**, ordered but unpaginated. Pagination is the
+  caller's concern: the public-api v1 routes slice `{limit, offset}` over the
+  full list in-memory and report a truthful `total`, and bulk-export/search/MCP
+  consume the whole set. There is deliberately no row cap — B79 had inherited
+  `applyPagination()`'s old default 100 as a literal `.limit(100)`, which
+  silently dropped the tail for any org past 100 items (corrupting API totals,
+  truncating backups, and — sharpest — making the team-library trash/delete
+  authz guard resolve through the capped list and return a false `not_found` for
+  an item outside the newest page). B85 removed the cap and moved the guard to
+  resolve its target directly by id. Pushing `limit`/`offset` into SQL is a
+  future deliberate feature, not an accidental default; when it lands it is one
+  canonical shape across all six facades, not a per-site parameter.
 - **Storage boot.** `initializeStorage()` (server/storage/lifecycle.js) opens
   the shared Kysely pool via `initializeDatabase()`; it is idempotent, and
   `getDb()` throws `"Database not initialized"` before it has run.
