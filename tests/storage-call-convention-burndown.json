@@ -2,6 +2,15 @@
   "server/storage/feedback.js :: ensureFeedbackForSlide :: mutation-returns-null",
   "server/storage/feedback.js :: resetFeedback :: mutation-returns-null",
   "server/storage/feedback.js :: setFeedbackStatus :: mutation-returns-null",
+  "server/storage/image-library/index.js :: updateImageLibraryItem :: mutation-returns-null-via-updateImage",
   "server/storage/interaction-slides.js :: ensureInteractionSlide :: mutation-returns-null",
-  "server/storage/interaction-slides.js :: updateInteractionSlide :: mutation-returns-null"
+  "server/storage/interaction-slides.js :: updateInteractionSlide :: mutation-returns-null",
+  "server/storage/interactions.js :: ensureLikertInteractionForSlide :: mutation-returns-null-via-ensureInteractionForSlide",
+  "server/storage/interactions.js :: ensurePollInteractionForSlide :: mutation-returns-null-via-ensureInteractionForSlide",
+  "server/storage/interactions.js :: resetLikertInteraction :: mutation-returns-null-via-resetInteraction",
+  "server/storage/interactions.js :: resetPollInteraction :: mutation-returns-null-via-resetInteraction",
+  "server/storage/interactions.js :: setLikertInteractionStatus :: mutation-returns-null-via-setInteractionStatus",
+  "server/storage/interactions.js :: setPollInteractionStatus :: mutation-returns-null-via-setInteractionStatus",
+  "server/storage/presentations/index.js :: duplicatePresentation :: mutation-returns-null-via-duplicatePresentationRow",
+  "server/storage/presentations/index.js :: restorePresentation :: mutation-returns-null-via-restorePresentationRow"
 ]

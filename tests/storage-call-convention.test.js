@@ -26,10 +26,12 @@
  * Rule (c) is deliberately shallow in three ways, and the doc says so. It reads
  * only the export's **own** body, so a `return null` in a nested closure that
  * the export converts to `{ ok, reason }` is not a violation — `createQuestion`
- * in `questions.js` is exactly that shape. It does not follow delegation, so an
- * export that tail-calls a private helper returning `null` reads as clean. And
- * it cannot judge `return false`, because a boolean is as often the payload as
- * the verdict. It is a drift stop, not a proof.
+ * in `questions.js` is exactly that shape. It follows delegation exactly one
+ * level and only in return position (`return helper(…)` to a module-private
+ * helper); a `null` reached any other way — an imported helper, a helper whose
+ * result is stored and returned later — reads as clean. And it cannot judge
+ * `return false`, because a boolean is as often the payload as the verdict.
+ * It is a drift stop, not a proof.
  *
  * Existing violations are carried in `storage-call-convention-burndown.json`,
  * an allowlist that may only shrink (the `eslint-suppressions.json` pattern):
@@ -128,17 +130,23 @@ function grabParens(text, start) {
  * Verb prefixes that make an export a **mutation**: it changes stored state, so
  * every non-throw failure branch must read `{ ok: false, reason }`.
  *
- * A whitelist on purpose. Prefixes deliberately left out, with why:
+ * A whitelist on purpose, and it must name every state-changing verb the tree
+ * actually uses — an export whose verb is missing here is simply not looked at,
+ * so a new leak behind an unlisted verb reads as clean. When a new mutation verb
+ * appears under server/storage, add it here (the scan of unlisted export names
+ * in the review of B86 PR A is how the current list was completed).
+ *
+ * Prefixes deliberately left out, with why:
  * `get`/`find`/`list`/`count`/`search`/`aggregate`/`has`/`is`/`load`/`read` are
  * reads, where `null`/`[]` *is* the canonical miss; `hydrate` fills the
  * in-process session map on the way to answering "give me this session", so its
  * `null` is a read miss too; `attach`/`detach`/`broadcast` wire up process-local
- * SSE sockets rather than rows; `assert`/`enforce` throw on failure (the third
- * canonical shape); `normalize`/`build`/`prepare` are pure helpers that never
- * reach the database.
+ * SSE sockets rather than rows, as does `notify`; `assert`/`enforce` throw on
+ * failure (the third canonical shape); `normalize`/`build`/`prepare`/`generate`
+ * are pure helpers that never reach the database.
  */
 const MUTATION_VERBS =
-  /^(accept|activate|add|append|approve|archive|assign|bump|cancel|claim|clear|consume|create|deactivate|decline|delete|disable|downvote|duplicate|enable|ensure|expire|grant|increment|insert|invalidate|invite|link|lock|mark|migrate|move|persist|pin|prune|publish|purge|record|regenerate|reject|release|remove|rename|replace|reset|restore|revoke|rotate|save|seed|set|store|sync|toggle|touch|unlink|unlock|unpin|unpublish|update|upsert|upvote|vote|write)(?=[A-Z_]|$)/;
+  /^(accept|acquire|activate|add|anonymize|append|approve|archive|assign|bump|cancel|claim|cleanup|clear|consume|create|deactivate|decline|delete|disable|dismiss|downvote|duplicate|enable|end|ensure|erase|expire|grant|increment|insert|invalidate|invite|link|lock|log|mark|migrate|move|permanentlyDelete|persist|pin|preRegister|promote|prune|publish|purge|record|refresh|regenerate|reject|release|remove|rename|reopen|reorder|replace|request|resend|reset|restore|revoke|rotate|save|seed|send|set|store|submit|sweep|sync|toggle|touch|transfer|transition|unlink|unlock|unpin|unpublish|update|upsert|upvote|vote|write)(?=[A-Z_]|$)/;
 
 const FUNCTION_NODES = new Set([
   'FunctionDeclaration',
@@ -146,23 +154,32 @@ const FUNCTION_NODES = new Set([
   'ArrowFunctionExpression',
 ]);
 
-/** Every `export function f()` / `export const f = () => …` in one module, as [name, fnNode]. */
-function exportedFunctions(ast) {
-  const out = [];
+/**
+ * Every top-level `function f()` / `const f = () => …` in one module, exported
+ * or not, as `{ exported: Map<name, fnNode>, local: Map<name, fnNode> }`. The
+ * local ones matter because a mutation export may hand its answer straight to a
+ * module-private helper (`return helper(…)`), and that helper's `return null`
+ * is then the export's own failure shape.
+ */
+function moduleFunctions(ast) {
+  const exported = new Map();
+  const local = new Map();
   for (const node of ast.body) {
-    if (node.type !== 'ExportNamedDeclaration' || !node.declaration) continue;
-    const decl = node.declaration;
+    const isExport = node.type === 'ExportNamedDeclaration';
+    const decl = isExport ? node.declaration : node;
+    if (!decl) continue;
+    const into = isExport ? exported : local;
     if (decl.type === 'FunctionDeclaration') {
-      out.push([decl.id.name, decl]);
+      into.set(decl.id.name, decl);
     } else if (decl.type === 'VariableDeclaration') {
       for (const d of decl.declarations) {
         if (d.init && FUNCTION_NODES.has(d.init.type) && d.id.type === 'Identifier') {
-          out.push([d.id.name, d.init]);
+          into.set(d.id.name, d.init);
         }
       }
     }
   }
-  return out;
+  return { exported, local };
 }
 
 /**
@@ -207,16 +224,42 @@ function forbiddenFailureLiteral(argument) {
   return null;
 }
 
-/** Rule (c) violations in one module. */
+/**
+ * The module-private helper a return statement hands its answer to — for
+ * `return helper(…)` / `return await helper(…)` — or `null` when the statement
+ * returns anything else. Only same-module private functions are followed:
+ * an imported callee has a contract of its own, gated where it is exported.
+ */
+function delegatedCallee(ret, local) {
+  let arg = ret.argument;
+  if (arg?.type === 'AwaitExpression') arg = arg.argument;
+  if (arg?.type !== 'CallExpression' || arg.callee.type !== 'Identifier') return null;
+  const fn = local.get(arg.callee.name);
+  return fn ? { name: arg.callee.name, fn } : null;
+}
+
+/**
+ * Rule (c) violations in one module. Judges the export's own return statements
+ * and, one level down, the returns of any module-private helper the export
+ * tail-calls (`return helper(…)`); the helper's `null` is then reported against
+ * the export as `mutation-returns-null-via-<helper>`.
+ */
 function scanFailureShapes(rel, text) {
   const violations = [];
   const ast = parse(text, { ecmaVersion: 'latest', sourceType: 'module' });
-  for (const [name, fn] of exportedFunctions(ast)) {
+  const { exported, local } = moduleFunctions(ast);
+  for (const [name, fn] of exported) {
     if (!MUTATION_VERBS.test(name)) continue;
     const kinds = new Set();
     for (const ret of ownReturnStatements(fn)) {
       const kind = forbiddenFailureLiteral(ret.argument);
       if (kind) kinds.add(kind);
+      const helper = delegatedCallee(ret, local);
+      if (!helper) continue;
+      for (const inner of ownReturnStatements(helper.fn)) {
+        const innerKind = forbiddenFailureLiteral(inner.argument);
+        if (innerKind) kinds.add(`${innerKind}-via-${helper.name}`);
+      }
     }
     for (const kind of [...kinds].sort()) {
       violations.push(`${rel} :: ${name} :: mutation-returns-${kind}`);
