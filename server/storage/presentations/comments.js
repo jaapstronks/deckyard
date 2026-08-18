@@ -3,13 +3,13 @@
  * Allows organization members to leave feedback on slides without editing.
  */
 
-import { getOrgId } from '../utils/context.js';
-import { norm, normalizeEmail, nowIso } from '../utils/normalize.js';
-import { parseMentions } from '../../shared/comment-mentions.js';
-import { toStorageContext } from './scope.js';
-import { withDbGuard } from './utils/db-guard.js';
-import { listPresentations } from './presentations/index.js';
-import { listPresentationsSharedWithUser } from './collaborators.js';
+import { getOrgId } from '../../utils/context.js';
+import { norm, normalizeEmail, nowIso } from '../../utils/normalize.js';
+import { parseMentions } from '../../../shared/comment-mentions.js';
+import { toStorageContext } from '../scope.js';
+import { withDbGuard } from '../utils/db-guard.js';
+import { listPresentations } from './index.js';
+import { listPresentationsSharedWithUser } from '../collaborators.js';
 
 // ============================================================
 // COMMENTS CRUD
@@ -164,7 +164,7 @@ async function annotateThreadReadState(db, threads, scope) {
  * replies), normalized and deduplicated. Used by the subscription resolver:
  * writing in a thread makes you a participant.
  *
- * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} commentId - Top-level comment id (or a reply id; the
  *   thread is resolved via its parent)
  * @returns {Promise<string[]>}
@@ -205,7 +205,7 @@ export async function getThreadParticipants(scope, commentId) {
  * presentation count; unknown/reply ids are ignored. No-op without an acting
  * user (guests have no read-state).
  *
- * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId
  * @param {string[]} commentIds - Top-level comment ids to mark read
  * @returns {Promise<{ok: boolean, marked?: number, reason?: string}>}
@@ -260,7 +260,7 @@ export async function markThreadsRead(scope, presentationId, commentIds) {
  * decks from `listPresentationsSharedWithUser`.
  * Built once so callers avoid per-comment N+1 title lookups.
  *
- * @param {import('./scope.js').StorageScope} scope - `actorEmail`/`ownerEmail`
+ * @param {import('../scope.js').StorageScope} scope - `actorEmail`/`ownerEmail`
  *   is the acting user, `organizationId` scopes shared lookups.
  * @param {'owned'|'shared'|'all'} [ownership='all'] - Which decks to include.
  * @returns {Promise<Array<{ id: string, title: string }>>}
@@ -300,7 +300,7 @@ export async function listAccessiblePresentationRefs(scope, ownership = 'all') {
  * queries ("latest comments on my decks", optionally by one reviewer) that the
  * per-deck listComments() can't answer.
  *
- * @param {import('./scope.js').StorageScope} scope - Acting user + org, as above.
+ * @param {import('../scope.js').StorageScope} scope - Acting user + org, as above.
  * @param {Object} [opts]
  * @param {'owned'|'shared'|'all'} [opts.ownership='all'] - Which decks to include.
  * @param {string|null} [opts.authorEmail=null] - Filter to one comment author.

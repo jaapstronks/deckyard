@@ -8,7 +8,7 @@
  */
 
 import { getFollowStateForPresentation } from '../../../storage/live-sessions/index.js';
-import { getPresentationCached } from '../../../storage/presentation-cache.js';
+import { getPresentationCached } from '../../../storage/presentations/cache.js';
 import { computeAudienceCapabilitiesFromState, followAudienceScope } from './helpers.js';
 
 const TICK_MS = 2000;

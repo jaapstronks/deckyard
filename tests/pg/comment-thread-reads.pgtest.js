@@ -1,7 +1,7 @@
 /**
  * `markThreadsRead` against real PostgreSQL.
  *
- * Marking comment threads read (server/storage/presentation-comments.js) batch-
+ * Marking comment threads read (server/storage/presentations/comments.js) batch-
  * upserts `comment_thread_reads` with ON CONFLICT (user_email, comment_id) DO
  * UPDATE SET last_read_at. This is the heaviest foreign-key chain of the
  * upsert sites: a read row points at a `presentation_comments(id)` (FK, ON
@@ -21,7 +21,7 @@ import { testScope } from '../helpers/storage-scope.js';
 import {
   createComment,
   markThreadsRead,
-} from '../../server/storage/presentation-comments.js';
+} from '../../server/storage/presentations/comments.js';
 
 const ALICE = 'alice@example.com';
 const ctx = testScope(null, { actorEmail: ALICE });

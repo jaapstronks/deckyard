@@ -14,7 +14,7 @@
 import { getStorage } from '../adapters/index.js';
 import { repoRootOf, toStorageContext } from '../scope.js';
 import { isCollabLiveEditsEnabled } from '../../config/features.js';
-import { deleteYDocState } from '../presentation-ydocs.js';
+import { deleteYDocState } from './ydocs.js';
 import { normalizeSlides } from './slides.js';
 import { normalizeI18n } from './i18n.js';
 import { prepareNewPresentation } from './crud/factory.js';
@@ -22,7 +22,7 @@ import { assertSandboxQuotaForCreate } from './sandbox-quota.js';
 import { stripIdentityForSnapshot } from './snapshot-identity.js';
 import { recordSlideLevelMerge } from '../../services/activity-events.js';
 import { validatePresentationSize } from '../../utils/presentation-limits.js';
-import { invalidatePresentationCache } from '../presentation-cache.js';
+import { invalidatePresentationCache } from './cache.js';
 import { migratePresentation } from '../../../shared/slide-types/schema-version.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('presentations');

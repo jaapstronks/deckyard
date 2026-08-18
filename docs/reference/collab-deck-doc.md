@@ -117,7 +117,7 @@ persistence hooks (`server/collab/persistence.js`):
 **Storage**: `getYDocState`/`setYDocState`/`deleteYDocState` on the
 adapter — Postgres table `presentation_ydocs` (one merged update per deck,
 `bytea`, cascade on deck delete; migration 040). Facade:
-`server/storage/presentation-ydocs.js`. The binary is a **cache** of the
+`server/storage/presentations/ydocs.js`. The binary is a **cache** of the
 live CRDT state; the deck JSON stays the durable format. Deleting a binary
 is always safe (next open re-bootstraps from JSON).
 
@@ -186,7 +186,7 @@ Design decisions, deliberate and load-bearing:
   from the `updatePresentation` facade after a successful non-collab save.
 - `server/collab/persistence.js` — Hocuspocus onLoad/onStore hooks
   (dependency-injectable for tests); wired in `server/collab/mount.js`.
-- `server/storage/presentation-ydocs.js` — doc-state facade;
+- `server/storage/presentations/ydocs.js` — doc-state facade;
   `server/db/migrations/040_presentation_ydocs.js` (Postgres).
 - `tests/collab-persistence.test.js` — hook + invalidation tests;
   `tests/collab-live-edits.test.js` — end-to-end over a real mount (two WS

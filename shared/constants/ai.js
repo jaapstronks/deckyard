@@ -35,7 +35,7 @@ export const DREAMBOT_NAME = DEFAULT_AI_NAME;
  * address. Kept in `shared/` so client (comment styling) and server agree.
  *
  * Comparison is case-insensitive: comment rows store the author address
- * lowercased (see storage/presentation-comments.js), while the configured
+ * lowercased (see storage/presentations/comments.js), while the configured
  * setting is kept verbatim, so a mixed-case identity would otherwise never
  * match its own comments.
  *

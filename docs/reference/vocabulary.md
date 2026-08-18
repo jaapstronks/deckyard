@@ -56,7 +56,7 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
   presentations view now spell the owned/shared/all source filter
   **`ownership`**. The storage helper's `visibility` option
   (`listAccessiblePresentationRefs`, `listRecentCommentsForOwner` in
-  `server/storage/presentation-comments.js`) — a second homonym for the same
+  `server/storage/presentations/comments.js`) — a second homonym for the same
   concept — was renamed with it. This was a breaking change to the MCP tool
   schema, shipped deliberately with no back-compat alias; MCP clients re-read
   the schema each session.

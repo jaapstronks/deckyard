@@ -242,7 +242,7 @@ test('the short-TTL read cache is keyed per organization', async () => {
   // presentation-cache.js sits in front of the facade on the audience hot paths.
   // A cache keyed on repo root alone would undo the isolation above inside its
   // 2s window: Beta asks for 'deck-alpha' and gets Alpha's entry back.
-  const { getPresentationCached } = await import('../server/storage/presentation-cache.js');
+  const { getPresentationCached } = await import('../server/storage/presentations/cache.js');
 
   const alpha = await getPresentationCached({ repoRoot: '/srv', organizationId: ORG_A }, 'deck-alpha');
   assert.equal(alpha?.id, 'deck-alpha');
