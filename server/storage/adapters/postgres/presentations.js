@@ -90,50 +90,6 @@ export function withPresentations(Base) {
     }
 
     /**
-     * Decks of the context's organization whose slide content references an
-     * exact URL — the "where is this image used" query behind the image
-     * library.
-     *
-     * The match is a whole-value string equality anywhere under a slide's
-     * `content`, in the base deck and in every `i18n` language version. It is
-     * deliberately not a substring search: a deck uses an image when a field
-     * *is* that URL, not when some prose happens to mention it.
-     *
-     * Trashed decks are excluded, like {@link listPresentations}: usage the
-     * user cannot see in their deck list would only confuse the count.
-     *
-     * @param {string} url - The exact URL to look for.
-     * @param {object} ctx - Storage context
-     * @returns {Promise<Array<{id: string, title: string, modified: string, i18n: Object|null}>>}
-     */
-    async findPresentationsUsingUrl(url, ctx) {
-      const u = String(url || '').trim();
-      if (!u) return [];
-
-      const db = getDb();
-      const orgId = getOrgId(ctx);
-
-      const rows = await db
-        .selectFrom('presentations')
-        .select(['id', 'title', 'i18n', 'modified_at as modified'])
-        .where('organization_id', '=', orgId)
-        .where('trashed_at', 'is', null)
-        .where(
-          sql`jsonb_path_exists(slides, '$[*].content.** ? (@ == $u)', jsonb_build_object('u', ${u}::text))
-              or jsonb_path_exists(i18n, '$.versions.*.slides[*].content.** ? (@ == $u)', jsonb_build_object('u', ${u}::text))`
-        )
-        .orderBy('modified_at', 'desc')
-        .execute();
-
-      return rows.map((row) => ({
-        id: row.id,
-        title: row.title,
-        modified: row.modified,
-        i18n: row.i18n && typeof row.i18n === 'object' ? row.i18n : null,
-      }));
-    }
-
-    /**
      * Fetch one presentation.
      *
      * The organization filter is skipped only when the context declares
