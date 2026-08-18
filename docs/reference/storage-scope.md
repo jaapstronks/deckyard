@@ -137,8 +137,8 @@ instead of rebuilding it, and the naming pass has landed: no storage export
 names its scope parameter `ctx` anymore, and the near-collision pair is now
 `getThemeRecord()` (DB row, storage layer) vs `loadThemeAssets()` (theme
 files, `utils/themes.js`). Two deliberate scope-homonyms remain outside the
-layer's parameter convention: the MCP tool input `scope: owned|shared|all`
-(external contract) and the slide-library `opts.scope: personal|team` (DB
-column). Nothing here promises compatibility with the old shapes: during beta
+layer's parameter convention: the MCP tool input `ownership: owned|shared|all`
+(external contract) and the slide-library `opts.shelf: personal|organization`
+(DB column). Nothing here promises compatibility with the old shapes: during beta
 they are removed, not tolerated (`docs/reference/versioning.md` § the beta
 stance).

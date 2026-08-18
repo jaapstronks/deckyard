@@ -276,7 +276,7 @@ missing is listed under *What is not done yet* below.
   Pinned by `tests/request-organization-binding.test.js` (single-organization,
   including query-log assertions that no extra lookup is issued) and
   `tests/request-organization-binding-multi-org.test.js` (two organizations on
-  one instance, walking session cookie → context → Postgres adapter).
+  one instance, walking session cookie → context → Postgres query).
 
 - **The organization-aware authorization layer — done.**
   `server/utils/presentation-authz/presentations.js` used to return `true` for
@@ -382,7 +382,7 @@ missing is listed under *What is not done yet* below.
   organization.
 
   Where the check sits matters as much as the check. Every facade validates the
-  scope in `toStorageContext()` **before** touching the adapter, so an
+  scope in `toStorageContext()` **before** touching the database, so an
   un-migrated caller fails on the validation, not somewhere inside a query.
 
   Single-organization installations are unaffected in behaviour: there the

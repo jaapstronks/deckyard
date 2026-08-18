@@ -4,14 +4,15 @@
 
 The storage layer is everything under `server/storage/` — the seam between
 route/business code and the database. It owns two jobs: **tenancy** (no query
-runs without an explicit organization scope) and the **adapter contract** (one
-Postgres-only backend behind a stable set of facades). Route handlers never
-touch SQL directly; they call a per-domain facade (`server/storage/presentations/`,
-`server/storage/themes.js`, …) with a *scope* as the first argument, and the
-facade delegates to the adapter.
+runs without an explicit organization scope) and the **query contract** (one
+Postgres-only backend reached by every facade through direct Kysely on
+`getDb()` — there is no adapter class; B79/D34 stripped it). Route handlers
+never touch SQL directly; they call a per-domain facade
+(`server/storage/presentations/`, `server/storage/themes.js`, …) with a *scope*
+as the first argument, and the facade runs its own Kysely queries.
 
-This document maps the layer: the module inventory, the adapter seam, the
-config that selects it (there is only one choice), and how the scope threads
+This document maps the layer: the module inventory, the query seam, the
+config (there is only one backend choice), and how the scope threads
 org-isolation through every call. It does not re-document the deck data format
 ([`deck-format.md`](deck-format.md)) or the isolation rules
 ([`tenant-isolation.md`](tenant-isolation.md)); it points at them.
