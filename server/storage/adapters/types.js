@@ -68,7 +68,7 @@
  *
  * @typedef {Object} SlideLibraryItem
  * @property {string} id
- * @property {string} scope
+ * @property {string} shelf
  * @property {string|null} ownerEmail
  * @property {string} name
  * @property {string} slideType

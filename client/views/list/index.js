@@ -220,7 +220,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   });
 
   // Unified "Presentations" view — replaces the Recent / Workspace /
-  // My presentations / Shared with me tabs with one scope-chip + tag surface.
+  // My presentations / Shared with me tabs with one shelf-chip + tag surface.
   const presentationsViewObj = createPresentationsView({
     h,
     api,
@@ -384,9 +384,9 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   // ============================================================
 
   // Handle permalink navigation to slide library
-  if (openSlideLibrary?.scope && openSlideLibrary?.slideId) {
+  if (openSlideLibrary?.shelf && openSlideLibrary?.slideId) {
     setView('slideLibrary');
-    slideLibraryViewObj.openSlide(openSlideLibrary.scope, openSlideLibrary.slideId);
+    slideLibraryViewObj.openSlide(openSlideLibrary.shelf, openSlideLibrary.slideId);
   } else {
     setView(currentView);
   }

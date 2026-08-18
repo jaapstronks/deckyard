@@ -16,7 +16,7 @@ export function withSlides(Base) {
      * List slide library items.
      * @param {object} ctx - Storage context
      * @param {object} [opts] - Options
-     * @param {string} [opts.scope] - 'personal' or 'team'
+     * @param {string} [opts.shelf] - 'personal' or 'organization'
      * @param {string} [opts.ownerEmail] - Filter by owner
      * @param {string} [opts.themeId] - Filter by theme
      * @param {number} [opts.limit] - Max items to return
@@ -33,8 +33,8 @@ export function withSlides(Base) {
 
       // Don't filter out trashed items - client handles trash view filtering
 
-      if (opts?.scope) {
-        query = query.where('scope', '=', opts.scope);
+      if (opts?.shelf) {
+        query = query.where('shelf', '=', opts.shelf);
       }
       if (opts?.ownerEmail) {
         query = query.where('owner_email', '=', opts.ownerEmail);
@@ -81,7 +81,7 @@ export function withSlides(Base) {
         .values({
           organization_id: orgId,
           owner_email: data.ownerEmail || ctx?.actorEmail || null,
-          scope: data.scope || 'personal',
+          shelf: data.shelf || 'personal',
           name: data.name,
           description: data.description || null,
           slide_type: data.slideType,

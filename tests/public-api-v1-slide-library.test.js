@@ -48,16 +48,16 @@ async function installDb() {
       { id: OTHER_ORG, name: 'Other', slug: 'other' },
     ],
     slide_library: [
-      libraryRow({ id: 'item-team', organization_id: ORG, scope: 'team', name: 'Team intro' }),
-      libraryRow({ id: 'item-personal', organization_id: ORG, scope: 'personal', name: 'My draft' }),
+      libraryRow({ id: 'item-team', organization_id: ORG, shelf: 'organization', name: 'Team intro' }),
+      libraryRow({ id: 'item-personal', organization_id: ORG, shelf: 'personal', name: 'My draft' }),
       libraryRow({
         id: 'item-trashed',
         organization_id: ORG,
-        scope: 'team',
+        shelf: 'organization',
         name: 'Old slide',
         trashed_at: '2026-08-01T00:00:00.000Z',
       }),
-      libraryRow({ id: 'item-foreign', organization_id: OTHER_ORG, scope: 'team', name: 'Foreign' }),
+      libraryRow({ id: 'item-foreign', organization_id: OTHER_ORG, shelf: 'organization', name: 'Foreign' }),
     ],
     tags: [{ id: 'tag-1', organization_id: ORG, name: 'intro' }],
     slide_library_tags: [{ slide_library_id: 'item-team', tag_id: 'tag-1' }],
@@ -71,11 +71,11 @@ async function installDb() {
   return db;
 }
 
-function libraryRow({ id, organization_id, scope, name, trashed_at = null }) {
+function libraryRow({ id, organization_id, shelf, name, trashed_at = null }) {
   return {
     id,
     organization_id,
-    scope,
+    shelf,
     owner_email: KEY_OWNER,
     name,
     description: '',

@@ -719,7 +719,7 @@
   "editor.slideLibrary.saveModal.onlyOneLang": "Deze slide heeft alleen inhoud in {lang}. Vertaal hem eerst om beide versies te bewaren.",
   "editor.slideLibrary.saveModal.save": "Bewaren in bibliotheek",
   "editor.slideLibrary.saveModal.saveTo": "Bewaren in",
-  "editor.slideLibrary.saveModal.scopeHint": "Persoonlijke slides zijn alleen voor jou zichtbaar. Teamdia's deel je met je organisatie.",
+  "editor.slideLibrary.saveModal.shelfHint": "Persoonlijke slides zijn alleen voor jou zichtbaar. Teamdia's deel je met je organisatie.",
   "editor.slideLibrary.saveModal.tags": "Tags",
   "editor.slideLibrary.saveModal.tagsHint": "Optioneel. Gebruik tags om je slides te ordenen.",
   "editor.slideLibrary.saveModal.tagsPlaceholder": "Tags toevoegen...",

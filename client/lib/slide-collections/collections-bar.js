@@ -39,11 +39,11 @@ export function createCollectionsBar({ api, root }) {
   const buildSlideIndex = async () => {
     if (slideIndex) return slideIndex;
     slideIndex = new Map();
-    for (const scope of ['personal', 'team']) {
+    for (const shelf of ['personal', 'organization']) {
       try {
-        const r = await api(`/api/slide-library/${scope}`);
+        const r = await api(`/api/slide-library/${shelf}`);
         for (const it of Array.isArray(r?.items) ? r.items : []) {
-          if (it?.id && !slideIndex.has(it.id)) slideIndex.set(it.id, { ...it, _scope: scope });
+          if (it?.id && !slideIndex.has(it.id)) slideIndex.set(it.id, { ...it, _shelf: shelf });
         }
       } catch {
         // Ignore; unresolved members degrade gracefully in the modal.
@@ -100,8 +100,8 @@ export function createCollectionsBar({ api, root }) {
       },
     });
     main.append(h('span', { class: 'collection-chip-name', text: col.name || t('slideLibrary.preview.untitled', 'Untitled') }));
-    if (col.scope === 'team') {
-      main.append(h('span', { class: 'collection-chip-badge', text: t('slideLibrary.scope.team', 'Team') }));
+    if (col.shelf === 'organization') {
+      main.append(h('span', { class: 'collection-chip-badge', text: t('slideLibrary.shelf.organization', 'Team') }));
     }
     main.append(
       h('span', {
@@ -142,7 +142,7 @@ export function createCollectionsBar({ api, root }) {
           });
           if (!ok) return;
           try {
-            await collectionsApi.remove(col.scope, col.id);
+            await collectionsApi.remove(col.shelf, col.id);
             toast.success(t('slideLibrary.collections.deleted', 'Collection deleted.'));
             afterChange();
           } catch (e) {
@@ -187,7 +187,7 @@ export function createCollectionsBar({ api, root }) {
 
   /**
    * Open the "add this slide to a collection" chooser (called from a card menu).
-   * @param {object} item - library item (may carry a `_scope` hint)
+   * @param {object} item - library item (may carry a `_shelf` hint)
    */
   function openAddTo(item) {
     openAddToCollectionModal({

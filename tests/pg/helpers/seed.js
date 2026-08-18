@@ -74,13 +74,13 @@ export async function seedPresentation(
 
 /**
  * Insert a slide-library item and return its id. Only the NOT NULL columns are
- * set (scope, name, slide_type, content); the rest take their defaults.
+ * set (shelf, name, slide_type, content); the rest take their defaults.
  *
  * @param {import('kysely').Kysely<any>} db
  * @param {object} opts
  * @param {string} [opts.organizationId]
- * @param {string} [opts.scope='team'] - 'personal' | 'team'.
- * @param {string} [opts.ownerEmail] - Required by the personal scope.
+ * @param {string} [opts.shelf='organization'] - 'personal' | 'organization'.
+ * @param {string} [opts.ownerEmail] - Required by the personal shelf.
  * @param {string} [opts.name='Slide']
  * @param {string} [opts.slideType='text']
  * @param {object} [opts.content]
@@ -88,14 +88,14 @@ export async function seedPresentation(
  */
 export async function seedSlideLibraryItem(
   db,
-  { organizationId, scope = 'team', ownerEmail = null, name = 'Slide', slideType = 'text', content = {} } = {}
+  { organizationId, shelf = 'organization', ownerEmail = null, name = 'Slide', slideType = 'text', content = {} } = {}
 ) {
   const orgId = organizationId || getDefaultOrganizationId();
   const row = await db
     .insertInto('slide_library')
     .values({
       organization_id: orgId,
-      scope,
+      shelf,
       owner_email: ownerEmail,
       name,
       slide_type: slideType,

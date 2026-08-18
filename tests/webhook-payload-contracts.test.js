@@ -254,13 +254,13 @@ describe('slide.added_to_team_library payload shape', () => {
       slideType: 'kpi-metrics-slide',
       themeId: 'aurora',
       previewUrl: '/thumbs/sl-9.png',
-      url: 'http://decks.example.test/app/slide-library/team/sl-9',
+      url: 'http://decks.example.test/app/slide-library/organization/sl-9',
     });
     assert.deepEqual(payload.links, {
       libraryPath: '/app/slide-library',
       libraryUrl: 'http://decks.example.test/app/slide-library',
-      slidePath: '/app/slide-library/team/sl-9',
-      slideUrl: 'http://decks.example.test/app/slide-library/team/sl-9',
+      slidePath: '/app/slide-library/organization/sl-9',
+      slideUrl: 'http://decks.example.test/app/slide-library/organization/sl-9',
     });
   });
 });

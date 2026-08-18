@@ -10,7 +10,7 @@ export function openSlideLibraryModal({
   afterSlideId = null,
   insertFromLibraryItem,
   openOverlayClosers,
-  initialScope = 'team',
+  initialShelf = 'organization',
   initialQuery = '',
   allowInsert = true,
 } = {}) {
@@ -90,7 +90,7 @@ export function openSlideLibraryModal({
     SLIDE_TYPES,
     insertFromLibraryItem,
     allowInsert,
-    initialScope,
+    initialShelf,
     initialQuery,
   });
   picker.renderSlideLibraryPicker(mount, {

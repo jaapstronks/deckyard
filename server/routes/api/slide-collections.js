@@ -108,14 +108,14 @@ async function handlePersonalDelete({ storageScope, res, authedUser }, id) {
   return true;
 }
 
-// GET /api/slide-collections/team
+// GET /api/slide-collections/organization
 async function handleTeamList({ storageScope, res, authedUser }) {
   const out = await listTeamCollections(storageScope, { userEmail: actorEmail(authedUser) });
   serveJson(res, 200, out);
   return true;
 }
 
-// POST /api/slide-collections/team
+// POST /api/slide-collections/organization
 async function handleTeamCreate({ storageScope, req, res, authedUser }) {
   const email = actorEmail(authedUser);
   const parsed = await requireJsonBody(req, res);
@@ -127,7 +127,7 @@ async function handleTeamCreate({ storageScope, req, res, authedUser }) {
   return true;
 }
 
-// GET /api/slide-collections/team/:id
+// GET /api/slide-collections/organization/:id
 async function handleTeamGet({ storageScope, res, authedUser }, id) {
   const item = await getTeamCollection(storageScope, id, { userEmail: actorEmail(authedUser) });
   if (!item) return notFound(res);
@@ -135,7 +135,7 @@ async function handleTeamGet({ storageScope, res, authedUser }, id) {
   return true;
 }
 
-// PATCH /api/slide-collections/team/:id
+// PATCH /api/slide-collections/organization/:id
 async function handleTeamUpdate({ storageScope, req, res, authedUser }, id) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
@@ -149,7 +149,7 @@ async function handleTeamUpdate({ storageScope, req, res, authedUser }, id) {
   return true;
 }
 
-// DELETE /api/slide-collections/team/:id
+// DELETE /api/slide-collections/organization/:id
 async function handleTeamDelete({ storageScope, res, authedUser }, id) {
   const r = await deleteTeamCollection(storageScope, id, {
     actorEmail: actorEmail(authedUser),
@@ -175,13 +175,13 @@ export const ROUTES = [
   { method: 'PATCH', pattern: /^\/api\/slide-collections\/personal\/([^/]+)$/, handler: handlePersonalUpdate },
   { method: 'DELETE', pattern: /^\/api\/slide-collections\/personal\/([^/]+)$/, handler: handlePersonalDelete },
   { pattern: /^\/api\/slide-collections\/personal\/([^/]+)$/, handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH', 'DELETE']) },
-  { method: 'GET', pattern: '/api/slide-collections/team', handler: handleTeamList },
-  { method: 'POST', pattern: '/api/slide-collections/team', handler: handleTeamCreate },
-  { pattern: '/api/slide-collections/team', handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']) },
-  { method: 'GET', pattern: /^\/api\/slide-collections\/team\/([^/]+)$/, handler: handleTeamGet },
-  { method: 'PATCH', pattern: /^\/api\/slide-collections\/team\/([^/]+)$/, handler: handleTeamUpdate },
-  { method: 'DELETE', pattern: /^\/api\/slide-collections\/team\/([^/]+)$/, handler: handleTeamDelete },
-  { pattern: /^\/api\/slide-collections\/team\/([^/]+)$/, handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH', 'DELETE']) },
+  { method: 'GET', pattern: '/api/slide-collections/organization', handler: handleTeamList },
+  { method: 'POST', pattern: '/api/slide-collections/organization', handler: handleTeamCreate },
+  { pattern: '/api/slide-collections/organization', handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']) },
+  { method: 'GET', pattern: /^\/api\/slide-collections\/organization\/([^/]+)$/, handler: handleTeamGet },
+  { method: 'PATCH', pattern: /^\/api\/slide-collections\/organization\/([^/]+)$/, handler: handleTeamUpdate },
+  { method: 'DELETE', pattern: /^\/api\/slide-collections\/organization\/([^/]+)$/, handler: handleTeamDelete },
+  { pattern: /^\/api\/slide-collections\/organization\/([^/]+)$/, handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH', 'DELETE']) },
 ];
 
 /**

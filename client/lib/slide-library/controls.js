@@ -1,6 +1,6 @@
 /**
  * Slide Library UI Controls
- * Renders scope, view, language, search, and filter controls
+ * Renders shelf, view, language, search, and filter controls
  */
 
 import { t } from '../ui-i18n.js';
@@ -28,28 +28,28 @@ export function createSlideLibraryControls({
     return t(def?.labelKey || `slideType.${type}.label`, def?.label || type);
   };
 
-  const renderScopeControls = (mount, rerender) => {
-    const seg = h('div', { class: 'sb-segmented is-toggle ps-lib-scope' });
-    const mkBtn = (scope, labelKey, fallback) =>
+  const renderShelfControls = (mount, rerender) => {
+    const seg = h('div', { class: 'sb-segmented is-toggle ps-lib-shelf' });
+    const mkBtn = (shelf, labelKey, fallback) =>
       h('button', {
-        class: `sb-segmented-btn ${state.getScope() === scope ? 'is-active' : ''}`,
+        class: `sb-segmented-btn ${state.getShelf() === shelf ? 'is-active' : ''}`,
         type: 'button',
         text: t(labelKey, fallback),
         onclick: async () => {
-          state.setScope(scope);
-          await apiOps.fetchScope(scope);
+          state.setShelf(shelf);
+          await apiOps.fetchShelf(shelf);
           rerender?.();
         },
       });
     seg.append(
-      mkBtn('personal', 'slideLibrary.scope.personal', 'Personal'),
-      mkBtn('team', 'slideLibrary.scope.team', 'Team')
+      mkBtn('personal', 'slideLibrary.shelf.personal', 'Personal'),
+      mkBtn('organization', 'slideLibrary.shelf.organization', 'Team')
     );
     mount.append(seg);
   };
 
   const renderViewControls = (mount, rerender) => {
-    const seg = h('div', { class: 'sb-segmented is-toggle ps-lib-scope' });
+    const seg = h('div', { class: 'sb-segmented is-toggle ps-lib-shelf' });
     const mkBtn = (view, labelKey, fallback) =>
       h('button', {
         class: `sb-segmented-btn ${state.getView() === view ? 'is-active' : ''}`,
@@ -107,8 +107,8 @@ export function createSlideLibraryControls({
     mount.append(input);
   };
 
-  const renderTypeFilters = (mount, scope, { rerenderList } = {}) => {
-    const items = state.getCache(scope);
+  const renderTypeFilters = (mount, shelf, { rerenderList } = {}) => {
+    const items = state.getCache(shelf);
     const activeTypeFilter = state.getTypeFilter();
     const activeTagFilter = state.getTagFilter();
 
@@ -230,7 +230,7 @@ export function createSlideLibraryControls({
 
   return {
     typeLabel,
-    renderScopeControls,
+    renderShelfControls,
     renderViewControls,
     renderLangControls,
     renderSearch,

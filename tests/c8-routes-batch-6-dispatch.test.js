@@ -118,14 +118,14 @@ test('slide-library: routes resolve to their named handlers in order', () => {
   named(SL_ROUTES, 'POST', '/api/slide-library/personal', 'handlePersonalCreate');
   named(SL_ROUTES, 'PATCH', '/api/slide-library/personal/i-1', 'handlePersonalUpdate');
   named(SL_ROUTES, 'DELETE', '/api/slide-library/personal/i-1', 'handlePersonalDelete');
-  named(SL_ROUTES, 'GET', '/api/slide-library/team', 'handleTeamList');
-  named(SL_ROUTES, 'POST', '/api/slide-library/team', 'handleTeamCreate');
-  named(SL_ROUTES, 'PATCH', '/api/slide-library/team/i-1', 'handleTeamUpdate');
-  named(SL_ROUTES, 'DELETE', '/api/slide-library/team/i-1', 'handleTeamDelete');
+  named(SL_ROUTES, 'GET', '/api/slide-library/organization', 'handleTeamList');
+  named(SL_ROUTES, 'POST', '/api/slide-library/organization', 'handleTeamCreate');
+  named(SL_ROUTES, 'PATCH', '/api/slide-library/organization/i-1', 'handleTeamUpdate');
+  named(SL_ROUTES, 'DELETE', '/api/slide-library/organization/i-1', 'handleTeamDelete');
   named(SL_ROUTES, 'GET', '/api/slide-library/personal/i-1/tags', 'handleItemTagsGet');
   named(SL_ROUTES, 'PUT', '/api/slide-library/personal/i-1/tags', 'handleItemTagsPut');
-  named(SL_ROUTES, 'GET', '/api/slide-library/team/i-1/tags', 'handleItemTagsGet');
-  named(SL_ROUTES, 'PUT', '/api/slide-library/team/i-1/tags', 'handleItemTagsPut');
+  named(SL_ROUTES, 'GET', '/api/slide-library/organization/i-1/tags', 'handleItemTagsGet');
+  named(SL_ROUTES, 'PUT', '/api/slide-library/organization/i-1/tags', 'handleItemTagsPut');
 });
 
 test('slide-library: a wrong method 405s with the pinned Allow list', async () => {
@@ -135,10 +135,10 @@ test('slide-library: a wrong method 405s with the pinned Allow list', async () =
     ['DELETE', '/api/slide-library/usage', 'GET, POST'],
     ['DELETE', '/api/slide-library/personal', 'GET, POST'],
     ['GET', '/api/slide-library/personal/i-1', 'PATCH, DELETE'],
-    ['DELETE', '/api/slide-library/team', 'GET, POST'],
-    ['GET', '/api/slide-library/team/i-1', 'PATCH, DELETE'],
+    ['DELETE', '/api/slide-library/organization', 'GET, POST'],
+    ['GET', '/api/slide-library/organization/i-1', 'PATCH, DELETE'],
     ['POST', '/api/slide-library/personal/i-1/tags', 'GET, PUT'],
-    ['POST', '/api/slide-library/team/i-1/tags', 'GET, PUT'],
+    ['POST', '/api/slide-library/organization/i-1/tags', 'GET, PUT'],
   ]) {
     const { ctx: c, res } = ctx(method, path);
     await handleSlideLibrary(c);

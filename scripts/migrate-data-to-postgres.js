@@ -255,7 +255,7 @@ async function migrateSlideLibrary(db, dataPath) {
           .values({
             id: item.id,
             organization_id: organizationId,
-            scope: 'team',
+            shelf: 'organization',
             owner_email: item.createdBy || null,
             name: item.name || '',
             slide_type: item.slideType || '',
@@ -318,7 +318,7 @@ async function migrateSlideLibrary(db, dataPath) {
             .values({
               id: item.id,
               organization_id: organizationId,
-              scope: 'personal',
+              shelf: 'personal',
               owner_email: item.createdBy || null,
               name: item.name || '',
               slide_type: item.slideType || '',
@@ -624,7 +624,7 @@ export async function migrateSlideCollections(db, dataPath, { dryRun, organizati
           id: item.id,
           organization_id: organizationId,
           owner_email: item.ownerEmail || null,
-          scope: item.scope || 'personal',
+          shelf: item.scope === 'team' ? 'organization' : 'personal',
           name: item.name || '',
           description: item.description || null,
           created_by: item.createdBy || null,

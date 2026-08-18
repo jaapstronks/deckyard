@@ -18,8 +18,8 @@ import { cleanStr } from '../../../shared/string-utils.js';
 export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
   if (!api) throw new Error('Missing api');
 
-  const fetchScope = async (scope) => {
-    const s = scope === 'team' ? 'team' : 'personal';
+  const fetchShelf = async (shelf) => {
+    const s = shelf === 'organization' ? 'organization' : 'personal';
     if (state.isLoading(s)) return;
     state.setLoading(s, true);
     try {
@@ -31,16 +31,16 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     }
   };
 
-  const toggleFavorite = async (scope, item, { rerender } = {}) => {
-    const s = scope === 'team' ? 'team' : 'personal';
+  const toggleFavorite = async (shelf, item, { rerender } = {}) => {
+    const s = shelf === 'organization' ? 'organization' : 'personal';
     const id = cleanStr(item?.id);
     if (!id) return;
-    const current = s === 'team' ? !!item?.isFavorite : !!item?.favorite;
+    const current = s === 'organization' ? !!item?.isFavorite : !!item?.favorite;
     const optimistic = !current;
 
     // Optimistic UI: update immediately, then reconcile with server response.
     const snap = state.patchInCache(s, id, (prev) => {
-      if (s === 'team') return { ...prev, isFavorite: optimistic };
+      if (s === 'organization') return { ...prev, isFavorite: optimistic };
       return { ...prev, favorite: optimistic };
     });
     rerender?.();
@@ -65,8 +65,8 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     }
   };
 
-  const setTrashed = async (scope, item, trashed, { rerender } = {}) => {
-    const s = scope === 'team' ? 'team' : 'personal';
+  const setTrashed = async (shelf, item, trashed, { rerender } = {}) => {
+    const s = shelf === 'organization' ? 'organization' : 'personal';
     const id = cleanStr(item?.id);
     if (!id) return;
 
@@ -102,7 +102,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     if (!name || !slideType) return;
 
     try {
-      await api('/api/slide-library/team', {
+      await api('/api/slide-library/organization', {
         method: 'POST',
         body: JSON.stringify({
           name,
@@ -112,14 +112,14 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
         }),
       });
       toast.success(t('slideLibrary.addedToTeam', 'Added to team library.'));
-      await fetchScope('team');
+      await fetchShelf('organization');
     } catch (e) {
       toast.error(String(e?.message || e));
     }
   };
 
-  const saveDescription = async (scope, item, newDesc) => {
-    const s = scope === 'team' ? 'team' : 'personal';
+  const saveDescription = async (shelf, item, newDesc) => {
+    const s = shelf === 'organization' ? 'organization' : 'personal';
     try {
       await api(`/api/slide-library/${s}/${encodeURIComponent(item.id)}`, {
         method: 'PATCH',
@@ -133,8 +133,8 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     }
   };
 
-  const saveTags = async (scope, item, newTags) => {
-    const s = scope === 'team' ? 'team' : 'personal';
+  const saveTags = async (shelf, item, newTags) => {
+    const s = shelf === 'organization' ? 'organization' : 'personal';
     try {
       const result = await api(`/api/slide-library/${s}/${encodeURIComponent(item.id)}/tags`, {
         method: 'PUT',
@@ -148,8 +148,8 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     }
   };
 
-  const saveSlide = async (scope, item, patch, { rerender } = {}) => {
-    const s = scope === 'team' ? 'team' : 'personal';
+  const saveSlide = async (shelf, item, patch, { rerender } = {}) => {
+    const s = shelf === 'organization' ? 'organization' : 'personal';
     const id = cleanStr(item?.id);
     if (!id) return { ok: false, error: new Error('Missing item id') };
 
@@ -174,7 +174,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     let successCount = 0;
     for (const item of items) {
       try {
-        await api('/api/slide-library/team', {
+        await api('/api/slide-library/organization', {
           method: 'POST',
           body: JSON.stringify({
             name: cleanStr(item?.name),
@@ -191,14 +191,14 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     }
     if (successCount > 0) {
       toast.success(`Added ${successCount} slide(s) to team library.`);
-      await fetchScope('team');
+      await fetchShelf('organization');
     }
     rerender?.();
     return successCount;
   };
 
   return {
-    fetchScope,
+    fetchShelf,
     toggleFavorite,
     setTrashed,
     pushToTeam,

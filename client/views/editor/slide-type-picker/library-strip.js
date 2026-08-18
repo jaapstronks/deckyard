@@ -5,9 +5,9 @@
  * when non-empty, and gated by the caller on both a loader and an onSeeAllLibrary
  * handler (modal context with a library tab). Hidden entirely on empty/error.
  *
- * Split across the personal and team scopes: the tile budget is weighted by how
- * many slides each scope has but guarantees at least one tile from every
- * non-empty scope, so a lone personal slide is never hidden behind a large team
+ * Split across the personal and team shelves: the tile budget is weighted by how
+ * many slides each shelf has but guarantees at least one tile from every
+ * non-empty shelf, so a lone personal slide is never hidden behind a large team
  * library (and vice versa).
  */
 
@@ -47,7 +47,7 @@ const splitLibraryBudget = (pCount, tCount) => {
  * @param {Function} [ctx.onPicked] - called after a library item is inserted
  * @param {Function} ctx.loadLibraryStripItems - async () => { personal, team } | items[]
  * @param {Function} ctx.insertLibraryItem - (item, opts) => insert it
- * @param {Function} ctx.onSeeAllLibrary - (scope) => open the full library
+ * @param {Function} ctx.onSeeAllLibrary - (shelf) => open the full library
  * @param {ResizeObserver|null} ctx.resizeObserver - keeps hydrated tiles scaled
  * @param {Function} ctx.applyFilter - re-apply the current search query
  */
@@ -134,14 +134,14 @@ export function mountLibraryStrip(ctx) {
     const groups = [];
     if (pShow) {
       groups.push({
-        scope: 'personal',
+        shelf: 'personal',
         label: tr('editor.slideTypeGroup.libraryPersonal', 'Personal library'),
         items: personal.slice(0, pShow),
       });
     }
     if (tShow) {
       groups.push({
-        scope: 'team',
+        shelf: 'organization',
         label: tr('editor.slideTypeGroup.libraryTeam', 'Team library'),
         items: team.slice(0, tShow),
       });
@@ -150,7 +150,7 @@ export function mountLibraryStrip(ctx) {
     const buildGroup = (g) => {
       const group = h('div', {
         class: 'ps-type-group ps-type-group-library',
-        'data-group-key': `library-${g.scope}`,
+        'data-group-key': `library-${g.shelf}`,
       });
       const seeAll = h('button', {
         class: 'ps-lib-strip-seeall',
@@ -158,7 +158,7 @@ export function mountLibraryStrip(ctx) {
         text: tr('editor.slideTypePicker.seeAll', 'See all'),
         onclick: () => {
           try {
-            onSeeAllLibrary(g.scope);
+            onSeeAllLibrary(g.shelf);
           } catch {
             // ignore
           }

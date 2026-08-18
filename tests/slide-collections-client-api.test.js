@@ -25,12 +25,12 @@ describe('createCollectionsApi.addSlide', () => {
     const { api, calls } = makeStubApi((path, init) => {
       if (init?.method === 'PATCH') {
         const body = JSON.parse(init.body);
-        return { id: 'c1', scope: 'personal', slideIds: body.slideIds };
+        return { id: 'c1', shelf: 'personal', slideIds: body.slideIds };
       }
       return {};
     });
     const collectionsApi = createCollectionsApi({ api });
-    const collection = { id: 'c1', scope: 'personal', slideIds: ['a', 'b'] };
+    const collection = { id: 'c1', shelf: 'personal', slideIds: ['a', 'b'] };
 
     const { collection: updated, added } = await collectionsApi.addSlide(collection, 'c');
     assert.strictEqual(added, true);
@@ -44,7 +44,7 @@ describe('createCollectionsApi.addSlide', () => {
   it('is a no-op when the slide is already a member (no PATCH)', async () => {
     const { api, calls } = makeStubApi(() => ({}));
     const collectionsApi = createCollectionsApi({ api });
-    const collection = { id: 'c1', scope: 'team', slideIds: ['a', 'b'] };
+    const collection = { id: 'c1', shelf: 'organization', slideIds: ['a', 'b'] };
 
     const { added } = await collectionsApi.addSlide(collection, 'a');
     assert.strictEqual(added, false);
@@ -53,10 +53,10 @@ describe('createCollectionsApi.addSlide', () => {
 });
 
 describe('createCollectionsApi.listAll', () => {
-  it('fetches both scopes and returns them keyed', async () => {
+  it('fetches both shelves and returns them keyed', async () => {
     const { api } = makeStubApi((path) => {
       if (path === '/api/slide-collections/personal') return { items: [{ id: 'p1' }] };
-      if (path === '/api/slide-collections/team') return { items: [{ id: 't1' }] };
+      if (path === '/api/slide-collections/organization') return { items: [{ id: 't1' }] };
       return { items: [] };
     });
     const collectionsApi = createCollectionsApi({ api });

@@ -27,9 +27,9 @@ export function route() {
   if (p === '/magic-login') return { name: 'magicLogin' };
   if (p === '/settings') return { name: 'settings' };
   if (p === '/insights') return { name: 'insights' };
-  // Slide library permalink: /app/slide-library/:scope/:id
-  const slm = p.match(/^\/app\/slide-library\/(team|personal)\/([^/]+)$/);
-  if (slm) return { name: 'slideLibrary', scope: slm[1], slideId: slm[2] };
+  // Slide library permalink: /app/slide-library/:shelf/:id
+  const slm = p.match(/^\/app\/slide-library\/(organization|personal)\/([^/]+)$/);
+  if (slm) return { name: 'slideLibrary', shelf: slm[1], slideId: slm[2] };
   const m = p.match(/^\/app\/([^/]+)$/);
   if (m) return { name: 'edit', id: m[1] };
   const pwm = p.match(/^\/present\/([^/]+)\/window$/);

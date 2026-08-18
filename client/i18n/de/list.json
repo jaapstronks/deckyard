@@ -66,8 +66,8 @@
   "slideLibrary.empty.team": "Noch keine Folien in der Team-Bibliothek.",
   "slideLibrary.modal.help": "Ihre persönliche Bibliothek ist nur für Sie. Die Team-Bibliothek wird mit allen geteilt.",
   "slideLibrary.modal.title": "Folienbibliothek",
-  "slideLibrary.scope.personal": "Persönlich",
-  "slideLibrary.scope.team": "Team",
+  "slideLibrary.shelf.personal": "Persönlich",
+  "slideLibrary.shelf.organization": "Team",
   "slideLibrary.search.aria": "Folienbibliothek durchsuchen",
   "slideLibrary.search.placeholder": "Folienbibliothek durchsuchen…",
   "slideLibrary.filter.all": "Alle"

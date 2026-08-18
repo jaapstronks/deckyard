@@ -10,25 +10,25 @@ const SUPPORTED_LANGS = ['nl', 'en-GB'];
 /**
  * Create state management for the slide library picker
  * @param {object} options
- * @param {string} options.initialScope - Initial scope ('personal' | 'team')
+ * @param {string} options.initialShelf - Initial shelf ('personal' | 'organization')
  * @param {string} options.initialQuery - Initial search query
  * @param {string} options.initialLang - Initial language
  * @returns {object} State management API
  */
 export function createSlideLibraryState({
-  initialScope = 'team',
+  initialShelf = 'organization',
   initialQuery = '',
   initialLang = 'nl',
 } = {}) {
-  let activeScope = initialScope === 'team' ? 'team' : 'personal';
+  let activeShelf = initialShelf === 'organization' ? 'organization' : 'personal';
   let activeView = 'library'; // library | trash
   let activeTypeFilter = ''; // empty = all types
   let activeTagFilter = []; // selected tag names for filtering
   let activeLang = normalizeLang(initialLang) || 'nl';
   let q = String(initialQuery || '');
 
-  /** @type {{ personal: any[], team: any[] }} */
-  const cache = { personal: [], team: [] };
+  /** @type {{ personal: any[], organization: any[] }} */
+  const cache = { personal: [], organization: [] };
   const loading = new Set();
 
   // Multi-select state
@@ -36,20 +36,20 @@ export function createSlideLibraryState({
 
   return {
     // Getters
-    getScope: () => activeScope,
+    getShelf: () => activeShelf,
     getView: () => activeView,
     getTypeFilter: () => activeTypeFilter,
     getTagFilter: () => [...activeTagFilter],
     getLang: () => activeLang,
     getQuery: () => q,
-    getCache: (scope) => cache[scope === 'team' ? 'team' : 'personal'] || [],
-    isLoading: (scope) => loading.has(scope === 'team' ? 'team' : 'personal'),
+    getCache: (shelf) => cache[shelf === 'organization' ? 'organization' : 'personal'] || [],
+    isLoading: (shelf) => loading.has(shelf === 'organization' ? 'organization' : 'personal'),
     getSelectedIds: () => new Set(selectedItems),
     getSelectedCount: () => selectedItems.size,
 
     // Setters
-    setScope: (scope) => {
-      activeScope = scope === 'team' ? 'team' : 'personal';
+    setShelf: (shelf) => {
+      activeShelf = shelf === 'organization' ? 'organization' : 'personal';
     },
     setView: (view) => {
       activeView = view === 'trash' ? 'trash' : 'library';
@@ -75,12 +75,12 @@ export function createSlideLibraryState({
     setQuery: (query) => {
       q = String(query || '');
     },
-    setCache: (scope, items) => {
-      const s = scope === 'team' ? 'team' : 'personal';
+    setCache: (shelf, items) => {
+      const s = shelf === 'organization' ? 'organization' : 'personal';
       cache[s] = Array.isArray(items) ? items : [];
     },
-    setLoading: (scope, isLoading) => {
-      const s = scope === 'team' ? 'team' : 'personal';
+    setLoading: (shelf, isLoading) => {
+      const s = shelf === 'organization' ? 'organization' : 'personal';
       if (isLoading) {
         loading.add(s);
       } else {
@@ -104,22 +104,22 @@ export function createSlideLibraryState({
       selectedItems.clear();
     },
     getSelectedItems: () => {
-      const scope = activeScope === 'team' ? 'team' : 'personal';
-      const items = cache[scope] || [];
+      const shelf = activeShelf === 'organization' ? 'organization' : 'personal';
+      const items = cache[shelf] || [];
       return items.filter((it) => selectedItems.has(it.id));
     },
     // Selected items in the order they were checked (the Set preserves
     // insertion order). Used by the compose flow so the composed deck follows
     // the user's selection order rather than the library's sort order.
     getSelectedItemsInOrder: () => {
-      const scope = activeScope === 'team' ? 'team' : 'personal';
-      const byId = new Map((cache[scope] || []).map((it) => [it.id, it]));
+      const shelf = activeShelf === 'organization' ? 'organization' : 'personal';
+      const byId = new Map((cache[shelf] || []).map((it) => [it.id, it]));
       return [...selectedItems].map((id) => byId.get(id)).filter(Boolean);
     },
 
     // Cache operations
-    patchInCache: (scope, id, updater) => {
-      const s = scope === 'team' ? 'team' : 'personal';
+    patchInCache: (shelf, id, updater) => {
+      const s = shelf === 'organization' ? 'organization' : 'personal';
       const arr = cache[s];
       const idx = arr.findIndex((x) => String(x?.id || '') === id);
       if (idx < 0) return { ok: false };
@@ -130,14 +130,14 @@ export function createSlideLibraryState({
     },
 
     // Bulk state update
-    setState: ({ scope, query, lang } = {}) => {
-      if (scope === 'team' || scope === 'personal') activeScope = scope;
+    setState: ({ shelf, query, lang } = {}) => {
+      if (shelf === 'organization' || shelf === 'personal') activeShelf = shelf;
       if (typeof query === 'string') q = query;
       const normalizedLang = normalizeLang(lang);
       if (normalizedLang) activeLang = normalizedLang;
     },
 
-    // Reset filters (for scope/view changes)
+    // Reset filters (for shelf/view changes)
     resetFilters: () => {
       activeTypeFilter = '';
       activeTagFilter = [];

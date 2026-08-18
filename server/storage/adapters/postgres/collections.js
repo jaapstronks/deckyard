@@ -106,7 +106,7 @@ export function withCollections(Base) {
      * List slide collections.
      * @param {object} ctx - Storage context
      * @param {object} [opts]
-     * @param {string} [opts.scope] - 'personal' or 'team'
+     * @param {string} [opts.shelf] - 'personal' or 'organization'
      * @param {string} [opts.ownerEmail] - filter to an owner (personal)
      */
     async listSlideCollections(ctx, opts = {}) {
@@ -118,7 +118,7 @@ export function withCollections(Base) {
         .selectAll()
         .where('organization_id', '=', orgId);
 
-      if (opts?.scope) query = query.where('scope', '=', opts.scope);
+      if (opts?.shelf) query = query.where('shelf', '=', opts.shelf);
       if (opts?.ownerEmail) query = query.where('owner_email', '=', opts.ownerEmail);
 
       query = query.orderBy('created_at', 'desc');
@@ -160,7 +160,7 @@ export function withCollections(Base) {
         .values({
           organization_id: orgId,
           owner_email: data.ownerEmail || ctx?.actorEmail || null,
-          scope: data.scope || 'personal',
+          shelf: data.shelf || 'personal',
           name: data.name,
           description: data.description || null,
           created_by: actorEmail,

@@ -174,50 +174,50 @@ export function openSaveToLibraryModal({
     langField = langInfo;
   }
 
-  // Scope selector (Personal / Team)
-  const scopeLabel = h('label', {
+  // Shelf selector (Personal / Team)
+  const shelfLabel = h('label', {
     class: 'field-label',
     text: t('editor.slideLibrary.saveModal.saveTo', 'Save to'),
   });
 
-  const scopeSegmented = h('div', { class: 'sb-segmented is-toggle' });
-  let selectedScope = 'personal';
+  const shelfSegmented = h('div', { class: 'sb-segmented is-toggle' });
+  let selectedShelf = 'personal';
 
   const personalBtn = h('button', {
     class: 'sb-segmented-btn is-active',
     type: 'button',
-    text: t('slideLibrary.scope.personal', 'Personal'),
+    text: t('slideLibrary.shelf.personal', 'Personal'),
   });
   const teamBtn = h('button', {
     class: 'sb-segmented-btn',
     type: 'button',
-    text: t('slideLibrary.scope.team', 'Team'),
+    text: t('slideLibrary.shelf.organization', 'Team'),
   });
 
   personalBtn.addEventListener('click', () => {
-    selectedScope = 'personal';
+    selectedShelf = 'personal';
     personalBtn.classList.add('is-active');
     teamBtn.classList.remove('is-active');
   });
 
   teamBtn.addEventListener('click', () => {
-    selectedScope = 'team';
+    selectedShelf = 'organization';
     teamBtn.classList.add('is-active');
     personalBtn.classList.remove('is-active');
   });
 
-  scopeSegmented.append(personalBtn, teamBtn);
+  shelfSegmented.append(personalBtn, teamBtn);
 
-  const scopeHint = h('div', {
+  const shelfHint = h('div', {
     class: 'help is-small',
     text: t(
-      'editor.slideLibrary.saveModal.scopeHint',
+      'editor.slideLibrary.saveModal.shelfHint',
       'Personal slides are only visible to you. Team slides are shared with your organization.'
     ),
   });
 
-  const scopeField = h('div', { class: 'field' });
-  scopeField.append(scopeLabel, scopeSegmented, scopeHint);
+  const shelfField = h('div', { class: 'field' });
+  shelfField.append(shelfLabel, shelfSegmented, shelfHint);
 
   // Status message
   const status = h('div', { class: 'help modal-status', text: '' });
@@ -240,7 +240,7 @@ export function openSaveToLibraryModal({
 
     try {
       const endpoint =
-        selectedScope === 'team' ? '/api/slide-library/team' : '/api/slide-library/personal';
+        selectedShelf === 'organization' ? '/api/slide-library/organization' : '/api/slide-library/personal';
 
       // Build the payload with i18n if we have multiple languages
       const description = String(descInput.value || '').trim();
@@ -287,7 +287,7 @@ export function openSaveToLibraryModal({
       }
 
       const successMsg =
-        selectedScope === 'team'
+        selectedShelf === 'organization'
           ? t('editor.slideLibrary.saveModal.doneTeam', 'Saved to team slide library.')
           : t('editor.slideLibrary.saveModal.donePersonal', 'Saved to personal slide library.');
 
@@ -296,7 +296,7 @@ export function openSaveToLibraryModal({
 
       // Optionally open the library to show the newly saved slide
       openSlideLibraryModal?.({
-        initialScope: selectedScope,
+        initialShelf: selectedShelf,
         initialQuery: name,
         allowInsert: true,
       });
@@ -327,7 +327,7 @@ export function openSaveToLibraryModal({
   // Build modal content
   modal.content.append(nameField, descField, tagsField);
   if (langField) modal.content.append(langField);
-  modal.content.append(scopeField, status, actions.wrap);
+  modal.content.append(shelfField, status, actions.wrap);
   modal.show(root, openOverlayClosers);
 
   // Focus and select the name input

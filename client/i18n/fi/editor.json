@@ -191,7 +191,7 @@
   "editor.slideLibrary.saveModal.namePlaceholder": "Esim. Yhteystietodia",
   "editor.slideLibrary.saveModal.nameRequired": "Anna nimi.",
   "editor.slideLibrary.saveModal.saveTo": "Tallenna kohteeseen",
-  "editor.slideLibrary.saveModal.scopeHint": "Henkilökohtaiset diat näkyvät vain sinulle. Tiimidiat jaetaan organisaatiosi kanssa.",
+  "editor.slideLibrary.saveModal.shelfHint": "Henkilökohtaiset diat näkyvät vain sinulle. Tiimidiat jaetaan organisaatiosi kanssa.",
   "editor.slideLibrary.saveModal.save": "Tallenna kirjastoon",
   "editor.slideLibrary.saveModal.donePersonal": "Tallennettu henkilökohtaiseen diakirjastoon.",
   "editor.slideLibrary.saveModal.doneTeam": "Tallennettu tiimin diakirjastoon.",

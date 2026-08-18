@@ -354,7 +354,7 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
       .insertInto('slide_library')
       .values({
         organization_id: ORG,
-        scope: 'team',
+        shelf: 'organization',
         name: 'Shelf item',
         slide_type: 'title-slide',
         created_by: ALICE,
@@ -367,7 +367,7 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
       .insertInto('slide_collections')
       .values({
         organization_id: ORG,
-        scope: 'team',
+        shelf: 'organization',
         name: 'A set',
         created_by: ALICE,
         created_by_user_id: ALICE_ID,

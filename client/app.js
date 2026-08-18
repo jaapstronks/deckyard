@@ -268,7 +268,7 @@ async function render() {
         renderList(root, {
           nav,
           user,
-          openSlideLibrary: { scope: r.scope, slideId: r.slideId },
+          openSlideLibrary: { shelf: r.shelf, slideId: r.slideId },
         })
       );
       return;
