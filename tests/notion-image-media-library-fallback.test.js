@@ -84,6 +84,47 @@ test('re-hosts each image through the media library and rewrites to a durable UR
   assert.ok(stat.size > 0, 'the re-hosted image was written to the media library');
 });
 
+test('SSRF: a private-range image URL is never fetched, and the original URL is kept', async () => {
+  // A Notion `external` image URL is attacker-controllable; one pointing at a
+  // private/link-local address (here the cloud metadata endpoint) must be
+  // refused before any fetch leaves the server. The guard checks the IP
+  // literal directly, so this needs no DNS.
+  let fetched = false;
+  globalThis.fetch = async () => {
+    fetched = true;
+    throw new Error('fetch must not be called for a blocked URL');
+  };
+
+  const METADATA_URL = 'http://169.254.169.254/latest/meta-data/img.jpg';
+  const [result] = await processNotionImages([
+    { url: METADATA_URL, caption: '', blockId: 'block-ssrf' },
+  ]);
+
+  assert.equal(fetched, false, 'the blocked URL is never fetched');
+  assert.equal(result.uploadedUrl, METADATA_URL, 'keeps the original URL when blocked');
+  assert.equal(result.originalUrl, METADATA_URL);
+});
+
+test('the re-host fetch goes through the hardened helper: no redirects, with a timeout', async () => {
+  // A redirect from a public host into private space would bypass a
+  // check-then-plain-fetch sequence, so the call site must use
+  // safeFetchRemoteImage, which fetches with redirect: 'error' and a signal.
+  let imageFetchOpts;
+  globalThis.fetch = async (url, opts) => {
+    if (imageFetchOpts === undefined) imageFetchOpts = opts;
+    return {
+      ok: true,
+      headers: { get: (h) => (h.toLowerCase() === 'content-type' ? 'image/gif' : null) },
+      arrayBuffer: async () => GIF_BYTES.buffer.slice(0),
+    };
+  };
+
+  await processNotionImages([{ url: SIGNED_URL, caption: '', blockId: 'block-redirect' }]);
+
+  assert.equal(imageFetchOpts?.redirect, 'error', 'the re-host fetch must refuse redirects');
+  assert.ok(imageFetchOpts?.signal, 'the re-host fetch must carry a timeout signal');
+});
+
 test('falls back to the original URL when the fetch fails', async () => {
   globalThis.fetch = async () => ({
     ok: false,
