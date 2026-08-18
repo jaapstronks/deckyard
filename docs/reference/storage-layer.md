@@ -230,23 +230,28 @@ sits. Measured on 2026-08-18: 386 `return { ok …` statements against 106
 `return null` statements, and nearly all of the latter are in reads, where
 `null` is correct.
 
-**Nine mutation exports still signal failure with `null`**, and they are one
-cluster rather than scattered drift: the live-session
-surface (`live-sessions/sessions.js`, `live-sessions/sse.js`,
-`live-sessions/control.js`) and the interaction/feedback surface
-(`interaction-slides.js`, `feedback.js`). They are carried in
+**Eighteen mutation exports still signal failure with `null`.** Nine do so
+in their own body — the live-session surface (`live-sessions/sessions.js`,
+`live-sessions/sse.js`, `live-sessions/control.js`) and the
+interaction/feedback surface (`interaction-slides.js`, `feedback.js`) — and
+nine more do so by handing their answer straight to a module-private helper
+that returns `null`: the poll and likert exports in `interactions.js`,
+`updateImageLibraryItem` (`image-library/index.js`), and `restorePresentation`
+/ `duplicatePresentation` (`presentations/index.js`). They are carried in
 [`tests/storage-call-convention-burndown.json`](../../tests/storage-call-convention-burndown.json),
 a shrink-only allowlist; `tests/storage-call-convention.test.js` fails on a
-tenth. The list may only get shorter.
+nineteenth. The list may only get shorter.
 
-Two shapes the gate cannot see, so they are stated here instead of pretended
-away. It does not follow delegation, so an export that tail-calls a private
-helper returning `null` reads as clean — the poll and likert exports in
-`interactions.js` are exactly that, and belong to the same cluster. And it
+The gate is a syntax check with stated edges, not a proof. It follows
+delegation exactly one level and only in return position (`return helper(…)`
+to a same-module private function), so a `null` reached through an imported
+helper or stored in a variable first reads as clean. It only looks at exports
+whose name starts with a mutation verb from its whitelist, so a new
+state-changing verb must be added there before the gate sees it. And it
 cannot judge `return false`, because a boolean is as often the payload as the
 verdict (`toggleImageFavorite` returns the *new* favourite state, not "it
 worked"); `removePublishedEntry` is a real boolean-shaped failure the gate will
-not catch. Both are drift the burndown does not cover, not drift that is
+not catch. All of that is drift the burndown does not cover, not drift that is
 allowed.
 
 ## Authz & tenancy
