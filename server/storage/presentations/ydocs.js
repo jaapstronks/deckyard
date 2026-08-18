@@ -6,9 +6,16 @@
  * server/storage/scope.js). A Y.Doc binary belongs to one deck in one
  * organization, so a write that guessed the organization would park collab
  * state on the wrong organization's deck.
+ *
+ * Queries run directly through Kysely (B79/D34 removed the adapter
+ * indirection); getDb() throws on an uninitialized database. The binary is
+ * stored in the `presentation_ydocs.state` bytea column: reads hand back a
+ * `Uint8Array`, writes take one and land as a `Buffer`.
  */
 
-import { getStorage } from '../adapters/index.js';
+import { getDb } from '../../db/client.js';
+import { getOrgId } from '../../utils/context.js';
+import { nowIso } from '../../utils/normalize.js';
 import { toStorageContext } from '../scope.js';
 
 /**
@@ -19,8 +26,18 @@ import { toStorageContext } from '../scope.js';
  */
 export async function getYDocState(storageScope, id) {
   const ctx = toStorageContext(storageScope, 'getYDocState');
-  const storage = getStorage();
-  return storage.getYDocState(id, ctx);
+  const db = getDb();
+  const orgId = getOrgId(ctx);
+
+  const row = await db
+    .selectFrom('presentation_ydocs')
+    .select('state')
+    .where('presentation_id', '=', id)
+    .where('organization_id', '=', orgId)
+    .executeTakeFirst();
+
+  if (!row?.state) return null;
+  return new Uint8Array(row.state);
 }
 
 /**
@@ -32,8 +49,27 @@ export async function getYDocState(storageScope, id) {
  */
 export async function setYDocState(storageScope, id, state) {
   const ctx = toStorageContext(storageScope, 'setYDocState');
-  const storage = getStorage();
-  return storage.setYDocState(id, state, ctx);
+  const db = getDb();
+  const orgId = getOrgId(ctx);
+  const buf = Buffer.from(state);
+  const timestamp = nowIso();
+
+  await db
+    .insertInto('presentation_ydocs')
+    .values({
+      presentation_id: id,
+      organization_id: orgId,
+      state: buf,
+      updated_at: timestamp,
+    })
+    .onConflict((oc) =>
+      oc.column('presentation_id').doUpdateSet({
+        state: buf,
+        updated_at: timestamp,
+      })
+    )
+    .execute();
+  return true;
 }
 
 /**
@@ -44,6 +80,13 @@ export async function setYDocState(storageScope, id, state) {
  */
 export async function deleteYDocState(storageScope, id) {
   const ctx = toStorageContext(storageScope, 'deleteYDocState');
-  const storage = getStorage();
-  return storage.deleteYDocState(id, ctx);
+  const db = getDb();
+  const orgId = getOrgId(ctx);
+
+  const result = await db
+    .deleteFrom('presentation_ydocs')
+    .where('presentation_id', '=', id)
+    .where('organization_id', '=', orgId)
+    .executeTakeFirst();
+  return Number(result?.numDeletedRows || 0) > 0;
 }

@@ -64,7 +64,7 @@ Concretely, on a dedicated instance:
 Putting **two organizations on one instance** (`MULTI_ORG_ENABLED`) only
 holds if the storage layer partitions on the organization. PostgreSQL — the only
 storage backend — does: every presentation query is scoped by `organization_id`
-(`server/storage/adapters/postgres/presentations.js`), and in multi-organization
+(`server/storage/presentations/index.js`), and in multi-organization
 mode the org is resolved per request from the session, verified against
 membership (`server/utils/context.js`, see below). A cross-org read returns
 nothing. The session is the *only* resolution path: the hostname says nothing

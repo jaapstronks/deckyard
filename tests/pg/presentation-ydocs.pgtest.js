@@ -3,7 +3,7 @@
  *
  * The collab Y.Doc binary lives in `presentation_ydocs.state` (`bytea`) and is
  * upserted with ON CONFLICT (presentation_id) DO UPDATE
- * (server/storage/adapters/postgres/presentations.js). Two things the in-memory
+ * (server/storage/presentations/ydocs.js). Two things the in-memory
  * double cannot prove:
  *  - the `bytea` round-trip: bytes go in as a `Uint8Array`, are stored via
  *    `Buffer.from(state)`, and must come back byte-for-byte as a `Uint8Array`
