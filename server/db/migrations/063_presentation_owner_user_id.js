@@ -11,7 +11,7 @@
  * **behaviour-preserving**: nothing reads the new columns yet, every read still
  * keys on the email, and who owns or can touch what does not change. A later PR
  * moves the reads over; this one only makes the target exist and keeps it
- * populated on write (server/storage/adapters/postgres/presentations.js).
+ * populated on write (server/storage/presentations/index.js).
  *
  * ## The three id columns mirror the three email columns
  *

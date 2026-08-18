@@ -43,7 +43,7 @@ const KEY_ID = 'key-1';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/adapters/index.js');
+const { initializeStorage } = await import('../server/storage/lifecycle.js');
 const { handleTranslation } = await import('../server/routes/public-api/v1/translate.js');
 const { TRANSLATION_LANGS } = await import('../server/storage/presentations/i18n.js');
 

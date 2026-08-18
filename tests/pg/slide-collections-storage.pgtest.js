@@ -7,8 +7,8 @@
  * creator/admin mutate guard — but on the backend PR G keeps.
  *
  * One real difference the file backend could not show: `slide_collection_items`
- * foreign-keys `slide_library_id`, and the adapter *filters membership to slide
- * ids that actually exist in the org* (postgres/collections.js
+ * foreign-keys `slide_library_id`, and the facade *filters membership to slide
+ * ids that actually exist in the org* (server/storage/collections/index.js
  * `filterExistingSlideIds`). The file suite passed bare `'s1'` strings that were
  * stored verbatim; here membership is seeded slide-library uuids, and a final
  * test pins the FK guard the fake-db never models.

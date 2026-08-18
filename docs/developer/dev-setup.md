@@ -344,11 +344,15 @@ Beyond the test suite, UI changes should be verified by hand:
 2. **Server logs** - Watch stdout for errors
 3. **Network tab** - Inspect API responses
 
-### PostgreSQL Adapter Test
+### PostgreSQL storage test
+
+The storage layer reaches PostgreSQL through direct Kysely; exercise it against a
+throwaway database with the real-PostgreSQL suite (see
+[pg-test-suite.md](pg-test-suite.md)):
 
 ```bash
-# Requires PostgreSQL running with correct connection
-node scripts/test-postgres-adapter.js
+# Requires a throwaway PostgreSQL named by DATABASE_URL, migrated first
+DATABASE_URL=postgres://…/deckyard_pg_tests npm run test:pg
 ```
 
 ### Concurrent Voting Load Test

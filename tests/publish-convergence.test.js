@@ -39,7 +39,7 @@ const WEBHOOK_URL = 'http://203.0.114.9/published';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/adapters/index.js');
+const { initializeStorage } = await import('../server/storage/lifecycle.js');
 const { testScope } = await import('./helpers/storage-scope.js');
 const { writeAppSettings } = await import('../server/storage/settings.js');
 const { handlePublishing } = await import('../server/routes/public-api/v1/publishing.js');

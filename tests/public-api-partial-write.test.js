@@ -38,7 +38,7 @@ const DECK_ID = 'deck-partial-write';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/adapters/index.js');
+const { initializeStorage } = await import('../server/storage/lifecycle.js');
 const { handleSlides } = await import('../server/routes/public-api/v1/slides.js');
 const { __store } = await import(
   '../server/storage/presentations/index.js'

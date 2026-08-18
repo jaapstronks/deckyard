@@ -24,7 +24,7 @@ import { scheduleSandboxCleanup } from './jobs/sandbox-cleanup.js';
 import { scheduleLiveSessionCleanup } from './jobs/live-session-cleanup.js';
 import { scheduleMcpSessionSweep } from './jobs/mcp-session-sweep.js';
 import { uploadsDir } from './config/storage-paths.js';
-import { initializeStorage, closeStorage } from './storage/adapters/index.js';
+import { initializeStorage, closeStorage } from './storage/lifecycle.js';
 import { strandedFileDataError } from './storage/boot-check.js';
 import { initializeMediaProvider } from './media/index.js';
 import {

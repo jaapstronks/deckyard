@@ -1,24 +1,22 @@
 /**
- * The storage-adapter strip (B79 / D34): getStorage() burndown gate.
+ * The storage-adapter strip (B79 / D34): getStorage() regression guard.
  *
- * D34 decided to **strip** the storage adapter class: the domain facades that
- * still reach PostgreSQL through `getStorage()` → `PostgresAdapter` are being
- * converted to direct Kysely, one domain per PR, until the adapter layer can be
- * deleted. This gate pins the direction so the migration cannot slide backwards.
+ * D34 decided to **strip** the storage adapter class, and the strip is now
+ * **complete**: every domain facade reaches PostgreSQL through direct Kysely on
+ * `getDb()`, `getStorage()` and the whole `server/storage/adapters/**` tree are
+ * deleted, and the burndown allowlist has reached empty. This gate stays on as a
+ * cheap permanent guard: it forbids re-introducing the adapter idiom.
  *
  * It enumerates every module under `server/**` that calls `getStorage(` and
- * refuses any caller not already carried in
- * `getstorage-strip-burndown.json` — an allowlist that may only **shrink**
- * (the `eslint-suppressions.json` / A7.20 burndown pattern). Converting a facade
- * means deleting its line here *and every `getStorage` token from the file*
- * (comments included); adding a brand-new `getStorage()` caller anywhere fails.
+ * refuses any caller not carried in `getstorage-strip-burndown.json` — now the
+ * empty list, which may only ever stay empty (the `eslint-suppressions.json` /
+ * A7.20 burndown pattern). Any new `getStorage()` caller anywhere fails.
  *
- * `server/storage/adapters/index.js` is excluded: it *defines* `getStorage()`.
  * `getStorageMode()` (server/config/database.js) is a different function and is
  * not matched — the pattern requires `getStorage` immediately followed by `(`.
- *
- * When the allowlist reaches empty, the adapter class (server/storage/adapters/**)
- * has no callers left and can be removed in the final PR.
+ * `DEFINITION_FILE` names the removed module that *used* to define `getStorage()`
+ * so the detector's "the definition is not a caller" contract stays documented
+ * and self-tested; no such file exists in the tree anymore.
  *
  * Run with: node --test tests/getstorage-strip-burndown.test.js
  */
@@ -32,7 +30,10 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const serverRoot = join(repoRoot, 'server');
 
-// The module that *defines* getStorage() — never a "caller".
+// The (now-removed) module that *defined* getStorage() — never a "caller".
+// Retained so the detector's definition-vs-caller contract stays self-tested;
+// no file at this path exists anymore, so the exclusion never fires on a real
+// scan.
 const DEFINITION_FILE = 'server/storage/adapters/index.js';
 
 // Matches a getStorage() *call*: the identifier immediately followed by `(`.

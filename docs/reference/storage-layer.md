@@ -18,23 +18,22 @@ org-isolation through every call. It does not re-document the deck data format
 
 ## Module map
 
-`server/storage/` holds **93 `.js` files** — 36 top-level facades/helpers and
-the rest under 14 subdirectories. Rather than list all 93, this is the shape;
+`server/storage/` holds **80 `.js` files** — 31 top-level facades/helpers and
+the rest under 13 subdirectories. Rather than list all 80, this is the shape;
 each path resolves.
 
 **The seam (read these first):**
 
 - `server/storage/scope.js` — defines and validates storage *scopes*, and
-  reduces a caller scope to the adapter's `StorageContext` via
-  `toStorageContext()`; the tenancy gate (see *Authz & tenancy*).
-- `server/storage/adapters/index.js` — the adapter factory
-  (`initializeStorage` / `getStorage` / `closeStorage`), a memoized singleton.
-- `server/storage/adapters/types.js` — the data-shape contract (`StorageContext`,
-  `Presentation`, `PresentationSummary`, …).
-- `server/storage/adapters/postgres/` — the only backend: `index.js` composes
-  the adapter from `with*()` mixins (`presentations.js`, `images.js`,
-  `slides.js`, `published.js`, `tags.js`, `collections.js`, …) over
-  `BasePostgresAdapter`.
+  reduces a caller scope to a `StorageContext` via `toStorageContext()`; the
+  tenancy gate (see *Authz & tenancy*). Every facade calls this once, then
+  passes the context down to its queries.
+- `server/storage/lifecycle.js` — the storage lifecycle
+  (`initializeStorage` / `closeStorage`), thin wrappers over `db/client.js`'s
+  idempotent `initializeDatabase()` / `closeDatabase()`.
+- `server/db/client.js` — the single Kysely handle. Every facade reaches
+  PostgreSQL through `getDb()` directly (there is no adapter class; B79/D34
+  stripped it), which throws before init so a premature query fails loud.
 - `server/storage/boot-check.js` — refuses to start on an empty DB while legacy
   on-disk data still exists.
 
@@ -73,8 +72,8 @@ collaboration/live (`collaborators.js`, `notifications.js`,
 `activity-events.js`, `feedback.js`, `leads.js`, `questions.js`,
 `interactions.js`, `follow-codes.js`), and content
 (`themes.js`, `font-families.js`, `custom-slide-types.js`, `settings.js`,
-`email-templates.js`, `uploads.js`). `mappers.js` turns snake_case rows into
-camelCase API objects.
+`email-templates.js`, `uploads.js`). Each facade maps its own snake_case rows
+into camelCase API objects inline (there is no shared `mappers.js` module).
 
 ## Data model
 
@@ -143,9 +142,9 @@ that one has no id beside it yet.
   codes are authorized by the *token*, not the org. These go through
   `crossOrganizationScope(repoRoot, reason, …)` — the mandatory `reason` string
   makes `grep -r crossOrganization` a complete census of every unscoped path.
-- **Adapter boot.** `initializeStorage()` dynamically imports
-  `adapters/postgres/index.js`, constructs the composed adapter once, and
-  memoizes it; `getStorage()` returns it or throws `"Storage not initialized"`.
+- **Storage boot.** `initializeStorage()` (server/storage/lifecycle.js) opens
+  the shared Kysely pool via `initializeDatabase()`; it is idempotent, and
+  `getDb()` throws `"Database not initialized"` before it has run.
 - **Boot safety.** `boot-check.js` aborts startup if the DB is empty but legacy
   file data still sits on disk, so an accidental empty-DB boot cannot silently
   shadow real data.
@@ -190,9 +189,10 @@ here.
 ## Implementation status
 
 Postgres is the **only** backend today. The file/JSON backend was removed during
-1.x; `adapters/` contains no file adapter, `STORAGE_MODE` accepts only
-`postgres`, and `types.js` states plainly that the contract *is* the Postgres
-adapter (no abstract base). This is the beta stance — one canonical backend, no
-compatibility shim for the old on-disk store. If a second backend is ever
-reintroduced it would re-materialize the adapter base that `types.js` currently
-only documents as a type; nothing in the tree promises that today.
+1.x, and B79/D34 then removed the adapter class that had abstracted over the two:
+every facade now reaches PostgreSQL through direct Kysely on `getDb()`, and
+`STORAGE_MODE` accepts only `postgres`. This is the beta stance — one canonical
+backend, one canonical way to reach it, no compatibility shim for the old
+on-disk store and no abstract base kept alive for a second backend that does not
+exist. If one is ever reintroduced it would grow its own seam then; nothing in
+the tree carries that weight today.

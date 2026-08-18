@@ -51,7 +51,7 @@ const { crossOrganizationScope, singleOrganizationScope } = await import(
   '../server/storage/scope.js'
 );
 const facade = await import('../server/storage/presentations/index.js');
-const { initializeStorage } = await import('../server/storage/adapters/index.js');
+const { initializeStorage } = await import('../server/storage/lifecycle.js');
 
 test.before(async () => {
   assert.equal(isMultiOrgEnabled(), true, 'multi-organization flag is on for this file');

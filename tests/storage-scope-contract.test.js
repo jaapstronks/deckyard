@@ -43,7 +43,7 @@ const facade = await import('../server/storage/presentations/index.js');
 // adapter; an empty database double answers them with "not found".
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/adapters/index.js');
+const { initializeStorage } = await import('../server/storage/lifecycle.js');
 __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
 await initializeStorage();
 

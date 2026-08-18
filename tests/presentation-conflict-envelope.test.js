@@ -28,7 +28,7 @@ const { __setTestDb } = await import('../server/db/client.js');
 // `__resetStorageForTests` rather than `closeStorage`: the double is not a real
 // Kysely handle, so closing it would call a `destroy()` it does not have.
 const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/adapters/index.js'
+  '../server/storage/lifecycle.js'
 );
 const { createPresentation, createPresentationVersion } = await import(
   '../server/storage/presentations/index.js'

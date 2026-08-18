@@ -58,12 +58,14 @@ There are two shapes of test:
   `openTestDb()`, `after` calls `closeTestDb()`.
 - **Facade tests** (`tags`, `slide-collections`, `slide-library-usage`,
   `slide-library-i18n`, `home-aggregation-route`, `version-history`) drive the
-  public storage facade (`server/storage/<domain>/index.js`), which dispatches
-  to whichever adapter `getStorage()` returns. `installFacadeStorage()` sets
-  `STORAGE_MODE=postgres` and calls `initializeStorage()`, wiring the facade to
-  the already-open handle (the adapter's `initialize()` reuses the injected
-  handle instead of opening a second pool). `uninstallFacadeStorage()` drops the
-  adapter singleton in `after` without closing the handle the test owns.
+  public storage facade (`server/storage/<domain>/index.js`), which reaches
+  PostgreSQL through `getDb()` directly (B79/D34 removed the adapter class).
+  `installFacadeStorage()` sets `STORAGE_MODE=postgres` and calls
+  `initializeStorage()`, which is idempotent and reuses the handle
+  `openTestDb()` already injected instead of opening a second pool — so the
+  facade is wired the moment the handle is installed. `uninstallFacadeStorage()`
+  is a no-op reset in `after` (no adapter singleton remains) that leaves the
+  handle the test owns for `closeTestDb()` to destroy.
 
 Foreign-key parents are seeded from `tests/pg/helpers/seed.js`
 (`seedDefaultOrganization`, `seedPresentation`, `seedSlideLibraryItem`): unlike

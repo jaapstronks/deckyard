@@ -23,7 +23,7 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/adapters/index.js'
+  '../server/storage/lifecycle.js'
 );
 const {
   getYDocState,
@@ -45,7 +45,7 @@ await initializeStorage();
 
 // `closeStorage()` would call `db.destroy()`, which the in-memory double does
 // not have — drop the adapter singleton instead, the seam meant for exactly
-// this (server/storage/adapters/index.js).
+// this (server/storage/lifecycle.js).
 after(() => {
   __resetStorageForTests();
   __setTestDb(null);
