@@ -47,12 +47,12 @@ import {
   getPresentation,
 } from '../../server/storage/presentations/index.js';
 import {
-  createTeamLibraryItem,
-  getTeamLibraryItem,
+  createOrganizationLibraryItem,
+  getOrganizationLibraryItem,
 } from '../../server/storage/slide-library/index.js';
 import {
-  createTeamCollection,
-  getTeamCollection,
+  createOrganizationCollection,
+  getOrganizationCollection,
 } from '../../server/storage/collections/index.js';
 import { isOwnerOrCreator, matchesIdentity } from '../../shared/identity-match.js';
 import { getDefaultOrganizationId } from '../../server/config/database.js';
@@ -157,7 +157,7 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
   // --- slide library ---------------------------------------------------------
 
   it('team-library create stamps created_by_user_id and updated_by_user_id', async () => {
-    const r = await createTeamLibraryItem(
+    const r = await createOrganizationLibraryItem(
       storageScope,
       { name: 'Shelf item', slideType: 'title-slide' },
       { actorEmail: ALICE }
@@ -177,7 +177,7 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
   });
 
   it('an external library author stamps a NULL id', async () => {
-    const r = await createTeamLibraryItem(
+    const r = await createOrganizationLibraryItem(
       storageScope,
       { name: 'Shelf item', slideType: 'title-slide' },
       { actorEmail: EXTERNAL }
@@ -187,7 +187,7 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
   });
 
   it('a renamed library creator still matches by id (the team trash/delete guard)', async () => {
-    const created = await createTeamLibraryItem(
+    const created = await createOrganizationLibraryItem(
       storageScope,
       { name: 'Shelf item', slideType: 'title-slide' },
       { actorEmail: ALICE }
@@ -195,7 +195,7 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
     await renameAlice();
     const renamed = { id: ALICE_ID, email: ALICE_RENAMED };
 
-    const item = await getTeamLibraryItem(storageScope, created.item.id);
+    const item = await getOrganizationLibraryItem(storageScope, created.item.id);
     assert.notEqual(item.createdBy.toLowerCase(), ALICE_RENAMED);
     assert.equal(matchesIdentity(renamed, { userId: item.createdById, email: item.createdBy }), true);
   });
@@ -203,7 +203,7 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
   // --- slide collections -----------------------------------------------------
 
   it('team-collection create stamps created_by_user_id, and a rename keeps the mutate right', async () => {
-    const r = await createTeamCollection(storageScope, { name: 'A set' }, { actorEmail: ALICE });
+    const r = await createOrganizationCollection(storageScope, { name: 'A set' }, { actorEmail: ALICE });
     assert.equal(r.ok, true);
     assert.equal(r.item.createdById, ALICE_ID);
 
@@ -217,7 +217,7 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
 
     await renameAlice();
     const renamed = { id: ALICE_ID, email: ALICE_RENAMED };
-    const collection = await getTeamCollection(storageScope, r.item.id);
+    const collection = await getOrganizationCollection(storageScope, r.item.id);
     assert.notEqual(collection.createdBy.toLowerCase(), ALICE_RENAMED);
     assert.equal(
       matchesIdentity(renamed, { userId: collection.createdById, email: collection.createdBy }),

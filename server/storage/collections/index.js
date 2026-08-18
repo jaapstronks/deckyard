@@ -48,7 +48,7 @@ function mapSlideCollectionRow(row, slideIds = []) {
     description: row.description || '',
     slideIds: Array.isArray(slideIds) ? slideIds : [],
     slideCount: Array.isArray(slideIds) ? slideIds.length : 0,
-    // Identity pair (T10 PR F2): the team-collection mutate guard matches on
+    // Identity pair (T10 PR F2): the organization-collection mutate guard matches on
     // `createdById`, with the e-mail as the fallback. See shared/identity-match.js.
     createdById: row.created_by_user_id || null,
     createdBy: row.created_by,
@@ -196,7 +196,7 @@ async function createSlideCollection(data, ctx) {
 
   // Dual-key (T10 PR F2): resolve the id once and stamp it beside both the
   // created_by and updated_by e-mail (the same actor at create), so the
-  // team-collection mutate guard can match on the stable id.
+  // organization-collection mutate guard can match on the stable id.
   const actorEmail = ctx?.actorEmail || null;
   const actorResolution = actorEmail ? await resolveIdentityByEmail(actorEmail) : null;
   const actorUserId = actorResolution?.userId ?? null;
@@ -345,24 +345,24 @@ export async function deletePersonalCollection(storageScope, userEmail, id) {
 }
 
 // ============================================================
-// Team collections
+// Organization-shelf collections
 // ============================================================
 
-export async function listTeamCollections(storageScope, { userEmail = '' } = {}) {
-  const ctx = toStorageContext(storageScope, 'listTeamCollections', { userEmail });
+export async function listOrganizationCollections(storageScope, { userEmail = '' } = {}) {
+  const ctx = toStorageContext(storageScope, 'listOrganizationCollections', { userEmail });
   const items = await listSlideCollections(ctx, { shelf: 'organization' });
   return { items };
 }
 
-export async function getTeamCollection(storageScope, id, { userEmail = '' } = {}) {
-  const ctx = toStorageContext(storageScope, 'getTeamCollection', { userEmail });
+export async function getOrganizationCollection(storageScope, id, { userEmail = '' } = {}) {
+  const ctx = toStorageContext(storageScope, 'getOrganizationCollection', { userEmail });
   const item = await getSlideCollection(id, ctx);
   if (!item || item.shelf !== 'organization') return null;
   return item;
 }
 
-export async function createTeamCollection(storageScope, input, { actorEmail } = {}) {
-  const ctx = toStorageContext(storageScope, 'createTeamCollection', { actorEmail });
+export async function createOrganizationCollection(storageScope, input, { actorEmail } = {}) {
+  const ctx = toStorageContext(storageScope, 'createOrganizationCollection', { actorEmail });
   if (!cleanName(input)) return { ok: false, reason: 'name_required' };
   const item = await createSlideCollection(
     {
@@ -377,8 +377,8 @@ export async function createTeamCollection(storageScope, input, { actorEmail } =
   return { ok: true, item };
 }
 
-export async function updateTeamCollection(storageScope, id, patch, { actorEmail, allowMutate } = {}) {
-  const ctx = toStorageContext(storageScope, 'updateTeamCollection', { actorEmail });
+export async function updateOrganizationCollection(storageScope, id, patch, { actorEmail, allowMutate } = {}) {
+  const ctx = toStorageContext(storageScope, 'updateOrganizationCollection', { actorEmail });
   const existing = await getSlideCollection(id, ctx);
   if (!existing || existing.shelf !== 'organization') return { ok: false, reason: 'not_found' };
   if (typeof allowMutate === 'function') {
@@ -390,8 +390,8 @@ export async function updateTeamCollection(storageScope, id, patch, { actorEmail
   return { ok: true, item };
 }
 
-export async function deleteTeamCollection(storageScope, id, { actorEmail, allowMutate } = {}) {
-  const ctx = toStorageContext(storageScope, 'deleteTeamCollection', { actorEmail });
+export async function deleteOrganizationCollection(storageScope, id, { actorEmail, allowMutate } = {}) {
+  const ctx = toStorageContext(storageScope, 'deleteOrganizationCollection', { actorEmail });
   const existing = await getSlideCollection(id, ctx);
   if (!existing || existing.shelf !== 'organization') return { ok: false, reason: 'not_found' };
   if (typeof allowMutate === 'function') {

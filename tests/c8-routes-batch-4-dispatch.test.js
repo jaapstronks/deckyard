@@ -81,11 +81,11 @@ test('slide-collections: routes resolve to their named handlers in order', () =>
   named(SC_ROUTES, 'GET', '/api/slide-collections/personal/abc', 'handlePersonalGet');
   named(SC_ROUTES, 'PATCH', '/api/slide-collections/personal/abc', 'handlePersonalUpdate');
   named(SC_ROUTES, 'DELETE', '/api/slide-collections/personal/abc', 'handlePersonalDelete');
-  named(SC_ROUTES, 'GET', '/api/slide-collections/organization', 'handleTeamList');
-  named(SC_ROUTES, 'POST', '/api/slide-collections/organization', 'handleTeamCreate');
-  named(SC_ROUTES, 'GET', '/api/slide-collections/organization/abc', 'handleTeamGet');
-  named(SC_ROUTES, 'PATCH', '/api/slide-collections/organization/abc', 'handleTeamUpdate');
-  named(SC_ROUTES, 'DELETE', '/api/slide-collections/organization/abc', 'handleTeamDelete');
+  named(SC_ROUTES, 'GET', '/api/slide-collections/organization', 'handleOrganizationList');
+  named(SC_ROUTES, 'POST', '/api/slide-collections/organization', 'handleOrganizationCreate');
+  named(SC_ROUTES, 'GET', '/api/slide-collections/organization/abc', 'handleOrganizationGet');
+  named(SC_ROUTES, 'PATCH', '/api/slide-collections/organization/abc', 'handleOrganizationUpdate');
+  named(SC_ROUTES, 'DELETE', '/api/slide-collections/organization/abc', 'handleOrganizationDelete');
 });
 
 test('slide-collections: a wrong method 405s with the pinned Allow list', async () => {

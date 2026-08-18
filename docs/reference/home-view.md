@@ -64,9 +64,9 @@ only reaches people who can open the deck). See
 
 The home's async sections load in a single round-trip via `/api/home`
 (`server/routes/api/home.js`), which returns
-`{ ok, popular, activity, buildingBlocks: { collections, teamSlides }, usage }`
+`{ ok, popular, activity, buildingBlocks: { collections, organizationSlides }, usage }`
 by running the existing storage/handlers in parallel (`getPopularPresentations`,
-`getEnrichedActivity`, `listPersonal/TeamCollections`, `listTeamLibrary`,
+`getEnrichedActivity`, `listPersonal/OrganizationCollections`, `listOrganizationLibrary`,
 `listSlideLibraryUsage`). The activity filter surface
 (`limit / excludeSelf / since / until / actorEmail / eventTypes[] /
 presentationId`) is threaded through.

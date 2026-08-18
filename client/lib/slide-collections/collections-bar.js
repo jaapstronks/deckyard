@@ -1,6 +1,6 @@
 /**
  * Collections bar — the management surface shown above the slide library grid
- * in the sidebar view. Lists personal + team collections and drives their
+ * in the sidebar view. Lists personal + organization collections and drives their
  * create / rename / delete / manage-membership modals.
  *
  * Membership (adding a slide) is initiated from a library card's more-menu; the
@@ -32,7 +32,7 @@ export function createCollectionsBar({ api, root }) {
   const listWrap = h('div', { class: 'collections-bar-list' });
   el.append(headerRow, listWrap);
 
-  let collections = { personal: [], team: [] };
+  let collections = { personal: [], organization: [] };
   // Lazily-built id -> library item index for the manage-members modal.
   let slideIndex = null;
 
@@ -158,7 +158,7 @@ export function createCollectionsBar({ api, root }) {
 
   const renderList = () => {
     listWrap.innerHTML = '';
-    const all = [...(collections.personal || []), ...(collections.team || [])];
+    const all = [...(collections.personal || []), ...(collections.organization || [])];
     if (!all.length) {
       listWrap.append(
         h('div', {
@@ -180,7 +180,7 @@ export function createCollectionsBar({ api, root }) {
     try {
       collections = await collectionsApi.listAll();
     } catch {
-      collections = { personal: [], team: [] };
+      collections = { personal: [], organization: [] };
     }
     render();
   }

@@ -39,11 +39,13 @@
  * `collab-research.md` is a deliberately frozen phase-0 snapshot (the same
  * allowlist reason `tests/docs-paths-resolvable.test.js` carries).
  *
- * Also NOT covered, and deliberately: the ten storage exports still *named*
- * `listTeamLibrary` / `getTeamCollection` / … . B53 renamed the field, the
- * values and the route segment but not the function names, so those are a
- * real remainder rather than something this gate should pretend away — see
- * the B53 remainder item in docs/plans/TODO.md.
+ * **Identifiers (B90).** B53 renamed the field, the values and the route segment
+ * but not the function names; B90 closed that remainder — the storage exports,
+ * the route handlers and the bulk-export ZIP entry all say *organization* now.
+ * `CODE_IDENTIFIERS` below pins the loser spelling to zero across `server/`,
+ * `client/` and `tests/` so it cannot creep back. The tenant axis (a *team* as
+ * an organization: `getTeamWeeklyAnalytics`, `buildTeamDigestEmail`) is a
+ * different concept and stays.
  *
  * Run with: node --test tests/shelf-vocabulary.test.js
  */
@@ -165,11 +167,11 @@ const DOC_PROSE = {
     { label: 'team-scope (the axis is shelf; the value is organization)', re: /\bteam[- ]scoped?\b/i },
     { label: "the 'personal | team' value pair (use 'personal' | 'organization')", re: /personal['"`]?\s*\|\s*['"`]?team\b/i },
     { label: 'scope-as-shelf value (the field is shelf)', re: /\bscope:\s*['"`]?(personal|team)\b/i },
-    // Anchored on /api/ so it catches the retired route segment without
-    // flagging `slide-library/team.json`, the bulk-export ZIP entry — that
-    // filename still says "team" in code, so documenting it truthfully is
-    // right until the code-side rename lands.
-    { label: 'old /api/slide-library/team or /api/slide-collections/team segment', re: /\/api\/slide-(library|collections)\/team\b/ },
+    // The /api/ anchor this needle used to carry is gone: B90 renamed the
+    // bulk-export ZIP entry to `slide-library/organization.json`, so nothing
+    // legitimate spells `slide-library/team` any more — route segment and
+    // archive entry alike.
+    { label: 'old slide-library/team or slide-collections/team path', re: /slide-(library|collections)\/team\b/ },
   ],
 };
 
@@ -208,5 +210,97 @@ test('the doc-prose exemptions still exist, so the list cannot rot', () => {
   for (const name of DOC_PROSE.exempt) {
     const abs = path.join(repoRoot, DOC_PROSE.dir, name);
     assert.ok(fs.existsSync(abs), `${DOC_PROSE.dir}/${name} is exempt but no longer exists`);
+  }
+});
+
+// ─── code identifiers (B90) ─────────────────────────────────────────────────
+
+// The shelf axis also lived in *names*: ten storage exports, five route
+// handlers per shelf route, a mutate guard, the bulk-export ZIP entry and the
+// `/api/home` response fields. B90 renamed all of them; this scan keeps the
+// loser spelling at zero across the source tree.
+//
+// Needles are identifier-shaped on purpose. A blanket `/team/i` would flag the
+// `team-cards` slide type, `.team-card-photo` CSS hooks, "Leadership Team"
+// sample copy, the `t('…', 'Team')` UI labels B53 deliberately kept, and the
+// tenant axis (`getTeamWeeklyAnalytics` / `buildTeamDigestEmail`), which means
+// "a team as an organization" and is a different concept entirely.
+const CODE_IDENTIFIERS = {
+  dirs: ['server', 'client', 'tests'],
+  exempt: new Set(['tests/shelf-vocabulary.test.js']),
+  forbidden: [
+    {
+      label: 'shelf storage export named *Team* (use *Organization*)',
+      re: /\b(list|get|create|update|delete|set)Team(Library|Collection)/,
+    },
+    {
+      label: 'shelf route handler named handleTeam* (use handleOrganization*)',
+      re: /\bhandleTeam(List|Create|Get|Update|Delete)\b/,
+    },
+    { label: 'teamMutateGuard (use organizationMutateGuard)', re: /\bteamMutateGuard\b/ },
+    {
+      label: 'team-shelf response field (use organization / organizationSlides)',
+      re: /\bteamSlides\b|\bcollections[?]?\.team\b/,
+    },
+    {
+      label: 'two-shelf pair shape { personal, team } (use { personal, organization })',
+      re: /[[{]\s*personal,\s*team\s*[\]}]/,
+    },
+    {
+      label: 'bulk-export ZIP entry slide-library/team.json (use organization.json)',
+      re: /slide-library\/team\.json/,
+    },
+    {
+      label: 'teamSlideLibraryItems manifest stat (use organizationSlideLibraryItems)',
+      re: /\bteamSlideLibraryItems\b/,
+    },
+  ],
+};
+
+function sourceFiles() {
+  const out = [];
+  for (const dir of CODE_IDENTIFIERS.dirs) {
+    (function walk(abs) {
+      for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
+        const full = path.join(abs, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (entry.name.endsWith('.js')) {
+          const rel = path.relative(repoRoot, full).split(path.sep).join('/');
+          if (!CODE_IDENTIFIERS.exempt.has(rel)) out.push(full);
+        }
+      }
+    })(path.join(repoRoot, dir));
+  }
+  return out;
+}
+
+test('shelf vocabulary: identifiers say Organization, never Team (B90)', () => {
+  const violations = [];
+  for (const file of sourceFiles()) {
+    const rel = path.relative(repoRoot, file).split(path.sep).join('/');
+    const lines = fs.readFileSync(file, 'utf8').split('\n');
+    lines.forEach((line, i) => {
+      for (const { label, re } of CODE_IDENTIFIERS.forbidden) {
+        if (re.test(line)) violations.push(`${rel}:${i + 1}  [${label}]  ${line.trim()}`);
+      }
+    });
+  }
+  assert.equal(
+    violations.length,
+    0,
+    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`
+  );
+});
+
+test('the canonical Organization identifiers are present, so the scan cannot pass vacuously', () => {
+  const required = [
+    ['server/storage/slide-library/index.js', /export async function listOrganizationLibrary\b/],
+    ['server/storage/collections/index.js', /export async function listOrganizationCollections\b/],
+    ['server/export/bulk-export.js', /slide-library\/organization\.json/],
+    ['server/routes/api/home.js', /organizationSlides:/],
+  ];
+  for (const [file, re] of required) {
+    const text = fs.readFileSync(path.join(repoRoot, file), 'utf8');
+    assert.ok(re.test(text), `${file} must carry the canonical organization spelling (${re})`);
   }
 });

@@ -243,7 +243,7 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
 
   const renderCollectionsChooser = (collections) => {
     collectionsMount.innerHTML = '';
-    const all = [...(collections?.personal || []), ...(collections?.team || [])];
+    const all = [...(collections?.personal || []), ...(collections?.organization || [])];
     if (!all.length) {
       collectionsMount.append(
         h('div', {
