@@ -94,7 +94,7 @@ the same public facade the server uses in `STORAGE_MODE=postgres`.
 | `setSubscription` (`presentation-subscriptions.js`) | the per-deck override upsert on the `(presentation_id, user_email)` primary key, with `presentation_id` FK-bound to a real deck |
 | `markThreadsRead` (`presentation-comments.js`) | the heaviest FK chain: a `comment_thread_reads` marker upserts on `(user_email, comment_id)` and cascades out when its `presentation_comments` row is deleted (org → deck → comment → marker) |
 | `setYDocState` (postgres `presentations`) | the collab `bytea` round-trip: a `Uint8Array` stored via `Buffer.from` reads back byte-for-byte, upserting on the `presentation_id` primary key |
-| image favorites (postgres adapter) | `addImageFavorite`'s `ON CONFLICT DO NOTHING` makes a duplicate add a silent no-op on the composite PK, and the `image_id` FK cascades favorites out when the image is deleted |
+| image favorites (facade) | `toggleImageFavorite` round-trips on the composite PK (migration 033), keeps favorites per user, and the `image_id` FK cascades favorites out when the image is deleted. Since B79/D34 stripped the adapter, the `ON CONFLICT DO NOTHING` inside the now-private `addFavorite` is a concurrency guard that is not serially reachable through the public surface, so a direct double-add is no longer exercised (documented in the test header) |
 | image library usage facade | the `jsonb_path_exists` search over `slides` and `i18n` that replaced the old directory scan — whole-value, content-scoped, org- and trash-filtered — a query shape the in-memory double does not model at all |
 | settings facade | the singleton `app_settings` upsert (one jsonb bag, one row) and the per-e-mail `user_settings` upsert (migration 059) — store-raw / normalize-on-read round-trips plus the partial-write merges the disk-JSON store used to prove on disk |
 | follow codes | that a five-character code fits the column at all: the 001 schema declared `char(4)`, which the double (any string is any string) could never have caught, and migration 060 widened |
@@ -117,8 +117,8 @@ end-to-end example.
 All eight `onConflict` sites from `docs/plans/briefs/postgres-test-infra.md`
 now have coverage: `slide-locks` and `api-usage` (the first suite), plus
 `activity-events`, `presentation-subscriptions`, `presentation-comments`, the
-adapter-backed `presentations` (Y.Doc state), `image-favorites`, and
-`slide-library-usage`.
+adapter-backed `presentations` (Y.Doc state), `image-favorites` (via the
+facade toggle since B79/D34 — see the table note), and `slide-library-usage`.
 
 ## Running it locally
 
