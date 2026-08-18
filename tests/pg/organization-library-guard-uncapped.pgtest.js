@@ -1,8 +1,8 @@
 /**
- * The team-library trash/delete authz guard resolves its target un-capped (B85).
+ * The organization-library trash/delete authz guard resolves its target un-capped (B85).
  *
  * B79 inherited the old `applyPagination()` default as a literal `.limit(100)`
- * on the slide-library list. `setTeamLibraryItemTrashed`/`deleteTeamLibraryItem`
+ * on the slide-library list. `setOrganizationLibraryItemTrashed`/`deleteOrganizationLibraryItem`
  * then resolved the guard's target by scanning that capped list, so an item that
  * sat past the newest 100 rows failed the authz guard with a false `not_found` —
  * an organization simply could not trash or delete the tail of its own shelf.
@@ -35,9 +35,9 @@ import {
 import { seedDefaultOrganization, seedSlideLibraryItem } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
 import {
-  listTeamLibrary,
-  setTeamLibraryItemTrashed,
-  deleteTeamLibraryItem,
+  listOrganizationLibrary,
+  setOrganizationLibraryItemTrashed,
+  deleteOrganizationLibraryItem,
 } from '../../server/storage/slide-library/index.js';
 import { getDefaultOrganizationId } from '../../server/config/database.js';
 
@@ -47,7 +47,7 @@ const storageScope = testScope();
 const CREATOR = 'creator@example.com';
 const FILLER_COUNT = 120; // comfortably past the old 100-row cap
 
-pgDescribe('team-library guard resolves un-capped (real PostgreSQL)', () => {
+pgDescribe('organization-library guard resolves un-capped (real PostgreSQL)', () => {
   /** @type {import('kysely').Kysely<any>} */
   let db;
   /** The target item, seeded oldest so it sits past the newest 100 by created_at. */
@@ -88,14 +88,14 @@ pgDescribe('team-library guard resolves un-capped (real PostgreSQL)', () => {
     }
   });
 
-  it('listTeamLibrary returns the full set, not just the newest 100', async () => {
-    const { items } = await listTeamLibrary(storageScope);
+  it('listOrganizationLibrary returns the full set, not just the newest 100', async () => {
+    const { items } = await listOrganizationLibrary(storageScope);
     assert.equal(items.length, FILLER_COUNT + 1, 'the tail past 100 rows is present');
     assert.ok(items.some((it) => it.id === tailId), 'the oldest item survives the list');
   });
 
   it('trashes an item past the newest 100 (no false not_found)', async () => {
-    const r = await setTeamLibraryItemTrashed(storageScope, tailId, {
+    const r = await setOrganizationLibraryItemTrashed(storageScope, tailId, {
       trashed: true,
       actorEmail: CREATOR,
       allowTrash: () => true,
@@ -112,7 +112,7 @@ pgDescribe('team-library guard resolves un-capped (real PostgreSQL)', () => {
   });
 
   it('deletes an item past the newest 100 (no false not_found)', async () => {
-    const r = await deleteTeamLibraryItem(storageScope, tailId, {
+    const r = await deleteOrganizationLibraryItem(storageScope, tailId, {
       actorEmail: CREATOR,
       allowDelete: () => true,
     });
@@ -127,7 +127,7 @@ pgDescribe('team-library guard resolves un-capped (real PostgreSQL)', () => {
   });
 
   it('still enforces the guard: a rejecting allowTrash returns forbidden', async () => {
-    const r = await setTeamLibraryItemTrashed(storageScope, tailId, {
+    const r = await setOrganizationLibraryItemTrashed(storageScope, tailId, {
       trashed: true,
       actorEmail: 'someone-else@example.com',
       allowTrash: () => false,
@@ -138,7 +138,7 @@ pgDescribe('team-library guard resolves un-capped (real PostgreSQL)', () => {
 
   it('a genuinely missing id is still not_found', async () => {
     // Ids are server-generated uuids; a "missing" one is a valid, absent uuid.
-    const r = await deleteTeamLibraryItem(storageScope, crypto.randomUUID(), {
+    const r = await deleteOrganizationLibraryItem(storageScope, crypto.randomUUID(), {
       actorEmail: CREATOR,
       allowDelete: () => true,
     });
@@ -146,14 +146,14 @@ pgDescribe('team-library guard resolves un-capped (real PostgreSQL)', () => {
     assert.equal(r.reason, 'not_found');
   });
 
-  it('a personal-shelf id is not a team item (stays not_found)', async () => {
+  it('a personal-shelf id is not an organization-shelf item (stays not_found)', async () => {
     const personalId = await seedSlideLibraryItem(db, {
       organizationId: ORG,
       shelf: 'personal',
       ownerEmail: CREATOR,
       name: 'Personal item',
     });
-    const r = await deleteTeamLibraryItem(storageScope, personalId, {
+    const r = await deleteOrganizationLibraryItem(storageScope, personalId, {
       actorEmail: CREATOR,
       allowDelete: () => true,
     });

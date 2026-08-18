@@ -10,14 +10,14 @@ import {
 } from '../../utils/http.js';
 import {
   createPersonalLibraryItem,
-  createTeamLibraryItem,
+  createOrganizationLibraryItem,
   deletePersonalLibraryItem,
-  deleteTeamLibraryItem,
+  deleteOrganizationLibraryItem,
   listPersonalLibrary,
-  listTeamLibrary,
+  listOrganizationLibrary,
   updatePersonalLibraryItem,
-  updateTeamLibraryItem,
-  setTeamLibraryItemTrashed,
+  updateOrganizationLibraryItem,
+  setOrganizationLibraryItemTrashed,
   getTagsForSlideLibraryItem,
   getTagsForSlideLibraryItems,
   setTagsForSlideLibraryItem,
@@ -116,11 +116,11 @@ async function handlePersonalDelete({ storageScope, res, authedUser }, id) {
   return true;
 }
 
-// GET /api/slide-library/organization - List the team (organization-wide) library
-async function handleTeamList({ storageScope, res, url, authedUser }) {
+// GET /api/slide-library/organization - List the organization-wide library
+async function handleOrganizationList({ storageScope, res, url, authedUser }) {
   const email = actorEmail(authedUser);
   const themeId = cleanThemeId(url.searchParams.get('theme') || '');
-  const out = await listTeamLibrary(storageScope, { themeId, userEmail: email });
+  const out = await listOrganizationLibrary(storageScope, { themeId, userEmail: email });
   // Attach tags to each item
   if (Array.isArray(out?.items) && out.items.length > 0) {
     const ids = out.items.map((it) => it.id);
@@ -133,13 +133,13 @@ async function handleTeamList({ storageScope, res, url, authedUser }) {
   return true;
 }
 
-// POST /api/slide-library/organization - Save a slide to the team library
-async function handleTeamCreate({ repoRoot, storageScope, req, res, authedUser }) {
+// POST /api/slide-library/organization - Save a slide to the organization library
+async function handleOrganizationCreate({ repoRoot, storageScope, req, res, authedUser }) {
   const email = actorEmail(authedUser);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const r = await createTeamLibraryItem(storageScope, body, { actorEmail: email });
+  const r = await createOrganizationLibraryItem(storageScope, body, { actorEmail: email });
   if (!r.ok) return badRequest(res, r.reason);
 
   // Generate preview image for the slide library item
@@ -165,7 +165,7 @@ async function handleTeamCreate({ repoRoot, storageScope, req, res, authedUser }
     log.warn('[slide-library] Preview generation failed:', err.message);
   }
 
-  // Fire webhook for team library addition (reuses organization share webhook URL)
+  // Fire webhook for organization-library addition (reuses organization share webhook URL)
   void maybeFireWebhook(repoRoot, req, {
     event: 'slide.added_to_team_library',
     slideItem: { ...r.item, previewUrl },
@@ -176,17 +176,17 @@ async function handleTeamCreate({ repoRoot, storageScope, req, res, authedUser }
   return true;
 }
 
-// PATCH /api/slide-library/organization/:id - Update a team item.
+// PATCH /api/slide-library/organization/:id - Update an organization-shelf item.
 // Permission model:
 // - Favorites are per-user and always allowed for authed users.
 // - Trashing (soft delete) is restricted to admins or the creator.
-async function handleTeamUpdate({ storageScope, req, res, authedUser }, id) {
+async function handleOrganizationUpdate({ storageScope, req, res, authedUser }, id) {
   const email = actorEmail(authedUser);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
   if ('trashed' in body) {
-    const r = await setTeamLibraryItemTrashed(storageScope, id, {
+    const r = await setOrganizationLibraryItemTrashed(storageScope, id, {
       trashed: !!body.trashed,
       actorEmail: email,
       allowTrash: (item) => {
@@ -206,16 +206,16 @@ async function handleTeamUpdate({ storageScope, req, res, authedUser }, id) {
     return true;
   }
 
-  const r = await updateTeamLibraryItem(storageScope, id, body, { actorEmail: email });
+  const r = await updateOrganizationLibraryItem(storageScope, id, body, { actorEmail: email });
   if (!r.ok) return r.reason === 'not_found' ? notFound(res) : badRequest(res, r.reason);
   serveJson(res, 200, r.item);
   return true;
 }
 
-// DELETE /api/slide-library/organization/:id - Delete a team item.
+// DELETE /api/slide-library/organization/:id - Delete an organization-shelf item.
 // Conservative policy: admins can delete, otherwise only the creator.
-async function handleTeamDelete({ storageScope, res, authedUser }, id) {
-  const r = await deleteTeamLibraryItem(storageScope, id, {
+async function handleOrganizationDelete({ storageScope, res, authedUser }, id) {
+  const r = await deleteOrganizationLibraryItem(storageScope, id, {
     actorEmail: actorEmail(authedUser),
     allowDelete: (item) => {
       // Id-first identity match (T10 PR F2), e-mail fallback for a creator
@@ -279,11 +279,11 @@ export const ROUTES = [
   { method: 'PATCH', pattern: /^\/api\/slide-library\/personal\/([^/]+)$/, handler: handlePersonalUpdate },
   { method: 'DELETE', pattern: /^\/api\/slide-library\/personal\/([^/]+)$/, handler: handlePersonalDelete },
   { pattern: /^\/api\/slide-library\/personal\/([^/]+)$/, handler: ({ res }) => methodNotAllowed(res, ['PATCH', 'DELETE']) },
-  { method: 'GET', pattern: '/api/slide-library/organization', handler: handleTeamList },
-  { method: 'POST', pattern: '/api/slide-library/organization', handler: handleTeamCreate },
+  { method: 'GET', pattern: '/api/slide-library/organization', handler: handleOrganizationList },
+  { method: 'POST', pattern: '/api/slide-library/organization', handler: handleOrganizationCreate },
   { pattern: '/api/slide-library/organization', handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']) },
-  { method: 'PATCH', pattern: /^\/api\/slide-library\/organization\/([^/]+)$/, handler: handleTeamUpdate },
-  { method: 'DELETE', pattern: /^\/api\/slide-library\/organization\/([^/]+)$/, handler: handleTeamDelete },
+  { method: 'PATCH', pattern: /^\/api\/slide-library\/organization\/([^/]+)$/, handler: handleOrganizationUpdate },
+  { method: 'DELETE', pattern: /^\/api\/slide-library\/organization\/([^/]+)$/, handler: handleOrganizationDelete },
   { pattern: /^\/api\/slide-library\/organization\/([^/]+)$/, handler: ({ res }) => methodNotAllowed(res, ['PATCH', 'DELETE']) },
   { method: 'GET', pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/, handler: handleItemTagsGet },
   { method: 'PUT', pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/, handler: handleItemTagsPut },

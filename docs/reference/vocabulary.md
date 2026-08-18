@@ -78,13 +78,20 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
   and the client. It never appeared in the public v1 API
   (`sanitizeLibraryItem` omits it) and still does not. "Team" survives only as a
   UI label. Deploying this requires migration 076 to run.
-  **Not finished:** ten storage exports are still *named* for the old value —
-  `listTeamLibrary`, `getTeamLibraryItem`, `createTeamCollection`, … — along
-  with the bulk-export ZIP entry `slide-library/team.json`. The field, the
-  values and the route segment moved; the function names did not. That
-  remainder is tracked separately and is why the doc-prose gate deliberately
-  does not flag `slide-library/team.json`: the doc is describing the code
-  truthfully.
+  **Names finished in B90 (2026-08-18).** B53 moved the field, the values and
+  the route segment but left the *names*: the storage exports
+  (`listTeamLibrary`, `getTeamCollection`, …), the shelf route handlers, the
+  bulk-export ZIP entry `slide-library/team.json` and the `/api/home` response
+  fields (`collections.team`, `teamSlides`). All now read *organization*; the
+  ZIP entry is `slide-library/organization.json` and the manifest stat is
+  `organizationSlideLibraryItems`. `tests/shelf-vocabulary.test.js` pins the
+  loser identifiers to zero across `server/`, `client/` and `tests/`.
+  Deliberately untouched: the *tenant* axis, where "team" means an
+  organization (`getTeamWeeklyAnalytics`, `buildTeamDigestEmail`), and the
+  webhook surface (`slideAddedToTeamLibraryUrl`, event
+  `slide.added_to_team_library`), which is a stored settings key plus a public
+  payload contract and so needs its own migration, on the model of migration
+  074 for `presentationMovedToOrganizationUrl`.
 - **Local, non-persisted use of the word "scope" is not a homonym defect.**
   A view-local variable using "scope" in its ordinary English sense (the
   comments panel's `'slide' | 'deck'` toggle, prose like "scoped to") makes

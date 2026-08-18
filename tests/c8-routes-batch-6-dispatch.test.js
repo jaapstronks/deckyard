@@ -118,10 +118,10 @@ test('slide-library: routes resolve to their named handlers in order', () => {
   named(SL_ROUTES, 'POST', '/api/slide-library/personal', 'handlePersonalCreate');
   named(SL_ROUTES, 'PATCH', '/api/slide-library/personal/i-1', 'handlePersonalUpdate');
   named(SL_ROUTES, 'DELETE', '/api/slide-library/personal/i-1', 'handlePersonalDelete');
-  named(SL_ROUTES, 'GET', '/api/slide-library/organization', 'handleTeamList');
-  named(SL_ROUTES, 'POST', '/api/slide-library/organization', 'handleTeamCreate');
-  named(SL_ROUTES, 'PATCH', '/api/slide-library/organization/i-1', 'handleTeamUpdate');
-  named(SL_ROUTES, 'DELETE', '/api/slide-library/organization/i-1', 'handleTeamDelete');
+  named(SL_ROUTES, 'GET', '/api/slide-library/organization', 'handleOrganizationList');
+  named(SL_ROUTES, 'POST', '/api/slide-library/organization', 'handleOrganizationCreate');
+  named(SL_ROUTES, 'PATCH', '/api/slide-library/organization/i-1', 'handleOrganizationUpdate');
+  named(SL_ROUTES, 'DELETE', '/api/slide-library/organization/i-1', 'handleOrganizationDelete');
   named(SL_ROUTES, 'GET', '/api/slide-library/personal/i-1/tags', 'handleItemTagsGet');
   named(SL_ROUTES, 'PUT', '/api/slide-library/personal/i-1/tags', 'handleItemTagsPut');
   named(SL_ROUTES, 'GET', '/api/slide-library/organization/i-1/tags', 'handleItemTagsGet');

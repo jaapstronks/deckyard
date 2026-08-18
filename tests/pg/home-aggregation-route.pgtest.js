@@ -4,7 +4,7 @@
  * The PostgreSQL counterpart of the `handleHome (round-trip)` half of
  * tests/home-aggregation-route.test.js. The pure `buildActivityOpts` filter
  * threading stays DB-less in that file; this asserts the assembly path —
- * `handleHome` fanning team slides, team collections and the user's usage set
+ * `handleHome` fanning organization slides, organization collections and the user's usage set
  * into the shape the Home loaders consume — against the backend PR G keeps.
  */
 
@@ -22,8 +22,8 @@ import {
 import { seedDefaultOrganization } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
 import { handleHome } from '../../server/routes/api/home.js';
-import { createTeamLibraryItem } from '../../server/storage/slide-library/index.js';
-import { createTeamCollection } from '../../server/storage/collections/index.js';
+import { createOrganizationLibraryItem } from '../../server/storage/slide-library/index.js';
+import { createOrganizationCollection } from '../../server/storage/collections/index.js';
 import { recordSlideLibraryUsage } from '../../server/storage/slide-library-usage/index.js';
 
 const storageScope = testScope();
@@ -65,12 +65,12 @@ pgDescribe('handleHome round-trip (real PostgreSQL, via facade)', () => {
     await truncate(db, 'organizations');
     await seedDefaultOrganization(db);
 
-    await createTeamLibraryItem(
+    await createOrganizationLibraryItem(
       storageScope,
       { name: 'Shared title slide', slideType: 'title', content: {} },
       { actorEmail: USER }
     );
-    await createTeamCollection(storageScope, { name: 'Onboarding kit', slideIds: [] }, { actorEmail: USER });
+    await createOrganizationCollection(storageScope, { name: 'Onboarding kit', slideIds: [] }, { actorEmail: USER });
     await recordSlideLibraryUsage(storageScope, USER, [{ type: 'slide', id: 'used-1' }]);
   });
 
@@ -97,15 +97,15 @@ pgDescribe('handleHome round-trip (real PostgreSQL, via facade)', () => {
     assert.ok(Array.isArray(body.activity.events), 'activity.events is an array');
     assert.ok(body.buildingBlocks.collections, 'has collections');
     assert.ok(Array.isArray(body.buildingBlocks.collections.personal));
-    assert.ok(Array.isArray(body.buildingBlocks.collections.team));
-    assert.ok(Array.isArray(body.buildingBlocks.teamSlides));
+    assert.ok(Array.isArray(body.buildingBlocks.collections.organization));
+    assert.ok(Array.isArray(body.buildingBlocks.organizationSlides));
     assert.ok(Array.isArray(body.usage.items));
 
-    // The seeded team building blocks + usage round-trip.
-    const teamCollectionNames = body.buildingBlocks.collections.team.map((c) => c.name);
-    assert.ok(teamCollectionNames.includes('Onboarding kit'));
-    const teamSlideNames = body.buildingBlocks.teamSlides.map((s) => s.name);
-    assert.ok(teamSlideNames.includes('Shared title slide'));
+    // The seeded organization building blocks + usage round-trip.
+    const organizationCollectionNames = body.buildingBlocks.collections.organization.map((c) => c.name);
+    assert.ok(organizationCollectionNames.includes('Onboarding kit'));
+    const organizationSlideNames = body.buildingBlocks.organizationSlides.map((s) => s.name);
+    assert.ok(organizationSlideNames.includes('Shared title slide'));
     const usedKeys = body.usage.items.map((u) => `${u.itemType}:${u.itemId}`);
     assert.ok(usedKeys.includes('slide:used-1'));
   });
