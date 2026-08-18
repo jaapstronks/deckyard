@@ -1,60 +1,37 @@
 /**
  * SSE (Server-Sent Events) manager for real-time comment updates.
  * Tracks connected clients per presentation and broadcasts events.
+ *
+ * The registry + heartbeat lifecycle is the shared `createSseHub` (B87); this
+ * module is the presentation channel over it: the key is the presentation ID,
+ * and the domain names below re-export the hub's methods.
  */
 
-import { formatSSEMessage } from '../utils/sse.js';
+import { createSseHub } from '../utils/sse.js';
 
-// Map of presentationId -> Set of response objects
-const clients = new Map();
+const hub = createSseHub();
 
 /**
  * Add a client connection for a presentation.
  * @param {string} presentationId - The presentation ID
- * @param {object} res - Express response object (kept open for SSE)
+ * @param {object} res - Response object (kept open for SSE)
  */
-export function addClient(presentationId, res) {
-  if (!clients.has(presentationId)) {
-    clients.set(presentationId, new Set());
-  }
-  clients.get(presentationId).add(res);
-}
+export const addClient = hub.addClient;
 
 /**
  * Remove a client connection.
  * @param {string} presentationId - The presentation ID
- * @param {object} res - Express response object
+ * @param {object} res - Response object
  */
-export function removeClient(presentationId, res) {
-  const presClients = clients.get(presentationId);
-  if (presClients) {
-    presClients.delete(res);
-    if (presClients.size === 0) {
-      clients.delete(presentationId);
-    }
-  }
-}
+export const removeClient = hub.removeClient;
 
 /**
  * Broadcast an event to all clients connected to a presentation.
  * @param {string} presentationId - The presentation ID
- * @param {string} eventType - Event type (e.g., 'comment:created', 'comment:resolved')
+ * @param {string} eventType - Event type (e.g. 'comment:created', 'comment:resolved')
  * @param {object} data - Event data to send
  */
-export function broadcastToPresentation(presentationId, eventType, data) {
-  const presClients = clients.get(presentationId);
-  if (!presClients || presClients.size === 0) return;
-
-  const message = formatSSEMessage(eventType, data);
-
-  for (const res of presClients) {
-    try {
-      res.write(message);
-    } catch {
-      // Client disconnected, will be cleaned up on 'close' event
-    }
-  }
-}
+export const broadcastToPresentation = hub.broadcast;
 
 /**
  * Broadcast an event to every connected client, across all presentations.
@@ -70,51 +47,17 @@ export function broadcastToPresentation(presentationId, eventType, data) {
  * @param {object} data - Event data to send.
  * @returns {number} Number of client connections written to.
  */
-export function broadcastToAll(eventType, data) {
-  const message = formatSSEMessage(eventType, data);
-  let sent = 0;
-
-  for (const presClients of clients.values()) {
-    for (const res of presClients) {
-      try {
-        res.write(message);
-        sent += 1;
-      } catch {
-        // Client disconnected, will be cleaned up on 'close' event
-      }
-    }
-  }
-  return sent;
-}
+export const broadcastToAll = hub.broadcastAll;
 
 /**
- * Send a heartbeat ping to all clients for a presentation.
- * Helps keep connections alive through proxies.
- * @param {string} presentationId - The presentation ID
+ * Start the global heartbeat interval. Safe to call multiple times (idempotent).
  */
-function sendHeartbeat(presentationId) {
-  const presClients = clients.get(presentationId);
-  if (!presClients) return;
-
-  const ping = `: heartbeat\n\n`;
-  for (const res of presClients) {
-    try {
-      res.write(ping);
-    } catch {
-      // Ignore, will be cleaned up
-    }
-  }
-}
+export const startHeartbeat = hub.startHeartbeat;
 
 /**
- * Send heartbeats to all connected presentations.
- * Call this periodically (e.g., every 30 seconds).
+ * Stop the global heartbeat interval.
  */
-function sendAllHeartbeats() {
-  for (const presentationId of clients.keys()) {
-    sendHeartbeat(presentationId);
-  }
-}
+export const stopHeartbeat = hub.stopHeartbeat;
 
 // Event type constants
 export const CommentEventTypes = {
@@ -142,28 +85,3 @@ export const PresentationEventTypes = {
 export const MaintenanceEventTypes = {
   CHANGED: 'maintenance:changed',
 };
-
-// Heartbeat interval (30 seconds keeps connections alive through most proxies)
-const HEARTBEAT_INTERVAL_MS = 30000;
-let heartbeatIntervalId = null;
-
-/**
- * Start the global heartbeat interval.
- * Sends periodic pings to all connected clients to keep connections alive.
- * Safe to call multiple times (idempotent).
- */
-export function startHeartbeat() {
-  if (heartbeatIntervalId) return; // Already running
-  heartbeatIntervalId = setInterval(sendAllHeartbeats, HEARTBEAT_INTERVAL_MS);
-  heartbeatIntervalId.unref?.(); // Don't keep process alive just for this
-}
-
-/**
- * Stop the global heartbeat interval.
- */
-export function stopHeartbeat() {
-  if (heartbeatIntervalId) {
-    clearInterval(heartbeatIntervalId);
-    heartbeatIntervalId = null;
-  }
-}

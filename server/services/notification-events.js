@@ -1,102 +1,48 @@
 /**
  * SSE (Server-Sent Events) manager for real-time notification updates.
  * Tracks connected clients per user email and broadcasts notification events.
+ *
+ * The registry + heartbeat lifecycle is the shared `createSseHub` (B87); this
+ * module is the notification channel over it: the key is a normalized email,
+ * and the domain names below re-export the hub's methods.
  */
 
 import { normalizeEmail } from '../utils/normalize.js';
-import { formatSSEMessage } from '../utils/sse.js';
+import { createSseHub } from '../utils/sse.js';
 
-// Map of userEmail -> Set of response objects
-const clients = new Map();
+const hub = createSseHub({ normalizeKey: normalizeEmail });
 
 /**
  * Add a client connection for a user.
  * @param {string} userEmail - The user's email
- * @param {object} res - Express response object (kept open for SSE)
+ * @param {object} res - Response object (kept open for SSE)
  */
-export function addClient(userEmail, res) {
-  const email = normalizeEmail(userEmail);
-  if (!email) return;
-
-  if (!clients.has(email)) {
-    clients.set(email, new Set());
-  }
-  clients.get(email).add(res);
-}
+export const addClient = hub.addClient;
 
 /**
  * Remove a client connection.
  * @param {string} userEmail - The user's email
- * @param {object} res - Express response object
+ * @param {object} res - Response object
  */
-export function removeClient(userEmail, res) {
-  const email = normalizeEmail(userEmail);
-  if (!email) return;
-
-  const userClients = clients.get(email);
-  if (userClients) {
-    userClients.delete(res);
-    if (userClients.size === 0) {
-      clients.delete(email);
-    }
-  }
-}
+export const removeClient = hub.removeClient;
 
 /**
  * Broadcast an event to all clients connected for a user.
  * @param {string} userEmail - The user's email
- * @param {string} eventType - Event type (e.g., 'notification:new', 'notification:counts')
+ * @param {string} eventType - Event type (e.g. 'notification:new', 'notification:counts')
  * @param {object} data - Event data to send
  */
-export function broadcastToUser(userEmail, eventType, data) {
-  const email = normalizeEmail(userEmail);
-  if (!email) return;
-
-  const userClients = clients.get(email);
-  if (!userClients || userClients.size === 0) return;
-
-  const message = formatSSEMessage(eventType, data);
-
-  for (const res of userClients) {
-    try {
-      res.write(message);
-    } catch {
-      // Client disconnected, will be cleaned up on 'close' event
-    }
-  }
-}
+export const broadcastToUser = hub.broadcast;
 
 /**
- * Send a heartbeat ping to all clients for a user.
- * Helps keep connections alive through proxies.
- * @param {string} userEmail - The user's email
+ * Start the global heartbeat interval. Safe to call multiple times (idempotent).
  */
-function sendHeartbeat(userEmail) {
-  const email = normalizeEmail(userEmail);
-  if (!email) return;
-
-  const userClients = clients.get(email);
-  if (!userClients) return;
-
-  const ping = `: heartbeat\n\n`;
-  for (const res of userClients) {
-    try {
-      res.write(ping);
-    } catch {
-      // Ignore, will be cleaned up
-    }
-  }
-}
+export const startHeartbeat = hub.startHeartbeat;
 
 /**
- * Send heartbeats to all connected users.
- * Call this periodically (e.g., every 30 seconds).
+ * Stop the global heartbeat interval.
  */
-function sendAllHeartbeats() {
-  for (const userEmail of clients.keys()) {
-    sendHeartbeat(userEmail);
-  }
-}
+export const stopHeartbeat = hub.stopHeartbeat;
 
 // Event type constants
 export const NotificationEventTypes = {
@@ -104,28 +50,3 @@ export const NotificationEventTypes = {
   COUNTS: 'notification:counts',
   READ: 'notification:read',
 };
-
-// Heartbeat interval (30 seconds keeps connections alive through most proxies)
-const HEARTBEAT_INTERVAL_MS = 30000;
-let heartbeatIntervalId = null;
-
-/**
- * Start the global heartbeat interval.
- * Sends periodic pings to all connected clients to keep connections alive.
- * Safe to call multiple times (idempotent).
- */
-export function startHeartbeat() {
-  if (heartbeatIntervalId) return; // Already running
-  heartbeatIntervalId = setInterval(sendAllHeartbeats, HEARTBEAT_INTERVAL_MS);
-  heartbeatIntervalId.unref?.(); // Don't keep process alive just for this
-}
-
-/**
- * Stop the global heartbeat interval.
- */
-export function stopHeartbeat() {
-  if (heartbeatIntervalId) {
-    clearInterval(heartbeatIntervalId);
-    heartbeatIntervalId = null;
-  }
-}

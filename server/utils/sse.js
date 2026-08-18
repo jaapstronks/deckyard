@@ -152,3 +152,121 @@ export function sseComment(res, comment) {
     `: ${String(comment || '').replace(/\n/g, ' ')}\n\n`
   );
 }
+
+/**
+ * A keyed SSE client hub — the `Map<key, Set<res>>` registry plus the global
+ * heartbeat lifecycle that the real-time services (notifications, comments)
+ * each hand-rolled identically. Create one per channel; the service re-exports
+ * the returned methods under its own domain names and keeps its event-type
+ * constants.
+ *
+ * The key is normalized once, at the boundary, by `normalizeKey`: it returns the
+ * storage key, or a falsy value to reject the operation (the notification hub
+ * rejects a blank email this way). add / remove / broadcast all funnel through
+ * it, so a channel has exactly one spelling of its key.
+ *
+ * @param {object} [options]
+ * @param {(rawKey: *) => *} [options.normalizeKey] - Map a caller-supplied key
+ *   to its storage form; return falsy to reject. Defaults to identity.
+ * @param {number} [options.heartbeatMs=30000] - Global heartbeat interval; 30s
+ *   keeps connections alive through most proxies.
+ * @returns {{
+ *   addClient: (rawKey: *, res: object) => void,
+ *   removeClient: (rawKey: *, res: object) => void,
+ *   broadcast: (rawKey: *, eventType: string, data: object) => void,
+ *   broadcastAll: (eventType: string, data: object) => number,
+ *   startHeartbeat: () => void,
+ *   stopHeartbeat: () => void,
+ * }}
+ */
+export function createSseHub({ normalizeKey = (k) => k, heartbeatMs = 30_000 } = {}) {
+  /** @type {Map<*, Set<object>>} key -> set of open response objects */
+  const clients = new Map();
+
+  function addClient(rawKey, res) {
+    const key = normalizeKey(rawKey);
+    if (!key) return;
+    let set = clients.get(key);
+    if (!set) {
+      set = new Set();
+      clients.set(key, set);
+    }
+    set.add(res);
+  }
+
+  function removeClient(rawKey, res) {
+    const key = normalizeKey(rawKey);
+    if (!key) return;
+    const set = clients.get(key);
+    if (set) {
+      set.delete(res);
+      if (set.size === 0) clients.delete(key);
+    }
+  }
+
+  /** Broadcast one event to every client under a single key. */
+  function broadcast(rawKey, eventType, data) {
+    const key = normalizeKey(rawKey);
+    if (!key) return;
+    const set = clients.get(key);
+    if (!set || set.size === 0) return;
+    const message = formatSSEMessage(eventType, data);
+    for (const res of set) {
+      try {
+        res.write(message);
+      } catch {
+        // Client disconnected, will be cleaned up on 'close' event
+      }
+    }
+  }
+
+  /**
+   * Broadcast one event to every client across every key (server-wide
+   * announcements like maintenance mode).
+   * @returns {number} Number of client connections written to.
+   */
+  function broadcastAll(eventType, data) {
+    const message = formatSSEMessage(eventType, data);
+    let sent = 0;
+    for (const set of clients.values()) {
+      for (const res of set) {
+        try {
+          res.write(message);
+          sent += 1;
+        } catch {
+          // Client disconnected, will be cleaned up on 'close' event
+        }
+      }
+    }
+    return sent;
+  }
+
+  function sendAllHeartbeats() {
+    for (const set of clients.values()) {
+      for (const res of set) {
+        try {
+          res.write(': heartbeat\n\n');
+        } catch {
+          // Ignore, will be cleaned up
+        }
+      }
+    }
+  }
+
+  let heartbeatIntervalId = null;
+  /** Start the global heartbeat (idempotent). */
+  function startHeartbeat() {
+    if (heartbeatIntervalId) return; // Already running
+    heartbeatIntervalId = setInterval(sendAllHeartbeats, heartbeatMs);
+    heartbeatIntervalId.unref?.(); // Don't keep process alive just for this
+  }
+  /** Stop the global heartbeat. */
+  function stopHeartbeat() {
+    if (heartbeatIntervalId) {
+      clearInterval(heartbeatIntervalId);
+      heartbeatIntervalId = null;
+    }
+  }
+
+  return { addClient, removeClient, broadcast, broadcastAll, startHeartbeat, stopHeartbeat };
+}
