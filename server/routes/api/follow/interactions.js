@@ -106,6 +106,9 @@ export async function handleFollowInteractionsCurrent(
   const optionCount = type === 'feedback' ? 0 : options.length;
 
   // Ensure a session-scoped interaction exists even before the first vote.
+  // The `{ ok, reason }` answer is deliberately discarded: the aggregate read
+  // below is the authoritative one, and it answers `null` for exactly the
+  // sessions an ensure failure would have named.
   if (type === 'feedback') {
     await ensureFeedbackForSlide(followAudienceScope(repoRoot), state.sessionId, {
       slideId,

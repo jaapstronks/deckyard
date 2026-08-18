@@ -128,7 +128,9 @@ const SLIDE_COLUMNS = [
  * @param {'poll'|'likert'|'feedback'} opts.type
  * @param {number} [opts.optionCount]
  * @param {'open'|'closed'} [opts.defaultStatus]
- * @returns {Promise<InteractionSlide|null>}
+ * @returns {Promise<{ok: true, slide: InteractionSlide}|{ok: false, reason: string}>}
+ *   `invalid` for a blank id or type, `not_found` when the session is gone,
+ *   `unavailable` when the pool is down.
  */
 export async function ensureInteractionSlide({
   sessionId,
@@ -139,9 +141,9 @@ export async function ensureInteractionSlide({
 }) {
   const sid = String(sessionId || '').trim();
   const slide = String(slideId || '').trim();
-  if (!sid || !slide || !type) return null;
+  if (!sid || !slide || !type) return { ok: false, reason: 'invalid' };
 
-  return withDbGuard(null, async (db) => {
+  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const values = {
       session_id: sid,
       slide_id: slide,
@@ -163,9 +165,9 @@ export async function ensureInteractionSlide({
         )
         .returning(SLIDE_COLUMNS)
         .executeTakeFirst();
-      return row ? rowToSlide(row) : null;
+      return row ? { ok: true, slide: rowToSlide(row) } : { ok: false, reason: 'not_found' };
     } catch (err) {
-      if (isMissingSession(err)) return null;
+      if (isMissingSession(err)) return { ok: false, reason: 'not_found' };
       throw err;
     }
   });
@@ -208,12 +210,14 @@ export async function getInteractionSlide({ sessionId, slideId }) {
  * @param {string} opts.slideId
  * @param {'open'|'closed'} [opts.status]
  * @param {number} [opts.optionCount]
- * @returns {Promise<InteractionSlide|null>} The updated row, or null if absent.
+ * @returns {Promise<{ok: true, slide: InteractionSlide}|{ok: false, reason: string}>}
+ *   `invalid` for a blank id, `not_found` when no such interaction exists,
+ *   `unavailable` when the pool is down.
  */
 export async function updateInteractionSlide({ sessionId, slideId, status, optionCount }) {
   const sid = String(sessionId || '').trim();
   const slide = String(slideId || '').trim();
-  if (!sid || !slide) return null;
+  if (!sid || !slide) return { ok: false, reason: 'invalid' };
 
   /** @type {Record<string, any>} */
   const set = { updated_at: new Date() };
@@ -222,7 +226,7 @@ export async function updateInteractionSlide({ sessionId, slideId, status, optio
     set.option_count = clampInt(optionCount, 0, MAX_OPTIONS);
   }
 
-  return withDbGuard(null, async (db) => {
+  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const row = await db
       .updateTable('interactions')
       .set(set)
@@ -230,6 +234,6 @@ export async function updateInteractionSlide({ sessionId, slideId, status, optio
       .where('slide_id', '=', slide)
       .returning(SLIDE_COLUMNS)
       .executeTakeFirst();
-    return row ? rowToSlide(row) : null;
+    return row ? { ok: true, slide: rowToSlide(row) } : { ok: false, reason: 'not_found' };
   });
 }

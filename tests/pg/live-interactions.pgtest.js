@@ -40,13 +40,20 @@ import {
   upvoteQuestion,
 } from '../../server/storage/questions.js';
 import {
+  ensureLikertInteractionForSlide,
   ensurePollInteractionForSlide,
   getPollInteractionAggregate,
+  resetLikertInteraction,
   resetPollInteraction,
+  setLikertInteractionStatus,
   setPollInteractionStatus,
   voteLikertInteraction,
   votePollInteraction,
 } from '../../server/storage/interactions.js';
+import {
+  ensureInteractionSlide,
+  updateInteractionSlide,
+} from '../../server/storage/interaction-slides.js';
 import {
   ensureFeedbackForSlide,
   getFeedbackAggregate,
@@ -341,12 +348,13 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
       optionIndex: 1,
       optionCount: 2,
     });
-    const agg = await resetPollInteraction(testScope(), sessionId, {
+    const reset = await resetPollInteraction(testScope(), sessionId, {
       slideId: 'poll-1',
       optionCount: 2,
     });
-    assert.deepEqual(agg.totals, [0, 0]);
-    assert.equal(agg.total, 0);
+    assert.equal(reset.ok, true);
+    assert.deepEqual(reset.aggregate.totals, [0, 0]);
+    assert.equal(reset.aggregate.total, 0);
     assert.equal(
       (await db.selectFrom('interactions').selectAll().execute()).length,
       1,
@@ -438,8 +446,9 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
 
   it('discards every entry on reset', async () => {
     await submitFeedback(testScope(), sessionId, { slideId: 'fb-1', deviceId: 'dev-a', text: 'gone' });
-    const agg = await resetFeedback(testScope(), sessionId, { slideId: 'fb-1' });
-    assert.equal(agg.total, 0);
+    const reset = await resetFeedback(testScope(), sessionId, { slideId: 'fb-1' });
+    assert.equal(reset.ok, true);
+    assert.equal(reset.aggregate.total, 0);
     assert.deepEqual(await listFeedbackEntries(testScope(), sessionId, { slideId: 'fb-1' }), []);
     assert.equal(
       (await getFeedbackAggregate(testScope(), sessionId, { slideId: 'fb-1' })).open,
@@ -530,5 +539,115 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
       }),
       { ok: false, reason: 'no_session' }
     );
+  });
+  // ─── the mutation failure shape (B91) ──────────────────────────────────────
+  //
+  // The interaction/feedback mutations answer `{ ok: true, … }` /
+  // `{ ok: false, reason }` on every non-throwing branch, `null` on none. See
+  // docs/reference/storage-layer.md § Failure signalling;
+  // tests/storage-call-convention.test.js gates it. Both directions are pinned,
+  // because a mutation that only ever answered `{ ok: false }` would pass a
+  // one-sided test while being useless.
+
+  it('ensureInteractionSlide answers invalid for a blank id and not_found for a dead session', async () => {
+    assert.deepEqual(await ensureInteractionSlide({ sessionId, slideId: '  ', type: 'poll' }), {
+      ok: false,
+      reason: 'invalid',
+    });
+    assert.deepEqual(
+      await ensureInteractionSlide({ sessionId: 'no-such-session', slideId: 'poll-1', type: 'poll' }),
+      { ok: false, reason: 'not_found' }
+    );
+  });
+
+  it('ensureInteractionSlide hands the row back under ok', async () => {
+    const ensured = await ensureInteractionSlide({
+      sessionId,
+      slideId: 'poll-1',
+      type: 'poll',
+      optionCount: 2,
+    });
+    assert.equal(ensured.ok, true);
+    assert.equal(ensured.slide.slideId, 'poll-1');
+    assert.equal(ensured.slide.type, 'poll');
+  });
+
+  it('updateInteractionSlide answers invalid for a blank id and not_found when nothing is there', async () => {
+    assert.deepEqual(await updateInteractionSlide({ sessionId, slideId: '' }), {
+      ok: false,
+      reason: 'invalid',
+    });
+    assert.deepEqual(await updateInteractionSlide({ sessionId, slideId: 'never-ensured' }), {
+      ok: false,
+      reason: 'not_found',
+    });
+  });
+
+  it('updateInteractionSlide hands the updated row back under ok', async () => {
+    await ensureInteractionSlide({ sessionId, slideId: 'poll-1', type: 'poll', optionCount: 2 });
+    const updated = await updateInteractionSlide({ sessionId, slideId: 'poll-1', status: 'closed' });
+    assert.equal(updated.ok, true);
+    assert.equal(updated.slide.status, 'closed');
+  });
+
+  it('the poll and likert ensures answer not_found for a dead session, ok otherwise', async () => {
+    for (const ensure of [ensurePollInteractionForSlide, ensureLikertInteractionForSlide]) {
+      assert.deepEqual(
+        await ensure(testScope(), 'no-such-session', { slideId: 'poll-1', optionCount: 2 }),
+        { ok: false, reason: 'not_found' }
+      );
+    }
+    const ensured = await ensurePollInteractionForSlide(testScope(), sessionId, {
+      slideId: 'poll-1',
+      optionCount: 2,
+    });
+    assert.equal(ensured.ok, true);
+    assert.deepEqual(ensured.aggregate.totals, [0, 0]);
+  });
+
+  it('the poll and likert reset/status calls answer not_found on a slide that has no interaction', async () => {
+    const calls = [
+      () => resetPollInteraction(testScope(), sessionId, { slideId: 'never-ensured' }),
+      () => resetLikertInteraction(testScope(), sessionId, { slideId: 'never-ensured' }),
+      () => setPollInteractionStatus(testScope(), sessionId, { slideId: 'never-ensured', status: 'closed' }),
+      () => setLikertInteractionStatus(testScope(), sessionId, { slideId: 'never-ensured', status: 'closed' }),
+    ];
+    for (const call of calls) {
+      assert.deepEqual(await call(), { ok: false, reason: 'not_found' });
+    }
+  });
+
+  it('setPollInteractionStatus returns the new aggregate under ok', async () => {
+    await ensurePollInteractionForSlide(testScope(), sessionId, { slideId: 'poll-1', optionCount: 2 });
+    const closed = await setPollInteractionStatus(testScope(), sessionId, {
+      slideId: 'poll-1',
+      status: 'closed',
+      optionCount: 2,
+    });
+    assert.equal(closed.ok, true);
+    assert.equal(closed.aggregate.open, false);
+  });
+
+  it('the feedback mutations answer not_found rather than null, and ok with the aggregate', async () => {
+    assert.deepEqual(
+      await ensureFeedbackForSlide(testScope(), 'no-such-session', { slideId: 'fb-1' }),
+      { ok: false, reason: 'not_found' }
+    );
+    for (const call of [
+      () => setFeedbackStatus(testScope(), sessionId, { slideId: 'never-ensured', status: 'closed' }),
+      () => resetFeedback(testScope(), sessionId, { slideId: 'never-ensured' }),
+    ]) {
+      assert.deepEqual(await call(), { ok: false, reason: 'not_found' });
+    }
+
+    const ensured = await ensureFeedbackForSlide(testScope(), sessionId, { slideId: 'fb-1' });
+    assert.equal(ensured.ok, true);
+    assert.equal(ensured.aggregate.open, true);
+    const closed = await setFeedbackStatus(testScope(), sessionId, {
+      slideId: 'fb-1',
+      status: 'closed',
+    });
+    assert.equal(closed.ok, true);
+    assert.equal(closed.aggregate.open, false);
   });
 });

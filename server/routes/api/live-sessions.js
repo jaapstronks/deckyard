@@ -156,6 +156,9 @@ async function handleLiveSessionStatePush({ storageScope, req, res, authedUser }
 
     // If this is a live slide, eagerly ensure interaction state exists so the
     // presenter can show live results immediately (even before the first vote).
+    // Pre-warming is opportunistic: a failure here (`{ ok: false }` from an
+    // expired session, or a throw) must not fail the state push, which already
+    // succeeded. The first voter creates the interaction anyway.
     try {
       const kind = liveInteractionKind(slideType);
       if (kind && slideId) {
@@ -237,7 +240,7 @@ async function handleLiveSessionInteractionAction({ storageScope, res, authedUse
   }
 
   if (action === 'reset') {
-    const agg =
+    const reset =
       kind === 'feedback'
         ? await resetFeedback(storageScope, sessionId, { slideId })
         : kind === 'likert'
@@ -249,11 +252,14 @@ async function handleLiveSessionInteractionAction({ storageScope, res, authedUse
               slideId,
               optionCount,
             });
-    serveJson(res, 200, { ok: true, interactionState: agg });
+    // The ensure above created the interaction; it can still vanish with an
+    // expiring session mid-request. Answering 404 beats serving `null` state.
+    if (!reset.ok) return notFound(res);
+    serveJson(res, 200, { ok: true, interactionState: reset.aggregate });
     return true;
   }
 
-  const agg =
+  const changed =
     kind === 'feedback'
       ? await setFeedbackStatus(storageScope, sessionId, {
           slideId,
@@ -270,6 +276,8 @@ async function handleLiveSessionInteractionAction({ storageScope, res, authedUse
             status: action === 'close' ? 'closed' : 'open',
             optionCount,
           });
+  if (!changed.ok) return notFound(res);
+  const agg = changed.aggregate;
 
   // Broadcast branch event when closing an interaction with onClose configured
   if (action === 'close' && kind !== 'feedback') {

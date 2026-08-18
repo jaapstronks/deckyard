@@ -239,26 +239,29 @@ function scheduleInteractionBroadcast(scope, sessionId, slideId, { immediate = f
  * @param {string} [opts.slideId]
  * @param {number} [opts.optionCount]
  * @param {'open'|'closed'} [opts.defaultStatus]
- * @returns {Promise<object|null>} The aggregate, or null when there is no such session.
+ * @returns {Promise<{ok: true, aggregate: object}|{ok: false, reason: string}>}
+ *   The reason is whatever `ensureInteractionSlide` answered — `invalid` for a
+ *   blank id, `not_found` when there is no such session.
  */
 async function ensureInteractionForSlide(
   scope,
   sessionId,
   { type = 'poll', slideId = '', optionCount = 0, defaultStatus = 'open' } = {}
 ) {
-  const slide = await ensureInteractionSlide({
+  const ensured = await ensureInteractionSlide({
     sessionId,
     slideId,
     type: normalizeInteractionType(type),
     optionCount,
     defaultStatus,
   });
-  if (!slide) return null;
+  if (!ensured.ok) return ensured;
+  const slide = ensured.slide;
   await pruneOutOfRangeVotes(slide.id, slide.optionCount);
 
   const agg = await aggregateForDevice(slide, null);
   scheduleInteractionBroadcast(scope, sessionId, slide.slideId);
-  return agg;
+  return { ok: true, aggregate: agg };
 }
 
 /**
@@ -281,7 +284,8 @@ async function getInteractionAggregate(
   let slide = await getInteractionSlide({ sessionId, slideId });
   if (!slide) return null;
   if (optionCount != null && clampInt(optionCount, 0, MAX_OPTIONS) !== slide.optionCount) {
-    slide = (await updateInteractionSlide({ sessionId, slideId, optionCount })) || slide;
+    const reconciled = await updateInteractionSlide({ sessionId, slideId, optionCount });
+    if (reconciled.ok) slide = reconciled.slide;
     await pruneOutOfRangeVotes(slide.id, slide.optionCount);
   }
   return aggregateForDevice(slide, deviceId);
@@ -307,13 +311,14 @@ async function voteInteraction(
   const sid = String(slideId || '').trim();
   if (!sid || !did) return { ok: false, reason: 'bad_request' };
 
-  const slide = await ensureInteractionSlide({
+  const ensured = await ensureInteractionSlide({
     sessionId,
     slideId: sid,
     type: normalizeInteractionType(type),
     optionCount,
   });
-  if (!slide) return { ok: false, reason: 'no_session' };
+  if (!ensured.ok) return { ok: false, reason: 'no_session' };
+  const slide = ensured.slide;
   await pruneOutOfRangeVotes(slide.id, slide.optionCount);
   if (slide.status === 'closed') return { ok: false, reason: 'closed' };
 
@@ -337,7 +342,8 @@ async function voteInteraction(
   });
   // A vote is a change to the interaction, so it moves `updated_at` — the
   // timestamp clients use to tell a fresh aggregate from a replayed one.
-  const touched = (await updateInteractionSlide({ sessionId, slideId: sid })) || slide;
+  const bumped = await updateInteractionSlide({ sessionId, slideId: sid });
+  const touched = bumped.ok ? bumped.slide : slide;
 
   const agg = await aggregateForDevice(touched, did);
   scheduleInteractionBroadcast(scope, sessionId, sid);
@@ -350,7 +356,9 @@ async function voteInteraction(
  * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
- * @returns {Promise<object|null>}
+ * @returns {Promise<{ok: true, aggregate: object}|{ok: false, reason: string}>}
+ *   `invalid` for a blank id, `not_found` when the slide has no interaction
+ *   (it was never ensured, or the session expired mid-request).
  */
 async function setInteractionStatus(
   scope,
@@ -358,15 +366,16 @@ async function setInteractionStatus(
   { slideId = '', status = 'open', optionCount = null } = {}
 ) {
   const existing = await getInteractionSlide({ sessionId, slideId });
-  if (!existing) return null;
+  if (!existing) return { ok: false, reason: 'not_found' };
 
-  const slide = await updateInteractionSlide({
+  const updated = await updateInteractionSlide({
     sessionId,
     slideId,
     status,
     ...(optionCount != null ? { optionCount } : {}),
   });
-  if (!slide) return null;
+  if (!updated.ok) return updated;
+  const slide = updated.slide;
   if (optionCount != null) await pruneOutOfRangeVotes(slide.id, slide.optionCount);
 
   const agg = await aggregateForDevice(slide, null);
@@ -384,7 +393,7 @@ async function setInteractionStatus(
     }).catch(() => {});
   }
 
-  return agg;
+  return { ok: true, aggregate: agg };
 }
 
 /**
@@ -393,15 +402,18 @@ async function setInteractionStatus(
  * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
- * @returns {Promise<object|null>}
+ * @returns {Promise<{ok: true, aggregate: object}|{ok: false, reason: string}>}
+ *   `invalid` for a blank id, `not_found` when the slide has no interaction
+ *   (it was never ensured, or the session expired mid-request).
  */
 async function resetInteraction(scope, sessionId, { slideId = '', optionCount = null } = {}) {
-  const slide = await updateInteractionSlide({
+  const updated = await updateInteractionSlide({
     sessionId,
     slideId,
     ...(optionCount != null ? { optionCount } : {}),
   });
-  if (!slide) return null;
+  if (!updated.ok) return updated;
+  const slide = updated.slide;
 
   await withDbGuard(undefined, async (db) => {
     await db.deleteFrom('interaction_votes').where('interaction_id', '=', slide.id).execute();
@@ -409,7 +421,7 @@ async function resetInteraction(scope, sessionId, { slideId = '', optionCount = 
 
   const agg = await aggregateForDevice(slide, null);
   scheduleInteractionBroadcast(scope, sessionId, slide.slideId, { immediate: true });
-  return agg;
+  return { ok: true, aggregate: agg };
 }
 
 // ---- Poll wrappers (back-compat) ----
