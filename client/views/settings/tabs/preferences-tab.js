@@ -4,6 +4,7 @@
  */
 
 import { h } from '../../../lib/dom.js';
+import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import {
@@ -184,11 +185,9 @@ export function createPreferencesTab({ user, nav }) {
   });
 
   // Allow view attribution toggle
-  const allowAttributionCheck = h('input', { type: 'checkbox' });
-  const allowAttributionLabel = h('label', { class: 'admin-checkbox-item' }, [
-    allowAttributionCheck,
-    h('span', { text: t('settings.privacy.allowAttribution', 'Allow my name to be shown in engagement insights') }),
-  ]);
+  const { element: allowAttributionLabel, input: allowAttributionCheck } = labeledCheckbox({
+    text: t('settings.privacy.allowAttribution', 'Allow my name to be shown in engagement insights'),
+  });
   const allowAttributionHint = h('div', {
     class: 'help',
     text: t(
@@ -198,11 +197,9 @@ export function createPreferencesTab({ user, nav }) {
   });
 
   // Disable all tracking toggle
-  const disableTrackingCheck = h('input', { type: 'checkbox' });
-  const disableTrackingLabel = h('label', { class: 'admin-checkbox-item' }, [
-    disableTrackingCheck,
-    h('span', { text: t('settings.privacy.disableTracking', 'Opt out of all engagement tracking') }),
-  ]);
+  const { element: disableTrackingLabel, input: disableTrackingCheck } = labeledCheckbox({
+    text: t('settings.privacy.disableTracking', 'Opt out of all engagement tracking'),
+  });
   const disableTrackingHint = h('div', {
     class: 'help',
     text: t(
@@ -236,11 +233,10 @@ export function createPreferencesTab({ user, nav }) {
   });
 
   // Digest enabled toggle
-  const digestEnabledCheck = h('input', { type: 'checkbox', checked: true });
-  const digestEnabledLabel = h('label', { class: 'admin-checkbox-item' }, [
-    digestEnabledCheck,
-    h('span', { text: t('settings.digest.enabled', 'Send weekly engagement digest') }),
-  ]);
+  const { element: digestEnabledLabel, input: digestEnabledCheck } = labeledCheckbox({
+    text: t('settings.digest.enabled', 'Send weekly engagement digest'),
+    checked: true,
+  });
 
   // Digest day of week
   const digestDaySelect = h('select', { class: 'select', 'aria-label': t('settings.digest.dayOfWeek', 'Send digest on') }, [
@@ -315,11 +311,9 @@ export function createPreferencesTab({ user, nav }) {
   thicknessLabel.append(thicknessRow);
 
   // Persistent draw toggle
-  const persistentDrawCheck = h('input', { type: 'checkbox' });
-  const persistentDrawLabel = h('label', { class: 'admin-checkbox-item' }, [
-    persistentDrawCheck,
-    h('span', { text: t('settings.highlighter.persistentDraw', 'Keep drawings visible until cleared') }),
-  ]);
+  const { element: persistentDrawLabel, input: persistentDrawCheck } = labeledCheckbox({
+    text: t('settings.highlighter.persistentDraw', 'Keep drawings visible until cleared'),
+  });
   const persistentDrawHint = h('div', {
     class: 'help',
     text: t(

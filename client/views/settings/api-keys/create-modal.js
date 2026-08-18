@@ -3,6 +3,7 @@
  */
 
 import { h } from '../../../lib/dom.js';
+import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
@@ -129,20 +130,15 @@ export function showCreateModal(onSuccess) {
   ];
 
   for (const permission of permissions) {
-    const checkbox = h('input', {
-      type: 'checkbox',
-      value: permission.value,
-      'data-permission': permission.value,
-    });
-    if (permission.defaultChecked) checkbox.checked = true;
-
-    const checkRow = h('label', { class: 'api-key-permission-checkbox' }, [
-      checkbox,
-      h('div', { class: 'api-key-permission-text' }, [
+    const { element: checkRow } = labeledCheckbox({
+      className: 'api-key-permission-checkbox',
+      checked: permission.defaultChecked,
+      inputAttrs: { value: permission.value, 'data-permission': permission.value },
+      content: h('div', { class: 'api-key-permission-text' }, [
         h('span', { class: 'api-key-permission-label', text: permission.label }),
         h('span', { class: 'api-key-permission-desc', text: permission.desc }),
       ]),
-    ]);
+    });
     permissionCheckboxes.append(checkRow);
   }
 

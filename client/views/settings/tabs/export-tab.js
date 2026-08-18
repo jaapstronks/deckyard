@@ -4,6 +4,7 @@
  */
 
 import { h } from '../../../lib/dom.js';
+import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { api } from '../../../lib/api.js';
@@ -61,21 +62,22 @@ export function createExportTab({ user }) {
 
   const createCheckbox = (key, label, description) => {
     const id = `export-opt-${key}`;
-    const item = h('label', { class: 'admin-checkbox-item', for: id });
-    const input = h('input', { type: 'checkbox', id });
-    const text = h('span');
-
-    const labelEl = h('span', {
-      style: 'font-size: var(--ps-text-sm); color: hsl(var(--app-text-primary));',
-      text: label,
+    const text = h('span', {}, [
+      h('span', {
+        style: 'font-size: var(--ps-text-sm); color: hsl(var(--app-text-primary));',
+        text: label,
+      }),
+      h('div', {
+        class: 'help',
+        style: 'margin: 0;',
+        text: description,
+      }),
+    ]);
+    const { element: item, input } = labeledCheckbox({
+      content: text,
+      inputAttrs: { id },
+      labelAttrs: { for: id },
     });
-    const descEl = h('div', {
-      class: 'help',
-      style: 'margin: 0;',
-      text: description,
-    });
-    text.append(labelEl, descEl);
-    item.append(input, text);
     checkboxes[key] = input;
     return item;
   };

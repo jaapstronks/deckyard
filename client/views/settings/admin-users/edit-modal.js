@@ -3,6 +3,7 @@
  */
 
 import { h } from '../../../lib/dom.js';
+import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { api } from '../../../lib/api.js';
@@ -175,23 +176,17 @@ export async function showEditModal(targetUser, onSuccess) {
   );
 
   // Designer capability toggle
-  const designerRow = h('label', {
-    class: 'form-checkbox-row',
-    style: 'display: flex; align-items: center; gap: 8px; margin-top: 4px;',
-  });
-  const designerCheckbox = h('input', {
-    type: 'checkbox',
-    checked: Boolean(targetUser.isExplicitDesigner),
-  });
-  const designerLabel = h('span', {
+  const { element: designerRow, input: designerCheckbox } = labeledCheckbox({
     text: t('admin.users.designerCapability', 'Designer'),
+    className: 'form-checkbox-row',
+    checked: Boolean(targetUser.isExplicitDesigner),
+    labelAttrs: { style: 'display: flex; align-items: center; gap: 8px; margin-top: 4px;' },
   });
   const designerHelp = h('div', {
     class: 'help',
     text: t('admin.users.designerHelp', 'Can manage themes and slide types. Admins and owners have this by default.'),
     style: 'font-size: 11px; margin-top: 2px;',
   });
-  designerRow.append(designerCheckbox, designerLabel);
 
   const status = h('div', { class: 'help modal-status' });
 
