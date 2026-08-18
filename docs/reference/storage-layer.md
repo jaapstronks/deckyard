@@ -230,17 +230,17 @@ sits. Measured on 2026-08-18: 386 `return { ok …` statements against 106
 `return null` statements, and nearly all of the latter are in reads, where
 `null` is correct.
 
-**Eighteen mutation exports still signal failure with `null`.** Nine do so
-in their own body — the live-session surface (`live-sessions/sessions.js`,
-`live-sessions/sse.js`, `live-sessions/control.js`) and the
-interaction/feedback surface (`interaction-slides.js`, `feedback.js`) — and
+**Fourteen mutation exports still signal failure with `null`.** Five do so
+in their own body — the interaction/feedback surface (`interaction-slides.js`,
+`feedback.js`; the live-session surface was swept to `{ ok, reason }` on the
+same day) — and
 nine more do so by handing their answer straight to a module-private helper
 that returns `null`: the poll and likert exports in `interactions.js`,
 `updateImageLibraryItem` (`image-library/index.js`), and `restorePresentation`
 / `duplicatePresentation` (`presentations/index.js`). They are carried in
 [`tests/storage-call-convention-burndown.json`](../../tests/storage-call-convention-burndown.json),
 a shrink-only allowlist; `tests/storage-call-convention.test.js` fails on a
-nineteenth. The list may only get shorter.
+fifteenth. The list may only get shorter.
 
 The gate is a syntax check with stated edges, not a proof. It follows
 delegation exactly one level and only in return position (`return helper(…)`
