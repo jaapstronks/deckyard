@@ -276,14 +276,15 @@ async function handleDuplicate(ctx, id) {
     actorEmail: apiKey.ownerEmail,
   });
 
-  if (!duplicated) {
+  if (!duplicated.ok) {
     await apiError(ctx, 500, 'Failed to duplicate presentation');
     return true;
   }
 
-  const tags = await getTagsForPresentation(storageScope, duplicated.id);
+  const copy = duplicated.presentation;
+  const tags = await getTagsForPresentation(storageScope, copy.id);
   await apiCreated(ctx, {
-    presentation: sanitizePresentation(duplicated, tags, apiKey.ownerEmail),
+    presentation: sanitizePresentation(copy, tags, apiKey.ownerEmail),
   });
   return true;
 }

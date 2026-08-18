@@ -1,5 +1,1 @@
-[
-  "server/storage/image-library/index.js :: updateImageLibraryItem :: mutation-returns-null-via-updateImage",
-  "server/storage/presentations/index.js :: duplicatePresentation :: mutation-returns-null-via-duplicatePresentationRow",
-  "server/storage/presentations/index.js :: restorePresentation :: mutation-returns-null-via-restorePresentationRow"
-]
+[]

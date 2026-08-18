@@ -163,7 +163,8 @@ async function handleReplaceUpload({ repoRoot, storageScope, req, res, authedUse
 
   await replaceUploadFromDataUrl(repoRoot, item.url, dataUrl);
   const updated = await updateImageLibraryItem(storageScope, imageId, {});
-  serveJson(res, 200, updated);
+  if (!updated.ok) return notFound(res);
+  serveJson(res, 200, updated.image);
   return true;
 }
 
@@ -201,15 +202,15 @@ async function handleImageItem({ storageScope, req, res, authedUser }, imageId) 
     if (!parsed.ok) return true;
     const body = parsed.body;
     const updated = await updateImageLibraryItem(storageScope, imageId, body);
-    if (!updated) return notFound(res);
-    serveJson(res, 200, updated);
+    if (!updated.ok) return notFound(res);
+    serveJson(res, 200, updated.image);
     return true;
   }
   if (req.method === 'DELETE') {
     if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
     if (!authedUser?.isAdmin) return unauthorized(res, 'Admin required');
-    const ok = await deleteImageLibraryItem(storageScope, imageId);
-    if (!ok) return notFound(res);
+    const deleted = await deleteImageLibraryItem(storageScope, imageId);
+    if (!deleted.ok) return notFound(res);
     serveJson(res, 200, { ok: true });
     return true;
   }

@@ -281,6 +281,8 @@ export async function listTrashedPresentations(storageScope) {
  * Restore a presentation out of the trash.
  * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} id
+ * @returns {Promise<{ok: true, presentation: Object}|{ok: false, reason: string}>}
+ *   `not_found` when no trashed deck with that id lives in this organization.
  */
 export async function restorePresentation(storageScope, id) {
   try {
@@ -310,6 +312,8 @@ export async function permanentlyDeletePresentation(storageScope, id) {
  * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} id
  * @param {Object} [opts]
+ * @returns {Promise<{ok: true, presentation: Object}|{ok: false, reason: string}>}
+ *   `not_found` when the source deck is not visible in this organization.
  */
 export async function duplicatePresentation(storageScope, id, opts) {
   const ctx = toStorageContext(storageScope, 'duplicatePresentation', {
@@ -1014,8 +1018,8 @@ async function restorePresentationRow(id, ctx) {
     .returningAll()
     .executeTakeFirst();
 
-  if (!row) return null;
-  return mapPresentationRow(row);
+  if (!row) return { ok: false, reason: 'not_found' };
+  return { ok: true, presentation: mapPresentationRow(row) };
 }
 
 /**
@@ -1039,10 +1043,11 @@ async function permanentlyDeletePresentationRow(id, ctx) {
 /**
  * @param {string} id
  * @param {object} ctx - Storage context
+ * @returns {Promise<{ok: true, presentation: Object}|{ok: false, reason: string}>}
  */
 async function duplicatePresentationRow(id, ctx) {
   const existing = await getPresentationRow(id, ctx);
-  if (!existing) return null;
+  if (!existing) return { ok: false, reason: 'not_found' };
 
   const slideIdMap = new Map();
   const mapSlides = (slides) => {
@@ -1070,7 +1075,7 @@ async function duplicatePresentationRow(id, ctx) {
   const prefix = lang === 'en-GB' ? 'Copy of ' : 'Kopie van ';
   const newTitle = prefix + existing.title;
 
-  return createPresentationRow(
+  const created = await createPresentationRow(
     {
       title: newTitle,
       theme: existing.theme,
@@ -1081,6 +1086,7 @@ async function duplicatePresentationRow(id, ctx) {
     },
     ctx
   );
+  return { ok: true, presentation: created };
 }
 
 /**

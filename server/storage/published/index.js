@@ -247,14 +247,16 @@ export async function upsertPublishedEntry(
  * Unpublish: drop the publish entry within the storageScope's organization.
  * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} publishId
- * @returns {Promise<boolean>}
+ * @returns {Promise<{ok: true}|{ok: false, reason: string}>}
+ *   `invalid` for a blank id, `not_found` when no such entry exists here.
  */
 export async function removePublishedEntry(storageScope, publishId) {
   const ctx = resolveScope(storageScope, 'removePublishedEntry');
   const id = String(publishId || '').trim();
-  if (!id) return false;
+  if (!id) return { ok: false, reason: 'invalid' };
 
-  return deletePublishedRow(id, ctx);
+  const deleted = await deletePublishedRow(id, ctx);
+  return deleted ? { ok: true } : { ok: false, reason: 'not_found' };
 }
 
 /**
