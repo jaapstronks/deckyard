@@ -24,10 +24,11 @@ create CTA instead of empty sections that read as "broken".
 ## Building-blocks shelf
 
 Replaces the old theme-picker "start something new" zone. Cards: a dashed
-**Blank presentation** (always present), slide **collections** (team first,
-capped), then recent individual **team slides**. Clicking a block opens the
+**Blank presentation** (always present), slide **collections** (the
+organization shelf first, capped), then recent individual **organization-shelf
+slides**. Clicking a block opens the
 creation view pre-seeded (`onComposeFrom` → `preselect`). A subtle **"New to
-you"** corner badge flags team-scope items the current user has never started a
+you"** corner badge flags organization-shelf items the current user has never started a
 deck from; it clears after first use. Usage is tracked per-user in
 `slide_library_usage` (see `deck-creation-and-reuse.md`).
 

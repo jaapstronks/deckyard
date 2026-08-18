@@ -66,7 +66,7 @@ authorization doctrines**:
   an organization — loudly, with a `TypeError` naming the convention.
 - ctx-at-the-tail went through `getOrgId(ctx)`, which *guessed*: a missing or
   scope-less ctx silently fell back to the default organization and read
-  from the wrong workspace. (That fallback is gone — `getOrgId` refuses too
+  from the wrong organization. (That fallback is gone — `getOrgId` refuses too
   now; see the boundary section below.)
 
 A mandatory first parameter cannot be forgotten — leave it off and every

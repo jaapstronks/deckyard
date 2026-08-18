@@ -53,7 +53,7 @@ ordered `slideIds[]`, timestamps.
 - **Storage**: migration `046_slide_collections.js` (`slide_collections` +
   ordered `slide_collection_items`) with the Postgres `withCollections` mixin.
   Facade `server/storage/collections/index.js` applies the personal-owner and
-  team-creator/admin guards.
+  organization-shelf guards.
 - **API:** `/api/slide-collections` (GET/POST/PATCH/DELETE + reorder), same
   shelf/authz conventions as `server/routes/api/slide-library.js` (the shared
   shelf lives under the `/organization` segment).
@@ -82,9 +82,18 @@ Their job is covered by Duplicate + the library + Collections. Former kit decks
 are now normal organization decks, editable and duplicable under the usual
 organization rules. `isViewOnly` is a separate, still-supported concept.
 
-## Known limitation
+## Composing keeps both languages
 
-On Postgres installs the slide-library adapter's `mapSlideLibraryRow` does not
-surface `i18n`, so composed decks fall back to single-language content
-(file-mode keeps NL+EN). The compose path degrades gracefully; storing and
-returning library-item i18n from the adapter is a separate storage task.
+A library item stores per-language content under `i18n.versions[<lang>].content`,
+and every hop of the compose path carries it: `mapSlideLibraryRow`
+(`server/storage/slide-library/index.js`) returns `i18n` on the item, the
+internal `/api/slide-library` routes serve that object as-is,
+`buildSlidesFromLibraryItems` (`client/lib/slide-library/compose.js`) forwards
+each available language as `contentByLang`, and `prepareNewPresentation`
+(`server/storage/presentations/crud/factory.js`) expands that into one i18n
+version per language, sharing a stable slide id across versions. A slide with
+no multilingual content falls back to a single version.
+
+Pinned by `tests/slide-library-compose-i18n.test.js` (both halves of the
+round-trip) and `tests/pg/slide-library-i18n-storage.pgtest.js` (create,
+read-back and update against real PostgreSQL).
