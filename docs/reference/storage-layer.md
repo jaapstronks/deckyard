@@ -225,34 +225,44 @@ that call kind's own failure shape.
 
 ### Implementation status: failure shapes
 
-The convention above is the target, and it is where the layer already mostly
-sits. Measured on 2026-08-18: 386 `return { ok …` statements against 106
-`return null` statements, and nearly all of the latter are in reads, where
-`null` is correct.
+**No mutation export signals failure with `null` any more.**
+[`tests/storage-call-convention-burndown.json`](../../tests/storage-call-convention-burndown.json)
+is `[]`, and `tests/storage-call-convention.test.js` stays on as a regression
+guard: it fails on the first export that reintroduces the shape, and the list
+is shrink-only, so a violation cannot be waved through by appending to it.
 
-**Fourteen mutation exports still signal failure with `null`.** Five do so
-in their own body — the interaction/feedback surface (`interaction-slides.js`,
-`feedback.js`; the live-session surface was swept to `{ ok, reason }` on the
-same day) — and
-nine more do so by handing their answer straight to a module-private helper
-that returns `null`: the poll and likert exports in `interactions.js`,
-`updateImageLibraryItem` (`image-library/index.js`), and `restorePresentation`
-/ `duplicatePresentation` (`presentations/index.js`). They are carried in
-[`tests/storage-call-convention-burndown.json`](../../tests/storage-call-convention-burndown.json),
-a shrink-only allowlist; `tests/storage-call-convention.test.js` fails on a
-fifteenth. The list may only get shorter.
+The sweep ran in three steps: the live-session surface (#825), the
+interaction/feedback cluster, and the presentation trash/duplicate,
+image-library and publishing exports. The two boolean-shaped verdicts the gate
+could not see went with them — `deleteImageLibraryItem` and
+`removePublishedEntry` now answer `{ ok: true }` / `{ ok: false, reason }`
+rather than `true`/`false`. A boolean that is a *payload* is untouched and
+stays correct: `toggleImageFavorite` returns the new favourite state, not "it
+worked".
 
-The gate is a syntax check with stated edges, not a proof. It follows
+Behaviour is pinned against a real database, both directions per export, in
+`tests/pg/live-sessions.pgtest.js`, `tests/pg/live-interactions.pgtest.js` and
+`tests/pg/storage-mutation-shapes.pgtest.js` — a static gate cannot tell which
+branch PostgreSQL actually takes.
+
+The gate is a syntax check with stated edges, not a proof, so drift it cannot
+see is still drift rather than something the convention permits. It follows
 delegation exactly one level and only in return position (`return helper(…)`
 to a same-module private function), so a `null` reached through an imported
 helper or stored in a variable first reads as clean. It only looks at exports
 whose name starts with a mutation verb from its whitelist, so a new
-state-changing verb must be added there before the gate sees it. And it
-cannot judge `return false`, because a boolean is as often the payload as the
-verdict (`toggleImageFavorite` returns the *new* favourite state, not "it
-worked"); `removePublishedEntry` is a real boolean-shaped failure the gate will
-not catch. All of that is drift the burndown does not cover, not drift that is
-allowed.
+state-changing verb must be added there before the gate sees it. And it cannot
+judge `return false` at all, which is why the two boolean verdicts above needed
+finding by hand.
+
+Two known gaps sit outside the shape itself. The reasons on the audience-facing
+interaction exports (`voteInteraction`, `submitFeedback`) still read
+`bad_request` / `no_session` / `empty` rather than the vocabulary above;
+normalizing them moves HTTP statuses through `getErrorStatus()`, so it is a
+behaviour change and needs its own pass. And several facades let a malformed
+caller id reach PostgreSQL, which raises `22P02` on a `uuid` column instead of
+the facade answering `invalid` — a throw where the convention wants a
+non-throwing failure branch.
 
 ## Authz & tenancy
 

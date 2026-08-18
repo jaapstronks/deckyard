@@ -127,7 +127,9 @@ async function maybeBroadcast(scope, sessionId, agg) {
  * @param {object} [opts]
  * @param {string} [opts.slideId]
  * @param {'open'|'closed'} [opts.defaultStatus]
- * @returns {Promise<object|null>} The aggregate, or null when there is no such session.
+ * @returns {Promise<{ok: true, aggregate: object}|{ok: false, reason: string}>}
+ *   The reason is whatever `ensureInteractionSlide` answered — `invalid` for a
+ *   blank id, `not_found` when there is no such session.
  */
 export async function ensureFeedbackForSlide(
   scope,
@@ -135,18 +137,18 @@ export async function ensureFeedbackForSlide(
   { slideId = '', defaultStatus = 'open' } = {}
 ) {
   toStorageContext(scope, 'ensureFeedbackForSlide', {}, { allowCrossOrganization: true });
-  const slide = await ensureInteractionSlide({
+  const ensured = await ensureInteractionSlide({
     sessionId,
     slideId,
     type: 'feedback',
     optionCount: 0,
     defaultStatus,
   });
-  if (!slide) return null;
+  if (!ensured.ok) return ensured;
 
-  const agg = await aggregateForDevice(slide, null);
+  const agg = await aggregateForDevice(ensured.slide, null);
   await maybeBroadcast(scope, sessionId, agg);
-  return agg;
+  return { ok: true, aggregate: agg };
 }
 
 /**
@@ -196,13 +198,14 @@ export async function submitFeedback(
 
   // Auto-create so the first respondent never needs a presenter action, the
   // same way a first voter creates a poll's interaction.
-  const slide = await ensureInteractionSlide({
+  const ensured = await ensureInteractionSlide({
     sessionId,
     slideId: sid,
     type: 'feedback',
     optionCount: 0,
   });
-  if (!slide) return { ok: false, reason: 'no_session' };
+  if (!ensured.ok) return { ok: false, reason: 'no_session' };
+  const slide = ensured.slide;
   if (slide.status === 'closed') return { ok: false, reason: 'closed' };
 
   await withDbGuard(undefined, async (db) => {
@@ -223,7 +226,8 @@ export async function submitFeedback(
       )
       .execute();
   });
-  const touched = (await updateInteractionSlide({ sessionId, slideId: sid })) || slide;
+  const bumped = await updateInteractionSlide({ sessionId, slideId: sid });
+  const touched = bumped.ok ? bumped.slide : slide;
 
   const aggForDevice = await aggregateForDevice(touched, did);
   const aggForBroadcast = await aggregateForDevice(touched, null);
@@ -244,7 +248,9 @@ export async function submitFeedback(
  * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
- * @returns {Promise<object|null>}
+ * @returns {Promise<{ok: true, aggregate: object}|{ok: false, reason: string}>}
+ *   `invalid` for a blank id, `not_found` when the slide has no feedback
+ *   interaction (it was never ensured, or the session expired mid-request).
  */
 export async function setFeedbackStatus(
   scope,
@@ -252,11 +258,11 @@ export async function setFeedbackStatus(
   { slideId = '', status = 'open' } = {}
 ) {
   toStorageContext(scope, 'setFeedbackStatus');
-  const slide = await updateInteractionSlide({ sessionId, slideId, status });
-  if (!slide) return null;
-  const agg = await aggregateForDevice(slide, null);
+  const updated = await updateInteractionSlide({ sessionId, slideId, status });
+  if (!updated.ok) return updated;
+  const agg = await aggregateForDevice(updated.slide, null);
   await maybeBroadcast(scope, sessionId, agg);
-  return agg;
+  return { ok: true, aggregate: agg };
 }
 
 /**
@@ -265,12 +271,15 @@ export async function setFeedbackStatus(
  * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
- * @returns {Promise<object|null>}
+ * @returns {Promise<{ok: true, aggregate: object}|{ok: false, reason: string}>}
+ *   `invalid` for a blank id, `not_found` when the slide has no feedback
+ *   interaction (it was never ensured, or the session expired mid-request).
  */
 export async function resetFeedback(scope, sessionId, { slideId = '' } = {}) {
   toStorageContext(scope, 'resetFeedback');
-  const slide = await updateInteractionSlide({ sessionId, slideId });
-  if (!slide) return null;
+  const updated = await updateInteractionSlide({ sessionId, slideId });
+  if (!updated.ok) return updated;
+  const slide = updated.slide;
 
   await withDbGuard(undefined, async (db) => {
     await db
@@ -282,7 +291,7 @@ export async function resetFeedback(scope, sessionId, { slideId = '' } = {}) {
 
   const agg = await aggregateForDevice(slide, null);
   await maybeBroadcast(scope, sessionId, agg);
-  return agg;
+  return { ok: true, aggregate: agg };
 }
 
 /**

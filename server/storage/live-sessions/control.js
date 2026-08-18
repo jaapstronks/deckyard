@@ -129,7 +129,9 @@ export async function sendLiveSessionControlCommand(scope, sessionId, cmd) {
           });
 
           // If this is a live slide, eagerly ensure interaction state exists
-          // (same logic as in live-sessions.js POST /state handler)
+          // (same logic as in live-sessions.js POST /state handler). Pre-warming
+          // is opportunistic, so the `{ ok, reason }` answer is discarded along
+          // with any throw: the first voter creates the interaction anyway.
           const kind = liveInteractionKind(slideType);
           if (kind && slideId) {
             try {

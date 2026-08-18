@@ -76,11 +76,11 @@ export async function handlePresentationRestore({ repoRoot, storageScope, req, r
   }
 
   const restored = await restorePresentation(storageScope, id);
-  if (!restored) {
+  if (!restored.ok) {
     return notFound(res);
   }
 
-  serveJson(res, 200, restored);
+  serveJson(res, 200, restored.presentation);
   return true;
 }
 

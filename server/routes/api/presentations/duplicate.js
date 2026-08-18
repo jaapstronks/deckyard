@@ -28,7 +28,7 @@ export async function handlePresentationDuplicate(
   const created = await duplicatePresentation(storageScope, id, {
     actorEmail: authedUser?.email || null,
   });
-  if (!created) return notFound(res);
-  serveJson(res, 201, created);
+  if (!created.ok) return notFound(res);
+  serveJson(res, 201, created.presentation);
   return true;
 }

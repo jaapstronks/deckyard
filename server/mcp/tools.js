@@ -1159,11 +1159,12 @@ export function registerTools(
     },
     async ({ presentationId }, context) => {
       await getCheckedPresentation(presentationId, context);
-      const dup = await duplicatePresentation(storageScopeOf(context), presentationId, {
+      const duplicated = await duplicatePresentation(storageScopeOf(context), presentationId, {
         ownerEmail: getOwner(context),
         actorEmail: getOwner(context),
       });
-      if (!dup?.id) throw new Error('Duplication failed');
+      if (!duplicated.ok) throw new Error('Duplication failed');
+      const dup = duplicated.presentation;
 
       const result = {
         id: dup.id,

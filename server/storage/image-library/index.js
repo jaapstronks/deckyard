@@ -134,8 +134,8 @@ async function updateImage(id, data, ctx) {
     .returningAll()
     .executeTakeFirst();
 
-  if (!row) return null;
-  return mapImageRow(row);
+  if (!row) return { ok: false, reason: 'not_found' };
+  return { ok: true, image: mapImageRow(row) };
 }
 
 async function deleteImage(id, ctx) {
@@ -148,7 +148,7 @@ async function deleteImage(id, ctx) {
     .where('organization_id', '=', orgId)
     .executeTakeFirst();
 
-  return result.numDeletedRows > 0;
+  return result.numDeletedRows > 0 ? { ok: true } : { ok: false, reason: 'not_found' };
 }
 
 // ============================================================
@@ -267,7 +267,8 @@ export async function createImageLibraryItem(storageScope, input) {
  * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} id
  * @param {Object} patch
- * @returns {Promise<Object|null>}
+ * @returns {Promise<{ok: true, image: Object}|{ok: false, reason: string}>}
+ *   `not_found` when no such image lives in this organization.
  */
 export async function updateImageLibraryItem(storageScope, id, patch) {
   const ctx = toStorageContext(storageScope, 'updateImageLibraryItem');
@@ -278,7 +279,8 @@ export async function updateImageLibraryItem(storageScope, id, patch) {
  * Delete an image library item within the storageScope's organization.
  * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} id
- * @returns {Promise<boolean>}
+ * @returns {Promise<{ok: true}|{ok: false, reason: string}>}
+ *   `not_found` when no such image lives in this organization.
  */
 export async function deleteImageLibraryItem(storageScope, id) {
   const ctx = toStorageContext(storageScope, 'deleteImageLibraryItem');
