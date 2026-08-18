@@ -5,7 +5,7 @@
 import {
   getOpenCommentCount,
   getCommentCountsBySlide,
-} from '../../../storage/presentation-comments.js';
+} from '../../../storage/presentations/comments.js';
 import {
   broadcastToPresentation,
   CommentEventTypes,

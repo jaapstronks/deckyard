@@ -84,7 +84,7 @@ validation it wraps.
 
 Three sites, all in the presentations facade's orbit:
 
-- `server/storage/presentation-cache.js` → `./presentations/index.js`
+- `server/storage/presentations/cache.js` → `./presentations/index.js`
 - `server/storage/presentations/index.js` → `../live-sessions/sse.js`
 - `server/storage/presentations/index.js` → `../../collab/live-apply.js`
 

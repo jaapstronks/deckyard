@@ -27,7 +27,7 @@ import {
   createComment,
   updateComment,
   deleteComment,
-} from '../../../storage/presentation-comments.js';
+} from '../../../storage/presentations/comments.js';
 import {
   recordCommentCreated,
 } from '../../../services/activity-events.js';

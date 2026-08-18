@@ -31,7 +31,7 @@ const { initializeStorage, __resetStorageForTests } = await import(
   '../server/storage/adapters/index.js'
 );
 const { listAccessiblePresentationRefs, listRecentCommentsForOwner } = await import(
-  '../server/storage/presentation-comments.js'
+  '../server/storage/presentations/comments.js'
 );
 
 // An address that owns no decks and is shared none, in any environment.

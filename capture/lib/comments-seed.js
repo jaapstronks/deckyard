@@ -31,7 +31,7 @@ import { initializeStorage, closeStorage } from '../../server/storage/adapters/i
 import {
   createComment,
   resolveComment,
-} from '../../server/storage/presentation-comments.js';
+} from '../../server/storage/presentations/comments.js';
 
 let initialized = false;
 
