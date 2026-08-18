@@ -216,7 +216,7 @@ staging/production distinction beyond running separate instances.
   [`tenant-isolation.md`](tenant-isolation.md)).
 - **Firing** carries no authorization of its own: the triggering request was
   already authorized by the route it happened in (publishing a deck, posting a
-  comment, adding a slide to the team library), and the webhook is a side effect
+  comment, adding a slide to the organization shelf), and the webhook is a side effect
   of that decision.
 - **Payload exposure.** The receiver gets whatever the payload holds regardless
   of who may read the deck: title, description, theme, visibility, the actor's email

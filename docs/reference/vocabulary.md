@@ -48,6 +48,15 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
   `tests/shelf-vocabulary.test.js` pins the slide-library/collections axis to
   `shelf` (never `scope`). `server/db/migrations/` is excluded as the
   historical record.
+- **Doc prose is gated too (B88, 2026-08-18).** The three gates above each
+  carry a `docs/reference/**.md` section, so a reference page cannot keep a
+  loser spelling alive after the code drops it. The needles are per-axis and
+  narrow rather than a blanket word ban: `\bteam\b` would drown in the
+  `team-cards` slide type and its CSS locals, and bare `scope`/`visibility`
+  are legitimate on nearly every page. Exempt in every gate: this file (the
+  register must name a loser spelling to forbid it) and `collab-research.md`
+  (a deliberately frozen phase-0 snapshot); the organization gate also exempts
+  `notion-import.md`, which describes Notion's own workspace concept.
 - **`scope` still legitimately exists** for the storage-scope concept
   (`server/storage/scope.js` — the module and its prose; variables say
   `storageScope`).
@@ -69,6 +78,13 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
   and the client. It never appeared in the public v1 API
   (`sanitizeLibraryItem` omits it) and still does not. "Team" survives only as a
   UI label. Deploying this requires migration 076 to run.
+  **Not finished:** ten storage exports are still *named* for the old value —
+  `listTeamLibrary`, `getTeamLibraryItem`, `createTeamCollection`, … — along
+  with the bulk-export ZIP entry `slide-library/team.json`. The field, the
+  values and the route segment moved; the function names did not. That
+  remainder is tracked separately and is why the doc-prose gate deliberately
+  does not flag `slide-library/team.json`: the doc is describing the code
+  truthfully.
 - **Local, non-persisted use of the word "scope" is not a homonym defect.**
   A view-local variable using "scope" in its ordinary English sense (the
   comments panel's `'slide' | 'deck'` toggle, prose like "scoped to") makes

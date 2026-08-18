@@ -23,6 +23,17 @@
  * local slide/deck toggle, which stays). `scope` remains legitimate elsewhere
  * — this gate only scans the surfaces that carry the ownership filter.
  *
+ * **Doc prose (B88).** The register lives in docs, so the docs are a surface
+ * too: `docs/reference/**.md` is scanned for the ownership filter spelled
+ * `scope` or `visibility`. Unlike the shelf and organization axes, this one
+ * came back clean at the time it was added — the section is preventive, and
+ * the needles are adjacency-based (`scope: owned`, `visibility: shared`)
+ * because bare `scope` and bare `visibility` are both legitimate words for
+ * other meanings on nearly every page. `vocabulary.md` is exempt as the
+ * register itself; `collab-research.md` as a deliberately frozen phase-0
+ * snapshot (the same allowlist reason `tests/docs-paths-resolvable.test.js`
+ * carries).
+ *
  * Run with: node --test tests/listing-filter-vocabulary.test.js
  */
 
@@ -108,5 +119,70 @@ test('the canonical `ownership` spelling is present on every renamed surface', (
     for (const re of required) {
       assert.ok(re.test(text), `${file} must carry the canonical ownership spelling (${re})`);
     }
+  }
+});
+
+// ─── doc prose (B88) ────────────────────────────────────────────────────────
+
+const DOC_DIR = path.join('docs', 'reference');
+const DOC_EXEMPT = new Set([
+  // The register itself: it names the loser spelling in order to forbid it.
+  'vocabulary.md',
+  // A deliberately frozen phase-0 snapshot, allowlisted the same way in
+  // tests/docs-paths-resolvable.test.js.
+  'collab-research.md',
+]);
+
+const DOC_FORBIDDEN = [
+  {
+    label: 'scope as the owned/shared/all listing filter (use ownership)',
+    re: /\bscope['"`]?\s*[:=]\s*['"`]?(owned|shared|all)\b/i,
+  },
+  {
+    label: 'visibility as the owned/shared/all listing filter (use ownership)',
+    re: /\bvisibility['"`]?\s*[:=]\s*['"`]?(owned|shared|all)\b/i,
+  },
+  {
+    label: 'MCP list tool documented with a scope filter (use ownership)',
+    re: /list_(presentations|recent_comments)[^\n]*\bscope\b/,
+  },
+];
+
+function referenceDocs() {
+  const out = [];
+  (function walkDocs(dir) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walkDocs(full);
+      else if (entry.name.endsWith('.md') && !DOC_EXEMPT.has(entry.name)) out.push(full);
+    }
+  })(path.join(repoRoot, DOC_DIR));
+  return out;
+}
+
+test('listing filter vocabulary: reference prose says ownership, never scope/visibility', () => {
+  const violations = [];
+  for (const file of referenceDocs()) {
+    const rel = path.relative(repoRoot, file).split(path.sep).join('/');
+    const lines = fs.readFileSync(file, 'utf8').split('\n');
+    lines.forEach((line, i) => {
+      for (const { label, re } of DOC_FORBIDDEN) {
+        if (re.test(line)) violations.push(`${rel}:${i + 1}  [${label}]  ${line.trim()}`);
+      }
+    });
+  }
+  assert.equal(
+    violations.length,
+    0,
+    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`
+  );
+});
+
+test('the doc-prose exemptions still exist, so the list cannot rot', () => {
+  for (const name of DOC_EXEMPT) {
+    assert.ok(
+      fs.existsSync(path.join(repoRoot, DOC_DIR, name)),
+      `${DOC_DIR}/${name} is exempt but no longer exists`
+    );
   }
 });

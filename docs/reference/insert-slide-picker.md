@@ -122,10 +122,10 @@ Close dismiss it; focus returns to the originating tile.
 When a modal context supplies `loadLibraryStripItems` + `onSeeAllLibrary`, a
 "From your library" strip loads async (never blocking the type grid) and is
 prepended above the categories: up to 8 insertable, non-trashed items split
-across your personal and team libraries (favourites first). The budget is
-weighted by how many slides each scope has but guarantees at least one tile
-from every non-empty scope, so a lone personal slide is never buried under a
-large team library. Each tile inserts the reused slide; "See all" jumps to the
+across your personal and organization shelves (favourites first). The budget is
+weighted by how many slides each shelf has but guarantees at least one tile
+from every non-empty shelf, so a lone personal slide is never buried under a
+large organization shelf. Each tile inserts the reused slide; "See all" jumps to the
 Slide library tab. Hidden entirely on empty/error, and skipped where no library
 tab exists (e.g. the quick-add drawer).
 

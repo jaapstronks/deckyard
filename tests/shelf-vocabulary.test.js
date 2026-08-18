@@ -26,6 +26,25 @@
  * NOT covered: the public v1 API, which never exposed this field
  * (`sanitizeLibraryItem` omits it) and stays scope-free.
  *
+ * **Doc prose (B88).** The register lives in docs, so the docs are a surface
+ * too: `DOC_PROSE` below scans every `docs/reference/**.md` for the loser
+ * spellings of *this axis* — "team library/shelf/slides", "team-scope", the
+ * `personal | team` value pair, `scope: personal`. The needles are that
+ * precise on purpose. A blanket `\bteam\b` would drown in the `team-cards`
+ * slide type, `--team-gap-x` CSS locals, "Leadership Team" sample content and
+ * Notion/Microsoft Teams references, all of which are legitimate.
+ *
+ * Two files are exempt, for opposite reasons: `vocabulary.md` is the register
+ * itself and must be able to name the loser spelling to forbid it, and
+ * `collab-research.md` is a deliberately frozen phase-0 snapshot (the same
+ * allowlist reason `tests/docs-paths-resolvable.test.js` carries).
+ *
+ * Also NOT covered, and deliberately: the ten storage exports still *named*
+ * `listTeamLibrary` / `getTeamCollection` / … . B53 renamed the field, the
+ * values and the route segment but not the function names, so those are a
+ * real remainder rather than something this gate should pretend away — see
+ * the B53 remainder item in docs/plans/TODO.md.
+ *
  * Run with: node --test tests/shelf-vocabulary.test.js
  */
 
@@ -123,5 +142,71 @@ test('the canonical `shelf` spelling is present on every renamed surface', () =>
     for (const re of required) {
       assert.ok(re.test(text), `${file} must carry the canonical shelf spelling (${re})`);
     }
+  }
+});
+
+// ─── doc prose (B88) ────────────────────────────────────────────────────────
+
+// Every `docs/reference/**.md` is scanned for the shelf axis's loser spellings.
+// Needles stay narrow: `team-cards` (a slide type), `--team-gap-x` (CSS locals),
+// sample deck copy and third-party products all say "team" legitimately.
+const DOC_PROSE = {
+  dir: path.join('docs', 'reference'),
+  exempt: new Set([
+    // The register itself: it names the loser spelling in order to forbid it.
+    'vocabulary.md',
+    // A deliberately frozen phase-0 snapshot, allowlisted the same way in
+    // tests/docs-paths-resolvable.test.js.
+    'collab-research.md',
+  ]),
+  forbidden: [
+    { label: 'team library/shelf (the shared shelf is the organization shelf)', re: /\bteam[- ](librar(y|ies)|shelf|shelves)\b/i },
+    { label: 'team slides/collections (say organization-shelf)', re: /\bteam[- ](slides?|collections?)\b/i },
+    { label: 'team-scope (the axis is shelf; the value is organization)', re: /\bteam[- ]scoped?\b/i },
+    { label: "the 'personal | team' value pair (use 'personal' | 'organization')", re: /personal['"`]?\s*\|\s*['"`]?team\b/i },
+    { label: 'scope-as-shelf value (the field is shelf)', re: /\bscope:\s*['"`]?(personal|team)\b/i },
+    // Anchored on /api/ so it catches the retired route segment without
+    // flagging `slide-library/team.json`, the bulk-export ZIP entry — that
+    // filename still says "team" in code, so documenting it truthfully is
+    // right until the code-side rename lands.
+    { label: 'old /api/slide-library/team or /api/slide-collections/team segment', re: /\/api\/slide-(library|collections)\/team\b/ },
+  ],
+};
+
+function referenceDocs() {
+  const abs = path.join(repoRoot, DOC_PROSE.dir);
+  const out = [];
+  (function walk(dir) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.name.endsWith('.md') && !DOC_PROSE.exempt.has(entry.name)) out.push(full);
+    }
+  })(abs);
+  return out;
+}
+
+test('shelf vocabulary: reference prose says shelf/organization, never team-as-shelf', () => {
+  const violations = [];
+  for (const file of referenceDocs()) {
+    const rel = path.relative(repoRoot, file).split(path.sep).join('/');
+    const lines = fs.readFileSync(file, 'utf8').split('\n');
+    lines.forEach((line, i) => {
+      for (const { label, re } of DOC_PROSE.forbidden) {
+        if (re.test(line)) violations.push(`${rel}:${i + 1}  [${label}]  ${line.trim()}`);
+      }
+    });
+  }
+  assert.equal(
+    violations.length,
+    0,
+    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`
+  );
+});
+
+test('the doc-prose exemptions still exist, so the list cannot rot', () => {
+  for (const name of DOC_PROSE.exempt) {
+    const abs = path.join(repoRoot, DOC_PROSE.dir, name);
+    assert.ok(fs.existsSync(abs), `${DOC_PROSE.dir}/${name} is exempt but no longer exists`);
   }
 });

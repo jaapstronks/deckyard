@@ -152,8 +152,8 @@ that one has no id beside it yet.
   consume the whole set. There is deliberately no row cap — B79 had inherited
   `applyPagination()`'s old default 100 as a literal `.limit(100)`, which
   silently dropped the tail for any org past 100 items (corrupting API totals,
-  truncating backups, and — sharpest — making the team-library trash/delete
-  authz guard resolve through the capped list and return a false `not_found` for
+  truncating backups, and — sharpest — making the organization-shelf
+  trash/delete authz guard resolve through the capped list and return a false `not_found` for
   an item outside the newest page). B85 removed the cap and moved the guard to
   resolve its target directly by id. Pushing `limit`/`offset` into SQL is a
   future deliberate feature, not an accidental default; when it lands it is one
