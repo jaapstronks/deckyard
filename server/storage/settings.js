@@ -45,7 +45,7 @@ import { DEFAULT_AI_NAME, DEFAULT_AI_EMAIL } from '../../shared/constants/ai.js'
 import { getAppName } from '../config/branding.js';
 import { envStr } from '../config/utils.js';
 import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
-import { SUBSCRIPTION_LEVELS } from './presentation-subscriptions.js';
+import { SUBSCRIPTION_LEVELS } from './presentations/subscriptions.js';
 
 /**
  * The shared bucket a caller with no e-mail writes to (mirrors the old file

@@ -215,14 +215,14 @@ test('every facade entry point refuses a bare repoRoot', async () => {
 
 // ─── the read funnels in FRONT of the facade take a scope too ──────────────
 //
-// The short-TTL cache (server/storage/presentation-cache.js) calls
+// The short-TTL cache (server/storage/presentations/cache.js) calls
 // getPresentation on the audience hot paths — follow status ticks, interaction
 // state, votes. It kept passing a bare repoRoot after the facade stopped
 // accepting one, which turned every follow-along audience request into a 500.
 // The facade contract above cannot catch that: the cache reaches the facade
 // through a dynamic import, so nothing type-checks the hand-off. These pin it.
 
-const { getPresentationCached } = await import('../server/storage/presentation-cache.js');
+const { getPresentationCached } = await import('../server/storage/presentations/cache.js');
 const { followAudienceScope } = await import('../server/routes/api/follow/helpers.js');
 
 test('the presentation cache passes its caller scope through to the facade', async () => {
@@ -295,7 +295,7 @@ const smallFacades = {
     ['deleteTag', (fn) => fn('tag-1')],
     ['searchTags', (fn) => fn('pre')],
   ],
-  'presentation-ydocs.js': [
+  'presentations/ydocs.js': [
     ['getYDocState', (fn) => fn('/srv', 'deck-1')],
     ['setYDocState', (fn) => fn('/srv', 'deck-1', new Uint8Array([1]))],
     ['deleteYDocState', (fn) => fn('/srv', 'deck-1')],

@@ -3,12 +3,12 @@
  * Replaces in-memory locks with persistent PostgreSQL storage.
  */
 
-import { getOrgId } from '../utils/context.js';
-import { toStorageContext } from './scope.js';
-import { norm, nowIso, isoAfter } from '../utils/normalize.js';
-import { matchesIdentity } from '../../shared/identity-match.js';
-import { resolveIdentityByEmail } from './identity-resolver.js';
-import { withDbGuard } from './utils/db-guard.js';
+import { getOrgId } from '../../utils/context.js';
+import { toStorageContext } from '../scope.js';
+import { norm, nowIso, isoAfter } from '../../utils/normalize.js';
+import { matchesIdentity } from '../../../shared/identity-match.js';
+import { resolveIdentityByEmail } from '../identity-resolver.js';
+import { withDbGuard } from '../utils/db-guard.js';
 
 const LOCK_TTL_MS = 2 * 60 * 1000; // 2 minutes
 

@@ -2,7 +2,7 @@ import { methodNotAllowed, serveJson, notFound } from '../../../utils/http.js';
 import {
   getFollowStateForPresentation,
 } from '../../../storage/live-sessions/index.js';
-import { getPresentationCached } from '../../../storage/presentation-cache.js';
+import { getPresentationCached } from '../../../storage/presentations/cache.js';
 import { computeAudienceCapabilitiesFromState, followAudienceScope } from './helpers.js';
 
 export async function handleFollowState({ repoRoot, req, res }, presentationId) {

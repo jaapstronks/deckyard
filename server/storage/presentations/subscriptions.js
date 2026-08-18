@@ -4,10 +4,10 @@
  * default level; no row means "use the default".
  */
 
-import { getOrgId } from '../utils/context.js';
-import { toStorageContext } from './scope.js';
-import { norm, normalizeEmail, nowIso } from '../utils/normalize.js';
-import { withDbGuard } from './utils/db-guard.js';
+import { getOrgId } from '../../utils/context.js';
+import { toStorageContext } from '../scope.js';
+import { norm, normalizeEmail, nowIso } from '../../utils/normalize.js';
+import { withDbGuard } from '../utils/db-guard.js';
 
 /** Valid subscription levels, most → least verbose. */
 export const SUBSCRIPTION_LEVELS = ['watching', 'participating', 'mentions_only', 'mute'];

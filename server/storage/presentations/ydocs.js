@@ -8,12 +8,12 @@
  * state on the wrong organization's deck.
  */
 
-import { getStorage } from './adapters/index.js';
-import { toStorageContext } from './scope.js';
+import { getStorage } from '../adapters/index.js';
+import { toStorageContext } from '../scope.js';
 
 /**
  * Read the stored Y.Doc state (one merged yjs update) for a presentation.
- * @param {import('./scope.js').StorageScope} storageScope
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} id - Presentation ID
  * @returns {Promise<Uint8Array|null>}
  */
@@ -25,7 +25,7 @@ export async function getYDocState(storageScope, id) {
 
 /**
  * Store the Y.Doc state for a presentation.
- * @param {import('./scope.js').StorageScope} storageScope
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} id - Presentation ID
  * @param {Uint8Array} state - Merged yjs update
  * @returns {Promise<boolean>}
@@ -38,7 +38,7 @@ export async function setYDocState(storageScope, id, state) {
 
 /**
  * Delete the stored Y.Doc state for a presentation.
- * @param {import('./scope.js').StorageScope} storageScope
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} id - Presentation ID
  * @returns {Promise<boolean>}
  */

@@ -26,7 +26,7 @@ import {
   resolveComment,
   reopenComment,
   dismissComment,
-} from '../storage/presentation-comments.js';
+} from '../storage/presentations/comments.js';
 import {
   canActorCommentOnPresentation,
   canActorResolveComment,

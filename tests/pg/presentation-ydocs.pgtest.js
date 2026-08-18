@@ -11,7 +11,7 @@
  *  - the conflict target is the `presentation_id` PRIMARY KEY (migration 040),
  *    so a second write to the same deck replaces the blob in place.
  *
- * It runs through the public facade (server/storage/presentation-ydocs.js) in
+ * It runs through the public facade (server/storage/presentations/ydocs.js) in
  * `STORAGE_MODE=postgres`, the same path the collab server uses.
  */
 
@@ -32,7 +32,7 @@ import {
   deleteYDocState,
   getYDocState,
   setYDocState,
-} from '../../server/storage/presentation-ydocs.js';
+} from '../../server/storage/presentations/ydocs.js';
 
 const storageScope = testScope();
 

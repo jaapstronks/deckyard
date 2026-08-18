@@ -10,7 +10,7 @@
  * That second property is not cosmetic. Every caller hands
  * `createPresentationVersion` the live presentation object it just read from
  * `getPresentation`, which may be a cache entry
- * (`server/storage/presentation-cache.js`) and is used again afterwards — the
+ * (`server/storage/presentations/cache.js`) and is used again afterwards — the
  * restore route reads it for the pre-restore snapshot and then answers the
  * request from it. A mutating strip would erase the owner from a cached deck.
  */

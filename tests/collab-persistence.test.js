@@ -29,7 +29,7 @@ const {
   getYDocState,
   setYDocState,
   deleteYDocState,
-} = await import('../server/storage/presentation-ydocs.js');
+} = await import('../server/storage/presentations/ydocs.js');
 const {
   createPresentation,
   getPresentation,
