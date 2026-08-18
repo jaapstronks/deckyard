@@ -12,11 +12,16 @@ import { touchLiveSession, findMostRecentSessionForPresentation } from './sessio
  * @param {import('../scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {import('node:http').ServerResponse} res
+ * @returns {Promise<(() => void)|null>} The detach handle, or null when there
+ *   is no such session. Attaching a socket is process-local wiring rather than
+ *   a write, so this keeps the read shape (storage-layer.md § Failure
+ *   signalling).
  */
 export async function attachSessionSseClient(scope, sessionId, res) {
   toStorageContext(scope, 'attachSessionSseClient', {}, { allowCrossOrganization: true });
-  const s = await touchLiveSession(scope, sessionId);
-  if (!s) return null;
+  const touched = await touchLiveSession(scope, sessionId);
+  if (!touched.ok) return null;
+  const s = touched.session;
 
   s.clients.add(res);
 
@@ -140,11 +145,20 @@ export function broadcastBranch(
   return { ok: true };
 }
 
+/**
+ * Replace a session's live state and push it to every attached client.
+ *
+ * @param {import('../scope.js').StorageScope} scope
+ * @param {string} sessionId
+ * @param {object} nextState
+ * @returns {Promise<{ok: true, state: object}|{ok: false, reason: string}>}
+ */
 export async function updateLiveSessionState(scope, sessionId, nextState) {
   // Presenter action (state push): the scope states its organization.
   toStorageContext(scope, 'updateLiveSessionState');
-  const s = await touchLiveSession(scope, sessionId);
-  if (!s) return null;
+  const touched = await touchLiveSession(scope, sessionId);
+  if (!touched.ok) return { ok: false, reason: 'not_found' };
+  const s = touched.session;
   const slideId = typeof nextState?.slideId === 'string' ? nextState.slideId : '';
   const slideIndex = Number(nextState?.slideIndex || 0) || 0;
   const slideType = typeof nextState?.slideType === 'string' ? nextState.slideType : '';
@@ -164,7 +178,7 @@ export async function updateLiveSessionState(scope, sessionId, nextState) {
   };
   schedulePersist(s);
   broadcast(scope, sessionId, 'state', s.state).catch(() => {});
-  return s.state;
+  return { ok: true, state: s.state };
 }
 
 // Used by control module (sync surface). Kept here to avoid importing broadcast from main.
