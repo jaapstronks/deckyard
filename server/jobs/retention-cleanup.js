@@ -17,6 +17,7 @@ import { cleanupExpiredShareLinks } from '../storage/share-links/index.js';
 import { deleteOldActivityEvents } from '../storage/activity-events.js';
 import { cleanupExpiredSlideLocks } from '../storage/slide-locks.js';
 import { createLogger } from '../utils/logger.js';
+import { createIntervalJob } from './interval-job.js';
 import { envInt } from '../config/utils.js';
 
 const log = createLogger('retention-cleanup');
@@ -79,7 +80,6 @@ export function scheduleRetentionCleanup({
   activityRetentionDays = ACTIVITY_RETENTION_DAYS,
   intervalMs = DEFAULT_INTERVAL_MS,
 } = {}) {
-  let intervalId = null;
   let isRunning = false;
 
   async function runJob() {
@@ -98,21 +98,8 @@ export function scheduleRetentionCleanup({
     }
   }
 
-  // Run immediately on start
-  runJob();
-
-  // Schedule recurring runs
-  intervalId = setInterval(runJob, intervalMs);
-  intervalId.unref?.(); // Don't keep process alive just for this
-
-  return {
-    stop() {
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
-      }
-    },
-  };
+  // Run immediately on start, then every intervalMs.
+  return createIntervalJob(runJob, { intervalMs, immediate: true });
 }
 
 // ============================================================

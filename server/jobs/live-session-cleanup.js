@@ -30,6 +30,7 @@ import { cleanupExpiredCodes } from '../storage/follow-codes.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { sweepExpiredSessions } from '../storage/live-sessions/db.js';
 import { createLogger } from '../utils/logger.js';
+import { createIntervalJob } from './interval-job.js';
 
 const log = createLogger('live-session-cleanup');
 
@@ -79,18 +80,16 @@ export function scheduleLiveSessionCleanup({ intervalMs = 15 * 60 * 1000 } = {})
   }
 
   // Run immediately, then on interval — the first synchronous sweep collects
-  // what a crash left behind.
-  sweep();
-  const t = setInterval(sweep, Math.max(60_000, Number(intervalMs) || 15 * 60 * 1000));
-  t.unref?.(); // Don't keep process alive just for this
+  // what a crash left behind. The floor guards against a mistyped interval
+  // breaking running sessions.
+  const handle = createIntervalJob(sweep, {
+    intervalMs: Math.max(60_000, Number(intervalMs) || 15 * 60 * 1000),
+    immediate: true,
+  });
   return {
     stop() {
-      stopped = true;
-      try {
-        clearInterval(t);
-      } catch {
-        // ignore
-      }
+      stopped = true; // Also short-circuit a sweep already past its guard.
+      handle.stop();
     },
   };
 }

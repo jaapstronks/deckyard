@@ -8,23 +8,17 @@
  */
 
 import { sweepExpiredMcpSessions } from '../mcp/sse.js';
+import { createIntervalJob } from './interval-job.js';
 
 const SWEEP_INTERVAL_MS = 60_000;
 
 /**
- * Schedule the MCP session sweep.
+ * Schedule the MCP session sweep. No immediate first run: the registry starts
+ * empty, so the first sweep worth doing is a full interval away.
  * @returns {{ stop: () => void }} Job handle.
  */
 export function scheduleMcpSessionSweep() {
-  const t = setInterval(sweepExpiredMcpSessions, SWEEP_INTERVAL_MS);
-  t.unref?.(); // Don't keep process alive just for this
-  return {
-    stop() {
-      try {
-        clearInterval(t);
-      } catch {
-        // ignore
-      }
-    },
-  };
+  return createIntervalJob(sweepExpiredMcpSessions, {
+    intervalMs: SWEEP_INTERVAL_MS,
+  });
 }
