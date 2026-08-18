@@ -15,7 +15,6 @@ import { withPresentations } from './presentations.js';
 import { withImages } from './images.js';
 import { withImageFavorites } from './image-favorites.js';
 import { withSlides } from './slides.js';
-import { withPublished } from './published.js';
 import { withSlideLibraryTags } from './slide-library-tags.js';
 import { withCollections } from './collections.js';
 import { createLogger } from '../../../utils/logger.js';
@@ -42,12 +41,10 @@ class BasePostgresAdapter {
  */
 export const PostgresAdapter = withCollections(
   withSlideLibraryTags(
-    withPublished(
-      withSlides(
-        withImageFavorites(
-          withImages(
-            withPresentations(BasePostgresAdapter)
-          )
+    withSlides(
+      withImageFavorites(
+        withImages(
+          withPresentations(BasePostgresAdapter)
         )
       )
     )
