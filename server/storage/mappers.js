@@ -25,37 +25,6 @@ export function mapImageRow(row) {
 }
 
 /**
- * Map a slide library database row to an API object.
- * @param {object} row - Database row
- * @returns {object}
- */
-export function mapSlideLibraryRow(row) {
-  return {
-    id: row.id,
-    shelf: row.shelf,
-    ownerEmail: row.owner_email,
-    name: row.name,
-    description: row.description || '',
-    slideType: row.slide_type,
-    themeId: row.theme_id,
-    content: row.content || {},
-    i18n: row.i18n || {},
-    favorites: row.favorites || [],
-    trashedAt: row.trashed_at,
-    // Identity travels as a pair (T10 PR F2): the stable `users.id`
-    // (migration 070) beside the display/fallback e-mail. The team-library
-    // trash/delete guard matches on `createdById`; see shared/identity-match.js.
-    trashedBy: row.trashed_by,
-    createdById: row.created_by_user_id || null,
-    createdBy: row.created_by,
-    updatedById: row.updated_by_user_id || null,
-    updatedBy: row.updated_by,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
-/**
  * Map a presentation version database row to an API object (list view).
  * @param {object} row - Database row
  * @returns {object}
