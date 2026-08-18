@@ -84,11 +84,22 @@ export async function seedPresentation(
  * @param {string} [opts.name='Slide']
  * @param {string} [opts.slideType='text']
  * @param {object} [opts.content]
+ * @param {string} [opts.createdAt] - Overrides the `now()` default, to fix ordering.
+ * @param {string} [opts.createdBy] - Seeds the creator e-mail (authz guard subject).
  * @returns {Promise<string>}
  */
 export async function seedSlideLibraryItem(
   db,
-  { organizationId, shelf = 'organization', ownerEmail = null, name = 'Slide', slideType = 'text', content = {} } = {}
+  {
+    organizationId,
+    shelf = 'organization',
+    ownerEmail = null,
+    name = 'Slide',
+    slideType = 'text',
+    content = {},
+    createdAt,
+    createdBy,
+  } = {}
 ) {
   const orgId = organizationId || getDefaultOrganizationId();
   const row = await db
@@ -100,6 +111,8 @@ export async function seedSlideLibraryItem(
       name,
       slide_type: slideType,
       content: JSON.stringify(content),
+      ...(createdAt === undefined ? {} : { created_at: createdAt }),
+      ...(createdBy === undefined ? {} : { created_by: createdBy }),
     })
     .returning('id')
     .executeTakeFirstOrThrow();

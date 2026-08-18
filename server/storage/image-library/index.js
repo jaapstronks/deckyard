@@ -64,11 +64,12 @@ async function listImages(ctx) {
     .selectAll()
     .where('organization_id', '=', orgId)
     .orderBy('created_at', 'desc')
-    // The adapter ran this through applyPagination() with no opts, whose
-    // default caps the result at 100 rows; kept literal to preserve behaviour.
-    // (A hard cap on the image list is a latent limit worth revisiting
-    // separately, not in this behaviour-preserving strip.)
-    .limit(100)
+    // Full organization-scoped set. B79 inherited applyPagination()'s default
+    // 100-row cap as a literal .limit(100), silently dropping the tail for orgs
+    // with >100 images; B85 removed it. The public-api resources route paginates
+    // over it in-memory and bulk-export backs it up, so a hard cap corrupted
+    // totals and dropped data. DB-level pagination is a future deliberate
+    // feature. See docs/reference/storage-layer.md § List reads.
     .execute();
 
   return rows.map(mapImageRow);

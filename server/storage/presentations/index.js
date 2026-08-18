@@ -565,11 +565,13 @@ async function listPresentationRows(ctx) {
     .where('organization_id', '=', orgId)
     .where('trashed_at', 'is', null)
     .orderBy('modified_at', 'desc')
-    // The adapter ran this through applyPagination() with no opts, whose
-    // default caps the result at 100 rows; kept literal to preserve behaviour.
-    // (A hard cap on the presentation list is a latent limit — B85 — worth
-    // revisiting separately, not in this behaviour-preserving strip.)
-    .limit(100)
+    // Full organization-scoped set. B79 inherited applyPagination()'s default
+    // 100-row cap as a literal .limit(100), silently dropping the tail for orgs
+    // with >100 decks; B85 removed it. Consumers treat this as the complete list
+    // (public-api paginates over it in-memory, search scans it, MCP filters it,
+    // bulk-export backs it up), so a hard cap corrupted their totals and dropped
+    // data. DB-level pagination is a future deliberate feature, not this cap.
+    // See docs/reference/storage-layer.md § List reads.
     .execute();
 
   return rows.map((row) => {
@@ -948,9 +950,9 @@ async function listTrashedPresentationRows(ctx) {
     .where('organization_id', '=', orgId)
     .where('trashed_at', 'is not', null)
     .orderBy('trashed_at', 'desc')
-    // Same latent B85 cap as listPresentationRows above: applyPagination()'s
-    // default 100, kept literal to preserve behaviour.
-    .limit(100)
+    // Full organization-scoped trash set; B85 removed the inherited 100-row cap
+    // (see listPresentationRows above and docs/reference/storage-layer.md
+    // § List reads).
     .execute();
 
   return rows.map((row) => {
@@ -1096,9 +1098,10 @@ async function listPresentationVersionRows(presentationId, ctx) {
     .where('presentation_id', '=', presentationId)
     .where('organization_id', '=', orgId)
     .orderBy('created_at', 'desc')
-    // Same latent B85 cap as the presentation listings: applyPagination()'s
-    // default 100, kept literal to preserve behaviour.
-    .limit(100)
+    // Full version history for the deck; B85 removed the inherited 100-row cap
+    // (see listPresentationRows above and docs/reference/storage-layer.md
+    // § List reads). bulk-export walks this per deck, so a cap truncated the
+    // backup of any deck with >100 saved versions.
     .execute();
 
   return rows.map(mapVersionRowSummary);

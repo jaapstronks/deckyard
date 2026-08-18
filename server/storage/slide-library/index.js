@@ -94,11 +94,13 @@ async function listSlideLibraryRows(ctx, opts = {}) {
   }
 
   query = query.orderBy('created_at', 'desc');
-  // The adapter ran this through applyPagination() with no opts, whose default
-  // caps the result at 100 rows; kept literal to preserve behaviour. (A hard
-  // cap on the library list is a latent limit worth revisiting separately, not
-  // in this behaviour-preserving strip.)
-  query = query.limit(100);
+  // Returns the full organization-scoped set. B79 inherited applyPagination()'s
+  // default 100-row cap as a literal .limit(100), which silently dropped the
+  // tail for orgs with >100 items; B85 removed it. Every consumer treats this as
+  // the complete list (the public-api route paginates over it in-memory,
+  // bulk-export backs it up) — DB-level pagination is a future deliberate
+  // feature, not an accidental cap. See docs/reference/storage-layer.md
+  // § List reads.
   const rows = await query.execute();
 
   return rows.map(mapSlideLibraryRow);
@@ -286,9 +288,12 @@ export async function updateTeamLibraryItem(storageScope, id, patch, { actorEmai
 export async function setTeamLibraryItemTrashed(storageScope, id, { trashed, actorEmail, allowTrash } = {}) {
   const ctx = toStorageContext(storageScope, 'setTeamLibraryItemTrashed', { actorEmail });
   if (typeof allowTrash === 'function') {
-    const items = await listSlideLibraryRows(ctx, { shelf: 'organization' });
-    const item = items.find((x) => String(x?.id || '') === String(id || ''));
-    if (!item) return { ok: false, reason: 'not_found' };
+    // Resolve the guard's target directly by id, never through the org list:
+    // that list was capped at 100 rows (B85), so an item past the newest page
+    // would have failed the authz guard with a false not_found. A non-org-shelf
+    // id is not a team item, so it stays not_found here.
+    const item = await getSlideLibraryRow(id, ctx);
+    if (!item || item.shelf !== 'organization') return { ok: false, reason: 'not_found' };
     const ok = await allowTrash(item, { actorEmail });
     if (!ok) return { ok: false, reason: 'forbidden' };
   }
@@ -303,9 +308,12 @@ export async function setTeamLibraryItemTrashed(storageScope, id, { trashed, act
 export async function deleteTeamLibraryItem(storageScope, id, { actorEmail, allowDelete } = {}) {
   const ctx = toStorageContext(storageScope, 'deleteTeamLibraryItem', { actorEmail });
   if (typeof allowDelete === 'function') {
-    const items = await listSlideLibraryRows(ctx, { shelf: 'organization' });
-    const item = items.find((x) => String(x?.id || '') === String(id || ''));
-    if (!item) return { ok: false, reason: 'not_found' };
+    // Resolve the guard's target directly by id, never through the org list:
+    // that list was capped at 100 rows (B85), so an item past the newest page
+    // would have failed the authz guard with a false not_found. A non-org-shelf
+    // id is not a team item, so it stays not_found here.
+    const item = await getSlideLibraryRow(id, ctx);
+    if (!item || item.shelf !== 'organization') return { ok: false, reason: 'not_found' };
     const ok = await allowDelete(item, { actorEmail });
     if (!ok) return { ok: false, reason: 'forbidden' };
   }

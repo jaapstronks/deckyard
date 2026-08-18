@@ -42,11 +42,13 @@ function mapPublishedRow(row) {
 }
 
 /**
- * All published rows of the organization, newest-modified first.
- * The adapter used applyPagination() with no opts, whose default caps the
- * result at 100 rows; kept literal here to preserve behaviour. (A hard cap on
- * the publish index is a latent limit worth revisiting separately, not in this
- * behaviour-preserving strip.)
+ * All published rows of the organization, newest-modified first. Returns the
+ * full organization-scoped set: B79 inherited applyPagination()'s default
+ * 100-row cap as a literal .limit(100), silently dropping the tail for orgs
+ * with >100 published decks; B85 removed it. getPublishedIndex folds this into
+ * an id-keyed map and listPublishedForFeed sorts and slices it, so a hard cap
+ * dropped links and truncated the RSS feed. See
+ * docs/reference/storage-layer.md § List reads.
  * @param {object} ctx - Storage context
  * @returns {Promise<Array<object>>}
  */
@@ -59,7 +61,6 @@ async function listPublishedRows(ctx) {
     .selectAll()
     .where('organization_id', '=', orgId)
     .orderBy('modified_at', 'desc')
-    .limit(100)
     .execute();
 
   return rows.map(mapPublishedRow);
