@@ -3,7 +3,7 @@
  *
  * Migration 063 adds `owner_user_id`, `created_by_user_id` and
  * `updated_by_user_id` beside `owner_email`/`created_by`/`updated_by`, and the
- * PostgreSQL adapter (server/storage/adapters/postgres/presentations.js) now
+ * presentations store (server/storage/presentations/index.js) now
  * populates them via the identity resolver. This file pins what those writes do
  * against real PostgreSQL, on the columns the reads still do NOT use:
  *

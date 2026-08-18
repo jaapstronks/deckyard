@@ -64,11 +64,9 @@ const {
 const { checkActorAccess } = await import(
   '../server/utils/presentation-authz/actor-access.js'
 );
-const { withPresentations } = await import(
-  '../server/storage/adapters/postgres/presentations.js'
+const { __store } = await import(
+  '../server/storage/presentations/index.js'
 );
-
-const PresentationsAdapter = withPresentations(class {});
 
 let passwordHash;
 
@@ -187,8 +185,7 @@ async function sessionUser(email, organizationId) {
  * anyway, which is what "defense in depth" means.
  */
 async function loadDeck(id, organizationId) {
-  const adapter = new PresentationsAdapter();
-  return adapter.getPresentation(id, { organizationId });
+  return __store.getPresentationRow(id, { organizationId });
 }
 
 // ---------------------------------------------------------------------------

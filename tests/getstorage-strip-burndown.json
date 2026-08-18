@@ -1,4 +1,3 @@
 [
-  "server/storage/presentations/index.js",
   "server/storage/presentations/ydocs.js"
 ]

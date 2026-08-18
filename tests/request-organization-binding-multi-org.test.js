@@ -5,7 +5,7 @@
  * every request the default organization, so a person who had switched
  * organizations still read and wrote in the default one. This file walks the whole
  * chain the way a request does — session cookie → `getUserFromRequestAsync` →
- * `createStorageScope` → the Postgres presentations adapter — and pins that the
+ * `createStorageScope` → the Postgres presentations store query — and pins that the
  * organization the session is resolved to is the organization the queries scope
  * on.
  *
@@ -55,11 +55,9 @@ const { hashPassword } = await import('../server/utils/password-hash.js');
 const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const auth = await import('../server/auth/auth.js');
 const { createStorageScope } = await import('../server/utils/context.js');
-const { withPresentations } = await import(
-  '../server/storage/adapters/postgres/presentations.js'
+const { __store } = await import(
+  '../server/storage/presentations/index.js'
 );
-
-const PresentationsAdapter = withPresentations(class {});
 
 let passwordHash;
 
@@ -247,21 +245,20 @@ test('an unverified organization from the synchronous path is ignored', () => {
 
 test('a deck from another organization is invisible', async () => {
   seedTwoOrgs();
-  const adapter = new PresentationsAdapter();
 
   const { ctx: inAlpha } = await contextFor(ORG_A);
   const { ctx: inBeta } = await contextFor(ORG_B);
 
-  assert.ok(await adapter.getPresentation('deck-alpha', inAlpha), 'own deck is readable');
+  assert.ok(await __store.getPresentationRow('deck-alpha', inAlpha), 'own deck is readable');
   assert.equal(
-    await adapter.getPresentation('deck-beta', inAlpha),
+    await __store.getPresentationRow('deck-beta', inAlpha),
     null,
     "Alpha cannot read Beta's deck"
   );
 
-  assert.ok(await adapter.getPresentation('deck-beta', inBeta), 'own deck is readable');
+  assert.ok(await __store.getPresentationRow('deck-beta', inBeta), 'own deck is readable');
   assert.equal(
-    await adapter.getPresentation('deck-alpha', inBeta),
+    await __store.getPresentationRow('deck-alpha', inBeta),
     null,
     "Beta cannot read Alpha's deck"
   );
@@ -269,10 +266,9 @@ test('a deck from another organization is invisible', async () => {
 
 test("listing decks only returns the active organization's", async () => {
   seedTwoOrgs();
-  const adapter = new PresentationsAdapter();
 
   const { ctx: inBeta } = await contextFor(ORG_B);
-  const listed = await adapter.listPresentations(inBeta);
+  const listed = await __store.listPresentationRows(inBeta);
 
   assert.deepEqual(
     listed.map((p) => p.id),
@@ -283,10 +279,9 @@ test("listing decks only returns the active organization's", async () => {
 
 test('a new deck is created in the active organization', async () => {
   const db = seedTwoOrgs();
-  const adapter = new PresentationsAdapter();
 
   const { ctx: inBeta } = await contextFor(ORG_B);
-  const created = await adapter.createPresentation({ title: 'Written in Beta' }, inBeta);
+  const created = await __store.createPresentationRow({ title: 'Written in Beta' }, inBeta);
 
   const row = db.__tables.presentations.find((p) => p.id === created.id);
   assert.equal(row.organization_id, ORG_B, 'writes land in the organization being used');
@@ -312,13 +307,12 @@ test('a revoked membership moves the request to the fallback organization', asyn
       },
     ],
   });
-  const adapter = new PresentationsAdapter();
 
   const { ctx } = await contextFor(ORG_A);
   assert.equal(ctx.organizationId, ORG_B, 'oldest remaining membership, per the phase 0 rule');
-  assert.ok(await adapter.getPresentation('deck-beta', ctx), 'her remaining organization works');
+  assert.ok(await __store.getPresentationRow('deck-beta', ctx), 'her remaining organization works');
   assert.equal(
-    await adapter.getPresentation('deck-alpha', ctx),
+    await __store.getPresentationRow('deck-alpha', ctx),
     null,
     'the organization she was removed from is no longer readable'
   );
@@ -338,7 +332,6 @@ test('no membership at all means no context is built', async () => {
 
 test('switching organizations moves the request with it', async () => {
   seedTwoOrgs();
-  const adapter = new PresentationsAdapter();
 
   const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', {
     organizationId: ORG_A,
@@ -365,6 +358,6 @@ test('switching organizations moves the request with it', async () => {
   const ctx = createStorageScope(authedUser);
 
   assert.equal(ctx.organizationId, ORG_B, 'the switch reaches the storage layer');
-  assert.ok(await adapter.getPresentation('deck-beta', ctx));
-  assert.equal(await adapter.getPresentation('deck-alpha', ctx), null);
+  assert.ok(await __store.getPresentationRow('deck-beta', ctx));
+  assert.equal(await __store.getPresentationRow('deck-alpha', ctx), null);
 });

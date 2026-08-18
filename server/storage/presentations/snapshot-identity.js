@@ -4,7 +4,7 @@
  * A snapshot embeds the whole presentation object as one jsonb bag
  * (`presentation_versions.presentation_data`), and a presentation object
  * carries who owns it, who made it and who last touched it — see
- * `mapPresentationRow` in `server/storage/mappers.js`. Storing that copy per
+ * `mapPresentationRow` in `server/storage/presentations/index.js`. Storing that copy per
  * snapshot has two consequences, and neither of them is wanted:
  *
  *  1. **Every historical copy stamps a person's e-mail.** A deck with fifty
@@ -22,7 +22,7 @@
  * write path consumes only `title`, `description`, `settings`, `i18n`,
  * `slides` and `published`; ownership moves solely through the transfer route's
  * `allowOwnerChange` opt-in, and `updated_by` comes from the acting user, not
- * from the body (`server/storage/adapters/postgres/presentations.js`). Restore
+ * from the body (`server/storage/presentations/index.js`). Restore
  * moves slides, never ownership — so the identity of a restored deck is the
  * living deck's, before and after this change. `tests/pg/version-snapshot-identity.pgtest.js`
  * pins that, including for the identity-bearing rows written before this PR.

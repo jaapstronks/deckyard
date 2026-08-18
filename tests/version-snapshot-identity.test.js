@@ -22,7 +22,7 @@ import {
   SNAPSHOT_IDENTITY_FIELDS,
   stripIdentityForSnapshot,
 } from '../server/storage/presentations/snapshot-identity.js';
-import { mapPresentationRow } from '../server/storage/mappers.js';
+import { mapPresentationRow } from '../server/storage/presentations/index.js';
 
 /** A presentation object in the shape `mapPresentationRow` produces. */
 function presentation() {
