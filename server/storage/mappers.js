@@ -82,23 +82,6 @@ export function mapSlideCollectionRow(row, slideIds = []) {
 }
 
 /**
- * Map a published presentation database row to an API object.
- * @param {object} row - Database row
- * @returns {object}
- */
-export function mapPublishedRow(row) {
-  return {
-    id: row.id,
-    presentationId: row.presentation_id,
-    title: row.title,
-    slug: row.slug,
-    ogImageUrl: row.og_image_url,
-    created: row.created_at,
-    modified: row.modified_at,
-  };
-}
-
-/**
  * Map a presentation version database row to an API object (list view).
  * @param {object} row - Database row
  * @returns {object}
