@@ -18,7 +18,6 @@ import { withSlides } from './slides.js';
 import { withPublished } from './published.js';
 import { withSlideLibraryTags } from './slide-library-tags.js';
 import { withCollections } from './collections.js';
-import { withSlideLibraryUsage } from './slide-library-usage.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('postgres');
 
@@ -41,15 +40,13 @@ class BasePostgresAdapter {
 /**
  * Full PostgreSQL adapter composed from all mixins.
  */
-export const PostgresAdapter = withSlideLibraryUsage(
-  withCollections(
-    withSlideLibraryTags(
-      withPublished(
-        withSlides(
-          withImageFavorites(
-            withImages(
-              withPresentations(BasePostgresAdapter)
-            )
+export const PostgresAdapter = withCollections(
+  withSlideLibraryTags(
+    withPublished(
+      withSlides(
+        withImageFavorites(
+          withImages(
+            withPresentations(BasePostgresAdapter)
           )
         )
       )
