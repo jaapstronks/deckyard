@@ -6,6 +6,5 @@
   "server/storage/presentations/ydocs.js",
   "server/storage/published/index.js",
   "server/storage/slide-library-usage/index.js",
-  "server/storage/slide-library/index.js",
-  "server/storage/tags/index.js"
+  "server/storage/slide-library/index.js"
 ]
