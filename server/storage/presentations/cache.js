@@ -9,7 +9,7 @@
  * write path that misses invalidation.
  */
 
-import { repoRootOf } from './scope.js';
+import { repoRootOf } from '../scope.js';
 
 const TTL_MS = 2000;
 const MAX_ENTRIES = 200;
@@ -48,7 +48,7 @@ function sweep(nowTs) {
  * `getPresentation`, so it must state which organization it reads in for the
  * same reason the facade does.
  *
- * @param {import('./scope.js').StorageScope} storageScope
+ * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} id
  * @returns {Promise<any>}
  */
@@ -59,7 +59,7 @@ export async function getPresentationCached(storageScope, id) {
   if (hit && nowTs - hit.at < TTL_MS) return hit.promise;
   // Dynamic import keeps this module free of a static cycle with the facade,
   // which imports invalidatePresentationCache from here.
-  const promise = import('./presentations/index.js')
+  const promise = import('./index.js')
     .then((mod) => mod.getPresentation(storageScope, id))
     .catch((err) => {
       cache.delete(key);

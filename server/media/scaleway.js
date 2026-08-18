@@ -129,9 +129,17 @@ export class ScalewayProvider extends MediaProvider {
     };
   }
 
-  async uploadBuffer({ buffer, filename, contentType }) {
+  async uploadBuffer({ buffer, filename, contentType, maxBytes = MAX_FILE_SIZE }) {
     if (!ALLOWED_CONTENT_TYPES.has(contentType)) {
       throw new ValidationError(`Unsupported content type: ${contentType}`);
+    }
+
+    // Enforce the byte ceiling the caller asked for, exactly as LocalProvider
+    // does. Scaleway silently ignored it before, so a caller's maxBytes bound
+    // (e.g. the Notion re-host) held only on local storage, not on Scaleway.
+    if (buffer.length > maxBytes) {
+      const mb = Math.round(maxBytes / (1024 * 1024));
+      throw new ValidationError(`File too large (max ${mb}MB)`);
     }
 
     const client = await this._getClient();

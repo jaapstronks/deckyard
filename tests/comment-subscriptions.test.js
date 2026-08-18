@@ -20,7 +20,7 @@ import {
   getSubscription,
   setSubscription,
   listSubscriptions,
-} from '../server/storage/presentation-subscriptions.js';
+} from '../server/storage/presentations/subscriptions.js';
 
 const PRES = { id: 'p-1', title: 'Deck', ownerEmail: 'owner@example.com' };
 
