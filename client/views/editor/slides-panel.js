@@ -365,13 +365,13 @@ export function createSlidesPanel({
   };
 
   // Fetch both shelves in parallel so the strip can show a mix of personal and
-  // team slides (the picker splits the available tiles between them).
+  // organization slides (the picker splits the available tiles between them).
   const loadLibraryStripItems = async () => {
-    const [personal, team] = await Promise.all([
+    const [personal, organization] = await Promise.all([
       loadLibraryStripShelf('/api/slide-library/personal'),
       loadLibraryStripShelf('/api/slide-library/organization'),
     ]);
-    return { personal, team };
+    return { personal, organization };
   };
 
   const { renderSlideTypePicker } = createSlideTypePicker({

@@ -243,6 +243,10 @@ const CODE_IDENTIFIERS = {
       re: /\bteamSlides\b|\bcollections[?]?\.team\b/,
     },
     {
+      label: 'two-shelf pair shape { personal, team } (use { personal, organization })',
+      re: /[[{]\s*personal,\s*team\s*[\]}]/,
+    },
+    {
       label: 'bulk-export ZIP entry slide-library/team.json (use organization.json)',
       re: /slide-library\/team\.json/,
     },

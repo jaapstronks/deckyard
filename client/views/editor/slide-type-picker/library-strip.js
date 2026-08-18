@@ -5,10 +5,10 @@
  * when non-empty, and gated by the caller on both a loader and an onSeeAllLibrary
  * handler (modal context with a library tab). Hidden entirely on empty/error.
  *
- * Split across the personal and team shelves: the tile budget is weighted by how
- * many slides each shelf has but guarantees at least one tile from every
- * non-empty shelf, so a lone personal slide is never hidden behind a large team
- * library (and vice versa).
+ * Split across the personal and organization shelves: the tile budget is
+ * weighted by how many slides each shelf has but guarantees at least one tile
+ * from every non-empty shelf, so a lone personal slide is never hidden behind a
+ * large organization library (and vice versa).
  */
 
 import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
@@ -16,22 +16,22 @@ import { applyThumbScale } from './thumbnails.js';
 
 const LIBRARY_STRIP_TOTAL = 8;
 
-const splitLibraryBudget = (pCount, tCount) => {
+const splitLibraryBudget = (pCount, oCount) => {
   let pShow = pCount ? 1 : 0;
-  let tShow = tCount ? 1 : 0;
-  const remaining = LIBRARY_STRIP_TOTAL - pShow - tShow;
+  let oShow = oCount ? 1 : 0;
+  const remaining = LIBRARY_STRIP_TOTAL - pShow - oShow;
   if (remaining > 0) {
     const pRem = pCount - pShow;
-    const tRem = tCount - tShow;
-    if (pRem + tRem > 0) {
-      let addP = Math.min(pRem, Math.round((remaining * pRem) / (pRem + tRem)));
-      let addT = Math.min(tRem, remaining - addP);
-      addP = Math.min(pRem, remaining - addT);
+    const oRem = oCount - oShow;
+    if (pRem + oRem > 0) {
+      let addP = Math.min(pRem, Math.round((remaining * pRem) / (pRem + oRem)));
+      let addO = Math.min(oRem, remaining - addP);
+      addP = Math.min(pRem, remaining - addO);
       pShow += addP;
-      tShow += addT;
+      oShow += addO;
     }
   }
-  return { pShow, tShow };
+  return { pShow, oShow };
 };
 
 /**
@@ -45,7 +45,7 @@ const splitLibraryBudget = (pCount, tCount) => {
  * @param {Function} ctx.labelFor - (type) => resolved label
  * @param {string} [ctx.afterSlideId] - insert anchor for a picked library item
  * @param {Function} [ctx.onPicked] - called after a library item is inserted
- * @param {Function} ctx.loadLibraryStripItems - async () => { personal, team } | items[]
+ * @param {Function} ctx.loadLibraryStripItems - async () => ({ personal, organization })
  * @param {Function} ctx.insertLibraryItem - (item, opts) => insert it
  * @param {Function} ctx.onSeeAllLibrary - (shelf) => open the full library
  * @param {ResizeObserver|null} ctx.resizeObserver - keeps hydrated tiles scaled
@@ -118,19 +118,13 @@ export function mountLibraryStrip(ctx) {
     } catch {
       data = {};
     }
-    // Back-compat: the loader used to return a flat array of personal items;
-    // now it returns { personal, team }. Accept either.
-    const personal = Array.isArray(data)
-      ? data
-      : Array.isArray(data.personal)
-        ? data.personal
-        : [];
-    const team = Array.isArray(data) ? [] : Array.isArray(data.team) ? data.team : [];
-    if (!personal.length && !team.length) return;
+    const personal = Array.isArray(data.personal) ? data.personal : [];
+    const organization = Array.isArray(data.organization) ? data.organization : [];
+    if (!personal.length && !organization.length) return;
     // A newer render replaced this pass while we were loading.
     if (!typesWrap.isConnected) return;
 
-    const { pShow, tShow } = splitLibraryBudget(personal.length, team.length);
+    const { pShow, oShow } = splitLibraryBudget(personal.length, organization.length);
     const groups = [];
     if (pShow) {
       groups.push({
@@ -139,11 +133,11 @@ export function mountLibraryStrip(ctx) {
         items: personal.slice(0, pShow),
       });
     }
-    if (tShow) {
+    if (oShow) {
       groups.push({
         shelf: 'organization',
         label: tr('editor.slideTypeGroup.libraryTeam', 'Team library'),
-        items: team.slice(0, tShow),
+        items: organization.slice(0, oShow),
       });
     }
 
@@ -175,7 +169,7 @@ export function mountLibraryStrip(ctx) {
     };
 
     // Prepend in reverse so the groups land above the category grid in
-    // order (personal on top, then team).
+    // order (personal on top, then organization).
     for (const g of [...groups].reverse()) typesWrap.prepend(buildGroup(g));
     // Re-apply the current filter so a persisted query also filters the strip.
     applyFilter();
