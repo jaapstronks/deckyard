@@ -78,12 +78,13 @@ function ensureCleanupTimer() {
  *
  * @param {import('../scope.js').StorageScope} scope
  * @param {{presentationId: string}} opts
+ * @returns {Promise<{ok: true, sessionId: string, joinPath: string, followCodes: object}|{ok: false, reason: string}>}
  */
 export async function createLiveSession(scope, { presentationId }) {
   toStorageContext(scope, 'createLiveSession');
   ensureCleanupTimer();
   const presId = String(presentationId || '').trim();
-  if (!presId) return null;
+  if (!presId) return { ok: false, reason: 'invalid' };
 
   // Adopt whatever is stored for this deck first, so a session another process
   // (or this one before a restart) started is reused rather than duplicated.
@@ -111,6 +112,7 @@ export async function createLiveSession(scope, { presentationId }) {
     s.lastActivityAt = Date.now();
     schedulePersist(s);
     return {
+      ok: true,
       sessionId: s.sessionId,
       joinPath: `/notes/${s.sessionId}`,
       followCodes,
@@ -142,6 +144,7 @@ export async function createLiveSession(scope, { presentationId }) {
   // another process, and the presenter's very next request may land there.
   await persistSession(s);
   return {
+    ok: true,
     sessionId,
     joinPath: `/notes/${sessionId}`,
     followCodes,
@@ -184,14 +187,18 @@ export async function findMostRecentSessionForPresentation(scope, presentationId
 }
 
 /**
+ * Bump a session's activity clock. A mutation, so it answers in the mutation
+ * shape even though the caller mostly wants the session it hands back.
+ *
  * @param {import('../scope.js').StorageScope} scope
  * @param {string} sessionId
+ * @returns {Promise<{ok: true, session: object}|{ok: false, reason: string}>}
  */
 export async function touchLiveSession(scope, sessionId) {
   toStorageContext(scope, 'touchLiveSession', {}, { allowCrossOrganization: true });
   const s = await getLiveSession(scope, sessionId);
-  if (!s) return null;
+  if (!s) return { ok: false, reason: 'not_found' };
   s.lastActivityAt = Date.now();
   schedulePersist(s);
-  return s;
+  return { ok: true, session: s };
 }

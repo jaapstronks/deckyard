@@ -47,19 +47,27 @@ function calculateNewSlideIndex(currentIndex, action, slideCount, gotoIndex) {
   return currentIndex;
 }
 
+/**
+ * Turn remote control on or off for a session.
+ *
+ * @param {import('../scope.js').StorageScope} scope
+ * @param {string} sessionId
+ * @param {boolean} enabled
+ * @returns {{ok: true, controlEnabled: boolean}|{ok: false, reason: string}}
+ */
 export function setLiveSessionControlEnabled(scope, sessionId, enabled) {
   // Presenter action: the scope states its organization.
   toStorageContext(scope, 'setLiveSessionControlEnabled');
   // Keep sync API surface (called on user interaction)
   const s = getSessionSync(sessionId);
-  if (!s) return null;
+  if (!s) return { ok: false, reason: 'not_found' };
   s.controlEnabled = !!enabled;
   touchSessionSync(s);
   broadcast(scope, sessionId, 'controlEnabled', {
     controlEnabled: !!s.controlEnabled,
     updatedAt: Date.now(),
   }).catch(() => {});
-  return { controlEnabled: !!s.controlEnabled };
+  return { ok: true, controlEnabled: !!s.controlEnabled };
 }
 
 export async function sendLiveSessionControlCommand(scope, sessionId, cmd) {
