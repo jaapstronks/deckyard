@@ -12,8 +12,6 @@
 import { initializeDatabase, closeDatabase } from '../../../db/client.js';
 
 import { withPresentations } from './presentations.js';
-import { withImages } from './images.js';
-import { withImageFavorites } from './image-favorites.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('postgres');
 
@@ -36,8 +34,4 @@ class BasePostgresAdapter {
 /**
  * Full PostgreSQL adapter composed from all mixins.
  */
-export const PostgresAdapter = withImageFavorites(
-  withImages(
-    withPresentations(BasePostgresAdapter)
-  )
-);
+export const PostgresAdapter = withPresentations(BasePostgresAdapter);

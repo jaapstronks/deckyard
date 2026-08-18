@@ -4,27 +4,6 @@
  */
 
 /**
- * Map an image library database row to an API object.
- * @param {object} row - Database row
- * @returns {object}
- */
-export function mapImageRow(row) {
-  return {
-    id: row.id,
-    url: row.url,
-    title: row.title,
-    description: row.description,
-    photographer: row.photographer,
-    tags: row.tags || [],
-    alts: row.alts || {},
-    sources: row.sources || [],
-    uploadedBy: row.uploaded_by || null,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
-/**
  * Map a presentation version database row to an API object (list view).
  * @param {object} row - Database row
  * @returns {object}
