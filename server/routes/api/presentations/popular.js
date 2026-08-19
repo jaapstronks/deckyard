@@ -9,6 +9,10 @@ import { withDbGuard } from '../../../storage/utils/db-guard.js';
 import { getTagsForPresentations } from '../../../storage/tags/index.js';
 import { canReadPresentation } from '../../../utils/presentation-authz.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
+import {
+  resolveDisplayNames,
+  toDisplayIdentity,
+} from '../../../storage/display-identity.js';
 
 /**
  * Get popular presentations based on recent activity.
@@ -72,6 +76,7 @@ export async function getPopularPresentations(ctx) {
         'p.visibility',
         'p.owner_email',
         'p.created_by',
+        'p.updated_by_user_id',
         'p.updated_by',
         'p.created_at',
         'p.modified_at',
@@ -94,6 +99,7 @@ export async function getPopularPresentations(ctx) {
         'p.visibility',
         'p.owner_email',
         'p.created_by',
+        'p.updated_by_user_id',
         'p.updated_by',
         'p.created_at',
         'p.modified_at',
@@ -120,6 +126,7 @@ export async function getPopularPresentations(ctx) {
           'p.visibility',
           'p.owner_email',
           'p.created_by',
+          'p.updated_by_user_id',
           'p.updated_by',
           'p.created_at',
           'p.modified_at',
@@ -198,6 +205,12 @@ async function formatPresentations(rows, ctx) {
   const presentationIds = rows.map((r) => r.id);
   const tagsMap = await getTagsForPresentations(ctx, presentationIds);
 
+  // One batched lookup for the whole board (D22); see
+  // server/storage/display-identity.js.
+  const displayNames = await resolveDisplayNames(
+    rows.map((row) => ({ id: row.updated_by_user_id, email: row.updated_by })),
+  );
+
   return rows.map((row) => {
     // Extract first slide from slides JSONB array
     const slides = Array.isArray(row.slides) ? row.slides : [];
@@ -210,7 +223,11 @@ async function formatPresentations(rows, ctx) {
       visibility: row.visibility,
       ownerEmail: row.owner_email,
       createdBy: row.created_by,
-      updatedBy: row.updated_by,
+      updatedBy: toDisplayIdentity(
+        row.updated_by_user_id,
+        row.updated_by,
+        displayNames,
+      ),
       created: row.created_at,
       modified: row.modified_at,
       hasSlides: !!first,

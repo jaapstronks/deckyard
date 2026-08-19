@@ -9,6 +9,7 @@ import { toast } from '../../../lib/dom/toast.js';
 import { api } from '../../../lib/api.js';
 import { createAvatar, updateAvatar } from '../../../lib/user/avatar.js';
 import { invalidateProfile } from '../../../lib/user/user-profiles.js';
+import { displayNameFromEmail } from '../../../lib/user/user-format.js';
 import { createPasswordSection } from '../sections/index.js';
 import {
   fetchMySettings,
@@ -50,8 +51,8 @@ export function createAccountTab({ user }) {
   const profileImageWrap = h('div', { class: 'profile-image-section' });
 
   const avatarEl = createAvatar({
-    email: user?.email || '',
-    name: user?.name || '',
+    seed: user?.id || user?.email || '',
+    name: user?.name || displayNameFromEmail(user?.email || ''),
     size: 'xl',
     className: 'profile-image-preview',
   });
@@ -131,7 +132,7 @@ export function createAccountTab({ user }) {
           t('settings.profile.imageUploaded', 'Profile photo updated.'),
           { id: 'profile-image', durationMs: 2000 },
         );
-        invalidateProfile(user?.email);
+        invalidateProfile(user?.id);
       }
     } catch (err) {
       toast.error(String(err?.message || err), { id: 'profile-image' });
@@ -157,7 +158,7 @@ export function createAccountTab({ user }) {
         t('settings.profile.imageRemoved', 'Profile photo removed.'),
         { id: 'profile-image', durationMs: 2000 },
       );
-      invalidateProfile(user?.email);
+      invalidateProfile(user?.id);
     } catch (err) {
       toast.error(String(err?.message || err), { id: 'profile-image' });
     } finally {

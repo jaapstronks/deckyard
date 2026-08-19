@@ -35,7 +35,7 @@ export function openConflictModal({
   conflictDetails,
   openOverlayClosers,
 } = {}) {
-  const who = safeString(conflictDetails?.updatedBy || '');
+  const who = safeString(conflictDetails?.updatedBy?.displayName || '');
   const when = conflictDetails?.modified
     ? formatDateTime(conflictDetails.modified)
     : '';

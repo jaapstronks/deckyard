@@ -100,7 +100,7 @@ export function createRemoteRefresh({
       if (fresh.i18n && typeof fresh.i18n === 'object') pres.i18n = fresh.i18n;
       if (typeof fresh.revision === 'number') pres.revision = fresh.revision;
       if (typeof fresh.modified === 'string') pres.modified = fresh.modified;
-      if (typeof fresh.updatedBy === 'string') pres.updatedBy = fresh.updatedBy;
+      if (fresh.updatedBy !== undefined) pres.updatedBy = fresh.updatedBy;
       if (typeof fresh.visibility === 'string')
         pres.visibility = fresh.visibility;
       // Re-point the active-language buffers exactly like the initial load.

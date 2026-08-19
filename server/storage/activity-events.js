@@ -8,6 +8,11 @@ import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { norm, nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
+import {
+  resolveDisplayNames,
+  toStoredActorIdentity,
+  NO_DISPLAY_NAMES,
+} from './display-identity.js';
 
 // ============================================================
 // EVENT TYPES
@@ -87,7 +92,7 @@ export async function createActivityEvent(scope, data) {
 
     return {
       ok: true,
-      event: rowToEvent(row),
+      event: rowToEvent(row, await actorDisplayNames([row])),
     };
   });
 }
@@ -164,9 +169,10 @@ export async function listActivityEvents(scope, opts = {}) {
     query = query.orderBy('created_at', 'desc').limit(limit).offset(offset);
 
     const rows = await query.execute();
+    const lookup = await actorDisplayNames(rows);
 
     return {
-      events: rows.map(rowToEvent),
+      events: rows.map((row) => rowToEvent(row, lookup)),
       total,
       limit,
       offset,
@@ -297,7 +303,7 @@ export async function getUnreadEventCountsByPresentation(scope, userEmail) {
 // HELPERS
 // ============================================================
 
-function rowToEvent(row) {
+function rowToEvent(row, lookup = NO_DISPLAY_NAMES) {
   return {
     id: row.id,
     organizationId: row.organization_id,
@@ -305,10 +311,32 @@ function rowToEvent(row) {
     entityType: row.entity_type,
     entityId: row.entity_id,
     presentationId: row.presentation_id,
-    actorEmail: row.actor_email,
-    actorName: row.actor_name,
+    // Who acted is display, never a decision (D22). `actorName` was written
+    // as `actor?.name || actor?.email`, so the address leaked through both
+    // fields and the client stripped the `@` back off it for rendering; the
+    // pair does that once, behind the boundary. See
+    // server/storage/display-identity.js.
+    actor: toStoredActorIdentity(row.actor_email, row.actor_name, lookup),
     actorType: row.actor_type,
     data: row.data || {},
     createdAt: row.created_at,
   };
+}
+
+/**
+ * Resolve the display names a batch of activity rows needs.
+ *
+ * `activity_events` stores no actor id (see storage/display-identity.js on why
+ * a display stamp gets no id column), so the address is the lookup key and the
+ * resolved identity's `id` stays null.
+ *
+ * @param {Array<Object>} rows - Raw `activity_events` rows.
+ * @returns {Promise<import('./display-identity.js').DisplayNameLookup>}
+ */
+async function actorDisplayNames(rows) {
+  const stamps = (rows || [])
+    .filter((row) => row?.actor_email)
+    .map((row) => ({ email: row.actor_email }));
+  if (!stamps.length) return NO_DISPLAY_NAMES;
+  return resolveDisplayNames(stamps);
 }

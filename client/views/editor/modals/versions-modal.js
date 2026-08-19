@@ -1,5 +1,4 @@
 import { formatDateTime } from '../../../lib/format/format.js';
-import { displayNameFromEmail } from '../../../lib/user/user-format.js';
 import {
   createModal,
   createPromiseModal,
@@ -112,7 +111,7 @@ export function openVersionsModal({
         return;
       }
       for (const v of arr) {
-        const who = displayNameFromEmail(v?.createdBy);
+        const who = v?.createdBy?.displayName || t('common.unknown', 'Unknown');
         const when = formatDateTime(v?.created);
         const reason = String(v?.reason || '').trim() || 'snapshot';
         const label = String(v?.label || '').trim();

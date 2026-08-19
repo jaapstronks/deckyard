@@ -8,6 +8,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { api } from '../../../lib/api.js';
 import { createAvatar, updateAvatar } from '../../../lib/user/avatar.js';
+import { displayNameFromEmail } from '../../../lib/user/user-format.js';
 import {
   invalidateProfile,
   getUserProfileAsync,
@@ -97,7 +98,7 @@ function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
         updateAvatar(avatarEl, { imageUrl: currentImageUrl });
         removeBtn.style.display = '';
         imageStatus.textContent = '';
-        invalidateProfile(targetUser.email);
+        invalidateProfile(targetUser.id);
       }
     } catch (err) {
       imageStatus.textContent = String(
@@ -123,7 +124,7 @@ function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
       updateAvatar(avatarEl, { imageUrl: '' });
       removeBtn.style.display = 'none';
       imageStatus.textContent = '';
-      invalidateProfile(targetUser.email);
+      invalidateProfile(targetUser.id);
     } catch (err) {
       imageStatus.textContent = String(
         err?.message || t('admin.users.removeFailed', 'Failed to remove'),
@@ -165,14 +166,14 @@ export async function showEditModal(targetUser, onSuccess) {
 
   // Fetch existing profile data
   let currentImageUrl = '';
-  const profile = await getUserProfileAsync(targetUser.email).catch(() => null);
+  const profile = await getUserProfileAsync(targetUser.id).catch(() => null);
   if (profile?.imageUrl) {
     currentImageUrl = profile.imageUrl;
   }
 
   const avatarEl = createAvatar({
-    email: targetUser.email,
-    name: targetUser.name || '',
+    seed: targetUser.id || targetUser.email,
+    name: targetUser.name || displayNameFromEmail(targetUser.email),
     imageUrl: currentImageUrl,
     size: 'lg',
   });

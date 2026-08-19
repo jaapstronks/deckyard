@@ -94,8 +94,7 @@ export function createVisibilitySection({
           pres.isViewOnly = updated.isViewOnly;
         if (typeof updated.revision === 'number')
           pres.revision = updated.revision;
-        if (typeof updated.updatedBy === 'string')
-          pres.updatedBy = updated.updatedBy;
+        if (updated.updatedBy !== undefined) pres.updatedBy = updated.updatedBy;
       } else if (visibility === 'organization') {
         // Fallback for an unexpectedly empty response: reflect the requested
         // value so the pills stay in sync until the next refresh. The /visibility

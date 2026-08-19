@@ -134,7 +134,7 @@ function createActivityItem(event, h, onNavigate) {
   // Avatar
   const avatar = h('div', {
     class: `activity-avatar${event.actorType === 'guest' ? ' is-guest' : ''}`,
-    text: getInitials(event.actorName || event.actorEmail),
+    text: getInitials(event.actor?.displayName),
   });
 
   // Content
@@ -153,8 +153,7 @@ function createActivityItem(event, h, onNavigate) {
 
   const actor = h('span', {
     class: 'activity-actor',
-    text:
-      event.actorName || event.actorEmail || t('activity.someone', 'Someone'),
+    text: event.actor?.displayName || t('activity.someone', 'Someone'),
   });
 
   // slide.added carries a slide count in its data ("added 3 slides to X"); all

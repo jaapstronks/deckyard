@@ -153,8 +153,7 @@ export function createLanguageMode({
     else if (typeof updated.revision === 'string' && updated.revision.trim())
       pres.revision = Number(updated.revision) || pres.revision;
     if (typeof updated.modified === 'string') pres.modified = updated.modified;
-    if (typeof updated.updatedBy === 'string')
-      pres.updatedBy = updated.updatedBy;
+    if (updated.updatedBy !== undefined) pres.updatedBy = updated.updatedBy;
   };
 
   /**

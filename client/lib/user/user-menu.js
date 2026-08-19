@@ -41,8 +41,8 @@ export function createUserMenu({ h = defaultH, user, nav, onLogout } = {}) {
   });
 
   // Fetch profile and update avatar with image if available
-  if (email && !isAnonymous) {
-    getUserProfileAsync(email)
+  if (user?.id && !isAnonymous) {
+    getUserProfileAsync(user.id)
       .then((profile) => {
         if (profile?.imageUrl) {
           updateAvatar(avatar, { imageUrl: profile.imageUrl });

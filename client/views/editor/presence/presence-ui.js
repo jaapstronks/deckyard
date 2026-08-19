@@ -86,8 +86,8 @@ export function createPresenceUI({
       });
       wrap.append(
         createAvatar({
-          email: peer.user.email,
-          name: peer.user.name,
+          seed: peer.user.id || peer.user.email,
+          name: peerName(peer),
           size: 'sm',
         }),
       );

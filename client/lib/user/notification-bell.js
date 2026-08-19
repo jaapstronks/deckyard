@@ -232,15 +232,15 @@ export function createNotificationBell({ api, onNavigate }) {
         'aria-label': notificationLabel(notif),
       });
 
-      // Actor avatar with profile image support
-      const actorEmail = notif.actorEmail || '';
-      const actorName = notif.actorName || '';
-      const profile = actorEmail ? getUserProfile(actorEmail) : null;
+      // Actor avatar. The name arrives with the payload (D22); only the
+      // profile image still needs a lookup, keyed on the actor's stable id.
+      const actor = notif.actor || null;
+      const profile = actor?.id ? getUserProfile(actor.id) : null;
 
       const avatar = createAvatar({
         imageUrl: profile?.imageUrl || '',
-        email: actorEmail,
-        name: profile?.name || actorName,
+        seed: actor?.id || actor?.displayName || '',
+        name: profile?.name || actor?.displayName || '',
         size: 'md',
         className: 'notification-bell-avatar',
       });
@@ -359,10 +359,10 @@ export function createNotificationBell({ api, onNavigate }) {
       unreadCount = resp?.unreadCount || 0;
       updateBadge();
 
-      // Prefetch profiles for all notification actors
-      const emails = notifications.map((n) => n.actorEmail).filter(Boolean);
-      if (emails.length) {
-        prefetchProfiles(emails);
+      // Prefetch profile images for all notification actors
+      const actorIds = notifications.map((n) => n.actor?.id).filter(Boolean);
+      if (actorIds.length) {
+        prefetchProfiles(actorIds);
       }
     } catch (e) {
       notifications = [];

@@ -23,6 +23,11 @@ import { getDb } from '../../db/client.js';
 import { getOrgId } from '../../utils/context.js';
 import { resolveIdentityByEmail } from '../identity-resolver.js';
 import { toStorageContext } from '../scope.js';
+import {
+  resolveDisplayNames,
+  toDisplayIdentity,
+  NO_DISPLAY_NAMES,
+} from '../display-identity.js';
 
 /** @returns {string} current ISO timestamp */
 function now() {
@@ -37,9 +42,11 @@ function cleanName(input) {
  * Map a slide_collections row to the facade's API object.
  * @param {object} row - Database row from slide_collections
  * @param {string[]} [slideIds] - Ordered member slide-library ids
+ * @param {import('../display-identity.js').DisplayNameLookup} [lookup] -
+ *   Resolved display names; omitted derives them from the stored address.
  * @returns {object}
  */
-function mapSlideCollectionRow(row, slideIds = []) {
+function mapSlideCollectionRow(row, slideIds = [], lookup = NO_DISPLAY_NAMES) {
   return {
     id: row.id,
     shelf: row.shelf,
@@ -52,8 +59,13 @@ function mapSlideCollectionRow(row, slideIds = []) {
     // `createdById`, with the e-mail as the fallback. See shared/identity-match.js.
     createdById: row.created_by_user_id || null,
     createdBy: row.created_by,
-    updatedById: row.updated_by_user_id || null,
-    updatedBy: row.updated_by,
+    // The last writer is display only — the mutate guard above matches on the
+    // creator — so it travels as a display pair (D22).
+    updatedBy: toDisplayIdentity(
+      row.updated_by_user_id,
+      row.updated_by,
+      lookup,
+    ),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -175,8 +187,9 @@ async function listSlideCollections(ctx, opts = {}) {
     db,
     rows.map((r) => r.id),
   );
+  const lookup = await collectionDisplayNames(rows);
   return rows.map((row) =>
-    mapSlideCollectionRow(row, membership.get(row.id) || []),
+    mapSlideCollectionRow(row, membership.get(row.id) || [], lookup),
   );
 }
 
@@ -193,7 +206,11 @@ async function getSlideCollection(id, ctx) {
 
   if (!row) return null;
   const membership = await loadMembership(db, [row.id]);
-  return mapSlideCollectionRow(row, membership.get(row.id) || []);
+  return mapSlideCollectionRow(
+    row,
+    membership.get(row.id) || [],
+    await collectionDisplayNames([row]),
+  );
 }
 
 async function createSlideCollection(data, ctx) {
@@ -231,7 +248,11 @@ async function createSlideCollection(data, ctx) {
     row.id,
     data.slideIds || [],
   );
-  return mapSlideCollectionRow(row, slideIds);
+  return mapSlideCollectionRow(
+    row,
+    slideIds,
+    await collectionDisplayNames([row]),
+  );
 }
 
 async function updateSlideCollection(id, data, ctx) {
@@ -269,7 +290,11 @@ async function updateSlideCollection(id, data, ctx) {
     const membership = await loadMembership(db, [id]);
     slideIds = membership.get(id) || [];
   }
-  return mapSlideCollectionRow(row, slideIds);
+  return mapSlideCollectionRow(
+    row,
+    slideIds,
+    await collectionDisplayNames([row]),
+  );
 }
 
 async function deleteSlideCollection(id, ctx) {
@@ -469,4 +494,17 @@ export async function deleteOrganizationCollection(
   const deleted = await deleteSlideCollection(id, ctx);
   if (!deleted) return { ok: false, reason: 'not_found' };
   return { ok: true };
+}
+
+/**
+ * Resolve the display names a batch of collection rows needs.
+ * @param {Array<Object>} rows - Raw `slide_collections` rows.
+ * @returns {Promise<import('../display-identity.js').DisplayNameLookup>}
+ */
+async function collectionDisplayNames(rows) {
+  return resolveDisplayNames(
+    (rows || [])
+      .filter(Boolean)
+      .map((row) => ({ id: row.updated_by_user_id, email: row.updated_by })),
+  );
 }

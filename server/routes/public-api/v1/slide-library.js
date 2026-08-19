@@ -37,7 +37,11 @@ function sanitizeLibraryItem(item, tags = []) {
     content: item.content || {},
     tags,
     createdAt: item.createdAt || null,
-    createdBy: item.createdBy || null,
+    // The stable id only. This used to be `createdBy`, the creator's e-mail,
+    // handed to any API key with library read access — a contact detail the
+    // caller has no claim on (D22). The id names the same person and discloses
+    // nothing about them, exactly as `ownerId` does on a deck.
+    createdById: item.createdById || null,
   };
 }
 

@@ -133,7 +133,9 @@ test('the public-API shape carries the identity ids beside the display email', (
     ownerId: USER_ID,
     ownerEmail: 'alice@example.com',
     createdById: USER_ID,
-    updatedById: OTHER_ID,
+    // The last writer travels as a display pair on the internal API (D22); the
+    // public v1 shape projects it back down to the bare id it always exposed.
+    updatedBy: { id: OTHER_ID, displayName: 'Bob Builder' },
     slides: [],
   };
 
@@ -141,6 +143,11 @@ test('the public-API shape carries the identity ids beside the display email', (
   assert.equal(asOwner.ownerId, USER_ID);
   assert.equal(asOwner.createdById, USER_ID);
   assert.equal(asOwner.updatedById, OTHER_ID);
+  assert.equal(
+    asOwner.updatedByDisplayName,
+    undefined,
+    'the public shape exposes the id only, never a name or an address',
+  );
   assert.equal(asOwner.ownerEmail, 'alice@example.com');
 });
 

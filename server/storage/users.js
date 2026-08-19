@@ -8,6 +8,7 @@ import { toStorageContext } from './scope.js';
 import { nowIso, isoAfter, normalizeEmail } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { generateSecureToken, hashToken } from '../utils/secure-tokens.js';
+import { invalidateDisplayNames } from './display-identity.js';
 
 // ============================================================
 // USER CRUD
@@ -259,6 +260,11 @@ export async function updateUser(scope, userId, updates) {
       return { ok: false, reason: 'not_found' };
     }
 
+    // `users.name` is the fallback a response's `displayName` is built from,
+    // and that is memoized (storage/display-identity.js) — drop the memo so an
+    // admin rename lands immediately rather than within the TTL.
+    if ('name' in updates) invalidateDisplayNames();
+
     return {
       ok: true,
       user: formatUser(row),
@@ -417,6 +423,85 @@ export async function searchUsers(scope, query, options = {}) {
 
     return rows.map(formatUser);
   });
+}
+
+/**
+ * Batch-read the public profile of users, by stable id.
+ *
+ * The avatar surfaces (deck cards, the notification bell) used to look a
+ * profile up by the address the response echoed at them. D22 removed that
+ * address, so the key is the `users.id` the response now carries instead —
+ * which also means this endpoint no longer takes an address, and can no longer
+ * be used to probe whether one exists.
+ *
+ * Organization-scoped: a profile is only returned for a user in the caller's
+ * organization, so an id guessed from elsewhere yields nothing.
+ *
+ * Reads the profile bag the way `storage/settings.js` does — the row keyed on
+ * the stable id leads, the email-keyed row is the fallback for rows the
+ * migration-067 backfill could not key — and falls back to `users.name`.
+ *
+ * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
+ * @param {string[]} userIds - Stable `users.id` values.
+ * @returns {Promise<Record<string, {name: string, imageUrl: string}>>} Keyed by
+ *   user id. Ids with no user record in this organization are simply absent.
+ */
+export async function getPublicProfilesByIds(scope, userIds) {
+  toStorageContext(scope, 'getPublicProfilesByIds');
+  const ids = [...new Set((userIds || []).filter(Boolean).map(String))];
+  if (!ids.length) return {};
+
+  return withDbGuard({}, async (db) => {
+    const orgId = getOrgId(scope);
+    const rows = await db
+      .selectFrom('users')
+      .leftJoin(
+        'user_settings as settings_by_id',
+        'settings_by_id.user_id',
+        'users.id',
+      )
+      .leftJoin(
+        'user_settings as settings_by_email',
+        'settings_by_email.email',
+        'users.email',
+      )
+      .select([
+        'users.id as id',
+        'users.name as name',
+        'settings_by_id.settings as settingsById',
+        'settings_by_email.settings as settingsByEmail',
+      ])
+      .where('users.id', 'in', ids)
+      .where('users.organization_id', '=', orgId)
+      .execute();
+
+    const out = {};
+    for (const row of rows) {
+      const byId = profileBag(row.settingsById);
+      const byEmail = profileBag(row.settingsByEmail);
+      out[row.id] = {
+        name: byId.name || byEmail.name || String(row.name || '').trim(),
+        imageUrl: byId.imageUrl || byEmail.imageUrl || '',
+      };
+    }
+    return out;
+  });
+}
+
+/**
+ * Read the `profile` object out of a stored user-settings bag.
+ * @param {any} settings
+ * @returns {{name: string, imageUrl: string}}
+ */
+function profileBag(settings) {
+  const profile =
+    settings && typeof settings === 'object' && settings.profile
+      ? settings.profile
+      : {};
+  return {
+    name: typeof profile.name === 'string' ? profile.name.trim() : '',
+    imageUrl: typeof profile.imageUrl === 'string' ? profile.imageUrl : '',
+  };
 }
 
 // ============================================================

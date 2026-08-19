@@ -47,8 +47,18 @@ export function createCardRenderer({
     thumbLoader.disconnect();
   });
 
-  const authorEmailForPresentation = (p) =>
-    String(p?.updatedBy || p?.createdBy || p?.ownerEmail || '').trim();
+  // Who to show as the card's author. The last writer travels as a display
+  // pair (D22); a deck nobody has written to since import falls back to its
+  // owner, whose address a viewer of their own deck may still see.
+  const authorForPresentation = (p) =>
+    p?.updatedBy?.displayName
+      ? p.updatedBy
+      : {
+          id: p?.ownerId || p?.createdById || null,
+          displayName: displayNameFromEmail(
+            p?.ownerEmail || p?.createdBy || '',
+          ),
+        };
 
   const openPresentation = (id) => nav?.(`/app/${id}`);
   const openPresenter = (id) => nav?.(`/present/${id}`);
@@ -264,15 +274,15 @@ export function createCardRenderer({
       else showEmpty();
     }, THUMB_SETTLE_TIMEOUT_MS);
 
-    const authorEmail = authorEmailForPresentation(p);
-    const profile = authorEmail ? getUserProfile(authorEmail) : null;
-    const authorName = profile?.name || displayNameFromEmail(authorEmail);
+    const author = authorForPresentation(p);
+    const profile = author.id ? getUserProfile(author.id) : null;
+    const authorName = profile?.name || author.displayName;
     const when = formatRelativeTime(p?.modified);
 
     // Create avatar with profile image support
     const avatar = createAvatar({
       imageUrl: profile?.imageUrl || '',
-      email: authorEmail,
+      seed: author.id || authorName,
       name: authorName,
       size: 'sm',
       className: 'presentation-avatar',
@@ -666,7 +676,9 @@ export function toListItem(pres) {
     modified: p.modified,
     created: p.created,
     theme,
+    ownerId: p.ownerId || null,
     ownerEmail: p.ownerEmail || null,
+    createdById: p.createdById || null,
     createdBy: p.createdBy || null,
     updatedBy: p.updatedBy || null,
     visibility: p.visibility || 'private',

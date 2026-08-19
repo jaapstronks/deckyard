@@ -208,15 +208,17 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
     // version list renders it. Stripping the bag must not have taken it too.
     // Since T10 PR F1 it carries a stable `users.id` beside the e-mail; both
     // halves are stamped from one resolution of the acting user's address.
+    // Since D22 the *response* renders that pair as `{ id, displayName }` —
+    // the id half is the same value, the address stays server-side.
     const [summary] = await listPresentationVersions(storageScope, DECK_ID);
-    assert.equal(summary.createdBy, ALICE);
     assert.equal(
-      summary.createdById,
+      summary.createdBy?.id,
       ALICE_ID,
       'the version author id is stamped',
     );
+    assert.equal(summary.createdBy?.displayName, 'Alice');
     assert.equal(
-      created.createdById,
+      created.createdBy?.id,
       ALICE_ID,
       'and returned from the create call',
     );
@@ -244,16 +246,24 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
 
     const [summary] = await listPresentationVersions(storageScope, DECK_ID);
     assert.equal(
-      summary.createdBy,
-      'stranger@example.com',
-      'the e-mail is still recorded',
+      summary.createdBy?.displayName,
+      'Stranger',
+      'the external author is still named, from the stored address',
     );
     assert.equal(
-      summary.createdById,
+      summary.createdBy?.id,
       null,
       'and the id half is a defined NULL (external)',
     );
-    assert.equal(created.createdById, null);
+    assert.equal(created.createdBy?.id, null);
+
+    // The address itself is in the column, not in the response (D22).
+    const row = await db
+      .selectFrom('presentation_versions')
+      .select('created_by')
+      .where('id', '=', created.id)
+      .executeTakeFirstOrThrow();
+    assert.equal(row.created_by, 'stranger@example.com');
   });
 
   it('snapshotting does not strip the live deck', async () => {
@@ -321,7 +331,11 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
       ALICE,
       'who made it is create-only and unchanged',
     );
-    assert.equal(after.updatedBy, BOB, 'the restorer is the last writer');
+    assert.equal(
+      after.updatedBy?.id,
+      BOB_ID,
+      'the restorer is the last writer',
+    );
     // Slide shape, not object identity: the write path normalizes slides (it
     // fills `parentId`), so compare what the restore was for.
     assert.deepEqual(
@@ -365,7 +379,7 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
     assert.equal(after.ownerEmail, BOB);
     assert.equal(after.ownerId, BOB_ID);
     assert.equal(after.createdBy, ALICE);
-    assert.equal(after.updatedBy, BOB);
+    assert.equal(after.updatedBy?.id, BOB_ID);
     assert.equal(after.title, 'Deck as it was');
     assert.deepEqual(
       after.slides.map((s) => [s.id, s.content.title]),
@@ -395,6 +409,6 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
     );
     assert.deepEqual(version.presentation.slides, SLIDES_NOW);
     assert.equal(version.title, 'Deck');
-    assert.equal(version.createdBy, ALICE);
+    assert.equal(version.createdBy?.id, ALICE_ID);
   });
 });

@@ -16,6 +16,11 @@ import { getDb, sql } from '../../db/client.js';
 import { getOrgId } from '../../utils/context.js';
 import { nowIso } from '../../utils/normalize.js';
 import { resolveIdentityByEmail } from '../identity-resolver.js';
+import {
+  resolveDisplayNames,
+  toDisplayIdentity,
+  NO_DISPLAY_NAMES,
+} from '../display-identity.js';
 import { ConflictError } from '../../utils/errors.js';
 import { mergeSlidesAtSlideLevel } from './crud/helpers.js';
 import { enforceSlideWritePolicy } from './crud/enforce-slide-locks.js';
@@ -504,18 +509,24 @@ function jsonb(value) {
 /**
  * Map a presentation version database row to an API object (list view).
  * @param {object} row - Database row
+ * @param {import('../display-identity.js').DisplayNameLookup} [lookup] -
+ *   Resolved display names; omitted derives them from the stored address.
  * @returns {object}
  */
-function mapVersionRowSummary(row) {
+function mapVersionRowSummary(row, lookup = NO_DISPLAY_NAMES) {
   return {
     id: row.id,
     presentationId: row.presentation_id,
     created: row.created_at,
-    // Identity travels as a pair (T10 PR F1): the stable `users.id`
-    // (migration 069) beside the display/fallback e-mail. See
-    // shared/identity-match.js and mapPresentationRow below.
-    createdById: row.created_by_user_id || null,
-    createdBy: row.created_by,
+    // Who made this snapshot is display, never a decision: nothing compares a
+    // version's author. So it travels as a display pair (D22) — the stable
+    // `users.id` (migration 069) and the name to render — and the e-mail that
+    // seeded both stays server-side. See storage/display-identity.js.
+    createdBy: toDisplayIdentity(
+      row.created_by_user_id,
+      row.created_by,
+      lookup,
+    ),
     reason: row.reason,
     label: row.label,
     revision: row.revision,
@@ -526,11 +537,13 @@ function mapVersionRowSummary(row) {
 /**
  * Map a presentation version database row to an API object (full view).
  * @param {object} row - Database row
+ * @param {import('../display-identity.js').DisplayNameLookup} [lookup] -
+ *   Resolved display names; omitted derives them from the stored address.
  * @returns {object}
  */
-function mapVersionRowFull(row) {
+function mapVersionRowFull(row, lookup = NO_DISPLAY_NAMES) {
   return {
-    ...mapVersionRowSummary(row),
+    ...mapVersionRowSummary(row, lookup),
     presentation: row.presentation_data,
   };
 }
@@ -538,9 +551,11 @@ function mapVersionRowFull(row) {
 /**
  * Map a presentation database row to an API object.
  * @param {object} row - Database row
+ * @param {import('../display-identity.js').DisplayNameLookup} [lookup] -
+ *   Resolved display names; omitted derives them from the stored address.
  * @returns {object}
  */
-export function mapPresentationRow(row) {
+export function mapPresentationRow(row, lookup = NO_DISPLAY_NAMES) {
   return {
     id: row.id,
     // The owning organization travels with the presentation so the
@@ -565,8 +580,16 @@ export function mapPresentationRow(row) {
     ownerEmail: row.owner_email,
     createdById: row.created_by_user_id || null,
     createdBy: row.created_by,
-    updatedById: row.updated_by_user_id || null,
-    updatedBy: row.updated_by,
+    // The last writer is display only — no decider asks who it was — so it
+    // travels as a display pair (D22) and its e-mail stays server-side. The
+    // owner/creator stamps above keep theirs: those are compared, and
+    // shared/identity-match.js still falls back to the address for rows whose
+    // id column is a defined NULL.
+    updatedBy: toDisplayIdentity(
+      row.updated_by_user_id,
+      row.updated_by,
+      lookup,
+    ),
     settings: row.settings || {},
     i18n: row.i18n || {},
     slides: row.slides || [],
@@ -602,6 +625,7 @@ async function listPresentationRows(ctx) {
       'owner_email as ownerEmail',
       'created_by_user_id as createdById',
       'created_by as createdBy',
+      'updated_by_user_id as updatedById',
       'updated_by as updatedBy',
       'visibility',
       'is_view_only as isViewOnly',
@@ -621,6 +645,12 @@ async function listPresentationRows(ctx) {
     // See docs/reference/storage-layer.md § List reads.
     .execute();
 
+  // One batched name lookup for the whole page rather than one per card:
+  // a 200-deck organization would otherwise issue 200 identical queries.
+  const displayNames = await resolveDisplayNames(
+    rows.map((row) => ({ id: row.updatedById, email: row.updatedBy })),
+  );
+
   return rows.map((row) => {
     const slides = Array.isArray(row.slides) ? row.slides : [];
     const firstSlide = slides[0] || null;
@@ -637,7 +667,11 @@ async function listPresentationRows(ctx) {
       ownerEmail: row.ownerEmail,
       createdById: row.createdById || null,
       createdBy: row.createdBy,
-      updatedBy: row.updatedBy,
+      updatedBy: toDisplayIdentity(
+        row.updatedById,
+        row.updatedBy,
+        displayNames,
+      ),
       visibility: row.visibility,
       isViewOnly: !!row.isViewOnly,
       revision: row.revision,
@@ -678,7 +712,24 @@ async function getPresentationRow(id, ctx) {
   const row = await query.executeTakeFirst();
 
   if (!row) return null;
-  return mapPresentationRow(row);
+  return mapPresentationRow(row, await displayNamesFor(row));
+}
+
+/**
+ * Resolve the display names one presentation row needs.
+ *
+ * Only the last writer travels as a display pair today; owner and creator are
+ * still compared, so they keep their (id, email) stamps. Kept as one helper so
+ * every single-row read path resolves the same set — the memo in
+ * storage/display-identity.js makes the repeat calls free.
+ *
+ * @param {object} row - A raw `presentations` row.
+ * @returns {Promise<import('../display-identity.js').DisplayNameLookup>}
+ */
+async function displayNamesFor(row) {
+  return resolveDisplayNames([
+    { id: row?.updated_by_user_id, email: row?.updated_by },
+  ]);
 }
 
 /**
@@ -731,7 +782,7 @@ async function createPresentationRow(data, ctx) {
     .returningAll()
     .executeTakeFirst();
 
-  return mapPresentationRow(row);
+  return mapPresentationRow(row, await displayNamesFor(row));
 }
 
 /**
@@ -873,7 +924,13 @@ async function updatePresentationRow(id, data, ctx, opts = {}) {
   // `updated_by_user_id` anyway would null the id half while the email half
   // kept the previous writer, which is exactly the divergence the dual-key
   // invariant exists to prevent.
-  const updatedByEmail = ctx?.actorEmail || data.updatedBy;
+  // `data.updatedBy` is a *display pair* on the way out (D22) and was never a
+  // meaningful thing to send in, so only a bare address is honoured here — a
+  // caller that echoes a whole presentation back must not stamp an object into
+  // a varchar column.
+  const updatedByEmail =
+    ctx?.actorEmail ||
+    (typeof data.updatedBy === 'string' ? data.updatedBy : null);
   const updateData = {
     modified_at: nowIso(),
     revision: sql`revision + 1`,
@@ -935,7 +992,7 @@ async function updatePresentationRow(id, data, ctx, opts = {}) {
     .executeTakeFirst();
 
   if (!row) return null;
-  const out = mapPresentationRow(row);
+  const out = mapPresentationRow(row, await displayNamesFor(row));
   // Response-only audit metadata (never stored); the facade logs it to
   // activity_events.
   if (mergeInfo) out._slideMerge = mergeInfo;
@@ -997,6 +1054,7 @@ async function listTrashedPresentationRows(ctx) {
       'owner_email as ownerEmail',
       'created_by_user_id as createdById',
       'created_by as createdBy',
+      'updated_by_user_id as updatedById',
       'updated_by as updatedBy',
       'visibility',
       'revision',
@@ -1010,6 +1068,10 @@ async function listTrashedPresentationRows(ctx) {
     // (see listPresentationRows above and docs/reference/storage-layer.md
     // § List reads).
     .execute();
+
+  const displayNames = await resolveDisplayNames(
+    rows.map((row) => ({ id: row.updatedById, email: row.updatedBy })),
+  );
 
   return rows.map((row) => {
     const slides = Array.isArray(row.slides) ? row.slides : [];
@@ -1030,7 +1092,11 @@ async function listTrashedPresentationRows(ctx) {
       ownerEmail: row.ownerEmail,
       createdById: row.createdById || null,
       createdBy: row.createdBy,
-      updatedBy: row.updatedBy,
+      updatedBy: toDisplayIdentity(
+        row.updatedById,
+        row.updatedBy,
+        displayNames,
+      ),
       visibility: row.visibility,
       revision: row.revision,
       i18n: i18n
@@ -1072,7 +1138,10 @@ async function restorePresentationRow(id, ctx) {
     .executeTakeFirst();
 
   if (!row) return { ok: false, reason: 'not_found' };
-  return { ok: true, presentation: mapPresentationRow(row) };
+  return {
+    ok: true,
+    presentation: mapPresentationRow(row, await displayNamesFor(row)),
+  };
 }
 
 /**
@@ -1173,7 +1242,10 @@ async function listPresentationVersionRows(presentationId, ctx) {
     // backup of any deck with >100 saved versions.
     .execute();
 
-  return rows.map(mapVersionRowSummary);
+  const displayNames = await resolveDisplayNames(
+    rows.map((row) => ({ id: row.created_by_user_id, email: row.created_by })),
+  );
+  return rows.map((row) => mapVersionRowSummary(row, displayNames));
 }
 
 /**
@@ -1195,7 +1267,18 @@ async function getPresentationVersionRow(presentationId, versionId, ctx) {
     .executeTakeFirst();
 
   if (!row) return null;
-  return mapVersionRowFull(row);
+  return mapVersionRowFull(row, await versionDisplayNames(row));
+}
+
+/**
+ * Resolve the display name one version row needs.
+ * @param {object} row - A raw `presentation_versions` row.
+ * @returns {Promise<import('../display-identity.js').DisplayNameLookup>}
+ */
+async function versionDisplayNames(row) {
+  return resolveDisplayNames([
+    { id: row?.created_by_user_id, email: row?.created_by },
+  ]);
 }
 
 /**
@@ -1218,8 +1301,8 @@ async function createPresentationVersionRow(
   // single resolution of the same address, so the two halves can never
   // drift (the invariant verifyIdentityConsistency checks). A known actor
   // maps to their users.id; an actor with no users row resolves `external`
-  // and stays NULL (the pinned legacy path). The version list still renders
-  // the e-mail; nothing keys authz on this audit column.
+  // and stays NULL (the pinned legacy path). Nothing keys authz on this audit
+  // column — the version list renders `{ id, displayName }` from it (D22).
   const createdByEmail = ctx?.actorEmail || null;
   const createdByResolution = createdByEmail
     ? await resolveIdentityByEmail(createdByEmail)
@@ -1241,7 +1324,7 @@ async function createPresentationVersionRow(
     .returningAll()
     .executeTakeFirst();
 
-  return mapVersionRowFull(row);
+  return mapVersionRowFull(row, await versionDisplayNames(row));
 }
 
 /**

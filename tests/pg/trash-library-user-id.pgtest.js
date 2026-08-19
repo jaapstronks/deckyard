@@ -208,7 +208,10 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
     );
     assert.equal(r.ok, true);
     assert.equal(r.item.createdById, ALICE_ID);
-    assert.equal(r.item.updatedById, ALICE_ID);
+    // The last writer is display only, so it travels as a pair (D22) rather
+    // than as an `updatedById` beside an e-mail; the stored dual key below is
+    // unchanged.
+    assert.equal(r.item.updatedBy?.id, ALICE_ID);
 
     const row = await db
       .selectFrom('slide_library')

@@ -140,7 +140,10 @@ export function createSlideUpdateHandler({
       // keep their previous base).
       saveManager.rebaseServerTruth?.(remote.slides);
 
-      const who = eventData.actorEmail || 'another user';
+      // The refetched deck already names the last writer (D22), so the toast
+      // reads their display name instead of the address the SSE event carries
+      // for the self-ignore comparison above.
+      const who = remote.updatedBy?.displayName || 'another user';
       toast.info(`Slides updated by ${who}`, { id: 'remote-update' });
 
       // Re-render UI

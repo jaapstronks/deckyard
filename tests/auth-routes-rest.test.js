@@ -477,7 +477,7 @@ test('profile lookup refuses an unauthenticated caller with a 401', async () => 
   const { res } = await call(
     handleUsers,
     'GET',
-    '/api/users/profiles?emails=viewer@example.com',
+    '/api/users/profiles?ids=user-viewer',
   );
 
   assert.equal(
@@ -488,36 +488,50 @@ test('profile lookup refuses an unauthenticated caller with a 401', async () => 
   assert.equal(res.body.error, 'unauthorized');
 });
 
-test('profile lookup returns name and imageUrl per address', async () => {
+test('profile lookup returns name and imageUrl per user id', async () => {
   seed();
   const { res } = await call(
     handleUsers,
     'GET',
-    '/api/users/profiles?emails=viewer@example.com,ghost@example.com',
+    '/api/users/profiles?ids=user-viewer,user-ghost',
     { as: ACTORS.owner },
   );
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.profiles['viewer@example.com'].name, 'Vera Viewer');
+  assert.equal(res.body.profiles['user-viewer'].name, 'Vera Viewer');
   assert.equal(
-    res.body.profiles['viewer@example.com'].imageUrl,
+    res.body.profiles['user-viewer'].imageUrl,
     'https://cdn.example/vera.png',
   );
-  assert.deepEqual(
-    res.body.profiles['ghost@example.com'],
-    { name: '', imageUrl: '' },
-    'an unknown address resolves to an empty profile, not an error',
+  assert.equal(
+    res.body.profiles['user-ghost'],
+    undefined,
+    'an id with no user record is simply absent, not an empty placeholder',
   );
 });
 
-test('profile lookup with no addresses returns an empty map', async () => {
+test('profile lookup does not answer for another organization', async () => {
   seed();
   const { res } = await call(
     handleUsers,
     'GET',
-    '/api/users/profiles?emails=',
+    '/api/users/profiles?ids=user-otto',
     { as: ACTORS.owner },
   );
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(
+    res.body.profiles,
+    {},
+    'an id from another organization discloses nothing',
+  );
+});
+
+test('profile lookup with no ids returns an empty map', async () => {
+  seed();
+  const { res } = await call(handleUsers, 'GET', '/api/users/profiles?ids=', {
+    as: ACTORS.owner,
+  });
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body.profiles, {});
