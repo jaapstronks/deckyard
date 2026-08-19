@@ -68,6 +68,8 @@ for (const k of [
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const OTHER_ORG = '00000000-0000-0000-0000-0000000000bb';
+/** A well-formed id that no seeded user carries. */
+const GHOST_ID = '00000000-0000-4000-8000-0000000000ee';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
@@ -126,9 +128,25 @@ test.after(() => {
 // ---------------------------------------------------------------------------
 
 /** @param {Actor} actor */
+/**
+ * A deterministic uuid per actor. The profile endpoint shape-checks its ids
+ * (server/utils/uuid.js), so the seeded ids must be real uuids.
+ * @param {Actor} actor
+ * @returns {string}
+ */
+function userId(actor) {
+  const local = actor.email.split('@')[0];
+  const hex = [...local]
+    .map((c) => c.charCodeAt(0).toString(16).padStart(2, '0'))
+    .join('')
+    .padEnd(12, '0')
+    .slice(0, 12);
+  return `00000000-0000-4000-8000-${hex}`;
+}
+
 function userRow(actor) {
   return {
-    id: `user-${actor.email.split('@')[0]}`,
+    id: userId(actor),
     organization_id: actor.organizationId,
     email: actor.email,
     name: actor.name,
@@ -144,7 +162,7 @@ function userRow(actor) {
 /** A `user_settings` row keyed by both id and email so either read branch finds it. */
 function settingsRow(actor, profile) {
   return {
-    user_id: `user-${actor.email.split('@')[0]}`,
+    user_id: userId(actor),
     email: actor.email,
     settings: { profile },
   };
@@ -477,7 +495,7 @@ test('profile lookup refuses an unauthenticated caller with a 401', async () => 
   const { res } = await call(
     handleUsers,
     'GET',
-    '/api/users/profiles?emails=viewer@example.com',
+    `/api/users/profiles?ids=${userId(ACTORS.viewer)}`,
   );
 
   assert.equal(
@@ -488,36 +506,54 @@ test('profile lookup refuses an unauthenticated caller with a 401', async () => 
   assert.equal(res.body.error, 'unauthorized');
 });
 
-test('profile lookup returns name and imageUrl per address', async () => {
+test('profile lookup returns name and imageUrl per user id', async () => {
   seed();
   const { res } = await call(
     handleUsers,
     'GET',
-    '/api/users/profiles?emails=viewer@example.com,ghost@example.com',
+    `/api/users/profiles?ids=${userId(ACTORS.viewer)},${GHOST_ID},not-a-uuid`,
     { as: ACTORS.owner },
   );
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.profiles['viewer@example.com'].name, 'Vera Viewer');
+  const viewer = res.body.profiles[userId(ACTORS.viewer)];
+  assert.equal(viewer.name, 'Vera Viewer');
+  assert.equal(viewer.imageUrl, 'https://cdn.example/vera.png');
   assert.equal(
-    res.body.profiles['viewer@example.com'].imageUrl,
-    'https://cdn.example/vera.png',
+    res.body.profiles[GHOST_ID],
+    undefined,
+    'an id with no user record is simply absent, not an empty placeholder',
   );
   assert.deepEqual(
-    res.body.profiles['ghost@example.com'],
-    { name: '', imageUrl: '' },
-    'an unknown address resolves to an empty profile, not an error',
+    Object.keys(res.body.profiles),
+    [userId(ACTORS.viewer)],
+    'a value that is not uuid-shaped is dropped before it reaches storage ' +
+      '(a Postgres uuid column would 500 on it), not echoed back',
   );
 });
 
-test('profile lookup with no addresses returns an empty map', async () => {
+test('profile lookup does not answer for another organization', async () => {
   seed();
   const { res } = await call(
     handleUsers,
     'GET',
-    '/api/users/profiles?emails=',
+    `/api/users/profiles?ids=${userId(ACTORS.outsider)}`,
     { as: ACTORS.owner },
   );
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(
+    res.body.profiles,
+    {},
+    'an id from another organization discloses nothing',
+  );
+});
+
+test('profile lookup with no ids returns an empty map', async () => {
+  seed();
+  const { res } = await call(handleUsers, 'GET', '/api/users/profiles?ids=', {
+    as: ACTORS.owner,
+  });
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body.profiles, {});

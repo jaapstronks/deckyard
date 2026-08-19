@@ -19,6 +19,7 @@ import { nowIso, normalizeEmail } from '../utils/normalize.js';
 import { sessionVersion } from '../utils/session-version.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { envStr } from '../config/utils.js';
+import { invalidateDisplayNames } from './display-identity.js';
 
 /**
  * The AUTH_ADMIN_EMAIL bootstrap admin, lowercased, or '' when unset.
@@ -100,6 +101,10 @@ export async function getOrCreateSsoUser(scope, identity, opts) {
         .returningAll()
         .executeTakeFirst();
       user = updated || { ...user, ...updates };
+      // `users.name` feeds the memoized response `displayName`
+      // (storage/display-identity.js); a rename at login lands now, not
+      // within the TTL.
+      if (updates.name) invalidateDisplayNames();
     }
 
     const adminEmail = getAdminEmail();

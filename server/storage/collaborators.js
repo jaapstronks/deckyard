@@ -38,6 +38,7 @@ import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { norm, nowIso, normalizeEmail } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
+import { resolveDisplayNames, toDisplayIdentity } from './display-identity.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
 import {
   getCachedPermission,
@@ -344,8 +345,10 @@ export async function listPresentationsSharedWithUser(scope, userEmail) {
         'p.title',
         'p.theme',
         'p.visibility',
+        'p.owner_user_id',
         'p.owner_email',
         'p.created_by',
+        'p.updated_by_user_id',
         'p.updated_by',
         'p.created_at',
         'p.modified_at',
@@ -360,14 +363,29 @@ export async function listPresentationsSharedWithUser(scope, userEmail) {
       .orderBy('c.invited_at', 'desc')
       .execute();
 
+    // One batched name lookup for the whole list, as in listPresentationRows.
+    const lookup = await resolveDisplayNames(
+      rows.map((row) => ({
+        id: row.updated_by_user_id,
+        email: row.updated_by,
+      })),
+    );
+
     return rows.map((row) => ({
       id: row.id,
       title: row.title,
       theme: row.theme,
       visibility: row.visibility,
+      ownerId: row.owner_user_id || null,
       ownerEmail: row.owner_email,
       createdBy: row.created_by,
-      updatedBy: row.updated_by,
+      // The last writer as a display pair (D22), the same shape the deck list
+      // in storage/presentations/index.js hands the same card component.
+      updatedBy: toDisplayIdentity(
+        row.updated_by_user_id,
+        row.updated_by,
+        lookup,
+      ),
       createdAt: row.created_at,
       updatedAt: row.modified_at,
       // Collaboration-specific fields

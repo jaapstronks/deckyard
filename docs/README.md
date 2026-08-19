@@ -188,28 +188,29 @@ nothing is discoverable only by `ls`.
 
 **Operating an instance**
 
-| Doc                                                            | What it covers                                                                                                             |
-| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| [`../ops/self-hosting.md`](ops/self-hosting.md)                | VPS deploy guide                                                                                                           |
-| [`../ops/agent-install.md`](ops/agent-install.md)              | Install Deckyard with an AI agent                                                                                          |
-| [`fork-setup.md`](reference/fork-setup.md)                     | Setting up a fork                                                                                                          |
-| [`storage-layer.md`](reference/storage-layer.md)               | The `server/storage/` module map, Postgres adapter seam, and scope-based tenancy                                           |
-| [`tenant-isolation.md`](reference/tenant-isolation.md)         | Organizations and isolation shapes                                                                                         |
-| [`permission-model.md`](reference/permission-model.md)         | The per-deck permission ladder: grants, collaborators, the deciders and the cache                                          |
-| [`auth-and-sessions.md`](reference/auth-and-sessions.md)       | Session cookies/tokens, the login paths, and auth rate limits                                                              |
-| [`sandbox-mode.md`](reference/sandbox-mode.md)                 | The public anonymous try-it playground: guest identity, ephemeral decks, TTL cleanup                                       |
-| [`feature-flags.md`](reference/feature-flags.md)               | Feature-flag env vars: where they live, the `X_ENABLED` polarity rule, the legacy `DISABLE_*` window                       |
-| [`security-posture.md`](reference/security-posture.md)         | Server-side hardening controls, what each blocks, and where it lives                                                       |
-| [`webhooks.md`](reference/webhooks.md)                         | The eight outgoing events, their payload contract, the SSRF guard and the admin config                                     |
-| [`data-sources.md`](reference/data-sources.md)                 | Live slide data sources (Notion/CSV): the fetch/bind pipeline, the csv-url SSRF sink, and the config                       |
-| [`analytics.md`](reference/analytics.md)                       | View analytics end to end: tracking routes, aggregations, reports, retention job                                           |
-| [`analytics-privacy.md`](reference/analytics-privacy.md)       | What view analytics stores per viewer, the two erase routes, retention                                                     |
-| [`email-infrastructure.md`](reference/email-infrastructure.md) | The Brevo transport, the senders, and the admin-customizable templates                                                     |
-| [`jobs-and-queues.md`](reference/jobs-and-queues.md)           | The BullMQ queue layer, its synchronous fallback, and the recurring interval jobs                                          |
-| [`maintenance-mode.md`](reference/maintenance-mode.md)         | Deploying without failing saves in open editors                                                                            |
-| [`sso-oidc.md`](reference/sso-oidc.md)                         | SSO via OIDC (single IdP)                                                                                                  |
-| [`storage-scope.md`](reference/storage-scope.md)               | The storage call convention: scope-first signatures, the six disk exceptions, the burndown gate                            |
-| [`versioning.md`](reference/versioning.md)                     | Versioning & releases                                                                                                      |
-| [`vocabulary.md`](reference/vocabulary.md)                     | One word per meaning: the vocabulary register (organization, visibility, permissions, storage scope) and the UI-label rule |
-| [`html-escaping.md`](reference/html-escaping.md)               | Escaping and `innerHTML` in the client                                                                                     |
-| [`dynamic-imports.md`](reference/dynamic-imports.md)           | When a dynamic `import()` is justified, and where they survive                                                             |
+| Doc                                                              | What it covers                                                                                                             |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| [`../ops/self-hosting.md`](ops/self-hosting.md)                  | VPS deploy guide                                                                                                           |
+| [`../ops/agent-install.md`](ops/agent-install.md)                | Install Deckyard with an AI agent                                                                                          |
+| [`fork-setup.md`](reference/fork-setup.md)                       | Setting up a fork                                                                                                          |
+| [`storage-layer.md`](reference/storage-layer.md)                 | The `server/storage/` module map, Postgres adapter seam, and scope-based tenancy                                           |
+| [`tenant-isolation.md`](reference/tenant-isolation.md)           | Organizations and isolation shapes                                                                                         |
+| [`permission-model.md`](reference/permission-model.md)           | The per-deck permission ladder: grants, collaborators, the deciders and the cache                                          |
+| [`auth-and-sessions.md`](reference/auth-and-sessions.md)         | Session cookies/tokens, the login paths, and auth rate limits                                                              |
+| [`sandbox-mode.md`](reference/sandbox-mode.md)                   | The public anonymous try-it playground: guest identity, ephemeral decks, TTL cleanup                                       |
+| [`feature-flags.md`](reference/feature-flags.md)                 | Feature-flag env vars: where they live, the `X_ENABLED` polarity rule, the legacy `DISABLE_*` window                       |
+| [`security-posture.md`](reference/security-posture.md)           | Server-side hardening controls, what each blocks, and where it lives                                                       |
+| [`webhooks.md`](reference/webhooks.md)                           | The eight outgoing events, their payload contract, the SSRF guard and the admin config                                     |
+| [`data-sources.md`](reference/data-sources.md)                   | Live slide data sources (Notion/CSV): the fetch/bind pipeline, the csv-url SSRF sink, and the config                       |
+| [`analytics.md`](reference/analytics.md)                         | View analytics end to end: tracking routes, aggregations, reports, retention job                                           |
+| [`analytics-privacy.md`](reference/analytics-privacy.md)         | What view analytics stores per viewer, the two erase routes, retention                                                     |
+| [`email-infrastructure.md`](reference/email-infrastructure.md)   | The Brevo transport, the senders, and the admin-customizable templates                                                     |
+| [`jobs-and-queues.md`](reference/jobs-and-queues.md)             | The BullMQ queue layer, its synchronous fallback, and the recurring interval jobs                                          |
+| [`maintenance-mode.md`](reference/maintenance-mode.md)           | Deploying without failing saves in open editors                                                                            |
+| [`sso-oidc.md`](reference/sso-oidc.md)                           | SSO via OIDC (single IdP)                                                                                                  |
+| [`identity-in-responses.md`](reference/identity-in-responses.md) | How an API response names a person: the `{ id, displayName }` pair, and when an address may cross the boundary             |
+| [`storage-scope.md`](reference/storage-scope.md)                 | The storage call convention: scope-first signatures, the six disk exceptions, the burndown gate                            |
+| [`versioning.md`](reference/versioning.md)                       | Versioning & releases                                                                                                      |
+| [`vocabulary.md`](reference/vocabulary.md)                       | One word per meaning: the vocabulary register (organization, visibility, permissions, storage scope) and the UI-label rule |
+| [`html-escaping.md`](reference/html-escaping.md)                 | Escaping and `innerHTML` in the client                                                                                     |
+| [`dynamic-imports.md`](reference/dynamic-imports.md)             | When a dynamic `import()` is justified, and where they survive                                                             |

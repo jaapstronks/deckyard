@@ -75,7 +75,6 @@ export async function handlePresentationVersions(
         ? {
             id: snap.id,
             created: snap.created,
-            createdById: snap.createdById || null,
             createdBy: snap.createdBy || null,
             reason: snap.reason || 'manual',
             revision: snap.revision || null,
@@ -127,7 +126,6 @@ export async function handlePresentationVersionItem(
   serveJson(res, 200, {
     id: version.id,
     created: version.created,
-    createdById: version.createdById || null,
     createdBy: version.createdBy || null,
     reason: version.reason || 'snapshot',
     label: version.label || '',
@@ -179,7 +177,6 @@ export async function handlePresentationVersionExport(
     version: {
       id: version.id,
       created: version.created,
-      createdById: version.createdById || null,
       createdBy: version.createdBy || null,
       reason: version.reason || 'snapshot',
       label: version.label || '',

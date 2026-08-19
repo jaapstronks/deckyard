@@ -47,6 +47,12 @@
  * id would leave a stable pointer to a person in every historical row, which is
  * the same problem one indirection further out.
  *
+ * The list is a **superset** of what a presentation carries today: a field the
+ * mapper has since retired must stay on it, because stored snapshots written
+ * before the retirement still contain it. Stripping an absent key is a no-op,
+ * so the cost of keeping one is nothing and the cost of dropping one is a
+ * person's identity frozen into history.
+ *
  * @type {readonly string[]}
  */
 export const SNAPSHOT_IDENTITY_FIELDS = Object.freeze([
@@ -54,8 +60,13 @@ export const SNAPSHOT_IDENTITY_FIELDS = Object.freeze([
   'ownerEmail',
   'createdById',
   'createdBy',
-  'updatedById',
+  // `updatedBy` is a display pair `{ id, displayName }` since D22, so the id
+  // half now travels inside it. `updatedById` is kept on the list as a
+  // **retired field name**: decks snapshotted before D22 still carry it, and a
+  // list that only covers today's shape would leave those rows stamped
+  // forever — the exact defect this module exists to prevent.
   'updatedBy',
+  'updatedById',
   'trashedBy',
   // `trashedBy` gained an id half in T10 PR F2 (migration 070). Like every
   // other dual key here, both halves are stripped — keeping the id would leave

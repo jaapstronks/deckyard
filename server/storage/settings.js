@@ -40,6 +40,7 @@
 import { sql } from 'kysely';
 import { toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/db-guard.js';
+import { invalidateDisplayNames } from './display-identity.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
 import {
   DEFAULT_AI_NAME,
@@ -1059,6 +1060,10 @@ export async function writeUserSettings(scope, email, next) {
       )
       .execute();
   });
+  // A response's `displayName` is memoized (storage/display-identity.js); drop
+  // the memo so the person who just renamed themselves sees it now rather than
+  // within the TTL.
+  invalidateDisplayNames();
   return merged;
 }
 

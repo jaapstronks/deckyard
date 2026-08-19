@@ -293,8 +293,7 @@ export function createSaveManager({
     if (typeof updated.revision === 'number') pres.revision = updated.revision;
     else if (typeof updated.revision === 'string' && updated.revision.trim())
       pres.revision = Number(updated.revision) || pres.revision;
-    if (typeof updated.updatedBy === 'string')
-      pres.updatedBy = updated.updatedBy;
+    if (updated.updatedBy !== undefined) pres.updatedBy = updated.updatedBy;
     if (typeof updated.visibility === 'string')
       pres.visibility = updated.visibility;
   };

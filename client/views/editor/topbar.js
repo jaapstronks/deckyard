@@ -67,27 +67,32 @@ export function createEditorTopbar({
   // AUTHOR DISPLAY
   // ============================================================
 
+  // The owner's address is one a viewer of their own deck may see (D22), so it
+  // still seeds the initials; the profile lookup keys on the stable id.
   const ownerEmail = pres?.ownerEmail || pres?.createdBy || '';
+  const ownerId = pres?.ownerId || pres?.createdById || '';
   const authorDisplayEl = h('div', { class: 'topbar-author' });
 
-  if (ownerEmail) {
-    // Create initial avatar with just email (will update with profile data)
+  if (ownerEmail || ownerId) {
+    // Start from the name the address derives; the profile lookup below
+    // replaces it with the real one (and the image) when there is one.
+    const ownerName = displayNameFromEmail(ownerEmail);
     const authorAvatar = createAvatar({
-      email: ownerEmail,
-      name: '',
+      seed: ownerId || ownerEmail,
+      name: ownerName,
       size: 'xs',
       className: 'topbar-author-avatar',
     });
 
     const authorNameEl = h('span', {
       class: 'topbar-author-name',
-      text: displayNameFromEmail(ownerEmail).split(' ')[0], // First name only initially
+      text: ownerName.split(' ')[0], // First name only initially
     });
 
     authorDisplayEl.append(authorAvatar, authorNameEl);
 
     // Fetch profile and update
-    getUserProfileAsync(ownerEmail)
+    getUserProfileAsync(ownerId)
       .then((profile) => {
         // Pass the resolved name along, not just the image: the initials were
         // derived from the address ("dev@local" → "DE"), so without this the

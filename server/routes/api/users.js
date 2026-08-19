@@ -3,11 +3,11 @@
  *
  * Authenticated endpoints:
  *   GET /api/users/search?q=<query>&limit=10&exclude=email1,email2
- *   GET /api/users/profiles?emails=a@x.com,b@x.com - Batch profile lookup
+ *   GET /api/users/profiles?ids=<uuid>,<uuid> - Batch profile lookup
  */
 
-import { searchUsers } from '../../storage/users.js';
-import { getUserSettings } from '../../storage/settings.js';
+import { searchUsers, getPublicProfilesByIds } from '../../storage/users.js';
+import { isUuid } from '../../utils/uuid.js';
 import {
   serveJson,
   methodNotAllowed,
@@ -41,7 +41,13 @@ async function handleUserSearch({ storageScope, res, url }) {
   return true;
 }
 
-// GET /api/users/profiles - Batch profile lookup for avatars.
+// GET /api/users/profiles - Batch avatar lookup, keyed on stable user ids.
+//
+// Keyed on `users.id` rather than on an address since D22: the responses that
+// name a person now carry `{ id, displayName }`, so the client has an id and no
+// longer has an address to ask with — which also removes this endpoint's old
+// side effect of confirming whether a given address exists.
+//
 // The auth check runs before the method check, so this stays a single
 // no-method handler (see docs/reference/route-dispatch.md, Form B guard note):
 // an unauthenticated request must get a 401, not a 405.
@@ -55,37 +61,20 @@ async function handleUserProfiles({ storageScope, req, res, url, authedUser }) {
     return methodNotAllowed(res, ['GET']);
   }
 
-  const emailsParam = url.searchParams.get('emails') || '';
-  const emails = emailsParam
+  // Shape-checked before storage sees them: `users.id` is a uuid column, and
+  // a value that cannot be a uuid cannot name a user (server/utils/uuid.js).
+  const idsParam = url.searchParams.get('ids') || '';
+  const ids = idsParam
     .split(',')
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean)
-    .slice(0, 50); // Limit to 50 emails per request
+    .map((id) => id.trim())
+    .filter(isUuid)
+    .slice(0, 50); // Limit to 50 ids per request
 
-  if (!emails.length) {
+  if (!ids.length) {
     return serveJson(res, 200, { profiles: {} });
   }
 
-  // Fetch profiles for all emails in parallel
-  const profileEntries = await Promise.all(
-    emails.map(async (email) => {
-      try {
-        const settings = await getUserSettings(storageScope, email);
-        return [
-          email,
-          {
-            name: settings?.profile?.name || '',
-            imageUrl: settings?.profile?.imageUrl || '',
-          },
-        ];
-      } catch {
-        // Return empty profile on error
-        return [email, { name: '', imageUrl: '' }];
-      }
-    }),
-  );
-
-  const profiles = Object.fromEntries(profileEntries);
+  const profiles = await getPublicProfilesByIds(storageScope, ids);
   serveJson(res, 200, { profiles });
   return true;
 }

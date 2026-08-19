@@ -73,7 +73,7 @@ export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
     // Identity as an (id, email) pair: the id is the key, the email display.
     ownerId: pres.ownerId || null,
     createdById: pres.createdById || null,
-    updatedById: pres.updatedById || null,
+    updatedById: pres.updatedBy?.id || null,
     ownerEmail,
     visibility: pres.visibility || 'private',
     // A view-only organization deck is comment-only for everyone but its

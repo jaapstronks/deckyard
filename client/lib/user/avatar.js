@@ -5,7 +5,8 @@
  */
 
 import { h } from '../dom.js';
-import { initialsForName, displayNameFromEmail } from './user-format.js';
+import { initialsForName } from './user-format.js';
+import { t } from '../ui-i18n.js';
 
 /**
  * Size presets for avatars
@@ -19,7 +20,7 @@ const AVATAR_SIZES = {
 };
 
 /**
- * Generate a consistent color for initials based on email/name
+ * Generate a consistent color for initials based on a stable seed
  * @param {string} str - String to hash
  * @returns {string} HSL color string
  */
@@ -38,9 +39,16 @@ function getInitialsColor(str) {
 /**
  * Create an avatar element.
  *
+ * Takes a ready display name rather than deriving one from an address: since
+ * D22 the server hands the client `{ id, displayName }` and most avatar call
+ * sites have no address to derive from. `seed` is only hashed for the initials
+ * colour, so the same person keeps the same tint across views — pass whatever
+ * stable identifier the caller holds (a user id, or an address where the
+ * viewer legitimately has one).
+ *
  * @param {Object} options
  * @param {string} [options.imageUrl] - URL of the profile image
- * @param {string} [options.email] - User's email (for initials fallback)
+ * @param {string} [options.seed] - Stable identifier, hashed for the initials colour
  * @param {string} [options.name] - User's display name (for initials)
  * @param {'xs'|'sm'|'md'|'lg'|'xl'} [options.size='sm'] - Avatar size
  * @param {string} [options.className] - Additional CSS classes
@@ -48,15 +56,15 @@ function getInitialsColor(str) {
  */
 export function createAvatar({
   imageUrl,
-  email,
+  seed,
   name,
   size = 'sm',
   className = '',
 } = {}) {
   const sizeClass = `avatar--${size}`;
-  const displayName = name || displayNameFromEmail(email);
+  const displayName = name || t('common.unknown', 'Unknown');
   const initials = initialsForName(displayName);
-  const bgColor = getInitialsColor(email || name || '');
+  const bgColor = getInitialsColor(seed || name || '');
 
   const container = h('div', {
     class: `avatar ${sizeClass}${className ? ` ${className}` : ''}`,

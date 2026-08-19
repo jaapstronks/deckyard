@@ -2218,8 +2218,16 @@ components:
         createdAt:
           type: string
           format: date-time
-        createdBy:
+        createdById:
           type: string
+          format: uuid
+          nullable: true
+          description: >-
+            The stable user id of whoever added the item to the library. This
+            was `createdBy`, their e-mail address, until D22: an id names the
+            same person and discloses nothing about them, exactly as `ownerId`
+            does on a deck. Null for an item whose creator has no user record
+            on this instance — a defined absence, not an error.
 
     DeckExport:
       type: object

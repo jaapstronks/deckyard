@@ -302,7 +302,7 @@ test('GET /slide-library/:itemId returns the sanitized item', async () => {
     [
       'content',
       'createdAt',
-      'createdBy',
+      'createdById',
       'id',
       'name',
       'slideType',

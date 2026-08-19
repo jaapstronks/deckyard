@@ -8,6 +8,11 @@ import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
+import {
+  resolveDisplayNames,
+  toStoredActorIdentity,
+  NO_DISPLAY_NAMES,
+} from './display-identity.js';
 
 // ============================================================
 // CREATE
@@ -58,7 +63,7 @@ export async function createNotification(scope, data) {
 
     return {
       ok: true,
-      notification: formatNotification(row),
+      notification: formatNotification(row, await actorDisplayNames([row])),
     };
   });
 }
@@ -117,7 +122,8 @@ export async function listNotifications(scope, userEmail, options = {}) {
       .offset(offset)
       .execute();
 
-    return rows.map(formatNotification);
+    const lookup = await actorDisplayNames(rows);
+    return rows.map((row) => formatNotification(row, lookup));
   });
 }
 
@@ -188,7 +194,7 @@ export async function markAsRead(scope, notificationId, userEmail) {
 
     return {
       ok: true,
-      notification: formatNotification(row),
+      notification: formatNotification(row, await actorDisplayNames([row])),
     };
   });
 }
@@ -255,7 +261,10 @@ export async function archiveNotification(scope, notificationId, userEmail) {
     if (!row) {
       return { ok: false, reason: 'not_found' };
     }
-    return { ok: true, notification: formatNotification(row) };
+    return {
+      ok: true,
+      notification: formatNotification(row, await actorDisplayNames([row])),
+    };
   });
 }
 
@@ -392,7 +401,7 @@ export async function findUnreadDeckActivityNotification(
     if (sinceIso) qb = qb.where('created_at', '>', sinceIso);
 
     const row = await qb.orderBy('created_at', 'desc').executeTakeFirst();
-    return row ? formatNotification(row) : null;
+    return row ? formatNotification(row, await actorDisplayNames([row])) : null;
   });
 }
 
@@ -446,7 +455,10 @@ export async function refreshDeckActivityNotification(
     if (!row) {
       return { ok: false, reason: 'not_found' };
     }
-    return { ok: true, notification: formatNotification(row) };
+    return {
+      ok: true,
+      notification: formatNotification(row, await actorDisplayNames([row])),
+    };
   });
 }
 
@@ -459,7 +471,7 @@ export async function refreshDeckActivityNotification(
  * @param {Object} row - Database row
  * @returns {Object} - Formatted notification
  */
-function formatNotification(row) {
+function formatNotification(row, lookup = NO_DISPLAY_NAMES) {
   let parsedData = {};
   if (row.data) {
     try {
@@ -477,8 +489,11 @@ function formatNotification(row) {
     title: row.title,
     body: row.body,
     presentationId: row.presentation_id,
-    actorEmail: row.actor_email,
-    actorName: row.actor_name,
+    // Who acted is display, never a decision (D22): the pair replaces the
+    // `actorEmail` + `actorName` echo, which handed every recipient the
+    // commenter's address so the client could look up a profile picture with
+    // it. See server/storage/display-identity.js.
+    actor: toStoredActorIdentity(row.actor_email, row.actor_name, lookup),
     data: parsedData,
     actionUrl: row.action_url,
     isRead: row.is_read,
@@ -486,4 +501,22 @@ function formatNotification(row) {
     archivedAt: row.archived_at ?? null,
     createdAt: row.created_at,
   };
+}
+
+/**
+ * Resolve the display names a batch of notification rows needs.
+ *
+ * `user_notifications` stores no actor id (see storage/display-identity.js on
+ * why a display stamp gets no id column), so the address is the lookup key and
+ * the resolved identity's `id` stays null.
+ *
+ * @param {Array<Object>} rows - Raw `user_notifications` rows.
+ * @returns {Promise<import('./display-identity.js').DisplayNameLookup>}
+ */
+async function actorDisplayNames(rows) {
+  const stamps = (rows || [])
+    .filter((row) => row?.actor_email)
+    .map((row) => ({ email: row.actor_email }));
+  if (!stamps.length) return NO_DISPLAY_NAMES;
+  return resolveDisplayNames(stamps);
 }

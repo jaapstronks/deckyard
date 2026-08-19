@@ -18,6 +18,11 @@ import { getDb, sql } from '../../db/client.js';
 import { getOrgId } from '../../utils/context.js';
 import { resolveIdentityByEmail } from '../identity-resolver.js';
 import { toStorageContext } from '../scope.js';
+import {
+  resolveDisplayNames,
+  toDisplayIdentity,
+  NO_DISPLAY_NAMES,
+} from '../display-identity.js';
 import { nowIso } from '../../utils/normalize.js';
 
 /**
@@ -33,9 +38,11 @@ function jsonb(value) {
 /**
  * Map a slide_library row to the facade's API object.
  * @param {object} row - Database row
+ * @param {import('../display-identity.js').DisplayNameLookup} [lookup] -
+ *   Resolved display names; omitted derives them from the stored address.
  * @returns {object}
  */
-function mapSlideLibraryRow(row) {
+function mapSlideLibraryRow(row, lookup = NO_DISPLAY_NAMES) {
   return {
     id: row.id,
     shelf: row.shelf,
@@ -54,8 +61,14 @@ function mapSlideLibraryRow(row) {
     trashedBy: row.trashed_by,
     createdById: row.created_by_user_id || null,
     createdBy: row.created_by,
-    updatedById: row.updated_by_user_id || null,
-    updatedBy: row.updated_by,
+    // The last writer is display only — no guard asks who it was — so it
+    // travels as a display pair (D22) while the creator/trasher stamps above
+    // keep their (id, e-mail) form for the matching they still do.
+    updatedBy: toDisplayIdentity(
+      row.updated_by_user_id,
+      row.updated_by,
+      lookup,
+    ),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -103,7 +116,8 @@ async function listSlideLibraryRows(ctx, opts = {}) {
   // § List reads.
   const rows = await query.execute();
 
-  return rows.map(mapSlideLibraryRow);
+  const lookup = await libraryDisplayNames(rows);
+  return rows.map((row) => mapSlideLibraryRow(row, lookup));
 }
 
 async function getSlideLibraryRow(id, ctx) {
@@ -118,7 +132,7 @@ async function getSlideLibraryRow(id, ctx) {
     .executeTakeFirst();
 
   if (!row) return null;
-  return mapSlideLibraryRow(row);
+  return mapSlideLibraryRow(row, await libraryDisplayNames([row]));
 }
 
 async function createSlideLibraryRow(data, ctx) {
@@ -155,7 +169,7 @@ async function createSlideLibraryRow(data, ctx) {
     .returningAll()
     .executeTakeFirst();
 
-  return mapSlideLibraryRow(row);
+  return mapSlideLibraryRow(row, await libraryDisplayNames([row]));
 }
 
 async function updateSlideLibraryRow(id, data, ctx) {
@@ -193,7 +207,7 @@ async function updateSlideLibraryRow(id, data, ctx) {
     .executeTakeFirst();
 
   if (!row) return null;
-  return mapSlideLibraryRow(row);
+  return mapSlideLibraryRow(row, await libraryDisplayNames([row]));
 }
 
 async function deleteSlideLibraryRow(id, ctx) {
@@ -561,4 +575,17 @@ export async function setTagsForSlideLibraryItem(
   }
 
   return tagIds;
+}
+
+/**
+ * Resolve the display names a batch of library rows needs.
+ * @param {Array<Object>} rows - Raw `slide_library` rows.
+ * @returns {Promise<import('../display-identity.js').DisplayNameLookup>}
+ */
+async function libraryDisplayNames(rows) {
+  return resolveDisplayNames(
+    (rows || [])
+      .filter(Boolean)
+      .map((row) => ({ id: row.updated_by_user_id, email: row.updated_by })),
+  );
 }

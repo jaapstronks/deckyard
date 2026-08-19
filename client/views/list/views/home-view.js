@@ -653,7 +653,8 @@ function bundleActivityEvents(events) {
     const sameRun =
       last &&
       last.event.eventType === event.eventType &&
-      (last.event.actorEmail || '') === (event.actorEmail || '') &&
+      (last.event.actor?.id || last.event.actor?.displayName || '') ===
+        (event.actor?.id || event.actor?.displayName || '') &&
       (last.event.presentationId || '') === (event.presentationId || '');
     if (sameRun) {
       last.count += 1;
@@ -682,10 +683,10 @@ function renderActivityPreviewItem(h, nav, { event, count }, detachThumbs) {
     },
   });
 
-  const rawActor = event.actorName || event.actorEmail || 'Someone';
-  // Strip the domain when only an email is available, so the feed reads
-  // "riley commented on…" rather than "riley@example.com commented on…".
-  const actorName = rawActor.includes('@') ? rawActor.split('@')[0] : rawActor;
+  // The server derives the display name now (D22), so the feed no longer has
+  // to strip a domain off an address it should never have received.
+  const actorName =
+    event.actor?.displayName || t('activity.someone', 'Someone');
   const initials = actorName.slice(0, 2).toUpperCase();
 
   let actionText = '';

@@ -85,7 +85,12 @@ pgDescribe('version history via the facade (real PostgreSQL)', () => {
     assert.strictEqual(created.reason, 'manual');
     assert.strictEqual(created.label, 'checkpoint');
     assert.strictEqual(created.revision, 7);
-    assert.strictEqual(created.createdBy, 'alice@example.com');
+    // Who took the snapshot travels as a display pair since D22; the address
+    // stays in the column and never reaches the response.
+    assert.deepStrictEqual(created.createdBy, {
+      id: null,
+      displayName: 'Alice',
+    });
 
     const list = await listPresentationVersions(storageScope, deckId);
     assert.strictEqual(list.length, 1, 'one version listed');

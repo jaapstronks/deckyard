@@ -57,10 +57,26 @@ test('every identity field a presentation carries is on the strip list', () => {
     /^(owner|createdBy|updatedBy|trashedBy)/.test(key),
   );
 
+  const missing = identityish.filter(
+    (key) => !SNAPSHOT_IDENTITY_FIELDS.includes(key),
+  );
   assert.deepEqual(
-    identityish.sort(),
-    [...SNAPSHOT_IDENTITY_FIELDS].sort(),
+    missing,
+    [],
     'a presentation grew an identity field that snapshots would still embed',
+  );
+
+  // The other direction is deliberately not an equality check: the list is a
+  // superset that also covers retired field names, so that snapshots written
+  // before a rename stay strippable (see the module doc). Every extra must be
+  // one of those, named here so a typo cannot hide in the gap.
+  const retired = SNAPSHOT_IDENTITY_FIELDS.filter(
+    (key) => !identityish.includes(key),
+  );
+  assert.deepEqual(
+    retired,
+    ['updatedById'],
+    'the strip list grew an entry that is neither current nor a known retired name',
   );
 });
 

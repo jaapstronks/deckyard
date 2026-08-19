@@ -3,6 +3,12 @@
  *
  * Provides efficient access to user profile data (name, imageUrl)
  * with caching and batch fetching.
+ *
+ * **Keyed on the stable `users.id`, not on an address.** Responses that name a
+ * person carry `{ id, displayName }` since D22 — the display name arrives with
+ * the payload, so the only thing still worth fetching is the avatar image, and
+ * the id is the key the client has for it. See shared/display-name.js and
+ * server/storage/display-identity.js.
  */
 
 import { api } from '../api.js';
@@ -12,19 +18,17 @@ const profileCache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 // Pending batch requests
-let pendingEmails = new Set();
+let pendingIds = new Set();
 let batchTimer = null;
 const BATCH_DELAY_MS = 50; // Debounce batch requests
 
 /**
  * Get a user profile from cache.
- * @param {string} email - User email
+ * @param {string} userId - Stable user id
  * @returns {Object|null} Profile object or null if not cached
  */
-function getFromCache(email) {
-  const key = String(email || '')
-    .toLowerCase()
-    .trim();
+function getFromCache(userId) {
+  const key = String(userId || '').trim();
   if (!key) return null;
 
   const entry = profileCache.get(key);
@@ -41,13 +45,11 @@ function getFromCache(email) {
 
 /**
  * Store a user profile in cache.
- * @param {string} email - User email
+ * @param {string} userId - Stable user id
  * @param {Object} profile - Profile object { name, imageUrl }
  */
-function setInCache(email, profile) {
-  const key = String(email || '')
-    .toLowerCase()
-    .trim();
+function setInCache(userId, profile) {
+  const key = String(userId || '').trim();
   if (!key) return;
 
   profileCache.set(key, {
@@ -58,16 +60,16 @@ function setInCache(email, profile) {
 
 /**
  * Fetch profiles from the server.
- * @param {string[]} emails - Array of email addresses
- * @returns {Promise<Object>} Map of email -> profile
+ * @param {string[]} userIds - Array of stable user ids
+ * @returns {Promise<Object>} Map of user id -> profile
  */
-async function fetchProfilesFromServer(emails) {
-  if (!emails.length) return {};
+async function fetchProfilesFromServer(userIds) {
+  if (!userIds.length) return {};
 
   try {
-    const emailParam = emails.join(',');
+    const idParam = userIds.join(',');
     const resp = await api(
-      `/api/users/profiles?emails=${encodeURIComponent(emailParam)}`,
+      `/api/users/profiles?ids=${encodeURIComponent(idParam)}`,
     );
     return resp?.profiles || {};
   } catch (err) {
@@ -80,37 +82,32 @@ async function fetchProfilesFromServer(emails) {
  * Process pending batch requests.
  */
 async function processBatch() {
-  if (!pendingEmails.size) return;
+  if (!pendingIds.size) return;
 
-  // Get emails that aren't already cached
-  const emailsToFetch = Array.from(pendingEmails).filter(
-    (email) => !getFromCache(email),
-  );
-  pendingEmails.clear();
+  // Get ids that aren't already cached
+  const idsToFetch = Array.from(pendingIds).filter((id) => !getFromCache(id));
+  pendingIds.clear();
   batchTimer = null;
 
-  if (!emailsToFetch.length) return;
+  if (!idsToFetch.length) return;
 
-  const profiles = await fetchProfilesFromServer(emailsToFetch);
+  const profiles = await fetchProfilesFromServer(idsToFetch);
 
   // Cache the results
-  for (const email of emailsToFetch) {
-    const profile = profiles[email.toLowerCase()] || { name: '', imageUrl: '' };
-    setInCache(email, profile);
+  for (const id of idsToFetch) {
+    setInCache(id, profiles[id] || { name: '', imageUrl: '' });
   }
 }
 
 /**
- * Schedule a batch fetch for the given email.
- * @param {string} email - Email to fetch
+ * Schedule a batch fetch for the given user id.
+ * @param {string} userId - User id to fetch
  */
-function scheduleBatchFetch(email) {
-  const key = String(email || '')
-    .toLowerCase()
-    .trim();
+function scheduleBatchFetch(userId) {
+  const key = String(userId || '').trim();
   if (!key) return;
 
-  pendingEmails.add(key);
+  pendingIds.add(key);
 
   if (!batchTimer) {
     batchTimer = setTimeout(processBatch, BATCH_DELAY_MS);
@@ -123,28 +120,26 @@ function scheduleBatchFetch(email) {
  * Returns cached data immediately if available.
  * Otherwise, schedules a batch fetch and returns null.
  *
- * @param {string} email - User email
+ * @param {string} userId - Stable user id
  * @returns {Object|null} Profile object { name, imageUrl } or null
  */
-export function getUserProfile(email) {
-  const cached = getFromCache(email);
+export function getUserProfile(userId) {
+  const cached = getFromCache(userId);
   if (cached) return cached;
 
   // Schedule fetch but return null for now
-  scheduleBatchFetch(email);
+  scheduleBatchFetch(userId);
   return null;
 }
 
 /**
  * Get a single user profile, waiting for fetch if needed.
  *
- * @param {string} email - User email
+ * @param {string} userId - Stable user id
  * @returns {Promise<Object>} Profile object { name, imageUrl }
  */
-export async function getUserProfileAsync(email) {
-  const key = String(email || '')
-    .toLowerCase()
-    .trim();
+export async function getUserProfileAsync(userId) {
+  const key = String(userId || '').trim();
   if (!key) return { name: '', imageUrl: '' };
 
   // Check cache first
@@ -160,18 +155,16 @@ export async function getUserProfileAsync(email) {
 }
 
 /**
- * Prefetch profiles for a list of emails.
+ * Prefetch profiles for a list of user ids.
  * Useful for warming the cache before rendering.
  *
- * @param {string[]} emails - Array of email addresses
+ * @param {string[]} userIds - Array of stable user ids
  */
-export function prefetchProfiles(emails) {
-  if (!Array.isArray(emails)) return;
+export function prefetchProfiles(userIds) {
+  if (!Array.isArray(userIds)) return;
 
-  for (const email of emails) {
-    const key = String(email || '')
-      .toLowerCase()
-      .trim();
+  for (const userId of userIds) {
+    const key = String(userId || '').trim();
     if (key && !getFromCache(key)) {
       scheduleBatchFetch(key);
     }
@@ -181,12 +174,10 @@ export function prefetchProfiles(emails) {
 /**
  * Invalidate a cached profile (e.g., after update).
  *
- * @param {string} email - Email to invalidate
+ * @param {string} userId - User id to invalidate
  */
-export function invalidateProfile(email) {
-  const key = String(email || '')
-    .toLowerCase()
-    .trim();
+export function invalidateProfile(userId) {
+  const key = String(userId || '').trim();
   if (key) {
     profileCache.delete(key);
   }
