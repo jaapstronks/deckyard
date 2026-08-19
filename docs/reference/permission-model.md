@@ -69,7 +69,7 @@ Storage and cache:
 Enforcement seam and the routes that hand grants out:
 
 - `server/utils/route-middleware.js` — `withPresentationAuth` (load + check +
-  respond, for `read` / `write` / `delete` / `manage` / `forceLock`) and
+  respond, for `read` / `write` / `delete` / `manage`) and
   `withPresentationReadAuth` (the same, plus a guest-session fallback).
 - `server/routes/api/collaborators.js` — invite, list, revoke and re-level
   collaborators.
@@ -103,7 +103,7 @@ handed out per deck:
   (`ownerId`/`ownerEmail`, `createdById`/`createdBy`). Both stamps grant the
   same author-level rights, which is why one function answers for both
   (`isOwnerOrCreator`). This is the only position that can delete the deck,
-  transfer it, force-release a lock, or lock slides against collaborators.
+  transfer it, or lock slides against collaborators.
 - **The unrestricted operator** — `user.unrestricted`, set only for the
   anonymous admin of an auth-disabled install (`AUTH_ENABLED=false`,
   `server/auth/auth.js`). There is nobody to protect decks from, so every
@@ -157,7 +157,7 @@ nothing itself:
    (cached).
 3. Apply the decider for the requested permission
    (`read` → `canReadPresentation`, `write` → `canWritePresentation`,
-   `delete`, `manage`, `forceLock`). `false` → **401**.
+   `delete`, `manage`). `false` → **401**.
 4. Return the presentation.
 
 `withPresentationReadAuth` is the same with one extra rung: if the
@@ -186,9 +186,8 @@ Where the deciders differ from that shape, they differ deliberately:
   because two gates sit in between: in sandbox mode an organization deck is
   read-only for guests (curated seed content), and `isViewOnly` makes a deck
   read-only for everyone who is not its owner.
-- **`canDeletePresentation`**, **`canForceLockRelease`**,
-  **`canTransferOwnership`** and **`isPresentationAuthor`** consult ownership
-  only. No collaborator level reaches them, `admin` included.
+- **`canDeletePresentation`**, **`canTransferOwnership`** and
+  **`isPresentationAuthor`** consult ownership only. No collaborator level reaches them, `admin` included.
 - **`canManageCollaborators`** grants to owner/creator or an `admin`
   collaborator. Note what is _absent_: the organization grant. Being in the deck's
   organization lets you edit it; it does not let you hand out access to it.

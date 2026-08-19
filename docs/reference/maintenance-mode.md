@@ -59,10 +59,9 @@ it lands in the `Retry-After` header of every refused write.
 - `client/views/shared/maintenance-banner.js` mounts on `document.body`, outside
   the SPA view root, so it survives navigation. Same pattern as the sandbox
   banner.
-- `client/views/editor/editor-controller.js` ORs maintenance with the existing
-  presentation-lock read-only state. The two sources must not clobber each
-  other: a lock released mid-deploy would otherwise hand editing back while
-  every save is still bouncing.
+- `client/views/editor/read-only-controller.js` owns the editor's read-only
+  state and mirrors it onto the shell; maintenance is its one source (slide
+  locks gate individual slides, never the whole editor).
 
 ## Why it rides the comments SSE stream
 

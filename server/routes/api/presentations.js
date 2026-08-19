@@ -31,18 +31,6 @@ import {
   handlePresentationPermanentDelete,
 } from './presentations/trash.js';
 import {
-  handlePresentationLockAcquire,
-  handlePresentationLockRefresh,
-  handlePresentationLockRelease,
-  handlePresentationLockStatus,
-  handlePresentationLockForceRelease,
-  handlePresentationLockRequest,
-  handlePresentationLockRequestsList,
-  handlePresentationLockRequestAccept,
-  handlePresentationLockRequestReject,
-  handlePresentationLockMyRequest,
-} from './presentations/locks.js';
-import {
   handlePresentationCommentsList,
   handlePresentationCommentsCreate,
   handlePresentationCommentGet,
@@ -153,7 +141,7 @@ function handleLegacyImportBadRequest({ res }) {
  *
  * IMPORTANT — this is a first-match dispatcher. The order below is significant
  * and mirrors the original `if`-chain exactly: specific paths (`/search`,
- * `/popular`, `/trash`, `/import/*`, the `/versions/…`, `/lock/…`,
+ * `/popular`, `/trash`, `/import/*`, the `/versions/…`,
  * `/slides/…/lock`, and `/comments/…` sub-routes) MUST stay ahead of the
  * generic `/api/presentations/:id`. Do not alphabetize or regroup.
  *
@@ -292,50 +280,6 @@ const ROUTES = [
   {
     pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)$/,
     handler: handlePresentationVersionItem,
-  },
-
-  // Presence / soft locks (advisory)
-  {
-    pattern: /^\/api\/presentations\/([^/]+)\/lock$/,
-    handler: handlePresentationLockStatus,
-  },
-  {
-    pattern: /^\/api\/presentations\/([^/]+)\/lock\/acquire$/,
-    handler: handlePresentationLockAcquire,
-  },
-  {
-    pattern: /^\/api\/presentations\/([^/]+)\/lock\/refresh$/,
-    handler: handlePresentationLockRefresh,
-  },
-  {
-    pattern: /^\/api\/presentations\/([^/]+)\/lock\/release$/,
-    handler: handlePresentationLockRelease,
-  },
-  {
-    pattern: /^\/api\/presentations\/([^/]+)\/lock\/force-release$/,
-    handler: handlePresentationLockForceRelease,
-  },
-
-  // Lock request endpoints
-  {
-    pattern: /^\/api\/presentations\/([^/]+)\/lock\/request$/,
-    handler: handlePresentationLockRequest,
-  },
-  {
-    pattern: /^\/api\/presentations\/([^/]+)\/lock\/requests$/,
-    handler: handlePresentationLockRequestsList,
-  },
-  {
-    pattern: /^\/api\/presentations\/([^/]+)\/lock\/requests\/([^/]+)\/accept$/,
-    handler: handlePresentationLockRequestAccept,
-  },
-  {
-    pattern: /^\/api\/presentations\/([^/]+)\/lock\/requests\/([^/]+)\/reject$/,
-    handler: handlePresentationLockRequestReject,
-  },
-  {
-    pattern: /^\/api\/presentations\/([^/]+)\/lock\/my-request$/,
-    handler: handlePresentationLockMyRequest,
   },
 
   // ============================================================

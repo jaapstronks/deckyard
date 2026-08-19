@@ -64,7 +64,6 @@ import {
 import { loadEditorModel } from './load-editor-model.js';
 import { attachEditorLifecycle } from './editor-lifecycle.js';
 import { getFeatures } from '../../lib/state/features.js';
-import { attachPresentationPresenceLock } from './presence-lock.js';
 import { createSlideLockManager } from './slide-lock-manager.js';
 import { syncSlideIdInUrl } from './slide-url.js';
 import { createCommentsPanel } from './comments-panel.js';
@@ -201,7 +200,6 @@ export async function createEditorController({
   let uiRefreshTimer = null;
   let commentsPanel = null;
   let setCommentsBadgeFn = () => {};
-  let setLockStateCallbackFn = () => {};
   let slideCommentCounts = {};
 
   // ============================================================
@@ -287,9 +285,9 @@ export async function createEditorController({
     return null;
   };
 
-  // Read-only state (lock source OR maintenance source) is owned by
-  // createReadOnlyController; it mirrors onto the shell, so it is created once
-  // the shell exists (below). See ./read-only-controller.js.
+  // Read-only state (server maintenance) is owned by createReadOnlyController;
+  // it mirrors onto the shell, so it is created once the shell exists (below).
+  // See ./read-only-controller.js.
 
   // Collaborator presence (initialized further down when features.collab)
   let presenceHandle = null;
@@ -667,29 +665,6 @@ export async function createEditorController({
     syncShareUi: dropdowns.syncShareUi,
     openOverlayClosers,
     markDirty,
-    setPresenceText: (setter) => {
-      // Live-edit mode: no lock plumbing at all. CRDT merging replaces edit
-      // exclusivity and the presence layer (avatar stack, slide dots) covers
-      // awareness, so the presence-lock module is never attached — the
-      // topbar lock-request UI stays dormant (its buttons only appear when
-      // a lock-state callback fires) and no fake holder state is reported.
-      if (liveEditsActive) return;
-      const detachPresenceLock = attachPresentationPresenceLock({
-        api,
-        id,
-        onPresenceText: (t) => setter?.(t),
-        onLockStateChange: (state, actions) => {
-          setLockStateCallbackFn?.(state, actions);
-        },
-        // Use slide-level locking instead of presentation-level locking
-        // This allows multiple users to edit different slides simultaneously
-        useSlideLevelLocking: true,
-      });
-      cleanup.register('presenceLock', detachPresenceLock);
-    },
-    setLockStateCallback: (fn) => {
-      setLockStateCallbackFn = fn;
-    },
     onOpenOverview: openDeckOverview,
     onAnalyze: () => {
       openAnalyzeModalImpl({
@@ -711,27 +686,6 @@ export async function createEditorController({
         },
       });
     },
-    onReadOnlyChange: (() => {
-      let wasReadOnly = false;
-      return (isReadOnly, lockInfo) => {
-        readOnlyController.setLockReadOnly(isReadOnly);
-        if (isReadOnly && !wasReadOnly && lockInfo) {
-          const who =
-            lockInfo.holderName ||
-            lockInfo.holderEmail ||
-            t('editor.readOnly.someone', 'someone else');
-          toast.info(
-            t(
-              'editor.readOnly.toast',
-              'This presentation is being edited by {who}. You can view but not edit.',
-              { who },
-            ),
-            { id: 'editor-read-only', durationMs: 6000 },
-          );
-        }
-        wasReadOnly = isReadOnly;
-      };
-    })(),
   });
 
   topbarTitle = topbarApi.topbarTitleEl;
@@ -1207,8 +1161,7 @@ export async function createEditorController({
   // Initialize slide lock manager. In live-edit mode the lock machinery is
   // fully retired: the manager is never initialized (no SSE listener, no
   // refresh timer, no acquisitions — its lock getters just report "no
-  // locks"), the presence-lock module above is never attached, and slide
-  // selection skips acquisition. Concurrent editing through the CRDT doc is
+  // locks") and slide selection skips acquisition. Concurrent editing through the CRDT doc is
   // the whole point; presence indicators cover awareness. Author locks
   // (lockedByAuthor) are checked directly on the slide data and keep
   // working in both modes. The flag-off path is untouched.

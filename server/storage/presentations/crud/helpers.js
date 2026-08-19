@@ -4,9 +4,9 @@
 
 import { normalizePresentationVisibility } from '../../../utils/presentation-authz.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
-import { ConflictError, LockedError } from '../../../utils/errors.js';
+import { ConflictError } from '../../../utils/errors.js';
 import { slideFingerprint } from '../../../../shared/slide-fingerprint.js';
-import { envBool, envInt } from '../../../config/utils.js';
+import { envInt } from '../../../config/utils.js';
 
 /**
  * Normalize presentation metadata.
@@ -42,24 +42,6 @@ export function conflictError(existing) {
       updatedBy: existing?.updatedBy || null,
     },
   );
-}
-
-/**
- * Create a locked error with lock holder details.
- */
-export function lockedError(lock) {
-  return new LockedError('Presentation is locked by another user.', {
-    holderEmail: lock?.holderEmail,
-    holderName: lock?.holderName,
-    acquiredAt: lock?.acquiredAt,
-  });
-}
-
-/**
- * Check if enforced locks are enabled.
- */
-export function useEnforcedLocks() {
-  return envBool('USE_DB_LOCKS');
 }
 
 // The slide-level merge exists for seconds-to-minutes concurrent editing.

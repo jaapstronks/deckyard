@@ -315,11 +315,6 @@
   width: min(800px, 100%);
 }
 
-/* Narrower modal for pending access requests */
-.modal.modal-pending-requests {
-  width: min(420px, 100%);
-}
-
 .modal-field {
   display: flex;
   flex-direction: column;
@@ -378,8 +373,7 @@
     border-radius: 0;
   }
 
-  .modal.modal-lg,
-  .modal.modal-pending-requests {
+  .modal.modal-lg {
     width: 100%;
     max-width: 100%;
   }

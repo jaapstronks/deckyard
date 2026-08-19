@@ -17,7 +17,6 @@ import {
   canWritePresentation,
   canDeletePresentation,
   canManageCollaborators,
-  canForceLockRelease,
   canCommentOnPresentation,
 } from './presentation-authz.js';
 import { isMultiOrgEnabled } from '../config/features.js';
@@ -220,7 +219,6 @@ const PERMISSION_CHECKS = {
   write: canWritePresentation,
   delete: canDeletePresentation,
   manage: canManageCollaborators,
-  forceLock: canForceLockRelease,
 };
 
 /**
@@ -236,7 +234,7 @@ const PERMISSION_CHECKS = {
  * @param {string} options.id - Presentation ID
  * @param {Object} options.authedUser - Authenticated user object
  * @param {Object} options.res - HTTP response object
- * @param {'read'|'write'|'delete'|'manage'|'forceLock'} [options.permission='read'] - Required permission
+ * @param {'read'|'write'|'delete'|'manage'} [options.permission='read'] - Required permission
  * @returns {Promise<Object|null>} The presentation if authorized, null if error response was sent
  *
  * @example

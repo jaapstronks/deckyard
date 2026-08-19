@@ -67,8 +67,8 @@ each path resolves.
 **Top-level facades** cover the remaining domains: auth/account
 (`users.js`, `sso.js`, `magic-link.js`, `password-reset.js`, `api-keys.js`,
 `api-usage.js`, `access-attempts.js`), presentation-adjacent
-(`presentation-comments.js`, `presentation-locks-db.js`,
-`presentation-subscriptions.js`, `presentation-ydocs.js`, `slide-locks.js`),
+(`presentation-comments.js`, `presentation-subscriptions.js`,
+`presentation-ydocs.js`, `slide-locks.js`),
 collaboration/live (`collaborators.js`, `notifications.js`,
 `activity-events.js`, `feedback.js`, `leads.js`, `questions.js`,
 `interactions.js`, `follow-codes.js`), and content

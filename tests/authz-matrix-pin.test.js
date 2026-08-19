@@ -44,7 +44,6 @@ const {
   canWritePresentation,
   canDeletePresentation,
   canChangePresentationVisibility,
-  canForceLockRelease,
   canManageCollaborators,
   canCommentOnPresentation,
   isPresentationAuthor,
@@ -334,27 +333,6 @@ describe('canChangePresentationVisibility', () => {
         nextVisibility: 'organization',
       }),
       false,
-    );
-  });
-});
-
-describe('canForceLockRelease (slide locks)', () => {
-  it('owner and creator can force-release; others cannot', () => {
-    assert.equal(canForceLockRelease({ user: OWNER, pres: privateDeck }), true);
-    assert.equal(
-      canForceLockRelease({ user: CREATOR, pres: privateDeck }),
-      true,
-    );
-    assert.equal(
-      canForceLockRelease({ user: OTHER, pres: privateDeck }),
-      false,
-    );
-    assert.equal(canForceLockRelease({ user: ANON, pres: privateDeck }), false);
-  });
-  it('the unrestricted operator can force-release', () => {
-    assert.equal(
-      canForceLockRelease({ user: OPERATOR, pres: privateDeck }),
-      true,
     );
   });
 });

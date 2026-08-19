@@ -8,7 +8,10 @@
  *
  *   - the hyphen module/route/URL form  `present-session`
  *   - the identifier form                `PresentSession` (Present + Session)
- *   - the only `-db` suffix in storage   `presentation-locks-db`
+ *
+ * (The sweep also dropped the one `-db` storage suffix of its day; that module
+ * was removed outright with the presentation-level locks in B96, so there is
+ * no needle for it any more.)
  *
  * Deliberately NOT forbidden: the snake_case physical table `present_sessions`
  * (and its columns / index names). Renaming the table needs a migration and is
@@ -48,10 +51,6 @@ const FORBIDDEN = [
   {
     label: 'Present' + 'Session identifier (use LiveSession)',
     re: new RegExp('Present' + 'Session'),
-  },
-  {
-    label: 'presentation-locks' + '-db (drop the -db suffix)',
-    re: new RegExp('presentation-locks' + '-db'),
   },
 ];
 

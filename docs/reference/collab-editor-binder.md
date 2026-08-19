@@ -57,10 +57,9 @@ these paths is untouched:
   server JSON.
 - **Slide locks**: fully retired (concurrent editing is the point). The
   slide-lock manager is never initialized (no SSE listener, no refresh
-  timer, no acquisitions), slide selection skips acquisition, and the
-  presence-lock module is never attached — so the topbar lock-request UI
-  stays dormant and no lock endpoints are called at all. The machinery
-  itself is untouched and keeps serving flag-off editors byte-for-byte.
+  timer, no acquisitions) and slide selection skips acquisition — so no
+  lock endpoints are called at all. The machinery itself is untouched and
+  keeps serving flag-off editors byte-for-byte.
   Author locks (`lockedByAuthor`) are checked directly on the slide data
   and keep working in both modes.
 - **Language switching** reads the requested version from the live doc
