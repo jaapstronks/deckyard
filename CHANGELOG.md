@@ -4,6 +4,31 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.21.0](https://github.com/jaapstronks/deckyard/compare/v1.20.0...v1.21.0) (2026-08-19)
+
+
+### Added
+
+* converge internal + v1 publish on one shared core (B62 vondst 8) ([#785](https://github.com/jaapstronks/deckyard/issues/785)) ([3359abd](https://github.com/jaapstronks/deckyard/commit/3359abd7cde114959b18a43e6ca90a6ae2c60a0b))
+* converge public API v1 on one error envelope (B61) ([#783](https://github.com/jaapstronks/deckyard/issues/783)) ([5310328](https://github.com/jaapstronks/deckyard/commit/53103289d134bf8a6112fe176274ed665d702647))
+* expose leads.retentionDays in the admin settings UI (B82) ([#795](https://github.com/jaapstronks/deckyard/issues/795)) ([b607ead](https://github.com/jaapstronks/deckyard/commit/b607eade3f3033207065dbb903692b0a1d75b6f7))
+* expose the lead.submitted webhook in the admin UI (B72) ([#787](https://github.com/jaapstronks/deckyard/issues/787)) ([65d2b3d](https://github.com/jaapstronks/deckyard/commit/65d2b3df9e9250dacc71a53a7a150d33b7887bfc))
+* make the leads my-data self-service routes public (B63b) ([#780](https://github.com/jaapstronks/deckyard/issues/780)) ([1b98fe6](https://github.com/jaapstronks/deckyard/commit/1b98fe658dd4ac52dcf23f00ee43e90f782b668f))
+* my-data landing page + durable GDPR token store (B63b-rest) ([#782](https://github.com/jaapstronks/deckyard/issues/782)) ([e013dce](https://github.com/jaapstronks/deckyard/commit/e013dcee3c2799cc8d3efe7661b189f7ae85b8e3))
+* re-host Notion images via the media library without ImageKit (B80) ([#797](https://github.com/jaapstronks/deckyard/issues/797)) ([add2a8c](https://github.com/jaapstronks/deckyard/commit/add2a8c51d247e31a496b32816728dff78ac6dfb))
+* webhook actor.id -&gt; users.id, opt-in HMAC signing, rebrand user-agent (B81) ([#799](https://github.com/jaapstronks/deckyard/issues/799)) ([7ce09a9](https://github.com/jaapstronks/deckyard/commit/7ce09a986a0736a7d1504cc1460ee9bc313f9253))
+
+
+### Fixed
+
+* cap normal two-column lists at 6 when a subheading meets 3-line titles (B54) ([#794](https://github.com/jaapstronks/deckyard/issues/794)) ([eb66a08](https://github.com/jaapstronks/deckyard/commit/eb66a0884fa38b8848728e6e0931029bc24dd538))
+* resolve team-library authz guard and list facades past the latent 100-row cap (B85) ([c387de9](https://github.com/jaapstronks/deckyard/commit/c387de93de6213465d7ff3ca9c0152219524605d))
+
+
+### Security
+
+* SSRF-guard the Notion image re-host fetches, enforce Scaleway maxBytes (B84) ([#807](https://github.com/jaapstronks/deckyard/issues/807)) ([2a86be1](https://github.com/jaapstronks/deckyard/commit/2a86be1b52dab9868f9e03e2a3537c4f3c9a1988))
+
 ## [1.20.0](https://github.com/jaapstronks/deckyard/compare/v1.19.0...v1.20.0) (2026-08-17)
 
 
