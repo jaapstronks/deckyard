@@ -17,7 +17,9 @@ import { escapeHtml } from '../../../shared/slide-types/helpers.js';
  *
  * The input is HTML, so an unescaped `<` counts as tag syntax; literal text
  * arrives as `&lt;` and stays escaped (the plain-text part is not a sink that
- * decodes it).
+ * decodes it). CodeQL keeps flagging the regex shape itself; the alert is
+ * dismissed as a false positive with that reasoning — the result of this
+ * function goes into a `text/plain` body, never into an HTML parser.
  *
  * @param {string} html - HTML fragment (our own template markup; interpolated
  *   values are already escaped by the caller).
