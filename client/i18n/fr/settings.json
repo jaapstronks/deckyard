@@ -57,7 +57,7 @@
   "settings.admin.webhooks.leadSubmitted.hint": "Événement : lead.submitted",
   "settings.admin.webhooks.leadSubmitted.title": "Lorsqu'un lead est envoyé",
   "settings.admin.webhooks.likertClosed.hint": "Événement : interaction.likert_closed",
-  "settings.admin.webhooks.likertClosed.title": "Lorsqu’une échelle de Likert est clôturée",
+  "settings.admin.webhooks.likertClosed.title": "Lorsqu'une échelle de Likert est clôturée",
   "settings.admin.webhooks.movedToOrganization.hint": "Événement : presentation.moved_to_organization",
   "settings.admin.webhooks.movedToOrganization.title": "Lorsqu'une présentation est partagée dans l'espace de travail",
   "settings.admin.webhooks.pollClosed.hint": "Événement : interaction.poll_closed",

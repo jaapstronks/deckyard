@@ -12,12 +12,16 @@
  * see DYNAMIC_KEY_PREFIXES for the families they cover.
  *
  * A `t()` call is not the only *static* spelling, though. Descriptor tables pass
- * the key and its English fallback as a paired `<x>Key` / `<x>Default` property
- * and hand both to `t()` later (`WEBHOOK_CONFIGS` in
- * client/views/settings/sections/admin-webhooks-section.js is the canonical
- * shape). Those keys are every bit as static, and they used to be invisible
- * here — which is how six webhook keys and three settings-tab keys went missing
- * from Tier 1 without the coverage gate noticing. DESCRIPTOR_PAIR picks them up.
+ * the key and its English fallback as a paired property and hand both to `t()`
+ * later, in two spellings: `<x>Key` / `<x>Default` (`WEBHOOK_CONFIGS` in
+ * client/views/settings/sections/admin-webhooks-section.js, the settings
+ * sidebar tabs) and `<x>Key` / `<x>` (`labelKey` / `label` on slide-type,
+ * preset and field descriptors, `hintKey` / `hint` on the data-source
+ * providers). Those keys are every bit as static, and they used to be invisible
+ * here — which is how six webhook keys, three settings-tab keys and fourteen
+ * font-editor / field-type keys went missing from Tier 1 without the coverage
+ * gate noticing. DESCRIPTOR_PAIR picks both spellings up; the pair must be
+ * adjacent, key first.
  */
 
 import fs from 'node:fs/promises';
@@ -91,12 +95,13 @@ async function* walkJs(dir) {
   }
 }
 
-// <x>Key: '<key>', <x>Default: '<English fallback>' — a descriptor-table entry
-// whose two halves are handed to t() elsewhere. The prefix backreference is
-// what makes this a *pair* rather than two unrelated properties, so an
-// unrelated `settingsKey` next to a `titleDefault` cannot match.
+// <x>Key: '<key>', <x>Default: '<English fallback>' — or the bare
+// <x>Key: '<key>', <x>: '<English fallback>' — a descriptor-table entry whose
+// two halves are handed to t() elsewhere. The prefix backreference is what
+// makes this a *pair* rather than two unrelated properties, so an unrelated
+// `settingsKey` next to a `titleDefault` cannot match.
 const DESCRIPTOR_PAIR =
-  /\b(\w+)Key:\s*(['"])([\w.-]+)\2\s*,\s*\1Default:\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g;
+  /\b(\w+)Key:\s*(['"])([\w.-]+)\2\s*,\s*\1(?:Default)?:\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g;
 
 /**
  * Extract every static t() key used in the client, whether it is spelled at the
