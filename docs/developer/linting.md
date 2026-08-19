@@ -15,6 +15,8 @@ code, duplicate keys).
 | `npm run lint:deadcode` | **Advisory** dead-exports + import-cycle discovery (runs `lint:deadexports` then the cycle config). Never gates. |
 | `npm run lint:deadexports` | **Advisory** unused-export discovery on its own (the Node scanner). Never gates. |
 | `npm run lint:deadcss` | **Advisory** unreferenced CSS-selector discovery. Never gates. |
+| `npm run format` | Prettier, writes. Formatting is not a lint concern — see [Formatting](#formatting-prettier). |
+| `npm run format:check` | Prettier, checks. A **gate**; CI runs it next to `npm run lint`. |
 
 ## The gate (`npm run lint`)
 
@@ -239,6 +241,28 @@ Two properties worth knowing:
   candidates; promote it to a gate only once those are triaged away. Each hit is
   a *candidate* — verify by hand (a fully dynamic `class` built from a variable
   the scanner can't see is a false positive) before deleting.
+
+## Formatting (Prettier)
+
+Formatting is deliberately *not* ESLint's job: the gate config carries no style
+rules. The repo is formatted with [Prettier](https://prettier.io) on its
+defaults plus `singleQuote: true` (`.prettierrc`); `.prettierignore` mirrors the
+ESLint ignore list and adds the tool-written files (`CHANGELOG.md`,
+`package-lock.json`, the generated baselines under `tests/fixtures/export-metrics/`)
+and the `docs/plans` symlink.
+
+- `npm run format` writes, `npm run format:check` gates in CI. There are no
+  editor hooks and no lint-staged: CI is the gate.
+- Generators that emit committed source (`scripts/generate-slide-*.js`) pass
+  their output through `scripts/lib/format-generated.js`, so their byte-for-byte
+  tests and the formatter agree on one spelling.
+- The one-time repo-wide reformat is a single commit listed in
+  `.git-blame-ignore-revs`. Run
+  `git config blame.ignoreRevsFile .git-blame-ignore-revs` once per clone so
+  `git blame` looks through it (GitHub's blame view honours the file by itself).
+- `// prettier-ignore` is allowed where Prettier's output genuinely hurts
+  readability (a hand-aligned table of constants), always with a reason on the
+  line above. Every ignore is an exception, not a second style.
 
 ## Cadence — what runs when
 

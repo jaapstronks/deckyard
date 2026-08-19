@@ -36,6 +36,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { formatGenerated } from './lib/format-generated.js';
+
 /** Repo root, for turning the relative paths below into absolute ones. */
 export const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 
@@ -43,7 +45,11 @@ export const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 export const TYPES_DIR = path.join(REPO_ROOT, 'shared', 'slide-types', 'types');
 
 /** The generated file, repo-relative. */
-export const AGGREGATOR_PATH = path.join('shared', 'slide-types', 'inline-edit.js');
+export const AGGREGATOR_PATH = path.join(
+  'shared',
+  'slide-types',
+  'inline-edit.js',
+);
 
 /**
  * Type names that ship an `inline-edit.js`, sorted so the output is stable
@@ -55,7 +61,9 @@ export function typesWithInlineEdit() {
     .readdirSync(TYPES_DIR, { withFileTypes: true })
     .filter((e) => e.isDirectory())
     .map((e) => e.name)
-    .filter((name) => fs.existsSync(path.join(TYPES_DIR, name, 'inline-edit.js')))
+    .filter((name) =>
+      fs.existsSync(path.join(TYPES_DIR, name, 'inline-edit.js')),
+    )
     .sort();
 }
 
@@ -68,15 +76,22 @@ export function identifierFor(name) {
   return name.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
 }
 
-/** The exact bytes `shared/slide-types/inline-edit.js` should contain. */
-export function buildAggregator() {
+/**
+ * The exact bytes the aggregator should contain — Prettier-formatted with
+ * the repo config, so `npm run format` and this generator agree (one spelling;
+ * see scripts/lib/format-generated.js).
+ */
+export async function buildAggregator() {
   const names = typesWithInlineEdit();
   const imports = names
-    .map((n) => `import * as ${identifierFor(n)} from './types/${n}/inline-edit.js';`)
+    .map(
+      (n) =>
+        `import * as ${identifierFor(n)} from './types/${n}/inline-edit.js';`,
+    )
     .join('\n');
   const entries = names.map((n) => `  '${n}': ${identifierFor(n)},`).join('\n');
 
-  return `// GENERATED FILE — do not edit by hand.
+  const raw = `// GENERATED FILE — do not edit by hand.
 // Run \`node scripts/generate-slide-inline-edit-aggregator.js\` to regenerate.
 // Source of truth: the \`inline-edit.js\` in each shared/slide-types/types/<name>/.
 
@@ -143,21 +158,24 @@ export const SLIDE_TYPE_INLINE_EDIT = facet('inlineEdit');
  */
 export const SLIDE_TYPE_INSPECTOR_KEEPS = facet('inspectorKeeps');
 `;
+  return formatGenerated(AGGREGATOR_PATH, raw);
 }
 
-function main() {
+async function main() {
   const abs = path.join(REPO_ROOT, AGGREGATOR_PATH);
-  const content = buildAggregator();
+  const content = await buildAggregator();
   const current = fs.existsSync(abs) ? fs.readFileSync(abs, 'utf8') : '';
   if (current === content) {
     console.log('shared/slide-types/inline-edit.js already up to date.');
     return;
   }
   fs.writeFileSync(abs, content);
-  console.log(`updated ${AGGREGATOR_PATH} (${typesWithInlineEdit().length} types)`);
+  console.log(
+    `updated ${AGGREGATOR_PATH} (${typesWithInlineEdit().length} types)`,
+  );
 }
 
 // pathToFileURL, not a template literal: the repo path may contain spaces, which
 // import.meta.url percent-encodes and a raw `file://${argv[1]}` does not — the
 // mismatch would make this script a silent no-op (see scripts/i18n-audit.js).
-if (import.meta.url === pathToFileURL(process.argv[1]).href) main();
+if (import.meta.url === pathToFileURL(process.argv[1]).href) await main();

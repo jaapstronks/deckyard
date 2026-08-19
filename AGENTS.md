@@ -37,6 +37,20 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - Prefer small modules in `client/lib/*`, `client/views/**`, `server/utils/**`, `server/storage/**`.
   - Avoid adding dependencies unless there is a strong reason (this project works great without them).
 
+- **Formatting is Prettier's job, not a review topic**
+  - The whole repo is formatted with [Prettier](https://prettier.io) on its
+    defaults plus `singleQuote: true` (the one option in `.prettierrc` — it was
+    already the codebase's spelling; measured as the smallest diff). `npm run
+    format` writes, `npm run format:check` gates in CI next to `npm run lint`.
+    No editor hooks, no lint-staged: CI is the gate. Generators that emit
+    committed source (`scripts/generate-slide-*.js`) run their output through
+    `scripts/lib/format-generated.js` so the byte-gates and the formatter agree.
+  - The repo-wide reformat is one commit, listed in `.git-blame-ignore-revs`;
+    run `git config blame.ignoreRevsFile .git-blame-ignore-revs` once per clone
+    so `git blame` skips it. Don't hand-format, don't argue style: if Prettier
+    output is unreadable in one spot, a `// prettier-ignore` with a reason is
+    the exception, not a second style.
+
 - **Optional dependencies match how the code loads them**
   - A package that is only reached through a gated `await import()` — behind a
     feature flag or with graceful "not installed" handling — lives in

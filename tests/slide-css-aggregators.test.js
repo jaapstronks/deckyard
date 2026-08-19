@@ -24,13 +24,13 @@ import {
  * not a sort key; see the script header).
  */
 
-test('every committed aggregator is byte-identical to the generated output', () => {
-  for (const [rel, expected] of buildAllAggregators()) {
+test('every committed aggregator is byte-identical to the generated output', async () => {
+  for (const [rel, expected] of await buildAllAggregators()) {
     const actual = fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8');
     assert.equal(
       actual,
       expected,
-      `${rel} is out of date — run \`node scripts/generate-slide-css-aggregators.js\``
+      `${rel} is out of date — run \`node scripts/generate-slide-css-aggregators.js\``,
     );
   }
 });
@@ -41,7 +41,7 @@ test('every type-owned CSS entry names a real core type', () => {
     assert.ok(
       core.has(type),
       `TYPE_CSS has "${type}" but it is not a registered core type — ` +
-        `rename or remove the entry (it would emit a dead @import)`
+        `rename or remove the entry (it would emit a dead @import)`,
     );
   }
 });
@@ -61,7 +61,7 @@ test('every CSS file on disk is claimed exactly once (no orphans, no drift)', ()
       onDisk,
       `tier ${tier.dir}: the files on disk and the declared imports disagree — ` +
         `a new stylesheet must be declared (on a type via TYPE_CSS, or in SHARED_CSS), ` +
-        `and a removed one un-declared`
+        `and a removed one un-declared`,
     );
   }
 });
@@ -72,7 +72,7 @@ test('cascade order is unique within each tier (no ambiguous winner)', () => {
     assert.equal(
       new Set(orders).size,
       orders.length,
-      `tier ${tier.dir}: two imports share a cascade order — the winner is undefined`
+      `tier ${tier.dir}: two imports share a cascade order — the winner is undefined`,
     );
   }
 });
@@ -95,7 +95,13 @@ test('poll keeps its documented out-of-cascade position after countdown', () => 
   // that "tidies" poll back to its filename prefix trips here first.
   const order = tierEntries('03-components');
   const idx = (file) => order.findIndex((e) => e.file === file);
-  assert.ok(idx('10-poll.css') > idx('18-countdown.css'), 'poll loads after countdown');
-  assert.ok(idx('10-poll.css') < idx('20-chart.css'), 'poll loads before chart');
+  assert.ok(
+    idx('10-poll.css') > idx('18-countdown.css'),
+    'poll loads after countdown',
+  );
+  assert.ok(
+    idx('10-poll.css') < idx('20-chart.css'),
+    'poll loads before chart',
+  );
   assert.equal(cascadeOrder(TYPE_CSS['poll-slide'][0]), 19);
 });

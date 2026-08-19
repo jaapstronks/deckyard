@@ -27,6 +27,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { formatGenerated } from './lib/format-generated.js';
+
 /** Repo root, for turning the relative paths below into absolute ones. */
 export const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 
@@ -34,7 +36,11 @@ export const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 export const TYPES_DIR = path.join(REPO_ROOT, 'shared', 'slide-types', 'types');
 
 /** The generated file, repo-relative. */
-export const AGGREGATOR_PATH = path.join('shared', 'slide-types', 'authoring.js');
+export const AGGREGATOR_PATH = path.join(
+  'shared',
+  'slide-types',
+  'authoring.js',
+);
 
 /**
  * Type names that ship an `authoring.js`, sorted so the output is stable
@@ -60,15 +66,19 @@ export function identifierFor(name) {
   return `${camel}Authoring`;
 }
 
-/** The exact bytes `shared/slide-types/authoring.js` should contain. */
-export function buildAggregator() {
+/**
+ * The exact bytes the aggregator should contain — Prettier-formatted with
+ * the repo config, so `npm run format` and this generator agree (one spelling;
+ * see scripts/lib/format-generated.js).
+ */
+export async function buildAggregator() {
   const names = typesWithAuthoring();
   const imports = names
     .map((n) => `import ${identifierFor(n)} from './types/${n}/authoring.js';`)
     .join('\n');
   const entries = names.map((n) => `  '${n}': ${identifierFor(n)},`).join('\n');
 
-  return `// GENERATED FILE — do not edit by hand.
+  const raw = `// GENERATED FILE — do not edit by hand.
 // Run \`node scripts/generate-slide-authoring-aggregator.js\` to regenerate.
 // Source of truth: the \`authoring.js\` in each shared/slide-types/types/<name>/.
 
@@ -92,21 +102,24 @@ export const SLIDE_TYPE_AUTHORING = {
 ${entries}
 };
 `;
+  return formatGenerated(AGGREGATOR_PATH, raw);
 }
 
-function main() {
+async function main() {
   const abs = path.join(REPO_ROOT, AGGREGATOR_PATH);
-  const content = buildAggregator();
+  const content = await buildAggregator();
   const current = fs.existsSync(abs) ? fs.readFileSync(abs, 'utf8') : '';
   if (current === content) {
     console.log('shared/slide-types/authoring.js already up to date.');
     return;
   }
   fs.writeFileSync(abs, content);
-  console.log(`updated ${AGGREGATOR_PATH} (${typesWithAuthoring().length} types)`);
+  console.log(
+    `updated ${AGGREGATOR_PATH} (${typesWithAuthoring().length} types)`,
+  );
 }
 
 // pathToFileURL, not a template literal: the repo path may contain spaces,
 // which import.meta.url percent-encodes and a raw `file://${argv[1]}` does not
 // — the mismatch would make this script a silent no-op (see scripts/i18n-audit.js).
-if (import.meta.url === pathToFileURL(process.argv[1]).href) main();
+if (import.meta.url === pathToFileURL(process.argv[1]).href) await main();

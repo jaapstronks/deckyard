@@ -20,6 +20,8 @@
     "lint:deadcode": "node scripts/lint-dead-exports.js && eslint . --config eslint.deadcode.config.js",
     "lint:deadexports": "node scripts/lint-dead-exports.js",
     "lint:deadcss": "node scripts/lint-dead-css.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "audit": "node scripts/audit-codebase.js",
     "gen:slide-authoring": "node scripts/generate-slide-authoring-aggregator.js",
     "gen:slide-ai": "node scripts/generate-slide-ai-aggregator.js",
@@ -87,7 +89,8 @@
     "eslint": "^10.8.1",
     "eslint-plugin-import-x": "^4.17.1",
     "globals": "^17.9.0",
-    "image-size": "file:./vendor/image-size-stub"
+    "image-size": "file:./vendor/image-size-stub",
+    "prettier": "3.9.6"
   },
   "overrides": {
     "image-size": "file:./vendor/image-size-stub"

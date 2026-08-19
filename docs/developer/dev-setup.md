@@ -88,6 +88,7 @@ NOTION_FEATURE=true
 | `npm start` | Start development server |
 | `npm test` | Run the node test suite |
 | `npm run lint` | ESLint gate; CI runs it before the tests |
+| `npm run format` / `npm run format:check` | Prettier (write / check); the check gates CI next to lint — see `docs/developer/linting.md` |
 | `npm run test:pg` | Storage-layer suite against a real PostgreSQL (see `docs/developer/pg-test-suite.md`) |
 | `npm run mcp` | Start the MCP server over stdio (for Claude Desktop etc.) |
 | `npm run vendor:collab` | Rebuild the vendored Yjs/Hocuspocus client bundle |

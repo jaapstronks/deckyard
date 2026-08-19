@@ -29,6 +29,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { formatGenerated } from './lib/format-generated.js';
+
 /** Repo root, for turning the relative paths below into absolute ones. */
 export const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 
@@ -41,7 +43,7 @@ export const AGGREGATOR_PATH = path.join(
   'utils',
   'ai',
   'slide-catalog',
-  'type-ai.js'
+  'type-ai.js',
 );
 
 /** Relative path from the aggregator back to the type directories. */
@@ -72,8 +74,8 @@ export function typesWithAi() {
 export function typesWithAiExamples() {
   return typesWithAi().filter((name) =>
     /^export const aiExamples\b/m.test(
-      fs.readFileSync(path.join(TYPES_DIR, name, 'ai.js'), 'utf8')
-    )
+      fs.readFileSync(path.join(TYPES_DIR, name, 'ai.js'), 'utf8'),
+    ),
   );
 }
 
@@ -96,8 +98,12 @@ export function examplesIdentifierFor(name) {
   return `${identifierFor(name)}Examples`;
 }
 
-/** The exact bytes the aggregator should contain. */
-export function buildAggregator() {
+/**
+ * The exact bytes the aggregator should contain — Prettier-formatted with
+ * the repo config, so `npm run format` and this generator agree (one spelling;
+ * see scripts/lib/format-generated.js).
+ */
+export async function buildAggregator() {
   const names = typesWithAi();
   const withExamples = new Set(typesWithAiExamples());
   const imports = names
@@ -114,7 +120,7 @@ export function buildAggregator() {
     .map((n) => `  '${n}': ${examplesIdentifierFor(n)},`)
     .join('\n');
 
-  return `// GENERATED FILE — do not edit by hand.
+  const raw = `// GENERATED FILE — do not edit by hand.
 // Run \`node scripts/generate-slide-ai-aggregator.js\` to regenerate.
 // Source of truth: the \`ai.js\` in each shared/slide-types/types/<name>/.
 
@@ -152,11 +158,12 @@ export const SLIDE_TYPE_AI_EXAMPLES = Object.freeze({
 ${exampleEntries}
 });
 `;
+  return formatGenerated(AGGREGATOR_PATH, raw);
 }
 
-function main() {
+async function main() {
   const abs = path.join(REPO_ROOT, AGGREGATOR_PATH);
-  const content = buildAggregator();
+  const content = await buildAggregator();
   const current = fs.existsSync(abs) ? fs.readFileSync(abs, 'utf8') : '';
   if (current === content) {
     console.log(`${AGGREGATOR_PATH} already up to date.`);
@@ -169,4 +176,4 @@ function main() {
 // pathToFileURL, not a template literal: the repo path may contain spaces, which
 // import.meta.url percent-encodes and a raw `file://${argv[1]}` does not — the
 // mismatch would make this script a silent no-op (see scripts/i18n-audit.js).
-if (import.meta.url === pathToFileURL(process.argv[1]).href) main();
+if (import.meta.url === pathToFileURL(process.argv[1]).href) await main();
