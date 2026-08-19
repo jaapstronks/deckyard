@@ -149,7 +149,10 @@ describe('MCP stdio transport — stdout carries protocol only', () => {
 
   it('imports the stdout guard before any other module', () => {
     const source = readFileSync(ENTRYPOINT, 'utf8');
-    const firstImport = source.match(/^import .*$/m);
+    // Any top-level `import …` or `export … from …` statement links a module
+    // that evaluates before this file's body — so the first such line, not
+    // just the first `import`, has to be the guard.
+    const firstImport = source.match(/^(?:import|export)\b.*$/m);
     assert.ok(firstImport, 'no import statement found in the stdio entrypoint');
     assert.equal(
       firstImport[0],
