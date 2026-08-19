@@ -78,7 +78,7 @@ describe('acquireSlideLock — conflicting acquire', () => {
   it('grants the lock when the slide is free', async () => {
     const res = await acquireSlideLock(ctx, PID, SID, ALICE);
     assert.equal(res.ok, true);
-    assert.equal(res.lock.holderEmail, ALICE.email);
+    assert.equal(res.lock.holder?.id, ALICE.userId);
     assert.equal(rows().length, 1);
   });
 
@@ -91,8 +91,8 @@ describe('acquireSlideLock — conflicting acquire', () => {
     assert.equal(res.ok, false);
     assert.equal(res.reason, 'held');
     assert.equal(
-      res.lock.holderEmail,
-      ALICE.email,
+      res.lock.holder?.id,
+      ALICE.userId,
       'the original holder keeps the lock',
     );
     assert.equal(rows().length, 1, 'no duplicate row was inserted');
@@ -102,7 +102,7 @@ describe('acquireSlideLock — conflicting acquire', () => {
     const first = await acquireSlideLock(ctx, PID, SID, ALICE);
     const again = await acquireSlideLock(ctx, PID, SID, ALICE);
     assert.equal(again.ok, true);
-    assert.equal(again.lock.holderEmail, ALICE.email);
+    assert.equal(again.lock.holder?.id, ALICE.userId);
     // Extended, not duplicated.
     assert.equal(rows().length, 1);
     assert.ok(again.lock.expiresAt >= first.lock.expiresAt);
@@ -117,8 +117,8 @@ describe('acquireSlideLock — conflicting acquire', () => {
     const res = await acquireSlideLock(ctx, PID, SID, BOB);
     assert.equal(res.ok, true);
     assert.equal(
-      res.lock.holderEmail,
-      BOB.email,
+      res.lock.holder?.id,
+      BOB.userId,
       'the expired lock is taken over',
     );
     assert.equal(rows().length, 1);

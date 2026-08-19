@@ -86,11 +86,11 @@ pgDescribe('acquireSlideLock (real PostgreSQL)', () => {
     const res = await acquireSlideLock(CTX, PID, SID, ALICE);
 
     assert.equal(res.ok, true);
-    assert.equal(res.lock.holderEmail, 'alice@example.com');
+    assert.equal(res.lock.holder?.id, ALICE.userId);
     assert.equal(res.lock.presentationId, PID);
 
     const stored = await getSlideLock(CTX, PID, SID);
-    assert.equal(stored.holderEmail, 'alice@example.com');
+    assert.equal(stored.holder?.id, ALICE.userId);
   });
 
   it('lets the same holder re-acquire (refresh) without a second row', async () => {
@@ -99,7 +99,7 @@ pgDescribe('acquireSlideLock (real PostgreSQL)', () => {
 
     const again = await acquireSlideLock(CTX, PID, SID, ALICE);
     assert.equal(again.ok, true);
-    assert.equal(again.lock.holderEmail, 'alice@example.com');
+    assert.equal(again.lock.holder?.id, ALICE.userId);
 
     // The conflict target is (presentation_id, slide_id): a re-acquire is an
     // upsert, not an insert, so there is exactly one row.
@@ -122,11 +122,11 @@ pgDescribe('acquireSlideLock (real PostgreSQL)', () => {
     const bob = await acquireSlideLock(CTX, PID, SID, BOB);
     assert.equal(bob.ok, false);
     assert.equal(bob.reason, 'held');
-    assert.equal(bob.lock.holderEmail, 'alice@example.com');
+    assert.equal(bob.lock.holder?.id, ALICE.userId);
 
     // Alice still holds it — Bob's failed acquire changed nothing.
     const stored = await getSlideLock(CTX, PID, SID);
-    assert.equal(stored.holderEmail, 'alice@example.com');
+    assert.equal(stored.holder?.id, ALICE.userId);
   });
 
   it('lets another user take over an expired lock', async () => {
@@ -151,10 +151,10 @@ pgDescribe('acquireSlideLock (real PostgreSQL)', () => {
     // so the upsert returns the updated row and Bob wins.
     const bob = await acquireSlideLock(CTX, PID, SID, BOB);
     assert.equal(bob.ok, true);
-    assert.equal(bob.lock.holderEmail, 'bob@example.com');
+    assert.equal(bob.lock.holder?.id, BOB.userId);
 
     const stored = await getSlideLock(CTX, PID, SID);
-    assert.equal(stored.holderEmail, 'bob@example.com');
+    assert.equal(stored.holder?.id, BOB.userId);
   });
   it('release by another user sweeps an expired lock instead of answering held', async () => {
     // The B96 guard: before it, release read the row without an expiry filter
@@ -197,6 +197,6 @@ pgDescribe('acquireSlideLock (real PostgreSQL)', () => {
     const res = await releaseSlideLock(CTX, PID, SID, BOB);
     assert.equal(res.ok, false);
     assert.equal(res.reason, 'held');
-    assert.equal((await getSlideLock(CTX, PID, SID)).holderEmail, ALICE.email);
+    assert.equal((await getSlideLock(CTX, PID, SID)).holder?.id, ALICE.userId);
   });
 });

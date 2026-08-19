@@ -4,7 +4,6 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { isAiAuthorEmail } from '../../../shared/constants/ai.js';
 import { renderCommentBodyNodes } from '../../lib/comments/comment-body.js';
 import { createRichCommentInput } from '../../lib/comments/comment-rich-input.js';
 import { createCommentLinkButton } from '../../lib/comments/comment-toolbar.js';
@@ -15,7 +14,6 @@ import { createCommentLinkButton } from '../../lib/comments/comment-toolbar.js';
  * @param {Function} deps.h - DOM helper function
  * @param {Object} deps.filter - Current filter state
  * @param {Function} deps.getSlideNumber - Function to get slide number from ID
- * @param {Function} [deps.getAiEmail] - Returns the effective AI-author email
  *   (settings.aiAssistant.email, resolved to the default when unset) so
  *   author-address recognition of AI suggestions honours a configured identity
  * @param {Function} deps.formatTime - Time formatting function
@@ -34,7 +32,6 @@ export function createCommentRenderers({
   h,
   filter,
   getSlideNumber,
-  getAiEmail,
   formatTime,
   isOwner,
   isAuthor,
@@ -127,9 +124,11 @@ export function createCommentRenderers({
    * Render a single comment.
    */
   function renderComment(comment, isReply, threadEl = null) {
+    // `isAi` is the server's answer about the author (it holds the configured
+    // AI address; the client never sees one — D22). `commentType` covers the
+    // suggestion flow regardless of who wrote it.
     const isAiSuggestion =
-      comment.commentType === 'ai-suggestion' ||
-      isAiAuthorEmail(comment.authorEmail, getAiEmail?.());
+      comment.commentType === 'ai-suggestion' || comment.isAi;
     const isDismissed = comment.status === 'dismissed';
     const hasProposedSlide = !!(
       comment.proposedSlide && comment.proposedSlide.type
@@ -145,9 +144,7 @@ export function createCommentRenderers({
       class: `comment-author ${isAiSuggestion ? 'comment-author-ai' : ''}`,
       text: isAiSuggestion
         ? t('comments.aiAuthor', 'AI Assistant')
-        : comment.authorName ||
-          comment.authorEmail ||
-          t('comments.unknownAuthor', 'Unknown'),
+        : comment.author?.displayName || t('comments.unknownAuthor', 'Unknown'),
     });
     const timeEl = h('span', {
       class: 'comment-time',

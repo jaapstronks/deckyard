@@ -334,6 +334,10 @@ async function handleShareGuestMe({ req, res }, shareToken) {
 
   serveJson(res, 200, {
     authenticated: true,
+    // The guest's own identity: the id a comment they wrote is keyed on
+    // (migration 079), beside the address they gave — their own, so theirs to
+    // see (D22).
+    id: guestInfo.guest.id,
     email: guestInfo.guest.email,
     name: guestInfo.guest.name,
     permission: guestInfo.shareLink.permission,

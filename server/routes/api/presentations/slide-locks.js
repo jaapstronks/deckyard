@@ -141,7 +141,7 @@ export async function handleSlideLockStatus(
   const lock = await getSlideLock(storageScope, presentationId, slideId);
 
   const isHolder =
-    !!lock && matchesIdentity(authedUser, { userId: lock.holderId });
+    !!lock && matchesIdentity(authedUser, { userId: lock.holder?.id });
 
   serveJson(res, 200, { ok: true, lock, isHolder });
   return true;
@@ -173,9 +173,9 @@ export async function handleSlideLockAcquire(
     lockActor(authedUser),
   );
 
-  // Broadcast lock event to other clients. `result.lock` carries holderId, so
-  // listeners decide "is this mine?" on the stable id — the only key there is
-  // (shared/identity-match.js).
+  // Broadcast lock event to other clients. `result.lock` names its holder as
+  // `{ id, displayName }`, so listeners decide "is this mine?" on the id — the
+  // only key there is (shared/identity-match.js) — and render the name.
   if (result.ok) {
     broadcastToPresentation(presentationId, SlideLockEventTypes.LOCKED, {
       slideId,

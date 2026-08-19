@@ -24,6 +24,7 @@ import {
 } from '../../../utils/presentation-authz.js';
 import {
   getComment,
+  getCommentAuthorEmail,
   createComment,
   updateComment,
   deleteComment,
@@ -259,9 +260,12 @@ export async function handlePresentationCommentUpdate(
       comment: result.comment,
       previousMentions: comment.mentions,
       parentComment,
+      // A guest editing their own comment: the notification actor is them.
+      // A comment names its author and carries no address (D22), so the
+      // address comes from the row, server-side.
       actor: authedUser || {
-        email: comment.authorEmail,
-        name: comment.authorName,
+        email: await getCommentAuthorEmail(storageScope, comment.id),
+        name: comment.author?.displayName || '',
       },
       scope: storageScope,
     });

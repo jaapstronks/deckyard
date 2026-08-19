@@ -194,6 +194,10 @@ function commentRow(overrides) {
     parent_id: null,
     author_email: ACTORS.author.email,
     author_name: ACTORS.author.name,
+    // Authorship is the id (migration 079); the address beside it is display
+    // only and never leaves the server.
+    author_user_id: ACTORS.author.id,
+    author_guest_id: null,
     body: `Body of ${overrides.id}`,
     status: 'open',
     position_x: null,
@@ -233,6 +237,7 @@ async function seed() {
         id: 'cm-ai',
         author_email: 'ai@deckyard.local',
         author_name: 'Deckyard AI',
+        author_user_id: null,
         comment_type: 'ai_suggestion',
         suggestion_category: 'clarity',
         proposed_slide: {

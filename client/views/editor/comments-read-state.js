@@ -7,44 +7,40 @@
  * for me" is a client-side heuristic on the same data: the thread's latest
  * message is not yours, so the ball is in your court. It is a filter, not a
  * status — nothing is stored.
+ *
+ * Who wrote a message is read off `author.id` — a comment names its author and
+ * carries no address (D22; see docs/reference/identity-in-responses.md).
  */
 
-function normEmail(v) {
-  return String(v || '')
-    .trim()
-    .toLowerCase();
-}
-
 /**
- * The author email of the latest message in a thread (top-level comment or
+ * The author id of the latest message in a thread (top-level comment or
  * newest reply). Replies arrive sorted oldest→newest from the server, but
  * sort defensively on createdAt anyway.
  * @param {Object} thread - Top-level comment with `replies`
- * @returns {string} normalized email ('' if unknown)
+ * @returns {string} `users.id` ('' if unknown, e.g. a guest author)
  */
 export function lastMessageAuthor(thread) {
   const replies = Array.isArray(thread?.replies) ? thread.replies : [];
-  if (replies.length === 0) return normEmail(thread?.authorEmail);
+  if (replies.length === 0) return thread?.author?.id || '';
   let last = replies[0];
   for (const r of replies) {
     if (new Date(r?.createdAt || 0) >= new Date(last?.createdAt || 0)) last = r;
   }
-  return normEmail(last?.authorEmail);
+  return last?.author?.id || '';
 }
 
 /**
  * Does this thread wait for the given user? True when the thread is open
  * and the latest message is from someone else.
  * @param {Object} thread - Top-level comment with `replies` and `status`
- * @param {string} userEmail - Current user's email
+ * @param {string} userId - Current user's `users.id`
  * @returns {boolean}
  */
-export function threadWaitsFor(thread, userEmail) {
-  const me = normEmail(userEmail);
-  if (!me) return false;
+export function threadWaitsFor(thread, userId) {
+  if (!userId) return false;
   if (thread?.status !== 'open') return false;
   const last = lastMessageAuthor(thread);
-  return !!last && last !== me;
+  return !!last && last !== userId;
 }
 
 /**

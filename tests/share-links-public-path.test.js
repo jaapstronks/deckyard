@@ -608,13 +608,25 @@ test('a guest on an open comment link verifies into a session', async () => {
     cookie: `share_guest_session=${sessionToken}`,
   });
   assert.equal(me.status, 200);
-  assert.deepEqual(me.body, {
-    authenticated: true,
-    email: 'guest@example.com',
-    name: 'Gwen',
-    permission: 'comment',
-    canComment: true,
-  });
+  // The guest's own identity: the id a comment they write is keyed on
+  // (migration 079), which the share viewer compares to decide whether the
+  // edit/delete affordance shows.
+  assert.match(
+    me.body.id,
+    /^[0-9a-f-]{36}$/,
+    'the session names the guest row it belongs to',
+  );
+  assert.deepEqual(
+    { ...me.body, id: undefined },
+    {
+      id: undefined,
+      authenticated: true,
+      email: 'guest@example.com',
+      name: 'Gwen',
+      permission: 'comment',
+      canComment: true,
+    },
+  );
 });
 
 test('a view-only link admits no guests at all', async () => {

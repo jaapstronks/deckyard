@@ -65,7 +65,8 @@ const OWNER_ID = '11111111-1111-4111-8111-111111111111';
 const CREATOR_ID = '33333333-3333-4333-8333-333333333333';
 const OWNER = { id: OWNER_ID, email: 'owner@example.com' };
 const CREATOR = { id: CREATOR_ID, email: 'creator@example.com' };
-const OTHER = { email: 'other@example.com' };
+const OTHER_ID = '22222222-2222-4222-8222-222222222222';
+const OTHER = { id: OTHER_ID, email: 'other@example.com' };
 const ADMIN = { email: 'admin@example.com', isAdmin: true };
 const ANON = {}; // no id and no email: an unauthenticated actor
 // An actor the instance knows by address alone (an API key whose owner never
@@ -576,21 +577,21 @@ describe('comment moderation (canResolveComment / canDeleteComment)', () => {
     assert.equal(canResolveComment({ user: ANON, pres: privateDeck }), false);
   });
   it('delete: the comment author can delete their own comment', () => {
-    const comment = { authorEmail: 'other@example.com' };
+    const comment = { author: { id: OTHER.id, displayName: 'Other' } };
     assert.equal(
       canDeleteComment({ user: OTHER, pres: privateDeck, comment }),
       true,
     );
   });
   it('delete: the deck owner can moderate anyone else’s comment', () => {
-    const comment = { authorEmail: 'other@example.com' };
+    const comment = { author: { id: OTHER.id, displayName: 'Other' } };
     assert.equal(
       canDeleteComment({ user: OWNER, pres: privateDeck, comment }),
       true,
     );
   });
   it('delete: an unrelated user cannot delete a comment they did not write', () => {
-    const comment = { authorEmail: 'someoneelse@example.com' };
+    const comment = { author: { id: 'user-someone-else', displayName: 'Sam' } };
     assert.equal(
       canDeleteComment({ user: OTHER, pres: privateDeck, comment }),
       false,

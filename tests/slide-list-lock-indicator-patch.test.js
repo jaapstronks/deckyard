@@ -46,7 +46,7 @@ function makeList() {
   const slideListEl = h('div', { class: 'slide-list' });
   document.body.append(slideListEl);
 
-  /** @type {Map<string, {holderName: string}>} */
+  /** @type {Map<string, {holder: {id: string|null, displayName: string}}>} */
   const locks = new Map();
   let selectedSlideId = 's1';
 
@@ -87,7 +87,7 @@ test('a lock takes: the badge appears on that row without rebuilding the list', 
   assert.equal(slideListEl.querySelectorAll('.slide-lock-indicator').length, 0);
 
   const rowsBefore = [...slideListEl.querySelectorAll('.list-item')];
-  locks.set('s2', { holderName: 'Other' });
+  locks.set('s2', { holder: { id: 'user-other', displayName: 'Other' } });
   api.updateSlideLockIndicators(['s2']);
 
   const target = row(slideListEl, 's2');
@@ -124,7 +124,7 @@ test('a lock takes: the badge appears on that row without rebuilding the list', 
 test('a lock releases: the stale badge is cleared even though the caller only knows still-locked ids', () => {
   const { api, slideListEl, locks, detach } = makeList();
 
-  locks.set('s2', { holderName: 'Other' });
+  locks.set('s2', { holder: { id: 'user-other', displayName: 'Other' } });
   api.updateSlideLockIndicators(['s2']);
   assert.equal(slideListEl.querySelectorAll('.slide-lock-indicator').length, 1);
 
@@ -158,7 +158,7 @@ test('a lock releases: the stale badge is cleared even though the caller only kn
 test('a legitimate full rerender still paints the badge', () => {
   const { api, slideListEl, locks, detach } = makeList();
 
-  locks.set('s3', { holderName: 'Other' });
+  locks.set('s3', { holder: { id: 'user-other', displayName: 'Other' } });
   api.rerenderSlideList();
 
   const target = row(slideListEl, 's3');

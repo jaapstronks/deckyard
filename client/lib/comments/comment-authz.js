@@ -7,7 +7,10 @@
  * stable `users.id` and on nothing else.
  */
 
-import { isOwnerOrCreator } from '../../../shared/identity-match.js';
+import {
+  isOwnerOrCreator,
+  matchesIdentity,
+} from '../../../shared/identity-match.js';
 
 /**
  * Check if the user is the presentation owner (can resolve/reopen comments).
@@ -24,10 +27,8 @@ export function isCommentOwner(user, pres) {
 /**
  * Check if the user is the author of a comment (can delete).
  *
- * Comment authorship still compares emails: a comment row carries
- * `author_email` and no author id, so there is no stable key to compare yet.
- * That is the absence of a key, not a second one — same seam as the server's
- * canEditComment.
+ * Authorship is the comment's `author.id` — a `users.id` since migration 079,
+ * and the same key the server's canEditComment compares.
  *
  * @param {Object} user - Current user object
  * @param {Object} comment - Comment object
@@ -35,24 +36,25 @@ export function isCommentOwner(user, pres) {
  */
 export function isCommentAuthor(user, comment) {
   if (!user || !comment) return false;
-  const userEmail = (user.email || '').toLowerCase();
-  const authorEmail = (comment.authorEmail || '').toLowerCase();
-  return user.isAdmin || (!!userEmail && userEmail === authorEmail);
+  return (
+    Boolean(user.isAdmin) ||
+    matchesIdentity(user, { userId: comment.author?.id })
+  );
 }
 
 /**
  * Check if a guest is the author of a comment (for share-viewer context).
  *
- * Guests have no user record at all — a share-link guest is identified by the
- * email they gave — so this is email-keyed by nature.
+ * A guest has no user record at all, so their identity is the
+ * `share_link_guests` row behind their session — and a comment they wrote
+ * carries that row's id (`authorGuestId`, migration 079). Mirrors the server's
+ * canGuestEditComment.
  *
- * @param {Object} guestSession - Guest session object
+ * @param {Object} guestSession - Guest session object (carrying `id`)
  * @param {Object} comment - Comment object
  * @returns {boolean} True if guest is author
  */
 export function isGuestCommentAuthor(guestSession, comment) {
-  if (!guestSession || !comment) return false;
-  const guestEmail = (guestSession.email || '').toLowerCase();
-  const authorEmail = (comment.authorEmail || '').toLowerCase();
-  return !!guestEmail && guestEmail === authorEmail;
+  if (!guestSession?.id || !comment?.authorGuestId) return false;
+  return guestSession.id === comment.authorGuestId;
 }

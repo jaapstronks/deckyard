@@ -78,16 +78,38 @@ this mine?" without one. With it gone, the remaining conversions are renames
 rather than decisions. See `permission-model.md` § _Identity: which key decides_
 for the rule and its two boundary cases (the auth-off operator, the dev bypass).
 
-What is left is marked `STILL TO CONVERT` in that test: the **comment author**
-and the **slide-lock holder**. Comments additionally need an `author_user_id`
-column before their author can be named by id.
+**Nothing is left to convert.** Both allowlists hold only addresses a viewer has
+a claim on: their own, a collaborator or guest they addressed, the owner of a
+deck they can open, an admin diagnostic about addresses, and the AI assistant's
+configured address (not a person).
 
 Converted: deck `ownerId` aside, every person a deck names — `createdBy`,
 `updatedBy`, `trashedBy` — plus the library and collection creator/trasher, the
 share-link issuer, the admin authoring stamps (custom slide types, font
 families, analytics reports), version `createdBy`, notification and
-activity-event `actor`, and the collab SSE `slides.updated` actor (which carries
-`actorId` alone).
+activity-event `actor`, the collab SSE `slides.updated` actor (which carries
+`actorId` alone), the **comment author** and **resolver**, and the **slide-lock
+holder**.
+
+## Two identities, not one
+
+A person on this instance is a `users.id`. A **share-link guest** is not: they
+verified an address against a link a deck owner issued, and they will never have
+an account. So a comment carries two nullable keys, exactly one of them set
+(migration 079): `author.id` for a signed-in author, `authorGuestId` for a
+guest. Both are opaque ids; neither is an address. The guest's own session
+(`GET /api/share/:token/guest/me`) carries the same id, which is what lets the
+share viewer decide whether to offer the edit and delete affordances.
+
+## Where an address still lives server-side
+
+Retiring the address as a _key_ did not retire it as a _contact_. The
+notification fan-out still has to reach the person a reply answers, and that
+person may be a guest with no user record — so
+`getCommentAuthorEmail(scope, commentId)` fetches it, by id, in the layer that
+sends the mail. It never travels back to a client. That is the shape to copy
+when a server-side path needs an address: ask storage for it at the point of
+use, rather than keeping one on the object that also becomes a response.
 
 **The owner is the one address that stays.** `ownerEmail` travels on a deck the
 reader can already open, so the owner keeps a flat `ownerId` beside it while

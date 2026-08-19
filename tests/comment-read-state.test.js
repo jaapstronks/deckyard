@@ -22,16 +22,15 @@ import {
 } from '../client/views/editor/comments-read-state.js';
 import { markThreadsRead } from '../server/storage/presentations/comments.js';
 
-const ME = 'me@example.com';
+// A comment names its author with `{ id, displayName }` and carries no address
+// (D22), so "who spoke last" is an id comparison.
+const ME = 'user-me';
+const OTHER = 'user-other';
 
-function thread({
-  author = 'other@example.com',
-  status = 'open',
-  replies = [],
-} = {}) {
+function thread({ author = OTHER, status = 'open', replies = [] } = {}) {
   return {
     id: 't-1',
-    authorEmail: author,
+    author: { id: author, displayName: author },
     status,
     createdAt: '2026-07-17T10:00:00Z',
     replies,
@@ -39,39 +38,36 @@ function thread({
 }
 
 function reply(author, createdAt) {
-  return { authorEmail: author, createdAt };
+  return { author: { id: author, displayName: author }, createdAt };
 }
 
 describe('lastMessageAuthor', () => {
   it('is the top-level author when there are no replies', () => {
-    assert.strictEqual(lastMessageAuthor(thread()), 'other@example.com');
+    assert.strictEqual(lastMessageAuthor(thread()), OTHER);
   });
 
   it('is the newest reply author when replies exist', () => {
     const t = thread({
       replies: [
         reply(ME, '2026-07-17T11:00:00Z'),
-        reply('other@example.com', '2026-07-17T12:00:00Z'),
+        reply(OTHER, '2026-07-17T12:00:00Z'),
       ],
     });
-    assert.strictEqual(lastMessageAuthor(t), 'other@example.com');
+    assert.strictEqual(lastMessageAuthor(t), OTHER);
   });
 
   it('handles unsorted replies defensively', () => {
     const t = thread({
       replies: [
-        reply('late@example.com', '2026-07-17T14:00:00Z'),
-        reply('early@example.com', '2026-07-17T11:00:00Z'),
+        reply('user-late', '2026-07-17T14:00:00Z'),
+        reply('user-early', '2026-07-17T11:00:00Z'),
       ],
     });
-    assert.strictEqual(lastMessageAuthor(t), 'late@example.com');
+    assert.strictEqual(lastMessageAuthor(t), 'user-late');
   });
 
-  it('normalizes casing', () => {
-    assert.strictEqual(
-      lastMessageAuthor(thread({ author: 'Other@Example.COM' })),
-      'other@example.com',
-    );
+  it('is empty for an author with no id (a share-link guest)', () => {
+    assert.strictEqual(lastMessageAuthor({ id: 't', author: null }), '');
   });
 });
 
@@ -99,16 +95,9 @@ describe('threadWaitsFor', () => {
     );
   });
 
-  it('is false without a user email (guests)', () => {
+  it('is false without a user id (guests)', () => {
     assert.strictEqual(threadWaitsFor(thread(), ''), false);
     assert.strictEqual(threadWaitsFor(thread(), null), false);
-  });
-
-  it('matches user email case-insensitively', () => {
-    const t = thread({
-      replies: [reply('ME@Example.com', '2026-07-17T12:00:00Z')],
-    });
-    assert.strictEqual(threadWaitsFor(t, ME), false);
   });
 });
 

@@ -9,7 +9,7 @@
  * enforced by PostgreSQL, not a hand double (tests/helpers/fake-db.js):
  *
  *   - **the stamp** — an acquire persists the holder's `users.id`, and the read
- *     surfaces it as `holderId`;
+ *     names the holder as a `{ id, displayName }` pair;
  *   - **rename-robustness** — a holder who changes their account e-mail keeps
  *     their own lock: they refresh it, release it and re-acquire it, and it never
  *     reads as "held by someone else" to them. This is the F3 improvement, and
@@ -117,11 +117,11 @@ pgDescribe('lock holder identity on users.id (real PostgreSQL)', () => {
   it('stamps and surfaces the holder users.id on a slide lock', async () => {
     const res = await acquireSlideLock(CTX, PID, SID, alice());
     assert.equal(res.ok, true);
-    assert.equal(res.lock.holderId, ALICE_ID);
-    assert.equal(res.lock.holderEmail, ALICE_EMAIL);
+    assert.equal(res.lock.holder?.id, ALICE_ID);
+    assert.equal(res.lock.holder?.displayName, 'Alice');
 
     const stored = await getSlideLock(CTX, PID, SID);
-    assert.equal(stored.holderId, ALICE_ID);
+    assert.equal(stored.holder?.id, ALICE_ID);
   });
 
   it('a renamed holder refreshes, releases and re-acquires their own slide lock', async () => {
@@ -162,7 +162,7 @@ pgDescribe('lock holder identity on users.id (real PostgreSQL)', () => {
       alice(ALICE_NEW_EMAIL),
     );
     assert.equal(reacquired.ok, true);
-    assert.equal(reacquired.lock.holderId, ALICE_ID);
+    assert.equal(reacquired.lock.holder?.id, ALICE_ID);
   });
 
   it("a renamed holder's own live lock is never 'locked by others' to them", async () => {
@@ -186,14 +186,14 @@ pgDescribe('lock holder identity on users.id (real PostgreSQL)', () => {
     const grab = await acquireSlideLock(CTX, PID, SID, bob());
     assert.equal(grab.ok, false);
     assert.equal(grab.reason, 'held');
-    assert.equal(grab.lock.holderId, ALICE_ID);
+    assert.equal(grab.lock.holder?.id, ALICE_ID);
 
     const steal = await releaseSlideLock(CTX, PID, SID, bob());
     assert.equal(steal.ok, false);
     assert.equal(steal.reason, 'held');
 
     // Alice still holds it — nobody else's attempt changed anything.
-    assert.equal((await getSlideLock(CTX, PID, SID)).holderId, ALICE_ID);
+    assert.equal((await getSlideLock(CTX, PID, SID)).holder?.id, ALICE_ID);
   });
 
   it('an external holder (no users row) cannot take a lock at all', async () => {
@@ -234,10 +234,10 @@ pgDescribe('lock holder identity on users.id (real PostgreSQL)', () => {
 
     const stored = await getSlideLock(CTX, PID, SID);
     assert.equal(
-      stored.holderId,
+      stored.holder?.id,
       null,
       'the FK dropped the id but not the lock',
     );
-    assert.equal(stored.holderEmail, BOB_EMAIL);
+    assert.equal(stored.holder?.displayName, 'Bob');
   });
 });

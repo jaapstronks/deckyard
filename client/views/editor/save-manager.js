@@ -550,7 +550,7 @@ export function createSaveManager({
         // Server-side slide-lock enforcement: a changed slide is locked
         // (author lock or another editor holds it). Not a hard block like a
         // revision conflict — the next edit reschedules autosave as usual.
-        const name = e?.details?.holderName || e?.details?.holderEmail || '';
+        const name = e?.details?.holder?.displayName || '';
         lastError = name
           ? t(
               'editor.save.slideLockedBy',

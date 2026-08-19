@@ -228,7 +228,9 @@ export async function recordCommentResolved({
     data: {
       presentationTitle: presentation.title,
       slideId: comment.slideId,
-      commentAuthor: comment.authorEmail,
+      // Who wrote the comment being resolved is not rendered anywhere and used
+      // to be stored as their address — dropped with D22 rather than reinstated
+      // as an id nothing reads.
     },
   });
 }

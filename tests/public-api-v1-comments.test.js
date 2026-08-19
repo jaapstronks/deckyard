@@ -400,7 +400,14 @@ test('POST /comments creates a comment as the key owner and answers 201', async 
   assert.equal(ctx.res.statusCode, 201);
   const { ok, comment } = ctx.res.body;
   assert.equal(ok, true);
-  assert.equal(comment.authorEmail, KEY_OWNER, 'the key owner is the author');
+  // v1 publishes ids, never addresses (D22): the key owner is named by the
+  // `users.id` their address resolved to at write time.
+  assert.equal(
+    comment.authorId,
+    userIdFor(KEY_OWNER),
+    'the key owner is the author',
+  );
+  assert.equal(comment.authorEmail, undefined);
   assert.equal(comment.body, 'A fresh remark');
   assert.equal(comment.status, 'open');
   assert.deepEqual(comment.slide, {
@@ -501,7 +508,11 @@ test('POST /status resolves, dismisses and reopens along the allowed transitions
   await handleComments(resolve);
   assert.equal(resolve.res.statusCode, 200);
   assert.equal(resolve.res.body.comment.status, 'resolved');
-  assert.equal(resolve.res.body.comment.resolvedBy, KEY_OWNER);
+  assert.equal(
+    resolve.res.body.comment.resolvedById,
+    userIdFor(KEY_OWNER),
+    'who resolved it is named by id, not by address (D22)',
+  );
 
   const reopen = makeCtx('POST', '/api/v1/comments/c-open/status', {
     body: { status: 'open' },

@@ -2001,18 +2001,36 @@ components:
           type: string
           format: uuid
           nullable: true
-        authorEmail:
+        authorId:
           type: string
-        authorName:
+          format: uuid
+          nullable: true
+          description: |
+            The comment author's stable user id. This used to be
+            `authorEmail`/`authorName`, the commenter's address and name, handed
+            to any key with `comments:read` — a contact detail the caller has no
+            claim on (D22). Null for a share-link guest, who has no user record;
+            `authorGuestId` names them instead.
+        authorGuestId:
           type: string
+          format: uuid
+          nullable: true
+          description: The share-link guest who wrote it, when the author is one.
+        isAi:
+          type: boolean
+          description: Whether this instance's AI assistant wrote the comment.
         body:
           type: string
         status:
           type: string
           enum: [open, resolved, dismissed]
-        resolvedBy:
+        resolvedById:
           type: string
+          format: uuid
           nullable: true
+          description: |
+            Who resolved it, by stable user id. Was `resolvedBy`, their address,
+            until D22.
         resolvedAt:
           type: string
           format: date-time

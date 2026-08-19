@@ -2,17 +2,19 @@
  * Comment authorization functions.
  *
  * Deck ownership is decided by {@link isOwnerOrCreator} (shared/identity-match.js),
- * which keys on `users.id`. Comment *authorship* is the exception and still
- * compares emails: `presentation_comments` carries `author_email` and no
- * author id column (migration 003), so there is no stable key to compare yet.
- * Giving comments one is its own migration, tracked in the identity-decoupling
- * brief; until then this is the absence of a key, not a second key.
+ * which keys on `users.id`. Comment **authorship** is decided the same way
+ * since migration 079 gave `presentation_comments` an `author_user_id`: no
+ * address is compared here either.
+ *
+ * A share-link guest is the one author without a `users.id` — they have no
+ * account and never will — so their comments are keyed on the guest row that
+ * verified their address (`author_guest_id`), in guests.js.
  */
 
-import { normalizeEmail } from '../normalize.js';
 import {
   hasIdentity,
   isOwnerOrCreator,
+  matchesIdentity,
 } from '../../../shared/identity-match.js';
 
 /**
@@ -28,13 +30,15 @@ export function canResolveComment({ user, pres } = {}) {
 /**
  * Check if a user can edit a comment.
  * Only the comment author or admin can edit.
+ *
+ * Authorship is the comment's `author.id` — a `users.id`, the same key every
+ * other ownership decision uses (shared/identity-match.js). A comment written
+ * by a share-link guest carries no user id and is theirs to edit through
+ * {@link canGuestEditComment} instead.
  */
 export function canEditComment({ user, comment } = {}) {
   if (user?.isAdmin) return true;
-  const userEmail = normalizeEmail(user?.email);
-  if (!userEmail) return false;
-  const authorEmail = normalizeEmail(comment?.authorEmail);
-  return authorEmail && authorEmail === userEmail;
+  return matchesIdentity(user, { userId: comment?.author?.id });
 }
 
 /**

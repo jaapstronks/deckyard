@@ -202,9 +202,7 @@ describe('enforceSlideLocks', () => {
     const locks = async () => ({
       free: {
         slideId: 'free',
-        holderId: userIdFor(OTHER),
-        holderEmail: OTHER,
-        holderName: 'Christel',
+        holder: { id: userIdFor(OTHER), displayName: 'Christel' },
       },
     });
     await assert.rejects(
@@ -219,7 +217,7 @@ describe('enforceSlideLocks', () => {
       (e) =>
         e.statusCode === 423 &&
         e.details?.lockKind === 'concurrent' &&
-        e.details?.holderName === 'Christel',
+        e.details?.holder?.displayName === 'Christel',
     );
   });
 
@@ -227,9 +225,7 @@ describe('enforceSlideLocks', () => {
     const locks = async () => ({
       free: {
         slideId: 'free',
-        holderId: userIdFor(OTHER),
-        holderEmail: OTHER,
-        holderName: 'Christel',
+        holder: { id: userIdFor(OTHER), displayName: 'Christel' },
       },
     });
     await enforceSlideLocks({

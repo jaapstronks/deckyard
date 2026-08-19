@@ -335,10 +335,13 @@ Normative target: **one ladder, one decider per question, keyed on
   unique constraint and both indexes are all on `user_email`. Moving the ACL
   reads onto the id is the remaining step of the identity epic; it changes the
   _keying_, not the ladder, so nothing in this document depends on it.
-- **Comment authorship also still keys on the email**, for a different reason:
-  `presentation_comments` has no author-id column (migration 003), so there is
-  no key to compare yet. Comment _moderation_ (resolve, reopen, delete on your
-  own deck) goes through the id-keyed ownership decider.
+- **Comment authorship keys on the id** since migration 079 gave
+  `presentation_comments` an `author_user_id` (and an `author_guest_id` for
+  share-link guests, who have no user record and never will). Exactly one of
+  the two is set on a comment written from here on; a legacy row whose address
+  matched neither is unattributed and nobody can claim it. Comment
+  _moderation_ (resolve, reopen, delete on your own deck) goes through the
+  id-keyed ownership decider as before.
 - **`presentation_collaborators.organization_id` is a denormalized copy** and a
   known R2 hazard. It drifted once — the write path stamped the inviter's
   session organization — and cannot any more: writes read the stamp off the

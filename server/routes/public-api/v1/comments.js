@@ -65,14 +65,40 @@ function commentEditUrl(presentationId, slideId) {
 }
 
 /**
+ * The public shape of one comment: **ids only**, like every other v1 payload.
+ *
+ * The app API names a comment's author with `{ id, displayName }` (D22); v1
+ * publishes the id alone — `authorId` beside `ownerId` and `createdById` — and
+ * leaves a machine consumer to resolve names itself. It used to hand out
+ * `authorEmail`/`authorName` to any key with `comments:read`.
+ *
+ * @param {Object} comment - A storage comment
+ * @param {Object} pres - The deck it belongs to
+ * @returns {Object}
+ */
+function sanitizeComment(comment, pres) {
+  const { author, authorGuestId, isAi, ...rest } = comment;
+  return {
+    ...rest,
+    authorId: author?.id || null,
+    // A share-link guest has no `users.id`; their comments are attributed to
+    // the guest identity the deck owner invited.
+    authorGuestId: authorGuestId || null,
+    isAi: !!isAi,
+    resolvedById: comment.resolvedBy?.id || null,
+    resolvedBy: undefined,
+    editUrl: commentEditUrl(pres.id, comment.slideId),
+  };
+}
+
+/**
  * Add slide context + editUrl to a list of comments (and replies).
  */
 function decorateComments(comments, pres) {
   return enrichCommentsWithSlideContext(comments, pres).map((c) => ({
-    ...c,
-    editUrl: commentEditUrl(pres.id, c.slideId),
+    ...sanitizeComment(c, pres),
     replies: (c.replies || []).map((r) => ({
-      ...r,
+      ...sanitizeComment(r, pres),
       editUrl: commentEditUrl(pres.id, r.slideId || c.slideId),
     })),
   }));
@@ -248,9 +274,8 @@ async function handleCreateComment(ctx, presentationId) {
   await apiCreated(ctx, {
     ok: true,
     comment: {
-      ...result.comment,
+      ...sanitizeComment(result.comment, pres),
       slide: slideContextFor(pres, result.comment.slideId),
-      editUrl: commentEditUrl(presentationId, result.comment.slideId),
     },
   });
   return true;
@@ -350,9 +375,8 @@ async function handleCommentStatus(ctx, commentId) {
   await apiSuccess(ctx, {
     ok: true,
     comment: {
-      ...result.comment,
+      ...sanitizeComment(result.comment, pres),
       slide: slideContextFor(pres, result.comment.slideId),
-      editUrl: commentEditUrl(pres.id, result.comment.slideId),
     },
   });
   return true;

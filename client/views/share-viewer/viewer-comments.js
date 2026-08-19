@@ -174,9 +174,7 @@ export function createShareViewerCommentsSection({
     const authorEl = h('span', {
       class: 'share-viewer-comment-author',
       text:
-        comment.authorName ||
-        comment.authorEmail ||
-        t('comments.unknownAuthor', 'Unknown'),
+        comment.author?.displayName || t('comments.unknownAuthor', 'Unknown'),
     });
     const timeEl = h('span', {
       class: 'share-viewer-comment-time',

@@ -11,6 +11,11 @@ import { toStorageContext } from './scope.js';
 import { norm, nowIso, isoAfter } from '../utils/normalize.js';
 import { matchesIdentity } from '../../shared/identity-match.js';
 import { withDbGuard } from './utils/db-guard.js';
+import {
+  NO_DISPLAY_NAMES,
+  resolveDisplayNames,
+  toDisplayIdentity,
+} from './display-identity.js';
 
 const LOCK_TTL_MS = 2 * 60 * 1000; // 2 minutes
 
@@ -20,20 +25,40 @@ const LOCK_TTL_MS = 2 * 60 * 1000; // 2 minutes
 
 /**
  * Map a slide_locks row to a lock object.
+ *
+ * The holder is named, not addressed (D22): `holder.id` is the key every "is
+ * this lock mine?" check compares (migration 071), `holder.displayName` is what
+ * the editor puts on the slide. The stored `holder_name` is not used: it froze
+ * whatever the session was created with — often the address itself — while the
+ * lookup answers with the person's current profile name.
+ *
  * @param {Object} row - Database row from slide_locks table
+ * @param {import('./display-identity.js').DisplayNameLookup} [lookup] -
+ *   Resolved display names; omitted derives them from the stored address.
  * @returns {Object} Lock object for API response
  */
-function mapLockRow(row) {
+function mapLockRow(row, lookup = NO_DISPLAY_NAMES) {
   return {
     presentationId: row.presentation_id,
     slideId: row.slide_id,
-    holderId: row.holder_user_id || null,
-    holderEmail: row.holder_email,
-    holderName: row.holder_name,
+    holder: toDisplayIdentity(row.holder_user_id, row.holder_email, lookup),
     acquiredAt: row.acquired_at,
     refreshedAt: row.refreshed_at,
     expiresAt: row.expires_at,
   };
+}
+
+/**
+ * The display names a batch of lock rows needs.
+ * @param {Array<Object>} rows - Raw `slide_locks` rows.
+ * @returns {Promise<import('./display-identity.js').DisplayNameLookup>}
+ */
+function lockDisplayNames(rows) {
+  return resolveDisplayNames(
+    (rows || [])
+      .filter(Boolean)
+      .map((row) => ({ id: row.holder_user_id, email: row.holder_email })),
+  );
 }
 
 /**
@@ -89,9 +114,10 @@ export async function getSlideLocks(scope, presentationId) {
       .where('expires_at', '>', now)
       .execute();
 
+    const lookup = await lockDisplayNames(rows);
     const locks = {};
     for (const row of rows) {
-      locks[row.slide_id] = mapLockRow(row);
+      locks[row.slide_id] = mapLockRow(row, lookup);
     }
     return locks;
   });
@@ -124,7 +150,7 @@ export async function getSlideLock(scope, presentationId, slideId) {
       .executeTakeFirst();
 
     if (!row) return null;
-    return mapLockRow(row);
+    return mapLockRow(row, await lockDisplayNames([row]));
   });
 }
 
@@ -219,7 +245,10 @@ export async function acquireSlideLock(
       .executeTakeFirst();
 
     if (inserted) {
-      return { ok: true, lock: mapLockRow(inserted) };
+      return {
+        ok: true,
+        lock: mapLockRow(inserted, await lockDisplayNames([inserted])),
+      };
     }
 
     // No row returned: the DO UPDATE guard was false, i.e. a live lock held by
@@ -236,7 +265,7 @@ export async function acquireSlideLock(
     return {
       ok: false,
       reason: 'held',
-      lock: held ? mapLockRow(held) : undefined,
+      lock: held ? mapLockRow(held, await lockDisplayNames([held])) : undefined,
     };
   });
 }
@@ -301,7 +330,7 @@ export async function refreshSlideLock(
       return {
         ok: false,
         reason: 'held',
-        lock: mapLockRow(existing),
+        lock: mapLockRow(existing, await lockDisplayNames([existing])),
       };
     }
 
@@ -320,7 +349,7 @@ export async function refreshSlideLock(
 
     return {
       ok: true,
-      lock: mapLockRow(updated),
+      lock: mapLockRow(updated, await lockDisplayNames([updated])),
     };
   });
 }
@@ -387,7 +416,7 @@ export async function releaseSlideLock(
       return {
         ok: false,
         reason: 'held',
-        lock: mapLockRow(existing),
+        lock: mapLockRow(existing, await lockDisplayNames([existing])),
       };
     }
 
@@ -504,8 +533,10 @@ export async function getLockedByOthers(
     // Exclude the caller's own locks by identity (the stable id), not by the
     // stamped address: a holder who renamed still owns the lock they took, and
     // an address-keyed filter would wrongly report it as held by someone else.
-    return rows
-      .filter((row) => !matchesIdentity(actor, holderStamp(row)))
-      .map(mapLockRow);
+    const foreign = rows.filter(
+      (row) => !matchesIdentity(actor, holderStamp(row)),
+    );
+    const lookup = await lockDisplayNames(foreign);
+    return foreign.map((row) => mapLockRow(row, lookup));
   });
 }
