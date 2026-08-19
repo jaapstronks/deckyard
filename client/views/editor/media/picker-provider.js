@@ -50,7 +50,7 @@ import { createQuickModal } from '../../../lib/dom/modal.js';
  */
 
 /**
- * Adapter: native image library (local/Scaleway upload + Unsplash/Giphy).
+ * Adapter: native image library (local/S3 upload + Unsplash/Giphy).
  * @param {Function} openLibraryRaw - bound `openImageLibraryPicker`
  * @returns {PickerProvider}
  */

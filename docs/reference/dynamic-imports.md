@@ -41,17 +41,17 @@ about twice that; half are JSDoc type annotations like
 
 ### Heavy or optional dependencies behind a gate
 
-| Package                                               | Site                                      | Gate                                                                                                                  |
-| ----------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `pptxgenjs`                                           | `server/export/pptx.js`                   | PPTX export only; throws `*_MISSING`                                                                                  |
-| `pdf-parse`                                           | `server/utils/convert-file/pdf-parser.js` | PDF import only                                                                                                       |
-| `puppeteer-core`                                      | `server/utils/puppeteer-browser.js`       | Chrome exports only                                                                                                   |
-| `ioredis`                                             | `server/utils/redis-client.js`            | `isRedisConfigured()`                                                                                                 |
-| `bullmq`                                              | `server/jobs/queue/connection.js`         | same gate, paired                                                                                                     |
-| `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner` | `server/media/scaleway.js`                | `isScalewayConfigured()`; `scaleway.js` itself is loaded dynamically from `server/media/index.js` for the same reason |
-| `@hocuspocus/server`, `crossws/adapters/node`         | `server/collab/mount.js`                  | `isCollabEnabled()` — a disabled install never loads the collab dependency tree                                       |
-| `ciiic-translation-rules`                             | `server/utils/openai/translate.js`        | fork-only, deliberately **not** in `package.json`, falls back to empty rules                                          |
-| `dompurify`, `jsdom`                                  | `shared/sanitize.js`                      | server-side sanitization path only                                                                                    |
+| Package                                               | Site                                      | Gate                                                                                                      |
+| ----------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `pptxgenjs`                                           | `server/export/pptx.js`                   | PPTX export only; throws `*_MISSING`                                                                      |
+| `pdf-parse`                                           | `server/utils/convert-file/pdf-parser.js` | PDF import only                                                                                           |
+| `puppeteer-core`                                      | `server/utils/puppeteer-browser.js`       | Chrome exports only                                                                                       |
+| `ioredis`                                             | `server/utils/redis-client.js`            | `isRedisConfigured()`                                                                                     |
+| `bullmq`                                              | `server/jobs/queue/connection.js`         | same gate, paired                                                                                         |
+| `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner` | `server/media/s3.js`                      | `isS3Configured()`; `s3.js` itself is loaded dynamically from `server/media/index.js` for the same reason |
+| `@hocuspocus/server`, `crossws/adapters/node`         | `server/collab/mount.js`                  | `isCollabEnabled()` — a disabled install never loads the collab dependency tree                           |
+| `ciiic-translation-rules`                             | `server/utils/openai/translate.js`        | fork-only, deliberately **not** in `package.json`, falls back to empty rules                              |
+| `dompurify`, `jsdom`                                  | `shared/sanitize.js`                      | server-side sanitization path only                                                                        |
 
 A package that is imported **statically** anywhere stays a hard `dependency`
 even when its feature is off, because loading that module pulls it in

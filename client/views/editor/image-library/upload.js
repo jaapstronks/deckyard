@@ -23,7 +23,7 @@ async function getMediaStatus(api) {
 
 /**
  * Upload a file using the best available method.
- * Uses presigned URLs for Scaleway/S3, falls back to server-side upload for local storage.
+ * Uses presigned URLs for S3-compatible object storage, falls back to server-side upload for local storage.
  *
  * Exported so the inline WYSIWYG editor's drag & drop path reuses the exact same
  * upload plumbing as the image-library modal (single upload destination: the
@@ -33,7 +33,7 @@ export async function uploadFile(api, file) {
   const status = await getMediaStatus(api);
 
   if (status.presignedSupported) {
-    // Presigned upload flow (Scaleway)
+    // Presigned upload flow (S3-compatible object storage)
     const presign = await api('/api/media/presign', {
       method: 'POST',
       body: JSON.stringify({

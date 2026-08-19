@@ -50,3 +50,10 @@ replacement and the removal date (`deprecatedFlagWarnings()` in
 the legacy recognition is deleted and only the enable form exists. This is a
 deliberately dated exception to the beta purity doctrine
 ([versioning.md](versioning.md)), not an open-ended tolerance.
+
+The media provider's `SCW_*` → `S3_*` rename (B98/D25) rides the **same date
+and the same shape**: legacy name read only when the canonical one is unset,
+one boot warning per name read, deletion in the first release after
+2026-11-01. Those are not feature flags, so the table lives with the provider
+it configures — [media-library.md § Legacy env names](media-library.md#legacy-env-names-until-2026-11-01)
+(`mediaConfigWarnings()` in `server/media/config.js`).

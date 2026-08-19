@@ -2,7 +2,7 @@
  * Image upload for theme assets.
  *
  * Two paths, chosen by what the install's media provider supports: a presigned
- * PUT straight to object storage (Scaleway/S3), or a data-URL round-trip
+ * PUT straight to S3-compatible object storage, or a data-URL round-trip
  * through the server (local disk). Extracted from the logo uploader so the
  * background-preset editor uploads the same way rather than growing a second
  * copy that drifts.

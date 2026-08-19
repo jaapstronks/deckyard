@@ -2,7 +2,8 @@
  * Media Provider Factory
  *
  * Exports a singleton media provider based on configuration.
- * Uses Scaleway when configured, falls back to local /uploads for OSS.
+ * Uses S3-compatible object storage when configured, falls back to local
+ * /uploads for OSS.
  */
 
 import { getEffectiveMediaProvider } from './config.js';
@@ -29,10 +30,10 @@ export async function initializeMediaProvider(repoRoot) {
   _repoRoot = repoRoot;
   const providerType = getEffectiveMediaProvider();
 
-  if (providerType === 'scaleway') {
-    const { ScalewayProvider } = await import('./scaleway.js');
-    _provider = new ScalewayProvider();
-    log.info('Initialized Scaleway provider');
+  if (providerType === 's3') {
+    const { S3Provider } = await import('./s3.js');
+    _provider = new S3Provider();
+    log.info('Initialized S3 provider');
   } else {
     _provider = new LocalProvider(repoRoot);
     log.info('Initialized local provider (/uploads)');

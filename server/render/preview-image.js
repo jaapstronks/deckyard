@@ -137,7 +137,7 @@ async function generateOgPreview(repoRoot, slide, theme, options = {}) {
 /**
  * Save a preview buffer to the media provider.
  *
- * @param {string} repoRoot - Repository root path (unused if using Scaleway)
+ * @param {string} repoRoot - Repository root path (unused with a remote provider)
  * @param {Buffer} buffer - PNG buffer to save
  * @param {string} prefix - Filename prefix (e.g., 'og-abc123' or 'lib-xyz456')
  * @returns {Promise<string>} Public URL of the saved image

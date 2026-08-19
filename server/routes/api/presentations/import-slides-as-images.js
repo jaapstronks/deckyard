@@ -27,7 +27,7 @@ const log = createLogger('import-slides-as-images');
 /**
  * Upload an image buffer using the best available method:
  * 1. ImageKit (if configured) - preferred for managed image hosting
- * 2. Media provider (Scaleway/local) - fallback
+ * 2. Media provider (S3/local) - fallback
  * @param {object} options
  * @param {Buffer} options.buffer - Image buffer
  * @param {string} options.fileName - File name
@@ -48,7 +48,7 @@ async function uploadImageBuffer({ buffer, fileName, mimeType, tags = [] }) {
     return result?.url || '';
   }
 
-  // Fall back to generic media provider (Scaleway or local)
+  // Fall back to generic media provider (S3 or local)
   if (isMediaProviderInitialized()) {
     const provider = getMediaProvider();
     const result = await provider.uploadBuffer({
@@ -60,7 +60,7 @@ async function uploadImageBuffer({ buffer, fileName, mimeType, tags = [] }) {
   }
 
   throw new Error(
-    'No media provider configured (neither ImageKit nor Scaleway/local)',
+    'No media provider configured (neither ImageKit nor S3/local)',
   );
 }
 

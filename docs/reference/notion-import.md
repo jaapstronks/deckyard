@@ -258,7 +258,7 @@ stands, as of 2026-08-17:
 - **Imported images are durable on both paths.** Notion's file-hosted image URLs
   are signed and expire (roughly an hour), so `processNotionImages` re-hosts every
   image: to ImageKit when it is configured, otherwise through Deckyard's own media
-  library (the configured media provider — local `/uploads` or Scaleway). Either
+  library (the configured media provider — local `/uploads` or S3). Either
   way the block URL is rewritten to a durable one before the deck is saved. If an
   individual image cannot be fetched or stored, that one image falls back to the
   original (expiring) URL rather than failing the import (B80, D29-1).

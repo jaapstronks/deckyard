@@ -1,12 +1,16 @@
 /**
- * ScalewayProvider - Media storage using Scaleway Object Storage (S3-compatible).
- * Supports presigned URLs for direct client uploads.
+ * S3Provider — media storage on any S3-compatible object store (AWS S3, MinIO,
+ * Wasabi, Backblaze B2, Scaleway Object Storage, …). Supports presigned URLs
+ * for direct client uploads.
+ *
+ * Nothing here is vendor-specific: the endpoint, region, bucket and public base
+ * URL all come from configuration (`server/media/config.js`).
  */
 
 import crypto from 'node:crypto';
 import { MediaProvider } from './interface.js';
 import { ValidationError } from '../utils/errors.js';
-import { getScalewayConfig } from './config.js';
+import { getS3Config } from './config.js';
 
 // AWS SDK v3 is loaded dynamically to make it an optional dependency
 let s3Client = null;
@@ -28,6 +32,7 @@ async function ensureS3() {
   } catch (err) {
     throw new Error(
       'AWS SDK not installed. Run: npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner',
+      { cause: err },
     );
   }
 }
@@ -57,10 +62,10 @@ const MIME_TO_EXT = {
 const PRESIGNED_URL_EXPIRY = 3600; // 1 hour
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB for presigned uploads
 
-export class ScalewayProvider extends MediaProvider {
+export class S3Provider extends MediaProvider {
   constructor() {
     super();
-    this.config = getScalewayConfig();
+    this.config = getS3Config();
     this._client = null;
   }
 
@@ -76,7 +81,7 @@ export class ScalewayProvider extends MediaProvider {
         accessKeyId: this.config.accessKeyId,
         secretAccessKey: this.config.secretAccessKey,
       },
-      forcePathStyle: false, // Scaleway uses virtual-hosted style
+      forcePathStyle: false, // virtual-hosted style, as _getPublicUrl assumes
     });
 
     return this._client;
@@ -84,7 +89,7 @@ export class ScalewayProvider extends MediaProvider {
 
   getStatus() {
     return {
-      name: 'scaleway',
+      name: 's3',
       configured: !!(
         this.config.accessKeyId &&
         this.config.secretAccessKey &&
@@ -146,8 +151,8 @@ export class ScalewayProvider extends MediaProvider {
     }
 
     // Enforce the byte ceiling the caller asked for, exactly as LocalProvider
-    // does. Scaleway silently ignored it before, so a caller's maxBytes bound
-    // (e.g. the Notion re-host) held only on local storage, not on Scaleway.
+    // does. This provider silently ignored it before, so a caller's maxBytes
+    // bound (e.g. the Notion re-host) held only on local storage.
     if (buffer.length > maxBytes) {
       const mb = Math.round(maxBytes / (1024 * 1024));
       throw new ValidationError(`File too large (max ${mb}MB)`);
@@ -229,33 +234,32 @@ export class ScalewayProvider extends MediaProvider {
   ownsUrl(url) {
     if (!url || typeof url !== 'string') return false;
 
-    // Check CDN URL
-    if (this.config.cdnUrl && url.startsWith(this.config.cdnUrl)) {
-      return true;
+    const { bucket, endpoint, publicUrl } = this.config;
+    if (publicUrl && url.startsWith(`${publicUrl}/`)) return true;
+    if (!endpoint || !bucket) return false;
+
+    // Both addressing styles for the configured endpoint: virtual-hosted
+    // (https://<bucket>.<host>/) and path style (https://<host>/<bucket>/).
+    let host;
+    try {
+      const u = new URL(endpoint);
+      host = `${u.protocol}//${u.host}`;
+    } catch {
+      return false;
     }
-
-    // Check direct Scaleway URL
-    const bucket = this.config.bucket;
-    const region = this.config.region;
-    const patterns = [
-      `https://${bucket}.s3.${region}.scw.cloud/`,
-      `https://s3.${region}.scw.cloud/${bucket}/`,
-    ];
-
-    return patterns.some((p) => url.startsWith(p));
+    return (
+      url.startsWith(`${host.replace('//', `//${bucket}.`)}/`) ||
+      url.startsWith(`${host}/${bucket}/`)
+    );
   }
 
   // Private helpers
 
   _getPublicUrl(key) {
-    // Prefer CDN URL if configured
-    if (this.config.cdnUrl) {
-      const cdnBase = this.config.cdnUrl.replace(/\/$/, '');
-      return `${cdnBase}/${key}`;
-    }
-
-    // Fall back to direct Scaleway URL (bucket must be public)
-    return `https://${this.config.bucket}.s3.${this.config.region}.scw.cloud/${key}`;
+    // `publicUrl` is either S3_PUBLIC_URL (a CDN or custom domain) or the
+    // virtual-hosted base derived from the endpoint — in which case the bucket
+    // must be publicly readable.
+    return `${this.config.publicUrl}/${key}`;
   }
 
   _datePrefix() {
