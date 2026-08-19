@@ -109,7 +109,7 @@ export function defaultAppSettings() {
     supportedSlideLangs: ['nl', 'en-GB'],
     webhooks: {
       presentationMovedToOrganizationUrl: '',
-      slideAddedToTeamLibraryUrl: '',
+      slideAddedToOrganizationLibraryUrl: '',
       presentationPublishedUrl: '',
       commentCreatedUrl: '',
       interactionPollClosedUrl: '',
@@ -329,7 +329,7 @@ export async function getAppSettings(scope) {
     presentationMovedToOrganizationUrl: normalizeWebhookUrl(
       wh?.presentationMovedToOrganizationUrl
     ),
-    slideAddedToTeamLibraryUrl: normalizeWebhookUrl(wh?.slideAddedToTeamLibraryUrl),
+    slideAddedToOrganizationLibraryUrl: normalizeWebhookUrl(wh?.slideAddedToOrganizationLibraryUrl),
     presentationPublishedUrl: normalizeWebhookUrl(wh?.presentationPublishedUrl),
     commentCreatedUrl: normalizeWebhookUrl(wh?.commentCreatedUrl),
     interactionPollClosedUrl: normalizeWebhookUrl(wh?.interactionPollClosedUrl),
@@ -446,8 +446,8 @@ export async function writeAppSettings(scope, next) {
         presentationMovedToOrganizationUrl: normalizeWebhookUrl(
           nextWh?.presentationMovedToOrganizationUrl
         ),
-        slideAddedToTeamLibraryUrl: normalizeWebhookUrl(
-          nextWh?.slideAddedToTeamLibraryUrl
+        slideAddedToOrganizationLibraryUrl: normalizeWebhookUrl(
+          nextWh?.slideAddedToOrganizationLibraryUrl
         ),
         presentationPublishedUrl: normalizeWebhookUrl(
           nextWh?.presentationPublishedUrl

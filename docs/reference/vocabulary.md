@@ -87,11 +87,17 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
   `organizationSlideLibraryItems`. `tests/shelf-vocabulary.test.js` pins the
   loser identifiers to zero across `server/`, `client/` and `tests/`.
   Deliberately untouched: the *tenant* axis, where "team" means an
-  organization (`getTeamWeeklyAnalytics`, `buildTeamDigestEmail`), and the
-  webhook surface (`slideAddedToTeamLibraryUrl`, event
-  `slide.added_to_team_library`), which is a stored settings key plus a public
-  payload contract and so needs its own migration, on the model of migration
-  074 for `presentationMovedToOrganizationUrl`.
+  organization (`getTeamWeeklyAnalytics`, `buildTeamDigestEmail`).
+  **Webhook surface done in B92 (2026-08-19, migration 077).** The settings key
+  `slideAddedToTeamLibraryUrl` and the event `slide.added_to_team_library` were
+  the remainder B90 held back, being a stored settings key plus a public payload
+  contract; they are now `slideAddedToOrganizationLibraryUrl` and
+  `slide.added_to_organization_library`, with migration 077 moving the stored
+  key on the model of 074 for `presentationMovedToOrganizationUrl`. It is a
+  breaking change for receivers matching the old event string — no alias, per
+  the beta stance ([`webhooks.md`](webhooks.md) § Implementation status).
+  Deploying this requires migration 077 to run. With that the shelf axis carries
+  one spelling everywhere: field, values, route segment, identifiers, webhook.
 - **Local, non-persisted use of the word "scope" is not a homonym defect.**
   A view-local variable using "scope" in its ordinary English sense (the
   comments panel's `'slide' | 'deck'` toggle, prose like "scoped to") makes

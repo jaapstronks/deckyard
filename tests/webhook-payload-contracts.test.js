@@ -44,7 +44,7 @@ const REPO_ROOT = '/tmp/webhook-contract-tests';
 // URL is a routing failure, not a coincidence.
 const URLS = {
   presentationMovedToOrganizationUrl: 'http://203.0.114.1/moved',
-  slideAddedToTeamLibraryUrl: 'http://203.0.114.2/library',
+  slideAddedToOrganizationLibraryUrl: 'http://203.0.114.2/library',
   presentationPublishedUrl: 'http://203.0.114.3/published',
   commentCreatedUrl: 'http://203.0.114.4/comment',
   interactionPollClosedUrl: 'http://203.0.114.5/poll',
@@ -228,10 +228,10 @@ describe('common payload shape', () => {
 
 // ─── slide-library payload ─────────────────────────────────────────────────
 
-describe('slide.added_to_team_library payload shape', () => {
+describe('slide.added_to_organization_library payload shape', () => {
   it('carries the slide block and library links instead of a presentation', async () => {
     await maybeFireWebhook(REPO_ROOT, REQ, {
-      event: 'slide.added_to_team_library',
+      event: 'slide.added_to_organization_library',
       slideItem: {
         id: 'sl-9',
         name: 'KPI grid',
@@ -245,7 +245,7 @@ describe('slide.added_to_team_library payload shape', () => {
     await settle();
 
     const { url, payload } = delivered();
-    assert.equal(url, URLS.slideAddedToTeamLibraryUrl);
+    assert.equal(url, URLS.slideAddedToOrganizationLibraryUrl);
     assert.deepEqual(Object.keys(payload).sort(), ['actor', 'createdAt', 'event', 'links', 'slide']);
     assert.deepEqual(payload.slide, {
       id: 'sl-9',

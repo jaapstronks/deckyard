@@ -252,8 +252,8 @@ export async function maybeFireWebhook(
   const url =
     e === 'presentation.moved_to_organization'
       ? String(wh.presentationMovedToOrganizationUrl || '').trim()
-      : e === 'slide.added_to_team_library'
-        ? String(wh.slideAddedToTeamLibraryUrl || '').trim()
+      : e === 'slide.added_to_organization_library'
+        ? String(wh.slideAddedToOrganizationLibraryUrl || '').trim()
         : e === 'presentation.published'
           ? String(wh.presentationPublishedUrl || '').trim()
           : e === 'comment.created'
@@ -267,7 +267,7 @@ export async function maybeFireWebhook(
     : null;
 
   // Use different payload builder for slide library events
-  const payload = e === 'slide.added_to_team_library'
+  const payload = e === 'slide.added_to_organization_library'
     ? buildSlideLibraryPayload({
         event: e,
         authedUser,

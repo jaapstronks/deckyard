@@ -167,7 +167,7 @@ async function handleOrganizationCreate({ repoRoot, storageScope, req, res, auth
 
   // Fire webhook for organization-library addition (reuses organization share webhook URL)
   void maybeFireWebhook(repoRoot, req, {
-    event: 'slide.added_to_team_library',
+    event: 'slide.added_to_organization_library',
     slideItem: { ...r.item, previewUrl },
     authedUser,
   });

@@ -44,7 +44,7 @@ Fire sites (each names the event it fires):
 |---|---|
 | `presentation.moved_to_organization` | `server/routes/api/presentations/visibility.js` |
 | `presentation.published` | `server/routes/api/publish.js` |
-| `slide.added_to_team_library` | `server/routes/api/slide-library.js` |
+| `slide.added_to_organization_library` | `server/routes/api/slide-library.js` |
 | `comment.created` | `server/services/comment-notifications.js` |
 | `lead.submitted` | `server/routes/api/leads.js` |
 | `interaction.poll_closed` | `server/storage/interactions.js` |
@@ -58,10 +58,10 @@ live in the `webhooks` object of app settings (`server/storage/settings.js`),
 one string key per event, defaulting to `''` (= disabled):
 
 ```
-presentationMovedToOrganizationUrl   slideAddedToTeamLibraryUrl
-presentationPublishedUrl          commentCreatedUrl
-interactionPollClosedUrl          interactionLikertClosedUrl
-interactionFeedbackSubmittedUrl   leadSubmittedUrl
+presentationMovedToOrganizationUrl   slideAddedToOrganizationLibraryUrl
+presentationPublishedUrl             commentCreatedUrl
+interactionPollClosedUrl             interactionLikertClosedUrl
+interactionFeedbackSubmittedUrl      leadSubmittedUrl
 ```
 
 plus one non-URL key, `signingSecret` (default `''`): the optional HMAC-SHA256
@@ -126,7 +126,7 @@ convenience, not authentication; the signature is the authentication.
 / legacy rows, the auth-off operator — where the email is the only identifier
 available.
 
-**Slide library** — `slide.added_to_team_library`: same `event` / `createdAt` /
+**Slide library** — `slide.added_to_organization_library`: same `event` / `createdAt` /
 `actor`, then `slide` (`id`, `name`, `description`, `slideType`, `themeId`,
 `previewUrl`, `url`) and `links` (`libraryPath`, `libraryUrl`, `slidePath`,
 `slideUrl`).
@@ -255,3 +255,17 @@ the admin UI.** Where the code stands, as of 2026-08-17 (B81):
   for receivers keying on `actor.id` — the kind the beta window is for.
 - **The user-agent is `Deckyard-Webhook/1`** (B81), replacing the pre-rename
   `presentation-system-webhook/1`.
+- **The shelf event and its settings key say *organization*** (B92, 1.21.0,
+  migration 077). The event `slide.added_to_team_library` is now
+  `slide.added_to_organization_library` and its URL key
+  `slideAddedToTeamLibraryUrl` is now `slideAddedToOrganizationLibraryUrl` — the
+  last two names carrying the retired "team" spelling of the shelf axis
+  (`docs/reference/vocabulary.md`, D27). **This is a breaking change for
+  receivers**: from the release carrying migration 077 on, the `event` field and
+  the `x-sb-event` header of that delivery read
+  `slide.added_to_organization_library`, and a receiver matching the old string
+  silently stops recognising the event. The old name is not accepted anywhere —
+  no alias, no dual read — because migration 077 moves the stored URL, so an
+  operator-configured webhook keeps firing without a compatibility seam
+  ([`versioning.md`](versioning.md) § the beta stance). Update the receiver's
+  event match when you deploy that release.
