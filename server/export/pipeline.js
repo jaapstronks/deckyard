@@ -1,11 +1,8 @@
 import { safeFilename } from '../utils/filename.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
-import {
-  badRequest,
-  notFound,
-  unauthorized,
-  serveJson,
-} from '../utils/http.js';
+import { jsonError, notFound, unauthorized, serveJson } from '../utils/http.js';
+import { isAppError } from '../utils/errors.js';
+import { createLogger } from '../utils/logger.js';
 import { getPresentation } from '../storage/presentations/index.js';
 import { normalizeLang, projectPresentationForLang } from '../utils/i18n.js';
 import { loadThemeAssets } from '../utils/themes.js';
@@ -17,6 +14,8 @@ import {
   QUEUE_NAMES,
 } from '../jobs/queue/connection.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
+
+const log = createLogger('export');
 
 /**
  * Get the language suffix for filenames based on export language
@@ -149,12 +148,27 @@ function sendHtmlPreviewResponse(res, html) {
 }
 
 /**
- * Handle export error
+ * Turn a thrown export failure into the canonical error envelope.
+ *
+ * An `AppError` is a deliberate, user-facing answer — its status and message
+ * are the contract, so they pass through unchanged. Anything else is an
+ * internal failure (a renderer crash, a missing binary, a bad ZIP): its
+ * message carries absolute paths and module layout, so it is logged and the
+ * client gets a fixed `export_failed` 500 instead of the raw text
+ * (js/stack-trace-exposure). It used to be a 400 with `String(error)` in the
+ * body, which was both a leak and the wrong status for a server-side crash.
+ *
  * @param {Object} res - Response object
  * @param {Error} error - Error object
+ * @returns {true}
  */
 export function handleExportError(res, error) {
-  return badRequest(res, String(error?.message || error));
+  if (isAppError(error)) {
+    serveJson(res, error.statusCode, error.toJSON());
+    return true;
+  }
+  log.error('Export failed:', error);
+  return jsonError(res, 500, 'export_failed', 'Export failed');
 }
 
 /**

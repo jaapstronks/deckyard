@@ -8,6 +8,7 @@ import {
   EMAIL_STYLES,
   emailButton,
   emailWrapper,
+  stripTags,
   troubleClickingFooter,
 } from './helpers.js';
 
@@ -53,7 +54,7 @@ export function buildGuestVerificationEmail({
   const textContent = `
 ${greeting}
 
-${bodyText.replace(/<[^>]*>/g, '')}
+${stripTags(bodyText)}
 
 ${verificationUrl}
 
@@ -130,7 +131,7 @@ export function buildCollaboratorInviteEmail({
   const textContent = `
 ${greeting}
 
-${bodyText.replace(/<[^>]*>/g, '')}
+${stripTags(bodyText)}
 
 ${buttonLabel}: ${editUrl}
 
@@ -176,7 +177,7 @@ export function buildGuestInvitationEmail({
   const textContent = `
 ${greeting}
 
-${bodyText.replace(/<[^>]*>/g, '')}
+${stripTags(bodyText)}
 
 ${buttonLabel}: ${shareUrl}
 

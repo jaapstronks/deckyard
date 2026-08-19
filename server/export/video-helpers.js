@@ -4,6 +4,7 @@
  */
 
 import { envStr } from '../config/utils.js';
+import { hostMatches, hostMatchesAny } from '../../shared/url-host.js';
 
 /**
  * Parse a video source string and determine the provider and ID.
@@ -56,13 +57,13 @@ export function parseVideoSource(source, bunnyLibraryId = '366590') {
 function parseYouTubeUrl(raw) {
   try {
     const u = new URL(raw.startsWith('//') ? `https:${raw}` : raw);
-    const host = u.hostname.toLowerCase();
+    const host = u.hostname;
 
-    if (host === 'youtu.be') {
+    if (hostMatches(host, 'youtu.be')) {
       return u.pathname.replace(/^\//, '').split('/')[0] || null;
     }
 
-    if (host.endsWith('youtube.com') || host.endsWith('youtube-nocookie.com')) {
+    if (hostMatchesAny(host, ['youtube.com', 'youtube-nocookie.com'])) {
       const v = u.searchParams.get('v');
       if (v) return v;
 
@@ -81,9 +82,9 @@ function parseYouTubeUrl(raw) {
 function parseVimeoUrl(raw) {
   try {
     const u = new URL(raw.startsWith('//') ? `https:${raw}` : raw);
-    const host = u.hostname.toLowerCase();
+    const host = u.hostname;
 
-    if (host.endsWith('vimeo.com') || host.endsWith('player.vimeo.com')) {
+    if (hostMatches(host, 'vimeo.com')) {
       const videoMatch = u.pathname.match(/\/(?:video\/)?(\d+)/);
       if (videoMatch?.[1]) return videoMatch[1];
     }

@@ -5,6 +5,25 @@
 
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 
+/**
+ * HTML → plain text for the `text/plain` half of a multipart email.
+ *
+ * The five senders used to inline `replace(/<[^>]*>/g, '')`, which leaves an
+ * unterminated `<script` (no closing `>`) standing — the shape CodeQL flags as
+ * js/incomplete-multi-character-sanitization. This is the one spelling: tags
+ * go, and a tag that opens without ever closing goes too. The input is HTML, so
+ * an unescaped `<` counts as tag syntax; literal text arrives as `&lt;`.
+ *
+ * @param {string} html - HTML fragment (our own template markup; interpolated
+ *   values are already escaped by the caller).
+ * @returns {string} Plain text with no tag-shaped substring left.
+ */
+export function stripTags(html) {
+  return String(html ?? '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/<\/?[a-zA-Z][^<]*$/, '');
+}
+
 // ============================================================
 // STYLES
 // ============================================================

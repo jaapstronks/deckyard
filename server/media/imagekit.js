@@ -98,7 +98,9 @@ function toImageKitSearchQuery({ q, searchQuery }) {
   // ImageKit searchable fields: name, tags, path, format, size, width, height,
   // createdAt, updatedAt, customMetadata.*, embeddedMetadata.*
   // Note: description is NOT searchable via the API.
-  const escaped = term.replace(/"/g, '\\"');
+  // Backslash first, then quote — escaping the quote first would leave a
+  // literal `\` in the term able to escape our own escape (js/incomplete-sanitization).
+  const escaped = term.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   // name HAS and tags HAS both support partial, case-insensitive matching
   // For multi-select custom metadata (like People), IN requires exact match with case variations
   const lower = escaped.toLowerCase();

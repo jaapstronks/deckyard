@@ -15,5 +15,6 @@ export function filterCssText(css) {
     .replace(/<\/style/gi, '<\\/style') // can't break out of the <style> block
     .replace(/@import[^;]*;?/gi, '') // no external stylesheet loads
     .replace(/expression\s*\(/gi, 'expression​(') // legacy IE JS-in-CSS
-    .replace(/javascript:/gi, 'javascript​:'); // defang url(javascript:...)
+    .replace(/javascript:/gi, 'javascript​:') // defang url(javascript:...)
+    .replace(/vbscript:/gi, 'vbscript​:'); // same family, legacy IE
 }
