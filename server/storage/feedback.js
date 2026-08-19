@@ -181,6 +181,10 @@ export async function getFeedbackAggregate(
  * @param {string} sessionId
  * @param {object} [opts]
  * @returns {Promise<{ok: true, aggregate: object}|{ok: false, reason: string}>}
+ *   `invalid` for a blank slide or device id and for empty text, `closed` when
+ *   the presenter shut the slide, and otherwise whatever
+ *   `ensureInteractionSlide` answered (`not_found` for a session that is gone,
+ *   `unavailable` when the pool is down).
  */
 export async function submitFeedback(
   scope,
@@ -190,10 +194,12 @@ export async function submitFeedback(
   toStorageContext(scope, 'submitFeedback', {}, { allowCrossOrganization: true });
   const sid = String(slideId || '').trim();
   const did = normalizeDeviceId(deviceId);
-  if (!sid || !did) return { ok: false, reason: 'bad_request' };
+  if (!sid || !did) return { ok: false, reason: 'invalid' };
 
   const t = String(text || '').trim();
-  if (!t) return { ok: false, reason: 'empty' };
+  // Empty text is malformed input, not its own outcome: nothing downstream
+  // acts on the difference between a blank id and a blank body.
+  if (!t) return { ok: false, reason: 'invalid' };
   const limited = t.length > MAX_TEXT_LENGTH ? t.slice(0, MAX_TEXT_LENGTH) : t;
 
   // Auto-create so the first respondent never needs a presenter action, the
@@ -204,7 +210,9 @@ export async function submitFeedback(
     type: 'feedback',
     optionCount: 0,
   });
-  if (!ensured.ok) return { ok: false, reason: 'no_session' };
+  // Pass the reason through: `not_found` (session gone) and `unavailable`
+  // (pool down) are different answers and must not collapse into one.
+  if (!ensured.ok) return ensured;
   const slide = ensured.slide;
   if (slide.status === 'closed') return { ok: false, reason: 'closed' };
 

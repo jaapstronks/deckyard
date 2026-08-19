@@ -255,11 +255,21 @@ state-changing verb must be added there before the gate sees it. And it cannot
 judge `return false` at all, which is why the two boolean verdicts above needed
 finding by hand.
 
-Two known gaps sit outside the shape itself. The reasons on the audience-facing
-interaction exports (`voteInteraction`, `submitFeedback`) still read
-`bad_request` / `no_session` / `empty` rather than the vocabulary above;
-normalizing them moves HTTP statuses through `getErrorStatus()`, so it is a
-behaviour change and needs its own pass. And several facades let a malformed
+The vocabulary followed the shape. The audience-facing interaction exports
+(`voteInteraction`, `submitFeedback`) used to answer `bad_request` / `no_session`
+/ `empty` — three spellings for meanings the table above already names (B93).
+They now answer `invalid` for a blank slide or device id and for empty feedback
+text, and they hand back whatever `ensureInteractionSlide` answered instead of
+flattening it, so a session that is gone reads `not_found` and a pool that is
+down reads `unavailable`. The follow routes map those through
+`getErrorStatus()`, which is where the change is visible: a vanished session is
+now a 404 rather than a 400, and a database outage a 503 rather than a 400. Both
+are only reachable on a race — the handlers pre-check live-ness and the current
+slide — and both are the honest status for what happened.
+`tests/storage-call-convention.test.js` pins the three retired spellings to zero
+under `server/storage/**`.
+
+One known gap sits outside the shape itself: several facades let a malformed
 caller id reach PostgreSQL, which raises `22P02` on a `uuid` column instead of
 the facade answering `invalid` — a throw where the convention wants a
 non-throwing failure branch.
