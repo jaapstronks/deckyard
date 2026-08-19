@@ -29,7 +29,7 @@ Enabled providers, in chooser order:
 
 - **native library** (`local-library`) — enabled when
   `features.enableImageLibrary` (which `IMAGEKIT_ONLY` forces off). Wraps
-  `openImageLibraryPicker` (local/Scaleway upload + Unsplash/Giphy).
+  `openImageLibraryPicker` (local/S3 upload + Unsplash/Giphy).
 - **bundled gradients** (`bundled`) — enabled whenever its raw opener is
   injected. See [`bundled-gradients.md`](bundled-gradients.md).
 - **ImageKit** (`imagekit`) — enabled whenever its raw opener is injected.

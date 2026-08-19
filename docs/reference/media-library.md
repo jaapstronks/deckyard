@@ -4,7 +4,8 @@
 
 Deckyard stores two different things about an image and keeps them apart. The
 **bytes** live behind a _media provider_ — either the local filesystem under
-`/uploads` or an S3-compatible bucket (Scaleway Object Storage) — reached through
+`/uploads` or an S3-compatible bucket (AWS S3, MinIO, Wasabi, Backblaze B2,
+Scaleway Object Storage, …) — reached through
 one interface so the rest of the server never knows which is active. The
 **catalogue entry** (url, title, description, alt texts, photographer, tags,
 favourites) lives in the `image_library` table, per organization. Uploading is a
@@ -28,14 +29,18 @@ Media providers (`server/media/`, 7 modules):
 - `server/media/interface.js` — the `MediaProvider` base class: `getStatus`,
   `createPresignedUpload`, `uploadBuffer`, `uploadDataUrl`, `confirmUpload`,
   `deleteFile`, `ownsUrl`. Every method throws unless a subclass implements it.
-- `server/media/config.js` — reads `MEDIA_STORAGE_MODE` and the `SCW_*` vars;
-  `isScalewayConfigured()`, `getScalewayConfig()`, `getEffectiveMediaProvider()`.
+- `server/media/config.js` — reads `MEDIA_STORAGE_MODE` and the `S3_*` vars;
+  `isS3Configured()`, `getS3Config()`, `derivePublicBaseUrl()`,
+  `getEffectiveMediaProvider()`, `mediaConfigWarnings()` (the legacy `SCW_*`
+  boot warnings).
 - `server/media/local.js` — `LocalProvider`: writes into `uploadsDir(repoRoot)`,
   serves under `/uploads/…`, 10 MB default ceiling, optimises rasters with
   `sharp`. Also exports the shared helpers `parseDataUrl()` and
   `optimizeRasterImage()`.
-- `server/media/scaleway.js` — `ScalewayProvider`: S3-compatible presigned PUT
-  uploads, allow-listed content types, 20 MB ceiling, 1 h presign expiry.
+- `server/media/s3.js` — `S3Provider`: presigned PUT uploads against any
+  S3-compatible endpoint, allow-listed content types, 20 MB ceiling, 1 h
+  presign expiry. Nothing vendor-specific: endpoint, region, bucket and public
+  base URL all come from configuration.
 - `server/media/imagekit.js` — the ImageKit DAM **read** client
   (`getImageKitConfigFromEnv`, `listImageKitFiles`, `listImageKitTags`,
   `getImageKitFileDetails`, `patchImageKitFileDetails`). ImageKit is not a
@@ -153,14 +158,49 @@ size}` returns a presigned PUT plus the eventual `publicUrl` and a key
 
 | Name                                                                                | Where                            | Purpose / default                                                                                                                                                                                  |
 | ----------------------------------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MEDIA_STORAGE_MODE`                                                                | `media/config.js`                | `auto` (default), `scaleway`, `local`. `auto` picks Scaleway when configured. `scaleway` throws at startup if it is not.                                                                           |
-| `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_BUCKET`                                    | `media/config.js`                | All three required to count as configured.                                                                                                                                                         |
-| `SCW_REGION`, `SCW_ENDPOINT`, `SCW_CDN_URL`                                         | `media/config.js`                | Default region `nl-ams`; endpoint defaults to `https://s3.<region>.scw.cloud`; CDN URL optional.                                                                                                   |
+| `MEDIA_STORAGE_MODE`                                                                | `media/config.js`                | `auto` (default), `s3`, `local`. `auto` picks S3 when it is fully configured. `s3` throws at startup if it is not.                                                                                 |
+| `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET`, `S3_ENDPOINT`                        | `media/config.js`                | All four required to count as configured. `S3_ENDPOINT` has **no default** — name your provider (`https://s3.nl-ams.scw.cloud`, `https://minio.example.com`, …).                                   |
+| `S3_REGION`, `S3_PUBLIC_URL`                                                        | `media/config.js`                | Region defaults to `nl-ams`. `S3_PUBLIC_URL` is the CDN/custom-domain base; unset means the public URL is derived from endpoint + bucket (virtual-hosted style, bucket must be publicly readable). |
+| `SCW_*`, `MEDIA_STORAGE_MODE=scaleway`                                              | `media/config.js`                | **Legacy, removed in the first release after 2026-11-01.** Read only when the `S3_*` counterpart is unset; each one read prints a boot warning. See _Legacy env names_ below.                      |
 | `UPLOADS_DIR` / `SANDBOX_UPLOADS_DIR`                                               | `server/config/storage-paths.js` | Override the local upload directory. It defaults to an `uploads` directory under `server/` (`uploads-sandbox` in sandbox mode), created at boot by `server/server.js` — so neither is in the repo. |
 | `IMAGEKIT_PRIVATE_KEY`, `IMAGEKIT_PUBLIC_KEY`, `IMAGEKIT_URL_ENDPOINT`              | `media/imagekit.js`              | Required for the DAM panel; missing ones surface as `issues`.                                                                                                                                      |
 | `IMAGEKIT_UPLOAD_FOLDER`, `IMAGEKIT_TAG_PREFIX`, `IMAGEKIT_METADATA_FIELD_ALT_SEED` | `media/imagekit.js`              | Optional; missing ones surface as `warnings`. Tag prefix defaults to `deck:`.                                                                                                                      |
 | `UNSPLASH_ACCESS_KEY`                                                               | `integrations/unsplash.js`       | Enables Unsplash search/import.                                                                                                                                                                    |
 | `GIPHY_API_KEY`                                                                     | `integrations/giphy.js`          | Enables Giphy search/trending/import.                                                                                                                                                              |
+
+### Legacy env names (until 2026-11-01)
+
+The provider used to be named after one vendor (a `scaleway.js` module with a
+`ScalewayProvider` class, `SCW_*`, `MEDIA_STORAGE_MODE=scaleway`). It is
+generic S3 now (D25); the old
+names are still recognized until the removal date, in the B68 shape — never as
+a silent alias:
+
+| Legacy (deprecated)           | Canonical               |
+| ----------------------------- | ----------------------- |
+| `MEDIA_STORAGE_MODE=scaleway` | `MEDIA_STORAGE_MODE=s3` |
+| `SCW_ACCESS_KEY`              | `S3_ACCESS_KEY`         |
+| `SCW_SECRET_KEY`              | `S3_SECRET_KEY`         |
+| `SCW_BUCKET`                  | `S3_BUCKET`             |
+| `SCW_REGION`                  | `S3_REGION`             |
+| `SCW_ENDPOINT`                | `S3_ENDPOINT`           |
+| `SCW_CDN_URL`                 | `S3_PUBLIC_URL`         |
+
+A legacy name is read only when its canonical counterpart is unset, and every
+one that is read produces a `⚠️  CONFIG:` line at boot naming the replacement
+and the date (`mediaConfigWarnings()`, printed by `server/server.js` next to
+`deprecatedFlagWarnings()`). One extra warning covers the endpoint: for an
+**untouched** legacy install only — no endpoint under either name and no
+`S3_ACCESS_KEY`/`S3_SECRET_KEY`/`S3_BUCKET` set — an unset endpoint is still
+derived as `https://s3.<region>.scw.cloud` (the single place a vendor host
+survives). The moment any `S3_*` core var is set, the install is on the new
+names and has to name its endpoint: `S3_ENDPOINT` has no default. After the
+removal date both the names and that derivation are deleted.
+
+A **partly configured** S3 set (some of `S3_ACCESS_KEY`, `S3_SECRET_KEY`,
+`S3_BUCKET`, `S3_ENDPOINT`, but not all) is a misconfiguration, not a choice:
+`auto` mode falls back to local `/uploads` as before, but now says so with a
+boot warning naming the missing vars.
 
 Feature flags (`server/config/flags-snapshot.js`):
 

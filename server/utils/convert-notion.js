@@ -168,7 +168,7 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
  * Notion's file-hosted image URLs are signed and expire (~1h), so keeping them
  * verbatim leaves an imported deck broken shortly after import. When ImageKit is
  * not configured this fetches the bytes and stores them via the configured media
- * provider (local `/uploads` or Scaleway), yielding a durable URL. On any failure
+ * provider (local `/uploads` or S3), yielding a durable URL. On any failure
  * it returns the original URL so the import still succeeds (just non-durable).
  * @param {{ url: string }} img
  * @returns {Promise<string>} A durable media-library URL, or the original URL on failure.

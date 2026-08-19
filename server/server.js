@@ -5,6 +5,7 @@ import { CLIENT_DIR, SHARED_PUBLIC_DIRS, repoRoot } from './config/paths.js';
 import { loadDotEnv } from './config/env.js';
 import { authConfigError, authConfigWarnings } from './auth/auth.js';
 import { deprecatedFlagWarnings } from './config/features.js';
+import { mediaConfigWarnings } from './media/config.js';
 import { ssoConfigError } from './config/sso.js';
 import { storageModeError } from './config/database.js';
 import { publicUrlWarnings, envStr, envBool, envInt } from './config/utils.js';
@@ -243,6 +244,7 @@ async function main() {
     ...authConfigWarnings(),
     ...publicUrlWarnings(),
     ...deprecatedFlagWarnings(),
+    ...mediaConfigWarnings(),
   ]) {
     console.warn(`⚠️  CONFIG: ${w}`);
   }
