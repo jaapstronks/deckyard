@@ -10,9 +10,9 @@ export function buildQaSection({ h, pres, markDirty, requestSave }) {
     h,
     checked: pres.settings.qaEnabled !== false,
     titleKey: 'editor.deckSettings.qa.title',
-    titleDefault: 'Enable Q&A',
+    title: 'Enable Q&A',
     helpKey: 'editor.deckSettings.qa.help',
-    helpDefault:
+    help:
       "When disabled, Q&A is hidden in follow-along (participants can't ask questions).",
     onChange: (checked) => {
       pres.settings.qaEnabled = checked;
@@ -34,9 +34,9 @@ export function buildBuildsSection({ h, pres, markDirty, requestSave }) {
     h,
     checked: pres.settings.stepParagraphs,
     titleKey: 'editor.deckSettings.builds.title',
-    titleDefault: 'Builds',
+    title: 'Builds',
     helpKey: 'editor.deckSettings.builds.help',
-    helpDefault:
+    help:
       'Reveal content step-by-step while presenting. Use ←/→ or space to advance.',
     onChange: (checked) => {
       pres.settings.stepParagraphs = checked;
@@ -62,9 +62,9 @@ export function buildAuthorPreviewSection({ h, pres, markDirty, requestSave }) {
     h,
     checked: pres.settings.ogPreview.showAuthor,
     titleKey: 'editor.deckSettings.authorPreview.title',
-    titleDefault: 'Show author on preview',
+    title: 'Show author on preview',
     helpKey: 'editor.deckSettings.authorPreview.help',
-    helpDefault:
+    help:
       'Display your name and photo on the social media preview image when published.',
     onChange: (checked) => {
       pres.settings.ogPreview.showAuthor = checked;
@@ -85,9 +85,9 @@ export function buildRssFeedSection({ h, pres, api, markDirty, requestSave }) {
     h,
     checked: !!pres.settings.excludeFromFeed,
     titleKey: 'editor.deckSettings.rssFeed.title',
-    titleDefault: 'Exclude from RSS feed',
+    title: 'Exclude from RSS feed',
     helpKey: 'editor.deckSettings.rssFeed.help',
-    helpDefault:
+    help:
       'When checked, this presentation will not appear in the public RSS feed.',
     onChange: (checked) => {
       pres.settings.excludeFromFeed = checked;

@@ -12,15 +12,15 @@ import { getFeatures } from '../../lib/state/features.js';
  * Tabs are grouped: user tabs first, designer tabs, then admin tabs.
  */
 const USER_TABS = [
-  { key: 'account', labelKey: 'settings.tabs.account', labelDefault: 'Account' },
-  { key: 'preferences', labelKey: 'settings.tabs.preferences', labelDefault: 'Preferences' },
-  { key: 'export', labelKey: 'settings.tabs.export', labelDefault: 'Data Export' },
+  { key: 'account', labelKey: 'settings.tabs.account', label: 'Account' },
+  { key: 'preferences', labelKey: 'settings.tabs.preferences', label: 'Preferences' },
+  { key: 'export', labelKey: 'settings.tabs.export', label: 'Data Export' },
 ];
 
 const DESIGNER_TABS = [
-  { key: 'fonts', labelKey: 'settings.tabs.fonts', labelDefault: 'Fonts' },
-  { key: 'themes', labelKey: 'settings.tabs.themes', labelDefault: 'Themes' },
-  { key: 'slide-types', labelKey: 'settings.tabs.slideTypes', labelDefault: 'Slide Types' },
+  { key: 'fonts', labelKey: 'settings.tabs.fonts', label: 'Fonts' },
+  { key: 'themes', labelKey: 'settings.tabs.themes', label: 'Themes' },
+  { key: 'slide-types', labelKey: 'settings.tabs.slideTypes', label: 'Slide Types' },
 ];
 
 /**
@@ -37,28 +37,28 @@ const DESIGNER_TABS = [
 const ORGANIZATION_TAB = {
   key: 'organization',
   labelKey: 'settings.tabs.organization',
-  labelDefault: 'Organization',
+  label: 'Organization',
 };
 
 const MEMBERS_TAB = {
   key: 'users',
   labelKey: 'settings.tabs.users',
-  labelDefault: 'Users',
+  label: 'Users',
   // In multi-workspace mode this tab lists the members of the organization
   // the session is in, not every user on the instance — so it says so. See
   // tabs/users-tab.js.
   multiOrganizationLabelKey: 'settings.tabs.members',
-  multiOrganizationLabelDefault: 'Members',
+  multiOrganizationLabel: 'Members',
 };
 
 const ADMIN_TABS = [
-  { key: 'admin', labelKey: 'settings.tabs.admin', labelDefault: 'Admin' },
+  { key: 'admin', labelKey: 'settings.tabs.admin', label: 'Admin' },
   ORGANIZATION_TAB,
   MEMBERS_TAB,
-  { key: 'api-keys', labelKey: 'settings.tabs.apiKeys', labelDefault: 'API Keys' },
-  { key: 'email', labelKey: 'settings.tabs.email', labelDefault: 'Email' },
-  { key: 'integrations', labelKey: 'settings.tabs.integrations', labelDefault: 'Integrations' },
-  { key: 'analytics', labelKey: 'settings.tabs.analytics', labelDefault: 'External Analytics' },
+  { key: 'api-keys', labelKey: 'settings.tabs.apiKeys', label: 'API Keys' },
+  { key: 'email', labelKey: 'settings.tabs.email', label: 'Email' },
+  { key: 'integrations', labelKey: 'settings.tabs.integrations', label: 'Integrations' },
+  { key: 'analytics', labelKey: 'settings.tabs.analytics', label: 'External Analytics' },
 ];
 
 /**
@@ -107,8 +107,8 @@ export function createSettingsSidebar({
     const label = h('span', {
       class: 'settings-sidebar-tab-label',
       text: renamed
-        ? t(tab.multiOrganizationLabelKey, tab.multiOrganizationLabelDefault)
-        : t(tab.labelKey, tab.labelDefault),
+        ? t(tab.multiOrganizationLabelKey, tab.multiOrganizationLabel)
+        : t(tab.labelKey, tab.label),
     });
 
     btn.append(label);

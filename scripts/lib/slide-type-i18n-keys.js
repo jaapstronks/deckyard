@@ -2,9 +2,10 @@
  * The one generator that turns the live slide-type registry into its `slideType.*`
  * i18n keys — labels, field labels/placeholders/help, item fields, and options.
  *
- * Two tools read the registry the same way and must not drift apart:
- *   - `i18n-extract.js` writes the English defaults into the extraction template;
- *   - `i18n-sync.js` prunes locale keys the registry no longer produces.
+ * `i18n-sync.js` reads the registry through it to prune locale keys the registry
+ * no longer produces. It is the only reader since B94 retired `i18n-extract.js`,
+ * and it walks the *whole* registry on purpose: there is no skip-set to pass,
+ * so a fork type's keys can never be left out of the valid set (#499).
  *
  * Keeping the walk here means "which keys does a type own?" has a single answer.
  * A departed type, field or option simply stops appearing in the returned set,
@@ -35,16 +36,13 @@ export function normalizeOption(opt) {
  *
  * A field/option that declares an explicit `*Key` reuses that key verbatim
  * (some options localise through a hand-picked key rather than the generated
- * one); everything else follows the `slideType.<type>.field.<key>…` convention
- * that `i18n-extract.js` established.
+ * one); everything else follows the `slideType.<type>.field.<key>…` convention.
  *
  * @param {Record<string, {label?: string, labelKey?: string, fields?: Array}>} slideTypes - `SLIDE_TYPES`
- * @param {Iterable<string>} [customNames] - fork-only type names to skip (`CUSTOM_SLIDE_TYPE_NAMES`)
  * @returns {Map<string, string>} key → English default
  */
-export function slideTypeUiStrings(slideTypes, customNames = []) {
+function slideTypeUiStrings(slideTypes) {
   const out = new Map();
-  const custom = new Set(customNames || []);
   const add = (key, def) => {
     const k = String(key || '').trim();
     if (!k) return;
@@ -52,7 +50,6 @@ export function slideTypeUiStrings(slideTypes, customNames = []) {
   };
 
   for (const [type, def] of Object.entries(slideTypes || {})) {
-    if (custom.has(type)) continue;
     add(def?.labelKey || `slideType.${type}.label`, def?.label || type);
 
     for (const f of Array.isArray(def?.fields) ? def.fields : []) {
@@ -76,7 +73,7 @@ export function slideTypeUiStrings(slideTypes, customNames = []) {
         const opt = normalizeOption(raw);
         // An option only contributes keys when it names them explicitly — the
         // generated fallbacks below are the option *value*, which is a machine
-        // token, not copy. (This matches i18n-extract's original behaviour.)
+        // token, not copy.
         if (!(opt?.labelKey || opt?.titleKey || opt?.ariaLabelKey)) continue;
         if (opt.labelKey) add(opt.labelKey, opt.label);
         if (opt.titleKey) add(opt.titleKey, opt.title);
@@ -92,9 +89,8 @@ export function slideTypeUiStrings(slideTypes, customNames = []) {
  * matching `slideType.` but absent here is an orphan from a removed type, field
  * or option and is safe to prune.
  * @param {Record<string, Object>} slideTypes
- * @param {Iterable<string>} [customNames]
  * @returns {Set<string>}
  */
-export function slideTypeUiKeys(slideTypes, customNames = []) {
-  return new Set(slideTypeUiStrings(slideTypes, customNames).keys());
+export function slideTypeUiKeys(slideTypes) {
+  return new Set(slideTypeUiStrings(slideTypes).keys());
 }

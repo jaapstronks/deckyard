@@ -8,9 +8,9 @@ import { t } from '../../../../lib/ui-i18n.js';
  * @param {(tag: string, attrs?: object, children?: any) => HTMLElement} opts.h
  * @param {boolean} opts.checked - initial checkbox state
  * @param {string} opts.titleKey
- * @param {string} opts.titleDefault
+ * @param {string} opts.title
  * @param {string} opts.helpKey
- * @param {string} opts.helpDefault
+ * @param {string} opts.help
  * @param {(checked: boolean) => void} opts.onChange
  * @returns {{ row: HTMLElement, cb: HTMLInputElement }}
  */
@@ -18,17 +18,17 @@ export function buildCheckboxCallout({
   h,
   checked,
   titleKey,
-  titleDefault,
+  title,
   helpKey,
-  helpDefault,
+  help,
   onChange,
 }) {
   const row = h('label', { class: 'row is-start editor-callout' });
   const cb = h('input', { type: 'checkbox' });
   cb.checked = checked;
   const text = h('div', { class: 'stack is-gap-xs' }, [
-    h('div', { class: 'field-label', text: t(titleKey, titleDefault) }),
-    h('div', { class: 'help', text: t(helpKey, helpDefault) }),
+    h('div', { class: 'field-label', text: t(titleKey, title) }),
+    h('div', { class: 'help', text: t(helpKey, help) }),
   ]);
   row.append(cb, text);
   cb.addEventListener('change', () => onChange(!!cb.checked));

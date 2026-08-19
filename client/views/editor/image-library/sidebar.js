@@ -23,49 +23,49 @@ const SECTION_CONFIG = {
   [SECTIONS.RECENT]: {
     icon: 'clock',
     labelKey: 'mediaLibrary.section.recent',
-    labelDefault: 'Recent',
+    label: 'Recent',
     group: 'main',
   },
   [SECTIONS.FAVORITES]: {
     icon: 'star',
     labelKey: 'mediaLibrary.section.favorites',
-    labelDefault: 'Favorites',
+    label: 'Favorites',
     group: 'main',
   },
   [SECTIONS.YOUR_MEDIA]: {
     icon: 'user',
     labelKey: 'mediaLibrary.section.yourMedia',
-    labelDefault: 'Your Media',
+    label: 'Your Media',
     group: 'main',
   },
   [SECTIONS.ALL]: {
     icon: 'folder',
     labelKey: 'mediaLibrary.section.allMedia',
-    labelDefault: 'All Media',
+    label: 'All Media',
     group: 'main',
   },
   [SECTIONS.LOGOS]: {
     icon: 'tag',
     labelKey: 'mediaLibrary.section.logos',
-    labelDefault: 'Logos',
+    label: 'Logos',
     group: 'tags',
   },
   [SECTIONS.ICONS]: {
     icon: 'sparkles',
     labelKey: 'mediaLibrary.section.icons',
-    labelDefault: 'Icons',
+    label: 'Icons',
     group: 'tags',
   },
   [SECTIONS.UNSPLASH]: {
     icon: 'camera',
     labelKey: 'stockMedia.tabs.unsplash',
-    labelDefault: 'Unsplash',
+    label: 'Unsplash',
     group: 'external',
   },
   [SECTIONS.GIPHY]: {
     icon: 'clapperboard',
     labelKey: 'stockMedia.tabs.giphy',
-    labelDefault: 'Giphy',
+    label: 'Giphy',
     group: 'external',
   },
 };
@@ -148,7 +148,7 @@ export function createMediaLibrarySidebar({
       });
 
       const iconSpan = h('img', { class: 'media-lib-nav-icon', src: iconUrl(config.icon), alt: '', 'aria-hidden': 'true' });
-      const labelSpan = h('span', { class: 'media-lib-nav-label', text: t(config.labelKey, config.labelDefault) });
+      const labelSpan = h('span', { class: 'media-lib-nav-label', text: t(config.labelKey, config.label) });
 
       btn.append(iconSpan, labelSpan);
       return btn;

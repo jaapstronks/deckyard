@@ -216,7 +216,8 @@ Then, in rough dependency order:
 
 - ~~**i18n**: deprecated types are excluded from extraction, so a type that
   spent time on rung 1 has no keys in `client/i18n/<locale>/slide-types.json`.~~
-  **Wrong — corrected 2026-07-30.** `scripts/i18n-extract.js` walks
+  **Wrong — corrected 2026-07-30.** The registry walk in
+  `scripts/lib/slide-type-i18n-keys.js` iterates
   `SLIDE_TYPES` and does not look at `deprecated`, so an archived type keeps its
   label and field keys in every locale. Split-partner still had six keys × 12
   locales when it was removed. **Every removal touches the 12 locale files**:

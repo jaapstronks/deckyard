@@ -10,6 +10,7 @@
  *  1. every static t() key used in client/ exists in both nl/ and en/
  *  2. {var} placeholders match between en/ and nl/ for shared keys
  *  3. follow.* keys are not reachable through the global t() (see below)
+ *  4. descriptor pairs use the one surviving spelling, `<x>Key` / `<x>`
  *
  * Run with: node --test tests/i18n-coverage.test.js
  */
@@ -20,7 +21,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { extractUsedKeys, loadLocale, isDynamicKey } from '../scripts/i18n-keys.js';
+import {
+  extractUsedKeys,
+  loadLocale,
+  isDynamicKey,
+  findLegacyDescriptorPairs,
+} from '../scripts/i18n-keys.js';
 import { TIER_1 } from '../scripts/i18n-tiers.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -112,6 +118,26 @@ describe('i18n coverage', () => {
       const missing = keys.filter((k) => typeof dict[k] !== 'string');
       assert.deepStrictEqual(missing.sort(), [], `missing from client/i18n/${locale}/follow.json`);
     }
+  });
+
+  it('descriptor pairs use one spelling (no <x>Default beside <x>Key)', async () => {
+    // B94 folded the `<x>Key` / `<x>Default` spelling into the bare
+    // `<x>Key` / `<x>` one and narrowed DESCRIPTOR_PAIR in scripts/i18n-keys.js
+    // to match only the survivor. Re-introducing `<x>Default` makes those keys
+    // invisible to the coverage check above — which is exactly how six webhook
+    // keys went missing before #831 — so it fails here instead.
+    // shared/ too: the slide-type registry spells the same pair there, and a
+    // `<x>Default` in it would be just as invisible.
+    const offenders = [
+      ...(await findLegacyDescriptorPairs(clientDir)),
+      ...(await findLegacyDescriptorPairs(path.join(repoRoot, 'shared'))),
+    ];
+    assert.deepStrictEqual(
+      offenders.map((o) => o.replace(repoRoot + '/', '')).sort(),
+      [],
+      'Descriptor pairs are spelled `<x>Key: …, <x>: …` — rename the `<x>Default` half:\n' +
+        offenders.map((o) => `  ${o.replace(repoRoot + '/', '')}`).join('\n')
+    );
   });
 
   it('every locale directory parses as JSON', async () => {

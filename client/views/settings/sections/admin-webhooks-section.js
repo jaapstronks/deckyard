@@ -13,65 +13,65 @@ const WEBHOOK_CONFIGS = [
     key: 'movedToOrganization',
     settingsKey: 'presentationMovedToOrganizationUrl',
     titleKey: 'settings.admin.webhooks.movedToOrganization.title',
-    titleDefault: 'When a presentation is shared to the workspace',
+    title: 'When a presentation is shared to the workspace',
     hintKey: 'settings.admin.webhooks.movedToOrganization.hint',
-    hintDefault: 'Event: presentation.moved_to_organization',
+    hint: 'Event: presentation.moved_to_organization',
   },
   {
     key: 'slideAddedToOrganizationLibrary',
     settingsKey: 'slideAddedToOrganizationLibraryUrl',
     titleKey: 'settings.admin.webhooks.slideAddedToOrganizationLibrary.title',
-    titleDefault: 'When a slide is added to the team library',
+    title: 'When a slide is added to the team library',
     hintKey: 'settings.admin.webhooks.slideAddedToOrganizationLibrary.hint',
-    hintDefault: 'Event: slide.added_to_organization_library',
+    hint: 'Event: slide.added_to_organization_library',
   },
   {
     key: 'published',
     settingsKey: 'presentationPublishedUrl',
     titleKey: 'settings.admin.webhooks.published.title',
-    titleDefault: 'When a presentation is published',
+    title: 'When a presentation is published',
     hintKey: 'settings.admin.webhooks.published.hint',
-    hintDefault: 'Event: presentation.published',
+    hint: 'Event: presentation.published',
   },
   {
     key: 'commentCreated',
     settingsKey: 'commentCreatedUrl',
     titleKey: 'settings.admin.webhooks.commentCreated.title',
-    titleDefault: 'When a comment is posted',
+    title: 'When a comment is posted',
     hintKey: 'settings.admin.webhooks.commentCreated.hint',
-    hintDefault: 'Event: comment.created',
+    hint: 'Event: comment.created',
   },
   {
     key: 'pollClosed',
     settingsKey: 'interactionPollClosedUrl',
     titleKey: 'settings.admin.webhooks.pollClosed.title',
-    titleDefault: 'When a poll is closed',
+    title: 'When a poll is closed',
     hintKey: 'settings.admin.webhooks.pollClosed.hint',
-    hintDefault: 'Event: interaction.poll_closed',
+    hint: 'Event: interaction.poll_closed',
   },
   {
     key: 'likertClosed',
     settingsKey: 'interactionLikertClosedUrl',
     titleKey: 'settings.admin.webhooks.likertClosed.title',
-    titleDefault: 'When a Likert scale is closed',
+    title: 'When a Likert scale is closed',
     hintKey: 'settings.admin.webhooks.likertClosed.hint',
-    hintDefault: 'Event: interaction.likert_closed',
+    hint: 'Event: interaction.likert_closed',
   },
   {
     key: 'feedbackSubmitted',
     settingsKey: 'interactionFeedbackSubmittedUrl',
     titleKey: 'settings.admin.webhooks.feedbackSubmitted.title',
-    titleDefault: 'When feedback is submitted',
+    title: 'When feedback is submitted',
     hintKey: 'settings.admin.webhooks.feedbackSubmitted.hint',
-    hintDefault: 'Event: interaction.feedback_submitted',
+    hint: 'Event: interaction.feedback_submitted',
   },
   {
     key: 'leadSubmitted',
     settingsKey: 'leadSubmittedUrl',
     titleKey: 'settings.admin.webhooks.leadSubmitted.title',
-    titleDefault: 'When a lead is submitted',
+    title: 'When a lead is submitted',
     hintKey: 'settings.admin.webhooks.leadSubmitted.hint',
-    hintDefault: 'Event: lead.submitted',
+    hint: 'Event: lead.submitted',
   },
 ];
 
@@ -106,7 +106,7 @@ export function createAdminWebhooksSection({ h }) {
   for (const config of WEBHOOK_CONFIGS) {
     const label = h('div', {
       class: 'field-label',
-      text: t(config.titleKey, config.titleDefault),
+      text: t(config.titleKey, config.title),
     });
 
     const input = h('input', {
@@ -117,7 +117,7 @@ export function createAdminWebhooksSection({ h }) {
 
     const inputHint = h('div', {
       class: 'help',
-      text: t(config.hintKey, config.hintDefault),
+      text: t(config.hintKey, config.hint),
     });
 
     inputs[config.key] = input;
