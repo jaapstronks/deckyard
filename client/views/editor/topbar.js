@@ -74,17 +74,19 @@ export function createEditorTopbar({
   const authorDisplayEl = h('div', { class: 'topbar-author' });
 
   if (ownerEmail || ownerId) {
-    // Create initial avatar with just email (will update with profile data)
+    // Start from the name the address derives; the profile lookup below
+    // replaces it with the real one (and the image) when there is one.
+    const ownerName = displayNameFromEmail(ownerEmail);
     const authorAvatar = createAvatar({
-      email: ownerEmail,
-      name: '',
+      seed: ownerId || ownerEmail,
+      name: ownerName,
       size: 'xs',
       className: 'topbar-author-avatar',
     });
 
     const authorNameEl = h('span', {
       class: 'topbar-author-name',
-      text: displayNameFromEmail(ownerEmail).split(' ')[0], // First name only initially
+      text: ownerName.split(' ')[0], // First name only initially
     });
 
     authorDisplayEl.append(authorAvatar, authorNameEl);

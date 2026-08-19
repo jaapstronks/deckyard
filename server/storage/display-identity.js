@@ -238,12 +238,27 @@ export async function resolveDisplayNames(stamps) {
   }
   if (!ids.size && !emails.size) return NO_DISPLAY_NAMES;
 
-  // Only the keys the memo cannot answer reach the database.
-  const idList = [...ids].filter((id) => cacheGet(`id:${id}`) === undefined);
-  const emailList = [...emails].filter(
-    (email) => cacheGet(`email:${email}`) === undefined,
-  );
+  // The answers for *this* batch, held locally. The returned lookup reads from
+  // here, not back from the memo: the memo can be cleared by a concurrent
+  // profile write or trimmed by its own size bound between the query and the
+  // mapper that consumes the result, and neither may turn a resolved name
+  // back into a derived one halfway through one response.
+  /** @type {Map<string, {name: string, userId: string|null}>} */
+  const resolved = new Map();
+  const idList = [];
+  const emailList = [];
+  for (const id of ids) {
+    const hit = cacheGet(`id:${id}`);
+    if (hit) resolved.set(`id:${id}`, hit);
+    else idList.push(id);
+  }
+  for (const email of emails) {
+    const hit = cacheGet(`email:${email}`);
+    if (hit) resolved.set(`email:${email}`, hit);
+    else emailList.push(email);
+  }
 
+  // Only the keys the memo cannot answer reach the database.
   if (idList.length || emailList.length) {
     const rows = await withDbGuard([], async (db) =>
       db
@@ -278,26 +293,33 @@ export async function resolveDisplayNames(stamps) {
     // Record the misses first, then overwrite the keys that did resolve: a key
     // with no row is a real answer ("no user record"), and not caching it
     // would re-query for every external collaborator on every render.
-    for (const id of idList) cacheSet(`id:${id}`, '');
-    for (const email of emailList) cacheSet(`email:${email}`, '');
+    const record = (key, name, userId = null) => {
+      const entry = { name, userId };
+      resolved.set(key, entry);
+      cacheSet(key, name, userId);
+    };
+    for (const id of idList) record(`id:${id}`, '');
+    for (const email of emailList) record(`email:${email}`, '');
     for (const row of rows) {
+      // A user with no name on file still *is* a user: the id behind the
+      // address is recorded even when the name is blank, so the client can
+      // still key the avatar lookup on it.
       const name =
         profileName(row?.settingsById) ||
         profileName(row?.settingsByEmail) ||
         String(row?.name || '').trim();
-      if (!name) continue;
-      if (row.id) cacheSet(`id:${row.id}`, name);
+      if (row.id) record(`id:${row.id}`, name);
       const email = normalize(row.email);
-      if (email) cacheSet(`email:${email}`, name, row.id || null);
+      if (email) record(`email:${email}`, name, row.id || null);
     }
   }
 
   const readEmail = (email) => {
     const key = normalize(email);
-    return key ? cacheGet(`email:${key}`) : undefined;
+    return key ? resolved.get(`email:${key}`) : undefined;
   };
   return {
-    forId: (id) => (id ? cacheGet(`id:${id}`)?.name || '' : ''),
+    forId: (id) => (id ? resolved.get(`id:${id}`)?.name || '' : ''),
     forEmail: (email) => readEmail(email)?.name || '',
     idForEmail: (email) => readEmail(email)?.userId || null,
   };

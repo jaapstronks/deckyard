@@ -7,6 +7,7 @@
  */
 
 import { searchUsers, getPublicProfilesByIds } from '../../storage/users.js';
+import { isUuid } from '../../utils/uuid.js';
 import {
   serveJson,
   methodNotAllowed,
@@ -60,11 +61,13 @@ async function handleUserProfiles({ storageScope, req, res, url, authedUser }) {
     return methodNotAllowed(res, ['GET']);
   }
 
+  // Shape-checked before storage sees them: `users.id` is a uuid column, and
+  // a value that cannot be a uuid cannot name a user (server/utils/uuid.js).
   const idsParam = url.searchParams.get('ids') || '';
   const ids = idsParam
     .split(',')
     .map((id) => id.trim())
-    .filter(Boolean)
+    .filter(isUuid)
     .slice(0, 50); // Limit to 50 ids per request
 
   if (!ids.length) {

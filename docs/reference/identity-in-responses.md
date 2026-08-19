@@ -46,15 +46,18 @@ Resolve **before** mapping — the address is the lookup key, and by the time an
 object is mapped it is deliberately gone.
 
 Resolutions are memoized in-process for 60 seconds. Writes that change a name
-(`writeUserSettings`, an admin `updateUser`) clear the memo, so a rename lands
-immediately.
+(`writeUserSettings`, an admin `updateUser`, the SSO login name refresh) clear
+the memo, so a rename lands immediately. A batch keeps its own answers: a memo
+cleared halfway through one response cannot turn a resolved name back into a
+derived one.
 
 ## Avatars
 
 The display name arrives with the payload; only the profile _image_ still
 needs a fetch. `GET /api/users/profiles?ids=<uuid>,<uuid>` answers it, keyed
 on the stable id and scoped to the caller's organization. It does not accept
-addresses, and therefore cannot be used to probe whether one exists.
+addresses, and therefore cannot be used to probe whether one exists; a value
+that is not uuid-shaped is dropped before storage sees it (`server/utils/uuid.js`).
 
 `createAvatar()` takes a ready `name` plus an optional `seed` (any stable
 identifier) that is hashed for the initials colour. It no longer derives a

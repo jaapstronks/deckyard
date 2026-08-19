@@ -34,8 +34,8 @@ export function createUserMenu({ h = defaultH, user, nav, onLogout } = {}) {
 
   // Create avatar
   const avatar = createAvatar({
-    email,
-    name: user?.name || '',
+    seed: user?.id || email,
+    name: displayName,
     size: 'sm',
     className: 'user-menu-avatar',
   });
