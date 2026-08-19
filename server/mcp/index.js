@@ -28,6 +28,7 @@ import { loadCustomToolsRegistrar } from './custom-tools-loader.js';
 import { registerPrompts } from './prompts.js';
 import { loadDotEnv } from '../config/env.js';
 import { initializeStorage } from '../storage/lifecycle.js';
+import { initSanitizer } from '../../shared/sanitize.js';
 import { strandedFileDataError } from '../storage/boot-check.js';
 import { storageModeError } from '../config/database.js';
 import { repoRoot } from '../config/paths.js';
@@ -137,6 +138,16 @@ async function main() {
       process.exit(1);
     }
   }
+
+  // Enable sync HTML sanitization, exactly as the HTTP server does
+  // (server/server.js). This process renders slide HTML too — preview tools,
+  // exports — and every markdown field on that path goes through
+  // sanitizeHtmlSync(). Without a DOMPurify instance that call falls back to
+  // escaping, so the rendered slide shows its own markup as visible text.
+  // Any Node entrypoint that can reach a render path owes this call; when one
+  // forgets, shared/sanitize.js now warns once on the fallback instead of
+  // degrading silently.
+  await initSanitizer();
 
   // Create and configure server
   const server = new McpServer({
