@@ -304,7 +304,11 @@ export async function refreshSlideLock(
 
 /**
  * Release a slide lock.
- * Only the current holder can release.
+ * Only the current holder can release a live lock. An expired row is no lock
+ * at all: it is swept and the call answers like the no-lock case
+ * (`{ ok: true, released: false }`), whoever held it — otherwise a stale row
+ * from another user answered `held` (409) when there was nothing to hold,
+ * the mirror of the expiry branch in {@link refreshSlideLock}.
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
  * @param {string} slideId - The slide ID
@@ -340,6 +344,18 @@ export async function releaseSlideLock(
       .executeTakeFirst();
 
     if (!existing) {
+      return { ok: true, released: false };
+    }
+
+    // Expired: sweep the row and answer as if there was no lock. Checked
+    // before the holder match — an expired lock belongs to nobody.
+    if (new Date(existing.expires_at) <= new Date(nowIso())) {
+      await db
+        .deleteFrom('slide_locks')
+        .where('presentation_id', '=', pid)
+        .where('slide_id', '=', sid)
+        .where('organization_id', '=', orgId)
+        .execute();
       return { ok: true, released: false };
     }
 

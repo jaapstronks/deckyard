@@ -1,5 +1,6 @@
 /**
- * `acquireSlideLock` against real PostgreSQL.
+ * `acquireSlideLock` (and the expiry branch of `releaseSlideLock`) against
+ * real PostgreSQL.
  *
  * This is the #423 path — the atomic `INSERT ... ON CONFLICT DO UPDATE ...
  * WHERE` that replaced a check-then-delete-then-insert that raced two
@@ -24,6 +25,7 @@ import {
 import {
   acquireSlideLock,
   getSlideLock,
+  releaseSlideLock,
 } from '../../server/storage/slide-locks.js';
 
 const CTX = { organizationId: 'org-pg-test' };
@@ -121,5 +123,48 @@ pgDescribe('acquireSlideLock (real PostgreSQL)', () => {
 
     const stored = await getSlideLock(CTX, PID, SID);
     assert.equal(stored.holderEmail, 'bob@example.com');
+  });
+  it('release by another user sweeps an expired lock instead of answering held', async () => {
+    // The B96 guard: before it, release read the row without an expiry filter
+    // and went straight to the holder match, so a lock of Alice's that had
+    // long expired made Bob's release answer { ok: false, reason: 'held' } —
+    // a 409 for a lock nobody held. Now an expired row is no lock: it is
+    // swept and the call answers like the no-lock case.
+    const past = new Date(Date.now() - 60_000).toISOString();
+    await db
+      .insertInto('slide_locks')
+      .values({
+        presentation_id: PID,
+        slide_id: SID,
+        organization_id: CTX.organizationId,
+        holder_email: ALICE.email,
+        holder_name: ALICE.name,
+        acquired_at: past,
+        refreshed_at: past,
+        expires_at: past,
+      })
+      .execute();
+
+    const res = await releaseSlideLock(CTX, PID, SID, BOB);
+    assert.deepEqual(res, { ok: true, released: false });
+
+    // getSlideLock filters on expiry and would hide a row that was merely
+    // ignored; read the table directly to prove the sweep.
+    const rows = await db
+      .selectFrom('slide_locks')
+      .selectAll()
+      .where('presentation_id', '=', PID)
+      .where('slide_id', '=', SID)
+      .execute();
+    assert.deepEqual(rows, [], 'the expired row is gone');
+  });
+
+  it('release by another user of a live lock still answers held', async () => {
+    await acquireSlideLock(CTX, PID, SID, ALICE);
+
+    const res = await releaseSlideLock(CTX, PID, SID, BOB);
+    assert.equal(res.ok, false);
+    assert.equal(res.reason, 'held');
+    assert.equal((await getSlideLock(CTX, PID, SID)).holderEmail, ALICE.email);
   });
 });
