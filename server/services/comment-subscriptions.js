@@ -21,7 +21,10 @@ import { repoRoot as defaultRepoRoot } from '../config/paths.js';
 import { normalizeEmail } from '../utils/normalize.js';
 import { parseMentions } from '../../shared/comment-mentions.js';
 import { listCollaborators } from '../storage/collaborators.js';
-import { getThreadParticipants } from '../storage/presentations/comments.js';
+import {
+  getCommentAuthorEmail,
+  getThreadParticipants,
+} from '../storage/presentations/comments.js';
 import { listSubscriptions } from '../storage/presentations/subscriptions.js';
 import { getUserSettings } from '../storage/settings.js';
 import { getUserByEmail } from '../storage/users.js';
@@ -64,7 +67,10 @@ export function levelAllows(level, reason) {
  * @param {Object} options
  * @param {Object} options.presentation
  * @param {Object} options.comment
- * @param {Object} [options.parentComment]
+ * @param {string} [options.parentAuthorEmail] - The address behind the comment
+ *   this one replies to. A comment names its author and hands out no address
+ *   (D22), so the caller looks it up server-side — see
+ *   storage/presentations/comments.js § getCommentAuthorEmail.
  * @param {Object} options.actor
  * @param {string[]} [options.threadParticipants] - Author emails in the thread
  * @param {string[]} [options.watchers] - Emails with an explicit watching override
@@ -75,7 +81,7 @@ export function levelAllows(level, reason) {
 export function buildCandidates({
   presentation,
   comment,
-  parentComment,
+  parentAuthorEmail = '',
   actor,
   threadParticipants = [],
   watchers = [],
@@ -94,7 +100,7 @@ export function buildCandidates({
       : parseMentions(comment?.body);
   for (const m of mentions) add(m?.email, 'mention');
 
-  if (parentComment?.authorEmail) add(parentComment.authorEmail, 'reply');
+  if (parentAuthorEmail) add(parentAuthorEmail, 'reply');
 
   // The owner's address is the deck's contact address (D22). The creator no
   // longer carries one — they are named, not addressed — so a creator who is
@@ -167,7 +173,9 @@ export async function resolveCommentRecipients({
   const candidates = buildCandidates({
     presentation,
     comment,
-    parentComment,
+    parentAuthorEmail: parentComment?.id
+      ? await getCommentAuthorEmail(scope, parentComment.id)
+      : '',
     actor,
     threadParticipants,
     watchers,

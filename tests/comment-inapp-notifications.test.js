@@ -63,11 +63,8 @@ describe('buildInAppNotificationInputs', () => {
     const [n] = buildInAppNotificationInputs({
       presentation: PRES,
       comment: { ...COMMENT, slideId: null, parentId: 'c-1' },
-      parentComment: {
-        id: 'c-1',
-        authorEmail: 'author@example.com',
-        slideId: 'slide-3',
-      },
+      parentComment: { id: 'c-1', slideId: 'slide-3' },
+      parentAuthorEmail: 'author@example.com',
       actor: { email: 'colleague@example.com' },
     });
     assert.strictEqual(n.actionUrl, '/app/pres-1?slideId=slide-3');
@@ -97,7 +94,10 @@ describe('buildInAppNotificationInputs', () => {
     const inputs = buildInAppNotificationInputs({
       presentation: PRES,
       comment: { ...COMMENT, parentId: 'c-1' },
-      parentComment: { id: 'c-1', authorEmail: 'author@example.com' },
+      parentComment: { id: 'c-1' },
+      // A comment names its author and carries no address (D22), so the fan-out
+      // is handed the one address it needs, looked up server-side.
+      parentAuthorEmail: 'author@example.com',
       actor: { email: 'colleague@example.com', name: 'Chris' },
     });
 
@@ -121,7 +121,8 @@ describe('buildInAppNotificationInputs', () => {
     const inputs = buildInAppNotificationInputs({
       presentation: PRES,
       comment: { ...COMMENT, parentId: 'c-1' },
-      parentComment: { id: 'c-1', authorEmail: 'owner@example.com' },
+      parentComment: { id: 'c-1' },
+      parentAuthorEmail: 'owner@example.com',
       actor: { email: 'colleague@example.com', name: 'Chris' },
     });
 
@@ -134,7 +135,8 @@ describe('buildInAppNotificationInputs', () => {
     const inputs = buildInAppNotificationInputs({
       presentation: { ...PRES, ownerEmail: 'Owner@Example.com' },
       comment: { ...COMMENT, parentId: 'c-1' },
-      parentComment: { id: 'c-1', authorEmail: 'owner@example.com' },
+      parentComment: { id: 'c-1' },
+      parentAuthorEmail: 'owner@example.com',
       actor: { email: 'colleague@example.com' },
     });
     assert.strictEqual(inputs.length, 1);
@@ -185,7 +187,8 @@ describe('buildInAppNotificationInputs', () => {
     const [n] = buildInAppNotificationInputs({
       presentation: PRES,
       comment: { ...COMMENT, parentId: 'c-1' },
-      parentComment: { id: 'c-1', authorEmail: 'author@example.com' },
+      parentComment: { id: 'c-1' },
+      parentAuthorEmail: 'author@example.com',
       actor: { email: 'owner@example.com' },
     });
     assert.deepStrictEqual(n.data, {

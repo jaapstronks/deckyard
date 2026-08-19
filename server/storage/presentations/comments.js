@@ -10,6 +10,57 @@ import { toStorageContext } from '../scope.js';
 import { withDbGuard } from '../utils/db-guard.js';
 import { listPresentations } from './index.js';
 import { listPresentationsSharedWithUser } from '../collaborators.js';
+import { resolveIdentityByEmail } from '../identity-resolver.js';
+import { getAiIdentity } from '../settings.js';
+import { isAiAuthorEmail } from '../../../shared/constants/ai.js';
+import {
+  NO_DISPLAY_NAMES,
+  resolveDisplayNames,
+  toDisplayIdentity,
+  toStoredActorIdentity,
+} from '../display-identity.js';
+
+/**
+ * What a batch of comment rows needs resolved before it can be mapped.
+ *
+ * @typedef {Object} CommentReadContext
+ * @property {import('../display-identity.js').DisplayNameLookup} lookup
+ * @property {(email: string|null|undefined) => boolean} isAi - Whether an
+ *   address is the instance's AI assistant. A predicate rather than the
+ *   address itself: the answer crosses the boundary, the address does not.
+ */
+
+/** The context for a mapper whose caller resolved nothing. */
+const NO_COMMENT_CONTEXT = Object.freeze({
+  lookup: NO_DISPLAY_NAMES,
+  isAi: (email) => isAiAuthorEmail(email),
+});
+
+/**
+ * Resolve the display names and the AI identity a batch of comment rows needs.
+ *
+ * Both halves are one round trip each and both are memoized (display names in
+ * storage/display-identity.js, app settings in storage/settings.js), so calling
+ * this per read is cheap and calling it once per batch is cheaper.
+ *
+ * @param {Array<Object>} rows - Raw `presentation_comments` rows.
+ * @param {import('../scope.js').StorageScope|object} scope
+ * @returns {Promise<CommentReadContext>}
+ */
+async function commentReadContext(rows, scope) {
+  const [lookup, ai] = await Promise.all([
+    resolveDisplayNames(
+      (rows || [])
+        .filter(Boolean)
+        .flatMap((row) => [
+          { id: row.author_user_id, email: row.author_email },
+          { email: row.resolved_by },
+        ]),
+    ),
+    getAiIdentity(scope).catch(() => null),
+  ]);
+  return { lookup, isAi: (email) => isAiAuthorEmail(email, ai?.email) };
+}
 
 // ============================================================
 // COMMENTS CRUD
@@ -71,20 +122,29 @@ export async function listComments(scope, presentationId, opts = {}) {
 
     const rows = await query.orderBy('created_at', 'desc').execute();
 
-    const comments = rows.map(rowToComment);
+    // Fetch the replies before mapping anything, so one name lookup covers the
+    // whole page (threads and replies alike) instead of one per thread.
+    const replyRows =
+      !opts?.includeReplies && rows.length > 0
+        ? await db
+            .selectFrom('presentation_comments')
+            .selectAll()
+            .where('presentation_id', '=', pid)
+            .where('organization_id', '=', orgId)
+            .where(
+              'parent_id',
+              'in',
+              rows.map((r) => r.id),
+            )
+            .orderBy('created_at', 'asc')
+            .execute()
+        : [];
 
-    // If we're getting top-level comments, also fetch their replies
+    const ctx = await commentReadContext([...rows, ...replyRows], scope);
+    const comments = rows.map((row) => rowToComment(row, ctx));
+
+    // If we're getting top-level comments, also attach their replies
     if (!opts?.includeReplies && comments.length > 0) {
-      const commentIds = comments.map((c) => c.id);
-      const repliesQuery = db
-        .selectFrom('presentation_comments')
-        .selectAll()
-        .where('presentation_id', '=', pid)
-        .where('organization_id', '=', orgId)
-        .where('parent_id', 'in', commentIds)
-        .orderBy('created_at', 'asc');
-
-      const replyRows = await repliesQuery.execute();
       const repliesByParent = new Map();
 
       for (const row of replyRows) {
@@ -92,7 +152,7 @@ export async function listComments(scope, presentationId, opts = {}) {
         if (!repliesByParent.has(parentId)) {
           repliesByParent.set(parentId, []);
         }
-        repliesByParent.get(parentId).push(rowToComment(row));
+        repliesByParent.get(parentId).push(rowToComment(row, ctx));
       }
 
       for (const comment of comments) {
@@ -117,7 +177,10 @@ export async function listComments(scope, presentationId, opts = {}) {
  */
 async function annotateThreadReadState(db, threads, scope) {
   const userEmail = normalizeEmail(scope?.actorEmail);
-  if (!userEmail || threads.length === 0) return;
+  // Authorship is compared on the stable id (D22), so an actor without one
+  // gets no annotation — the same answer guests already got.
+  const userId = scope?.actorUserId || null;
+  if (!userEmail || !userId || threads.length === 0) return;
 
   const rows = await db
     .selectFrom('comment_thread_reads')
@@ -142,9 +205,7 @@ async function annotateThreadReadState(db, threads, scope) {
 
     // Only activity from others can make a thread unread, and your own
     // later reply counts as an implicit read (you saw what you answered).
-    const foreign = messages.filter(
-      (m) => normalizeEmail(m.authorEmail) !== userEmail,
-    );
+    const foreign = messages.filter((m) => m.author?.id !== userId);
     if (foreign.length === 0) {
       thread.unreadForUser = false;
       continue;
@@ -152,9 +213,7 @@ async function annotateThreadReadState(db, threads, scope) {
     const lastForeign = Math.max(
       ...foreign.map((m) => new Date(m.createdAt).getTime()),
     );
-    const own = messages.filter(
-      (m) => normalizeEmail(m.authorEmail) === userEmail,
-    );
+    const own = messages.filter((m) => m.author?.id === userId);
     const lastOwn = own.length
       ? Math.max(...own.map((m) => new Date(m.createdAt).getTime()))
       : -Infinity;
@@ -359,13 +418,43 @@ export async function listRecentCommentsForOwner(scope, opts = {}) {
       .limit(limit)
       .execute();
 
+    const ctx = await commentReadContext(rows, scope);
     const comments = rows.map((row) => {
-      const comment = rowToComment(row);
+      const comment = rowToComment(row, ctx);
       comment.presentationTitle = titleById.get(comment.presentationId) || null;
       return comment;
     });
 
     return { comments, total: comments.length };
+  });
+}
+
+/**
+ * The address a comment was written under — **server-side only**.
+ *
+ * A comment names its author (`author: { id, displayName }`) and hands out no
+ * address (D22). The notification fan-out still needs one: a reply has to reach
+ * the person it answers, and that person may be a share-link guest with no
+ * `users` row to resolve an address from. So the address is fetched here, by
+ * comment id, by the layer that sends the mail — and never travels back to a
+ * client. See services/comment-notifications.js.
+ *
+ * @param {import('../scope.js').StorageScope} scope - The caller's storage scope
+ * @param {string} commentId
+ * @returns {Promise<string>} The stored address, or '' when there is no such comment.
+ */
+export async function getCommentAuthorEmail(scope, commentId) {
+  toStorageContext(scope, 'getCommentAuthorEmail');
+  const cid = norm(commentId);
+  if (!cid) return '';
+  return withDbGuard('', async (db) => {
+    const row = await db
+      .selectFrom('presentation_comments')
+      .select('author_email')
+      .where('id', '=', cid)
+      .where('organization_id', '=', getOrgId(scope))
+      .executeTakeFirst();
+    return normalizeEmail(row?.author_email) || '';
   });
 }
 
@@ -386,19 +475,21 @@ export async function getComment(scope, commentId) {
 
     if (!row) return null;
 
-    const comment = rowToComment(row);
-
     // Fetch replies if this is a top-level comment
-    if (!row.parent_id) {
-      const replyRows = await db
-        .selectFrom('presentation_comments')
-        .selectAll()
-        .where('parent_id', '=', commentId)
-        .where('organization_id', '=', orgId)
-        .orderBy('created_at', 'asc')
-        .execute();
+    const replyRows = row.parent_id
+      ? []
+      : await db
+          .selectFrom('presentation_comments')
+          .selectAll()
+          .where('parent_id', '=', commentId)
+          .where('organization_id', '=', orgId)
+          .orderBy('created_at', 'asc')
+          .execute();
 
-      comment.replies = replyRows.map(rowToComment);
+    const ctx = await commentReadContext([row, ...replyRows], scope);
+    const comment = rowToComment(row, ctx);
+    if (!row.parent_id) {
+      comment.replies = replyRows.map((reply) => rowToComment(reply, ctx));
     }
 
     return comment;
@@ -414,10 +505,20 @@ export async function createComment(scope, presentationId, data) {
   const authorEmail = norm(data?.email || scope?.actorEmail).toLowerCase();
   const authorName = norm(data?.name) || authorEmail;
   const body = norm(data?.body);
+  // A share-link guest is identified by their guest row, not by an address:
+  // they have no `users` row and never will (migration 079).
+  const authorGuestId = data?.guestId || null;
 
   if (!pid || !authorEmail || !body) {
     return { ok: false, reason: 'invalid' };
   }
+
+  // Dual-write the stable key beside the address, the way every other stamp
+  // does (storage/identity-resolver.js). A guest, or an address with no user
+  // row, resolves to a defined NULL.
+  const authorUserId = authorGuestId
+    ? null
+    : ((await resolveIdentityByEmail(authorEmail))?.userId ?? null);
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(scope);
@@ -464,6 +565,8 @@ export async function createComment(scope, presentationId, data) {
         parent_id: parentId,
         author_email: authorEmail,
         author_name: authorName,
+        author_user_id: authorUserId,
+        author_guest_id: authorGuestId,
         body: body,
         status: 'open',
         position_x: positionX,
@@ -483,7 +586,7 @@ export async function createComment(scope, presentationId, data) {
 
     return {
       ok: true,
-      comment: rowToComment(row),
+      comment: rowToComment(row, await commentReadContext([row], scope)),
     };
   });
 }
@@ -521,7 +624,7 @@ export async function updateComment(scope, commentId, data) {
 
     return {
       ok: true,
-      comment: rowToComment(row),
+      comment: rowToComment(row, await commentReadContext([row], scope)),
     };
   });
 }
@@ -557,7 +660,7 @@ export async function resolveComment(scope, commentId, { email } = {}) {
 
     return {
       ok: true,
-      comment: rowToComment(row),
+      comment: rowToComment(row, await commentReadContext([row], scope)),
     };
   });
 }
@@ -591,7 +694,7 @@ export async function reopenComment(scope, commentId) {
 
     return {
       ok: true,
-      comment: rowToComment(row),
+      comment: rowToComment(row, await commentReadContext([row], scope)),
     };
   });
 }
@@ -627,7 +730,7 @@ export async function dismissComment(scope, commentId, { email } = {}) {
 
     return {
       ok: true,
-      comment: rowToComment(row),
+      comment: rowToComment(row, await commentReadContext([row], scope)),
     };
   });
 }
@@ -717,17 +820,63 @@ export async function getCommentCountsBySlide(scope, presentationId) {
 // HELPERS
 // ============================================================
 
-function rowToComment(row) {
+/**
+ * The author pair of a comment row.
+ *
+ * The id half is the row's own column; the name half prefers the author's
+ * current profile name, then the name stored on the row, then one derived from
+ * the address. The stored name matters for a share-link guest: they have no
+ * profile to resolve, and `author_name` is the name they gave when they
+ * verified — deriving one from their address would throw it away.
+ *
+ * @param {object} row - Database row
+ * @param {import('../display-identity.js').DisplayNameLookup} lookup
+ * @returns {import('../display-identity.js').DisplayIdentity|null}
+ */
+function commentAuthor(row, lookup) {
+  const identity = toDisplayIdentity(
+    row.author_user_id,
+    row.author_email,
+    lookup,
+  );
+  if (!identity) return null;
+  const profileName =
+    lookup.forId(row.author_user_id) || lookup.forEmail(row.author_email);
+  const stored = String(row.author_name || '').trim();
+  if (!profileName && stored && !stored.includes('@')) {
+    identity.displayName = stored;
+  }
+  return identity;
+}
+
+/**
+ * Map a comment row to the object a response carries.
+ *
+ * @param {object} row - Database row
+ * @param {CommentReadContext} [ctx] - What the batch resolved: display names
+ *   and the instance's AI author address.
+ * @returns {object}
+ */
+function rowToComment(row, ctx = NO_COMMENT_CONTEXT) {
   return {
     id: row.id,
     presentationId: row.presentation_id,
     slideId: row.slide_id,
     parentId: row.parent_id,
-    authorEmail: row.author_email,
-    authorName: row.author_name,
+    // Who wrote it, named rather than addressed (D22). The `id` is the key the
+    // edit/delete checks compare — `users.id` for a signed-in author, null for
+    // a guest, who is keyed by `authorGuestId` instead (migration 079).
+    author: commentAuthor(row, ctx.lookup),
+    authorGuestId: row.author_guest_id || null,
+    // Whether the instance's AI assistant wrote it. The client used to derive
+    // this by comparing the configured AI address against `authorEmail`; the
+    // address no longer travels, so the answer does.
+    isAi: ctx.isAi(row.author_email),
     body: row.body,
     status: row.status,
-    resolvedBy: row.resolved_by,
+    // Who resolved it: this column never got an id half, so the id comes from
+    // the same lookup that resolved the name (storage/display-identity.js).
+    resolvedBy: toStoredActorIdentity(row.resolved_by, null, ctx.lookup),
     resolvedAt: row.resolved_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

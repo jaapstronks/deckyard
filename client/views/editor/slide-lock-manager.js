@@ -63,8 +63,8 @@ export function createSlideLockManager({
    * rebuild downstream). Only the display-relevant fields go in:
    * - `lockedByOthers` is a Set emitted as an Array, so it is sorted first —
    *   iteration order must not read as a change.
-   * - per-slide the holder identity (`holderEmail` / `holderName`), the only
-   *   lock fields the slide-list indicator and the locked-slide banner read.
+   * - per-slide the holder identity (the `holder` pair), the only lock field
+   *   the slide-list indicator and the locked-slide banner read.
    *   Volatile lock timestamps (`expiresAt` / `refreshedAt`) are deliberately
    *   excluded: a 30s lock refresh advances them without changing anything on
    *   screen, and letting that through would defeat this guard on exactly the
@@ -78,7 +78,11 @@ export function createSlideLockManager({
         .sort()
         .map((slideId) => {
           const lock = locks[slideId] || {};
-          return [slideId, lock.holderEmail || '', lock.holderName || ''];
+          return [
+            slideId,
+            lock.holder?.id || '',
+            lock.holder?.displayName || '',
+          ];
         }),
       lockedByOthers: Array.from(lockedByOthers).sort(),
       currentLockedSlideId,
@@ -257,7 +261,7 @@ export function createSlideLockManager({
             // Locked by someone else unless the holder is me. Decided on the
             // stable id the payload carries (shared/identity-match.js), so a
             // renamed holder still recognizes their own lock.
-            if (!matchesIdentity(user, { userId: data.lock.holderId })) {
+            if (!matchesIdentity(user, { userId: data.lock.holder?.id })) {
               lockedByOthers.add(data.slideId);
             }
             emitLocksChanged();

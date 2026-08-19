@@ -30,6 +30,7 @@ import {
   REASON_TO_TYPE,
 } from './comment-subscriptions.js';
 import { getUserByEmail } from '../storage/users.js';
+import { getCommentAuthorEmail } from '../storage/presentations/comments.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from '../utils/logger.js';
 
@@ -56,6 +57,11 @@ export async function notifyCommentCreated(
 ) {
   const ownerEmail = normalizeEmail(presentation?.ownerEmail);
   const commenterEmail = normalizeEmail(actor?.email);
+  // A comment names its author and carries no address (D22), so the one address
+  // this fan-out needs — the person a reply answers — is fetched server-side.
+  const parentAuthorEmail = parentComment?.id
+    ? await getCommentAuthorEmail(scope, parentComment.id)
+    : '';
 
   // One place decides event → who: the subscription resolver (per-deck
   // override → user default → participating; mentions always deliver).
@@ -77,7 +83,7 @@ export async function notifyCommentCreated(
   const webhookRecipients = buildRecipients({
     presentation,
     comment,
-    parentComment,
+    parentAuthorEmail,
     actor,
   });
 
@@ -108,6 +114,7 @@ export async function notifyCommentCreated(
     presentation,
     comment,
     parentComment,
+    parentAuthorEmail,
     actor,
     recipients,
     scope,
@@ -162,13 +169,11 @@ export async function notifyCommentCreated(
  * Build the recipient set for a new comment: deck owner + parent-comment
  * author + mentioned users, deduplicated, excluding the commenter.
  */
-function buildRecipients({ presentation, comment, parentComment, actor }) {
+function buildRecipients({ presentation, comment, parentAuthorEmail, actor }) {
   const recipients = new Set();
   const ownerEmail = normalizeEmail(presentation?.ownerEmail);
   if (ownerEmail) recipients.add(ownerEmail);
-  if (parentComment?.authorEmail) {
-    recipients.add(normalizeEmail(parentComment.authorEmail));
-  }
+  if (parentAuthorEmail) recipients.add(normalizeEmail(parentAuthorEmail));
   for (const mention of commentMentions(comment)) {
     recipients.add(mention.email);
   }
@@ -209,6 +214,9 @@ export async function notifyCommentCreatedInApp({
   actor,
   scope,
 }) {
+  const parentAuthorEmail = parentComment?.id
+    ? await getCommentAuthorEmail(scope, parentComment.id)
+    : '';
   const recipients = await resolveCommentRecipients({
     presentation,
     comment,
@@ -220,6 +228,7 @@ export async function notifyCommentCreatedInApp({
     presentation,
     comment,
     parentComment,
+    parentAuthorEmail,
     actor,
     recipients,
     scope,
@@ -281,6 +290,8 @@ export async function notifyMentionsAdded(
     .map((email) => ({ email, reason: 'mention' }));
   if (recipients.length === 0) return;
 
+  // Every recipient here is a mention, so the reply reason never applies and
+  // the parent author's address is not needed.
   await createInAppNotifications({
     presentation,
     comment,
@@ -343,12 +354,16 @@ function commentExcerpt(body, maxLength = 140) {
  * @param {Array<{email: string, reason: string}>} [options.recipients] -
  *   Subscription-resolved recipients. When omitted, falls back to the
  *   unfiltered candidate set (owner + parent author + mentions).
+ * @param {string} [options.parentAuthorEmail] - The address behind the comment
+ *   this one replies to, looked up server-side (D22; see
+ *   storage/presentations/comments.js § getCommentAuthorEmail).
  * @returns {Array<Object>} createNotification-ready payloads
  */
 export function buildInAppNotificationInputs({
   presentation,
   comment,
   parentComment,
+  parentAuthorEmail = '',
   actor,
   recipients,
 }) {
@@ -357,14 +372,14 @@ export function buildInAppNotificationInputs({
     const mentionedEmails = new Set(
       commentMentions(comment).map((m) => m.email),
     );
-    const parentAuthorEmail = normalizeEmail(parentComment?.authorEmail);
+    const replyTo = normalizeEmail(parentAuthorEmail);
     resolved = [
-      ...buildRecipients({ presentation, comment, parentComment, actor }),
+      ...buildRecipients({ presentation, comment, parentAuthorEmail, actor }),
     ].map((email) => ({
       email,
       reason: mentionedEmails.has(email)
         ? 'mention'
-        : parentAuthorEmail && email === parentAuthorEmail
+        : replyTo && email === replyTo
           ? 'reply'
           : 'participating',
     }));
@@ -453,6 +468,7 @@ async function createInAppNotifications({
   presentation,
   comment,
   parentComment,
+  parentAuthorEmail = '',
   actor,
   recipients,
   scope,
@@ -461,6 +477,7 @@ async function createInAppNotifications({
     presentation,
     comment,
     parentComment,
+    parentAuthorEmail,
     actor,
     recipients,
   });
@@ -519,8 +536,9 @@ async function fireCommentWebhook(
           body: stripMentionMarkup(comment.body),
           slideId: comment.slideId,
           parentId: comment.parentId,
-          authorEmail: comment.authorEmail,
-          authorName: comment.authorName,
+          // The author, named rather than addressed — the same shape the
+          // internal API uses since D22.
+          author: comment.author || null,
         },
         isReply: !!parentComment,
         owner: { email: ownerEmail },

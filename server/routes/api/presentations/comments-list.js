@@ -16,7 +16,6 @@ import {
   CommentEventTypes,
 } from '../../../services/comment-events.js';
 import { withPresentationReadAuth } from '../../../utils/route-middleware.js';
-import { getAiIdentity } from '../../../storage/settings.js';
 import { openSseStream } from '../../../utils/sse.js';
 
 /**
@@ -52,19 +51,13 @@ export async function handlePresentationCommentsList(
   });
   const openCount = await getOpenCommentCount(storageScope, id);
 
-  // The effective AI-author identity so the client can recognise legacy
-  // AI-suggestion comments that predate the commentType field, including
-  // self-hosters who configured a custom aiAssistant.email. App-global, but
-  // shipped with the list so guests (who cannot read /api/settings/app) get it
-  // too. Best-effort: recognition falls back to the default/legacy addresses.
-  let aiEmail;
-  try {
-    aiEmail = (await getAiIdentity(storageScope)).email;
-  } catch {
-    aiEmail = undefined;
-  }
-
-  serveJson(res, 200, { ok: true, comments, openCount, aiEmail });
+  // The AI-author address used to ship with the list so the client could
+  // recognise legacy AI-suggestion comments (those that predate the
+  // `commentType` field, and self-hosters with a custom aiAssistant.email) by
+  // comparing it against each comment's author address. Both addresses are
+  // gone from the payload (D22): the storage layer answers the same question
+  // per comment with `isAi`.
+  serveJson(res, 200, { ok: true, comments, openCount });
   return true;
 }
 

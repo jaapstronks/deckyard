@@ -118,6 +118,17 @@ const ACTORS = {
   },
 };
 
+/**
+ * A share-link guest: no `users` row, identified by their guest row
+ * (migration 079) and reaching the handlers through a session cookie.
+ */
+const GUEST = {
+  id: 'guest-gwen',
+  email: 'gwen@guest.example',
+  name: 'Gwen Guest',
+  sessionToken: 'guest-session-gwen',
+};
+
 /** @type {ReturnType<typeof createFakeDb>} */
 let db;
 
@@ -194,6 +205,10 @@ function commentRow(overrides) {
     parent_id: null,
     author_email: ACTORS.author.email,
     author_name: ACTORS.author.name,
+    // Authorship is the id (migration 079); the address beside it is display
+    // only and never leaves the server.
+    author_user_id: ACTORS.author.id,
+    author_guest_id: null,
     body: `Body of ${overrides.id}`,
     status: 'open',
     position_x: null,
@@ -233,6 +248,7 @@ async function seed() {
         id: 'cm-ai',
         author_email: 'ai@deckyard.local',
         author_name: 'Deckyard AI',
+        author_user_id: null,
         comment_type: 'ai_suggestion',
         suggestion_category: 'clarity',
         proposed_slide: {
@@ -242,6 +258,42 @@ async function seed() {
       }),
     ],
     comment_thread_reads: [],
+    // A comment-permission share link on the deck, with one verified guest
+    // holding a live session — the second identity path through the handlers.
+    presentation_share_links: [
+      {
+        id: 'link-guests',
+        organization_id: ORG,
+        presentation_id: DECK,
+        token: 'tok-guests',
+        label: null,
+        permission: 'comment',
+        password_hash: null,
+        expires_at: null,
+        max_uses: null,
+        use_count: 0,
+        created_by: ACTORS.owner.email,
+        created_at: '2026-02-01T00:00:00.000Z',
+        last_used_at: null,
+        revoked_at: null,
+        revoked_by: null,
+        revocation_message: null,
+        registration_mode: 'open',
+      },
+    ],
+    share_link_guests: [
+      {
+        id: GUEST.id,
+        organization_id: ORG,
+        share_link_id: 'link-guests',
+        email: GUEST.email,
+        name: GUEST.name,
+        verified_at: '2026-02-01T00:00:00.000Z',
+        session_token: GUEST.sessionToken,
+        session_expires_at: '2099-01-01T00:00:00.000Z',
+        created_at: '2026-02-01T00:00:00.000Z',
+      },
+    ],
   });
   __setTestDb(db);
 
@@ -287,13 +339,22 @@ function makeRes() {
  * @param {Actor|null} [options.as] - Acting user; omit for anonymous.
  * @param {Object} [options.body] - JSON request body.
  * @param {Array<string>} [options.args] - Path captures (id, commentId).
+ * @param {string} [options.cookie] - Cookie header (a guest session rides here).
  * @returns {Promise<{handled: *, res: Object}>}
  */
-async function call(handler, method, { as = null, body, args = [DECK] } = {}) {
+async function call(
+  handler,
+  method,
+  { as = null, body, args = [DECK], cookie } = {},
+) {
   const payload = body === undefined ? '' : JSON.stringify(body);
   const req = {
     method,
-    headers: { host: 'decks.example.test', 'content-type': 'application/json' },
+    headers: {
+      host: 'decks.example.test',
+      'content-type': 'application/json',
+      ...(cookie ? { cookie } : {}),
+    },
     socket: { remoteAddress: '203.0.113.9' },
     async *[Symbol.asyncIterator]() {
       if (payload) yield Buffer.from(payload, 'utf8');
@@ -739,4 +800,67 @@ test('mark-read refuses more than 500 ids', async () => {
   });
 
   assert.equal(res.statusCode, 400);
+});
+
+// ===========================================================================
+// Guests — the second identity path, keyed on the guest row, not an address
+// ===========================================================================
+
+const asGuest = { cookie: `share_guest_session=${GUEST.sessionToken}` };
+
+test('a verified guest comments under their guest id, and the payload names them', async () => {
+  await seed();
+  const { res } = await call(handlePresentationCommentsCreate, 'POST', {
+    body: { body: 'From the share link', slideId: 's1' },
+    args: [DECK],
+    ...asGuest,
+  });
+
+  assert.equal(res.statusCode, 201);
+  const stored = comments().find((c) => c.author_email === GUEST.email);
+  assert.equal(
+    stored.author_guest_id,
+    GUEST.id,
+    'the comment is keyed on the guest row — without it the guest owns nothing',
+  );
+  assert.equal(stored.author_user_id, null, 'a guest has no users.id');
+  assert.deepEqual(
+    res.body.comment.author,
+    { id: null, displayName: GUEST.name },
+    'the guest is named by the name they verified with, never their address',
+  );
+  assert.equal(res.body.comment.authorGuestId, GUEST.id);
+  assert.equal(res.body.comment.authorEmail, undefined);
+});
+
+test("a guest can edit and delete their own comment, and nobody else's", async () => {
+  await seed();
+  const created = await call(handlePresentationCommentsCreate, 'POST', {
+    body: { body: 'Typo here' },
+    args: [DECK],
+    ...asGuest,
+  });
+  const mine = created.res.body.comment.id;
+
+  const edit = await call(handlePresentationCommentUpdate, 'PUT', {
+    body: { body: 'Typo fixed' },
+    args: [DECK, mine],
+    ...asGuest,
+  });
+  assert.equal(edit.res.statusCode, 200, 'their own comment: editable');
+  assert.equal(commentById(mine).body, 'Typo fixed');
+
+  const other = await call(handlePresentationCommentUpdate, 'PUT', {
+    body: { body: 'Rewrite' },
+    args: [DECK, 'cm-open'],
+    ...asGuest,
+  });
+  assert.equal(other.res.statusCode, 401, "someone else's: not editable");
+
+  const del = await call(handlePresentationCommentDelete, 'DELETE', {
+    args: [DECK, mine],
+    ...asGuest,
+  });
+  assert.equal(del.res.statusCode, 200, 'their own comment: deletable');
+  assert.equal(commentById(mine), undefined);
 });

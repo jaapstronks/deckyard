@@ -265,7 +265,7 @@ export async function createEditorController({
       }
     },
     onLockFailed: ({ slideId, lock }) => {
-      const name = lock?.holderName || lock?.holderEmail || 'another user';
+      const name = lock?.holder?.displayName || 'another user';
       toast?.warn?.(
         t('editor.slideLocked.toast', 'This slide is being edited by {name}', {
           name,

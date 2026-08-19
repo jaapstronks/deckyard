@@ -18,11 +18,11 @@ import {
 } from '../server/utils/presentation-authz/comments.js';
 
 const OWNER = 'owner@example.com';
-const AUTHOR = 'author@example.com';
-const BOT = 'dreambot@example.com';
-// Deck ownership is decided on the `users.id` (shared/identity-match.js);
-// comment authorship is still address-keyed, because a comment row carries no
-// author id yet (that is PR C of the D22 burndown).
+const AUTHOR_ID = 'user-author';
+const BOT_ID = 'user-bot';
+// Deck ownership and comment authorship are both decided on the `users.id`
+// (shared/identity-match.js): a comment names its author with
+// `{ id, displayName }` and hands out no address (D22).
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
 const owner = { id: OWNER_ID, email: OWNER };
 
@@ -34,18 +34,18 @@ const pres = {
 
 describe('canDeleteComment', () => {
   it('lets the comment author delete their own comment', () => {
-    const comment = { authorEmail: AUTHOR };
+    const comment = { author: { id: AUTHOR_ID, displayName: 'Andy' } };
     assert.equal(
-      canDeleteComment({ user: { email: AUTHOR }, pres, comment }),
+      canDeleteComment({ user: { id: AUTHOR_ID }, pres, comment }),
       true,
     );
   });
 
   it('lets an admin delete any comment', () => {
-    const comment = { authorEmail: BOT };
+    const comment = { author: { id: BOT_ID, displayName: 'Bot' } };
     assert.equal(
       canDeleteComment({
-        user: { email: 'someone@else.com', isAdmin: true },
+        user: { id: 'user-admin', isAdmin: true },
         pres,
         comment,
       }),
@@ -54,7 +54,10 @@ describe('canDeleteComment', () => {
   });
 
   it('lets the presentation owner delete an AI-suggestion comment they did not author', () => {
-    const comment = { authorEmail: BOT, commentType: 'ai-suggestion' };
+    const comment = {
+      author: { id: BOT_ID, displayName: 'Bot' },
+      commentType: 'ai-suggestion',
+    };
     assert.equal(canDeleteComment({ user: owner, pres, comment }), true);
   });
 
@@ -64,7 +67,7 @@ describe('canDeleteComment', () => {
       ownerEmail: 'other@example.com',
       createdBy: { id: OWNER_ID, displayName: 'Owner' },
     };
-    const comment = { authorEmail: 'guest@example.com' };
+    const comment = { author: null, authorGuestId: 'guest-1' };
     assert.equal(
       canDeleteComment({ user: owner, pres: createdPres, comment }),
       true,
@@ -72,10 +75,10 @@ describe('canDeleteComment', () => {
   });
 
   it("does not let an unrelated reader delete someone else's comment", () => {
-    const comment = { authorEmail: AUTHOR };
+    const comment = { author: { id: AUTHOR_ID, displayName: 'Andy' } };
     assert.equal(
       canDeleteComment({
-        user: { email: 'reader@example.com' },
+        user: { id: 'user-reader' },
         pres,
         comment,
       }),
@@ -84,14 +87,14 @@ describe('canDeleteComment', () => {
   });
 
   it('returns false without a user email', () => {
-    const comment = { authorEmail: AUTHOR };
+    const comment = { author: { id: AUTHOR_ID, displayName: 'Andy' } };
     assert.equal(canDeleteComment({ user: {}, pres, comment }), false);
   });
 });
 
 describe('canEditComment stays author-only (owner cannot rewrite others)', () => {
   it('does not let the owner edit a comment they did not author', () => {
-    const comment = { authorEmail: AUTHOR };
+    const comment = { author: { id: AUTHOR_ID, displayName: 'Andy' } };
     assert.equal(canEditComment({ user: owner, comment }), false);
   });
 });

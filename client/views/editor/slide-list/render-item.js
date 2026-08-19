@@ -53,7 +53,7 @@ export function applySlideLockIndicator({
     return;
   }
 
-  const lockedBy = lockInfo.holderName || lockInfo.holderEmail || '';
+  const lockedBy = lockInfo.holder?.displayName || '';
   const lockTitle = t('editor.slideList.lockedBy', 'Locked by {name}', {
     name: lockedBy,
   });

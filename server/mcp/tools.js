@@ -1779,8 +1779,9 @@ export function registerTools(
           slideId: c.slideId,
           slide: slideContextFor(pres || { slides: [] }, c.slideId),
           slideSnapshot: c.slideSnapshot ?? null,
-          authorName: c.authorName,
-          authorEmail: c.authorEmail,
+          // The author, named rather than addressed — the same shape the app
+          // API uses since D22 (docs/reference/identity-in-responses.md).
+          author: c.author || null,
           body: c.body,
           status: c.status,
           createdAt: c.createdAt,

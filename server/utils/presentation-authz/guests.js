@@ -2,7 +2,6 @@
  * Guest authorization functions.
  */
 
-import { normalizeEmail } from '../normalize.js';
 import { canComment } from '../../../shared/constants/permissions.js';
 
 /**
@@ -37,16 +36,20 @@ export function canGuestComment({ guest, shareLink, presentationId } = {}) {
 
 /**
  * Check if a guest can edit their own comment.
+ *
+ * A guest has no `users` row, so their identity is the `share_link_guests` row
+ * they verified an address against — and that row's id is what a comment they
+ * wrote carries (`authorGuestId`, migration 079). Comparing the addresses, as
+ * this did before D22, meant the comment payload had to hand one out.
+ *
  * @param {Object} options
  * @param {Object} options.guest - The guest object
  * @param {Object} options.comment - The comment object
  * @returns {boolean}
  */
 export function canGuestEditComment({ guest, comment } = {}) {
-  if (!guest || !comment) return false;
-  const guestEmail = normalizeEmail(guest.email);
-  const authorEmail = normalizeEmail(comment.authorEmail);
-  return guestEmail && authorEmail && guestEmail === authorEmail;
+  if (!guest?.id || !comment?.authorGuestId) return false;
+  return guest.id === comment.authorGuestId;
 }
 
 /**

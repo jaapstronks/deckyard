@@ -165,27 +165,7 @@ const PERMITTED_ADDRESSES = new Map([
       'is whether a row e-mail and a users-row e-mail agree',
   ],
   // ── not a person ─────────────────────────────────────────────────────────
-  [
-    'server/routes/api/presentations/comments-list.js :: aiEmail',
-    'the instance-configured AI assistant address, not a human being — the ' +
-      'client marks AI-authored comments with it (isAiAuthorEmail)',
-  ],
   // ── still to convert: addresses that are also matching keys ──────────────
-  [
-    'server/storage/presentations/comments.js :: authorEmail',
-    'STILL TO CONVERT: the client compares this address to decide whether the ' +
-      'edit/delete affordance shows (client/lib/comments/comment-authz.js), ' +
-      'so today it is a matching key, not only display. Retiring it means ' +
-      'moving that mirror onto ids first — including guest authors, who have ' +
-      'no users row at all.',
-  ],
-  [
-    'server/storage/slide-locks.js :: holderEmail',
-    'STILL TO CONVERT: display only since the address stopped being a key — ' +
-      'the client shows who holds the lock and falls back to the address when ' +
-      'the holder has no name (slide-lock-manager.js, render-item.js). ' +
-      'Converts to a holder pair with the rest of the lock surface.',
-  ],
 ]);
 
 // ─── allowlist (b): display stamps not yet built as a pair ─────────────────
@@ -218,10 +198,6 @@ const PERMITTED_STAMPS = new Map([
   // ── org-admin authoring stamps ───────────────────────────────────────────
   // ── guest-authored content ───────────────────────────────────────────────
   [
-    'server/storage/presentations/comments.js :: authorName',
-    'STILL TO CONVERT: converts together with the comment author address above.',
-  ],
-  [
     'server/storage/questions.js :: authorName',
     'the name an audience member typed into the live-session question box — ' +
       'self-declared, not an account, so there is no id to pair it with',
@@ -235,9 +211,11 @@ const STAMP_KEYS = new Set([
   'trashedBy',
   'invitedBy',
   'sharedBy',
+  'resolvedBy',
   'actorName',
   'authorName',
   'ownerName',
+  'holderName',
 ]);
 
 /** The two builders that produce a `{ id, displayName }` pair. */

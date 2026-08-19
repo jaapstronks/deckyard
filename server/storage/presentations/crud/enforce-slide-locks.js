@@ -146,13 +146,14 @@ export async function enforceSlideLocks({
     // Whose lock it is, decided on the stable id — an actor the instance
     // cannot identify holds nothing, so any live lock blocks them
     // (shared/identity-match.js).
-    if (lock && !matchesIdentity(actor, { userId: lock.holderId })) {
-      const holder = lock.holderName || lock.holderEmail;
+    if (lock && !matchesIdentity(actor, { userId: lock.holder?.id })) {
+      const holder = lock.holder?.displayName || 'someone else';
       throw new LockedError(`This slide is being edited by ${holder}.`, {
         slideId,
         lockKind: 'concurrent',
-        holderEmail: lock.holderEmail,
-        holderName: lock.holderName || null,
+        // Who holds it, named rather than addressed (D22) — the 423 payload
+        // reaches a client that may not be allowed the holder's address.
+        holder: lock.holder || null,
       });
     }
   }

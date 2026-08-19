@@ -82,7 +82,7 @@ describe('buildCandidates', () => {
         mentions: [{ name: 'O', email: 'owner@example.com' }],
         parentId: 'c-1',
       },
-      parentComment: { authorEmail: 'owner@example.com' },
+      parentAuthorEmail: 'owner@example.com',
       actor: { email: 'someone@example.com' },
       threadParticipants: ['owner@example.com'],
       watchers: ['owner@example.com', 'watcher@example.com'],
@@ -95,7 +95,7 @@ describe('buildCandidates', () => {
     const candidates = buildCandidates({
       presentation: PRES,
       comment: { body: 'x', parentId: 'c-1' },
-      parentComment: { authorEmail: 'author@example.com' },
+      parentAuthorEmail: 'author@example.com',
       actor: { email: 'someone@example.com' },
     });
     assert.strictEqual(candidates.get('author@example.com'), 'reply');
@@ -115,7 +115,7 @@ describe('buildCandidates', () => {
     const candidates = buildCandidates({
       presentation: PRES,
       comment: { body: 'x', parentId: 'c-1' },
-      parentComment: { authorEmail: 'author@example.com' },
+      parentAuthorEmail: 'author@example.com',
       actor: { email: 'someone@example.com' },
       collaborators: [
         'author@example.com',
