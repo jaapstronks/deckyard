@@ -22,6 +22,20 @@ the **sanitizer** — never interpolated raw into an HTML sink (`innerHTML`,
 Do not hand-roll a new HTML sink for user data. If you need markup from
 untrusted input, it goes through `markdownToSafeHtml()` or `h()`.
 
+### The precondition: a DOMPurify instance must exist
+
+The sync sanitizers (`sanitizeHtmlSync`, `sanitizeSlideHtmlSync`,
+`sanitizeInlineSync`) cannot load DOMPurify themselves — loading it is async. In
+the browser the page loads the vendored bundle (`client/index.html` →
+`client/app.js`). **In Node every process that can reach a render path must call
+`initSanitizer()` at boot** — `server/server.js` and `server/mcp/index.js` both
+do.
+
+Without it the sanitizers fall back to escaping. That is safe (nothing unsafe is
+injected) but wrong-looking: the slide renders its own markup as visible text.
+The fallback warns once per process so the miss is diagnosable from a log; the
+uninitialized path is pinned by `tests/sanitizer-fallback-path.test.js`.
+
 ## Why `innerHTML` is still used in places (and is safe)
 
 A full sweep of `client/` (B8) classified every `innerHTML` occurrence. The

@@ -171,6 +171,39 @@ export async function stripHtml(html) {
 }
 
 /**
+ * The one escape fallback shared by every sync sanitizer.
+ *
+ * Escaping is the safe degradation — nothing unsafe is injected — but it makes
+ * authored markup render as visible text, which is the "raw HTML in the slide"
+ * symptom. The cause is always the same: no DOMPurify instance. In the browser
+ * that means the vendored bundle failed to load; in Node it means the process
+ * never called initSanitizer(). Warn once per process so the next occurrence is
+ * diagnosable from a log instead of only from a screenshot.
+ *
+ * @param {string} html - Raw HTML to escape
+ * @returns {string} Escaped, inert HTML
+ */
+let fallbackWarned = false;
+function escapeFallback(html) {
+  if (!fallbackWarned) {
+    fallbackWarned = true;
+    const cause =
+      typeof window === 'undefined'
+        ? 'this Node process never called initSanitizer() (see server/server.js and server/mcp/index.js)'
+        : 'DOMPurify did not load in this page';
+    console.warn(
+      `[sanitize] No DOMPurify available: ${cause}. Markup is escaped, so authored HTML and rendered markdown appear as visible text.`
+    );
+  }
+  return html
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * Synchronous sanitization
  * Uses pre-initialized purify instance (server or browser)
  * Falls back to escaping if DOMPurify not available
@@ -200,12 +233,7 @@ export function sanitizeHtmlSync(html, config = {}) {
   }
 
   // Fallback: escape HTML (not ideal but safe)
-  return html
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  return escapeFallback(html);
 }
 
 /**
@@ -265,12 +293,7 @@ export function sanitizeSlideHtmlSync(html) {
   if (dp) return dp.sanitize(html, config);
 
   // Fallback: escape so the source shows as text instead of injecting unsafe HTML.
-  return html
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  return escapeFallback(html);
 }
 
 /**
@@ -299,10 +322,5 @@ export function sanitizeInlineSync(html) {
   }
 
   // Fallback: escape HTML
-  return html
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  return escapeFallback(html);
 }
