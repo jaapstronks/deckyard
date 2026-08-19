@@ -9,7 +9,10 @@
  *  (d) `S3_*` wins when both are set, and the warning says the legacy name is
  *      overridden;
  *  (e) the public base URL comes from `S3_PUBLIC_URL` when set, and is derived
- *      from endpoint + bucket otherwise.
+ *      from endpoint + bucket otherwise;
+ *  (f) the `scw.cloud` endpoint derivation applies to an untouched legacy
+ *      install only — one `S3_*` core var and the endpoint must be named;
+ *  (g) a partly configured S3 set warns instead of silently landing on local.
  *
  * Run with: node --test tests/media-config-s3.test.js
  */
@@ -176,5 +179,56 @@ test('(e) the public base URL: explicit wins, else derived from the endpoint', (
     getS3Config().publicUrl,
     'https://media.example.com',
     'the trailing slash is normalised away so key joining stays single-slash',
+  );
+});
+
+test('(f) the endpoint derivation is for untouched legacy installs only', () => {
+  // Migrated the keys, kept a stray SCW_BUCKET: no scw.cloud guess, and no
+  // SCW_REGION override of S3_REGION — the install must name its endpoint.
+  process.env.S3_ACCESS_KEY = 'ak';
+  process.env.S3_SECRET_KEY = 'sk';
+  process.env.S3_BUCKET = 'media';
+  process.env.S3_REGION = 'fr-par';
+  process.env.SCW_BUCKET = 'legacy-bucket';
+  process.env.SCW_REGION = 'nl-ams';
+
+  assert.equal(getS3Config().endpoint, '');
+  assert.equal(isS3Configured(), false);
+  process.env.MEDIA_STORAGE_MODE = 's3';
+  assert.throws(() => getEffectiveMediaProvider(), /S3_ENDPOINT/);
+  assert.ok(
+    !mediaConfigWarnings().some((w) => /derived from SCW_REGION/.test(w)),
+    'no derivation warning when nothing is derived',
+  );
+
+  // The legacy branch proper honours S3_REGION over SCW_REGION too.
+  clearManaged();
+  setLegacyEnv();
+  process.env.SCW_REGION = 'nl-ams';
+  process.env.S3_REGION = 'pl-waw';
+  assert.equal(getS3Config().endpoint, 'https://s3.pl-waw.scw.cloud');
+});
+
+test('(g) a partly configured S3 set warns instead of silently staying local', () => {
+  setS3Env();
+  delete process.env.S3_ENDPOINT;
+
+  assert.equal(getEffectiveMediaProvider(), 'local', 'auto falls back');
+  const line = mediaConfigWarnings().find((w) =>
+    w.startsWith('S3 storage is only partly configured'),
+  );
+  assert.ok(line, 'but it says so at boot');
+  assert.match(line, /missing S3_ENDPOINT\b/);
+  assert.match(line, /local \/uploads/);
+
+  // Complete sets — new or untouched legacy — do not trip it.
+  clearManaged();
+  setS3Env();
+  assert.equal(mediaConfigWarnings().length, 0);
+  clearManaged();
+  setLegacyEnv();
+  assert.ok(
+    !mediaConfigWarnings().some((w) => /partly configured/.test(w)),
+    'a derived endpoint counts as present',
   );
 });

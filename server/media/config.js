@@ -28,6 +28,18 @@ const LEGACY_MEDIA_VARS = Object.freeze({
   SCW_CDN_URL: 'S3_PUBLIC_URL',
 });
 
+/**
+ * The four vars that together make S3 storage "configured", each with its
+ * legacy spelling. The endpoint counts as present when the legacy derivation
+ * applies (see {@link usesLegacyEndpointDerivation}).
+ */
+const S3_CORE_VARS = Object.freeze([
+  ['S3_ACCESS_KEY', 'SCW_ACCESS_KEY'],
+  ['S3_SECRET_KEY', 'SCW_SECRET_KEY'],
+  ['S3_BUCKET', 'SCW_BUCKET'],
+  ['S3_ENDPOINT', 'SCW_ENDPOINT'],
+]);
+
 /** Date after which the `SCW_*` names and `scaleway` mode stop being read. */
 const LEGACY_MEDIA_REMOVAL_DATE = '2026-11-01';
 
@@ -72,13 +84,28 @@ function getMediaStorageMode() {
  * @returns {string} Endpoint URL, or '' when nothing resolves.
  */
 function resolveEndpoint() {
-  const explicit = envStr('S3_ENDPOINT') || envStr('SCW_ENDPOINT');
+  const explicit = envWithLegacy('S3_ENDPOINT', 'SCW_ENDPOINT');
   if (explicit) return explicit;
-  // Legacy-only derivation: the pre-D25 default for a Scaleway bucket.
-  if (envStr('SCW_BUCKET') || envStr('SCW_ACCESS_KEY')) {
-    return `https://s3.${envStr('SCW_REGION', DEFAULT_REGION)}.scw.cloud`;
+  if (usesLegacyEndpointDerivation()) {
+    return `https://s3.${envWithLegacy('S3_REGION', 'SCW_REGION') || DEFAULT_REGION}.scw.cloud`;
   }
   return '';
+}
+
+/**
+ * Is this an untouched Scaleway-era install that relies on the old endpoint
+ * default? True only when no endpoint is set under either name AND the
+ * credentials/bucket come from `SCW_*` exclusively — as soon as any `S3_*`
+ * core var is set, the install is on the new names and must name its endpoint
+ * (`S3_ENDPOINT` has no default). One predicate, used by both the resolver and
+ * the boot warning, so the two cannot disagree.
+ * @returns {boolean}
+ */
+function usesLegacyEndpointDerivation() {
+  if (envStr('S3_ENDPOINT') || envStr('SCW_ENDPOINT')) return false;
+  if (envStr('S3_ACCESS_KEY') || envStr('S3_SECRET_KEY') || envStr('S3_BUCKET'))
+    return false;
+  return !!(envStr('SCW_BUCKET') || envStr('SCW_ACCESS_KEY'));
 }
 
 /**
@@ -198,15 +225,30 @@ export function mediaConfigWarnings() {
     );
   }
 
-  if (
-    !envStr('S3_ENDPOINT') &&
-    !envStr('SCW_ENDPOINT') &&
-    (envStr('SCW_BUCKET') || envStr('SCW_ACCESS_KEY'))
-  ) {
+  if (usesLegacyEndpointDerivation()) {
     warnings.push(
       `The S3 endpoint is being derived from SCW_REGION ` +
         `(${resolveEndpoint()}); that fallback disappears in the first ` +
         `release after ${LEGACY_MEDIA_REMOVAL_DATE}. Set S3_ENDPOINT.`,
+    );
+  }
+
+  // Half a configuration is a misconfiguration, not "auto picked local": with
+  // S3_ENDPOINT required there is a new way to be incomplete, and in `auto`
+  // mode that used to fall back to local storage without a word.
+  const isSet = ([name, legacyName]) =>
+    name === 'S3_ENDPOINT'
+      ? !!resolveEndpoint()
+      : !!envWithLegacy(name, legacyName);
+  const present = S3_CORE_VARS.filter(isSet);
+  if (present.length > 0 && present.length < S3_CORE_VARS.length) {
+    const missing = S3_CORE_VARS.filter((v) => !isSet(v))
+      .map(([name]) => name)
+      .join(', ');
+    warnings.push(
+      `S3 storage is only partly configured (missing ${missing}); ` +
+        `uploads ${getMediaStorageMode() === 'local' ? 'use' : 'fall back to'} ` +
+        `local /uploads storage until it is complete.`,
     );
   }
 

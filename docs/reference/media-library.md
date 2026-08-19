@@ -189,10 +189,18 @@ a silent alias:
 A legacy name is read only when its canonical counterpart is unset, and every
 one that is read produces a `⚠️  CONFIG:` line at boot naming the replacement
 and the date (`mediaConfigWarnings()`, printed by `server/server.js` next to
-`deprecatedFlagWarnings()`). One extra warning covers the endpoint: in the
-legacy branch only, an unset endpoint is still derived as
-`https://s3.<SCW_REGION>.scw.cloud` — the single place a vendor host survives.
-After the removal date both the names and that derivation are deleted.
+`deprecatedFlagWarnings()`). One extra warning covers the endpoint: for an
+**untouched** legacy install only — no endpoint under either name and no
+`S3_ACCESS_KEY`/`S3_SECRET_KEY`/`S3_BUCKET` set — an unset endpoint is still
+derived as `https://s3.<region>.scw.cloud` (the single place a vendor host
+survives). The moment any `S3_*` core var is set, the install is on the new
+names and has to name its endpoint: `S3_ENDPOINT` has no default. After the
+removal date both the names and that derivation are deleted.
+
+A **partly configured** S3 set (some of `S3_ACCESS_KEY`, `S3_SECRET_KEY`,
+`S3_BUCKET`, `S3_ENDPOINT`, but not all) is a misconfiguration, not a choice:
+`auto` mode falls back to local `/uploads` as before, but now says so with a
+boot warning naming the missing vars.
 
 Feature flags (`server/config/flags-snapshot.js`):
 
