@@ -149,7 +149,7 @@ test('the redirect covers every surface class', () => {
   // A pole class that is not in the redirect group sets --surface-text and
   // nothing reads it — a silent no-op, which is worse than no class at all.
   const group = BASE_CSS.match(
-    /\.slide :is\(([^)]*)\)\s*\{\s*--slide-on-surface: var\(--surface-text\)/,
+    /\.slide\s+:is\(([^)]*)\)\s*\{\s*--slide-on-surface: var\(--surface-text\)/,
   );
   assert.ok(group, 'expected the shared redirect block');
   for (const s of SURFACES) {

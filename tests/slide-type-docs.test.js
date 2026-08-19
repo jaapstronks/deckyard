@@ -57,7 +57,7 @@ function inventoryTable(doc) {
 
 test('the inventory lists exactly the core registry, in registration order', () => {
   const doc = fs.readFileSync(path.join(REPO_ROOT, INVENTORY_DOC), 'utf8');
-  const listed = [...inventoryTable(doc).matchAll(/^\| `([^`]+)` \|/gm)].map(
+  const listed = [...inventoryTable(doc).matchAll(/^\| `([^`]+)`\s*\|/gm)].map(
     (m) => m[1],
   );
   assert.deepEqual(
@@ -70,7 +70,7 @@ test('the inventory lists exactly the core registry, in registration order', () 
 test('the declared-not-built table lists exactly the reserved names', () => {
   const doc = fs.readFileSync(path.join(REPO_ROOT, INVENTORY_DOC), 'utf8');
   const section = doc.split('\n## Declared, not built')[1] || '';
-  const listed = [...section.matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]);
+  const listed = [...section.matchAll(/^\| `([^`]+)`\s*\|/gm)].map((m) => m[1]);
   assert.deepEqual(listed, DECLARED_SLIDE_TYPE_NAMES);
   for (const name of listed) {
     assert.equal(
@@ -126,7 +126,7 @@ function regionTypes(rel, region) {
   const body =
     text.split(`<!--gen:${region}-->`)[1]?.split(`<!--/gen:${region}-->`)[0] ??
     '';
-  return [...body.matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]);
+  return [...body.matchAll(/^\| `([^`]+)`\s*\|/gm)].map((m) => m[1]);
 }
 
 test('both per-type tables cover exactly the core registry, in registration order', () => {
@@ -164,9 +164,10 @@ test('the inspector-keeps column restates the declaration', () => {
     'utf8',
   );
   for (const row of coverageRows()) {
+    // Prettier pads table cells to the column width, hence the `\s*`.
     const line = text
       .split('\n')
-      .find((l) => l.startsWith(`| \`${row.type}\` |`));
+      .find((l) => new RegExp(`^\\| \`${row.type}\`\\s*\\|`).test(l));
     assert.ok(line, `${row.type}: no row in the coverage table`);
     const cell = line.split('|')[4].trim();
     const expected = condenseKeys(row.keeps || []);

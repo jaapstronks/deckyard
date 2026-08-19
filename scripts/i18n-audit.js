@@ -181,7 +181,9 @@ async function findHardcodedCopy(dir) {
       for (const m of src.matchAll(re)) {
         const value = m[valueGroup];
         if (!looksLikeCopy(value)) continue;
-        const line = src.slice(0, m.index).split('\n').length;
+        const line = src
+          .slice(0, m.index + m[0].lastIndexOf(value))
+          .split('\n').length;
         // A `t()` on the same line means the literal is a fallback, not copy.
         if (/\bt\(/.test(lines[line - 1] || '')) continue;
         if (hasSiblingI18nKey(src, m.index)) continue;

@@ -249,7 +249,7 @@ rules. The repo is formatted with [Prettier](https://prettier.io) on its
 defaults plus `singleQuote: true` (`.prettierrc`); `.prettierignore` mirrors the
 ESLint ignore list and adds the tool-written files (`CHANGELOG.md`,
 `package-lock.json`, the generated baselines under `tests/fixtures/export-metrics/`)
-and the `docs/plans` symlink.
+and the gitignored planning symlink (see `CLAUDE.md`).
 
 - `npm run format` writes, `npm run format:check` gates in CI. There are no
   editor hooks and no lint-staged: CI is the gate.

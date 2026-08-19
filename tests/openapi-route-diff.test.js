@@ -121,7 +121,9 @@ const ANCHOR_EXACT = /url\.pathname\s*===\s*'([^']+)'/g;
 // The regex literal runs from `match(/` to its terminating `/)`. Internal
 // escaped slashes (`\/`) are followed by more pattern, never `)`, so the
 // non-greedy body with the `s` flag stops only at the real end of the literal.
-const ANCHOR_REGEX = /url\.pathname\.match\(\s*\/(.+?)\/\s*\)/gs;
+// Prettier may break the call over three lines and leave a trailing comma
+// after the literal (`match(\n  /…/,\n)`), hence the optional `,`.
+const ANCHOR_REGEX = /url\.pathname\.match\(\s*\/(.+?)\/\s*,?\s*\)/gs;
 const METHOD_LIST = /v1MethodNotAllowed\(\s*res\s*,\s*\[([^\]]*)\]/g;
 
 function routerOperations() {

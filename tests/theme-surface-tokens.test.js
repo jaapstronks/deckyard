@@ -24,9 +24,10 @@ const tokensCss = readFileSync(
 );
 
 test('the radius scale is read by the slide radius tokens', () => {
-  assert.match(tokensCss, /--slide-radius-sm:\s*var\(--t-radius-sm,/);
-  assert.match(tokensCss, /--slide-radius-md:\s*var\(--t-radius,/);
-  assert.match(tokensCss, /--slide-radius-lg:\s*var\(--t-radius-lg,/);
+  // `\s*` after `var(`: Prettier breaks a long `var()` over several lines.
+  assert.match(tokensCss, /--slide-radius-sm:\s*var\(\s*--t-radius-sm,/);
+  assert.match(tokensCss, /--slide-radius-md:\s*var\(\s*--t-radius,/);
+  assert.match(tokensCss, /--slide-radius-lg:\s*var\(\s*--t-radius-lg,/);
 });
 
 test('every shadow token is scaled by --t-shadow-scale', () => {
