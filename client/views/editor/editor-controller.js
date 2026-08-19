@@ -1161,10 +1161,11 @@ export async function createEditorController({
   // Initialize slide lock manager. In live-edit mode the lock machinery is
   // fully retired: the manager is never initialized (no SSE listener, no
   // refresh timer, no acquisitions — its lock getters just report "no
-  // locks") and slide selection skips acquisition. Concurrent editing through the CRDT doc is
-  // the whole point; presence indicators cover awareness. Author locks
-  // (lockedByAuthor) are checked directly on the slide data and keep
-  // working in both modes. The flag-off path is untouched.
+  // locks") and slide selection skips acquisition. Concurrent editing
+  // through the CRDT doc is the whole point; presence indicators cover
+  // awareness. Author locks (lockedByAuthor) are checked directly on the
+  // slide data and keep working in both modes. The flag-off path is
+  // untouched.
   if (!liveEditsActive) {
     slideLockManager
       .init()

@@ -41,7 +41,9 @@ each path resolves.
 **Domain subdirectories** (each takes a scope as first arg):
 
 - `server/storage/presentations/` — the deck facade + `crud/`, `slides.js`,
-  `ownership.js`, `i18n.js`, `slide-notes.js`, `sandbox.js`, `sandbox-quota.js`.
+  `ownership.js`, `i18n.js`, `slide-notes.js`, `sandbox.js`, `sandbox-quota.js`,
+  `cache.js`, `comments.js`, `subscriptions.js`, `ydocs.js`,
+  `snapshot-identity.js`.
 - `server/storage/published/` — published-deck facade; `getPublishedById` is the
   one deliberately cross-org read.
 - `server/storage/share-links/` — token share links (`crud.js`, `guests.js`,
@@ -67,9 +69,7 @@ each path resolves.
 **Top-level facades** cover the remaining domains: auth/account
 (`users.js`, `sso.js`, `magic-link.js`, `password-reset.js`, `api-keys.js`,
 `api-usage.js`, `access-attempts.js`), presentation-adjacent
-(`presentation-comments.js`, `presentation-subscriptions.js`,
-`presentation-ydocs.js`, `slide-locks.js`),
-collaboration/live (`collaborators.js`, `notifications.js`,
+(`slide-locks.js`), collaboration/live (`collaborators.js`, `notifications.js`,
 `activity-events.js`, `feedback.js`, `leads.js`, `questions.js`,
 `interactions.js`, `follow-codes.js`), and content
 (`themes.js`, `font-families.js`, `custom-slide-types.js`, `settings.js`,
