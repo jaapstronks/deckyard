@@ -91,3 +91,11 @@ export const inspectorKeeps = [
   'imageBackground',
   'actions',
 ];
+
+/**
+ * Every image cell gets a tab: `images[]` is padded to the layout's cell count
+ * on demand, so a selection can legitimately point past the stored items.
+ * Grammar: shared/slide-types/inline-edit-companions.js.
+ * @type {Object}
+ */
+export const elementTab = { image: { any: true } };

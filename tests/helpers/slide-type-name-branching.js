@@ -330,12 +330,10 @@ export const INVENTORY = {
   // (shared/slide-types/field-behaviour.js). The header's AI-convert menu was
   // the second hand-written copy of the server's SUPPORTED_CONVERSIONS; the
   // types declare `aiConvertTo` and both consumers read it.
-  'client/views/editor/editor-form/element-tab.js': {
-    kind: sparse,
-    why:
-      'Which sub-element kinds (image, card, member, column) the element tab ' +
-      'offers per type. Absence means the tab shows the slide-level fields only.',
-  },
+  // element-tab.js left the inventory with A7.15 PR C: which sub-element kinds
+  // a type offers, and how many of each, is an `elementTab` declaration in the
+  // type's own inline-edit.js now (gated by the companion matrix), and the tab
+  // reads the grammar through inline-edit-companions.js.
   // editor-utils.js left the inventory with the A7.13 done-gate pass: its
   // per-type label extraction ("backwards compatibility" branches shadowing
   // the labelField declaration that already existed) collapsed into

@@ -63,3 +63,10 @@ export const inlineEdit = {
  * @type {string[]}
  */
 export const inspectorKeeps = ['layout'];
+
+/**
+ * The card is this type's sub-element: one tab per item.
+ * Grammar: shared/slide-types/inline-edit-companions.js.
+ * @type {Object}
+ */
+export const elementTab = { card: { list: 'items' } };

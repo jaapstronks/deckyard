@@ -44,6 +44,7 @@ import { MANUAL_EXAMPLES } from '../../server/utils/openai/slide-types-prompt.js
 import { SLIDE_TYPE_SCHEMATIC } from '../../client/views/editor/slide-type-schematics.js';
 import { INLINE_DESCRIPTORS } from '../../client/views/editor/inline-edit/descriptors.js';
 import { INSPECTOR_KEEPS } from '../../client/views/editor/editor-form/inspector-form.js';
+import { SLIDE_TYPE_ELEMENT_TAB } from '../../shared/slide-types/inline-edit.js';
 import { SLIDE_TYPE_GROUP } from '../../shared/slide-types/authoring-groups.js';
 import {
   SLIDE_TYPE_DESCRIPTION,
@@ -374,6 +375,22 @@ export const COMPANIONS = [
     appliesTo: isEditable,
     has: (name) => Array.isArray(INSPECTOR_KEEPS[name]),
     keys: () => Object.keys(INSPECTOR_KEEPS),
+    exempt: {},
+  },
+  {
+    id: 'element-tab',
+    label: 'element-tab offer',
+    where:
+      'shared/slide-types/types/<name>/inline-edit.js (elementTab) — ' +
+      'surfaced as SLIDE_TYPE_ELEMENT_TAB by ' +
+      'shared/slide-types/inline-edit.js',
+    degradesTo:
+      'the inspector offers no "This element" tab for a selected image or ' +
+      'card, so its settings are only reachable through the slide-level form',
+    optional: true,
+    appliesTo: isEditable,
+    has: (name) => Boolean(SLIDE_TYPE_ELEMENT_TAB[name]),
+    keys: () => Object.keys(SLIDE_TYPE_ELEMENT_TAB),
     exempt: {},
   },
   {

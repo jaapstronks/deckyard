@@ -49,3 +49,10 @@ export const inlineEdit = {
  * @type {string[]}
  */
 export const inspectorKeeps = [];
+
+/**
+ * One tab per logo.
+ * Grammar: shared/slide-types/inline-edit-companions.js.
+ * @type {Object}
+ */
+export const elementTab = { image: { list: 'logos' } };

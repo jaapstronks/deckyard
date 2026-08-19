@@ -376,3 +376,4 @@ convert the consumer later — which is how `group` itself got there.
 | `server/routes/api/slide-types.js`                       | `description` / `aliases` on the wire — the same seam half, +2.9 KB raw (+1.2 KB gzipped) on the ~558 KB response                     | A7.1 rollout PR 5 |
 | `client/views/editor/editor-form/inspector-form.js`      | inspector keep-list, every core type (+ `inspectorKeeps` on the wire, so a fork type can narrow its own settings pane)                | A7.1 rollout PR 6 |
 | `server/utils/ai/slide-catalog/`                         | agent editorial copy, 31 types — five category modules collapsed into one generated import list, with the prompt order kept as a hint | A7.1 rollout PR 7 |
+| `client/views/editor/editor-form/element-tab.js`         | element-tab offer, 7 types (+ `elementTab` on the wire) — a `switch (slide.type)` replaced by a declaration beside `inspectorKeeps`   | A7.15 PR C        |

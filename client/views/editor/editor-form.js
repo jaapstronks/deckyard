@@ -330,7 +330,9 @@ export function createRerenderEditor({
     // "This element" tab) and the tab bar appears; the rest renders into `form`
     // (the "Slide" tab). With no selection there is no tab bar - just `form`.
     const selectedElement = contentOnly ? null : getSelectedElement?.() || null;
-    const elementActive = elementAppliesToSlide(slide, selectedElement);
+    const elementActive = elementAppliesToSlide(slide, selectedElement, {
+      slideTypes: SLIDE_TYPES,
+    });
     const elemKey = elementActive
       ? `${selectedElement.kind}:${selectedElement.idx}`
       : null;
