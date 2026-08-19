@@ -111,21 +111,7 @@ export async function handleNotionPublish({ req, res }) {
       blocksAdded: result.blocksAdded,
     });
   } catch (e) {
-    const msg = String(e?.message || e || 'Unknown error');
-    const code = e?.statusCode || 500;
-    if (msg.includes('Could not find') || code === 404) {
-      return badRequest(
-        res,
-        'Notion page not found. Make sure the page is shared with your Notion integration.',
-      );
-    }
-    if (msg.includes('unauthorized') || code === 401 || code === 403) {
-      return badRequest(
-        res,
-        'Access denied. Make sure the page is shared with your Notion integration and has edit permissions.',
-      );
-    }
-    jsonError(res, code >= 400 && code < 600 ? code : 500, 'notion_error', msg);
+    handleNotionError(e, res);
   }
   return true;
 }
