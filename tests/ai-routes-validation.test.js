@@ -3,8 +3,8 @@
  * surface 5, "AI-routelaag/SSE-schil").
  *
  * `server/routes/api/ai/*.js` are the editor-facing AI endpoints (wizard,
- * append-slides, refine-section, convert-slide, compress-deck, iterate, the
- * wizard-v2 family, and vendor discovery). The generation logic beneath them is
+ * wizard-v2/stream, append-slides, refine-section, convert-slide, compress-deck,
+ * iterate, and vendor discovery). The generation logic beneath them is
  * tested elsewhere (the `tests/ai-*` pipeline suites) and the dispatcher wiring
  * has `tests/ai-route-dispatch.test.js`; what was untested is each handler's
  * **request contract** — the validation ladder every one of them runs before it
@@ -17,7 +17,7 @@
  * kill-switch is likewise a single upstream mount gate (`flags.enableAi &&
  * handleAi(ctx)`), not a per-route check — so, unlike the public v1 AI surface
  * (#758) where the kill-switch is uneven, the internal surface has one gate for
- * all ten routes and none of the handlers re-check it. There is therefore no
+ * all of its routes and none of the handlers re-check it. There is therefore no
  * handler-level authz-negative to pin here; the contract that *is* the
  * handlers' own is input validation, which is what this file covers, plus the
  * one endpoint that answers without an LLM at all (`/api/ai/vendors`).
@@ -43,8 +43,6 @@ import assert from 'node:assert/strict';
 
 const { handleAiVendors } = await import('../server/routes/api/ai/vendors.js');
 const { handleAiWizard } = await import('../server/routes/api/ai/wizard.js');
-const { handleAiWizardV2 } = await import('../server/routes/api/ai/wizard-v2.js');
-const { handleAiWizardV2Outline } = await import('../server/routes/api/ai/wizard-v2-outline.js');
 const { handleAiWizardV2Stream } = await import('../server/routes/api/ai/wizard-v2-stream.js');
 const { handleAiAppendSlides } = await import('../server/routes/api/ai/append-slides.js');
 const { handleAiRefineSection } = await import('../server/routes/api/ai/refine-section.js');
@@ -131,8 +129,6 @@ test('vendor discovery answers 200 without touching an LLM', async () => {
 test('every POST handler rejects a body that is not JSON with a 400', async () => {
   const handlers = [
     handleAiWizard,
-    handleAiWizardV2,
-    handleAiWizardV2Outline,
     handleAiWizardV2Stream,
     handleAiAppendSlides,
     handleAiRefineSection,
@@ -153,16 +149,6 @@ test('every POST handler rejects a body that is not JSON with a 400', async () =
 
 test('wizard requires non-empty raw input', async () => {
   const { res } = await call(handleAiWizard, { body: { raw: '   ' } });
-  assert.equal(res.statusCode, 400);
-});
-
-test('wizard-v2 requires non-empty raw input', async () => {
-  const { res } = await call(handleAiWizardV2, { body: { raw: '' } });
-  assert.equal(res.statusCode, 400);
-});
-
-test('wizard-v2 outline requires non-empty raw input', async () => {
-  const { res } = await call(handleAiWizardV2Outline, { body: {} });
   assert.equal(res.statusCode, 400);
 });
 

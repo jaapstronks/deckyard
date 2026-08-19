@@ -44,8 +44,8 @@ Pipeline (`server/utils/ai/`, 42 modules). The top level:
 
 - `server/utils/ai/index.js` — the barrel.
 - `server/utils/ai/generate-deck-v2.js` — the orchestrator: `generateDeckV2`,
-  `generateOutlineOnly`, `groupSlidesForPhase2`, `refineSlideGroup`,
-  `assembleDeck`, plus session id/logger helpers.
+  `groupSlidesForPhase2`, `refineSlideGroup`, `assembleDeck`, plus session
+  id/logger helpers.
 - `server/utils/ai/generate-outline.js` (366 lines) — **phase 1**:
   `generateOutline`, `separateSlidesForProcessing`, `calculateTargetSlides`.
 - `server/utils/ai/revise-outline.js` (215 lines) — **phase 1b**: a second pass
@@ -99,7 +99,7 @@ Legacy single-prompt path (`server/utils/openai/`, 8 modules):
 them. This is the **v1** generation route — one prompt, no outline phase — still
 live behind `POST /api/ai/wizard`.
 
-Routes (`server/routes/api/ai/`, 11 modules + a 54-line dispatcher):
+Routes (`server/routes/api/ai/`, 9 modules + a 38-line dispatcher):
 
 - `server/routes/api/ai.js` — a declarative exact-path table; every route is a
   fixed method + pathname.
@@ -108,8 +108,9 @@ Routes (`server/routes/api/ai/`, 11 modules + a 54-line dispatcher):
   `loadAiThemeContext` (backgrounds, brand colours, presets),
   `reattachAiMeta`, `createPresentationWithI18n`.
 - `wizard.js` (50) — `POST /api/ai/wizard`, the v1 one-shot path.
-- `wizard-v2.js` (81) / `wizard-v2-outline.js` (35) / `wizard-v2-stream.js`
-  (260) — the two-phase path; only the stream variant has a live client caller.
+- `wizard-v2-stream.js` (257) — `POST /api/ai/wizard-v2/stream`, the two-phase
+  path. The one wizard-v2 route: the non-streaming `wizard-v2` and
+  `wizard-v2/outline` siblings were retired in B97.
 - `append-slides.js` (90), `refine-section.js` (75), `convert-slide.js` (34),
   `compress-deck.js` (47), `iterate.js` (62) — the per-feature routes.
 - `vendors.js` (11) — `GET /api/ai/vendors`, the configured-vendor list.
@@ -240,12 +241,6 @@ Honest gaps:
   prompts, different validation depth and different output quality. The
   "new presentation" modal still calls v1 while the stream path calls v2. One
   canonical path is the target; two is the current state.
-- **`POST /api/ai/wizard-v2` and `/wizard-v2/outline` have no client caller.**
-  After #561 only `scripts/test-ai-v2.sh` and the dispatch-table test reference
-  them, and neither appears in the OpenAPI spec; the outline route describes
-  itself as being for debugging. Finish-or-strip is an open product decision
-  (`docs/plans/briefs/dead-code-audit.md` § Reststand) — they are *not*
-  documented here as a supported API.
 - **`slide-type-catalog.js` and `utils/ai.js` are compatibility shims.** Both
   exist only to re-export; new code imports `slide-catalog/` and the specific
   `openai/*` module directly.

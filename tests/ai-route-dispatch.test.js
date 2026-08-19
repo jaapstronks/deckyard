@@ -66,8 +66,6 @@ test('all AI handler modules export a handler function', async () => {
   const mods = {
     'vendors.js': 'handleAiVendors',
     'wizard.js': 'handleAiWizard',
-    'wizard-v2.js': 'handleAiWizardV2',
-    'wizard-v2-outline.js': 'handleAiWizardV2Outline',
     'wizard-v2-stream.js': 'handleAiWizardV2Stream',
     'append-slides.js': 'handleAiAppendSlides',
     'refine-section.js': 'handleAiRefineSection',
