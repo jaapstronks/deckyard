@@ -5,6 +5,12 @@ on:
     branches: [main, collab]
   pull_request:
 
+# Every job here only reads the repository (checkout + install + test); nothing
+# writes back to GitHub. Pinning the GITHUB_TOKEN to read-only at workflow level
+# covers all jobs at once (actions/missing-workflow-permissions).
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true

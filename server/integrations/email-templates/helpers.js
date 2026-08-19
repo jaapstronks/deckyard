@@ -5,6 +5,36 @@
 
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 
+/**
+ * HTML → plain text for the `text/plain` half of a multipart email.
+ *
+ * The five senders used to inline `replace(/<[^>]*>/g, '')`, which is a
+ * single-pass strip: it leaves an unterminated `<script` (one with no closing
+ * `>`) standing, and a nested construct can re-form a tag out of what the pass
+ * removed — js/incomplete-multi-character-sanitization. This is the one
+ * spelling, and it repeats until the text stops changing, so what it returns
+ * provably has no tag left in it.
+ *
+ * The input is HTML, so an unescaped `<` counts as tag syntax; literal text
+ * arrives as `&lt;` and stays escaped (the plain-text part is not a sink that
+ * decodes it). CodeQL keeps flagging the regex shape itself; the alert is
+ * dismissed as a false positive with that reasoning — the result of this
+ * function goes into a `text/plain` body, never into an HTML parser.
+ *
+ * @param {string} html - HTML fragment (our own template markup; interpolated
+ *   values are already escaped by the caller).
+ * @returns {string} Plain text with no tag-shaped substring left.
+ */
+export function stripTags(html) {
+  let out = String(html ?? '');
+  let previous;
+  do {
+    previous = out;
+    out = out.replace(/<[^>]*>/g, '').replace(/<\/?[a-zA-Z][^<]*$/, '');
+  } while (out !== previous);
+  return out;
+}
+
 // ============================================================
 // STYLES
 // ============================================================

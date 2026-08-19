@@ -8,6 +8,7 @@ import {
   EMAIL_STYLES,
   emailButton,
   emailWrapper,
+  stripTags,
   troubleClickingFooter,
 } from './helpers.js';
 
@@ -207,7 +208,7 @@ export function buildLeadNotificationEmail({
   const textContent = `
 ${greeting}
 
-${bodyText.replace(/<[^>]*>/g, '')}
+${stripTags(bodyText)}
 
 Name: ${leadName}
 Email: ${leadEmail}

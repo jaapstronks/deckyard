@@ -119,7 +119,7 @@ test('emptyRequiredFields finds the empty ones only', () => {
     fieldMarkdown('D', '  ', 'help', () => {}, { required: true }),
   ]);
   const labels = emptyRequiredFields(root).map((w) =>
-    w.querySelector('.field-label').textContent.replace('*', ''),
+    w.querySelector('.field-label').textContent.replace(/\*/g, ''),
   );
   assert.deepEqual(labels, ['A', 'D']);
 });
