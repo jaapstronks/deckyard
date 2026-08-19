@@ -20,8 +20,18 @@ import {
 const OWNER = 'owner@example.com';
 const AUTHOR = 'author@example.com';
 const BOT = 'dreambot@example.com';
+// Deck ownership is decided on the `users.id` (shared/identity-match.js);
+// comment authorship is still address-keyed, because a comment row carries no
+// author id yet (that is PR C of the D22 burndown).
+const OWNER_ID = '11111111-1111-4111-8111-111111111111';
+const owner = { id: OWNER_ID, email: OWNER };
 
-const pres = { ownerEmail: OWNER, createdBy: OWNER };
+const pres = {
+  ownerId: OWNER_ID,
+  ownerEmail: OWNER,
+  createdById: OWNER_ID,
+  createdBy: OWNER,
+};
 
 describe('canDeleteComment', () => {
   it('lets the comment author delete their own comment', () => {
@@ -46,17 +56,19 @@ describe('canDeleteComment', () => {
 
   it('lets the presentation owner delete an AI-suggestion comment they did not author', () => {
     const comment = { authorEmail: BOT, commentType: 'ai-suggestion' };
-    assert.equal(
-      canDeleteComment({ user: { email: OWNER }, pres, comment }),
-      true,
-    );
+    assert.equal(canDeleteComment({ user: owner, pres, comment }), true);
   });
 
   it('lets the presentation creator delete a guest/collaborator comment', () => {
-    const createdPres = { ownerEmail: 'other@example.com', createdBy: OWNER };
+    const createdPres = {
+      ownerId: '22222222-2222-4222-8222-222222222222',
+      ownerEmail: 'other@example.com',
+      createdById: OWNER_ID,
+      createdBy: OWNER,
+    };
     const comment = { authorEmail: 'guest@example.com' };
     assert.equal(
-      canDeleteComment({ user: { email: OWNER }, pres: createdPres, comment }),
+      canDeleteComment({ user: owner, pres: createdPres, comment }),
       true,
     );
   });
@@ -82,6 +94,6 @@ describe('canDeleteComment', () => {
 describe('canEditComment stays author-only (owner cannot rewrite others)', () => {
   it('does not let the owner edit a comment they did not author', () => {
     const comment = { authorEmail: AUTHOR };
-    assert.equal(canEditComment({ user: { email: OWNER }, comment }), false);
+    assert.equal(canEditComment({ user: owner, comment }), false);
   });
 });

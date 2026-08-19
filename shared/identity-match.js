@@ -14,26 +14,40 @@
  * comparison, and a client mirror that had to import server code would be no
  * mirror at all.
  *
- * ## The key is `users.id`, with email as the fallback identifier
+ * ## The key is `users.id`, and nothing else
  *
- * A presentation carries two parallel stamps per role since migration 063:
- * `ownerId`/`ownerEmail`, `createdById`/`createdBy`. The id is the key:
+ * A presentation carries an id per role since migration 063: `ownerId`,
+ * `createdById`. **The id is the only key.** Two identities match when both
+ * carry a `users.id` and the two are equal; a stamp whose id column is a
+ * defined NULL — a legacy row, an external collaborator who never became a user
+ * here — matches *nobody*, and no address is consulted to rescue it.
  *
- *   1. **Both sides carry an id → the ids decide.** No email is consulted.
- *   2. **Either side lacks one → the emails decide**, exactly as before.
+ * That is a deliberate retirement (D22, decision (a), 2026-08-19). Until then
+ * an id-less stamp fell back to comparing e-mail strings, and that fallback was
+ * the reason an address had to travel in the response at all: the client mirrors
+ * could not decide "is this mine?" without one. Removing the fallback is what
+ * lets a response name a person as `{ id, displayName }` — see
+ * docs/reference/identity-in-responses.md.
  *
- * Case 2 is not a second key, it is the *defined absence* of the first one, and
- * it covers the real shapes the resolver already names (identity-resolver.js):
- * legacy/external rows whose email never matched a `users` row, so the id column
- * is a defined NULL; and the auth-off operator and dev bypass, which are not
- * database users at all. Those shapes must keep working, which is why the
- * fallback exists — not to let a caller choose which key to identify someone by.
+ * What a NULL-id stamp costs is bounded: an ownerless deck is still reachable
+ * through `owner_user_id`, which every current write path resolves in the same
+ * statement that writes the address. Only rows stamped before an account
+ * existed lose their *creator* claim, and the owner claim already covers them.
  *
- * The two keys cannot disagree on data this codebase writes: every write path
- * resolves the id *from* the email in the same statement (the dual-key invariant,
- * PR 2/PR 3), and nothing updates a `users.email` afterwards. Where they ever
- * did disagree the id wins by rule 1 — that is the whole point of a stable key,
- * and it is why this module prefers rather than merely supplements it.
+ * ## The one actor without an id: the auth-off operator
+ *
+ * With `AUTH_ENABLED=false` there is a single trusted local operator, flagged
+ * `unrestricted` (server/auth/auth.js). They are not a database user and never
+ * will be, so they carry no id — and on that instance there is nobody to
+ * distinguish them from: every stamp is theirs. {@link matchesIdentity} says so
+ * outright rather than routing that case through an address comparison, which is
+ * what the old fallback quietly did. The flag is set only by the auth-off path,
+ * so it cannot widen access on an authenticated instance (`isUnrestricted()` in
+ * server/utils/presentation-authz/presentations.js gates the same way).
+ *
+ * The development bypass (`AUTH_DEV_BYPASS`) *is* a database user: it resolves
+ * `dev@local` to a real `users` row on session build (server/auth/dev-bypass.js),
+ * precisely so it needs no exception here.
  *
  * The functions here are pure: they read the objects handed to them and touch no
  * storage. Resolving an email-only actor (an API key owner) to a `users.id`
@@ -50,9 +64,8 @@
 /**
  * Normalize an email for comparison: trimmed, lowercased, '' when absent.
  *
- * A local copy rather than an import, because this module is shared and the
- * server's `normalizeEmail` (which answers `null`) lives in server code. Same
- * comparison, no dependency.
+ * Nothing compares addresses to decide identity any more; this normalizes the
+ * one remaining use, {@link hasIdentity}'s "is there an actor at all?".
  *
  * @param {string} [email]
  * @returns {string}
@@ -67,6 +80,7 @@ function normalizeEmail(email) {
  * @typedef {Object} ActorIdentity
  * @property {string|null} userId - Stable `users.id`, when the actor has one.
  * @property {string} email - Normalized email, or '' when the actor has none.
+ * @property {boolean} unrestricted - True for the auth-off single operator.
  */
 
 /**
@@ -75,8 +89,8 @@ function normalizeEmail(email) {
  * Accepts the authed user the server builds in `getUserFromRequestAsync`, the
  * same object as `/api/auth/me` hands the client, the actor shape the machine
  * surfaces build in actor-access.js, and the bare `{ email }` objects tests and
- * legacy call sites pass. A missing id is normal, not an error — see the module
- * header.
+ * legacy call sites pass. A missing id is normal, not an error — such an actor
+ * simply matches no stamp; see the module header.
  *
  * @param {Object} [user] - The acting user
  * @returns {ActorIdentity}
@@ -85,6 +99,7 @@ export function actorIdentity(user) {
   return {
     userId: user?.id || null,
     email: normalizeEmail(user?.email),
+    unrestricted: user?.unrestricted === true,
   };
 }
 
@@ -92,10 +107,11 @@ export function actorIdentity(user) {
  * Whether an actor can be identified at all.
  *
  * Guards the deciders the way the old `if (!userEmail) return false` did: an
- * actor with neither a user id nor an email is anonymous, and anonymous never
- * matches an ownership stamp. It now passes on an id alone, so a future
- * identity source (SSO subject, atproto DID) that arrives without an email is
- * not silently locked out.
+ * actor with neither a user id nor an email is anonymous, and anonymous is
+ * granted nothing. This is the "is anyone there?" question, not "who is this?" —
+ * an actor known only by an address passes here and still matches no ownership
+ * stamp, which is what leaves them the grants that rest on being *a* user
+ * (organization visibility) without the ones that rest on being *the* user.
  *
  * @param {Object} [user] - The acting user
  * @returns {boolean}
@@ -106,25 +122,23 @@ export function hasIdentity(user) {
 }
 
 /**
- * Whether an actor is the person a `(userId, email)` stamp names.
+ * Whether an actor is the person a `(userId, …)` stamp names.
+ *
+ * Both sides must carry a `users.id`, and they must be equal. A stamp with no
+ * id names nobody. The one exception is the auth-off operator, who is the only
+ * person on their instance — see the module header.
  *
  * @param {Object} [user] - The acting user
  * @param {Object} [stamp] - The identity stamped on the record
  * @param {string|null} [stamp.userId] - The stamped `users.id`, if any
- * @param {string} [stamp.email] - The stamped email, if any
  * @returns {boolean}
  */
 export function matchesIdentity(user, stamp = {}) {
   const actor = actorIdentity(user);
+  // The single trusted operator of an auth-off install: every stamp is theirs.
+  if (actor.unrestricted) return true;
   const stampedId = stamp?.userId || null;
-
-  // 1. Both sides carry the stable key: it alone decides.
-  if (actor.userId && stampedId) return actor.userId === stampedId;
-
-  // 2. One side has no id (external/legacy row, auth-off operator):
-  //    fall back to the email identifier, which is what those shapes carry.
-  const stampedEmail = normalizeEmail(stamp?.email);
-  return Boolean(actor.email && stampedEmail && actor.email === stampedEmail);
+  return Boolean(actor.userId && stampedId && actor.userId === stampedId);
 }
 
 /**
@@ -141,7 +155,7 @@ export function matchesIdentity(user, stamp = {}) {
 export function isOwnerOrCreator(user, pres) {
   if (!pres || typeof pres !== 'object') return false;
   return (
-    matchesIdentity(user, { userId: pres.ownerId, email: pres.ownerEmail }) ||
-    matchesIdentity(user, { userId: pres.createdById, email: pres.createdBy })
+    matchesIdentity(user, { userId: pres.ownerId }) ||
+    matchesIdentity(user, { userId: pres.createdById })
   );
 }

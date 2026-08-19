@@ -218,8 +218,11 @@ test("a different user carrying the owner's address is refused by both", () => {
   assert.equal(serverIsAuthor({ user: twin, pres: dualKeyDeck }), false);
 });
 
-test('the id-less shapes still fall back to the email on the client too', () => {
-  // File mode / an external owner: no ids anywhere, the address is all there is.
+test('an id-less stamp names nobody on the client either', () => {
+  // An external or legacy owner: the address never matched a `users` row, so
+  // the id column is a defined NULL. The client mirrors the server's rule —
+  // no id, no match (D22; shared/identity-match.js) — which is what lets the
+  // address stay out of the payload the mirror reads.
   const legacyDeck = {
     id: 'p2',
     visibility: 'private',
@@ -228,14 +231,19 @@ test('the id-less shapes still fall back to the email on the client too', () => 
 
   assert.equal(
     clientIsAuthor({ email: 'legacy@example.com' }, legacyDeck),
-    true,
+    false,
   );
   assert.equal(
     isCommentOwner({ email: 'legacy@example.com' }, legacyDeck),
-    true,
+    false,
   );
   assert.equal(
     clientIsAuthor({ email: 'someone@example.com' }, legacyDeck),
+    false,
+  );
+  // …and the server agrees, which is the whole point of the shared rule.
+  assert.equal(
+    serverIsAuthor({ user: { email: 'legacy@example.com' }, pres: legacyDeck }),
     false,
   );
 });

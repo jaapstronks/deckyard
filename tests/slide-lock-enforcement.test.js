@@ -15,6 +15,7 @@
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import { testScope } from './helpers/storage-scope.js';
+import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -30,6 +31,26 @@ const { createPresentation, getPresentation, updatePresentation } =
 
 const OWNER = 'owner@example.com';
 const OTHER = 'collab@example.com';
+
+/**
+ * Who is acting, as identity-match reads them: an id and nothing else decides
+ * authorship and lock ownership (shared/identity-match.js).
+ * @param {string} email
+ * @returns {{id: string}}
+ */
+const actorFor = (email) => ({ id: userIdFor(email) });
+const asOwner = actorFor(OWNER);
+const asOther = actorFor(OTHER);
+
+/**
+ * Storage write opts naming the actor, the way a route's storage scope does.
+ * @param {string} email
+ * @returns {{actorEmail: string, actorUserId: string}}
+ */
+const writeAs = (email) => ({
+  actorEmail: email,
+  actorUserId: userIdFor(email),
+});
 const LOCKED_ID = '11111111-1111-4111-8111-111111111111';
 const FREE_ID = '22222222-2222-4222-8222-222222222222';
 
@@ -131,7 +152,7 @@ describe('enforceSlideLocks', () => {
         previousSlides: [locked, free],
         nextSlides: [edited(locked), free],
         isAuthor: false,
-        actorEmail: OTHER,
+        actor: asOther,
         loadSlideLocks: noLocks,
       }),
       (e) =>
@@ -148,7 +169,7 @@ describe('enforceSlideLocks', () => {
         previousSlides: [locked, free],
         nextSlides: [free],
         isAuthor: false,
-        actorEmail: OTHER,
+        actor: asOther,
         loadSlideLocks: noLocks,
       }),
       (e) => e.statusCode === 423 && e.details?.lockKind === 'author',
@@ -161,7 +182,7 @@ describe('enforceSlideLocks', () => {
       previousSlides: [locked, free],
       nextSlides: [edited(locked), free],
       isAuthor: true,
-      actorEmail: OWNER,
+      actor: asOwner,
       loadSlideLocks: noLocks,
     });
   });
@@ -172,14 +193,19 @@ describe('enforceSlideLocks', () => {
       previousSlides: [locked, free],
       nextSlides: [locked, edited(free)],
       isAuthor: false,
-      actorEmail: OTHER,
+      actor: asOther,
       loadSlideLocks: noLocks,
     });
   });
 
   it('rejects edits on a slide concurrently locked by someone else (even the author)', async () => {
     const locks = async () => ({
-      free: { slideId: 'free', holderEmail: OTHER, holderName: 'Christel' },
+      free: {
+        slideId: 'free',
+        holderId: userIdFor(OTHER),
+        holderEmail: OTHER,
+        holderName: 'Christel',
+      },
     });
     await assert.rejects(
       enforceSlideLocks({
@@ -187,7 +213,7 @@ describe('enforceSlideLocks', () => {
         previousSlides: [locked, free],
         nextSlides: [locked, edited(free)],
         isAuthor: true,
-        actorEmail: OWNER,
+        actor: asOwner,
         loadSlideLocks: locks,
       }),
       (e) =>
@@ -199,14 +225,19 @@ describe('enforceSlideLocks', () => {
 
   it('allows edits on a slide the actor holds the concurrent lock for', async () => {
     const locks = async () => ({
-      free: { slideId: 'free', holderEmail: OTHER, holderName: 'Christel' },
+      free: {
+        slideId: 'free',
+        holderId: userIdFor(OTHER),
+        holderEmail: OTHER,
+        holderName: 'Christel',
+      },
     });
     await enforceSlideLocks({
       presentationId: 'p1',
       previousSlides: [locked, free],
       nextSlides: [locked, edited(free)],
       isAuthor: false,
-      actorEmail: OTHER,
+      actor: asOther,
       loadSlideLocks: locks,
     });
   });
@@ -218,7 +249,7 @@ describe('enforceSlideLocks', () => {
       previousSlides: [locked, free],
       nextSlides: [free, locked], // reorder only
       isAuthor: false,
-      actorEmail: OTHER,
+      actor: asOther,
       loadSlideLocks: async () => {
         called = true;
         return {};
@@ -239,6 +270,10 @@ describe('updatePresentation — slide-lock enforcement', () => {
     __setTestDb(
       createFakeDb({
         organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+        // Both people need a `users` row: the deck's owner id is resolved from
+        // the address at create, and authorship is decided on that id alone
+        // (shared/identity-match.js).
+        users: userRows(OWNER, OTHER),
       }),
     );
     await initializeStorage();
@@ -277,7 +312,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
       { ...structuredClone(base), id: FREE_ID, lockedByAuthor: false },
     ];
     syncI18n(doc);
-    await updatePresentation(testScope(), deckId, doc, { actorEmail: OWNER });
+    await updatePresentation(testScope(), deckId, doc, writeAs(OWNER));
   });
 
   it('rejects a non-author content edit on an author-locked slide with 423', async () => {
@@ -285,7 +320,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
     doc.slides.find((s) => s.id === LOCKED_ID).content.title = 'Gehackt';
     syncI18n(doc);
     await assert.rejects(
-      updatePresentation(testScope(), deckId, doc, { actorEmail: OTHER }),
+      updatePresentation(testScope(), deckId, doc, writeAs(OTHER)),
       (e) => e.statusCode === 423 && e.details?.slideId === LOCKED_ID,
     );
     // Nothing was written
@@ -301,7 +336,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
     doc.slides = doc.slides.filter((s) => s.id !== LOCKED_ID);
     syncI18n(doc);
     await assert.rejects(
-      updatePresentation(testScope(), deckId, doc, { actorEmail: OTHER }),
+      updatePresentation(testScope(), deckId, doc, writeAs(OTHER)),
       (e) => e.statusCode === 423,
     );
   });
@@ -311,7 +346,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
     doc.slides.find((s) => s.id === FREE_ID).content.title = 'Aangepast';
     syncI18n(doc);
     const updated = await updatePresentation(testScope(), deckId, doc, {
-      actorEmail: OTHER,
+      ...writeAs(OTHER),
     });
     assert.equal(
       updated.slides.find((s) => s.id === FREE_ID).content.title,
@@ -324,7 +359,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
     doc.slides = [...doc.slides].reverse();
     syncI18n(doc);
     const updated = await updatePresentation(testScope(), deckId, doc, {
-      actorEmail: OTHER,
+      ...writeAs(OTHER),
     });
     assert.equal(updated.slides[0].id, FREE_ID);
   });
@@ -334,7 +369,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
     doc.slides.find((s) => s.id === LOCKED_ID).content.title = 'Door auteur';
     syncI18n(doc);
     const updated = await updatePresentation(testScope(), deckId, doc, {
-      actorEmail: OWNER,
+      ...writeAs(OWNER),
     });
     assert.equal(
       updated.slides.find((s) => s.id === LOCKED_ID).content.title,
@@ -347,8 +382,8 @@ describe('updatePresentation — slide-lock enforcement', () => {
     doc.slides.find((s) => s.id === LOCKED_ID).content.title = 'Door admin';
     syncI18n(doc);
     const updated = await updatePresentation(testScope(), deckId, doc, {
-      actorEmail: 'admin@example.com',
-      user: { email: 'admin@example.com', isAdmin: true },
+      ...writeAs('admin@example.com'),
+      user: { id: userIdFor('admin@example.com'), isAdmin: true },
     });
     assert.equal(
       updated.slides.find((s) => s.id === LOCKED_ID).content.title,
@@ -361,7 +396,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
     doc.slides.find((s) => s.id === LOCKED_ID).lockedByAuthor = false;
     syncI18n(doc);
     await assert.rejects(
-      updatePresentation(testScope(), deckId, doc, { actorEmail: OTHER }),
+      updatePresentation(testScope(), deckId, doc, writeAs(OTHER)),
       (e) => e.statusCode === 400,
     );
   });
@@ -371,7 +406,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
     doc.slides.find((s) => s.id === LOCKED_ID).content.title = 'Interne write';
     syncI18n(doc);
     const updated = await updatePresentation(testScope(), deckId, doc, {
-      actorEmail: OTHER,
+      ...writeAs(OTHER),
       bypassLockCheck: true,
       user: { email: OWNER }, // internal writes act for the author
     });
@@ -391,7 +426,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
       // The author-lock *flag* guard still applies, so act as the author here;
       // the point is that the content-edit enforcement itself is off.
       const updated = await updatePresentation(testScope(), deckId, doc, {
-        actorEmail: OTHER,
+        ...writeAs(OTHER),
         bypassLockCheck: false,
         user: { email: OWNER },
       });
@@ -416,7 +451,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
       })),
     };
     syncI18n(doc);
-    await updatePresentation(testScope(), deckId, doc, { actorEmail: OWNER });
+    await updatePresentation(testScope(), deckId, doc, writeAs(OWNER));
 
     // Non-author switches the active language: top-level slides become the
     // en-GB buffer (every slide's content differs from the stored nl slides),
@@ -428,7 +463,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
     doc.slides.find((s) => s.id === FREE_ID).content.title = 'EN edited';
     syncI18n(doc);
     const updated = await updatePresentation(testScope(), deckId, doc, {
-      actorEmail: OTHER,
+      ...writeAs(OTHER),
     });
     // Top-level slides realign to the dominant (nl) buffer; the edit lands
     // in the en-GB version buffer.
@@ -449,7 +484,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
       })),
     };
     syncI18n(doc);
-    await updatePresentation(testScope(), deckId, doc, { actorEmail: OWNER });
+    await updatePresentation(testScope(), deckId, doc, writeAs(OWNER));
 
     doc = await loadDoc();
     doc.i18n.active = 'en-GB';
@@ -458,7 +493,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
     doc.slides.find((s) => s.id === LOCKED_ID).content.title = 'EN gehackt';
     syncI18n(doc);
     await assert.rejects(
-      updatePresentation(testScope(), deckId, doc, { actorEmail: OTHER }),
+      updatePresentation(testScope(), deckId, doc, writeAs(OTHER)),
       (e) => e.statusCode === 423 && e.details?.slideId === LOCKED_ID,
     );
   });

@@ -2,10 +2,10 @@
  * Core presentation authorization functions.
  *
  * Who a deck belongs to is decided by {@link isOwnerOrCreator} in
- * shared/identity-match.js, which keys on the stable `users.id` and falls back to the
- * email identifier only where no id exists (file mode, external/legacy rows,
- * the auth-off operator). These functions therefore never compare an email
- * themselves — see that module for the rule and why it is not a second key.
+ * shared/identity-match.js, which keys on the stable `users.id` and on nothing
+ * else: a stamp whose id column is a defined NULL (an external or legacy row)
+ * names nobody. These functions therefore never compare an email themselves —
+ * see that module for the rule and why an address is not a second key.
  */
 
 import { sandboxEnabled } from '../../config/sandbox.js';

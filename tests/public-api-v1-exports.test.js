@@ -24,6 +24,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 import { Readable } from 'node:stream';
 
 process.env.AUTH_SECRET = ['amethyst', 'test', 'auth']
@@ -53,6 +54,7 @@ const { handleExports } =
 async function installDb({ exportsUsedToday = 0 } = {}) {
   const db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    users: userRows(KEY_OWNER),
     presentations: [
       deckRow({ id: DECK_ID, owner: KEY_OWNER }),
       deckRow({ id: FOREIGN_DECK_ID, owner: 'someone-else@example.com' }),
@@ -82,6 +84,10 @@ function deckRow({ id, owner }) {
     owner_email: owner,
     created_by: owner,
     updated_by: owner,
+    // Ownership is decided on the id, not the address (identity-match.js).
+    owner_user_id: userIdFor(owner),
+    created_by_user_id: userIdFor(owner),
+    updated_by_user_id: userIdFor(owner),
     title: 'Export Me',
     description: null,
     theme: 'amethyst',
@@ -171,6 +177,7 @@ function makeCtx(method, pathname, { permissions = ['read', 'export'] } = {}) {
     storageScope: {
       repoRoot: process.cwd(),
       organizationId: ORG,
+      actorUserId: userIdFor(KEY_OWNER),
       actorEmail: KEY_OWNER,
     },
     apiKey: {
@@ -181,7 +188,8 @@ function makeCtx(method, pathname, { permissions = ['read', 'export'] } = {}) {
       organizationId: ORG,
     },
     authedUser: {
-      id: null,
+      // The middleware resolves the key owner to this id once per request.
+      id: userIdFor(KEY_OWNER),
       email: KEY_OWNER,
       role: 'user',
       organizationId: ORG,

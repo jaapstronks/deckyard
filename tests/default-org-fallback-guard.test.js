@@ -66,6 +66,13 @@ const ALLOWLIST = [
     reason: 'auth-disabled and dev-bypass synthetic users (no session org)',
   },
   {
+    file: 'server/auth/dev-bypass.js',
+    reason:
+      'the dev-bypass users row is created in the default organization; the ' +
+      'bypass has no session to read one from and refuses to run outside ' +
+      'development',
+  },
+  {
     file: 'server/utils/context.js',
     reason:
       'createStorageScope pre-auth default (reset / magic-link / SSO have no resolved org)',

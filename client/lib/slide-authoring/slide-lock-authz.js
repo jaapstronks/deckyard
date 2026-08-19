@@ -4,8 +4,7 @@
  * Advisory only: these complement the server-side enforcement in
  * presentation-authz, on the same rule — deck ownership through
  * {@link isOwnerOrCreator} in shared/identity-match.js, which keys on the
- * stable `users.id` and falls back to the email identifier only where no id
- * exists (file mode, external/legacy rows).
+ * stable `users.id` and on nothing else.
  */
 
 import { isOwnerOrCreator } from '../../../shared/identity-match.js';
@@ -15,8 +14,8 @@ import { isOwnerOrCreator } from '../../../shared/identity-match.js';
  * Authors are: owner, creator, or admin.
  * Authors can lock/unlock slides to prevent editing by collaborators.
  *
- * @param {Object} user - The user object with id, email and isAdmin
- * @param {Object} pres - The presentation, with ownerId/createdById (and their emails)
+ * @param {Object} user - The user object with id and isAdmin
+ * @param {Object} pres - The presentation, with ownerId/createdById
  * @returns {boolean} True if user is an author
  */
 export function isPresentationAuthor(user, pres) {

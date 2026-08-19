@@ -33,8 +33,18 @@ const { acquireSlideLock } = await import('../server/storage/slide-locks.js');
 const ORG = '00000000-0000-0000-0000-0000000000aa';
 const PID = 'deck-1';
 const SID = 'slide-1';
-const ALICE = { email: 'alice@example.com', name: 'Alice' };
-const BOB = { email: 'bob@example.com', name: 'Bob' };
+// A lock is held by a `users.id`; the address and name ride along for display
+// (shared/identity-match.js).
+const ALICE = {
+  userId: '11111111-1111-4111-8111-111111111111',
+  email: 'alice@example.com',
+  name: 'Alice',
+};
+const BOB = {
+  userId: '22222222-2222-4222-8222-222222222222',
+  email: 'bob@example.com',
+  name: 'Bob',
+};
 const ctx = { organizationId: ORG };
 
 /** Rows currently in the slide_locks table of the installed double. */
@@ -44,6 +54,7 @@ const lockRow = (overrides = {}) => ({
   presentation_id: PID,
   slide_id: SID,
   organization_id: ORG,
+  holder_user_id: ALICE.userId,
   holder_email: ALICE.email,
   holder_name: ALICE.name,
   acquired_at: '2020-01-01T00:00:00.000Z',

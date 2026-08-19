@@ -19,6 +19,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { testScope } from './helpers/storage-scope.js';
+import { sessionFor, userRows } from './helpers/identity-fixtures.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -43,6 +44,10 @@ test.before(async () => {
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      // The owner needs a `users` row: the deck's `owner_user_id` is resolved
+      // from the address at create, and it is the only key ownership is
+      // decided on (shared/identity-match.js).
+      users: userRows(OWNER),
     }),
   );
   await initializeStorage();
@@ -99,7 +104,7 @@ async function seedDeck() {
   });
 }
 
-const owner = { email: OWNER, isAdmin: false };
+const owner = sessionFor(OWNER, { isAdmin: false });
 
 /** Assert a body is the canonical conflict envelope with details preserved. */
 function assertConflictEnvelope(res, presId) {

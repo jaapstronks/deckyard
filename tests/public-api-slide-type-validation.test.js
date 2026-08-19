@@ -23,6 +23,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 import { Readable } from 'node:stream';
 
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
@@ -47,6 +48,7 @@ const { handlePresentations } =
 async function installDb() {
   const db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    users: userRows(OWNER),
     presentations: [
       {
         id: DECK_ID,
@@ -54,6 +56,10 @@ async function installDb() {
         owner_email: OWNER,
         created_by: OWNER,
         updated_by: OWNER,
+        // Ownership is decided on the id, not the address (identity-match.js).
+        owner_user_id: userIdFor(OWNER),
+        created_by_user_id: userIdFor(OWNER),
+        updated_by_user_id: userIdFor(OWNER),
         title: 'A deck',
         theme: 'default',
         lang: 'nl',
@@ -117,6 +123,7 @@ function makeCtx(method, pathname, body = null) {
     storageScope: {
       repoRoot: process.cwd(),
       organizationId: ORG,
+      actorUserId: userIdFor(OWNER),
       actorEmail: OWNER,
     },
     apiKey: {
@@ -128,7 +135,13 @@ function makeCtx(method, pathname, body = null) {
     },
     // What authenticateApiKey puts on the context: who is acting and in which
     // organization. Per-deck checks read the actor from here, not off the deck.
-    authedUser: { id: null, email: OWNER, role: 'user', organizationId: ORG },
+    authedUser: {
+      // The middleware resolves the key owner to this id once per request.
+      id: userIdFor(OWNER),
+      email: OWNER,
+      role: 'user',
+      organizationId: ORG,
+    },
   };
 }
 

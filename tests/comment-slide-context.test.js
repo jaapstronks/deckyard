@@ -91,16 +91,29 @@ describe('enrichCommentsWithSlideContext', () => {
 describe('checkActorCommentAccess', () => {
   const OWNER = 'owner@example.com';
   const OTHER = 'other@example.com';
-  const privateDeck = { id: 'p1', ownerEmail: OWNER, visibility: 'private' };
+  // A machine actor arrives as an address and is resolved to its `users.id` at
+  // the boundary; ownership is decided on that id (shared/identity-match.js).
+  const OWNER_ID = '11111111-1111-4111-8111-111111111111';
+  const privateDeck = {
+    id: 'p1',
+    ownerId: OWNER_ID,
+    ownerEmail: OWNER,
+    visibility: 'private',
+  };
   const organizationDeck = {
     id: 'w1',
+    ownerId: OWNER_ID,
     ownerEmail: OWNER,
     visibility: 'organization',
   };
 
   it('owner and organization users can comment', () => {
     assert.equal(
-      checkActorCommentAccess({ pres: privateDeck, actor: { email: OWNER } }),
+      checkActorCommentAccess({
+        pres: privateDeck,
+        actor: { email: OWNER },
+        actorUserId: OWNER_ID,
+      }),
       true,
     );
     assert.equal(

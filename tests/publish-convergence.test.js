@@ -43,6 +43,7 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
 const { testScope } = await import('./helpers/storage-scope.js');
+const { userIdFor, userRows } = await import('./helpers/identity-fixtures.js');
 const { writeAppSettings } = await import('../server/storage/settings.js');
 const { handlePublishing } =
   await import('../server/routes/public-api/v1/publishing.js');
@@ -57,6 +58,10 @@ function deckRow({ id, owner }) {
     owner_email: owner,
     created_by: owner,
     updated_by: owner,
+    // Ownership is decided on the id, not the address (identity-match.js).
+    owner_user_id: userIdFor(owner),
+    created_by_user_id: userIdFor(owner),
+    updated_by_user_id: userIdFor(owner),
     title: `Title of ${id}`,
     description: null,
     theme: 'default',
@@ -83,6 +88,7 @@ function deckRow({ id, owner }) {
 async function installDb() {
   const db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    users: userRows(KEY_OWNER),
     presentations: [deckRow({ id: DECK_ID, owner: KEY_OWNER })],
     published_presentations: [],
   });
@@ -124,6 +130,7 @@ function makeV1Ctx(method, deckId, { permissions = ['read', 'write'] } = {}) {
     storageScope: {
       repoRoot: REPO_ROOT,
       organizationId: ORG,
+      actorUserId: userIdFor(KEY_OWNER),
       actorEmail: KEY_OWNER,
     },
     apiKey: {
@@ -134,7 +141,8 @@ function makeV1Ctx(method, deckId, { permissions = ['read', 'write'] } = {}) {
       organizationId: ORG,
     },
     authedUser: {
-      id: null,
+      // The middleware resolves the key owner to this id once per request.
+      id: userIdFor(KEY_OWNER),
       email: KEY_OWNER,
       role: 'user',
       organizationId: ORG,

@@ -33,6 +33,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { Readable, Writable } from 'node:stream';
+import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 import { fileURLToPath } from 'node:url';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
@@ -55,7 +56,10 @@ const { fetchCsvData } =
   await import('../server/utils/data-source/providers/csv-url.js');
 const { sessions } = await import('../server/storage/live-sessions/state.js');
 
-const OWNER = { email: 'owner@example.com' };
+const OWNER = {
+  id: userIdFor('owner@example.com'),
+  email: 'owner@example.com',
+};
 const FOREIGN = { email: 'attacker@example.com' };
 
 /** The database double, reinstalled per test so decks never leak between them. */
@@ -64,6 +68,10 @@ let db;
 test.beforeEach(async () => {
   db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    // The owner needs a `users` row: a deck's `owner_user_id` is resolved from
+    // the address at create, and it is the only key ownership is decided on
+    // (shared/identity-match.js).
+    users: userRows(OWNER.email),
     presentations: [],
   });
   __setTestDb(db);
@@ -127,6 +135,10 @@ function seedPresentation(id, { ownerEmail, slides = [] }) {
     owner_email: ownerEmail,
     created_by: ownerEmail,
     updated_by: ownerEmail,
+    // Ownership is decided on the id, not the address (identity-match.js).
+    owner_user_id: userIdFor(ownerEmail),
+    created_by_user_id: userIdFor(ownerEmail),
+    updated_by_user_id: userIdFor(ownerEmail),
     title: 'Test deck',
     description: null,
     theme: 'default',

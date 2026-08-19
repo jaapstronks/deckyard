@@ -38,11 +38,27 @@ function mapLockRow(row) {
 
 /**
  * The identity stamp on a lock row, as {@link matchesIdentity} expects it.
+ * The address beside it is display only: who holds a lock is decided on the
+ * stable id (shared/identity-match.js).
  * @param {Object} row - A slide_locks row
- * @returns {{userId: string|null, email: string}}
+ * @returns {{userId: string|null}}
  */
 function holderStamp(row) {
-  return { userId: row.holder_user_id || null, email: row.holder_email };
+  return { userId: row.holder_user_id || null };
+}
+
+/**
+ * The acting user, as {@link matchesIdentity} reads them.
+ *
+ * `unrestricted` rides along because the auth-off operator has no `users.id`
+ * and is the only person on that instance, so every lock is theirs — the same
+ * shape the deciders get (server/utils/presentation-authz/presentations.js).
+ *
+ * @param {{userId?: string|null, unrestricted?: boolean}} opts
+ * @returns {{id: string|null, unrestricted: boolean}}
+ */
+function lockActor({ userId, unrestricted } = {}) {
+  return { id: userId || null, unrestricted: unrestricted === true };
 }
 
 // ============================================================
@@ -118,14 +134,14 @@ export async function getSlideLock(scope, presentationId, slideId) {
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
  * @param {string} slideId - The slide ID
- * @param {Object} user - User info { email, name }
+ * @param {Object} user - User info { email, name, userId, unrestricted }
  * @returns {Promise<Object>} { ok: boolean, reason?, lock? }
  */
 export async function acquireSlideLock(
   scope,
   presentationId,
   slideId,
-  { email, name, userId } = {},
+  { email, name, userId, unrestricted } = {},
 ) {
   toStorageContext(scope, 'acquireSlideLock');
   const pid = norm(presentationId);
@@ -134,7 +150,11 @@ export async function acquireSlideLock(
   const holderName = norm(name) || holderEmail;
   const holderId = userId || null;
 
-  if (!pid || !sid || !holderEmail) {
+  // A lock is held by a `users.id`: an actor the instance cannot identify could
+  // take one but never refresh or release it, leaving the slide blocked until
+  // the TTL. So they do not take one — the auth-off operator excepted, since
+  // there is nobody else on that instance (shared/identity-match.js).
+  if (!pid || !sid || !holderEmail || (!holderId && !unrestricted)) {
     return { ok: false, reason: 'invalid' };
   }
 
@@ -170,28 +190,31 @@ export async function acquireSlideLock(
         refreshed_at: now,
         expires_at: expiresAt,
       })
-      .onConflict((oc) =>
-        oc
-          .columns(['presentation_id', 'slide_id'])
-          .doUpdateSet({
-            holder_user_id: holderId,
-            holder_email: holderEmail,
-            holder_name: holderName,
-            acquired_at: now,
-            refreshed_at: now,
-            expires_at: expiresAt,
-          })
-          .where((eb) => {
-            // The DO UPDATE only fires when the lock is expired or already this
-            // user's. Matching by id too means a holder who renamed still
-            // re-acquires their own live lock (the e-mail no longer equals the
-            // stored one, but the stable id does) — the rename-robustness F3 buys.
-            const mine = [eb('slide_locks.holder_email', '=', holderEmail)];
-            if (holderId)
-              mine.push(eb('slide_locks.holder_user_id', '=', holderId));
-            return eb.or([eb('slide_locks.expires_at', '<=', now), ...mine]);
-          }),
-      )
+      .onConflict((oc) => {
+        const target = oc.columns(['presentation_id', 'slide_id']).doUpdateSet({
+          holder_user_id: holderId,
+          holder_email: holderEmail,
+          holder_name: holderName,
+          acquired_at: now,
+          refreshed_at: now,
+          expires_at: expiresAt,
+        });
+        // The auth-off operator is the only person on the instance, so every
+        // live lock is already theirs and the guard has nothing to guard.
+        if (unrestricted) return target;
+        return target.where((eb) => {
+          // The DO UPDATE only fires when the lock is expired or already this
+          // user's, matched on the stable id — so a holder who renamed still
+          // re-acquires their own live lock, and an id-less actor takes over
+          // nothing (shared/identity-match.js).
+          const expired = eb('slide_locks.expires_at', '<=', now);
+          if (!holderId) return expired;
+          return eb.or([
+            expired,
+            eb('slide_locks.holder_user_id', '=', holderId),
+          ]);
+        });
+      })
       .returningAll()
       .executeTakeFirst();
 
@@ -224,20 +247,20 @@ export async function acquireSlideLock(
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
  * @param {string} slideId - The slide ID
- * @param {Object} user - User info { email }
+ * @param {Object} user - User info { email, userId, unrestricted }
  * @returns {Promise<Object>} { ok: boolean, reason?, lock? }
  */
 export async function refreshSlideLock(
   scope,
   presentationId,
   slideId,
-  { email, userId } = {},
+  { email, userId, unrestricted } = {},
 ) {
   toStorageContext(scope, 'refreshSlideLock');
   const pid = norm(presentationId);
   const sid = norm(slideId);
   const holderEmail = norm(email).toLowerCase();
-  const actor = { id: userId || null, email: holderEmail };
+  const actor = lockActor({ userId, unrestricted });
 
   if (!pid || !sid || !holderEmail) {
     return { ok: false, reason: 'invalid' };
@@ -273,7 +296,7 @@ export async function refreshSlideLock(
       return { ok: false, reason: 'expired' };
     }
 
-    // Check if held by different user (id-primary, e-mail fallback)
+    // Check if held by a different user (decided on the stable id)
     if (!matchesIdentity(actor, holderStamp(existing))) {
       return {
         ok: false,
@@ -312,20 +335,20 @@ export async function refreshSlideLock(
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
  * @param {string} slideId - The slide ID
- * @param {Object} user - User info { email }
+ * @param {Object} user - User info { email, userId, unrestricted }
  * @returns {Promise<Object>} { ok: boolean, reason?, released? }
  */
 export async function releaseSlideLock(
   scope,
   presentationId,
   slideId,
-  { email, userId } = {},
+  { email, userId, unrestricted } = {},
 ) {
   toStorageContext(scope, 'releaseSlideLock');
   const pid = norm(presentationId);
   const sid = norm(slideId);
   const holderEmail = norm(email).toLowerCase();
-  const actor = { id: userId || null, email: holderEmail };
+  const actor = lockActor({ userId, unrestricted });
 
   if (!pid || !sid || !holderEmail) {
     return { ok: false, reason: 'invalid' };
@@ -359,7 +382,7 @@ export async function releaseSlideLock(
       return { ok: true, released: false };
     }
 
-    // Check if held by different user (id-primary, e-mail fallback)
+    // Check if held by a different user (decided on the stable id)
     if (!matchesIdentity(actor, holderStamp(existing))) {
       return {
         ok: false,
@@ -385,20 +408,23 @@ export async function releaseSlideLock(
  * Used when user navigates away or disconnects.
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
- * @param {Object} user - User info { email }
+ * @param {Object} user - User info { userId, unrestricted }
  * @returns {Promise<Object>} { ok: boolean, releasedCount: number }
  */
 export async function releaseAllUserSlideLocks(
   scope,
   presentationId,
-  { email, userId } = {},
+  { userId, unrestricted } = {},
 ) {
   toStorageContext(scope, 'releaseAllUserSlideLocks');
   const pid = norm(presentationId);
-  const holderEmail = norm(email).toLowerCase();
   const holderId = userId || null;
+  const operator = unrestricted === true;
 
-  if (!pid || !holderEmail) {
+  // An actor with no id holds no lock (shared/identity-match.js), so there is
+  // nothing to release — except for the auth-off operator, whose instance has
+  // no one else and whose locks are therefore all of them.
+  if (!pid || (!holderId && !operator)) {
     return { ok: false, reason: 'invalid', releasedCount: 0 };
   }
 
@@ -407,18 +433,15 @@ export async function releaseAllUserSlideLocks(
     async (db) => {
       const orgId = getOrgId(scope);
 
-      const result = await db
+      let query = db
         .deleteFrom('slide_locks')
         .where('presentation_id', '=', pid)
-        .where('organization_id', '=', orgId)
-        // Match the caller's own locks by id or e-mail: a holder who renamed
-        // mid-session still tears down the locks they took under the old address.
-        .where((eb) => {
-          const mine = [eb('holder_email', '=', holderEmail)];
-          if (holderId) mine.push(eb('holder_user_id', '=', holderId));
-          return eb.or(mine);
-        })
-        .executeTakeFirst();
+        .where('organization_id', '=', orgId);
+      // Match the caller's own locks on the stable id: a holder who renamed
+      // mid-session still tears down the locks they took under the old address.
+      if (!operator) query = query.where('holder_user_id', '=', holderId);
+
+      const result = await query.executeTakeFirst();
 
       return {
         ok: true,
@@ -453,17 +476,17 @@ export async function cleanupExpiredSlideLocks() {
  * Useful for UI to show which slides are unavailable.
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} presentationId - The presentation ID
- * @param {Object} user - User info { email }
+ * @param {Object} user - User info { userId, unrestricted }
  * @returns {Promise<Array>} Array of lock objects for slides locked by others
  */
 export async function getLockedByOthers(
   scope,
   presentationId,
-  { email, userId } = {},
+  { userId, unrestricted } = {},
 ) {
   toStorageContext(scope, 'getLockedByOthers');
   const pid = norm(presentationId);
-  const actor = { id: userId || null, email: norm(email).toLowerCase() };
+  const actor = lockActor({ userId, unrestricted });
   if (!pid) return [];
 
   return withDbGuard([], async (db) => {
@@ -478,9 +501,9 @@ export async function getLockedByOthers(
       .where('expires_at', '>', now)
       .execute();
 
-    // Exclude the caller's own locks by identity, not by a raw e-mail match:
-    // a holder who renamed still owns a lock stamped with their old address, so
-    // an e-mail-only filter would wrongly report it as held by someone else.
+    // Exclude the caller's own locks by identity (the stable id), not by the
+    // stamped address: a holder who renamed still owns the lock they took, and
+    // an address-keyed filter would wrongly report it as held by someone else.
     return rows
       .filter((row) => !matchesIdentity(actor, holderStamp(row)))
       .map(mapLockRow);

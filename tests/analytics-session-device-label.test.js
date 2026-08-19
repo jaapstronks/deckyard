@@ -55,6 +55,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { userIdFor } from './helpers/identity-fixtures.js';
 
 process.env.AUTH_SECRET = 'test-secret-for-device-labels-0123456789';
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
@@ -76,6 +77,9 @@ const { createStorageScope } = await import('../server/utils/context.js');
 const DECK_ONE = 'deck-one';
 const DECK_TWO = 'deck-two';
 const OWNER = {
+  // The `users.id` the deck is stamped with; ownership is decided on it alone
+  // (shared/identity-match.js).
+  id: userIdFor('owner@example.test'),
   email: 'owner@example.test',
   name: 'Otto',
   role: 'admin',
@@ -103,6 +107,9 @@ function deckRow(id) {
     owner_email: OWNER.email,
     created_by: OWNER.email,
     updated_by: OWNER.email,
+    owner_user_id: OWNER.id,
+    created_by_user_id: OWNER.id,
+    updated_by_user_id: OWNER.id,
     visibility: 'private',
     theme: 'default',
     lang: 'nl',

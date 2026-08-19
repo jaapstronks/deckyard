@@ -196,19 +196,18 @@ pgDescribe('lock holder identity on users.id (real PostgreSQL)', () => {
     assert.equal((await getSlideLock(CTX, PID, SID)).holderId, ALICE_ID);
   });
 
-  it('an external holder (no users row) stamps NULL and is matched by e-mail', async () => {
+  it('an external holder (no users row) cannot take a lock at all', async () => {
+    // A lock is held by a `users.id`. An actor without one could take a lock
+    // and then never refresh or release it — the address that used to stand in
+    // is not a key any more (D22) — so the acquire is refused outright.
     const res = await acquireSlideLock(CTX, PID, SID, external);
-    assert.equal(res.ok, true);
-    assert.equal(res.lock.holderId, null);
+    assert.equal(res.ok, false);
+    assert.equal(res.reason, 'invalid');
+    assert.equal(await getSlideLock(CTX, PID, SID), null);
 
-    // The external holder still refreshes their own lock via the e-mail fallback.
-    const refreshed = await refreshSlideLock(CTX, PID, SID, external);
-    assert.equal(refreshed.ok, true);
-
-    // And Alice sees it as held by someone else.
+    // Nothing is locked, so Alice sees no foreign lock either.
     const others = await getLockedByOthers(CTX, PID, alice());
-    assert.equal(others.length, 1);
-    assert.equal(others[0].holderEmail, EXTERNAL_EMAIL);
+    assert.equal(others.length, 0);
   });
 
   it("release-all tears down a renamed holder's locks by id", async () => {

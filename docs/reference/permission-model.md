@@ -55,7 +55,7 @@ by one barrel:
 Shared with the client (imported by both sides, so the rule cannot fork):
 
 - `shared/identity-match.js` — "is this actor the person this stamp names?",
-  keyed on `users.id` with the email as the fallback identifier.
+  keyed on `users.id` and on nothing else.
 - `shared/constants/permissions.js` — the four levels and the four predicates
   (`canRead` / `canComment` / `canWrite` / `canManage`).
 
@@ -134,8 +134,9 @@ Two partial indexes, both `WHERE revoked_at IS NULL`: by `presentation_id`
 with me").
 
 **Ownership stamps on `presentations`** — `owner_id` / `owner_email`,
-`created_by_id` / `created_by` (migration 063). The id is the key; the email is
-display and the fallback identifier.
+`created_by_id` / `created_by` (migration 063). The id is the key; the address
+beside it is display only, and a row whose id column is a defined NULL names
+nobody.
 
 **`presentation_share_links`** (migration 004) — token, `permission`,
 `expires_at`, `revoked_at`, `revocation_message`. The token is globally unique
@@ -206,20 +207,31 @@ Where the deciders differ from that shape, they differ deliberately:
 
 `isOwnerOrCreator` → `matchesIdentity` (`shared/identity-match.js`):
 
-1. **Both sides carry a `users.id`** → the ids decide, no email is read.
-2. **Either side lacks one** → the emails decide.
+1. **Both sides carry a `users.id` and the ids are equal** → the same person.
+2. **Anything else** → not the same person. No address is compared, ever.
 
-Case 2 is the _defined absence_ of the key, not a second key: external or
-legacy rows whose email never matched a `users` row keep a NULL id, and the
-auth-off operator and dev bypass are not database users at all. The two keys
-cannot disagree on data this codebase writes — every write path resolves the id
-from the email in the same statement, and nothing updates a `users.email`
-afterwards. Where they ever did disagree, rule 1 means the id wins.
+Rule 2 is the retirement of the old address fallback (decision D22, 2026-08-19):
+an external or legacy row whose address never matched a `users` row keeps a NULL
+id and now names nobody at all. That is what lets a response name a person as
+`{ id, displayName }` instead of handing out their address — the client mirrors
+could not answer "is this mine?" without one while the fallback existed. What it
+costs is bounded: such a deck is still reachable through `owner_user_id`, and
+only rows stamped before an account existed lose their _creator_ claim.
 
-Machine clients (public API keys, MCP sessions) hold an email and no id, so
-`actor-access.js` resolves it once at the boundary rather than per deck. An
-email with no `users` row resolves to a defined NULL and simply puts the
-deciders on their email fallback.
+The one actor with no id is the **auth-off operator** (`AUTH_ENABLED=false`),
+flagged `unrestricted`. On that instance there is nobody to tell them apart
+from, so `matchesIdentity` answers yes for every stamp — stated outright rather
+than routed through an address comparison. The **dev bypass**
+(`AUTH_DEV_BYPASS`) is a real database user: `server/auth/dev-bypass.js`
+resolves `dev@local` to a `users` row (creating it on first use) when the
+session is built, so it needs no exception.
+
+Machine clients (public API keys, MCP sessions) hold an address and no id, so
+the boundary resolves it once — `middleware.js` for the public API,
+`actingIdentity()` for MCP tools, `actor-access.js` for the shared checks —
+rather than per deck. An address with no `users` row resolves to a defined NULL,
+and such an actor reaches only what being _a_ user grants (organization
+visibility), never what being _the_ owner does.
 
 ### 4. Handing out and revoking a collaborator grant
 

@@ -17,6 +17,7 @@ import {
 } from '../storage/presentations/index.js';
 import { loadPresentationChecked } from './presentation-access.js';
 import { singleOrganizationScope } from '../storage/scope.js';
+import { resolveIdentityByEmail } from '../storage/identity-resolver.js';
 import {
   listComments,
   listRecentCommentsForOwner,
@@ -206,20 +207,39 @@ export function registerTools(
   }
 
   /**
+   * The acting identity for a storage write, both halves of it.
+   *
+   * The slide-lock policy decides authorship on the stable `users.id`
+   * (shared/identity-match.js), so the session's address is resolved to one
+   * here — the boundary — exactly as the public API resolves its API-key owner.
+   * An owner with no `users` row resolves to null and is simply not an author.
+   *
+   * @param {string} ownerEmail - The acting session owner's address
+   * @returns {Promise<{actorEmail: string, actorUserId: string|null}>}
+   */
+  async function actingIdentity(ownerEmail) {
+    const resolution = await resolveIdentityByEmail(ownerEmail);
+    return {
+      actorEmail: ownerEmail,
+      actorUserId: resolution?.userId || null,
+    };
+  }
+
+  /**
    * Write options for updatePresentation/deletePresentation calls: attribute
    * the write to the acting session owner so the slide-lock policy
-   * (enforceSlideWritePolicy) can tell authors from non-authors. Without
-   * actorEmail the policy fails closed and author-locked slides reject even
-   * their own author. No owner configured = trusted local (stdio) session:
-   * per-deck access checks are already skipped for it (see
-   * presentation-access.js), so lock enforcement is skipped too instead of
-   * failing closed on an anonymous actor.
+   * (enforceSlideWritePolicy) can tell authors from non-authors. Without an
+   * actor the policy fails closed and author-locked slides reject even their
+   * own author. No owner configured = trusted local (stdio) session: per-deck
+   * access checks are already skipped for it (see presentation-access.js), so
+   * lock enforcement is skipped too instead of failing closed on an anonymous
+   * actor.
    * @param {Object} [context] - Per-request context (SSE session)
-   * @returns {Object} opts for the storage write call
+   * @returns {Promise<Object>} opts for the storage write call
    */
-  function writeOpts(context) {
+  async function writeOpts(context) {
     const owner = getOwner(context);
-    return owner ? { actorEmail: owner } : { bypassLockCheck: true };
+    return owner ? actingIdentity(owner) : { bypassLockCheck: true };
   }
 
   // ─── get_slide_types ────────────────────────────────────────────────────
@@ -491,7 +511,7 @@ export function registerTools(
           slides: parts.slides,
           title: parts.title,
         },
-        { actorEmail: effectiveOwner },
+        await actingIdentity(effectiveOwner),
       );
 
       const result = {
@@ -679,7 +699,7 @@ export function registerTools(
             notes: s.notes || '',
           })),
         },
-        { actorEmail: effectiveOwner },
+        await actingIdentity(effectiveOwner),
       );
       if (updated?.ok === false) {
         throw new Error(
@@ -757,7 +777,7 @@ export function registerTools(
         storageScopeOf(context),
         presentationId,
         pres,
-        writeOpts(context),
+        await writeOpts(context),
       );
 
       return {
@@ -818,7 +838,7 @@ export function registerTools(
         storageScopeOf(context),
         presentationId,
         pres,
-        writeOpts(context),
+        await writeOpts(context),
       );
 
       return {
@@ -878,7 +898,7 @@ export function registerTools(
         storageScopeOf(context),
         presentationId,
         pres,
-        writeOpts(context),
+        await writeOpts(context),
       );
 
       return {
@@ -934,7 +954,7 @@ export function registerTools(
         storageScopeOf(context),
         presentationId,
         pres,
-        writeOpts(context),
+        await writeOpts(context),
       );
 
       return {
@@ -1103,7 +1123,7 @@ export function registerTools(
         storageScopeOf(context),
         presentationId,
         pres,
-        writeOpts(context),
+        await writeOpts(context),
       );
 
       return {
@@ -1149,7 +1169,7 @@ export function registerTools(
         storageScopeOf(context),
         presentationId,
         pres,
-        writeOpts(context),
+        await writeOpts(context),
       );
 
       return {
@@ -1230,7 +1250,7 @@ export function registerTools(
         storageScopeOf(context),
         presentationId,
         pres,
-        writeOpts(context),
+        await writeOpts(context),
       );
 
       return {
@@ -1294,7 +1314,7 @@ export function registerTools(
           storageScopeOf(context),
           presentationId,
           pres,
-          writeOpts(context),
+          await writeOpts(context),
         );
       }
 

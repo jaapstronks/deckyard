@@ -93,13 +93,21 @@ warns), and sandbox/demo mode and `AUTH_ENABLED=false` are exempt by design.
 
 ## Dev auth bypass is development-only
 
-**Where:** `server/auth/auth.js` (`devAuthBypassEnabled`), with a belt-and-braces
-check at startup in `server/server.js`.
+**Where:** `server/auth/auth.js` (`devAuthBypassEnabled`) and
+`server/auth/dev-bypass.js`, with a belt-and-braces check at startup in
+`server/server.js`.
 
 `AUTH_DEV_BYPASS` grants a passwordless admin session — a development convenience
 only. It is refused unless `NODE_ENV` is explicitly `development`, so a leftover
 `AUTH_DEV_BYPASS=1` in a staging/production/unset-`NODE_ENV` environment can never
 silently grant anonymous admin.
+
+The bypass session carries a real `users.id`: `dev-bypass.js` resolves
+`dev@local` once per process and **creates that row on first use**, because
+ownership is keyed on the id and on nothing else
+(`shared/identity-match.js`). The row is an ordinary admin user with no password
+— it is only ever reached through the bypass, which cannot be on outside
+development. Nothing is written when the bypass is off.
 
 ## Login brute-force throttle
 

@@ -24,16 +24,26 @@ import { checkActorAccess } from '../server/utils/presentation-authz/actor-acces
 
 const OWNER = 'owner@example.com';
 const OTHER = 'other@example.com';
+// The key each side is identified by. A machine actor arrives as an address and
+// is resolved to its `users.id` at the boundary (actor-access.js); the deck
+// carries the id its create statement resolved. Nothing compares the addresses
+// — see shared/identity-match.js.
+const OWNER_ID = '11111111-1111-4111-8111-111111111111';
+const OTHER_ID = '22222222-2222-4222-8222-222222222222';
 
 const privateDeck = {
   id: 'p1',
+  ownerId: OWNER_ID,
   ownerEmail: OWNER,
+  createdById: OWNER_ID,
   createdBy: OWNER,
   visibility: 'private',
 };
 const organizationDeck = {
   id: 'w1',
+  ownerId: OWNER_ID,
   ownerEmail: OWNER,
+  createdById: OWNER_ID,
   createdBy: OWNER,
   visibility: 'organization',
 };
@@ -44,6 +54,7 @@ describe('checkActorAccess — private decks', () => {
       checkActorAccess({
         pres: privateDeck,
         actor: { email: OWNER },
+        actorUserId: OWNER_ID,
         access: 'read',
       }),
       true,
@@ -52,6 +63,7 @@ describe('checkActorAccess — private decks', () => {
       checkActorAccess({
         pres: privateDeck,
         actor: { email: OWNER },
+        actorUserId: OWNER_ID,
         access: 'write',
       }),
       true,
@@ -63,6 +75,7 @@ describe('checkActorAccess — private decks', () => {
       checkActorAccess({
         pres: privateDeck,
         actor: { email: OTHER },
+        actorUserId: OTHER_ID,
         access: 'read',
       }),
       false,
@@ -71,6 +84,7 @@ describe('checkActorAccess — private decks', () => {
       checkActorAccess({
         pres: privateDeck,
         actor: { email: OTHER },
+        actorUserId: OTHER_ID,
         access: 'write',
       }),
       false,
@@ -81,6 +95,7 @@ describe('checkActorAccess — private decks', () => {
     const opts = {
       pres: privateDeck,
       actor: { email: OTHER },
+      actorUserId: OTHER_ID,
       collaboratorPermission: 'view',
     };
     assert.equal(checkActorAccess({ ...opts, access: 'read' }), true);
@@ -91,6 +106,7 @@ describe('checkActorAccess — private decks', () => {
     const opts = {
       pres: privateDeck,
       actor: { email: OTHER },
+      actorUserId: OTHER_ID,
       collaboratorPermission: 'comment',
     };
     assert.equal(checkActorAccess({ ...opts, access: 'read' }), true);
@@ -102,6 +118,7 @@ describe('checkActorAccess — private decks', () => {
       const opts = {
         pres: privateDeck,
         actor: { email: OTHER },
+        actorUserId: OTHER_ID,
         collaboratorPermission: permission,
       };
       assert.equal(
@@ -124,6 +141,7 @@ describe('checkActorAccess — organization decks', () => {
       checkActorAccess({
         pres: organizationDeck,
         actor: { email: OTHER },
+        actorUserId: OTHER_ID,
         access: 'read',
       }),
       true,
@@ -132,6 +150,7 @@ describe('checkActorAccess — organization decks', () => {
       checkActorAccess({
         pres: organizationDeck,
         actor: { email: OTHER },
+        actorUserId: OTHER_ID,
         access: 'write',
       }),
       true,
@@ -144,6 +163,7 @@ describe('checkActorAccess — organization decks', () => {
       checkActorAccess({
         pres: viewOnly,
         actor: { email: OTHER },
+        actorUserId: OTHER_ID,
         access: 'read',
       }),
       true,
@@ -152,6 +172,7 @@ describe('checkActorAccess — organization decks', () => {
       checkActorAccess({
         pres: viewOnly,
         actor: { email: OTHER },
+        actorUserId: OTHER_ID,
         access: 'write',
       }),
       false,
@@ -161,6 +182,7 @@ describe('checkActorAccess — organization decks', () => {
       checkActorAccess({
         pres: viewOnly,
         actor: { email: OWNER },
+        actorUserId: OWNER_ID,
         access: 'write',
       }),
       true,
@@ -171,11 +193,19 @@ describe('checkActorAccess — organization decks', () => {
 describe('checkActorAccess — edge cases', () => {
   it('defaults to read access', () => {
     assert.equal(
-      checkActorAccess({ pres: privateDeck, actor: { email: OWNER } }),
+      checkActorAccess({
+        pres: privateDeck,
+        actor: { email: OWNER },
+        actorUserId: OWNER_ID,
+      }),
       true,
     );
     assert.equal(
-      checkActorAccess({ pres: privateDeck, actor: { email: OTHER } }),
+      checkActorAccess({
+        pres: privateDeck,
+        actor: { email: OTHER },
+        actorUserId: OTHER_ID,
+      }),
       false,
     );
   });
@@ -214,7 +244,9 @@ describe('checkActorAccess — edge cases', () => {
   it('creator (createdBy) counts as owner', () => {
     const created = {
       id: 'c1',
+      ownerId: '33333333-3333-4333-8333-333333333333',
       ownerEmail: 'boss@example.com',
+      createdById: OTHER_ID,
       createdBy: OTHER,
       visibility: 'private',
     };
@@ -222,6 +254,7 @@ describe('checkActorAccess — edge cases', () => {
       checkActorAccess({
         pres: created,
         actor: { email: OTHER },
+        actorUserId: OTHER_ID,
         access: 'write',
       }),
       true,

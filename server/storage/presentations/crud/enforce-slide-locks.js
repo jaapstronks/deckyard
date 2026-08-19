@@ -13,6 +13,7 @@
 import { LockedError, ValidationError } from '../../../utils/errors.js';
 import { getSlideLocks } from '../../slide-locks.js';
 import { isPresentationAuthor } from '../../../utils/presentation-authz.js';
+import { matchesIdentity } from '../../../../shared/identity-match.js';
 import { isCollabLiveEditsEnabled } from '../../../config/features.js';
 
 /**
@@ -93,7 +94,8 @@ export function collectContentChangedSlideIds(previousSlides, nextSlides) {
  *   pairs to diff, e.g. the per-language i18n version buffers — edits made
  *   while another language is active only show up there.
  * @param {boolean} opts.isAuthor - Whether the actor is the presentation author
- * @param {string} opts.actorEmail - Normalized (lowercased) actor email
+ * @param {Object} [opts.actor] - The acting user, as identity-match reads them
+ *   ({ id, unrestricted }); who holds a concurrent lock is decided on the id.
  * @param {Object} opts.ctx - Context with organization info (for lock lookup)
  * @param {Function} [opts.loadSlideLocks] - Injectable lock loader (tests)
  */
@@ -103,7 +105,7 @@ export async function enforceSlideLocks({
   nextSlides,
   extraPairs = [],
   isAuthor,
-  actorEmail,
+  actor = null,
   ctx,
   loadSlideLocks = getSlideLocks,
 } = {}) {
@@ -139,10 +141,12 @@ export async function enforceSlideLocks({
   // Concurrent slide locks live in the database; without one (file mode)
   // getSlideLocks returns {} and this check is a no-op.
   const locks = await loadSlideLocks(ctx, presentationId);
-  const email = typeof actorEmail === 'string' ? actorEmail.toLowerCase() : '';
   for (const slideId of changedIds) {
     const lock = locks?.[slideId];
-    if (lock?.holderEmail && lock.holderEmail !== email) {
+    // Whose lock it is, decided on the stable id — an actor the instance
+    // cannot identify holds nothing, so any live lock blocks them
+    // (shared/identity-match.js).
+    if (lock && !matchesIdentity(actor, { userId: lock.holderId })) {
       const holder = lock.holderName || lock.holderEmail;
       throw new LockedError(`This slide is being edited by ${holder}.`, {
         slideId,
@@ -170,8 +174,9 @@ export async function enforceSlideLocks({
  * @param {Object} opts.existing - Stored presentation (slides, i18n, owner fields)
  * @param {Array} opts.nextSlides - Normalized slides about to be written (post-merge)
  * @param {Object} [opts.nextI18nVersions] - Candidate i18n.versions (normalized)
- * @param {Object} [opts.user] - Acting user ({ email, isAdmin }) when known
- * @param {string} [opts.actorEmail] - Acting user email (fallback identity)
+ * @param {Object} [opts.user] - Acting user ({ id, email, isAdmin }) when known
+ * @param {string|null} [opts.actorUserId] - Acting `users.id`, when the caller
+ *   has no full user object (machine surfaces: API key owner, MCP session)
  * @param {boolean} [opts.bypassLockCheck] - Internal write, skip enforcement
  * @param {Object} opts.ctx - Context with organization info (for lock lookup)
  * @param {Function} [opts.loadSlideLocks] - Injectable lock loader (tests)
@@ -182,12 +187,17 @@ export async function enforceSlideWritePolicy({
   nextSlides,
   nextI18nVersions = null,
   user = null,
-  actorEmail = '',
+  actorUserId = null,
   bypassLockCheck = false,
   ctx,
   loadSlideLocks = getSlideLocks,
 } = {}) {
-  const effectiveUser = user || (actorEmail ? { email: actorEmail } : null);
+  // Authorship is decided on the stable `users.id` and on nothing else
+  // (shared/identity-match.js), so a caller that has only an address — the
+  // machine surfaces — must hand the id it resolved at its boundary. Without
+  // one the actor is nobody in particular and the policy treats them as a
+  // non-author, which is the fail-closed direction.
+  const effectiveUser = user || (actorUserId ? { id: actorUserId } : null);
   const isAuthor =
     isPresentationAuthor({ user: effectiveUser, pres: existing }) ||
     !!effectiveUser?.isAdmin;
@@ -240,7 +250,7 @@ export async function enforceSlideWritePolicy({
     nextSlides,
     extraPairs,
     isAuthor,
-    actorEmail: typeof actorEmail === 'string' ? actorEmail.toLowerCase() : '',
+    actor: effectiveUser,
     ctx,
     loadSlideLocks,
   });

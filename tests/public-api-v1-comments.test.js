@@ -25,6 +25,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
+import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
   .join('-')
@@ -54,6 +55,7 @@ const { MAX_COMMENT_LENGTH } =
 async function installDb() {
   const db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    users: userRows(KEY_OWNER, 'boss@example.com', 'someone-else@example.com'),
     presentations: [
       deckRow({ id: DECK_ID, owner: KEY_OWNER, visibility: 'private' }),
       deckRow({
@@ -116,6 +118,10 @@ function deckRow({ id, owner, visibility }) {
     owner_email: owner,
     created_by: owner,
     updated_by: owner,
+    // Ownership is decided on the id, not the address (identity-match.js).
+    owner_user_id: userIdFor(owner),
+    created_by_user_id: userIdFor(owner),
+    updated_by_user_id: userIdFor(owner),
     title: `Title of ${id}`,
     description: null,
     theme: 'default',
@@ -226,6 +232,7 @@ function makeCtx(
     storageScope: {
       repoRoot: process.cwd(),
       organizationId: ORG,
+      actorUserId: userIdFor(KEY_OWNER),
       actorEmail: KEY_OWNER,
     },
     apiKey: {
@@ -236,7 +243,9 @@ function makeCtx(
       organizationId: ORG,
     },
     authedUser: {
-      id: null,
+      // The middleware resolves the key owner's address to this id once per
+      // request; every ownership check downstream keys on it.
+      id: userIdFor(KEY_OWNER),
       email: KEY_OWNER,
       role: 'user',
       organizationId: ORG,

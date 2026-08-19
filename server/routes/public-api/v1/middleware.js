@@ -88,8 +88,8 @@ export async function authenticateApiKey(ctx) {
   // Attach API key data to context. An `api_keys` row identifies its owner by
   // email, so this is where that email becomes the stable `users.id` the
   // authorization layer keys on — resolved once per request rather than per
-  // deck. A key whose owner has no user row (external/legacy) resolves to null
-  // and the deciders fall back to the email identifier; see
+  // deck. A key whose owner has no user row (external/legacy) resolves to null,
+  // and an actor with no id matches no ownership stamp; see
   // shared/identity-match.js.
   ctx.apiKey = result;
   const ownerResolution = await resolveIdentityByEmail(result.ownerEmail);
@@ -108,6 +108,9 @@ export async function authenticateApiKey(ctx) {
   ctx.storageScope = {
     repoRoot: ctx.repoRoot ?? null,
     organizationId: result.organizationId,
+    // Both halves of the acting identity, so a storage write can compare the id
+    // (author locks) and stamp the address (display) without resolving again.
+    actorUserId: ctx.authedUser.id,
     actorEmail: result.ownerEmail,
   };
 

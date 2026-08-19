@@ -129,6 +129,10 @@ export function createStorageScope(authedUser, options = {}) {
 
   return {
     organizationId,
+    // The acting identity: the stable `users.id` is what every ownership
+    // decision compares (shared/identity-match.js); the address rides along to
+    // be stamped on rows for display.
+    actorUserId: authedUser?.id ?? null,
     actorEmail: authedUser?.email,
     repoRoot: options.repoRoot ?? null,
   };

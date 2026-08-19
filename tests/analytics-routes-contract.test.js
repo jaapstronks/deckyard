@@ -92,17 +92,34 @@ const { handleAnalyticsReportPublic } =
 // The cast
 // ---------------------------------------------------------------------------
 
-/** @typedef {{email: string, name: string, organizationId: string}} Actor */
+/** @typedef {{id: string, email: string, name: string, organizationId: string}} Actor */
+
+/**
+ * The `users.id` behind an address: every ownership decision is keyed on it and
+ * on nothing else (shared/identity-match.js), so the seeded rows and the
+ * sessions acting on them must agree.
+ * @param {string} email
+ * @returns {string}
+ */
+function uid(email) {
+  return `user-${email.split('@')[0]}`;
+}
+
+/**
+ * @param {string} email
+ * @param {string} name
+ * @param {string} organizationId
+ * @returns {Actor}
+ */
+function person(email, name, organizationId) {
+  return { id: uid(email), email, name, organizationId };
+}
 
 const ACTORS = {
-  owner: { email: 'owner@example.com', name: 'Olive', organizationId: ORG },
-  viewer: { email: 'viewer@example.com', name: 'Vera', organizationId: ORG },
-  stranger: { email: 'stranger@example.com', name: 'Sam', organizationId: ORG },
-  outsider: {
-    email: 'outsider@other.example',
-    name: 'Otto',
-    organizationId: OTHER_ORG,
-  },
+  owner: person('owner@example.com', 'Olive', ORG),
+  viewer: person('viewer@example.com', 'Vera', ORG),
+  stranger: person('stranger@example.com', 'Sam', ORG),
+  outsider: person('outsider@other.example', 'Otto', OTHER_ORG),
 };
 
 // Decks used across the file. `deck-owned` is a private deck Olive owns;
@@ -151,7 +168,7 @@ test.beforeEach(() => {
 /** @param {Actor} actor */
 function userRow(actor) {
   return {
-    id: `user-${actor.email.split('@')[0]}`,
+    id: actor.id,
     organization_id: actor.organizationId,
     email: actor.email,
     name: actor.name,
@@ -172,6 +189,9 @@ function deckRow(overrides) {
     owner_email: ACTORS.owner.email,
     created_by: ACTORS.owner.email,
     updated_by: ACTORS.owner.email,
+    owner_user_id: ACTORS.owner.id,
+    created_by_user_id: ACTORS.owner.id,
+    updated_by_user_id: ACTORS.owner.id,
     visibility: 'private',
     theme: 'default',
     lang: 'nl',
@@ -253,6 +273,9 @@ async function seed() {
         owner_email: ACTORS.outsider.email,
         created_by: ACTORS.outsider.email,
         updated_by: ACTORS.outsider.email,
+        owner_user_id: ACTORS.outsider.id,
+        created_by_user_id: ACTORS.outsider.id,
+        updated_by_user_id: ACTORS.outsider.id,
       }),
     ],
     presentation_collaborators: [
