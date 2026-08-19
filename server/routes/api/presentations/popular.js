@@ -74,7 +74,9 @@ export async function getPopularPresentations(ctx) {
         'p.title',
         'p.theme',
         'p.visibility',
+        'p.owner_user_id',
         'p.owner_email',
+        'p.created_by_user_id',
         'p.created_by',
         'p.updated_by_user_id',
         'p.updated_by',
@@ -97,7 +99,9 @@ export async function getPopularPresentations(ctx) {
         'p.title',
         'p.theme',
         'p.visibility',
+        'p.owner_user_id',
         'p.owner_email',
+        'p.created_by_user_id',
         'p.created_by',
         'p.updated_by_user_id',
         'p.updated_by',
@@ -124,7 +128,9 @@ export async function getPopularPresentations(ctx) {
           'p.title',
           'p.theme',
           'p.visibility',
+          'p.owner_user_id',
           'p.owner_email',
+          'p.created_by_user_id',
           'p.created_by',
           'p.updated_by_user_id',
           'p.updated_by',
@@ -168,12 +174,15 @@ async function filterReadableRows(rows, ctx) {
   const organizationId = getOrgId(ctx);
   const readable = [];
   for (const row of rows) {
+    // The deciders key on the stable ids (shared/identity-match.js); the
+    // creator arrives as a pair with the id half, like every mapped deck.
     const pres = {
       id: row.id,
       organizationId,
       visibility: row.visibility,
+      ownerId: row.owner_user_id || null,
       ownerEmail: row.owner_email,
-      createdBy: row.created_by,
+      createdBy: { id: row.created_by_user_id || null },
     };
     let collaboratorPermission = null;
     if (canReadPresentation({ user, pres })) {
@@ -208,7 +217,10 @@ async function formatPresentations(rows, ctx) {
   // One batched lookup for the whole board (D22); see
   // server/storage/display-identity.js.
   const displayNames = await resolveDisplayNames(
-    rows.map((row) => ({ id: row.updated_by_user_id, email: row.updated_by })),
+    rows.flatMap((row) => [
+      { id: row.updated_by_user_id, email: row.updated_by },
+      { id: row.created_by_user_id, email: row.created_by },
+    ]),
   );
 
   return rows.map((row) => {
@@ -221,8 +233,15 @@ async function formatPresentations(rows, ctx) {
       title: row.title,
       theme: row.theme,
       visibility: row.visibility,
+      // The owner keeps both fields (key + an address colleagues in the org
+      // may have); the creator is named, not addressed (D22).
+      ownerId: row.owner_user_id || null,
       ownerEmail: row.owner_email,
-      createdBy: row.created_by,
+      createdBy: toDisplayIdentity(
+        row.created_by_user_id,
+        row.created_by,
+        displayNames,
+      ),
       updatedBy: toDisplayIdentity(
         row.updated_by_user_id,
         row.updated_by,

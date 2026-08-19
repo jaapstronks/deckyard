@@ -149,6 +149,9 @@ export async function handlePresentationCommentsCreate(
   const result = await createComment(storageScope, id, {
     email: commenterEmail,
     name: commenterName,
+    // A guest is keyed on their guest row (migration 079): without this id the
+    // comment would be nobody's, and the guest could never edit or delete it.
+    guestId: isGuest ? guestInfo.guest.id : null,
     body: body.body,
     slideId: body.slideId || null,
     parentId: body.parentId || null,

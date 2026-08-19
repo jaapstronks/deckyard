@@ -149,11 +149,6 @@
       "count": 3
     }
   },
-  "server/routes/api/presentations/comments-write.js": {
-    "no-useless-assignment": {
-      "count": 1
-    }
-  },
   "server/routes/api/presentations/popular.js": {
     "no-useless-assignment": {
       "count": 1

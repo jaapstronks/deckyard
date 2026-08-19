@@ -821,6 +821,35 @@ export async function getCommentCountsBySlide(scope, presentationId) {
 // ============================================================
 
 /**
+ * The author pair of a comment row.
+ *
+ * The id half is the row's own column; the name half prefers the author's
+ * current profile name, then the name stored on the row, then one derived from
+ * the address. The stored name matters for a share-link guest: they have no
+ * profile to resolve, and `author_name` is the name they gave when they
+ * verified — deriving one from their address would throw it away.
+ *
+ * @param {object} row - Database row
+ * @param {import('../display-identity.js').DisplayNameLookup} lookup
+ * @returns {import('../display-identity.js').DisplayIdentity|null}
+ */
+function commentAuthor(row, lookup) {
+  const identity = toDisplayIdentity(
+    row.author_user_id,
+    row.author_email,
+    lookup,
+  );
+  if (!identity) return null;
+  const profileName =
+    lookup.forId(row.author_user_id) || lookup.forEmail(row.author_email);
+  const stored = String(row.author_name || '').trim();
+  if (!profileName && stored && !stored.includes('@')) {
+    identity.displayName = stored;
+  }
+  return identity;
+}
+
+/**
  * Map a comment row to the object a response carries.
  *
  * @param {object} row - Database row
@@ -837,7 +866,7 @@ function rowToComment(row, ctx = NO_COMMENT_CONTEXT) {
     // Who wrote it, named rather than addressed (D22). The `id` is the key the
     // edit/delete checks compare — `users.id` for a signed-in author, null for
     // a guest, who is keyed by `authorGuestId` instead (migration 079).
-    author: toDisplayIdentity(row.author_user_id, row.author_email, ctx.lookup),
+    author: commentAuthor(row, ctx.lookup),
     authorGuestId: row.author_guest_id || null,
     // Whether the instance's AI assistant wrote it. The client used to derive
     // this by comparing the configured AI address against `authorEmail`; the
