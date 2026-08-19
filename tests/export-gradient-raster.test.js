@@ -6,7 +6,7 @@
  * alpha stops leaves Chrome as a page-sized tiling pattern behind a luminosity
  * SMask, both halves a ShadingType 1 shading driven by a FunctionType 4
  * PostScript program that the reader runs *per pixel*. Measured here on a
- * three-page deck on the `deckyard` theme's `calm` background: 3.3 s per page
+ * three-page deck on the `amethyst` theme's `calm` background: 3.3 s per page
  * under Ghostscript at 110 dpi, against 0.06 s for the same deck without one.
  * After rasterizing: 0.14 s, with the rendered page differing by at most 4/255.
  *

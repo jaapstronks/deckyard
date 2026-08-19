@@ -113,7 +113,7 @@ Central config: `server/config/sandbox.js` (all env-driven).
 |---|---|---|
 | `SANDBOX_MODE` | Master on/off — turns sandbox on | off |
 | `SANDBOX_TTL_HOURS` | Ephemeral-deck lifetime | 24 |
-| `SANDBOX_DEFAULT_THEME` | Neutral default theme id | `editorial` (compose sets `deckyard`) |
+| `SANDBOX_DEFAULT_THEME` | Neutral default theme id for new decks that name none | `editorial` |
 | `SANDBOX_COOKIE_DAYS` | Guest cookie Max-Age (capped 365) | 30 |
 | `SANDBOX_WATERMARK` | Export watermark text | `Sandbox export • Created by an anonymous user` |
 | `SANDBOX_DATA_DIR` / `SANDBOX_UPLOADS_DIR` | Data/uploads dir overrides | `server/data-sandbox` / a sibling `uploads-sandbox` (created at runtime) |
