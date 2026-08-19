@@ -433,7 +433,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
   it('refuses empty text and feedback on a closed slide', async () => {
     assert.deepEqual(
       await submitFeedback(testScope(), sessionId, { slideId: 'fb-1', deviceId: 'dev-a', text: '   ' }),
-      { ok: false, reason: 'empty' }
+      { ok: false, reason: 'invalid' }
     );
 
     await ensureFeedbackForSlide(testScope(), sessionId, { slideId: 'fb-1' });
@@ -529,7 +529,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
         optionIndex: 0,
         optionCount: 2,
       }),
-      { ok: false, reason: 'no_session' }
+      { ok: false, reason: 'not_found' }
     );
     assert.deepEqual(
       await submitFeedback(testScope(), 'no-such-session', {
@@ -537,7 +537,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
         deviceId: 'dev-a',
         text: 'F',
       }),
-      { ok: false, reason: 'no_session' }
+      { ok: false, reason: 'not_found' }
     );
   });
   // ─── the mutation failure shape (B91) ──────────────────────────────────────
@@ -614,6 +614,31 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
     ];
     for (const call of calls) {
       assert.deepEqual(await call(), { ok: false, reason: 'not_found' });
+    }
+  });
+
+  it('the audience write paths answer invalid on a blank slide or device id (B93)', async () => {
+    // These two are the audience-facing exports; they used to answer
+    // `bad_request` / `empty` / `no_session` — second spellings of the
+    // layer-wide vocabulary. Pinned here so the loser spellings cannot return.
+    for (const opts of [
+      { slideId: '   ', deviceId: 'dev-a', optionIndex: 0, optionCount: 2 },
+      { slideId: 'poll-1', deviceId: '   ', optionIndex: 0, optionCount: 2 },
+    ]) {
+      assert.deepEqual(await votePollInteraction(testScope(), sessionId, opts), {
+        ok: false,
+        reason: 'invalid',
+      });
+    }
+    for (const opts of [
+      { slideId: '   ', deviceId: 'dev-a', text: 'hi' },
+      { slideId: 'fb-1', deviceId: '   ', text: 'hi' },
+      { slideId: 'fb-1', deviceId: 'dev-a', text: '   ' },
+    ]) {
+      assert.deepEqual(await submitFeedback(testScope(), sessionId, opts), {
+        ok: false,
+        reason: 'invalid',
+      });
     }
   });
 

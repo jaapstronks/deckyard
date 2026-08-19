@@ -301,6 +301,10 @@ async function getInteractionAggregate(
  * @param {string} sessionId
  * @param {object} [opts]
  * @returns {Promise<{ok: true, aggregate: object}|{ok: false, reason: string}>}
+ *   `invalid` for a blank slide or device id, `closed` when the presenter shut
+ *   the interaction, and otherwise whatever `ensureInteractionSlide` answered
+ *   (`not_found` for a session that is gone, `unavailable` when the pool is
+ *   down).
  */
 async function voteInteraction(
   scope,
@@ -309,7 +313,7 @@ async function voteInteraction(
 ) {
   const did = normalizeDeviceId(deviceId);
   const sid = String(slideId || '').trim();
-  if (!sid || !did) return { ok: false, reason: 'bad_request' };
+  if (!sid || !did) return { ok: false, reason: 'invalid' };
 
   const ensured = await ensureInteractionSlide({
     sessionId,
@@ -317,7 +321,10 @@ async function voteInteraction(
     type: normalizeInteractionType(type),
     optionCount,
   });
-  if (!ensured.ok) return { ok: false, reason: 'no_session' };
+  // Pass the reason through rather than flattening it: a vanished session
+  // (`not_found`) and a pool that is down (`unavailable`) are different
+  // answers, and the follow route turns them into different statuses.
+  if (!ensured.ok) return ensured;
   const slide = ensured.slide;
   await pruneOutOfRangeVotes(slide.id, slide.optionCount);
   if (slide.status === 'closed') return { ok: false, reason: 'closed' };

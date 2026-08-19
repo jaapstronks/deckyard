@@ -54,6 +54,7 @@ const { handleFollowInteractionsCurrent, handleFollowInteractionVote } = await i
   '../server/routes/api/follow/interactions.js'
 );
 const { handleShareLink } = await import('../server/routes/static/share-viewer.js');
+const { getErrorStatus } = await import('../server/utils/http.js');
 
 test.before(async () => {
   __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
@@ -302,6 +303,22 @@ test('voting on a slide other than the current one is refused (400)', async () =
   // Vote targets the *other* slide, which is not the presenter's current one.
   const res = await callVote({ presentationId: pres.id, slideId: pres.slides[1].id, body: { optionIndex: 0 } });
   assert.equal(res.statusCode, 400);
+});
+
+// The storage reasons these two handlers forward (B93). The handlers pre-check
+// live-ness, the current slide and the slide type, so `voteInteraction` /
+// `submitFeedback` can only fail underneath them on a race — the session
+// disappearing, or the pool going down, between the follow-state read and the
+// write. That makes the branches unreachable from a driven request, so what is
+// pinned here is the mapping the handlers apply to them: `jsonError(res,
+// getErrorStatus(reason), reason)`. The statuses are deliberate — a session
+// that is gone is a 404, not a 400, and a pool that is down must not answer
+// 4xx at all.
+test('the audience write paths map their storage reasons to deliberate statuses', () => {
+  assert.equal(getErrorStatus('invalid'), 400); // blank slide/device id, empty text
+  assert.equal(getErrorStatus('not_found'), 404); // the session is gone
+  assert.equal(getErrorStatus('closed'), 409); // the presenter shut the interaction
+  assert.equal(getErrorStatus('unavailable'), 503); // ours, not the caller's
 });
 
 // ---------------------------------------------------------------------------
