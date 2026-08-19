@@ -45,12 +45,16 @@ function openChangeThemeModal({
   const slideCount = problematicSlides.length;
 
   const modal = createPromiseModal(h, {
-    title: t('editor.changeTheme.warningTitle', '{count} slides may be affected', {
-      count: String(slideCount),
-    }),
+    title: t(
+      'editor.changeTheme.warningTitle',
+      '{count} slides may be affected',
+      {
+        count: String(slideCount),
+      },
+    ),
     hint: t(
       'editor.changeTheme.warningHint',
-      'These slides use features that work differently in the new theme.'
+      'These slides use features that work differently in the new theme.',
     ),
     closeOnBackdrop: false,
     onClose: (result) => result,
@@ -79,7 +83,10 @@ function openChangeThemeModal({
 
     const reasonText =
       slide.reason === 'theme_specific'
-        ? t('editor.changeTheme.reasonThemeSpecific', 'Theme-specific slide type')
+        ? t(
+            'editor.changeTheme.reasonThemeSpecific',
+            'Theme-specific slide type',
+          )
         : t('editor.changeTheme.reasonWillBeHidden', 'Hidden in new theme');
     const reasonBadge = h('span', {
       class: `change-theme-reason change-theme-reason-${slide.reason}`,
@@ -99,7 +106,7 @@ function openChangeThemeModal({
       label: t('editor.changeTheme.optionReview', 'Review slides first'),
       description: t(
         'editor.changeTheme.optionReviewDesc',
-        'Close this modal and navigate to the first affected slide'
+        'Close this modal and navigate to the first affected slide',
       ),
     },
     {
@@ -107,24 +114,28 @@ function openChangeThemeModal({
       label: t('editor.changeTheme.optionExport', 'Export backup first'),
       description: t(
         'editor.changeTheme.optionExportDesc',
-        'Download presentation as JSON before making changes'
+        'Download presentation as JSON before making changes',
       ),
     },
   ];
 
   // Only show convert option if any slides can be converted
   const convertibleSlides = problematicSlides.filter(
-    (s) => Array.isArray(s.convertibleTo) && s.convertibleTo.length > 0
+    (s) => Array.isArray(s.convertibleTo) && s.convertibleTo.length > 0,
   );
   if (convertibleSlides.length > 0) {
     options.push({
       id: 'convert',
-      label: t('editor.changeTheme.optionConvert', 'Convert {count} compatible slides', {
-        count: String(convertibleSlides.length),
-      }),
+      label: t(
+        'editor.changeTheme.optionConvert',
+        'Convert {count} compatible slides',
+        {
+          count: String(convertibleSlides.length),
+        },
+      ),
       description: t(
         'editor.changeTheme.optionConvertDesc',
-        'Automatically convert slides to compatible types and change theme'
+        'Automatically convert slides to compatible types and change theme',
       ),
     });
   }
@@ -134,7 +145,7 @@ function openChangeThemeModal({
     label: t('editor.changeTheme.optionProceed', 'Proceed anyway'),
     description: t(
       'editor.changeTheme.optionProceedDesc',
-      'Change theme without converting slides (they may look different)'
+      'Change theme without converting slides (they may look different)',
     ),
   });
 
@@ -151,8 +162,14 @@ function openChangeThemeModal({
     });
 
     const optionText = h('div', { class: 'change-theme-option-text' });
-    const optionLabel = h('div', { class: 'change-theme-option-label', text: opt.label });
-    const optionDesc = h('div', { class: 'change-theme-option-desc help', text: opt.description });
+    const optionLabel = h('div', {
+      class: 'change-theme-option-label',
+      text: opt.label,
+    });
+    const optionDesc = h('div', {
+      class: 'change-theme-option-desc help',
+      text: opt.description,
+    });
     optionText.append(optionLabel, optionDesc);
 
     optionRow.append(radio, optionText);
@@ -265,7 +282,9 @@ function openChangeThemeModal({
       onThemeChanged?.(result.presentation);
       modal.close({ ok: true, presentation: result.presentation });
     } else {
-      throw new Error(result?.error || t('common.unknownError', 'Unknown error'));
+      throw new Error(
+        result?.error || t('common.unknownError', 'Unknown error'),
+      );
     }
   }
 
@@ -308,10 +327,13 @@ export async function analyzeAndApplyThemeChange({
   }
 
   // Analyze the theme change
-  const analysis = await api(`/api/presentations/${presId}/analyze-theme-change`, {
-    method: 'POST',
-    body: { newThemeId },
-  });
+  const analysis = await api(
+    `/api/presentations/${presId}/analyze-theme-change`,
+    {
+      method: 'POST',
+      body: { newThemeId },
+    },
+  );
 
   if (analysis.compatible) {
     // No problems, apply directly

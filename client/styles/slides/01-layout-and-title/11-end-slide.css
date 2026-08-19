@@ -97,7 +97,9 @@
   padding: var(--slide-space-2) var(--slide-space-4);
   border: 1px solid var(--slide-border-light);
   border-radius: var(--slide-radius-full);
-  transition: opacity 0.15s ease, border-color 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .slide-end .end-social-link:hover {

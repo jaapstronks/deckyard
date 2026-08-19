@@ -20,7 +20,9 @@ export function getImageKitConfigFromEnv() {
   const urlEndpoint = cleanStr(envStr('IMAGEKIT_URL_ENDPOINT'));
   const uploadFolder = cleanFolder(envStr('IMAGEKIT_UPLOAD_FOLDER'));
   const tagPrefix = cleanStr(envStr('IMAGEKIT_TAG_PREFIX')) || 'deck:';
-  const metadataFieldAltSeed = cleanStr(envStr('IMAGEKIT_METADATA_FIELD_ALT_SEED'));
+  const metadataFieldAltSeed = cleanStr(
+    envStr('IMAGEKIT_METADATA_FIELD_ALT_SEED'),
+  );
 
   const issues = [];
   const warnings = [];
@@ -28,10 +30,13 @@ export function getImageKitConfigFromEnv() {
   if (!privateKey) issues.push('IMAGEKIT_PRIVATE_KEY is missing');
   if (!publicKey) issues.push('IMAGEKIT_PUBLIC_KEY is missing');
   if (!urlEndpoint) issues.push('IMAGEKIT_URL_ENDPOINT is missing');
-  if (!uploadFolder) warnings.push('IMAGEKIT_UPLOAD_FOLDER is missing (uploads will use ImageKit defaults)');
+  if (!uploadFolder)
+    warnings.push(
+      'IMAGEKIT_UPLOAD_FOLDER is missing (uploads will use ImageKit defaults)',
+    );
   if (!metadataFieldAltSeed)
     warnings.push(
-      'IMAGEKIT_METADATA_FIELD_ALT_SEED is missing (ALT seed read/write will be disabled)'
+      'IMAGEKIT_METADATA_FIELD_ALT_SEED is missing (ALT seed read/write will be disabled)',
     );
 
   const configured = issues.length === 0;
@@ -59,7 +64,9 @@ async function fetchJsonOrThrow(url, opts = {}) {
   const res = await fetch(url, opts);
   const ct = String(res.headers.get('content-type') || '');
   const isJson = ct.includes('application/json');
-  const body = isJson ? await res.json().catch(() => null) : await res.text().catch(() => '');
+  const body = isJson
+    ? await res.json().catch(() => null)
+    : await res.text().catch(() => '');
   if (!res.ok) {
     const msg =
       typeof body === 'string'
@@ -73,7 +80,7 @@ async function fetchJsonOrThrow(url, opts = {}) {
       res.status >= 500
         ? `ImageKit request failed (${res.status})`
         : msg || `Request failed (${res.status})`,
-      res.status
+      res.status,
     );
     // Raw upstream payload rides along for logging only — deliberately NOT
     // in `details`, which AppError.toJSON() would echo to the client.
@@ -95,7 +102,8 @@ function toImageKitSearchQuery({ q, searchQuery }) {
   // name HAS and tags HAS both support partial, case-insensitive matching
   // For multi-select custom metadata (like People), IN requires exact match with case variations
   const lower = escaped.toLowerCase();
-  const title = escaped.charAt(0).toUpperCase() + escaped.slice(1).toLowerCase();
+  const title =
+    escaped.charAt(0).toUpperCase() + escaped.slice(1).toLowerCase();
   const variants = [...new Set([escaped, lower, title])];
   const peopleClause = `"customMetadata.People" IN [${variants.map((v) => `"${v}"`).join(',')}]`;
   return `(name HAS "${escaped}" OR tags HAS "${escaped}" OR ${peopleClause})`;
@@ -115,7 +123,10 @@ export async function listImageKitFiles({
   const sq = toImageKitSearchQuery({ q, searchQuery });
   const u = new URL('https://api.imagekit.io/v1/files');
   if (sq) u.searchParams.set('searchQuery', sq);
-  u.searchParams.set('limit', String(Math.max(1, Math.min(100, Number(limit) || 48))));
+  u.searchParams.set(
+    'limit',
+    String(Math.max(1, Math.min(100, Number(limit) || 48))),
+  );
   u.searchParams.set('skip', String(Math.max(0, Number(skip) || 0)));
   // Include custom metadata (for ALT text) in response
   u.searchParams.set('includeCustomMetadata', 'true');
@@ -271,17 +282,21 @@ export async function uploadImageKitBuffer({
   const uploadFolder = cleanStr(folder) || cfg.uploadFolder;
   if (uploadFolder) form.append('folder', cleanFolder(uploadFolder));
 
-  if (Array.isArray(tags)) form.append('tags', tags.filter((t) => cleanStr(t)).join(','));
+  if (Array.isArray(tags))
+    form.append('tags', tags.filter((t) => cleanStr(t)).join(','));
   if (customMetadata && typeof customMetadata === 'object')
     form.append('customMetadata', JSON.stringify(customMetadata));
 
-  return await fetchJsonOrThrow('https://upload.imagekit.io/api/v1/files/upload', {
-    method: 'POST',
-    headers: {
-      Authorization: basicAuthHeader(cfg.privateKey),
+  return await fetchJsonOrThrow(
+    'https://upload.imagekit.io/api/v1/files/upload',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: basicAuthHeader(cfg.privateKey),
+      },
+      body: form,
     },
-    body: form,
-  });
+  );
 }
 
 /**
@@ -311,12 +326,16 @@ export async function uploadImageKitUrl(imageUrl, fileName, options = {}) {
     // non-public addresses, refuses redirects (which could hop into private
     // space after the check), times out, and caps the body size. A null
     // return throws here, falling back to the original URL.
-    const fetched = await safeFetchRemoteImage(imageUrl, { maxBytes: 20 * 1024 * 1024 });
+    const fetched = await safeFetchRemoteImage(imageUrl, {
+      maxBytes: 20 * 1024 * 1024,
+    });
     if (!fetched) {
       throw new Error('Blocked or failed to fetch image');
     }
     const contentType =
-      fetched.contentType === 'application/octet-stream' ? 'image/jpeg' : fetched.contentType;
+      fetched.contentType === 'application/octet-stream'
+        ? 'image/jpeg'
+        : fetched.contentType;
 
     // Upload to ImageKit
     const result = await uploadImageKitBuffer({

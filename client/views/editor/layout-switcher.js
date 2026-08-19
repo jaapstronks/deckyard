@@ -17,7 +17,11 @@ import {
   activeLayoutVariantId,
   applyLayoutVariant,
 } from '../../../shared/slide-types.js';
-import { canConvertSlideTo, convertSlideWithConfirm, slideTypeLabel } from './convert-slide-action.js';
+import {
+  canConvertSlideTo,
+  convertSlideWithConfirm,
+  slideTypeLabel,
+} from './convert-slide-action.js';
 import { renderSlideSchematic } from '../../lib/slide-authoring/slide-schematic.js';
 
 /**
@@ -79,7 +83,8 @@ function getLayoutTextColumns(def) {
   const whenValues = Array.isArray(d?.when?.values)
     ? d.when.values.map(String)
     : null;
-  const when = whenKey && whenValues?.length ? { key: whenKey, values: whenValues } : null;
+  const when =
+    whenKey && whenValues?.length ? { key: whenKey, values: whenValues } : null;
   return { key, values, when };
 }
 
@@ -130,9 +135,7 @@ export function createLayoutSwitcherChip({
   });
   chip.innerHTML =
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1"/><line x1="8" y1="2.5" x2="8" y2="13.5"/></svg>';
-  chip.append(
-    h('span', { text: t('editor.layoutSwitcher.chip', 'Layout') })
-  );
+  chip.append(h('span', { text: t('editor.layoutSwitcher.chip', 'Layout') }));
 
   let close = null;
 
@@ -179,10 +182,13 @@ export function createLayoutSwitcherChip({
           {
             class: 'sb-segmented is-toggle layout-switcher-mirror',
             role: 'group',
-            'aria-label': t('editor.layoutSwitcher.imagePosition', 'Image position'),
+            'aria-label': t(
+              'editor.layoutSwitcher.imagePosition',
+              'Image position',
+            ),
           },
-          mirrorBtns
-        )
+          mirrorBtns,
+        ),
       );
     }
     const syncMirrorState = () => {
@@ -206,7 +212,7 @@ export function createLayoutSwitcherChip({
       textCols &&
       (!textCols.when ||
         textCols.when.values.includes(
-          effectiveContentValue(slide, def, textCols.when.key)
+          effectiveContentValue(slide, def, textCols.when.key),
         ));
     const syncTextColsState = () => {
       if (!textColsBtns) return;
@@ -248,10 +254,13 @@ export function createLayoutSwitcherChip({
           {
             class: 'sb-segmented is-toggle layout-switcher-mirror',
             role: 'group',
-            'aria-label': t('editor.layoutSwitcher.textColumns', 'Text columns'),
+            'aria-label': t(
+              'editor.layoutSwitcher.textColumns',
+              'Text columns',
+            ),
           },
-          textColsBtns
-        )
+          textColsBtns,
+        ),
       );
       syncTextColsState();
     }
@@ -292,12 +301,19 @@ export function createLayoutSwitcherChip({
       for (const variant of variants) {
         // Cross-type tiles only when the seam supports the conversion here
         // (keeps custom types that override a core name working).
-        if (variant.convertTo && !canConvertSlideTo(slide, variant.convertTo, SLIDE_TYPES)) {
+        if (
+          variant.convertTo &&
+          !canConvertSlideTo(slide, variant.convertTo, SLIDE_TYPES)
+        ) {
           continue;
         }
-        const label = variant.convertTo && !variant.labelKey && !variant.label
-          ? slideTypeLabel(variant.convertTo, SLIDE_TYPES)
-          : t(variant.labelKey || `editor.layoutVariant.${variant.id}`, variant.label || variant.id);
+        const label =
+          variant.convertTo && !variant.labelKey && !variant.label
+            ? slideTypeLabel(variant.convertTo, SLIDE_TYPES)
+            : t(
+                variant.labelKey || `editor.layoutVariant.${variant.id}`,
+                variant.label || variant.id,
+              );
         const isActive = !variant.convertTo && variant.id === activeId;
         const tile = h(
           'button',
@@ -308,7 +324,10 @@ export function createLayoutSwitcherChip({
             title: label,
             onclick: () => pickVariant(variant),
           },
-          [renderSchematic(h, variant, mirrored), h('span', { class: 'layout-tile-label', text: label })]
+          [
+            renderSchematic(h, variant, mirrored),
+            h('span', { class: 'layout-tile-label', text: label }),
+          ],
         );
         grid.append(tile);
       }
@@ -361,7 +380,9 @@ export function createLayoutSwitcherChip({
     document.addEventListener('keydown', onKey, true);
     chip.setAttribute('aria-expanded', 'true');
 
-    const firstTile = grid.querySelector('.layout-tile.is-active') || grid.querySelector('.layout-tile');
+    const firstTile =
+      grid.querySelector('.layout-tile.is-active') ||
+      grid.querySelector('.layout-tile');
     requestAnimationFrame(() => {
       try {
         firstTile?.focus();

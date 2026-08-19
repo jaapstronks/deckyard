@@ -19,9 +19,9 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       Visualize numeric data as bar, line, or pie chart.
 
       STRUCTURE:
@@ -34,17 +34,17 @@ export const ai = {
       For pie charts, use just two columns (label + value).
       For bar/line charts, can have multiple data series.
     `,
-    bestFor: [
-      'Trends over time (line chart)',
-      'Category comparisons (bar chart)',
-      'Parts of a whole (pie chart)',
-      'Any numeric data that benefits from visualization',
-    ],
-    notFor: [
-      'Non-numeric comparisons (use table-slide)',
-      'Complex multi-dimensional data',
-      'Data that needs exact values shown (use table-slide)',
-    ],
+  bestFor: [
+    'Trends over time (line chart)',
+    'Category comparisons (bar chart)',
+    'Parts of a whole (pie chart)',
+    'Any numeric data that benefits from visualization',
+  ],
+  notFor: [
+    'Non-numeric comparisons (use table-slide)',
+    'Complex multi-dimensional data',
+    'Data that needs exact values shown (use table-slide)',
+  ],
 };
 
 /**

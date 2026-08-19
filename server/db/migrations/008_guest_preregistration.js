@@ -9,7 +9,7 @@ export const up = async (db) => {
   await db.schema
     .alterTable('presentation_share_links')
     .addColumn('registration_mode', 'varchar(20)', (col) =>
-      col.defaultTo('invite_only').notNull()
+      col.defaultTo('invite_only').notNull(),
     )
     .execute();
 

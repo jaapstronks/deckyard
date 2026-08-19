@@ -13,16 +13,30 @@ import { HEADER_GHOSTS, HEADER_TEXT } from '../../inline-edit-common.js';
 
 /** @type {Object} InlineDescriptor for cycle-slide. */
 export const inlineEdit = {
-    ghosts: [
-      ...HEADER_GHOSTS,
-      { field: 'centerLabel', anchors: [{ sel: '.cycle-center', pos: 'append', chip: 'top-start' }] },
-    ],
-    itemGhosts: [
-      { list: 'items', field: 'text', item: '.cycle-stage', within: '.stage-details', pos: 'append' },
-    ],
-    cards: { field: 'items', fieldAliases: ['stages'], container: '.cycle-container', itemSelector: '.cycle-stage' },
-    formText: [...HEADER_TEXT, 'centerLabel', 'items', 'stages'],
-  };
+  ghosts: [
+    ...HEADER_GHOSTS,
+    {
+      field: 'centerLabel',
+      anchors: [{ sel: '.cycle-center', pos: 'append', chip: 'top-start' }],
+    },
+  ],
+  itemGhosts: [
+    {
+      list: 'items',
+      field: 'text',
+      item: '.cycle-stage',
+      within: '.stage-details',
+      pos: 'append',
+    },
+  ],
+  cards: {
+    field: 'items',
+    fieldAliases: ['stages'],
+    container: '.cycle-container',
+    itemSelector: '.cycle-stage',
+  },
+  formText: [...HEADER_TEXT, 'centerLabel', 'items', 'stages'],
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the

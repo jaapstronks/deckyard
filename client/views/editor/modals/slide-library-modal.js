@@ -39,9 +39,9 @@ export function openSlideLibraryModal({
           stroke: 'currentColor',
           'stroke-width': '2',
         },
-        [h('path', { d: 'M18 6L6 18M6 6l12 12' })]
+        [h('path', { d: 'M18 6L6 18M6 6l12 12' })],
       ),
-    ]
+    ],
   );
   header.append(title, closeBtn);
 
@@ -50,7 +50,7 @@ export function openSlideLibraryModal({
     class: 'help',
     text: t(
       'slideLibrary.modal.help',
-      'Your personal library is just for you. The team library is shared with everyone.'
+      'Your personal library is just for you. The team library is shared with everyone.',
     ),
   });
 

@@ -30,13 +30,13 @@ export function createPresenterConsoleToggle({ shell, getUpdateConsole }) {
       class: 'presenter-toggle',
       title: t(
         'presenter.console.toggleTitle',
-        'Presenter console: notes, next slide and elapsed time on your own screen'
+        'Presenter console: notes, next slide and elapsed time on your own screen',
       ),
     },
     [
       consoleToggleInput,
       h('span', { text: t('presenter.console.toggle', 'Console') }),
-    ]
+    ],
   );
   const setConsoleMode = (on) => {
     const enabled = !!on;

@@ -100,7 +100,13 @@ export const PICKER_GROUP_ORDER = {
 
 // The curated shelves the picker renders, in display order. `other` is absent
 // on purpose (see above); `custom` is computed from the registry, not declared.
-export const PICKER_GROUP_KEYS = ['basic', 'media', 'layouts', 'data', 'interaction'];
+export const PICKER_GROUP_KEYS = [
+  'basic',
+  'media',
+  'layouts',
+  'data',
+  'interaction',
+];
 
 // Curated layout variants surfaced as their own picker tiles (item 15). Each
 // preset inserts the base slide type pre-configured with these content
@@ -111,11 +117,36 @@ export const PICKER_GROUP_KEYS = ['basic', 'media', 'layouts', 'data', 'interact
 // explode. A type absent here renders as a single base tile, as before.
 export const SLIDE_TYPE_PRESETS = {
   'image-text-slide': [
-    { id: 'image-left', labelKey: 'editor.slideTypePreset.imageText.left', label: 'Image left', content: { imageSide: 'left' } },
-    { id: 'image-right', labelKey: 'editor.slideTypePreset.imageText.right', label: 'Image right', content: { imageSide: 'right' } },
-    { id: 'image-wide', labelKey: 'editor.slideTypePreset.imageText.wide', label: 'Image 2/3', content: { imageWidth: 'wide' } },
-    { id: 'image-corner', labelKey: 'editor.slideTypePreset.imageText.corner', label: 'Corner image', content: { layout: 'corner', imageSide: 'right' } },
-    { id: 'image-row', labelKey: 'editor.slideTypePreset.imageText.row', label: 'Image row', content: { layout: 'row-top' } },
+    {
+      id: 'image-left',
+      labelKey: 'editor.slideTypePreset.imageText.left',
+      label: 'Image left',
+      content: { imageSide: 'left' },
+    },
+    {
+      id: 'image-right',
+      labelKey: 'editor.slideTypePreset.imageText.right',
+      label: 'Image right',
+      content: { imageSide: 'right' },
+    },
+    {
+      id: 'image-wide',
+      labelKey: 'editor.slideTypePreset.imageText.wide',
+      label: 'Image 2/3',
+      content: { imageWidth: 'wide' },
+    },
+    {
+      id: 'image-corner',
+      labelKey: 'editor.slideTypePreset.imageText.corner',
+      label: 'Corner image',
+      content: { layout: 'corner', imageSide: 'right' },
+    },
+    {
+      id: 'image-row',
+      labelKey: 'editor.slideTypePreset.imageText.row',
+      label: 'Image row',
+      content: { layout: 'row-top' },
+    },
   ],
   // content-slide has no picker presets on purpose: its two-column layout is a
   // CSS text-flow variant that only splits once the body is long enough, so it
@@ -124,8 +155,17 @@ export const SLIDE_TYPE_PRESETS = {
   // via the layout switcher (content-slide's layoutVariants), which is where the
   // "I explicitly want two columns" use case lives.
   'list-slide': [
-    { id: 'bullets', labelKey: 'editor.slideTypePreset.list.bullets', label: 'Bullet list', content: { variant: 'bullets' } },
-    { id: 'numbers', labelKey: 'editor.slideTypePreset.list.numbers', label: 'Numbered list', content: { variant: 'numbers' } },
+    {
+      id: 'bullets',
+      labelKey: 'editor.slideTypePreset.list.bullets',
+      label: 'Bullet list',
+      content: { variant: 'bullets' },
+    },
+    {
+      id: 'numbers',
+      labelKey: 'editor.slideTypePreset.list.numbers',
+      label: 'Numbered list',
+      content: { variant: 'numbers' },
+    },
   ],
 };
-

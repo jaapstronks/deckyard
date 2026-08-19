@@ -4,7 +4,10 @@
 
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
-import { formatDuration, formatCompact } from '../../lib/format/analytics-format.js';
+import {
+  formatDuration,
+  formatCompact,
+} from '../../lib/format/analytics-format.js';
 
 /**
  * Create dashboard summary cards.
@@ -14,14 +17,16 @@ import { formatDuration, formatCompact } from '../../lib/format/analytics-format
  * @returns {HTMLElement}
  */
 export function createDashboardCards({ summary, trend }) {
-  const trendArrow = trend.direction === 'up' ? '↑' : trend.direction === 'down' ? '↓' : '';
+  const trendArrow =
+    trend.direction === 'up' ? '↑' : trend.direction === 'down' ? '↓' : '';
   const trendClass = `dashboard-trend dashboard-trend-${trend.direction}`;
-  const trendText = trend.percentChange > 0
-    ? t('dashboard.trend.change', '{arrow}{percent}% vs previous period', {
-        arrow: trendArrow,
-        percent: trend.percentChange,
-      })
-    : t('dashboard.trend.noPrevious', 'No previous data');
+  const trendText =
+    trend.percentChange > 0
+      ? t('dashboard.trend.change', '{arrow}{percent}% vs previous period', {
+          arrow: trendArrow,
+          percent: trend.percentChange,
+        })
+      : t('dashboard.trend.noPrevious', 'No previous data');
 
   const cards = h('div', { class: 'dashboard-cards' }, [
     createCard({
@@ -40,7 +45,10 @@ export function createDashboardCards({ summary, trend }) {
     }),
     createCard({
       label: t('dashboard.cards.completionRate', 'Completion Rate'),
-      value: summary.completionRate > 0 ? `${Math.round(summary.completionRate * 100)}%` : '—',
+      value:
+        summary.completionRate > 0
+          ? `${Math.round(summary.completionRate * 100)}%`
+          : '—',
     }),
   ]);
 

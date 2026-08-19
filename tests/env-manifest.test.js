@@ -24,10 +24,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
 
 // Not configuration: set by the runtime/test-runner, never by an operator.
-const EXEMPT = new Set([
-  'NODE_ENV',
-  'NODE_TEST_CONTEXT',
-]);
+const EXEMPT = new Set(['NODE_ENV', 'NODE_TEST_CONTEXT']);
 
 // A literal read, or a read through the accessor family / the named-env
 // helpers — both count: the accessor form is the canonical one, so the gate
@@ -88,7 +85,7 @@ test('every env var the server reads is declared in .env.example', () => {
   assert.equal(
     report.length,
     0,
-    `Env vars read by server code but missing from .env.example:\n  ${report.join('\n  ')}`
+    `Env vars read by server code but missing from .env.example:\n  ${report.join('\n  ')}`,
   );
 });
 
@@ -101,7 +98,7 @@ test('the exempt list only names vars the server actually reads', () => {
   for (const name of EXEMPT) {
     assert.ok(
       read.has(name),
-      `Stale exempt entry: ${name} is no longer read by server code — remove it.`
+      `Stale exempt entry: ${name} is no longer read by server code — remove it.`,
     );
   }
 });

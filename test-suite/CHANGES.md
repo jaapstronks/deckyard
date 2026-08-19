@@ -38,7 +38,7 @@ example exactly; the example was wrong.
 block bodies, and the card slide bodies.
 
 **Deliberately not changed.** The two `\\n` occurrences in
-`visual-content-slides.js` are prose *descriptions* documenting the TSV escape
+`visual-content-slides.js` are prose _descriptions_ documenting the TSV escape
 format ("newlines between rows"), not JSON examples. Chart `data` fields came
 out of the baseline with correct real newlines, so that documentation works as
 intended and was left alone.
@@ -70,15 +70,16 @@ part of why the generated decks feel unlike the human ones.
 **Root cause — a real bug, not prompt wording.** `buildAdjacentContext` reads
 `group.resolvedTypes` to tell the model what the previous slides used. But
 groups are refined in parallel batches of six, and `batch.map()` builds every
-group's context *before* any of them resolve; `resolvedTypes` is only assigned
+group's context _before_ any of them resolve; `resolvedTypes` is only assigned
 in the `.then()` after a group returns. For any deck with no more groups than
 the batch size — which is most decks — no group ever saw a previous group's
 types, and the "ADJACENT CONTEXT (avoid repetition)" block was empty every
 time. The mechanism existed but was dead in practice.
 
 **Change.**
+
 1. `refine-slides.js` — when `resolvedTypes` is not yet available, fall back to
-   the previous group's *hints*, which are known upfront. This keeps the signal
+   the previous group's _hints_, which are known upfront. This keeps the signal
    alive without serializing the batch (hints predict type choice closely
    enough to steer off a third list-slide in a row).
 2. Phase 2 system prompt — added an explicit variety rule naming the
@@ -100,20 +101,20 @@ Measured on the full 11-case corpus (run `2026-07-18_16-07-20`, prompt version
 
 The change did exactly what it was designed to do, and made the decks worse.
 
-| Monotony (the target) | Baseline | Round 2 |
-| --- | ---: | ---: |
-| Consecutive same-type repeats | 55 | 20 |
-| Longest run of one type | 4 | 3 |
-| list-slide share | 37% | 26% |
+| Monotony (the target)         | Baseline | Round 2 |
+| ----------------------------- | -------: | ------: |
+| Consecutive same-type repeats |       55 |      20 |
+| Longest run of one type       |        4 |       3 |
+| list-slide share              |      37% |     26% |
 
-| Judged quality | Baseline | Round 2 | Δ |
-| --- | ---: | ---: | ---: |
-| Coverage | 4.73 | 4.36 | −0.37 |
-| Structure | 4.64 | 4.55 | −0.09 |
-| Slide economy | 4.00 | 3.82 | −0.18 |
-| Faithfulness | 4.82 | 4.27 | **−0.55** |
-| Presentability | 4.09 | 3.91 | −0.18 |
-| **Overall** | **4.46** | **4.18** | **−0.28** |
+| Judged quality | Baseline |  Round 2 |         Δ |
+| -------------- | -------: | -------: | --------: |
+| Coverage       |     4.73 |     4.36 |     −0.37 |
+| Structure      |     4.64 |     4.55 |     −0.09 |
+| Slide economy  |     4.00 |     3.82 |     −0.18 |
+| Faithfulness   |     4.82 |     4.27 | **−0.55** |
+| Presentability |     4.09 |     3.91 |     −0.18 |
+| **Overall**    | **4.46** | **4.18** | **−0.28** |
 
 The monotony metric improved by 64% while every quality dimension fell. Pushed
 to vary the layout, the model moved content into shapes it did not have —
@@ -147,27 +148,27 @@ divider carries no content of its own, so roughly a fifth of every deck was
 signposting rather than substance.
 
 **Root cause.** The phase 1 structure guidelines said "After each chapter,
-include 2-4 content slides maximum". Read as an instruction that is a *ceiling
-on content per chapter*, so it actively forces a new chapter every second to
+include 2-4 content slides maximum". Read as an instruction that is a _ceiling
+on content per chapter_, so it actively forces a new chapter every second to
 fourth slide — the more faithfully the model follows it, the more dividers it
 produces.
 
 **Change.** `generate-outline.js` structure guideline 3 now gives each chapter
-3-5 content slides, explains *why* (a divider carries no content of its own),
+3-5 content slides, explains _why_ (a divider carries no content of its own),
 and anchors the count to deck length: at most 2 chapters under 10 content
 slides, more than 4 only for a long deck.
 
 **Result: KEPT.** Run `2026-07-18_16-29-02` (3 cases) against R1.
 
-| | R1 | Round 3 |
-| --- | ---: | ---: |
-| Divider share (the target) | 23% | **15%** |
-| Structure | 4.67 | **5.00** |
-| Faithfulness | 4.33 | 5.00 |
-| Coverage | 4.67 | 4.67 |
-| Slide economy | 4.00 | 4.00 |
-| Presentability | 4.67 | 3.67 |
-| **Overall** | **4.47** | **4.47** |
+|                            |       R1 |  Round 3 |
+| -------------------------- | -------: | -------: |
+| Divider share (the target) |      23% |  **15%** |
+| Structure                  |     4.67 | **5.00** |
+| Faithfulness               |     4.33 |     5.00 |
+| Coverage                   |     4.67 |     4.67 |
+| Slide economy              |     4.00 |     4.00 |
+| Presentability             |     4.67 |     3.67 |
+| **Overall**                | **4.47** | **4.47** |
 
 The target metric moved and structure went to a clean 5.00 without the
 coverage or faithfulness cost that sank round 2 — fewer dividers removes
@@ -227,15 +228,15 @@ from exercising a code path rather than from any rubric score.
 
 ### Vendor comparison (3 cases, same judge, prompt version `218d32ce56fc`)
 
-| Dimension | Claude Opus 4.8 | OpenAI gpt-5.5 |
-| --- | ---: | ---: |
-| Coverage | 4.67 | 4.67 |
-| Structure | 4.67 | 4.67 |
-| Slide economy | 4.00 | 3.67 |
-| Faithfulness | 5.00 | 4.67 |
-| Presentability | 3.67 | 4.00 |
-| Closeness to human deck | 3.00 | **4.00** |
-| **Overall** | **4.47** | **4.34** |
+| Dimension               | Claude Opus 4.8 | OpenAI gpt-5.5 |
+| ----------------------- | --------------: | -------------: |
+| Coverage                |            4.67 |           4.67 |
+| Structure               |            4.67 |           4.67 |
+| Slide economy           |            4.00 |           3.67 |
+| Faithfulness            |            5.00 |           4.67 |
+| Presentability          |            3.67 |           4.00 |
+| Closeness to human deck |            3.00 |       **4.00** |
+| **Overall**             |        **4.47** |       **4.34** |
 
 Cost was near-identical (~$2.35 per round either way), so there is no cost
 argument between them. Opus edges the overall score, but gpt-5.5 is a full
@@ -257,19 +258,19 @@ carries most weight and cut it elsewhere.
 closeness-to-human −1.00, overall 4.34 → 4.07.
 
 The mechanism was visible in all three coverage rationales: the decks now
-*omit* facts — ASML's effective tax rate, quantitative detail on victim types,
+_omit_ facts — ASML's effective tax rate, quantitative detail on victim types,
 the Cloudflare "worst outage since 2019" severity framing. An instruction to
 cut repeated facts made the model cut facts. Reverted to `218d32ce56fc`.
 
 ### The pattern across all four rounds
 
-| Round | Kind of change | Outcome |
-| --- | --- | --- |
-| 1 — escaped newlines | Concrete defect fix | Kept; defect 5 → 0 |
-| 2 — slide-type variety | General stylistic nudge | **Reverted** (faithfulness −0.55) |
-| 3 — chapter dividers | Concrete, counted defect | Kept; 23% → 15% |
-| 4 — no fact twice | General stylistic nudge | **Reverted** (coverage −0.67) |
-| OpenAI temperature | Concrete defect fix | Kept; path went broken → working |
+| Round                  | Kind of change           | Outcome                           |
+| ---------------------- | ------------------------ | --------------------------------- |
+| 1 — escaped newlines   | Concrete defect fix      | Kept; defect 5 → 0                |
+| 2 — slide-type variety | General stylistic nudge  | **Reverted** (faithfulness −0.55) |
+| 3 — chapter dividers   | Concrete, counted defect | Kept; 23% → 15%                   |
+| 4 — no fact twice      | General stylistic nudge  | **Reverted** (coverage −0.67)     |
+| OpenAI temperature     | Concrete defect fix      | Kept; path went broken → working  |
 
 Both changes that fixed a **specific, countable defect** held up. Both
 **general instructions about how to write better slides** made the decks worse,
@@ -288,35 +289,35 @@ unknown whether the fix alone helps. The staged harness makes the experiment
 clean and cheap.
 
 **Method.** Outlines generated once and frozen (`outline-2026-07-18_17-52-24`,
-3 cases, 3–5 sections each — the fix only acts *between* groups, so a
+3 cases, 3–5 sections each — the fix only acts _between_ groups, so a
 single-section run would eliminate the effect being measured). Both arms then
 refined the identical frozen outlines, varying only phase 2:
 
 - **Arm A** — current code, bug present.
 - **Arm B** — hints fallback in `buildAdjacentContext`. The prompt template is
   byte-identical, including the original `ADJACENT CONTEXT (avoid repetition):`
-  label. No variety rule. Only the *data* filling the block changes.
+  label. No variety rule. Only the _data_ filling the block changes.
 
 **Aggregate result — a wash:**
 
-| | Arm A (bug) | Arm B (fix) |
-| --- | ---: | ---: |
-| Consecutive same-type repeats | 15 | **12** |
-| Longest run of one type | 4 | **3** |
-| list-slide count | 8 | **6** |
-| Wall-of-text slides | 5 | **4** |
-| Slide economy | 3.33 | 3.67 |
-| Faithfulness | 5.00 | 4.67 |
-| Presentability | 4.00 | 3.67 |
-| Coverage / structure | 4.67 | 4.67 |
+|                               | Arm A (bug) | Arm B (fix) |
+| ----------------------------- | ----------: | ----------: |
+| Consecutive same-type repeats |          15 |      **12** |
+| Longest run of one type       |           4 |       **3** |
+| list-slide count              |           8 |       **6** |
+| Wall-of-text slides           |           5 |       **4** |
+| Slide economy                 |        3.33 |        3.67 |
+| Faithfulness                  |        5.00 |        4.67 |
+| Presentability                |        4.00 |        3.67 |
+| Coverage / structure          |        4.67 |        4.67 |
 
 **Per case, which is what actually settles it:**
 
-| Case | Repeats | Economy | Faithfulness | Presentability |
-| --- | --- | --- | --- | --- |
-| asml-q4-2024 | 4 → **2** | 3 → **4** | 5 → 5 | 4 → 4 |
-| cloudflare-nov-2025-outage | 6 → **5** | 3 → 3 | 5 → 5 | 4 → 4 |
-| cbs-persbericht-criminaliteit | 5 → 5 | 4 → 4 | 5 → **4** | 4 → **3** |
+| Case                          | Repeats   | Economy   | Faithfulness | Presentability |
+| ----------------------------- | --------- | --------- | ------------ | -------------- |
+| asml-q4-2024                  | 4 → **2** | 3 → **4** | 5 → 5        | 4 → 4          |
+| cloudflare-nov-2025-outage    | 6 → **5** | 3 → 3     | 5 → 5        | 4 → 4          |
+| cbs-persbericht-criminaliteit | 5 → 5     | 4 → 4     | 5 → **4**    | 4 → **3**      |
 
 Every point of the aggregate regression comes from the CBS case — **the one
 case where the mechanism never fired** (repeats unchanged at 5). Its
@@ -332,7 +333,7 @@ context and silently passes nothing for most decks. The mechanism improves
 where it fires, and unlike round 2 there is no evidence of harm.
 
 **Honest limits.** n=3, one repeat per arm. This does not establish a quality
-*gain*; it establishes that the fix is not harmful and that round 2's damage
+_gain_; it establishes that the fix is not harmful and that round 2's damage
 came from the prompt rule, not from this. Separating the two was the whole
 point of the retest.
 
@@ -349,14 +350,14 @@ rounds should be read with that in mind too.
 Three **identical** staged-refine runs — same frozen outlines, same prompts, no
 code change between them. Every difference below is pure run-to-run noise.
 
-| Dimension | Run 1 | Run 2 | Run 3 | Noise spread |
-| --- | ---: | ---: | ---: | ---: |
-| Slide economy | 3.67 | 3.67 | 3.33 | 0.33 |
-| Faithfulness | 5.00 | 4.00 | 4.67 | **1.00** |
-| Presentability | 4.00 | 4.00 | 3.67 | 0.33 |
-| Structure | 4.33 | 4.00 | 4.33 | 0.33 |
-| Coverage | 5.00 | 4.67 | 4.67 | 0.33 |
-| **Consecutive same-type repeats** | **12** | **12** | **12** | **0** |
+| Dimension                         |  Run 1 |  Run 2 |  Run 3 | Noise spread |
+| --------------------------------- | -----: | -----: | -----: | -----------: |
+| Slide economy                     |   3.67 |   3.67 |   3.33 |         0.33 |
+| Faithfulness                      |   5.00 |   4.00 |   4.67 |     **1.00** |
+| Presentability                    |   4.00 |   4.00 |   3.67 |         0.33 |
+| Structure                         |   4.33 |   4.00 |   4.33 |         0.33 |
+| Coverage                          |   5.00 |   4.67 |   4.67 |         0.33 |
+| **Consecutive same-type repeats** | **12** | **12** | **12** |        **0** |
 
 Two things follow, and they are the most useful results in this document.
 
@@ -366,13 +367,13 @@ indistinguishable from noise, and for faithfulness the bar is a full point.
 
 Re-reading the earlier rounds against that bar:
 
-| Round | Reported delta | Verdict now |
-| --- | --- | --- |
-| 1 — escaped newlines | +0.33 presentability | Inside noise. The *defect count* 5 → 0 was the real evidence, not the score. |
-| 2 — variety rule | −0.55 faithfulness | Measured on **11** cases, not 3. Stands, though the 11-case noise floor is still unmeasured. |
+| Round                | Reported delta                           | Verdict now                                                                                                                                                                                                                    |
+| -------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1 — escaped newlines | +0.33 presentability                     | Inside noise. The _defect count_ 5 → 0 was the real evidence, not the score.                                                                                                                                                   |
+| 2 — variety rule     | −0.55 faithfulness                       | Measured on **11** cases, not 3. Stands, though the 11-case noise floor is still unmeasured.                                                                                                                                   |
 | 3 — chapter dividers | +0.67 faithfulness, −1.00 presentability | The faithfulness gain is inside the 1.00 faithfulness noise band — it was correctly attributed to variance at the time. The presentability drop was traced to a specific truncation defect, which is why it survived scrutiny. |
-| 4 — no fact twice | −0.67 coverage | Twice the coverage noise band, and corroborated by three rationales naming omitted facts. Revert stands. |
-| 5 — adjacency | −0.33 faithfulness | Comfortably inside noise, as the per-case reading already concluded. |
+| 4 — no fact twice    | −0.67 coverage                           | Twice the coverage noise band, and corroborated by three rationales naming omitted facts. Revert stands.                                                                                                                       |
+| 5 — adjacency        | −0.33 faithfulness                       | Comfortably inside noise, as the per-case reading already concluded.                                                                                                                                                           |
 
 **2. The deterministic metrics are perfectly stable.** Consecutive same-type
 repeats came out 12, 12, 12. Structural counts do not drift at all while judge
@@ -381,7 +382,7 @@ scores swing by a point.
 This retroactively justifies a pattern that had only been an observation:
 **changes fixing a countable defect held up; changes judged by score movement
 alone did not.** The countable metrics were simply a far better instrument.
-Prefer them, and treat the judge's *rationales* — which name specific slides —
+Prefer them, and treat the judge's _rationales_ — which name specific slides —
 as evidence, while treating its aggregate numbers at n=3 as a weak prior.
 
 Cost: $5.09 for three replicates.
@@ -392,12 +393,12 @@ Cost: $5.09 for three replicates.
 
 Phase 1 only, judged on the plan rather than the prose. `$5.74` for the corpus.
 
-| Dimension | Mean | Per-case scores |
-| --- | ---: | --- |
-| Ordering | 4.00 | `44444444444` |
-| Sectioning | 3.91 | `44443444444` |
-| Selection | 3.64 | `23443444444` |
-| **Slide allocation** | **2.82** | `24323333323` |
+| Dimension            |     Mean | Per-case scores |
+| -------------------- | -------: | --------------- |
+| Ordering             |     4.00 | `44444444444`   |
+| Sectioning           |     3.91 | `44443444444`   |
+| Selection            |     3.64 | `23443444444`   |
+| **Slide allocation** | **2.82** | `24323333323`   |
 
 **Slide allocation is the systematic weakness of the whole pipeline** — never
 above 3 on any case, well clear of the noise floor, and measured on 11 cases

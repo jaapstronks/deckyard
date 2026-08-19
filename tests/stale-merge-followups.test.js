@@ -31,12 +31,10 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { mergeSlidesAtSlideLevel } = await import(
-  '../server/storage/presentations/crud/helpers.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { mergeSlidesAtSlideLevel } =
+  await import('../server/storage/presentations/crud/helpers.js');
 const {
   createPresentation,
   getPresentation,
@@ -85,8 +83,14 @@ describe('mergeSlidesAtSlideLevel — order preservation', () => {
     assert.deepEqual(r.conflicts, []);
     // N stays mid-deck at its server position instead of being appended.
     assert.deepEqual(idsOf(r.slides), ['a', 'n', 'b', 'c']);
-    assert.equal(r.slides.find((s) => s.id === 'a').content.body, 'A v2 by other');
-    assert.equal(r.slides.find((s) => s.id === 'c').content.body, 'C client edit');
+    assert.equal(
+      r.slides.find((s) => s.id === 'a').content.body,
+      'A v2 by other',
+    );
+    assert.equal(
+      r.slides.find((s) => s.id === 'c').content.body,
+      'C client edit',
+    );
     assert.deepEqual(r.appendedSlideIds, ['n']);
   });
 
@@ -109,7 +113,12 @@ describe('mergeSlidesAtSlideLevel — order preservation', () => {
   });
 
   it('inserts a client-new first slide at the start of the deck', () => {
-    const withNewFirst = [slide('x', 'X new'), slide('a', 'A v1'), slide('b', 'B v1'), slide('c', 'C v1')];
+    const withNewFirst = [
+      slide('x', 'X new'),
+      slide('a', 'A v1'),
+      slide('b', 'B v1'),
+      slide('c', 'C v1'),
+    ];
     const r = mergeSlidesAtSlideLevel({
       serverSlides,
       clientSlides: withNewFirst,
@@ -134,7 +143,10 @@ describe('mergeSlidesAtSlideLevel — order preservation', () => {
     assert.equal(r.merged, true);
     assert.deepEqual(r.conflicts, ['a']);
     // Server version kept for the conflicting slide.
-    assert.equal(r.slides.find((s) => s.id === 'a').content.body, 'A v2 by other');
+    assert.equal(
+      r.slides.find((s) => s.id === 'a').content.body,
+      'A v2 by other',
+    );
   });
 
   it('applies the client order when the client actually reordered', () => {
@@ -181,7 +193,11 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
   let template;
 
   before(async () => {
-    __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+    __setTestDb(
+      createFakeDb({
+        organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      }),
+    );
     await initializeStorage();
     const created = await createPresentation(testScope(), {
       title: 'Stale merge follow-ups',
@@ -214,17 +230,24 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
     }
     return doc;
   };
-  const loadDoc = async () => structuredClone(await getPresentation(testScope(), deckId));
+  const loadDoc = async () =>
+    structuredClone(await getPresentation(testScope(), deckId));
   const resetDeck = async (slides) => {
     const doc = await loadDoc();
     doc.slides = structuredClone(slides);
     syncI18n(doc);
-    await updatePresentation(testScope(), deckId, doc, { actorEmail: 'owner@example.com' });
+    await updatePresentation(testScope(), deckId, doc, {
+      actorEmail: 'owner@example.com',
+    });
     return loadDoc();
   };
 
   it('a non-reordering stale tab keeps the server order and reports merge metadata', async () => {
-    const base = await resetDeck([mkSlide(A, 'A v1'), mkSlide(B, 'B v1'), mkSlide(C, 'C v1')]);
+    const base = await resetDeck([
+      mkSlide(A, 'A v1'),
+      mkSlide(B, 'B v1'),
+      mkSlide(C, 'C v1'),
+    ]);
     const staleTab = structuredClone(base);
     const staleFingerprints = {
       [C]: slideFingerprint(staleTab.slides.find((s) => s.id === C)),
@@ -234,7 +257,9 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
     let other = await loadDoc();
     setTitle(other, A, 'A v2 by other');
     syncI18n(other);
-    await updatePresentation(testScope(), deckId, other, { actorEmail: 'other@example.com' });
+    await updatePresentation(testScope(), deckId, other, {
+      actorEmail: 'other@example.com',
+    });
     other = await loadDoc();
     other.slides = [
       other.slides.find((s) => s.id === A),
@@ -243,7 +268,9 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
       other.slides.find((s) => s.id === C),
     ];
     syncI18n(other);
-    await updatePresentation(testScope(), deckId, other, { actorEmail: 'other@example.com' });
+    await updatePresentation(testScope(), deckId, other, {
+      actorEmail: 'other@example.com',
+    });
 
     // The stale tab edited only C and did not reorder.
     setTitle(staleTab, C, 'C stale-tab edit');
@@ -258,8 +285,14 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
 
     // N stays mid-deck; both users' edits survive.
     assert.deepEqual(idsOf(updated.slides), [A, N, B, C]);
-    assert.equal(updated.slides.find((s) => s.id === A).content.title, 'A v2 by other');
-    assert.equal(updated.slides.find((s) => s.id === C).content.title, 'C stale-tab edit');
+    assert.equal(
+      updated.slides.find((s) => s.id === A).content.title,
+      'A v2 by other',
+    );
+    assert.equal(
+      updated.slides.find((s) => s.id === C).content.title,
+      'C stale-tab edit',
+    );
 
     // Layer 5: merge metadata on the result (input for the audit log).
     assert.ok(updated._slideMerge, 'merge metadata must be attached');
@@ -283,12 +316,14 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
     const other = await loadDoc();
     setTitle(other, A, 'A v2 by other');
     syncI18n(other);
-    await updatePresentation(testScope(), deckId, other, { actorEmail: 'other@example.com' });
+    await updatePresentation(testScope(), deckId, other, {
+      actorEmail: 'other@example.com',
+    });
 
     setTitle(staleTab, B, 'B tab edit');
     syncI18n(staleTab);
     const before = (await listPresentationVersions(testScope(), deckId)).filter(
-      (v) => v.reason === 'pre_merge'
+      (v) => v.reason === 'pre_merge',
     ).length;
     const updated = await updatePresentation(testScope(), deckId, staleTab, {
       expectedRevision: staleTab.revision,
@@ -302,7 +337,7 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
 
     assert.equal(updated._slideMerge.revisionGap, 1);
     const after = (await listPresentationVersions(testScope(), deckId)).filter(
-      (v) => v.reason === 'pre_merge'
+      (v) => v.reason === 'pre_merge',
     ).length;
     assert.equal(after, before, 'gap 1 must not create a pre_merge snapshot');
   });
@@ -326,14 +361,20 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
 
 describe('save-manager — X-Slides-Order-Changed and rebaseServerTruth', () => {
   const noopToast = { info: () => {}, error: () => {}, success: () => {} };
-  const SLIDE_TYPES = { 'text-slide': { fields: [{ key: 'body', type: 'markdown' }] } };
+  const SLIDE_TYPES = {
+    'text-slide': { fields: [{ key: 'body', type: 'markdown' }] },
+  };
 
   const makePres = () => ({
     id: 'p1',
     title: 'Deck',
     revision: 1,
     slides: [slide('a', 'A v1'), slide('b', 'B v1'), slide('c', 'C v1')],
-    i18n: { active: 'nl', dominant: 'nl', versions: { nl: { title: 'Deck', slides: [] } } },
+    i18n: {
+      active: 'nl',
+      dominant: 'nl',
+      versions: { nl: { title: 'Deck', slides: [] } },
+    },
   });
 
   const makeManager = ({ pres, apiImpl }) =>
@@ -351,7 +392,11 @@ describe('save-manager — X-Slides-Order-Changed and rebaseServerTruth', () => 
   const echoApi = (sentHeaders) => async (_path, opts) => {
     sentHeaders.push(opts.headers);
     const body = JSON.parse(opts.body);
-    return { ...body, revision: Number(opts.headers['If-Match']) + 1, modified: 'x' };
+    return {
+      ...body,
+      revision: Number(opts.headers['If-Match']) + 1,
+      modified: 'x',
+    };
   };
 
   it("sends '0' when only content changed", async () => {
@@ -405,7 +450,11 @@ describe('save-manager — X-Slides-Order-Changed and rebaseServerTruth', () => 
     // another user changed A.
     pres.slides[1].content.body = 'B local edit';
     mgr.markDirty({ slideId: 'b' });
-    const remoteSlides = [slide('a', 'A v2 remote'), pres.slides[1], slide('c', 'C v1')];
+    const remoteSlides = [
+      slide('a', 'A v2 remote'),
+      pres.slides[1],
+      slide('c', 'C v1'),
+    ];
     mgr.rebaseServerTruth(remoteSlides);
 
     // User then also edits A and saves both.
@@ -419,12 +468,12 @@ describe('save-manager — X-Slides-Order-Changed and rebaseServerTruth', () => 
     assert.equal(
       fps.a,
       slideFingerprint(slide('a', 'A v2 remote')),
-      'adopted slide must be re-based on the remote version'
+      'adopted slide must be re-based on the remote version',
     );
     assert.equal(
       fps.b,
       originalB,
-      'slide with pending local edits must keep its pre-edit base'
+      'slide with pending local edits must keep its pre-edit base',
     );
   });
 });
@@ -440,7 +489,11 @@ describe('remote-refresh — wake-up staleness check', () => {
     revision: 3,
     modified: '2026-07-17T09:00:00.000Z',
     slides: [slide('a', 'A v1'), slide('b', 'B v1')],
-    i18n: { active: 'nl', dominant: 'nl', versions: { nl: { title: 'Deck', slides: [] } } },
+    i18n: {
+      active: 'nl',
+      dominant: 'nl',
+      versions: { nl: { title: 'Deck', slides: [] } },
+    },
   });
 
   const stubSaveManager = (overrides = {}) => {
@@ -462,7 +515,11 @@ describe('remote-refresh — wake-up staleness check', () => {
 
   it('silently adopts the server state when the tab is clean', async () => {
     const pres = makePres();
-    const freshSlides = [slide('a', 'A v2 remote'), slide('n', 'N new'), slide('b', 'B v1')];
+    const freshSlides = [
+      slide('a', 'A v2 remote'),
+      slide('n', 'N new'),
+      slide('b', 'B v1'),
+    ];
     const apiCalls = [];
     const api = async (path) => {
       apiCalls.push(path);
@@ -474,7 +531,13 @@ describe('remote-refresh — wake-up staleness check', () => {
         modified: '2026-07-17T10:00:00.000Z',
         updatedBy: 'other@example.com',
         slides: structuredClone(freshSlides),
-        i18n: { active: 'nl', dominant: 'nl', versions: { nl: { title: 'Deck renamed', slides: structuredClone(freshSlides) } } },
+        i18n: {
+          active: 'nl',
+          dominant: 'nl',
+          versions: {
+            nl: { title: 'Deck renamed', slides: structuredClone(freshSlides) },
+          },
+        },
       };
     };
     const saveManager = stubSaveManager();
@@ -491,7 +554,10 @@ describe('remote-refresh — wake-up staleness check', () => {
 
     await rr.check();
 
-    assert.deepEqual(apiCalls, ['/api/presentations/p1/revision', '/api/presentations/p1?lang=nl']);
+    assert.deepEqual(apiCalls, [
+      '/api/presentations/p1/revision',
+      '/api/presentations/p1?lang=nl',
+    ]);
     assert.equal(pres.revision, 5);
     assert.equal(pres.title, 'Deck renamed');
     assert.deepEqual(idsOf(pres.slides), ['a', 'n', 'b']);
@@ -543,7 +609,12 @@ describe('remote-refresh — wake-up staleness check', () => {
       probes += 1;
       return { id: 'p1', revision: 3 };
     };
-    const rr = createRemoteRefresh({ api, id: 'p1', pres, saveManager: stubSaveManager() });
+    const rr = createRemoteRefresh({
+      api,
+      id: 'p1',
+      pres,
+      saveManager: stubSaveManager(),
+    });
 
     await rr.check();
     await rr.check();

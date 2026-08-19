@@ -1,6 +1,6 @@
 # Image-picker seam
 
-How Deckyard's editor resolves *where images come from* — one injected entry
+How Deckyard's editor resolves _where images come from_ — one injected entry
 point (`openImagePicker`) over a small provider registry. This is the seam a
 downstream fork swaps to route every image entry point (side-form fields **and**
 the inline WYSIWYG popover) through its own DAM.
@@ -15,8 +15,13 @@ feature-detection at call sites).
 
 ```js
 openImagePicker({
-  title, docId, allowCaptionCredit, context,
-  onPick: (picked) => { /* normalized PickedImage */ },
+  title,
+  docId,
+  allowCaptionCredit,
+  context,
+  onPick: (picked) => {
+    /* normalized PickedImage */
+  },
 });
 ```
 
@@ -32,13 +37,13 @@ Enabled providers, in chooser order:
 Two different kinds of gate decide whether an opener is injected, and
 `createImagePickers` (`client/views/editor/image-pickers.js`) resolves both:
 ImageKit hangs off the env-derived `features.imagekitConfigured`, while the
-bundled gradients hang off the `stockMedia.bundled.enabled` *app setting*,
+bundled gradients hang off the `stockMedia.bundled.enabled` _app setting_,
 fetched once via `lib/net/stock-media.js` and shared with the image library.
 That async step is why `createImagePickers` is async.
 
 With **one** provider enabled, `openImagePicker` opens it directly. With **more
 than one**, it shows a lightweight source chooser first. A single-provider
-config (e.g. `IMAGEKIT_ONLY`) therefore has the native library *fully absent*,
+config (e.g. `IMAGEKIT_ONLY`) therefore has the native library _fully absent_,
 not merely hidden.
 
 ## The normalized pick (`PickedImage`)

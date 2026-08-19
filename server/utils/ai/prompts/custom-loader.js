@@ -36,7 +36,12 @@ const __dirname = dirname(__filename);
 
 // Resolve the repo root (four levels up from server/utils/ai/prompts/).
 const REPO_ROOT = resolve(__dirname, '..', '..', '..', '..');
-const DEFAULT_CUSTOM_PROMPTS_FILE = join(REPO_ROOT, 'custom', 'ai', 'prompts.js');
+const DEFAULT_CUSTOM_PROMPTS_FILE = join(
+  REPO_ROOT,
+  'custom',
+  'ai',
+  'prompts.js',
+);
 
 /**
  * Load fork-supplied prompt-builder overrides.
@@ -51,7 +56,10 @@ const DEFAULT_CUSTOM_PROMPTS_FILE = join(REPO_ROOT, 'custom', 'ai', 'prompts.js'
  *   every function-valued entry is accepted.
  * @returns {Promise<Record<string, Function>>}
  */
-export async function loadCustomPromptOverrides({ file = DEFAULT_CUSTOM_PROMPTS_FILE, knownBuilders = null } = {}) {
+export async function loadCustomPromptOverrides({
+  file = DEFAULT_CUSTOM_PROMPTS_FILE,
+  knownBuilders = null,
+} = {}) {
   if (!existsSync(file)) return {};
 
   const allow = knownBuilders
@@ -81,7 +89,9 @@ export async function loadCustomPromptOverrides({ file = DEFAULT_CUSTOM_PROMPTS_
       continue;
     }
     if (allow && !allow.has(name)) {
-      log.warn(`override "${name}" does not match a known prompt builder; ignoring`);
+      log.warn(
+        `override "${name}" does not match a known prompt builder; ignoring`,
+      );
       continue;
     }
     clean[name] = value;

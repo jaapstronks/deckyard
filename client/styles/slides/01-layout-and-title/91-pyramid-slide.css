@@ -192,7 +192,11 @@
 }
 
 .slide-pyramid .pyramid-level:nth-child(2) .level-bar {
-  background: color-mix(in srgb, var(--slide-accent, #375c5d) 75%, var(--slide-bg-lime, #e2fe52));
+  background: color-mix(
+    in srgb,
+    var(--slide-accent, #375c5d) 75%,
+    var(--slide-bg-lime, #e2fe52)
+  );
 }
 
 .slide-pyramid .pyramid-level:nth-child(2) .level-label,
@@ -205,11 +209,19 @@
 }
 
 .slide-pyramid .pyramid-level:nth-child(3) .level-bar {
-  background: color-mix(in srgb, var(--slide-accent, #375c5d) 50%, var(--slide-bg-lime, #e2fe52));
+  background: color-mix(
+    in srgb,
+    var(--slide-accent, #375c5d) 50%,
+    var(--slide-bg-lime, #e2fe52)
+  );
 }
 
 .slide-pyramid .pyramid-level:nth-child(4) .level-bar {
-  background: color-mix(in srgb, var(--slide-accent, #375c5d) 25%, var(--slide-bg-lime, #e2fe52));
+  background: color-mix(
+    in srgb,
+    var(--slide-accent, #375c5d) 25%,
+    var(--slide-bg-lime, #e2fe52)
+  );
 }
 
 /* On lime background, invert the gradient direction */
@@ -227,7 +239,11 @@
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(2) .level-bar {
-  background: color-mix(in srgb, var(--slide-bg-lime, #e2fe52) 75%, var(--slide-accent, #375c5d));
+  background: color-mix(
+    in srgb,
+    var(--slide-bg-lime, #e2fe52) 75%,
+    var(--slide-accent, #375c5d)
+  );
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(2) .level-label,
@@ -236,11 +252,19 @@
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(3) .level-bar {
-  background: color-mix(in srgb, var(--slide-bg-lime, #e2fe52) 50%, var(--slide-accent, #375c5d));
+  background: color-mix(
+    in srgb,
+    var(--slide-bg-lime, #e2fe52) 50%,
+    var(--slide-accent, #375c5d)
+  );
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(4) .level-bar {
-  background: color-mix(in srgb, var(--slide-bg-lime, #e2fe52) 25%, var(--slide-accent, #375c5d));
+  background: color-mix(
+    in srgb,
+    var(--slide-bg-lime, #e2fe52) 25%,
+    var(--slide-accent, #375c5d)
+  );
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(5) .level-bar,

@@ -26,30 +26,35 @@ export async function renderDashboard(root, { nav } = {}) {
 
   // Topbar with back navigation
   const topbar = h('header', { class: 'dashboard-topbar' }, [
-    h('a', {
-      href: '/',
-      class: 'dashboard-back-btn',
-      onclick: (e) => {
-        e.preventDefault();
-        if (nav) nav('/');
-        else window.location.href = '/';
+    h(
+      'a',
+      {
+        href: '/',
+        class: 'dashboard-back-btn',
+        onclick: (e) => {
+          e.preventDefault();
+          if (nav) nav('/');
+          else window.location.href = '/';
+        },
       },
-    }, [
-      h('svg', {
-        width: '20',
-        height: '20',
-        viewBox: '0 0 24 24',
-        fill: 'none',
-        stroke: 'currentColor',
-        'stroke-width': '2',
-        'stroke-linecap': 'round',
-        'stroke-linejoin': 'round',
-      }, [
-        h('path', { d: 'M19 12H5' }),
-        h('path', { d: 'M12 19l-7-7 7-7' }),
-      ]),
-      h('span', { text: t('dashboard.back', 'Back to presentations') }),
-    ]),
+      [
+        h(
+          'svg',
+          {
+            width: '20',
+            height: '20',
+            viewBox: '0 0 24 24',
+            fill: 'none',
+            stroke: 'currentColor',
+            'stroke-width': '2',
+            'stroke-linecap': 'round',
+            'stroke-linejoin': 'round',
+          },
+          [h('path', { d: 'M19 12H5' }), h('path', { d: 'M12 19l-7-7 7-7' })],
+        ),
+        h('span', { text: t('dashboard.back', 'Back to presentations') }),
+      ],
+    ),
   ]);
 
   const shell = h('div', { class: 'dashboard-shell' });
@@ -64,7 +69,10 @@ export async function renderDashboard(root, { nav } = {}) {
   // Show loading state
   const loading = h('div', { class: 'analytics-loading' }, [
     spinner('lg'),
-    h('div', { class: 'analytics-loading-text', text: t('dashboard.loading', 'Loading insights...') }),
+    h('div', {
+      class: 'analytics-loading-text',
+      text: t('dashboard.loading', 'Loading insights...'),
+    }),
   ]);
   shell.append(loading);
 
@@ -80,9 +88,15 @@ export async function renderDashboard(root, { nav } = {}) {
     try {
       dashboardData = await api(`/api/analytics/dashboard?period=${period}`);
     } catch (err) {
-      loadError = err?.message || t('dashboard.error', 'Failed to load insights');
+      loadError =
+        err?.message || t('dashboard.error', 'Failed to load insights');
       dashboardData = {
-        summary: { totalViews: 0, uniqueViewers: 0, avgDurationSeconds: 0, completionRate: 0 },
+        summary: {
+          totalViews: 0,
+          uniqueViewers: 0,
+          avgDurationSeconds: 0,
+          completionRate: 0,
+        },
         trend: { percentChange: 0, direction: 'flat' },
         timeline: [],
         topPresentations: [],
@@ -96,17 +110,29 @@ export async function renderDashboard(root, { nav } = {}) {
 
     // Show error banner if there was a load error
     if (loadError) {
-      const errorBanner = h('div', { class: 'dashboard-error-banner', role: 'alert' }, [
-        h('img', { class: 'dashboard-error-icon', src: iconUrl('circle-alert'), alt: '', 'aria-hidden': 'true' }),
-        h('span', { text: loadError }),
-      ]);
+      const errorBanner = h(
+        'div',
+        { class: 'dashboard-error-banner', role: 'alert' },
+        [
+          h('img', {
+            class: 'dashboard-error-icon',
+            src: iconUrl('circle-alert'),
+            alt: '',
+            'aria-hidden': 'true',
+          }),
+          h('span', { text: loadError }),
+        ],
+      );
       shell.append(errorBanner);
     }
 
     // Header
     const header = h('div', { class: 'dashboard-header' }, [
       h('div', { class: 'dashboard-title-row' }, [
-        h('h1', { class: 'dashboard-title', text: t('dashboard.title', 'My Engagement Insights') }),
+        h('h1', {
+          class: 'dashboard-title',
+          text: t('dashboard.title', 'My Engagement Insights'),
+        }),
         createPeriodSelector(),
       ]),
     ]);
@@ -142,45 +168,96 @@ export async function renderDashboard(root, { nav } = {}) {
       class: 'visually-hidden',
       text: t('dashboard.periodLabel', 'Time period'),
     });
-    const select = h('select', {
-      id,
-      class: 'dashboard-period-select',
-      'aria-label': t('dashboard.periodLabel', 'Time period'),
-      onchange: async (e) => {
-        period = e.target.value;
-        shell.innerHTML = '';
-        shell.append(loading);
-        await loadDashboardData();
-        render();
+    const select = h(
+      'select',
+      {
+        id,
+        class: 'dashboard-period-select',
+        'aria-label': t('dashboard.periodLabel', 'Time period'),
+        onchange: async (e) => {
+          period = e.target.value;
+          shell.innerHTML = '';
+          shell.append(loading);
+          await loadDashboardData();
+          render();
+        },
       },
-    }, [
-      h('option', { value: '7d', text: t('dashboard.period.7d', 'Last 7 days'), selected: period === '7d' }),
-      h('option', { value: '30d', text: t('dashboard.period.30d', 'Last 30 days'), selected: period === '30d' }),
-      h('option', { value: '90d', text: t('dashboard.period.90d', 'Last 90 days'), selected: period === '90d' }),
-      h('option', { value: '12m', text: t('dashboard.period.12m', 'Last 12 months'), selected: period === '12m' }),
-    ]);
+      [
+        h('option', {
+          value: '7d',
+          text: t('dashboard.period.7d', 'Last 7 days'),
+          selected: period === '7d',
+        }),
+        h('option', {
+          value: '30d',
+          text: t('dashboard.period.30d', 'Last 30 days'),
+          selected: period === '30d',
+        }),
+        h('option', {
+          value: '90d',
+          text: t('dashboard.period.90d', 'Last 90 days'),
+          selected: period === '90d',
+        }),
+        h('option', {
+          value: '12m',
+          text: t('dashboard.period.12m', 'Last 12 months'),
+          selected: period === '12m',
+        }),
+      ],
+    );
     select.value = period;
-    const wrapper = h('div', { class: 'dashboard-period-wrapper' }, [label, select]);
+    const wrapper = h('div', { class: 'dashboard-period-wrapper' }, [
+      label,
+      select,
+    ]);
     return wrapper;
   }
 
   function createSourceBreakdown() {
     const breakdown = dashboardData.sourceBreakdown || {};
-    const total = breakdown.shareLink + breakdown.published + breakdown.follow + breakdown.embed;
+    const total =
+      breakdown.shareLink +
+      breakdown.published +
+      breakdown.follow +
+      breakdown.embed;
 
     const sources = [
-      { key: 'shareLink', label: t('dashboard.source.shareLink', 'Share Links'), value: breakdown.shareLink || 0 },
-      { key: 'published', label: t('dashboard.source.published', 'Published'), value: breakdown.published || 0 },
-      { key: 'follow', label: t('dashboard.source.follow', 'Follow Mode'), value: breakdown.follow || 0 },
-      { key: 'embed', label: t('dashboard.source.embed', 'Embedded'), value: breakdown.embed || 0 },
+      {
+        key: 'shareLink',
+        label: t('dashboard.source.shareLink', 'Share Links'),
+        value: breakdown.shareLink || 0,
+      },
+      {
+        key: 'published',
+        label: t('dashboard.source.published', 'Published'),
+        value: breakdown.published || 0,
+      },
+      {
+        key: 'follow',
+        label: t('dashboard.source.follow', 'Follow Mode'),
+        value: breakdown.follow || 0,
+      },
+      {
+        key: 'embed',
+        label: t('dashboard.source.embed', 'Embedded'),
+        value: breakdown.embed || 0,
+      },
     ].filter((s) => s.value > 0);
 
     const card = h('div', { class: 'dashboard-card dashboard-source-card' }, [
-      h('h3', { class: 'dashboard-card-title', text: t('dashboard.source.title', 'Engagement by Source') }),
+      h('h3', {
+        class: 'dashboard-card-title',
+        text: t('dashboard.source.title', 'Engagement by Source'),
+      }),
     ]);
 
     if (!sources.length) {
-      card.append(h('div', { class: 'dashboard-empty', text: t('dashboard.source.empty', 'No data yet') }));
+      card.append(
+        h('div', {
+          class: 'dashboard-empty',
+          text: t('dashboard.source.empty', 'No data yet'),
+        }),
+      );
       return card;
     }
 
@@ -195,8 +272,11 @@ export async function renderDashboard(root, { nav } = {}) {
               style: `width: ${percent}%`,
             }),
           ]),
-          h('span', { class: 'dashboard-source-label', text: `${source.label} (${percent}%)` }),
-        ])
+          h('span', {
+            class: 'dashboard-source-label',
+            text: `${source.label} (${percent}%)`,
+          }),
+        ]),
       );
     }
     card.append(bars);

@@ -18,7 +18,7 @@ shape. Two consequences worth stating up front:
 
 - In the default single-organization install every user shares one organization,
   so "org-scoped" checks collapse to "any logged-in user". The hardening below is
-  about what an *authenticated* user (or an unauthenticated visitor of a public
+  about what an _authenticated_ user (or an unauthenticated visitor of a public
   surface) can reach, not about a cross-tenant boundary that a single-org install
   does not have.
 - Some controls are conditional on operator configuration (`TRUST_PROXY`, the
@@ -105,7 +105,7 @@ silently grant anonymous admin.
 
 **Where:** `server/routes/api/auth.js` (`allowLoginAttempt`).
 
-The login route throttles per-IP **and** per-email *before* the expensive
+The login route throttles per-IP **and** per-email _before_ the expensive
 password verification runs, so credentials cannot be hammered and a single
 attacker cannot burn CPU by forcing repeated hashes. (When `TRUST_PROXY` is set,
 the client IP is read from the trusted-proxy hop rather than a spoofable

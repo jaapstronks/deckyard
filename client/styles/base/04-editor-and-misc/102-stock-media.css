@@ -43,7 +43,9 @@
   overflow: hidden;
   cursor: pointer;
   background: var(--ps-color-bg-subtle);
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
 }
 
 .stock-media-item:hover {

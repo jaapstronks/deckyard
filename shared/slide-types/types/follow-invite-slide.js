@@ -55,9 +55,7 @@ export default {
   },
   // Signature must be (content, slide, ctx) – see `shared/slide-types/presentation.js`.
   renderHtml: (content, slide, ctx = {}) => {
-    const presId = String(
-      content?.presentationId || ''
-    ).trim();
+    const presId = String(content?.presentationId || '').trim();
     // Derived, never read from the slide: this is the invite for *this* version.
     const lang = normalizeLang(ctx?.lang) || 'nl';
     const base = COPY[lang] || COPY.nl;
@@ -66,24 +64,19 @@ export default {
         ? content.customTitle.trim()
         : '';
     const customBody =
-      typeof content?.customBody === 'string'
-        ? content.customBody.trim()
-        : '';
+      typeof content?.customBody === 'string' ? content.customBody.trim() : '';
     const copy = {
       title: customTitle || base.title,
       body: customBody || base.body,
     };
 
     const relFollow = presId
-      ? `/follow/${encodeURIComponent(
-          presId
-        )}?lang=${encodeURIComponent(lang)}`
+      ? `/follow/${encodeURIComponent(presId)}?lang=${encodeURIComponent(lang)}`
       : '';
 
     // Get follow codes from context (when available during presentations)
     const followCodes = ctx?.followCodes || {};
-    const code =
-      lang === 'nl' ? followCodes.nl : followCodes.en;
+    const code = lang === 'nl' ? followCodes.nl : followCodes.en;
 
     const goHref = '/go';
 
@@ -92,37 +85,33 @@ export default {
         <div class="slide-inner">
           <div class="sfi">
             <div>
-              <div class="sfi-title" dir="auto">${escapeHtml(
-                copy.title
-              )}</div>
+              <div class="sfi-title" dir="auto">${escapeHtml(copy.title)}</div>
               <div class="sfi-body" dir="auto">${escapeHtml(copy.body)}</div>
             </div>
 
             <div class="sfi-methods" role="group" aria-label="${escapeHtml(base.followMethodsLabel)}">
               <div class="sfi-card on-surface-light">
                 <div class="sfi-card-kicker">${escapeHtml(
-                  base.methodScan
+                  base.methodScan,
                 )}</div>
                 <div class="sfi-qr-wrap">
                   <canvas class="sfi-qr" data-follow-qr="1" data-follow-url="${escapeHtml(
-                    relFollow
+                    relFollow,
                   )}" role="img" aria-label="${escapeHtml(base.qrCodeLabel)}"></canvas>
                 </div>
               </div>
 
               <div class="sfi-card on-surface-light">
                 <div class="sfi-card-kicker">${escapeHtml(
-                  base.methodType
+                  base.methodType,
                 )}</div>
                 <div class="sfi-go" data-follow-go-url="1">${escapeHtml(
-                  goHref
+                  goHref,
                 )}</div>
                 <div class="sfi-code-row">
-                  <div class="sfi-row-label">${escapeHtml(
-                    base.codeLabel
-                  )}</div>
+                  <div class="sfi-row-label">${escapeHtml(base.codeLabel)}</div>
                   <div class="sfi-code" aria-label="${escapeHtml(base.accessCodeLabel)}">${escapeHtml(
-                    code || '----'
+                    code || '----',
                   )}</div>
                 </div>
               </div>

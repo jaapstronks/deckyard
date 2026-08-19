@@ -19,26 +19,26 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       Linear step-by-step process with 3-7 numbered steps.
       Direction: horizontal (default) or vertical.
       For one-time workflows, not recurring cycles.
     `,
-    bestFor: [
-      'Step-by-step procedures',
-      'Onboarding processes',
-      'Implementation methodologies',
-      'How-to guides with sequential steps',
-      'Project phases',
-    ],
-    notFor: [
-      'Recurring/cyclical processes (use cycle-slide)',
-      'Timelines with specific dates (use timeline-slide)',
-      'Narrowing conversions (use funnel-slide)',
-      'Chains where each item CAUSES the next rather than being carried out in order (use text-blocks-slide). Test: can you name who performs each step? If yes it is a process; if the items are consequences nobody performs, it is a causal chain',
-    ],
+  bestFor: [
+    'Step-by-step procedures',
+    'Onboarding processes',
+    'Implementation methodologies',
+    'How-to guides with sequential steps',
+    'Project phases',
+  ],
+  notFor: [
+    'Recurring/cyclical processes (use cycle-slide)',
+    'Timelines with specific dates (use timeline-slide)',
+    'Narrowing conversions (use funnel-slide)',
+    'Chains where each item CAUSES the next rather than being carried out in order (use text-blocks-slide). Test: can you name who performs each step? If yes it is a process; if the items are consequences nobody performs, it is a causal chain',
+  ],
 };
 
 /**

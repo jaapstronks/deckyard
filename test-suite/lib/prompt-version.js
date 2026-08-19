@@ -34,7 +34,11 @@ export async function computePromptVersion() {
       // it as absent rather than failing the run.
       content = '\0missing';
     }
-    const fileHash = crypto.createHash('sha256').update(content).digest('hex').slice(0, 12);
+    const fileHash = crypto
+      .createHash('sha256')
+      .update(content)
+      .digest('hex')
+      .slice(0, 12);
     files[relative] = fileHash;
     combined.update(`${relative}:${fileHash}\n`);
   }

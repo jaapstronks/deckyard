@@ -9,7 +9,10 @@
  * fills empty translatable fields).
  */
 
-import { getSupportedLangs, isSupportedLang } from '../../../lib/format/i18n.js';
+import {
+  getSupportedLangs,
+  isSupportedLang,
+} from '../../../lib/format/i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
@@ -112,9 +115,11 @@ export function createLanguageMode({
           : null;
     const msg =
       String(p?.msg || '').trim() || t('common.unknownError', 'Unknown error');
-    const level = p?.level === 'success' || p?.level === 'error' ? p.level : 'info';
+    const level =
+      p?.level === 'success' || p?.level === 'error' ? p.level : 'info';
     const durationMs = typeof p?.durationMs === 'number' ? p.durationMs : 5200;
-    if (level === 'success') toast.success(msg, { id: 'editor-translate', durationMs });
+    if (level === 'success')
+      toast.success(msg, { id: 'editor-translate', durationMs });
     else if (level === 'error') toast.error(msg, { id: 'editor-translate' });
     else toast.info(msg, { id: 'editor-translate', durationMs });
   };
@@ -134,7 +139,7 @@ export function createLanguageMode({
     langSeg.title = translateBusy
       ? t(
           'editor.translate.busyLangSwitch',
-          'Translating… you can switch language again when it is done.'
+          'Translating… you can switch language again when it is done.',
         )
       : t('editor.langMode.title', 'Language mode (edit + present)');
   };
@@ -148,7 +153,8 @@ export function createLanguageMode({
     else if (typeof updated.revision === 'string' && updated.revision.trim())
       pres.revision = Number(updated.revision) || pres.revision;
     if (typeof updated.modified === 'string') pres.modified = updated.modified;
-    if (typeof updated.updatedBy === 'string') pres.updatedBy = updated.updatedBy;
+    if (typeof updated.updatedBy === 'string')
+      pres.updatedBy = updated.updatedBy;
   };
 
   /**
@@ -173,7 +179,7 @@ export function createLanguageMode({
       }
       if (!refreshed) {
         refreshed = await api?.(
-          `/api/presentations/${id}?lang=${encodeURIComponent(next)}`
+          `/api/presentations/${id}?lang=${encodeURIComponent(next)}`,
         );
       }
       pres.i18n = refreshed.i18n;
@@ -199,7 +205,7 @@ export function createLanguageMode({
       ? (pres.slides || []).some((s) => s?.id === prevSelectedSlideId)
       : false;
     setSelectedSlideId?.(
-      sameSlideExists ? prevSelectedSlideId : pres.slides?.[0]?.id || null
+      sameSlideExists ? prevSelectedSlideId : pres.slides?.[0]?.id || null,
     );
     setUrlLangParam(next);
     editorState.refreshAll();
@@ -223,14 +229,17 @@ export function createLanguageMode({
         level: 'info',
         msg: t(
           'editor.lang.disabledByAdmin',
-          'This language is disabled in admin settings.'
+          'This language is disabled in admin settings.',
         ),
       });
       return;
     }
     if (next === pres.i18n.active) return;
     if (translateBusy) {
-      onStatus?.({ level: 'info', msg: t('editor.translate.busy', 'Translating…') });
+      onStatus?.({
+        level: 'info',
+        msg: t('editor.translate.busy', 'Translating…'),
+      });
       return;
     }
 
@@ -246,14 +255,17 @@ export function createLanguageMode({
     }
 
     if (isDirty?.()) {
-      onStatus?.({ level: 'info', msg: t('common.savingFirst', 'Saving first…') });
+      onStatus?.({
+        level: 'info',
+        msg: t('common.savingFirst', 'Saving first…'),
+      });
       await requestSave?.();
       if (isDirty?.()) {
         onStatus?.({
           level: 'error',
           msg: t(
             'editor.lang.switchAborted',
-            'Could not save; language switch aborted.'
+            'Could not save; language switch aborted.',
           ),
         });
         return;
@@ -272,16 +284,16 @@ export function createLanguageMode({
         t(
           'editor.lang.versionCreatedInvite',
           'The {lang} version was just created and has no texts yet. Translate them automatically? Fields you fill in yourself are never overwritten.',
-          { lang: langLabel(next) }
-        )
+          { lang: langLabel(next) },
+        ),
       );
     } else if (versionHasMissingTexts(next)) {
       showTranslateInvite(
         t(
           'editor.lang.versionIncompleteInvite',
           'This {lang} version still has untranslated texts. Translate them automatically? Fields you filled in yourself are never overwritten.',
-          { lang: langLabel(next) }
-        )
+          { lang: langLabel(next) },
+        ),
       );
     }
   };
@@ -315,7 +327,7 @@ export function createLanguageMode({
     const tgtById = new Map(
       (Array.isArray(tgt.slides) ? tgt.slides : [])
         .filter((s) => s && typeof s.id === 'string')
-        .map((s) => [s.id, s])
+        .map((s) => [s.id, s]),
     );
     for (const s of Array.isArray(src.slides) ? src.slides : []) {
       if (!s || typeof s !== 'object') continue;
@@ -326,7 +338,8 @@ export function createLanguageMode({
         const sv = s.content?.[k];
         const tv = tgtContent[k];
         if (
-          typeof sv === 'string' && sv.trim() &&
+          typeof sv === 'string' &&
+          sv.trim() &&
           !(typeof tv === 'string' && tv.trim())
         ) {
           return true;
@@ -348,24 +361,30 @@ export function createLanguageMode({
         level: 'info',
         msg: t(
           'editor.translate.disabled',
-          'Translation is disabled (only one language enabled).'
+          'Translation is disabled (only one language enabled).',
         ),
       });
       return;
     }
     if (translateBusy) {
-      onStatus?.({ level: 'info', msg: t('editor.translate.busy', 'Translating…') });
+      onStatus?.({
+        level: 'info',
+        msg: t('editor.translate.busy', 'Translating…'),
+      });
       return;
     }
     if (isDirty?.()) {
-      onStatus?.({ level: 'info', msg: t('common.savingFirst', 'Saving first…') });
+      onStatus?.({
+        level: 'info',
+        msg: t('common.savingFirst', 'Saving first…'),
+      });
       await requestSave?.();
       if (isDirty?.()) {
         onStatus?.({
           level: 'error',
           msg: t(
             'editor.translate.abortedSaveFailed',
-            'Could not save; translation aborted.'
+            'Could not save; translation aborted.',
           ),
         });
         return;
@@ -417,7 +436,7 @@ export function createLanguageMode({
         level: 'info',
         msg: t(
           'editor.translate.disabled',
-          'Translation is disabled (only one language enabled).'
+          'Translation is disabled (only one language enabled).',
         ),
       });
       return;
@@ -429,7 +448,7 @@ export function createLanguageMode({
         message: t(
           'editor.translate.overwriteConfirm',
           'The {lang} version already exists. Overwrite?',
-          { lang: to === 'nl' ? 'NL' : 'EN' }
+          { lang: to === 'nl' ? 'NL' : 'EN' },
         ),
         confirmLabel: t('editor.translate.overwrite', 'Overwrite translation'),
         danger: true,
@@ -437,20 +456,26 @@ export function createLanguageMode({
       if (!ok) return;
     }
     if (isDirty?.()) {
-      onStatus?.({ level: 'info', msg: t('common.savingFirst', 'Saving first…') });
+      onStatus?.({
+        level: 'info',
+        msg: t('common.savingFirst', 'Saving first…'),
+      });
       await requestSave?.();
       if (isDirty?.()) {
         onStatus?.({
           level: 'error',
           msg: t(
             'editor.translate.abortedSaveFailed',
-            'Could not save; translation aborted.'
+            'Could not save; translation aborted.',
           ),
         });
         return;
       }
     }
-    onStatus?.({ level: 'info', msg: t('editor.translate.busy', 'Translating…') });
+    onStatus?.({
+      level: 'info',
+      msg: t('editor.translate.busy', 'Translating…'),
+    });
     setTranslateBusy(true);
     const backdrop = buildBusyModal();
     root.append(backdrop);
@@ -470,7 +495,10 @@ export function createLanguageMode({
       // Live-edit mode: the server applied the translation to the live doc
       // (step-4 seam), so it syncs to every client — no local doc write here
       // (a duplicate write would double-insert the same text via the CRDT).
-      onStatus?.({ level: 'success', msg: t('editor.translate.done', 'Translation ready.') });
+      onStatus?.({
+        level: 'success',
+        msg: t('editor.translate.done', 'Translation ready.'),
+      });
     } catch (e) {
       onStatus?.({ level: 'error', msg: errorMessage(e) });
     } finally {
@@ -495,9 +523,9 @@ export function createLanguageMode({
         class: 'help is-mt-8',
         text: t(
           'editor.translate.modalHelp',
-          'Please wait. You can keep using the editor once translation is done.'
+          'Please wait. You can keep using the editor once translation is done.',
         ),
-      })
+      }),
     );
     backdrop.append(modal);
     const handleEscape = (e) => {
@@ -584,7 +612,8 @@ export function createLanguageMode({
   return {
     el: langSegWrapper,
     syncLangUi,
-    translateOtherLanguage: () => translateOtherLanguage({ onStatus: toastStatus }),
+    translateOtherLanguage: () =>
+      translateOtherLanguage({ onStatus: toastStatus }),
     translateMissingForActive: () =>
       translateMissingForActive({ onStatus: toastStatus }),
     canTranslate: () => !!otherLang(normalizeLang(pres?.i18n?.active) || 'nl'),

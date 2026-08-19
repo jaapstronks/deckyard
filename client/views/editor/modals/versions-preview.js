@@ -32,7 +32,9 @@ export function openVersionPreviewModal({
   const versionLabel = version?.label || '';
   const titleText = versionLabel
     ? `${versionLabel} (${versionDate})`
-    : t('editor.versions.preview.title', 'Preview: {date}', { date: versionDate });
+    : t('editor.versions.preview.title', 'Preview: {date}', {
+        date: versionDate,
+      });
 
   const modal = createModal(h, {
     title: titleText,
@@ -40,7 +42,10 @@ export function openVersionPreviewModal({
     closeOnBackdrop: true,
   });
 
-  const status = h('div', { class: 'help modal-status', text: t('common.loading', 'Loading…') });
+  const status = h('div', {
+    class: 'help modal-status',
+    text: t('common.loading', 'Loading…'),
+  });
   const grid = h('div', { class: 'version-preview-grid' });
 
   modal.content.append(status, grid);
@@ -52,18 +57,25 @@ export function openVersionPreviewModal({
   async function loadVersionData() {
     try {
       const versionData = await api(
-        `/api/presentations/${presentationId}/versions/${version.id}`
+        `/api/presentations/${presentationId}/versions/${version.id}`,
       );
       const slides = versionData?.presentation?.slides || [];
 
       if (!slides.length) {
-        status.textContent = t('editor.versions.preview.noSlides', 'No slides in this version.');
+        status.textContent = t(
+          'editor.versions.preview.noSlides',
+          'No slides in this version.',
+        );
         return;
       }
 
-      status.textContent = t('editor.versions.preview.slideCount', '{count} slides', {
-        count: slides.length,
-      });
+      status.textContent = t(
+        'editor.versions.preview.slideCount',
+        '{count} slides',
+        {
+          count: slides.length,
+        },
+      );
 
       // Render slide thumbnails
       for (let i = 0; i < slides.length; i++) {
@@ -79,7 +91,10 @@ export function openVersionPreviewModal({
           });
           thumb.append(slideEl);
         } catch {
-          thumb.textContent = t('editor.versions.preview.renderError', 'Could not render');
+          thumb.textContent = t(
+            'editor.versions.preview.renderError',
+            'Could not render',
+          );
         }
 
         const label = h('div', {

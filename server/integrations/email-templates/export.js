@@ -20,18 +20,20 @@ export function buildExportReadyEmail({ tr, stats, downloadUrl }) {
   const bodyText = tr(
     'email.exportReady.body',
     'Your data export is ready to download. {count} presentation{s} have been exported.',
-    { count: presCount, s: presCount !== 1 ? 's' : '' }
+    { count: presCount, s: presCount !== 1 ? 's' : '' },
   );
 
   const sizeText = stats?.totalSizeBytes
-    ? tr('email.exportReady.size', 'File size: {size}', { size: formatBytes(stats.totalSizeBytes) })
+    ? tr('email.exportReady.size', 'File size: {size}', {
+        size: formatBytes(stats.totalSizeBytes),
+      })
     : '';
 
   const buttonLabel = tr('email.exportReady.button', 'Download backup');
 
   const footerText = tr(
     'email.exportReady.footer',
-    'This link will expire in 2 hours. If the link has expired, you can start a new export from your settings.'
+    'This link will expire in 2 hours. If the link has expired, you can start a new export from your settings.',
   );
 
   const htmlContent = `<!DOCTYPE html>
@@ -71,4 +73,3 @@ ${footerText}
 
   return { htmlContent, textContent };
 }
-

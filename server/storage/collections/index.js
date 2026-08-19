@@ -138,7 +138,7 @@ async function replaceMembership(db, orgId, collectionId, slideIds) {
           slide_library_id: slideId,
           position: index,
           created_at: now(),
-        }))
+        })),
       )
       .execute();
   }
@@ -165,13 +165,19 @@ async function listSlideCollections(ctx, opts = {}) {
     .where('organization_id', '=', orgId);
 
   if (opts?.shelf) query = query.where('shelf', '=', opts.shelf);
-  if (opts?.ownerEmail) query = query.where('owner_email', '=', opts.ownerEmail);
+  if (opts?.ownerEmail)
+    query = query.where('owner_email', '=', opts.ownerEmail);
 
   query = query.orderBy('created_at', 'desc');
   const rows = await query.execute();
 
-  const membership = await loadMembership(db, rows.map((r) => r.id));
-  return rows.map((row) => mapSlideCollectionRow(row, membership.get(row.id) || []));
+  const membership = await loadMembership(
+    db,
+    rows.map((r) => r.id),
+  );
+  return rows.map((row) =>
+    mapSlideCollectionRow(row, membership.get(row.id) || []),
+  );
 }
 
 async function getSlideCollection(id, ctx) {
@@ -198,7 +204,9 @@ async function createSlideCollection(data, ctx) {
   // created_by and updated_by e-mail (the same actor at create), so the
   // organization-collection mutate guard can match on the stable id.
   const actorEmail = ctx?.actorEmail || null;
-  const actorResolution = actorEmail ? await resolveIdentityByEmail(actorEmail) : null;
+  const actorResolution = actorEmail
+    ? await resolveIdentityByEmail(actorEmail)
+    : null;
   const actorUserId = actorResolution?.userId ?? null;
 
   const row = await db
@@ -217,7 +225,12 @@ async function createSlideCollection(data, ctx) {
     .returningAll()
     .executeTakeFirst();
 
-  const slideIds = await replaceMembership(db, orgId, row.id, data.slideIds || []);
+  const slideIds = await replaceMembership(
+    db,
+    orgId,
+    row.id,
+    data.slideIds || [],
+  );
   return mapSlideCollectionRow(row, slideIds);
 }
 
@@ -277,7 +290,9 @@ async function deleteSlideCollection(id, ctx) {
 // ============================================================
 
 export async function listPersonalCollections(storageScope, userEmail) {
-  const ctx = toStorageContext(storageScope, 'listPersonalCollections', { userEmail });
+  const ctx = toStorageContext(storageScope, 'listPersonalCollections', {
+    userEmail,
+  });
   const items = await listSlideCollections(ctx, {
     shelf: 'personal',
     ownerEmail: String(userEmail || '').toLowerCase(),
@@ -286,7 +301,9 @@ export async function listPersonalCollections(storageScope, userEmail) {
 }
 
 export async function getPersonalCollection(storageScope, userEmail, id) {
-  const ctx = toStorageContext(storageScope, 'getPersonalCollection', { userEmail });
+  const ctx = toStorageContext(storageScope, 'getPersonalCollection', {
+    userEmail,
+  });
   const item = await getSlideCollection(id, ctx);
   if (!item || item.shelf !== 'personal') return null;
   const owner = String(userEmail || '').toLowerCase();
@@ -294,8 +311,16 @@ export async function getPersonalCollection(storageScope, userEmail, id) {
   return item;
 }
 
-export async function createPersonalCollection(storageScope, userEmail, input, { actorEmail } = {}) {
-  const ctx = toStorageContext(storageScope, 'createPersonalCollection', { userEmail, actorEmail });
+export async function createPersonalCollection(
+  storageScope,
+  userEmail,
+  input,
+  { actorEmail } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'createPersonalCollection', {
+    userEmail,
+    actorEmail,
+  });
   if (!cleanName(input)) return { ok: false, reason: 'name_required' };
   const item = await createSlideCollection(
     {
@@ -305,14 +330,23 @@ export async function createPersonalCollection(storageScope, userEmail, input, {
       shelf: 'personal',
       ownerEmail: String(userEmail || '').toLowerCase(),
     },
-    ctx
+    ctx,
   );
   if (!item) return { ok: false, reason: 'create_failed' };
   return { ok: true, item };
 }
 
-export async function updatePersonalCollection(storageScope, userEmail, id, patch, { actorEmail } = {}) {
-  const ctx = toStorageContext(storageScope, 'updatePersonalCollection', { userEmail, actorEmail });
+export async function updatePersonalCollection(
+  storageScope,
+  userEmail,
+  id,
+  patch,
+  { actorEmail } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'updatePersonalCollection', {
+    userEmail,
+    actorEmail,
+  });
   // Ownership check: only the owner may mutate their personal collection.
   const existing = await getSlideCollection(id, ctx);
   const owner = String(userEmail || '').toLowerCase();
@@ -329,7 +363,9 @@ export async function updatePersonalCollection(storageScope, userEmail, id, patc
 }
 
 export async function deletePersonalCollection(storageScope, userEmail, id) {
-  const ctx = toStorageContext(storageScope, 'deletePersonalCollection', { userEmail });
+  const ctx = toStorageContext(storageScope, 'deletePersonalCollection', {
+    userEmail,
+  });
   const existing = await getSlideCollection(id, ctx);
   const owner = String(userEmail || '').toLowerCase();
   if (
@@ -348,21 +384,38 @@ export async function deletePersonalCollection(storageScope, userEmail, id) {
 // Organization-shelf collections
 // ============================================================
 
-export async function listOrganizationCollections(storageScope, { userEmail = '' } = {}) {
-  const ctx = toStorageContext(storageScope, 'listOrganizationCollections', { userEmail });
+export async function listOrganizationCollections(
+  storageScope,
+  { userEmail = '' } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'listOrganizationCollections', {
+    userEmail,
+  });
   const items = await listSlideCollections(ctx, { shelf: 'organization' });
   return { items };
 }
 
-export async function getOrganizationCollection(storageScope, id, { userEmail = '' } = {}) {
-  const ctx = toStorageContext(storageScope, 'getOrganizationCollection', { userEmail });
+export async function getOrganizationCollection(
+  storageScope,
+  id,
+  { userEmail = '' } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'getOrganizationCollection', {
+    userEmail,
+  });
   const item = await getSlideCollection(id, ctx);
   if (!item || item.shelf !== 'organization') return null;
   return item;
 }
 
-export async function createOrganizationCollection(storageScope, input, { actorEmail } = {}) {
-  const ctx = toStorageContext(storageScope, 'createOrganizationCollection', { actorEmail });
+export async function createOrganizationCollection(
+  storageScope,
+  input,
+  { actorEmail } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'createOrganizationCollection', {
+    actorEmail,
+  });
   if (!cleanName(input)) return { ok: false, reason: 'name_required' };
   const item = await createSlideCollection(
     {
@@ -371,16 +424,24 @@ export async function createOrganizationCollection(storageScope, input, { actorE
       slideIds: input?.slideIds,
       shelf: 'organization',
     },
-    ctx
+    ctx,
   );
   if (!item) return { ok: false, reason: 'create_failed' };
   return { ok: true, item };
 }
 
-export async function updateOrganizationCollection(storageScope, id, patch, { actorEmail, allowMutate } = {}) {
-  const ctx = toStorageContext(storageScope, 'updateOrganizationCollection', { actorEmail });
+export async function updateOrganizationCollection(
+  storageScope,
+  id,
+  patch,
+  { actorEmail, allowMutate } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'updateOrganizationCollection', {
+    actorEmail,
+  });
   const existing = await getSlideCollection(id, ctx);
-  if (!existing || existing.shelf !== 'organization') return { ok: false, reason: 'not_found' };
+  if (!existing || existing.shelf !== 'organization')
+    return { ok: false, reason: 'not_found' };
   if (typeof allowMutate === 'function') {
     const ok = await allowMutate(existing, { actorEmail });
     if (!ok) return { ok: false, reason: 'forbidden' };
@@ -390,10 +451,17 @@ export async function updateOrganizationCollection(storageScope, id, patch, { ac
   return { ok: true, item };
 }
 
-export async function deleteOrganizationCollection(storageScope, id, { actorEmail, allowMutate } = {}) {
-  const ctx = toStorageContext(storageScope, 'deleteOrganizationCollection', { actorEmail });
+export async function deleteOrganizationCollection(
+  storageScope,
+  id,
+  { actorEmail, allowMutate } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'deleteOrganizationCollection', {
+    actorEmail,
+  });
   const existing = await getSlideCollection(id, ctx);
-  if (!existing || existing.shelf !== 'organization') return { ok: false, reason: 'not_found' };
+  if (!existing || existing.shelf !== 'organization')
+    return { ok: false, reason: 'not_found' };
   if (typeof allowMutate === 'function') {
     const ok = await allowMutate(existing, { actorEmail });
     if (!ok) return { ok: false, reason: 'forbidden' };

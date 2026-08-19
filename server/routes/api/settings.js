@@ -1,4 +1,10 @@
-import { methodNotAllowed, serveJson, unauthorized, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import {
+  methodNotAllowed,
+  serveJson,
+  unauthorized,
+  requireJsonBody,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { getStringArray } from '../../utils/request-validators.js';
 import {
   getAppSettings,
@@ -35,7 +41,10 @@ async function canWriteOrgAdminKeys(authedUser, organizationId) {
   if (!isMultiOrgEnabled()) return true;
   if (!authedUser?.email || !organizationId) return false;
 
-  const membership = await getMembershipByEmail(authedUser.email, organizationId);
+  const membership = await getMembershipByEmail(
+    authedUser.email,
+    organizationId,
+  );
   return hasOrganizationRole(membership?.role, 'admin');
 }
 
@@ -96,7 +105,9 @@ async function handleOrgSettingsPatch({ req, res, authedUser }) {
   const body = parsed.body;
 
   const hasDesignerKeys = 'disabledSlideTypes' in body;
-  const hasAdminKeys = Object.keys(body).some(k => k !== 'disabledSlideTypes');
+  const hasAdminKeys = Object.keys(body).some(
+    (k) => k !== 'disabledSlideTypes',
+  );
   // Third copy of the designer gate, and it carried the same `|| isAdmin`
   // that canManage() and canManageThemes() did — so scoping only those two
   // left `disabledSlideTypes` on the *active* organization writable by an
@@ -134,7 +145,10 @@ async function handleOrgSettingsPatch({ req, res, authedUser }) {
             enabled: rss.enabled === true,
             title: String(rss.title || '').slice(0, 200),
             description: String(rss.description || '').slice(0, 500),
-            language: typeof rss.language === 'string' ? rss.language.slice(0, 10) : 'en',
+            language:
+              typeof rss.language === 'string'
+                ? rss.language.slice(0, 10)
+                : 'en',
             maxItems: Math.max(1, Math.min(100, Number(rss.maxItems) || 50)),
             copyright: String(rss.copyright || '').slice(0, 200),
             authorName: String(rss.authorName || '').slice(0, 100),
@@ -184,12 +198,34 @@ async function handleMySettings({ storageScope, req, res, authedUser }) {
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'GET', pattern: '/api/settings/app', handler: handleAppSettingsGet },
-  { method: 'PUT', pattern: '/api/settings/app', handler: handleAppSettingsPut },
-  { pattern: '/api/settings/app', handler: ({ res }) => methodNotAllowed(res, ['GET', 'PUT']) },
-  { method: 'GET', pattern: '/api/settings/organization', handler: handleOrgSettingsGet },
-  { method: 'PATCH', pattern: '/api/settings/organization', handler: handleOrgSettingsPatch },
-  { pattern: '/api/settings/organization', handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH']) },
+  {
+    method: 'GET',
+    pattern: '/api/settings/app',
+    handler: handleAppSettingsGet,
+  },
+  {
+    method: 'PUT',
+    pattern: '/api/settings/app',
+    handler: handleAppSettingsPut,
+  },
+  {
+    pattern: '/api/settings/app',
+    handler: ({ res }) => methodNotAllowed(res, ['GET', 'PUT']),
+  },
+  {
+    method: 'GET',
+    pattern: '/api/settings/organization',
+    handler: handleOrgSettingsGet,
+  },
+  {
+    method: 'PATCH',
+    pattern: '/api/settings/organization',
+    handler: handleOrgSettingsPatch,
+  },
+  {
+    pattern: '/api/settings/organization',
+    handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH']),
+  },
   { pattern: '/api/settings/me', handler: handleMySettings },
 ];
 
@@ -198,5 +234,5 @@ export const ROUTES = [
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
 export const handleSettings = withErrorHandler('settings', (ctx) =>
-  dispatchRoutes(ROUTES, ctx)
+  dispatchRoutes(ROUTES, ctx),
 );

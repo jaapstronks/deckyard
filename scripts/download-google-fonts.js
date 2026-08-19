@@ -111,14 +111,15 @@ async function fetchFontFaces(url) {
   const response = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch CSS: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Failed to fetch CSS: ${response.status} ${response.statusText}`,
+    );
   }
 
   const css = await response.text();
   const faces = new Map();
 
-  const blockRe =
-    /\/\*\s*([a-z0-9-]+)\s*\*\/\s*@font-face\s*\{([^}]*)\}/g;
+  const blockRe = /\/\*\s*([a-z0-9-]+)\s*\*\/\s*@font-face\s*\{([^}]*)\}/g;
 
   let match;
   while ((match = blockRe.exec(css)) !== null) {
@@ -162,13 +163,15 @@ async function fetchBytes(url) {
     response = await fetch(url);
   } catch (err) {
     const cause = err?.cause?.code ? ` (${err.cause.code})` : '';
-    throw new Error(`could not reach ${url}${cause} — network error, not a broken pin`);
+    throw new Error(
+      `could not reach ${url}${cause} — network error, not a broken pin`,
+    );
   }
   if (!response.ok) {
     const err = new Error(
       `Failed to download font: ${response.status} ${response.statusText}\n` +
         `      ${url}\n` +
-        '      the pinned URL is gone; re-run with --update-lock and review the diff'
+        '      the pinned URL is gone; re-run with --update-lock and review the diff',
     );
     err.fatalPin = true;
     throw err;
@@ -197,7 +200,9 @@ async function resolveFontEntries(font, options) {
     for (const { name: subset, unicodeRange: expectedRange } of FONT_SUBSETS) {
       const face = faces.get(`${weight}/${subset}`);
       if (!face) {
-        throw new Error(`no ${subset} @font-face at weight ${weight} in the API response`);
+        throw new Error(
+          `no ${subset} @font-face at weight ${weight} in the API response`,
+        );
       }
       // A drifting range means Google reshuffled the subset boundaries, which
       // changes which file serves which glyph. Fail loudly rather than pin a
@@ -206,7 +211,7 @@ async function resolveFontEntries(font, options) {
         throw new Error(
           `${subset} unicode-range drifted from shared/theme-fonts.js at weight ${weight}\n` +
             `      expected: ${expectedRange}\n` +
-            `      received: ${face.unicodeRange}`
+            `      received: ${face.unicodeRange}`,
         );
       }
 
@@ -242,7 +247,9 @@ async function updateLock(options) {
   for (const font of selectFonts(options)) {
     console.log(`\n📝 Resolving: ${font.family}`);
     if (options.dryRun) {
-      console.log(`   Would resolve weights ${font.weights.join(', ')} × ${FONT_SUBSET_NAMES.join(', ')}`);
+      console.log(
+        `   Would resolve weights ${font.weights.join(', ')} × ${FONT_SUBSET_NAMES.join(', ')}`,
+      );
       continue;
     }
     try {
@@ -270,11 +277,14 @@ async function updateLock(options) {
       'Pins every self-hosted Google Font file by URL and SHA-256 so postinstall ' +
       'is reproducible and a Google-side font update cannot silently change how ' +
       'decks render. Do not hand-edit.',
-    subsets: FONT_SUBSETS.map(({ name, unicodeRange }) => ({ name, unicodeRange })),
+    subsets: FONT_SUBSETS.map(({ name, unicodeRange }) => ({
+      name,
+      unicodeRange,
+    })),
     fonts: Object.fromEntries(
       Object.keys(fonts)
         .sort()
-        .map((family) => [family, fonts[family]])
+        .map((family) => [family, fonts[family]]),
     ),
   };
 
@@ -296,7 +306,7 @@ async function readLock({ optional = false } = {}) {
     if (optional) return null;
     throw new Error(
       `missing ${path.relative(ROOT_DIR, LOCK_PATH)} — run ` +
-        '`node scripts/download-google-fonts.js --update-lock` to generate it'
+        '`node scripts/download-google-fonts.js --update-lock` to generate it',
     );
   }
   const lock = JSON.parse(raw);
@@ -324,7 +334,7 @@ async function downloadPinnedFont(font, lock, options) {
   const pinned = lock.fonts[font.family];
   if (!pinned) {
     const err = new Error(
-      `not in the lockfile — run \`node scripts/download-google-fonts.js --update-lock\``
+      `not in the lockfile — run \`node scripts/download-google-fonts.js --update-lock\``,
     );
     err.fatalPin = true;
     throw err;
@@ -361,11 +371,14 @@ async function downloadPinnedFont(font, lock, options) {
       try {
         const onDisk = await fs.readFile(destPath);
         if (sha256(onDisk) === entry.sha256) {
-          if (options.verbose) console.log(`   ✓ ${entry.file} (pinned, cached)`);
+          if (options.verbose)
+            console.log(`   ✓ ${entry.file} (pinned, cached)`);
           cached++;
           continue;
         }
-        console.log(`   ↻ ${entry.file} (does not match the pin, re-downloading)`);
+        console.log(
+          `   ↻ ${entry.file} (does not match the pin, re-downloading)`,
+        );
       } catch {
         // Not on disk yet.
       }
@@ -384,7 +397,7 @@ async function downloadPinnedFont(font, lock, options) {
             `      expected ${entry.sha256}\n` +
             `      received ${actual}\n` +
             `      the pinned URL no longer serves the pinned bytes; re-run with --update-lock ` +
-            `and review the diff`
+            `and review the diff`,
         );
         err.fatalPin = true;
         throw err;
@@ -434,8 +447,8 @@ function generateFontFaceCSS(lock) {
       ...face,
       style: 'normal',
       identity:
-        pins.find((p) => p.weight === face.weight && p.subset === face.subset)?.sha256 ||
-        face.path,
+        pins.find((p) => p.weight === face.weight && p.subset === face.subset)
+          ?.sha256 || face.path,
     }));
 
     for (const face of mergeFontFaces(faces)) {
@@ -460,10 +473,12 @@ function selectFonts(options) {
   if (!options.singleFont) return CURATED_FONTS;
 
   const matches = CURATED_FONTS.filter(
-    (f) => f.family.toLowerCase() === options.singleFont.toLowerCase()
+    (f) => f.family.toLowerCase() === options.singleFont.toLowerCase(),
   );
   if (matches.length === 0) {
-    console.error(`\n❌ Font "${options.singleFont}" not found in curated list.`);
+    console.error(
+      `\n❌ Font "${options.singleFont}" not found in curated list.`,
+    );
     console.log('\nAvailable fonts:');
     for (const font of CURATED_FONTS) console.log(`  - ${font.family}`);
     process.exit(1);
@@ -486,7 +501,9 @@ async function main() {
     const errors = await updateLock(options);
     console.log('\n========================');
     if (errors > 0) {
-      console.error(`❌ ${errors} font(s) could not be resolved — lockfile left incomplete`);
+      console.error(
+        `❌ ${errors} font(s) could not be resolved — lockfile left incomplete`,
+      );
       process.exit(1);
     }
     console.log('✅ Lockfile up to date');
@@ -504,8 +521,13 @@ async function main() {
   for (const font of selectFonts(options)) {
     console.log(`\n📝 Processing: ${font.family}`);
     try {
-      const { downloaded, cached } = await downloadPinnedFont(font, lock, options);
-      if (!options.dryRun && downloaded === 0) console.log(`   ✓ ${cached} files already pinned`);
+      const { downloaded, cached } = await downloadPinnedFont(
+        font,
+        lock,
+        options,
+      );
+      if (!options.dryRun && downloaded === 0)
+        console.log(`   ✓ ${cached} files already pinned`);
       successCount++;
     } catch (err) {
       // A broken pin is a repository problem and must stop the run; an
@@ -537,7 +559,9 @@ async function main() {
   console.log('\n========================');
   console.log(`✅ Processed: ${successCount} fonts`);
   if (errorCount > 0) {
-    console.log(`⚠️  Skipped: ${errorCount} fonts (download failed — fonts fall back to the system stack)`);
+    console.log(
+      `⚠️  Skipped: ${errorCount} fonts (download failed — fonts fall back to the system stack)`,
+    );
   }
 
   if (options.dryRun) {

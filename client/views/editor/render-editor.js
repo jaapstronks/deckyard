@@ -5,11 +5,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 import { showEditorLoadingSkeleton } from './loading-skeleton.js';
 
-export async function renderEditor(
-  root,
-  id,
-  { nav, user } = {}
-) {
+export async function renderEditor(root, id, { nav, user } = {}) {
   // Long decks take a while to fetch + mount; show the layout skeleton
   // immediately so the page never sits blank (removed on every exit path).
   const hideSkeleton = showEditorLoadingSkeleton(root);
@@ -46,7 +42,8 @@ export async function renderEditor(
   // For view or comment permissions, render the viewer mode instead of the editor
   if (permission === 'view' || permission === 'comment') {
     try {
-      const { createViewerController } = await import('../viewer/viewer-controller.js');
+      const { createViewerController } =
+        await import('../viewer/viewer-controller.js');
       const controller = await createViewerController({
         root,
         id,
@@ -84,7 +81,12 @@ function renderPermissionDenied(root, nav) {
 
   const card = h('div', { class: 'access-error-card' });
 
-  const icon = h('img', { class: 'access-error-icon', src: iconUrl('lock'), alt: '', 'aria-hidden': 'true' });
+  const icon = h('img', {
+    class: 'access-error-icon',
+    src: iconUrl('lock'),
+    alt: '',
+    'aria-hidden': 'true',
+  });
 
   const title = h('h1', {
     class: 'access-error-title',
@@ -95,7 +97,7 @@ function renderPermissionDenied(root, nav) {
     class: 'access-error-message',
     text: t(
       'access.denied.message',
-      "You don't have permission to view this presentation. If you believe you should have access, please contact the presentation owner to request access."
+      "You don't have permission to view this presentation. If you believe you should have access, please contact the presentation owner to request access.",
     ),
   });
 
@@ -121,7 +123,12 @@ function renderNotFound(root, nav) {
 
   const card = h('div', { class: 'access-error-card' });
 
-  const icon = h('img', { class: 'access-error-icon', src: iconUrl('search'), alt: '', 'aria-hidden': 'true' });
+  const icon = h('img', {
+    class: 'access-error-icon',
+    src: iconUrl('search'),
+    alt: '',
+    'aria-hidden': 'true',
+  });
 
   const title = h('h1', {
     class: 'access-error-title',
@@ -132,7 +139,7 @@ function renderNotFound(root, nav) {
     class: 'access-error-message',
     text: t(
       'access.notFound.message',
-      "This presentation doesn't exist or may have been deleted. Please check the link and try again."
+      "This presentation doesn't exist or may have been deleted. Please check the link and try again.",
     ),
   });
 

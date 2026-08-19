@@ -29,7 +29,10 @@ import {
 } from '../scripts/i18n-keys.js';
 import { TIER_1 } from '../scripts/i18n-tiers.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const clientDir = path.join(repoRoot, 'client');
 const i18nDir = path.join(clientDir, 'i18n');
 
@@ -45,7 +48,9 @@ const staticKeys = [...used.keys()].filter((k) => !isDynamicKey(k));
 
 /** @param {string} s @returns {string[]} sorted {var} names in a string */
 function placeholders(s) {
-  return [...String(s).matchAll(/\{([a-zA-Z0-9_]+)\}/g)].map((m) => m[1]).sort();
+  return [...String(s).matchAll(/\{([a-zA-Z0-9_]+)\}/g)]
+    .map((m) => m[1])
+    .sort();
 }
 
 describe('i18n coverage', () => {
@@ -60,15 +65,22 @@ describe('i18n coverage', () => {
           `Add them (see scripts/i18n-keys.js). First few:\n` +
           missing
             .slice(0, 20)
-            .map((k) => `  ${k}  <- ${used.get(k).file.replace(repoRoot + '/', '')}`)
-            .join('\n')
+            .map(
+              (k) =>
+                `  ${k}  <- ${used.get(k).file.replace(repoRoot + '/', '')}`,
+            )
+            .join('\n'),
       );
     });
 
     it(`${locale}/ has no empty values`, async () => {
       const dict = await loadLocale(i18nDir, locale);
       const empty = Object.keys(dict).filter((k) => !String(dict[k]).trim());
-      assert.deepStrictEqual(empty.sort(), [], `Empty translation values in ${locale}/`);
+      assert.deepStrictEqual(
+        empty.sort(),
+        [],
+        `Empty translation values in ${locale}/`,
+      );
     });
   }
 
@@ -84,7 +96,11 @@ describe('i18n coverage', () => {
         mismatched.push(`${key}: en{${a.join(',')}} vs nl{${b.join(',')}}`);
       }
     }
-    assert.deepStrictEqual(mismatched.sort(), [], 'Placeholder mismatch between en and nl');
+    assert.deepStrictEqual(
+      mismatched.sort(),
+      [],
+      'Placeholder mismatch between en and nl',
+    );
   });
 
   it('follow.* keys are not used through the global t()', async () => {
@@ -99,7 +115,11 @@ describe('i18n coverage', () => {
       offenders.sort(),
       [],
       'follow.* keys must come from createFollowCopy(), not the global t():\n' +
-        offenders.map((k) => `  ${k}  <- ${used.get(k).file.replace(repoRoot + '/', '')}`).join('\n')
+        offenders
+          .map(
+            (k) => `  ${k}  <- ${used.get(k).file.replace(repoRoot + '/', '')}`,
+          )
+          .join('\n'),
     );
   });
 
@@ -108,15 +128,27 @@ describe('i18n coverage', () => {
     // deckLangToLocale() narrows to exactly 'nl' or 'en'. A key added to
     // createFollowCopy() without a matching follow.json entry silently keeps
     // its inline English fallback in both languages.
-    const src = await fs.readFile(path.join(clientDir, 'views/follow/i18n.js'), 'utf8');
-    const keys = [...src.matchAll(/\btr\(\s*'(follow\.[\w.]+)'/g)].map((m) => m[1]);
-    assert.ok(keys.length > 0, 'no follow keys found — did createFollowCopy move?');
+    const src = await fs.readFile(
+      path.join(clientDir, 'views/follow/i18n.js'),
+      'utf8',
+    );
+    const keys = [...src.matchAll(/\btr\(\s*'(follow\.[\w.]+)'/g)].map(
+      (m) => m[1],
+    );
+    assert.ok(
+      keys.length > 0,
+      'no follow keys found — did createFollowCopy move?',
+    );
     for (const locale of ['nl', 'en']) {
       const dict = JSON.parse(
-        await fs.readFile(path.join(i18nDir, locale, 'follow.json'), 'utf8')
+        await fs.readFile(path.join(i18nDir, locale, 'follow.json'), 'utf8'),
       );
       const missing = keys.filter((k) => typeof dict[k] !== 'string');
-      assert.deepStrictEqual(missing.sort(), [], `missing from client/i18n/${locale}/follow.json`);
+      assert.deepStrictEqual(
+        missing.sort(),
+        [],
+        `missing from client/i18n/${locale}/follow.json`,
+      );
     }
   });
 
@@ -136,7 +168,7 @@ describe('i18n coverage', () => {
       offenders.map((o) => o.replace(repoRoot + '/', '')).sort(),
       [],
       'Descriptor pairs are spelled `<x>Key: …, <x>: …` — rename the `<x>Default` half:\n' +
-        offenders.map((o) => `  ${o.replace(repoRoot + '/', '')}`).join('\n')
+        offenders.map((o) => `  ${o.replace(repoRoot + '/', '')}`).join('\n'),
     );
   });
 
@@ -148,7 +180,7 @@ describe('i18n coverage', () => {
     for (const locale of locales) {
       await assert.doesNotReject(
         () => loadLocale(i18nDir, locale),
-        `client/i18n/${locale}/ contains invalid JSON`
+        `client/i18n/${locale}/ contains invalid JSON`,
       );
     }
   });

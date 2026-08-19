@@ -53,7 +53,9 @@ function now() {
  * @returns {string}
  */
 function normalizeDeviceId(v) {
-  return String(v || '').trim().slice(0, MAX_DEVICE_ID_LENGTH);
+  return String(v || '')
+    .trim()
+    .slice(0, MAX_DEVICE_ID_LENGTH);
 }
 
 /**
@@ -134,7 +136,11 @@ async function pruneOutOfRangeVotes(interactionId, optionCount) {
  * @returns {Promise<object>}
  */
 async function aggregateForDevice(slide, deviceId) {
-  const { totals, myVote } = await readVotes(slide.id, slide.optionCount, deviceId);
+  const { totals, myVote } = await readVotes(
+    slide.id,
+    slide.optionCount,
+    deviceId,
+  );
   const total = totals.reduce((a, b) => a + b, 0);
   return {
     slideId: slide.slideId,
@@ -191,7 +197,12 @@ function sweepBroadcastStates() {
  * @param {boolean} [opts.immediate]
  * @returns {void}
  */
-function scheduleInteractionBroadcast(scope, sessionId, slideId, { immediate = false } = {}) {
+function scheduleInteractionBroadcast(
+  scope,
+  sessionId,
+  slideId,
+  { immediate = false } = {},
+) {
   const key = `${sessionId}\n${slideId}`;
   let b = broadcastStates.get(key);
   if (!b) {
@@ -204,7 +215,11 @@ function scheduleInteractionBroadcast(scope, sessionId, slideId, { immediate = f
     (async () => {
       const slide = await getInteractionSlide({ sessionId, slideId });
       if (!slide) return;
-      await maybeBroadcast(scope, sessionId, await aggregateForDevice(slide, null));
+      await maybeBroadcast(
+        scope,
+        sessionId,
+        await aggregateForDevice(slide, null),
+      );
     })().catch(() => {});
   };
   if (immediate) {
@@ -246,7 +261,7 @@ function scheduleInteractionBroadcast(scope, sessionId, slideId, { immediate = f
 async function ensureInteractionForSlide(
   scope,
   sessionId,
-  { type = 'poll', slideId = '', optionCount = 0, defaultStatus = 'open' } = {}
+  { type = 'poll', slideId = '', optionCount = 0, defaultStatus = 'open' } = {},
 ) {
   const ensured = await ensureInteractionSlide({
     sessionId,
@@ -279,12 +294,19 @@ async function ensureInteractionForSlide(
 async function getInteractionAggregate(
   scope,
   sessionId,
-  { slideId = '', deviceId = null, optionCount = null } = {}
+  { slideId = '', deviceId = null, optionCount = null } = {},
 ) {
   let slide = await getInteractionSlide({ sessionId, slideId });
   if (!slide) return null;
-  if (optionCount != null && clampInt(optionCount, 0, MAX_OPTIONS) !== slide.optionCount) {
-    const reconciled = await updateInteractionSlide({ sessionId, slideId, optionCount });
+  if (
+    optionCount != null &&
+    clampInt(optionCount, 0, MAX_OPTIONS) !== slide.optionCount
+  ) {
+    const reconciled = await updateInteractionSlide({
+      sessionId,
+      slideId,
+      optionCount,
+    });
     if (reconciled.ok) slide = reconciled.slide;
     await pruneOutOfRangeVotes(slide.id, slide.optionCount);
   }
@@ -309,7 +331,13 @@ async function getInteractionAggregate(
 async function voteInteraction(
   scope,
   sessionId,
-  { type = 'poll', slideId = '', deviceId = '', optionIndex = 0, optionCount = 0 } = {}
+  {
+    type = 'poll',
+    slideId = '',
+    deviceId = '',
+    optionIndex = 0,
+    optionCount = 0,
+  } = {},
 ) {
   const did = normalizeDeviceId(deviceId);
   const sid = String(slideId || '').trim();
@@ -343,7 +371,7 @@ async function voteInteraction(
         oc.columns(['interaction_id', 'device_id']).doUpdateSet({
           option_index: idx,
           updated_at: new Date(),
-        })
+        }),
       )
       .execute();
   });
@@ -370,7 +398,7 @@ async function voteInteraction(
 async function setInteractionStatus(
   scope,
   sessionId,
-  { slideId = '', status = 'open', optionCount = null } = {}
+  { slideId = '', status = 'open', optionCount = null } = {},
 ) {
   const existing = await getInteractionSlide({ sessionId, slideId });
   if (!existing) return { ok: false, reason: 'not_found' };
@@ -383,10 +411,13 @@ async function setInteractionStatus(
   });
   if (!updated.ok) return updated;
   const slide = updated.slide;
-  if (optionCount != null) await pruneOutOfRangeVotes(slide.id, slide.optionCount);
+  if (optionCount != null)
+    await pruneOutOfRangeVotes(slide.id, slide.optionCount);
 
   const agg = await aggregateForDevice(slide, null);
-  scheduleInteractionBroadcast(scope, sessionId, slide.slideId, { immediate: true });
+  scheduleInteractionBroadcast(scope, sessionId, slide.slideId, {
+    immediate: true,
+  });
 
   if (existing.status !== 'closed' && slide.status === 'closed') {
     const webhookEvent =
@@ -413,7 +444,11 @@ async function setInteractionStatus(
  *   `invalid` for a blank id, `not_found` when the slide has no interaction
  *   (it was never ensured, or the session expired mid-request).
  */
-async function resetInteraction(scope, sessionId, { slideId = '', optionCount = null } = {}) {
+async function resetInteraction(
+  scope,
+  sessionId,
+  { slideId = '', optionCount = null } = {},
+) {
   const updated = await updateInteractionSlide({
     sessionId,
     slideId,
@@ -423,11 +458,16 @@ async function resetInteraction(scope, sessionId, { slideId = '', optionCount = 
   const slide = updated.slide;
 
   await withDbGuard(undefined, async (db) => {
-    await db.deleteFrom('interaction_votes').where('interaction_id', '=', slide.id).execute();
+    await db
+      .deleteFrom('interaction_votes')
+      .where('interaction_id', '=', slide.id)
+      .execute();
   });
 
   const agg = await aggregateForDevice(slide, null);
-  scheduleInteractionBroadcast(scope, sessionId, slide.slideId, { immediate: true });
+  scheduleInteractionBroadcast(scope, sessionId, slide.slideId, {
+    immediate: true,
+  });
   return { ok: true, aggregate: agg };
 }
 
@@ -438,18 +478,37 @@ async function resetInteraction(scope, sessionId, { slideId = '', optionCount = 
 // scope may act cross-organization (see routes/api/follow/helpers.js). The
 // presenter half (set status/reset) requires an organization-scoped scope.
 
-export async function ensurePollInteractionForSlide(scope, sessionId, opts = {}) {
-  toStorageContext(scope, 'ensurePollInteractionForSlide', {}, { allowCrossOrganization: true });
+export async function ensurePollInteractionForSlide(
+  scope,
+  sessionId,
+  opts = {},
+) {
+  toStorageContext(
+    scope,
+    'ensurePollInteractionForSlide',
+    {},
+    { allowCrossOrganization: true },
+  );
   return ensureInteractionForSlide(scope, sessionId, { ...opts, type: 'poll' });
 }
 
 export async function getPollInteractionAggregate(scope, sessionId, opts = {}) {
-  toStorageContext(scope, 'getPollInteractionAggregate', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'getPollInteractionAggregate',
+    {},
+    { allowCrossOrganization: true },
+  );
   return getInteractionAggregate(scope, sessionId, opts);
 }
 
 export async function votePollInteraction(scope, sessionId, opts = {}) {
-  toStorageContext(scope, 'votePollInteraction', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'votePollInteraction',
+    {},
+    { allowCrossOrganization: true },
+  );
   return voteInteraction(scope, sessionId, { ...opts, type: 'poll' });
 }
 
@@ -465,18 +524,44 @@ export async function resetPollInteraction(scope, sessionId, opts = {}) {
 
 // ---- Likert (new) ----
 
-export async function ensureLikertInteractionForSlide(scope, sessionId, opts = {}) {
-  toStorageContext(scope, 'ensureLikertInteractionForSlide', {}, { allowCrossOrganization: true });
-  return ensureInteractionForSlide(scope, sessionId, { ...opts, type: 'likert' });
+export async function ensureLikertInteractionForSlide(
+  scope,
+  sessionId,
+  opts = {},
+) {
+  toStorageContext(
+    scope,
+    'ensureLikertInteractionForSlide',
+    {},
+    { allowCrossOrganization: true },
+  );
+  return ensureInteractionForSlide(scope, sessionId, {
+    ...opts,
+    type: 'likert',
+  });
 }
 
-export async function getLikertInteractionAggregate(scope, sessionId, opts = {}) {
-  toStorageContext(scope, 'getLikertInteractionAggregate', {}, { allowCrossOrganization: true });
+export async function getLikertInteractionAggregate(
+  scope,
+  sessionId,
+  opts = {},
+) {
+  toStorageContext(
+    scope,
+    'getLikertInteractionAggregate',
+    {},
+    { allowCrossOrganization: true },
+  );
   return getInteractionAggregate(scope, sessionId, opts);
 }
 
 export async function voteLikertInteraction(scope, sessionId, opts = {}) {
-  toStorageContext(scope, 'voteLikertInteraction', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'voteLikertInteraction',
+    {},
+    { allowCrossOrganization: true },
+  );
   return voteInteraction(scope, sessionId, { ...opts, type: 'likert' });
 }
 

@@ -7,8 +7,14 @@ async function listAssetDir(repoRoot, subdir, allowedExts) {
   // Core assets ship with the OSS repo; forks add their own under
   // custom/assets/images/<subdir> (see docs/reference/fork-setup.md).
   const roots = [
-    { dir: path.join(repoRoot, 'assets', 'images', subdir), prefix: `/assets/images/${subdir}` },
-    { dir: path.join(repoRoot, 'custom', 'assets', 'images', subdir), prefix: `/custom/assets/images/${subdir}` },
+    {
+      dir: path.join(repoRoot, 'assets', 'images', subdir),
+      prefix: `/assets/images/${subdir}`,
+    },
+    {
+      dir: path.join(repoRoot, 'custom', 'assets', 'images', subdir),
+      prefix: `/custom/assets/images/${subdir}`,
+    },
   ];
   const allowed = new Set(allowedExts);
   const urls = [];
@@ -23,7 +29,7 @@ async function listAssetDir(repoRoot, subdir, allowedExts) {
       ...files
         .filter((f) => allowed.has(path.extname(f).toLowerCase()))
         .sort((a, b) => a.localeCompare(b))
-        .map((f) => `${prefix}/${f}`)
+        .map((f) => `${prefix}/${f}`),
     );
   }
   return urls;
@@ -65,8 +71,16 @@ async function handleBackgrounds({ repoRoot, res }) {
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'GET', pattern: '/api/assets/partnerlogos', handler: handlePartnerLogos },
-  { method: 'GET', pattern: '/api/assets/backgrounds', handler: handleBackgrounds },
+  {
+    method: 'GET',
+    pattern: '/api/assets/partnerlogos',
+    handler: handlePartnerLogos,
+  },
+  {
+    method: 'GET',
+    pattern: '/api/assets/backgrounds',
+    handler: handleBackgrounds,
+  },
 ];
 
 /**
@@ -74,5 +88,5 @@ export const ROUTES = [
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
 export const handleAssets = withErrorHandler('assets', (ctx) =>
-  dispatchRoutes(ROUTES, ctx)
+  dispatchRoutes(ROUTES, ctx),
 );

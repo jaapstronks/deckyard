@@ -24,7 +24,7 @@ export function createAdminNotificationsSection({ h }) {
     class: 'help',
     text: t(
       'settings.admin.notifications.hint',
-      'Configure email notifications for comments. Requires BREVO_API_KEY and BREVO_SENDER_EMAIL environment variables.'
+      'Configure email notifications for comments. Requires BREVO_API_KEY and BREVO_SENDER_EMAIL environment variables.',
     ),
   });
 
@@ -34,7 +34,7 @@ export function createAdminNotificationsSection({ h }) {
     h('span', {
       text: t(
         'settings.admin.notifications.emailEnabled',
-        'Send email notifications for comments'
+        'Send email notifications for comments',
       ),
     }),
   ]);

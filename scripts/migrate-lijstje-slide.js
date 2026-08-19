@@ -67,7 +67,10 @@ import { loadDotEnv } from '../server/config/env.js';
 import { isPostgresMode } from '../server/config/database.js';
 import { dataDir } from '../server/config/storage-paths.js';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 export const OLD_TYPE = 'lijstje-slide';
 export const NEW_TYPE = 'list-slide';
@@ -135,7 +138,13 @@ export function renameSlideTypeDeep(value) {
  */
 export async function migrateFileStore(root, opts = {}) {
   const dryRun = Boolean(opts.dryRun);
-  const stats = { root, filesScanned: 0, filesModified: 0, slidesRenamed: 0, files: [] };
+  const stats = {
+    root,
+    filesScanned: 0,
+    filesModified: 0,
+    slidesRenamed: 0,
+    files: [],
+  };
 
   /** @param {string} dir */
   async function walk(dir) {
@@ -183,7 +192,11 @@ export async function migrateFileStore(root, opts = {}) {
 
     if (!dryRun) {
       const trailing = raw.endsWith('\n') ? '\n' : '';
-      await writeFile(filePath, JSON.stringify(value, null, 2) + trailing, 'utf8');
+      await writeFile(
+        filePath,
+        JSON.stringify(value, null, 2) + trailing,
+        'utf8',
+      );
     }
   }
 
@@ -300,7 +313,11 @@ export async function migratePostgres(db, opts = {}) {
         result.rowsModified += 1;
         result.slidesRenamed += renamed;
         if (!dryRun) {
-          await db.updateTable(table).set(updates).where('id', '=', row.id).execute();
+          await db
+            .updateTable(table)
+            .set(updates)
+            .where('id', '=', row.id)
+            .execute();
         }
       }
     }
@@ -349,7 +366,10 @@ function parseArgs(argv) {
   const backendIdx = argv.indexOf('--backend');
   const dirIdx = argv.indexOf('--dir');
   const dir = dirIdx !== -1 ? path.resolve(argv[dirIdx + 1] || '') : null;
-  let backend = backendIdx !== -1 ? String(argv[backendIdx + 1] || '').toLowerCase() : 'auto';
+  let backend =
+    backendIdx !== -1
+      ? String(argv[backendIdx + 1] || '').toLowerCase()
+      : 'auto';
   if (dir && backend === 'auto') backend = 'file';
   return { dryRun, backend, dir };
 }
@@ -357,14 +377,19 @@ function parseArgs(argv) {
 async function main() {
   const { dryRun, backend, dir } = parseArgs(process.argv.slice(2));
   if (!['auto', 'file', 'postgres', 'both'].includes(backend)) {
-    console.error(`Unknown --backend "${backend}" (use auto, file, postgres or both).`);
+    console.error(
+      `Unknown --backend "${backend}" (use auto, file, postgres or both).`,
+    );
     process.exit(1);
   }
 
   await loadDotEnv(REPO_ROOT);
-  const resolved = backend === 'auto' ? (isPostgresMode() ? 'postgres' : 'file') : backend;
+  const resolved =
+    backend === 'auto' ? (isPostgresMode() ? 'postgres' : 'file') : backend;
   const prefix = dryRun ? '[DRY RUN] ' : '';
-  console.log(`${prefix}Renaming "${OLD_TYPE}" → "${NEW_TYPE}" (backend: ${resolved})\n`);
+  console.log(
+    `${prefix}Renaming "${OLD_TYPE}" → "${NEW_TYPE}" (backend: ${resolved})\n`,
+  );
 
   if (resolved === 'file' || resolved === 'both') {
     const root = dir || dataDir(REPO_ROOT);
@@ -378,11 +403,12 @@ async function main() {
   }
 
   if (resolved === 'postgres' || resolved === 'both') {
-    const { initializeDatabase, closeDatabase } = await import('../server/db/client.js');
+    const { initializeDatabase, closeDatabase } =
+      await import('../server/db/client.js');
     if (!isPostgresMode()) {
       console.error(
         'STORAGE_MODE is not "postgres", so there is no database to migrate.\n' +
-          'Run this on the Postgres install (or point --dir at a file-store export).'
+          'Run this on the Postgres install (or point --dir at a file-store export).',
       );
       process.exit(1);
     }
@@ -398,7 +424,7 @@ async function main() {
         console.log(
           `  ${r.table.padEnd(28)} rows scanned ${String(r.rowsScanned).padStart(5)}` +
             `   rows modified ${String(r.rowsModified).padStart(4)}` +
-            `   slides renamed ${String(r.slidesRenamed).padStart(4)}`
+            `   slides renamed ${String(r.slidesRenamed).padStart(4)}`,
         );
       }
       console.log('');
@@ -408,17 +434,22 @@ async function main() {
   }
 
   if (dryRun) {
-    console.log('[DRY RUN] Nothing was written. Re-run without --dry-run to apply.');
+    console.log(
+      '[DRY RUN] Nothing was written. Re-run without --dry-run to apply.',
+    );
   } else {
     console.log(
       `Done. Verify with:  node scripts/scan-slide-type.js ${OLD_TYPE}` +
-        (dir ? ` --dir ${dir}` : '')
+        (dir ? ` --dir ${dir}` : ''),
     );
   }
 }
 
 // Only run as a CLI; importing the module (tests) must not touch any store.
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   main().catch((err) => {
     console.error(err);
     process.exit(1);

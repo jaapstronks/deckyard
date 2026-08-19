@@ -11,8 +11,8 @@ the non-SSO login paths, and points at SSO where they meet.
 
 Scope is `server/auth/` plus the auth route handlers under `server/routes/api/`.
 Authorization (who may do what, org-scoping) lives in
-[`tenant-isolation.md`](tenant-isolation.md); this doc stops at *who you are*,
-not *what you may touch*.
+[`tenant-isolation.md`](tenant-isolation.md); this doc stops at _who you are_,
+not _what you may touch_.
 
 ## Module map
 
@@ -100,7 +100,7 @@ in-memory fallback, `rate-limit-redis.js`):
 - **Login**: `allowLoginAttempt({ip, email})` with `LOGIN_LIMITS` — IP bucket
   ~6/min, email bucket similar; a `429` (`rateLimited()`) is returned before the
   password is ever checked. (`security-posture.md` attributes this to the auth
-  route, but the limiter is defined here and merely *called* from the route.)
+  route, but the limiter is defined here and merely _called_ from the route.)
 - **Magic-link** and **password-reset** enforce their own DB-count limits in
   their storage modules (magic-link: 5/h per email, 15/h per IP; reset: 3/h per
   email, 10/h per IP).

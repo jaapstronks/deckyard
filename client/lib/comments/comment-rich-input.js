@@ -114,7 +114,7 @@ export function serializeRichInput(root) {
           mentionMarkup({
             name: child.getAttribute('data-mention-name') || '',
             email: child.getAttribute('data-mention-email') || '',
-          })
+          }),
         );
         continue;
       }
@@ -124,7 +124,12 @@ export function serializeRichInput(root) {
         // carries no text to click, so it collapses to nothing.
         const label = child.textContent || '';
         if (label.trim()) {
-          parts.push(linkMarkup({ label, url: child.getAttribute('data-link-url') || '' }));
+          parts.push(
+            linkMarkup({
+              label,
+              url: child.getAttribute('data-link-url') || '',
+            }),
+          );
         }
         continue;
       }
@@ -286,7 +291,6 @@ export function createRichCommentInput({
     sel.addRange(range);
   }
 
-
   /**
    * Text from the start of the composer up to the caret, with chips counted
    * as their rendered `@Name` text. Used by the mention autocomplete to find
@@ -317,7 +321,8 @@ export function createRichCommentInput({
     // The '@' plus the query must sit in the text node before the caret.
     const consume = queryLength + 1;
     if (node.nodeType !== 3 || offset < consume) return false;
-    if (node.data.slice(offset - consume, offset - queryLength) !== '@') return false;
+    if (node.data.slice(offset - consume, offset - queryLength) !== '@')
+      return false;
 
     const del = document.createRange();
     del.setStart(node, offset - consume);

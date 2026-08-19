@@ -36,8 +36,10 @@ export function getConsentState() {
     const parsed = JSON.parse(stored);
     return {
       [CONSENT_CATEGORIES.NECESSARY]: true, // Always true
-      [CONSENT_CATEGORIES.ANALYTICS]: parsed[CONSENT_CATEGORIES.ANALYTICS] === true,
-      [CONSENT_CATEGORIES.MARKETING]: parsed[CONSENT_CATEGORIES.MARKETING] === true,
+      [CONSENT_CATEGORIES.ANALYTICS]:
+        parsed[CONSENT_CATEGORIES.ANALYTICS] === true,
+      [CONSENT_CATEGORIES.MARKETING]:
+        parsed[CONSENT_CATEGORIES.MARKETING] === true,
       timestamp: parsed.timestamp || null,
     };
   } catch {
@@ -60,7 +62,9 @@ export function setConsentState({ analytics = false, marketing = false }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 
     // Dispatch event for other components to react
-    window.dispatchEvent(new CustomEvent('cookieConsentChanged', { detail: state }));
+    window.dispatchEvent(
+      new CustomEvent('cookieConsentChanged', { detail: state }),
+    );
 
     return state;
   } catch {
@@ -115,7 +119,9 @@ export function hasMarketingConsent() {
 export function clearConsentState() {
   try {
     localStorage.removeItem(STORAGE_KEY);
-    window.dispatchEvent(new CustomEvent('cookieConsentChanged', { detail: DEFAULT_CONSENT }));
+    window.dispatchEvent(
+      new CustomEvent('cookieConsentChanged', { detail: DEFAULT_CONSENT }),
+    );
   } catch {
     // Ignore
   }

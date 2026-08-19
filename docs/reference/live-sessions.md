@@ -32,13 +32,13 @@ Storage (`server/storage/live-sessions/`, 10 modules):
 - `server/storage/live-sessions/sessions.js` — lifecycle
   (`createLiveSession` create-or-reuse per deck, `getLiveSession`,
   `touchLiveSession`), follow-code minting, in-memory TTL cleanup.
-- `server/storage/live-sessions/db.js` — Postgres persistence of the *cold*
+- `server/storage/live-sessions/db.js` — Postgres persistence of the _cold_
   half (`present_sessions` row): `persistSession`, `schedulePersist` (600 ms
   debounce), `hydrateSession`, `sweepExpiredSessions`.
 - `server/storage/live-sessions/sse.js` — the SSE fan-out
   (`attachSessionSseClient`, `broadcast`, `updateLiveSessionState`,
   `notifyLiveSessionInteractionState`, `notifyLiveSessionDeckUpdated`,
-  `broadcastBranch`). **Process-local only** (see *Implementation status*).
+  `broadcastBranch`). **Process-local only** (see _Implementation status_).
 - `server/storage/live-sessions/control.js` — follower remote-control
   (`setLiveSessionControlEnabled`, `sendLiveSessionControlCommand`).
 - `server/storage/live-sessions/follow-state.js` — `getFollowStateForPresentation`,
@@ -83,16 +83,16 @@ the row; on hydrate, the newer of the two (`last_activity_at`) wins.
 Table `present_sessions` (`server/db/migrations/001_initial_schema.js`, altered
 by `server/db/migrations/060_live_session_tables.js`):
 
-| Column | Type | Notes |
-|---|---|---|
-| `session_id` | varchar(100) | primary key (a UUID string) |
-| `presentation_id` | uuid | NOT NULL (post-060), FK → `presentations(id)` **ON DELETE CASCADE** |
-| `state` | jsonb | `{slideId, slideIndex, slideType, stepIdx, stepParagraphs, updatedAt}` |
-| `control_enabled` | boolean | default false |
-| `follow_codes` | jsonb | per-language `{nl, en}` join codes |
-| `follow_codes_created_at` | timestamptz | added by 060 (re-mint decision) |
-| `created_at` | timestamptz | default now() |
-| `last_activity_at` | timestamptz | the TTL/freshness key |
+| Column                    | Type         | Notes                                                                  |
+| ------------------------- | ------------ | ---------------------------------------------------------------------- |
+| `session_id`              | varchar(100) | primary key (a UUID string)                                            |
+| `presentation_id`         | uuid         | NOT NULL (post-060), FK → `presentations(id)` **ON DELETE CASCADE**    |
+| `state`                   | jsonb        | `{slideId, slideIndex, slideType, stepIdx, stepParagraphs, updatedAt}` |
+| `control_enabled`         | boolean      | default false                                                          |
+| `follow_codes`            | jsonb        | per-language `{nl, en}` join codes                                     |
+| `follow_codes_created_at` | timestamptz  | added by 060 (re-mint decision)                                        |
+| `created_at`              | timestamptz  | default now()                                                          |
+| `last_activity_at`        | timestamptz  | the TTL/freshness key                                                  |
 
 Migration 060 **dropped `organization_id`** from `present_sessions` (a session is
 authorized by possession of its id, not by org — see below). The session-scoped
@@ -103,11 +103,11 @@ ON DELETE CASCADE`, so closing a session cascades them away.
 ## Flows
 
 - **Create** — presenter (deck-write) `POST /api/live-sessions
-  {presentationId}`. `createLiveSession` reuses a non-expired session for that
+{presentationId}`. `createLiveSession` reuses a non-expired session for that
   deck (idempotent per deck) or mints a new UUID, mints per-language follow
   codes, and answers `{ok: true, sessionId, joinPath, followCodes}` — the
-  mutation shape ([`storage-layer.md`](storage-layer.md) § *Failure
-  signalling*). The route unwraps it and serves
+  mutation shape ([`storage-layer.md`](storage-layer.md) § _Failure
+  signalling_). The route unwraps it and serves
   `{sessionId, joinPath, followCodes}` with 201.
 - **Join** — audience connects with only the session id (companion) or the
   presentation id via a follow code (follow-along). No login.
@@ -148,12 +148,12 @@ ON DELETE CASCADE`, so closing a session cascades them away.
 
 ## Config & flags
 
-| Name | Where | Purpose / default |
-|---|---|---|
-| `PRESENT_LIVE_WINDOW_MS` | `live-sessions/constants.js` | Freshness window for `live` status. 15 min (floor 60 s). |
-| `SSE_MAX_CONNECTIONS` | `utils/sse-limiter.js` | Global concurrent public SSE cap. 2000. |
-| `SSE_MAX_CONNECTIONS_PER_IP` | `utils/sse-limiter.js` | Per-IP cap (skipped behind proxy/NAT). 50. |
-| `SSE_MAX_LIFETIME_MS` | `utils/sse-limiter.js` | Absolute stream lifetime. 6 h. |
+| Name                         | Where                        | Purpose / default                                        |
+| ---------------------------- | ---------------------------- | -------------------------------------------------------- |
+| `PRESENT_LIVE_WINDOW_MS`     | `live-sessions/constants.js` | Freshness window for `live` status. 15 min (floor 60 s). |
+| `SSE_MAX_CONNECTIONS`        | `utils/sse-limiter.js`       | Global concurrent public SSE cap. 2000.                  |
+| `SSE_MAX_CONNECTIONS_PER_IP` | `utils/sse-limiter.js`       | Per-IP cap (skipped behind proxy/NAT). 50.               |
+| `SSE_MAX_LIFETIME_MS`        | `utils/sse-limiter.js`       | Absolute stream lifetime. 6 h.                           |
 
 Internal constants (not env): `TTL_MS` (24 h idle session), `HEARTBEAT_MS`
 (15 s), follow-code TTL (24 h, `server/storage/follow-codes.js`), status tick
@@ -165,7 +165,7 @@ and there is **no max-audience** cap beyond the SSE connection caps.
 - **Start**: deck-write only. Every route in `live-sessions.js` goes through
   `requirePresentationControl` → `withPresentationAuth({permission:'write'})`.
 - **Join**: anonymous, capability-based. The audience and follow routes sit in
-  the *public* block of `server/routes/api/index.js`, before the login gate. The
+  the _public_ block of `server/routes/api/index.js`, before the login gate. The
   **session id** authorizes companion routes; the **follow code / presentation
   id** authorizes follow routes. A join link is explicitly not a login — the
   companion deck read is narrowed (slides/notes/title/theme/lang only, no

@@ -31,9 +31,8 @@ globalThis.EventSource = class {
 };
 
 const { h } = await import('../client/lib/dom.js');
-const { createCommentsPanel } = await import(
-  '../client/views/editor/comments-panel.js'
-);
+const { createCommentsPanel } =
+  await import('../client/views/editor/comments-panel.js');
 
 const DECK_COMMENTS = [
   {
@@ -62,7 +61,9 @@ function makePanel({ selectedSlideId = null, slides = [] } = {}) {
     if (String(path).includes('/comments/counts')) return { counts: {} };
     if (String(path).includes('/comments')) {
       // Mirrors the server: no slideId filter means the whole deck.
-      const wanted = new URL(String(path), 'http://x').searchParams.get('slideId');
+      const wanted = new URL(String(path), 'http://x').searchParams.get(
+        'slideId',
+      );
       const comments = wanted
         ? DECK_COMMENTS.filter((c) => c.slideId === wanted)
         : DECK_COMMENTS;
@@ -91,9 +92,12 @@ test('a deck with no slides shows no comments under the "This slide" scope', asy
   assert.equal(
     panel.panelEl.querySelector('[data-comment-id]'),
     null,
-    'no deck-wide comments leaked into the slide scope'
+    'no deck-wide comments leaked into the slide scope',
   );
-  assert.ok(panel.panelEl.querySelector('.comments-empty'), 'empty state shown');
+  assert.ok(
+    panel.panelEl.querySelector('.comments-empty'),
+    'empty state shown',
+  );
   panel.panelEl.remove();
 });
 
@@ -112,15 +116,21 @@ test('switching to "All slides" still shows the whole deck', async () => {
 });
 
 test('a selected slide still scopes to that slide', async () => {
-  const { panel } = makePanel({ selectedSlideId: 's1', slides: [{ id: 's1' }, { id: 's2' }] });
+  const { panel } = makePanel({
+    selectedSlideId: 's1',
+    slides: [{ id: 's1' }, { id: 's2' }],
+  });
   panel.show();
   await panel.loadComments();
 
-  assert.ok(panel.panelEl.querySelector('[data-comment-id="c1"]'), 'own comment shown');
+  assert.ok(
+    panel.panelEl.querySelector('[data-comment-id="c1"]'),
+    'own comment shown',
+  );
   assert.equal(
     panel.panelEl.querySelector('[data-comment-id="c2"]'),
     null,
-    "other slide's comment hidden"
+    "other slide's comment hidden",
   );
   panel.panelEl.remove();
 });

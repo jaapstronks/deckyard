@@ -40,7 +40,7 @@ export function conflictError(existing) {
       revision: existing?.revision,
       modified: existing?.modified,
       updatedBy: existing?.updatedBy || null,
-    }
+    },
   );
 }
 
@@ -74,7 +74,9 @@ const DEFAULT_MERGE_MAX_REVISION_GAP = 10;
  * @returns {number}
  */
 export function mergeMaxRevisionGap() {
-  return envInt('MERGE_MAX_REVISION_GAP', DEFAULT_MERGE_MAX_REVISION_GAP, { min: 1 });
+  return envInt('MERGE_MAX_REVISION_GAP', DEFAULT_MERGE_MAX_REVISION_GAP, {
+    min: 1,
+  });
 }
 
 /**
@@ -141,7 +143,11 @@ export function mergeSlidesAtSlideLevel({
       baseFingerprints && typeof baseFingerprints === 'object'
         ? baseFingerprints[clientSlide.id]
         : null;
-    if (typeof baseFp === 'string' && baseFp && slideFingerprint(serverSlide) !== baseFp) {
+    if (
+      typeof baseFp === 'string' &&
+      baseFp &&
+      slideFingerprint(serverSlide) !== baseFp
+    ) {
       conflicts.push(clientSlide.id);
       return serverSlide;
     }

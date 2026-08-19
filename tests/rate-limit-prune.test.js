@@ -25,7 +25,7 @@ test('idle full buckets are pruned once the map crosses the threshold', () => {
   // The map must have been swept rather than accumulating all 10050 keys.
   assert.ok(
     rateLimitBucketCount() < 10000,
-    `expected pruning, got ${rateLimitBucketCount()} buckets`
+    `expected pruning, got ${rateLimitBucketCount()} buckets`,
   );
   resetRateLimitBuckets();
 });

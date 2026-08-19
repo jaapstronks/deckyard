@@ -33,7 +33,7 @@ test('every registered type is offered, derived, or explicitly opted out', () =>
     const offered = Object.prototype.hasOwnProperty.call(resolved, name);
     assert.ok(
       offered !== isAgentOptOut(def),
-      `${name}: must be either offered to agents or explicitly opted out, not both/neither`
+      `${name}: must be either offered to agents or explicitly opted out, not both/neither`,
     );
   }
 });
@@ -45,7 +45,11 @@ test('the three formerly invisible live types are resolved correctly', () => {
   // core types that the picker offers but get_slide_types could not see.
   for (const name of ['embed-slide', 'countdown-slide']) {
     assert.ok(resolved[name], `${name} must be visible to agents`);
-    assert.equal(resolved[name].documented, true, `${name} needs editorial copy`);
+    assert.equal(
+      resolved[name].documented,
+      true,
+      `${name} needs editorial copy`,
+    );
     assert.ok(resolved[name].schema, `${name} needs a schema`);
     assert.ok(resolved[name].bestFor.length, `${name} needs bestFor guidance`);
   }
@@ -76,12 +80,21 @@ test('an undocumented registered type is still offered, flagged documented:false
     { key: 'title', type: 'string', required: true, maxLength: 120 },
     { key: 'count', type: 'number', min: 0, max: 10 },
     { key: 'mode', type: 'enum', options: [{ value: 'a' }, { value: 'b' }] },
-    { key: 'items', type: 'items', minItems: 2, itemFields: [{ key: 'text', type: 'string' }] },
+    {
+      key: 'items',
+      type: 'items',
+      minItems: 2,
+      itemFields: [{ key: 'text', type: 'string' }],
+    },
     // Global fields travel in globalOptions, not per type.
     { key: 'slideLogo', type: 'enum', options: ['none'] },
   ]);
 
-  assert.deepEqual(schema.title, { type: 'string', required: true, maxLength: 120 });
+  assert.deepEqual(schema.title, {
+    type: 'string',
+    required: true,
+    maxLength: 120,
+  });
   assert.deepEqual(schema.count, { type: 'number', min: 0, max: 10 });
   assert.deepEqual(schema.mode, { type: 'enum', options: ['a', 'b'] });
   assert.deepEqual(schema.items, {
@@ -104,7 +117,7 @@ test('the derived schema is the only schema — no catalog entry declares one', 
     offenders,
     [],
     'catalog entries must not declare a schema; put the constraint on the ' +
-      'field in shared/slide-types/types/<type>.js instead'
+      'field in shared/slide-types/types/<type>.js instead',
   );
 });
 
@@ -117,7 +130,7 @@ test('every offered core type resolves a schema out of its own fields', () => {
     if (entry.isCustom || FIELDLESS.has(name)) continue;
     assert.ok(
       Object.keys(entry.schema).length > 0,
-      `${name}: derived schema is empty — every field is global or opted out`
+      `${name}: derived schema is empty — every field is global or opted out`,
     );
   }
 });
@@ -140,7 +153,12 @@ test('a field opts out of the agent contract three ways', () => {
 test('markdown stays markdown, and helpText becomes the field description', () => {
   const schema = deriveAgentSchema([
     { key: 'body', type: 'markdown', maxLength: 700 },
-    { key: 'mode', type: 'enum', options: ['a'], helpText: '  Only used in the duo layout.  ' },
+    {
+      key: 'mode',
+      type: 'enum',
+      options: ['a'],
+      helpText: '  Only used in the duo layout.  ',
+    },
     { key: 'plain', type: 'string', helpText: '   ' },
   ]);
 
@@ -168,7 +186,9 @@ test('the opt-out rules reach into item fields too', () => {
 });
 
 test('org disabled types are filtered out for agents too', () => {
-  const resolved = resolveAgentSlideTypes({ disabledSlideTypes: ['quote-slide'] });
+  const resolved = resolveAgentSlideTypes({
+    disabledSlideTypes: ['quote-slide'],
+  });
   assert.equal(resolved['quote-slide'], undefined);
   assert.ok(resolved['title-slide'], 'other types stay');
 });
@@ -221,7 +241,7 @@ test('every offered entry carries a canonical type id', () => {
     assert.equal(
       formatCanonicalId(parseTypeId(entry.typeId)),
       entry.typeId,
-      `${name} must expose the CANONICAL id, not an older spelling`
+      `${name} must expose the CANONICAL id, not an older spelling`,
     );
   }
 });

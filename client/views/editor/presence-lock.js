@@ -28,12 +28,15 @@ export function attachPresentationPresenceLock({
   if (useSlideLevelLocking) {
     // Immediately report that we're the "holder" so the editor isn't read-only
     try {
-      onLockStateChange?.({
-        isHolder: true,
-        lockInfo: null,
-        myRequest: null,
-        pendingRequestsCount: 0,
-      }, {});
+      onLockStateChange?.(
+        {
+          isHolder: true,
+          lockInfo: null,
+          myRequest: null,
+          pendingRequestsCount: 0,
+        },
+        {},
+      );
     } catch {
       // ignore
     }
@@ -83,10 +86,13 @@ export function attachPresentationPresenceLock({
     },
     acceptRequest: async (requestId) => {
       try {
-        const resp = await api(`/api/presentations/${id}/lock/requests/${requestId}/accept`, {
-          method: 'POST',
-          body: JSON.stringify({}),
-        });
+        const resp = await api(
+          `/api/presentations/${id}/lock/requests/${requestId}/accept`,
+          {
+            method: 'POST',
+            body: JSON.stringify({}),
+          },
+        );
         if (resp?.ok) {
           isHolder = false;
           pendingRequestsCount = 0;
@@ -102,10 +108,13 @@ export function attachPresentationPresenceLock({
     },
     rejectRequest: async (requestId) => {
       try {
-        const resp = await api(`/api/presentations/${id}/lock/requests/${requestId}/reject`, {
-          method: 'POST',
-          body: JSON.stringify({}),
-        });
+        const resp = await api(
+          `/api/presentations/${id}/lock/requests/${requestId}/reject`,
+          {
+            method: 'POST',
+            body: JSON.stringify({}),
+          },
+        );
         if (resp?.ok) {
           pendingRequestsCount = Math.max(0, pendingRequestsCount - 1);
           emitStateChange();
@@ -145,12 +154,15 @@ export function attachPresentationPresenceLock({
 
   const emitStateChange = () => {
     try {
-      onLockStateChange?.({
-        isHolder,
-        lockInfo,
-        myRequest,
-        pendingRequestsCount,
-      }, actions);
+      onLockStateChange?.(
+        {
+          isHolder,
+          lockInfo,
+          myRequest,
+          pendingRequestsCount,
+        },
+        actions,
+      );
     } catch {
       // ignore
     }
@@ -179,7 +191,9 @@ export function attachPresentationPresenceLock({
       }
 
       isHolder = false;
-      const who = String(lockInfo?.holderName || lockInfo?.holderEmail || '').trim();
+      const who = String(
+        lockInfo?.holderName || lockInfo?.holderEmail || '',
+      ).trim();
       setPresence(who ? `Bewerkt door ${who}` : 'Bewerkt door iemand anders');
       emitStateChange();
     } catch {

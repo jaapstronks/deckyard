@@ -64,12 +64,16 @@ const ORG_SCOPED_TABLES = ['questions', 'interactions', 'feedback'];
 
 export const up = async (db) => {
   for (const table of ORG_SCOPED_TABLES) {
-    await sql`ALTER TABLE ${sql.ref(table)} DROP COLUMN IF EXISTS organization_id`.execute(db);
+    await sql`ALTER TABLE ${sql.ref(table)} DROP COLUMN IF EXISTS organization_id`.execute(
+      db,
+    );
 
     // Nothing ever wrote these tables, so there are no sessionless rows to
     // preserve — but a DELETE first keeps the NOT NULL from failing on an
     // install where something did.
-    await sql`DELETE FROM ${sql.ref(table)} WHERE session_id IS NULL`.execute(db);
+    await sql`DELETE FROM ${sql.ref(table)} WHERE session_id IS NULL`.execute(
+      db,
+    );
     await sql`
       ALTER TABLE ${sql.ref(table)} ALTER COLUMN session_id SET NOT NULL
     `.execute(db);
@@ -77,9 +81,13 @@ export const up = async (db) => {
 
   // --- questions ----------------------------------------------------------
   await sql`ALTER TABLE questions DROP COLUMN IF EXISTS upvotes`.execute(db);
-  await sql`ALTER TABLE questions DROP COLUMN IF EXISTS original_text`.execute(db);
+  await sql`ALTER TABLE questions DROP COLUMN IF EXISTS original_text`.execute(
+    db,
+  );
 
-  await sql`UPDATE questions SET voters = '{}' WHERE voters IS NULL`.execute(db);
+  await sql`UPDATE questions SET voters = '{}' WHERE voters IS NULL`.execute(
+    db,
+  );
   await sql`
     ALTER TABLE questions
     ALTER COLUMN voters SET DEFAULT '{}',

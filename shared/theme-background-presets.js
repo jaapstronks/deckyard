@@ -20,7 +20,7 @@ export function getBackgroundPresets(theme) {
   if (!theme || typeof theme !== 'object') return [];
   if (!Array.isArray(theme.backgroundPresets)) return [];
   return theme.backgroundPresets.filter(
-    (url) => typeof url === 'string' && url.trim()
+    (url) => typeof url === 'string' && url.trim(),
   );
 }
 

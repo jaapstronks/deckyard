@@ -46,13 +46,14 @@ export function createRemoteRefresh({
 
   const diffChangedSlideIds = (before, after) => {
     const byId = new Map(
-      (before || []).filter((s) => s?.id).map((s) => [s.id, s])
+      (before || []).filter((s) => s?.id).map((s) => [s.id, s]),
     );
     const changed = [];
     for (const s of after || []) {
       if (!s?.id) continue;
       const prev = byId.get(s.id);
-      if (!prev || JSON.stringify(prev) !== JSON.stringify(s)) changed.push(s.id);
+      if (!prev || JSON.stringify(prev) !== JSON.stringify(s))
+        changed.push(s.id);
     }
     return changed;
   };
@@ -100,7 +101,8 @@ export function createRemoteRefresh({
       if (typeof fresh.revision === 'number') pres.revision = fresh.revision;
       if (typeof fresh.modified === 'string') pres.modified = fresh.modified;
       if (typeof fresh.updatedBy === 'string') pres.updatedBy = fresh.updatedBy;
-      if (typeof fresh.visibility === 'string') pres.visibility = fresh.visibility;
+      if (typeof fresh.visibility === 'string')
+        pres.visibility = fresh.visibility;
       // Re-point the active-language buffers exactly like the initial load.
       initPresentationI18n({ pres, initialLang: active || null });
       normalizeSlideNotes(pres);

@@ -20,10 +20,32 @@ const __dirname = path.dirname(__filename);
 
 const I18N_DIR = path.join(__dirname, '..', 'client', 'i18n');
 const LANGUAGES = ['nl', 'de', 'fr', 'es', 'pt', 'da', 'sv', 'no'];
-const MODULES = ['common', 'auth', 'editor', 'list', 'share', 'settings', 'presenter', 'slide-types'];
+const MODULES = [
+  'common',
+  'auth',
+  'editor',
+  'list',
+  'share',
+  'settings',
+  'presenter',
+  'slide-types',
+];
 // Every locale on disk, not just the fill targets: it/pl/fi ship translations
 // but never sat in LANGUAGES, so their orphaned slideType keys went unpruned too.
-const ALL_LOCALES = ['en', 'nl', 'de', 'fr', 'es', 'pt', 'it', 'pl', 'fi', 'da', 'sv', 'no'];
+const ALL_LOCALES = [
+  'en',
+  'nl',
+  'de',
+  'fr',
+  'es',
+  'pt',
+  'it',
+  'pl',
+  'fi',
+  'da',
+  'sv',
+  'no',
+];
 
 function loadJson(filePath) {
   try {
@@ -101,7 +123,9 @@ function pruneOrphanedSlideTypeKeys() {
       const data = loadJson(modulePath);
       if (!data) continue;
 
-      const dead = Object.keys(data).filter((k) => k.startsWith('slideType.') && !valid.has(k));
+      const dead = Object.keys(data).filter(
+        (k) => k.startsWith('slideType.') && !valid.has(k),
+      );
       if (dead.length === 0) continue;
 
       // Delete in place and keep the file's existing order: a prune should be a
@@ -110,7 +134,9 @@ function pruneOrphanedSlideTypeKeys() {
       // the deletions under hundreds of moved lines).
       for (const k of dead) delete data[k];
       saveJson(modulePath, data);
-      console.log(`${lang}/${moduleName}.json: -${dead.length} orphaned slideType key(s)`);
+      console.log(
+        `${lang}/${moduleName}.json: -${dead.length} orphaned slideType key(s)`,
+      );
       totalPruned += dead.length;
     }
   }
@@ -120,7 +146,9 @@ function pruneOrphanedSlideTypeKeys() {
 }
 
 function main() {
-  console.log('i18n Sync - Prune orphaned slide-type keys, then fill missing keys with English\n');
+  console.log(
+    'i18n Sync - Prune orphaned slide-type keys, then fill missing keys with English\n',
+  );
 
   // Prune first: filling copies English into each locale, so a dead key left in
   // English would be handed straight back to every locale we just cleaned.

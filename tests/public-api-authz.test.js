@@ -24,15 +24,12 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 // `__resetStorageForTests` rather than `closeStorage`: the double is not a real
 // Kysely handle, so closing it would call a `destroy()` it does not have.
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { getPresentationWithAccess } = await import(
-  '../server/routes/public-api/v1/middleware.js'
-);
-const { createPresentation, updatePresentation } = await import(
-  '../server/storage/presentations/index.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { getPresentationWithAccess } =
+  await import('../server/routes/public-api/v1/middleware.js');
+const { createPresentation, updatePresentation } =
+  await import('../server/storage/presentations/index.js');
 
 const OWNER = 'owner@example.com';
 const OTHER = 'other@example.com';
@@ -43,9 +40,15 @@ function makeCtx(ownerEmail) {
     statusCode: null,
     body: null,
     headers: {},
-    setHeader(name, value) { this.headers[name] = value; },
-    writeHead(status) { this.statusCode = status; },
-    end(payload) { this.body = payload ? JSON.parse(payload) : null; },
+    setHeader(name, value) {
+      this.headers[name] = value;
+    },
+    writeHead(status) {
+      this.statusCode = status;
+    },
+    end(payload) {
+      this.body = payload ? JSON.parse(payload) : null;
+    },
   };
   return {
     storageScope: testScope(),
@@ -53,7 +56,12 @@ function makeCtx(ownerEmail) {
     apiKey: { id: 'test-key', tier: 'free', ownerEmail },
     // What authenticateApiKey puts on the context: who is acting and in which
     // organization. Per-deck checks read the actor from here, not off the deck.
-    authedUser: { id: null, email: ownerEmail, role: 'user', organizationId: null },
+    authedUser: {
+      id: null,
+      email: ownerEmail,
+      role: 'user',
+      organizationId: null,
+    },
   };
 }
 
@@ -62,7 +70,11 @@ describe('getPresentationWithAccess', () => {
   let viewOnlyId;
 
   before(async () => {
-    __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+    __setTestDb(
+      createFakeDb({
+        organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      }),
+    );
     await initializeStorage();
 
     const privateDeck = await createPresentation(testScope(), {
@@ -76,13 +88,18 @@ describe('getPresentationWithAccess', () => {
       ownerEmail: OWNER,
     });
     viewOnlyId = viewOnlyDeck.id;
-    await updatePresentation(testScope(), viewOnlyId, {
-      ...viewOnlyDeck,
-      visibility: 'organization',
-      isViewOnly: true,
-      // Both flips are gated on the write path, so the fixture opts into them
-      // explicitly (as the routes that own those switches do).
-    }, { allowVisibilityChange: true, allowViewOnlyChange: true });
+    await updatePresentation(
+      testScope(),
+      viewOnlyId,
+      {
+        ...viewOnlyDeck,
+        visibility: 'organization',
+        isViewOnly: true,
+        // Both flips are gated on the write path, so the fixture opts into them
+        // explicitly (as the routes that own those switches do).
+      },
+      { allowVisibilityChange: true, allowViewOnlyChange: true },
+    );
   });
 
   after(() => {
@@ -102,9 +119,9 @@ describe('getPresentationWithAccess', () => {
     assert.equal(read.ok, true);
     assert.equal(read.pres.id, privateId);
 
-    const write = await getPresentationWithAccess(
-      makeCtx(OWNER), privateId, { access: 'write' }
-    );
+    const write = await getPresentationWithAccess(makeCtx(OWNER), privateId, {
+      access: 'write',
+    });
     assert.equal(write.ok, true);
   });
 
@@ -117,7 +134,9 @@ describe('getPresentationWithAccess', () => {
 
   it("403s another key's write of a private deck", async () => {
     const ctx = makeCtx(OTHER);
-    const { ok } = await getPresentationWithAccess(ctx, privateId, { access: 'write' });
+    const { ok } = await getPresentationWithAccess(ctx, privateId, {
+      access: 'write',
+    });
     assert.equal(ok, false);
     assert.equal(ctx.res.statusCode, 403);
   });
@@ -127,7 +146,9 @@ describe('getPresentationWithAccess', () => {
     assert.equal(read.ok, true);
 
     const ctx = makeCtx(OTHER);
-    const { ok } = await getPresentationWithAccess(ctx, viewOnlyId, { access: 'write' });
+    const { ok } = await getPresentationWithAccess(ctx, viewOnlyId, {
+      access: 'write',
+    });
     assert.equal(ok, false);
     assert.equal(ctx.res.statusCode, 403);
     // B61: the machine code is `forbidden`; the human prose moved to `message`.

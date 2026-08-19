@@ -22,10 +22,36 @@ export function normName(s) {
  */
 const STOP_WORDS = new Set([
   // NL + EN (very small; just for keyword extraction heuristics)
-  'de', 'het', 'een', 'en', 'of', 'voor', 'van', 'met', 'op', 'aan',
-  'in', 'bij', 'naar', 'over', 'door',
-  'the', 'a', 'an', 'and', 'or', 'to', 'of', 'in', 'for', 'with',
-  'on', 'at', 'by', 'from', 'about',
+  'de',
+  'het',
+  'een',
+  'en',
+  'of',
+  'voor',
+  'van',
+  'met',
+  'op',
+  'aan',
+  'in',
+  'bij',
+  'naar',
+  'over',
+  'door',
+  'the',
+  'a',
+  'an',
+  'and',
+  'or',
+  'to',
+  'of',
+  'in',
+  'for',
+  'with',
+  'on',
+  'at',
+  'by',
+  'from',
+  'about',
 ]);
 
 /**
@@ -70,7 +96,10 @@ export function looksLikeUsableDoc(text) {
   const t = String(text || '').trim();
   if (!t) return false;
   // Must have at least 2 "paragraph-ish" chunks and some minimum length.
-  const paras = t.split(/\n\s*\n/g).map((p) => p.trim()).filter(Boolean);
+  const paras = t
+    .split(/\n\s*\n/g)
+    .map((p) => p.trim())
+    .filter(Boolean);
   const charCount = t.replace(/\s+/g, ' ').trim().length;
   // Either:
   // - multiple paragraphs with a moderate amount of text, or
@@ -93,11 +122,17 @@ export function handleNotionError(error, res) {
 
   // Helpful error messages for common Notion API errors
   if (msg.includes('Could not find') || code === 404) {
-    badRequest(res, 'Page not found. Make sure the page is shared with your Notion integration.');
+    badRequest(
+      res,
+      'Page not found. Make sure the page is shared with your Notion integration.',
+    );
     return true;
   }
   if (msg.includes('unauthorized') || code === 401 || code === 403) {
-    badRequest(res, 'Access denied. Make sure the page is shared with your Notion integration.');
+    badRequest(
+      res,
+      'Access denied. Make sure the page is shared with your Notion integration.',
+    );
     return true;
   }
 

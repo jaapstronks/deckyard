@@ -39,7 +39,8 @@ function renderCustom(ct, content, slide = { id: 's1' }) {
 test('H5: {{raw}} content is sanitized (script + event handlers stripped)', () => {
   const ct = {
     label: 'Raw',
-    template: '<div class="slide"><div class="slide-inner">{{raw body}}</div></div>',
+    template:
+      '<div class="slide"><div class="slide-inner">{{raw body}}</div></div>',
   };
   const out = renderCustom(ct, {
     body: '<img src=x onerror=alert(1)><script>alert(2)</script>hello',
@@ -65,7 +66,8 @@ test('H5: custom CSS block is preserved (not sanitized away)', () => {
   const ct = {
     label: 'Styled',
     css: '.demo { color: red; }',
-    template: '<div class="slide"><div class="slide-inner">{{esc title}}</div></div>',
+    template:
+      '<div class="slide"><div class="slide-inner">{{esc title}}</div></div>',
   };
   const out = renderCustom(ct, { title: 'Keep me' });
   assert.ok(out.includes('<style>'), 'CSS <style> block still injected');
@@ -84,7 +86,10 @@ test('H5: benign structural markup survives sanitization', () => {
     body: '<p>Para</p><ul><li>one</li><li>two</li></ul>',
   });
   assert.ok(out.includes('<h2'), 'heading survives');
-  assert.ok(out.includes('<ul>') && out.includes('<li>one</li>'), 'list survives');
+  assert.ok(
+    out.includes('<ul>') && out.includes('<li>one</li>'),
+    'list survives',
+  );
   assert.ok(out.includes('class="slide'), 'slide wrapper class survives');
 });
 
@@ -122,7 +127,11 @@ test('M1: the markdown helper is safe on its own (independent of the wrap)', () 
     x: '[x](javascript:alert(1))',
   });
   assert.doesNotMatch(jsLink, /javascript:/i);
-  assert.doesNotMatch(jsLink, /<a\s/i, 'unsafe link becomes text, not an anchor');
+  assert.doesNotMatch(
+    jsLink,
+    /<a\s/i,
+    'unsafe link becomes text, not an anchor',
+  );
   assert.ok(jsLink.includes('x'));
 
   const httpLink = renderTemplate('{{markdown x}}', {

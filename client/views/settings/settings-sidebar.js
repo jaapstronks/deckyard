@@ -13,14 +13,22 @@ import { getFeatures } from '../../lib/state/features.js';
  */
 const USER_TABS = [
   { key: 'account', labelKey: 'settings.tabs.account', label: 'Account' },
-  { key: 'preferences', labelKey: 'settings.tabs.preferences', label: 'Preferences' },
+  {
+    key: 'preferences',
+    labelKey: 'settings.tabs.preferences',
+    label: 'Preferences',
+  },
   { key: 'export', labelKey: 'settings.tabs.export', label: 'Data Export' },
 ];
 
 const DESIGNER_TABS = [
   { key: 'fonts', labelKey: 'settings.tabs.fonts', label: 'Fonts' },
   { key: 'themes', labelKey: 'settings.tabs.themes', label: 'Themes' },
-  { key: 'slide-types', labelKey: 'settings.tabs.slideTypes', label: 'Slide Types' },
+  {
+    key: 'slide-types',
+    labelKey: 'settings.tabs.slideTypes',
+    label: 'Slide Types',
+  },
 ];
 
 /**
@@ -57,8 +65,16 @@ const ADMIN_TABS = [
   MEMBERS_TAB,
   { key: 'api-keys', labelKey: 'settings.tabs.apiKeys', label: 'API Keys' },
   { key: 'email', labelKey: 'settings.tabs.email', label: 'Email' },
-  { key: 'integrations', labelKey: 'settings.tabs.integrations', label: 'Integrations' },
-  { key: 'analytics', labelKey: 'settings.tabs.analytics', label: 'External Analytics' },
+  {
+    key: 'integrations',
+    labelKey: 'settings.tabs.integrations',
+    label: 'Integrations',
+  },
+  {
+    key: 'analytics',
+    labelKey: 'settings.tabs.analytics',
+    label: 'External Analytics',
+  },
 ];
 
 /**
@@ -103,7 +119,8 @@ export function createSettingsSidebar({
       },
     });
 
-    const renamed = tab.multiOrganizationLabelKey && getFeatures()?.multiOrganization;
+    const renamed =
+      tab.multiOrganizationLabelKey && getFeatures()?.multiOrganization;
     const label = h('span', {
       class: 'settings-sidebar-tab-label',
       text: renamed
@@ -135,7 +152,7 @@ export function createSettingsSidebar({
   // The organization tab only exists in multi-workspace mode, so an admin on a
   // single-workspace instance keeps the Admin group they always had.
   const adminTabs = ADMIN_TABS.filter(
-    (tab) => tab.key !== ORGANIZATION_TAB.key || canSeeOrganization
+    (tab) => tab.key !== ORGANIZATION_TAB.key || canSeeOrganization,
   );
 
   // Add designer section if user has designer capability

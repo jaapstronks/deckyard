@@ -30,8 +30,9 @@ const DEFAULT_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // Activity events carry actor emails; keep them long enough to be a useful feed
 // but not indefinitely. Override with ACTIVITY_RETENTION_DAYS.
-const ACTIVITY_RETENTION_DAYS =
-  envInt('ACTIVITY_RETENTION_DAYS', 180, { min: 1 });
+const ACTIVITY_RETENTION_DAYS = envInt('ACTIVITY_RETENTION_DAYS', 180, {
+  min: 1,
+});
 
 // ============================================================
 // CLEANUP
@@ -57,7 +58,7 @@ export async function runRetentionCleanup({
   const activityCutoff = new Date();
   activityCutoff.setDate(activityCutoff.getDate() - activityRetentionDays);
   const { deleted: activityEvents } = await deleteOldActivityEvents(
-    activityCutoff.toISOString()
+    activityCutoff.toISOString(),
   );
   log.info(`Deleted ${activityEvents} old activity events`);
 

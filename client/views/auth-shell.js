@@ -24,7 +24,9 @@ import { h } from '../lib/dom.js';
  */
 export function authShell({ title, subtitle, centered = false } = {}) {
   const shell = h('div', { class: 'auth-shell' });
-  const card = h('div', { class: centered ? 'auth-card is-centered' : 'auth-card' });
+  const card = h('div', {
+    class: centered ? 'auth-card is-centered' : 'auth-card',
+  });
   const header = h('div', { class: 'auth-header' });
   const titleEl = h('h1', { class: 'auth-title', text: title });
   const subtitleEl = h('p', { class: 'auth-subtitle', text: subtitle });

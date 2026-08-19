@@ -81,7 +81,11 @@ function storeBgImageSectionOpen(open) {
  * @param {object} pres
  * @param {{ markDirty?: Function, scheduleUiRefresh?: Function }} cbs
  */
-async function runBgContrastDetection(slide, pres, { markDirty, scheduleUiRefresh } = {}) {
+async function runBgContrastDetection(
+  slide,
+  pres,
+  { markDirty, scheduleUiRefresh } = {},
+) {
   const url = String(slide?.content?.slideBgImage || '').trim();
   if (!url) return;
   if (slide.content.slideBgAutoFor === url) return; // already detected for this image
@@ -186,7 +190,7 @@ export function buildBackgroundControls({
       class: 'help',
       text: t(
         'editor.slide.background.lockedByTheme',
-        'Set by the theme and not editable per slide.'
+        'Set by the theme and not editable per slide.',
       ),
     });
 
@@ -201,7 +205,9 @@ export function buildBackgroundControls({
     // A locked background still says so where its control would have been —
     // silently omitting it reads as a missing feature.
     if (!colorField) {
-      return bgLocked ? h('div', { class: 'stack editor-bg-color' }, [lockNote()]) : null;
+      return bgLocked
+        ? h('div', { class: 'stack editor-bg-color' }, [lockNote()])
+        : null;
     }
     const group = h('div', { class: 'stack editor-bg-color' });
     const colorEl = renderField({
@@ -218,7 +224,8 @@ export function buildBackgroundControls({
     if (customField) {
       const customEl = renderField(customField);
       if (customEl) {
-        if (slide.content?.background !== 'custom') customEl.style.display = 'none';
+        if (slide.content?.background !== 'custom')
+          customEl.style.display = 'none';
         group.append(customEl);
       }
     }
@@ -232,19 +239,25 @@ export function buildBackgroundControls({
     if (!imageField && !logoField) return null;
 
     const imageUrl = String(slide?.content?.slideBgImage || '').trim();
-    const details = h('details', { class: 'editor-advanced editor-bg-section' });
+    const details = h('details', {
+      class: 'editor-advanced editor-bg-section',
+    });
     if (readBgImageSectionOpen()) details.open = true;
-    details.addEventListener('toggle', () => storeBgImageSectionOpen(details.open));
+    details.addEventListener('toggle', () =>
+      storeBgImageSectionOpen(details.open),
+    );
 
     const summary = h('summary', {
       class: 'editor-advanced-summary',
       title: t(
         'editor.slide.background.imageSectionHelp',
-        'A slide-wide background image, how it crops, and the theme corner logo.'
+        'A slide-wide background image, how it crops, and the theme corner logo.',
       ),
     });
     summary.append(
-      h('span', { text: t('editor.slide.background.imageSection', 'Background image') })
+      h('span', {
+        text: t('editor.slide.background.imageSection', 'Background image'),
+      }),
     );
     // A set background must stay visible without costing the height of the open
     // panel — hence a thumbnail in the summary rather than the force-open this
@@ -257,14 +270,14 @@ export function buildBackgroundControls({
           alt: '',
           loading: 'lazy',
           decoding: 'async',
-        })
+        }),
       );
     } else {
       summary.append(
         h('span', {
           class: 'editor-bg-status',
           text: t('editor.slide.background.statusNone', 'none'),
-        })
+        }),
       );
     }
 
@@ -287,10 +300,13 @@ export function buildBackgroundControls({
         body.append(
           renderFocusGridField({
             h,
-            label: t('editor.slide.background.focus', 'Background focus (crop)'),
+            label: t(
+              'editor.slide.background.focus',
+              'Background focus (crop)',
+            ),
             helpText: t(
               'editor.slide.background.focusHelp',
-              'Pick which part stays visible when the image is cropped to fill the slide.'
+              'Pick which part stays visible when the image is cropped to fill the slide.',
             ),
             focusX: slide.content?.slideBgFocusX ?? 50,
             focusY: slide.content?.slideBgFocusY ?? 50,
@@ -300,11 +316,14 @@ export function buildBackgroundControls({
               markDirty?.();
               scheduleUiRefresh?.();
             },
-          })
+          }),
         );
-        if (slide.content.slideBgFit == null) slide.content.slideBgFit = 'cover';
-        if (slide.content.slideBgOverlay == null) slide.content.slideBgOverlay = 'auto';
-        if (slide.content.slideBgText == null) slide.content.slideBgText = 'auto';
+        if (slide.content.slideBgFit == null)
+          slide.content.slideBgFit = 'cover';
+        if (slide.content.slideBgOverlay == null)
+          slide.content.slideBgOverlay = 'auto';
+        if (slide.content.slideBgText == null)
+          slide.content.slideBgText = 'auto';
         // Auto-detect the readable text colour for the current image (async;
         // stores slideBgTextAuto / slideBgNeedsScrim, then refreshes). No-op
         // when already detected for this image URL.

@@ -52,62 +52,62 @@ Add to your Cursor MCP settings:
 
 ### Reading
 
-| Tool | Description |
-|------|-------------|
-| `get_slide_types` | List the slide types you may use, resolved for your organization (see [below](#which-slide-types-an-agent-sees)) |
-| `list_presentations` | Browse presentations you can access (`ownership`: owned/shared/all; with edit URLs) |
-| `get_presentation` | Get full deck data (all slides) |
-| `get_presentation_url` | Get edit and present URLs for sharing |
-| `list_themes` | List available themes with brand colors |
-| `list_comments` | List comments on one deck (newest first, with replies, slide context + snapshots, `since` filter); access-scoped |
-| `list_recent_comments` | Latest comments across your decks, optionally by one reviewer or since-date (DB store only) |
+| Tool                   | Description                                                                                                      |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `get_slide_types`      | List the slide types you may use, resolved for your organization (see [below](#which-slide-types-an-agent-sees)) |
+| `list_presentations`   | Browse presentations you can access (`ownership`: owned/shared/all; with edit URLs)                              |
+| `get_presentation`     | Get full deck data (all slides)                                                                                  |
+| `get_presentation_url` | Get edit and present URLs for sharing                                                                            |
+| `list_themes`          | List available themes with brand colors                                                                          |
+| `list_comments`        | List comments on one deck (newest first, with replies, slide context + snapshots, `since` filter); access-scoped |
+| `list_recent_comments` | Latest comments across your decks, optionally by one reviewer or since-date (DB store only)                      |
 
 ### Creating
 
-| Tool | Description |
-|------|-------------|
-| `create_presentation` | Generate a full deck from text content using AI |
+| Tool                              | Description                                                          |
+| --------------------------------- | -------------------------------------------------------------------- |
+| `create_presentation`             | Generate a full deck from text content using AI                      |
 | `create_presentation_from_slides` | Write a deck directly from a pre-structured slide array — no AI pass |
-| `add_slide` | Add a slide at a specific position |
-| `append_slides` | AI-generate new slides from content and add to existing deck |
-| `duplicate_presentation` | Create a copy of an existing presentation |
+| `add_slide`                       | Add a slide at a specific position                                   |
+| `append_slides`                   | AI-generate new slides from content and add to existing deck         |
+| `duplicate_presentation`          | Create a copy of an existing presentation                            |
 
 ### Modifying
 
-| Tool | Description |
-|------|-------------|
-| `update_slide` | Update a slide's content directly |
-| `remove_slide` | Remove a slide by index |
-| `reorder_slides` | Move a slide from one position to another |
-| `convert_slide` | AI-powered type conversion (e.g. content → list) |
+| Tool                   | Description                                             |
+| ---------------------- | ------------------------------------------------------- |
+| `update_slide`         | Update a slide's content directly                       |
+| `remove_slide`         | Remove a slide by index                                 |
+| `reorder_slides`       | Move a slide from one position to another               |
+| `convert_slide`        | AI-powered type conversion (e.g. content → list)        |
 | `iterate_presentation` | Natural language modification ("make slide 3 punchier") |
 
 ### Commenting
 
-| Tool | Description |
-|------|-------------|
-| `add_comment` | New top-level comment as the acting user, optionally anchored to a slide (stores a slide snapshot) |
-| `reply_to_comment` | Reply in an existing thread ("good point, fixed in slide 7") |
-| `set_comment_status` | Resolve / reopen / dismiss (owner-only, same transitions as the app) |
+| Tool                 | Description                                                                                        |
+| -------------------- | -------------------------------------------------------------------------------------------------- |
+| `add_comment`        | New top-level comment as the acting user, optionally anchored to a slide (stores a slide snapshot) |
+| `reply_to_comment`   | Reply in an existing thread ("good point, fixed in slide 7")                                       |
+| `set_comment_status` | Resolve / reopen / dismiss (owner-only, same transitions as the app)                               |
 
 Details, payload shape and the matching REST endpoints:
 `docs/reference/comments-api.md`.
 
 ### Analyzing
 
-| Tool | Description |
-|------|-------------|
-| `validate_presentation` | Check for density, repetition, and readability issues |
-| `analyze_presentation` | AI-powered improvement suggestions (language, structure, brevity) |
-| `compress_presentation` | Find merge/removal opportunities to tighten the deck |
+| Tool                    | Description                                                       |
+| ----------------------- | ----------------------------------------------------------------- |
+| `validate_presentation` | Check for density, repetition, and readability issues             |
+| `analyze_presentation`  | AI-powered improvement suggestions (language, structure, brevity) |
+| `compress_presentation` | Find merge/removal opportunities to tighten the deck              |
 
 ### Previewing & exporting
 
-| Tool | Description |
-|------|-------------|
-| `preview_slide` | Render one slide as self-contained HTML (display as an artifact) |
-| `preview_presentation` | Render a slide range as self-contained HTML (visual gallery) |
-| `export_presentation` | Get a download URL for a finished export (PDF, PPTX, HTML, JSON, or zipped per-slide PNGs) |
+| Tool                   | Description                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------ |
+| `preview_slide`        | Render one slide as self-contained HTML (display as an artifact)                           |
+| `preview_presentation` | Render a slide range as self-contained HTML (visual gallery)                               |
+| `export_presentation`  | Get a download URL for a finished export (PDF, PPTX, HTML, JSON, or zipped per-slide PNGs) |
 
 `export_presentation` returns a URL the user opens in a browser signed in to
 Deckyard; the server renders the file on demand (PDF/PPTX/PNG take a few seconds
@@ -116,8 +116,8 @@ visual preview rather than a downloadable file.
 
 ### Deleting
 
-| Tool | Description |
-|------|-------------|
+| Tool                  | Description                  |
+| --------------------- | ---------------------------- |
 | `delete_presentation` | Move a presentation to trash |
 
 ## Guided prompts
@@ -127,15 +127,15 @@ client surfaces in its `/` menu (Claude Desktop) or prompt picker. A prompt is a
 parameterized workflow: the client collects the arguments, the server returns
 the composed instruction, and the model then drives the tools itself.
 
-| Prompt | What it does | Required | Optional |
-|--------|--------------|----------|----------|
-| `create-presentation` | Generate a slide deck from text, notes, or a document | `content` | `language`, `speaker` |
-| `create-from-structured-data` | Build a deck from pre-structured slides — no AI rewriting. Use when you already know the exact slide types and content | `title`, `data` | `language` |
-| `improve-presentation` | Analyze an existing presentation and apply improvements | `presentationId` | `focus` |
-| `refine-slide` | Improve a specific slide with natural-language instructions | `presentationId`, `instruction` | — |
-| `compress-presentation` | Make a presentation shorter and punchier by merging or removing slides | `presentationId` | `intensity` |
-| `add-content` | Add new slides to an existing presentation from additional text | `presentationId`, `content` | — |
-| `deck-overview` | Quick overview of a presentation: slides, themes, validation | — | `presentationId` |
+| Prompt                        | What it does                                                                                                           | Required                        | Optional              |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------- | --------------------- |
+| `create-presentation`         | Generate a slide deck from text, notes, or a document                                                                  | `content`                       | `language`, `speaker` |
+| `create-from-structured-data` | Build a deck from pre-structured slides — no AI rewriting. Use when you already know the exact slide types and content | `title`, `data`                 | `language`            |
+| `improve-presentation`        | Analyze an existing presentation and apply improvements                                                                | `presentationId`                | `focus`               |
+| `refine-slide`                | Improve a specific slide with natural-language instructions                                                            | `presentationId`, `instruction` | —                     |
+| `compress-presentation`       | Make a presentation shorter and punchier by merging or removing slides                                                 | `presentationId`                | `intensity`           |
+| `add-content`                 | Add new slides to an existing presentation from additional text                                                        | `presentationId`, `content`     | —                     |
+| `deck-overview`               | Quick overview of a presentation: slides, themes, validation                                                           | —                               | `presentationId`      |
 
 `server/mcp/prompts.js` is the source of truth for both the list and the
 argument shapes.
@@ -167,6 +167,7 @@ server/mcp/
 ```
 
 Each tool maps directly to existing Deckyard functionality:
+
 - `create_presentation` → `generateDeckV2()` + `createPresentation()`
 - `create_presentation_from_slides` → `validateRefinedSlidesStrict()` / `validateAndFixRefinedSlides()` + `createPresentation()` + `updatePresentation()` (no AI pass)
 - `convert_slide` → `convertSlideWithAi()`
@@ -214,11 +215,11 @@ hand-written editorial catalog. Every registered type is offered unless it opts
 out, so a type that shows up in the editor's picker also shows up here. Each
 entry lands in exactly one of three states:
 
-| State | How it is expressed | What the agent gets |
-|---|---|---|
-| Documented | An `ai.js` in the type's own directory (`shared/slide-types/types/<name>/ai.js`) | Full `description` / `bestFor` / `notFor`, `documented: true` |
-| Undocumented | Registered, no catalog entry | A generic description, `documented: false` |
-| Withheld | `deprecated: true` or `ai: false` on the definition | Not listed at all |
+| State        | How it is expressed                                                              | What the agent gets                                           |
+| ------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Documented   | An `ai.js` in the type's own directory (`shared/slide-types/types/<name>/ai.js`) | Full `description` / `bestFor` / `notFor`, `documented: true` |
+| Undocumented | Registered, no catalog entry                                                     | A generic description, `documented: false`                    |
+| Withheld     | `deprecated: true` or `ai: false` on the definition                              | Not listed at all                                             |
 
 The `schema` is the same in all three: it is **always** derived from the type's
 `fields[]` — what the editor renders a form from and validation runs against —
@@ -257,10 +258,10 @@ SSE session resolves against the organization its API key belongs to.
 An entry may also carry a `usage` string, and it answers a different question
 from the rest of the entry:
 
-| Field | Question it answers | Written by |
-|---|---|---|
-| `description` / `bestFor` / `notFor` | which type should I pick? | whoever authored the type |
-| `usage` | how does this organization require the type to be filled? | the organization |
+| Field                                | Question it answers                                       | Written by                |
+| ------------------------------------ | --------------------------------------------------------- | ------------------------- |
+| `description` / `bestFor` / `notFor` | which type should I pick?                                 | whoever authored the type |
+| `usage`                              | how does this organization require the type to be filled? | the organization          |
 
 Sources, cut-off dates, mandatory explanations, escalation rules. It sits after
 `schema` in the entry so an agent reads the shape first and the house rule
@@ -269,12 +270,12 @@ empty. Agents should treat it as binding.
 
 Four authoring surfaces, one field:
 
-| Where | How |
-|---|---|
-| Core type | `usage` on the type's own `ai.js` (`shared/slide-types/types/<name>/ai.js`) |
-| Core type, fork override | `usage` in `custom/ai/catalog.js` (no OSS patch needed) |
-| Fork file-JS type | `ai.usage` in `custom/slide-types/<type>.js` |
-| Tier-2 DB type | the **Usage rules for AI** field in the slide-type builder |
+| Where                    | How                                                                         |
+| ------------------------ | --------------------------------------------------------------------------- |
+| Core type                | `usage` on the type's own `ai.js` (`shared/slide-types/types/<name>/ai.js`) |
+| Core type, fork override | `usage` in `custom/ai/catalog.js` (no OSS patch needed)                     |
+| Fork file-JS type        | `ai.usage` in `custom/slide-types/<type>.js`                                |
+| Tier-2 DB type           | the **Usage rules for AI** field in the slide-type builder                  |
 
 Text is dedented and capped at 1000 characters per type (it multiplies by every
 visible type in every response). The authoring paths reject over-long input; the
@@ -294,12 +295,16 @@ export default function registerCustomTools(server, ctx) {
   server.tool(
     'publish_presentation',
     'Publish a presentation to its public URL',
-    { type: 'object', properties: { presentationId: { type: 'string' } }, required: ['presentationId'] },
+    {
+      type: 'object',
+      properties: { presentationId: { type: 'string' } },
+      required: ['presentationId'],
+    },
     async ({ presentationId }, context) => {
       const owner = ctx.getOwner(context); // per-request (SSE) or default (stdio)
       // ... fork logic; import core modules directly as needed
       return { url: ctx.presentationUrl(presentationId, 'present') };
-    }
+    },
   );
 }
 ```
@@ -335,12 +340,12 @@ Create API keys in the Deckyard web UI (Settings → API Keys) or via the API.
 
 The SSE transport implements the [MCP Streamable HTTP transport](https://spec.modelcontextprotocol.io/specification/basic/transports/#streamable-http):
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/mcp` | Send JSON-RPC requests (tool calls, initialize) |
-| `GET` | `/mcp` | Open SSE stream for server-initiated messages |
-| `DELETE` | `/mcp` | Close a session |
-| `OPTIONS` | `/mcp` | CORS preflight |
+| Method    | Path   | Description                                     |
+| --------- | ------ | ----------------------------------------------- |
+| `POST`    | `/mcp` | Send JSON-RPC requests (tool calls, initialize) |
+| `GET`     | `/mcp` | Open SSE stream for server-initiated messages   |
+| `DELETE`  | `/mcp` | Close a session                                 |
+| `OPTIONS` | `/mcp` | CORS preflight                                  |
 
 ### Session Flow
 
@@ -398,7 +403,7 @@ curl -X POST https://your-deckyard.com/mcp \
 
 ## Transports
 
-| Transport | Use case | Auth |
-|-----------|----------|------|
-| **stdio** | Local tools (Claude Desktop, Cursor) | None needed (local) |
-| **SSE** | Remote agents, webhooks, web clients | API key (Bearer token) |
+| Transport | Use case                             | Auth                   |
+| --------- | ------------------------------------ | ---------------------- |
+| **stdio** | Local tools (Claude Desktop, Cursor) | None needed (local)    |
+| **SSE**   | Remote agents, webhooks, web clients | API key (Bearer token) |

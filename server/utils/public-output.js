@@ -6,7 +6,7 @@ export function stripLiveOnlySlidesFromPresentation(pres) {
   if (!pres || typeof pres !== 'object') return pres;
   const slides = Array.isArray(pres.slides) ? pres.slides : [];
   const filtered = slides.filter(
-    (s) => !(s && typeof s === 'object' && s.type === 'follow-invite-slide')
+    (s) => !(s && typeof s === 'object' && s.type === 'follow-invite-slide'),
   );
   // Avoid cloning big objects unless we actually changed something.
   if (filtered.length === slides.length) return pres;

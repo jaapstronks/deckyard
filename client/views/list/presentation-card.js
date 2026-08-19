@@ -65,7 +65,17 @@ export function createCardRenderer({
    * @param {string} [options.permission] - Permission level (view, comment, edit)
    * @returns {HTMLElement} Card element
    */
-  const renderCard = (p, { isOrganization, highlight = false, isSharedWithMe = false, isTrashView = false, sharedBy, permission } = {}) => {
+  const renderCard = (
+    p,
+    {
+      isOrganization,
+      highlight = false,
+      isSharedWithMe = false,
+      isTrashView = false,
+      sharedBy,
+      permission,
+    } = {},
+  ) => {
     // Check if selection mode is active
     const isSelectionMode = () => selectionState?.isActive?.() ?? false;
     const isSelected = () => selectionState?.isSelected?.(p.id) ?? false;
@@ -75,7 +85,8 @@ export function createCardRenderer({
       tabindex: '0',
       'data-id': p.id,
       onclick: (e) => {
-        if (e?.target?.closest?.('button,a,.presentation-card-checkbox')) return;
+        if (e?.target?.closest?.('button,a,.presentation-card-checkbox'))
+          return;
         // In selection mode, toggle selection instead of opening
         if (isSelectionMode()) {
           selectionState?.toggle?.(p.id, p);
@@ -171,7 +182,7 @@ export function createCardRenderer({
         h('div', {
           class: 'help thumb-overlay is-muted',
           text: t('list.thumb.empty', 'No slides yet'),
-        })
+        }),
       );
     };
 
@@ -304,7 +315,8 @@ export function createCardRenderer({
               h('a', {
                 href: `/app/${p.id}`,
                 text: t('list.restore.openLink', 'Open presentation'),
-                style: 'color: inherit; text-decoration: underline; cursor: pointer;',
+                style:
+                  'color: inherit; text-decoration: underline; cursor: pointer;',
                 onclick: (ev) => {
                   ev.preventDefault();
                   nav?.(`/app/${p.id}`);
@@ -334,24 +346,35 @@ export function createCardRenderer({
           if (
             !(await confirmModal(h, document.body, {
               title: t('list.deletePermanently', 'Delete permanently'),
-              message: t('list.deletePermanentlyConfirm', 'Permanently delete "{title}"? This can\'t be undone.', {
-                title: p.title,
-              }),
+              message: t(
+                'list.deletePermanentlyConfirm',
+                'Permanently delete "{title}"? This can\'t be undone.',
+                {
+                  title: p.title,
+                },
+              ),
               confirmLabel: t('list.deletePermanently', 'Delete permanently'),
               danger: true,
             }))
           )
             return;
           try {
-            await api(`/api/presentations/${p.id}/permanent`, { method: 'DELETE' });
-            toast.success(t('list.deletePermanently.done', 'Permanently deleted.'), {
-              id: 'list-permanent-delete',
-              durationMs: 1800,
+            await api(`/api/presentations/${p.id}/permanent`, {
+              method: 'DELETE',
             });
+            toast.success(
+              t('list.deletePermanently.done', 'Permanently deleted.'),
+              {
+                id: 'list-permanent-delete',
+                durationMs: 1800,
+              },
+            );
             // Remove from trash list
             item.remove();
           } catch (err) {
-            toast.error(String(err?.message || err), { id: 'list-permanent-delete' });
+            toast.error(String(err?.message || err), {
+              id: 'list-permanent-delete',
+            });
           }
         },
       });
@@ -459,7 +482,7 @@ export function createCardRenderer({
               text: '▶',
             }),
             h('span', { text: t('list.present', 'Present') }),
-          ]
+          ],
         )
       : null;
 
@@ -467,25 +490,36 @@ export function createCardRenderer({
     const thumbWrapper = h(
       'div',
       { class: 'presentation-card-thumb-wrapper' },
-      [thumb, checkbox, presentBtn].filter(Boolean)
+      [thumb, checkbox, presentBtn].filter(Boolean),
     );
 
     // Build tags element if there are tags
     const tags = Array.isArray(p.tags) ? p.tags : [];
-    const tagsEl = tags.length > 0
-      ? h('div', { class: 'presentation-tags' },
-          tags.slice(0, 3).map((tag) =>
-            h('span', {
-              class: 'presentation-tag',
-              text: typeof tag === 'string' ? tag : tag.name,
-            })
-          ).concat(
-            tags.length > 3
-              ? [h('span', { class: 'presentation-tag', text: `+${tags.length - 3}` })]
-              : []
+    const tagsEl =
+      tags.length > 0
+        ? h(
+            'div',
+            { class: 'presentation-tags' },
+            tags
+              .slice(0, 3)
+              .map((tag) =>
+                h('span', {
+                  class: 'presentation-tag',
+                  text: typeof tag === 'string' ? tag : tag.name,
+                }),
+              )
+              .concat(
+                tags.length > 3
+                  ? [
+                      h('span', {
+                        class: 'presentation-tag',
+                        text: `+${tags.length - 3}`,
+                      }),
+                    ]
+                  : [],
+              ),
           )
-        )
-      : null;
+        : null;
 
     item.append(
       thumbWrapper,
@@ -510,21 +544,26 @@ export function createCardRenderer({
             ? h('div', { class: 'presentation-shared-with-me-badges' }, [
                 h('span', {
                   class: `presentation-permission-badge presentation-permission-badge--${permission || 'view'}`,
-                  text: permission === 'edit' ? t('list.permission.edit', 'Can edit')
-                      : permission === 'comment' ? t('list.permission.comment', 'Can comment')
-                      : t('list.permission.view', 'Can view'),
+                  text:
+                    permission === 'edit'
+                      ? t('list.permission.edit', 'Can edit')
+                      : permission === 'comment'
+                        ? t('list.permission.comment', 'Can comment')
+                        : t('list.permission.view', 'Can view'),
                 }),
                 sharedBy
                   ? h('span', {
                       class: 'presentation-shared-by',
-                      text: t('list.sharedBy', 'Shared by {name}', { name: displayNameFromEmail(sharedBy) }),
+                      text: t('list.sharedBy', 'Shared by {name}', {
+                        name: displayNameFromEmail(sharedBy),
+                      }),
                     })
                   : null,
               ])
             : null,
         ]),
         tagsEl,
-      ])
+      ]),
     );
 
     if (highlight) {
@@ -593,7 +632,9 @@ function getVisibilityIndicator(h, p, t) {
   if (p.collaboratorCount > 0) {
     return h('img', {
       class: 'presentation-visibility-indicator is-shared',
-      title: t('list.visibility.shared', 'Shared with {count} people', { count: p.collaboratorCount }),
+      title: t('list.visibility.shared', 'Shared with {count} people', {
+        count: p.collaboratorCount,
+      }),
       src: iconUrl('link'),
       alt: '',
       'aria-hidden': 'true',

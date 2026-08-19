@@ -12,7 +12,7 @@ import { curatedFontPath } from '../shared/theme-fonts.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  '..'
+  '..',
 );
 
 /**
@@ -33,7 +33,7 @@ const localFont = await (async () => {
 })();
 
 const amethystTheme = JSON.parse(
-  await fs.readFile(path.join(repoRoot, 'themes', 'amethyst.json'), 'utf8')
+  await fs.readFile(path.join(repoRoot, 'themes', 'amethyst.json'), 'utf8'),
 );
 
 test('inlineLocalFontUrls embeds a referenced local woff2 as a data URL', async (t) => {
@@ -46,11 +46,11 @@ test('inlineLocalFontUrls embeds a referenced local woff2 as a data URL', async 
   const out = await inlineLocalFontUrls(repoRoot, css);
   assert.ok(
     out.includes('data:font/woff2;base64,'),
-    'referenced font should be inlined as a base64 data URL'
+    'referenced font should be inlined as a base64 data URL',
   );
   assert.ok(
     !out.includes('/assets/fonts/'),
-    'the server-relative /assets/fonts path must be gone'
+    'the server-relative /assets/fonts path must be gone',
   );
   // The rest of the @font-face rule (family, format, weight) is preserved.
   assert.ok(out.includes("format('woff2')"));
@@ -74,17 +74,23 @@ test('standalone HTML export embeds theme fonts and drops /assets/fonts referenc
   const pres = {
     title: 'Font embed test',
     slides: [
-      { id: 's1', type: 'text-slide', content: { title: 'Hello', body: 'World' } },
+      {
+        id: 's1',
+        type: 'text-slide',
+        content: { title: 'Hello', body: 'World' },
+      },
     ],
   };
-  const html = await buildStandaloneHtml(repoRoot, pres, { theme: amethystTheme });
+  const html = await buildStandaloneHtml(repoRoot, pres, {
+    theme: amethystTheme,
+  });
   assert.ok(
     !html.includes('/assets/fonts/'),
-    'downloaded standalone HTML must not reference server-hosted font files'
+    'downloaded standalone HTML must not reference server-hosted font files',
   );
   assert.ok(
     html.includes('data:font/woff2;base64,'),
-    "the theme's fonts must be embedded as data URLs"
+    "the theme's fonts must be embedded as data URLs",
   );
 });
 
@@ -101,14 +107,18 @@ test('each distinct font file is inlined exactly once', async (t) => {
   assert.equal(
     new Set(blobs).size,
     blobs.length,
-    'the same font file is base64-inlined more than once'
+    'the same font file is base64-inlined more than once',
   );
   // Two families × two Latin subsets, each family variable across its weights.
-  assert.equal(blobs.length, 4, 'the default theme should embed four distinct files');
+  assert.equal(
+    blobs.length,
+    4,
+    'the default theme should embed four distinct files',
+  );
   assert.match(
     css,
     /font-weight: 400 700;/,
-    'weights that share a variable file collapse into one range'
+    'weights that share a variable file collapse into one range',
   );
 });
 

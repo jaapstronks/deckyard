@@ -19,16 +19,19 @@
  */
 
 export const ai = {
-    category: 'interactive',
-    resolveInPhase1: false,
-    description: `
+  category: 'interactive',
+  resolveInPhase1: false,
+  description: `
       Numeric slider question (1-10 scale).
       Has min and max labels at the ends.
     `,
-    bestFor: [
-      '"Rate from 1 to 10" questions',
-      '"How likely are you to..." questions',
-      'Confidence or intensity ratings',
-    ],
-    notFor: ['Labeled categories (use likert-slide)', 'Multiple choice (use poll-slide)'],
+  bestFor: [
+    '"Rate from 1 to 10" questions',
+    '"How likely are you to..." questions',
+    'Confidence or intensity ratings',
+  ],
+  notFor: [
+    'Labeled categories (use likert-slide)',
+    'Multiple choice (use poll-slide)',
+  ],
 };

@@ -26,7 +26,9 @@ import { nowIso } from '../utils/normalize.js';
  * @returns {Promise<{ok: boolean}>}
  */
 export async function storeGdprToken({ email, token, expiresAt }) {
-  const e = String(email || '').toLowerCase().trim();
+  const e = String(email || '')
+    .toLowerCase()
+    .trim();
   const t = String(token || '');
   if (!e || !t) return { ok: false };
 
@@ -35,9 +37,18 @@ export async function storeGdprToken({ email, token, expiresAt }) {
   return withDbGuard({ ok: false }, async (db) => {
     await db
       .insertInto('gdpr_verification_tokens')
-      .values({ email: e, token: t, expires_at: expiresIso, created_at: nowIso() })
+      .values({
+        email: e,
+        token: t,
+        expires_at: expiresIso,
+        created_at: nowIso(),
+      })
       .onConflict((oc) =>
-        oc.column('email').doUpdateSet({ token: t, expires_at: expiresIso, created_at: nowIso() })
+        oc.column('email').doUpdateSet({
+          token: t,
+          expires_at: expiresIso,
+          created_at: nowIso(),
+        }),
       )
       .execute();
     return { ok: true };
@@ -58,7 +69,9 @@ export async function storeGdprToken({ email, token, expiresAt }) {
  * @returns {Promise<boolean>} True only if the token matches and is unexpired.
  */
 export async function verifyGdprToken({ email, token }) {
-  const e = String(email || '').toLowerCase().trim();
+  const e = String(email || '')
+    .toLowerCase()
+    .trim();
   const t = String(token || '');
   if (!e || !t) return false;
 
@@ -81,10 +94,15 @@ export async function verifyGdprToken({ email, token }) {
  * @returns {Promise<void>}
  */
 export async function consumeGdprToken(email) {
-  const e = String(email || '').toLowerCase().trim();
+  const e = String(email || '')
+    .toLowerCase()
+    .trim();
   if (!e) return;
   await withDbGuard(undefined, async (db) => {
-    await db.deleteFrom('gdpr_verification_tokens').where('email', '=', e).execute();
+    await db
+      .deleteFrom('gdpr_verification_tokens')
+      .where('email', '=', e)
+      .execute();
   });
 }
 
@@ -96,7 +114,10 @@ export async function consumeGdprToken(email) {
  */
 export async function deleteExpiredGdprTokens() {
   await withDbGuard(undefined, async (db) => {
-    await db.deleteFrom('gdpr_verification_tokens').where('expires_at', '<', nowIso()).execute();
+    await db
+      .deleteFrom('gdpr_verification_tokens')
+      .where('expires_at', '<', nowIso())
+      .execute();
   });
 }
 

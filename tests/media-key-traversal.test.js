@@ -42,7 +42,7 @@ test('confirmUpload refuses to stat a file outside uploadsDir', async () => {
     assert.deepEqual(
       res,
       { exists: false, publicUrl: '' },
-      `traversal key ${JSON.stringify(key)} must not leak existence`
+      `traversal key ${JSON.stringify(key)} must not leak existence`,
     );
   }
 });
@@ -71,6 +71,10 @@ test('non-string / empty / NUL keys are rejected', async () => {
   for (const key of ['', 'file\0.png', null, undefined, 42]) {
     const res = await provider.confirmUpload(key);
     assert.equal(res.exists, false, `key ${JSON.stringify(key)}`);
-    assert.equal(await provider.deleteFile(key), false, `key ${JSON.stringify(key)}`);
+    assert.equal(
+      await provider.deleteFile(key),
+      false,
+      `key ${JSON.stringify(key)}`,
+    );
   }
 });

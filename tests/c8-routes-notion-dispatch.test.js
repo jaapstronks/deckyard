@@ -19,7 +19,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ROUTES, GATED_ROUTES, handleNotion } from '../server/routes/api/notion.js';
+import {
+  ROUTES,
+  GATED_ROUTES,
+  handleNotion,
+} from '../server/routes/api/notion.js';
 
 function select(routes, method, pathname) {
   for (const route of routes) {
@@ -38,9 +42,14 @@ function mockRes() {
   return {
     statusCode: null,
     headers: {},
-    writeHead(c, headers) { this.statusCode = c; Object.assign(this.headers, headers); },
+    writeHead(c, headers) {
+      this.statusCode = c;
+      Object.assign(this.headers, headers);
+    },
     end() {},
-    setHeader(k, v) { this.headers[k] = v; },
+    setHeader(k, v) {
+      this.headers[k] = v;
+    },
   };
 }
 
@@ -62,7 +71,11 @@ function ctx(method, pathname) {
 function named(routes, method, path, handlerName) {
   const route = select(routes, method, path);
   assert.ok(route, `${method} ${path} matches a route`);
-  assert.equal(route.handler.name, handlerName, `${method} ${path} → ${handlerName}`);
+  assert.equal(
+    route.handler.name,
+    handlerName,
+    `${method} ${path} → ${handlerName}`,
+  );
 }
 
 test('notion: always-available routes resolve to their named handlers in order', () => {
@@ -70,7 +83,12 @@ test('notion: always-available routes resolve to their named handlers in order',
   named(ROUTES, 'POST', '/api/notion/fetch', 'handleNotionFetch');
   named(ROUTES, 'POST', '/api/notion/publish', 'handleNotionPublish');
   named(ROUTES, 'POST', '/api/notion/import', 'handleNotionImport');
-  named(ROUTES, 'POST', '/api/notion/import/stream', 'handleNotionImportStream');
+  named(
+    ROUTES,
+    'POST',
+    '/api/notion/import/stream',
+    'handleNotionImportStream',
+  );
 });
 
 test('notion: feature-gated routes live in GATED_ROUTES, not the always table', () => {
@@ -80,20 +98,37 @@ test('notion: feature-gated routes live in GATED_ROUTES, not the always table', 
 
   // The gate is the whole point: the feature-gated paths must not be reachable
   // through the always-available table.
-  for (const p of ['/api/notion/subjects', '/api/notion/compose', '/api/notion/suggest']) {
-    assert.equal(select(ROUTES, 'POST', p), null, `${p} is not an always-available route`);
+  for (const p of [
+    '/api/notion/subjects',
+    '/api/notion/compose',
+    '/api/notion/suggest',
+  ]) {
+    assert.equal(
+      select(ROUTES, 'POST', p),
+      null,
+      `${p} is not an always-available route`,
+    );
   }
 });
 
 test('notion: import/stream stay distinct — /import does not swallow /import/stream', () => {
   named(ROUTES, 'POST', '/api/notion/import', 'handleNotionImport');
-  named(ROUTES, 'POST', '/api/notion/import/stream', 'handleNotionImportStream');
+  named(
+    ROUTES,
+    'POST',
+    '/api/notion/import/stream',
+    'handleNotionImportStream',
+  );
 });
 
 test('notion: a wrong method on an always-available path falls through (no 405)', async () => {
   // GET on a POST-only path matches no row in either table, regardless of the
   // feature flag, and never reaches a storage-touching handler.
-  for (const path of ['/api/notion/fetch', '/api/notion/import', '/api/notion/import/stream']) {
+  for (const path of [
+    '/api/notion/fetch',
+    '/api/notion/import',
+    '/api/notion/import/stream',
+  ]) {
     const { ctx: c, res } = ctx('GET', path);
     assert.equal(await handleNotion(c), false, `GET ${path} → false`);
     assert.equal(res.statusCode, null, `GET ${path} sent no response`);
@@ -135,7 +170,11 @@ test('notion: the dispatcher forwards storageScope to the import handler (B62 vo
     c.storageScope = scope;
     assert.equal(await handleNotion(c), true);
     assert.ok(seen, 'the import handler was invoked');
-    assert.equal(seen.storageScope, scope, 'the exact storageScope reached the handler');
+    assert.equal(
+      seen.storageScope,
+      scope,
+      'the exact storageScope reached the handler',
+    );
   } finally {
     importRoute.handler = realHandler;
   }

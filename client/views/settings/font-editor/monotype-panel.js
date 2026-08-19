@@ -20,7 +20,7 @@ export function createMonotypePanel({ sourceConfig = {}, onChange }) {
     class: 'help',
     text: t(
       'fonts.monotypeHelp',
-      'Enter your fonts.com (Monotype) project ID and the CSS font-family name. The project ID can be found in your fonts.com Web Fonts project settings.'
+      'Enter your fonts.com (Monotype) project ID and the CSS font-family name. The project ID can be found in your fonts.com Web Fonts project settings.',
     ),
   });
 
@@ -29,7 +29,10 @@ export function createMonotypePanel({ sourceConfig = {}, onChange }) {
   // Project ID
   const projectField = h('div', { class: 'stack' });
   projectField.append(
-    h('label', { class: 'field-label', text: t('fonts.monotypeProjectId', 'Project ID') })
+    h('label', {
+      class: 'field-label',
+      text: t('fonts.monotypeProjectId', 'Project ID'),
+    }),
   );
   const projectInput = h('input', {
     class: 'input',
@@ -45,7 +48,10 @@ export function createMonotypePanel({ sourceConfig = {}, onChange }) {
   // Version
   const versionField = h('div', { class: 'stack' });
   versionField.append(
-    h('label', { class: 'field-label', text: t('fonts.monotypeVersion', 'Version (optional)') })
+    h('label', {
+      class: 'field-label',
+      text: t('fonts.monotypeVersion', 'Version (optional)'),
+    }),
   );
   const versionInput = h('input', {
     class: 'input',

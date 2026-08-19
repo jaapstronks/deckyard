@@ -14,7 +14,11 @@ import { createCollectionsApi } from '../client/lib/slide-collections/api.js';
 function makeStubApi(handler) {
   const calls = [];
   const api = async (path, init) => {
-    calls.push({ path, method: init?.method || 'GET', body: init?.body ? JSON.parse(init.body) : undefined });
+    calls.push({
+      path,
+      method: init?.method || 'GET',
+      body: init?.body ? JSON.parse(init.body) : undefined,
+    });
     return handler(path, init);
   };
   return { api, calls };
@@ -32,7 +36,10 @@ describe('createCollectionsApi.addSlide', () => {
     const collectionsApi = createCollectionsApi({ api });
     const collection = { id: 'c1', shelf: 'personal', slideIds: ['a', 'b'] };
 
-    const { collection: updated, added } = await collectionsApi.addSlide(collection, 'c');
+    const { collection: updated, added } = await collectionsApi.addSlide(
+      collection,
+      'c',
+    );
     assert.strictEqual(added, true);
     assert.deepStrictEqual(updated.slideIds, ['a', 'b', 'c']);
 
@@ -44,24 +51,39 @@ describe('createCollectionsApi.addSlide', () => {
   it('is a no-op when the slide is already a member (no PATCH)', async () => {
     const { api, calls } = makeStubApi(() => ({}));
     const collectionsApi = createCollectionsApi({ api });
-    const collection = { id: 'c1', shelf: 'organization', slideIds: ['a', 'b'] };
+    const collection = {
+      id: 'c1',
+      shelf: 'organization',
+      slideIds: ['a', 'b'],
+    };
 
     const { added } = await collectionsApi.addSlide(collection, 'a');
     assert.strictEqual(added, false);
-    assert.strictEqual(calls.some((c) => c.method === 'PATCH'), false);
+    assert.strictEqual(
+      calls.some((c) => c.method === 'PATCH'),
+      false,
+    );
   });
 });
 
 describe('createCollectionsApi.listAll', () => {
   it('fetches both shelves and returns them keyed', async () => {
     const { api } = makeStubApi((path) => {
-      if (path === '/api/slide-collections/personal') return { items: [{ id: 'p1' }] };
-      if (path === '/api/slide-collections/organization') return { items: [{ id: 'o1' }] };
+      if (path === '/api/slide-collections/personal')
+        return { items: [{ id: 'p1' }] };
+      if (path === '/api/slide-collections/organization')
+        return { items: [{ id: 'o1' }] };
       return { items: [] };
     });
     const collectionsApi = createCollectionsApi({ api });
     const { personal, organization } = await collectionsApi.listAll();
-    assert.deepStrictEqual(personal.map((c) => c.id), ['p1']);
-    assert.deepStrictEqual(organization.map((c) => c.id), ['o1']);
+    assert.deepStrictEqual(
+      personal.map((c) => c.id),
+      ['p1'],
+    );
+    assert.deepStrictEqual(
+      organization.map((c) => c.id),
+      ['o1'],
+    );
   });
 });

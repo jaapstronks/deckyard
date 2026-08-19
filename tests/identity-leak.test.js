@@ -19,7 +19,11 @@ function feedEntry(extra = {}) {
     description: 'desc',
     modified: '2026-07-21T10:00:00.000Z',
     created: '2026-07-20T10:00:00.000Z',
-    published: { id: 'pub123', slug: 'a-deck', created: '2026-07-20T10:00:00.000Z' },
+    published: {
+      id: 'pub123',
+      slug: 'a-deck',
+      created: '2026-07-20T10:00:00.000Z',
+    },
     ...extra,
   };
 }
@@ -31,7 +35,9 @@ test('the RSS feed never publishes the owner raw email address', () => {
     org: ORG,
     baseUrl: BASE,
     format: 'rss',
-    presentations: [feedEntry({ ownerName: 'jaap', ownerEmail: 'jaap@ciiic.nl' })],
+    presentations: [
+      feedEntry({ ownerName: 'jaap', ownerEmail: 'jaap@ciiic.nl' }),
+    ],
   });
   assert.ok(!xml.includes('jaap@ciiic.nl'), 'raw email leaked into the feed');
   assert.ok(!xml.includes('@ciiic.nl'), 'email domain leaked into the feed');

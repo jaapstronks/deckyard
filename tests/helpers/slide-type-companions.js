@@ -52,7 +52,7 @@ import {
 
 /** Registered type names, minus fork-local ones (see the scope note above). */
 export const CORE_SLIDE_TYPE_NAMES = Object.keys(SLIDE_TYPES).filter(
-  (name) => !CUSTOM_SLIDE_TYPE_NAMES.includes(name)
+  (name) => !CUSTOM_SLIDE_TYPE_NAMES.includes(name),
 );
 
 /**
@@ -63,15 +63,22 @@ export const CORE_SLIDE_TYPE_NAMES = Object.keys(SLIDE_TYPES).filter(
  * @type {Record<string, string>}
  */
 const NL_SLIDE_TYPE_DESC = (() => {
-  const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const repoRoot = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '..',
+    '..',
+  );
   const raw = JSON.parse(
-    fs.readFileSync(path.join(repoRoot, 'client', 'i18n', 'nl', 'editor.json'), 'utf8')
+    fs.readFileSync(
+      path.join(repoRoot, 'client', 'i18n', 'nl', 'editor.json'),
+      'utf8',
+    ),
   );
   const prefix = 'editor.slideTypeDesc.';
   return Object.fromEntries(
     Object.entries(raw)
       .filter(([k, v]) => k.startsWith(prefix) && typeof v === 'string')
-      .map(([k, v]) => [k.slice(prefix.length), v])
+      .map(([k, v]) => [k.slice(prefix.length), v]),
   );
 })();
 
@@ -143,7 +150,7 @@ export function missingFor(companion, names, types) {
     (name) =>
       companion.appliesTo(name, types[name]) &&
       !companion.has(name, types[name]) &&
-      !Object.prototype.hasOwnProperty.call(companion.exempt, name)
+      !Object.prototype.hasOwnProperty.call(companion.exempt, name),
   );
 }
 
@@ -157,7 +164,8 @@ export function missingFor(companion, names, types) {
  */
 export function staleFor(companion, types) {
   return companion.keys().filter((name) => {
-    if (Object.prototype.hasOwnProperty.call(companion.exempt, name)) return false;
+    if (Object.prototype.hasOwnProperty.call(companion.exempt, name))
+      return false;
     const def = types[name];
     if (!def) return true; // an entry for a type that is not registered at all
     return !companion.appliesTo(name, def);
@@ -186,7 +194,8 @@ export const COMPANIONS = [
     where:
       'shared/slide-types/types/<name>/ai.js (aiExamples) — surfaced as ' +
       'SLIDE_TYPE_EXAMPLES by server/utils/ai/slide-catalog/examples.js',
-    degradesTo: 'the prompt describes the schema without showing filled-in content',
+    degradesTo:
+      'the prompt describes the schema without showing filled-in content',
     // Sparse on purpose: examples exist for the types whose shape is hard to
     // infer from a schema alone. Forward coverage is a quality goal, not a gate.
     optional: true,
@@ -199,7 +208,8 @@ export const COMPANIONS = [
     id: 'v1-manual-examples',
     label: 'v1 generator manual example',
     where: 'server/utils/openai/slide-types-prompt.js (MANUAL_EXAMPLES)',
-    degradesTo: 'the v1 prompt falls back to the catalog example, then to defaults',
+    degradesTo:
+      'the v1 prompt falls back to the catalog example, then to defaults',
     // Sparse by design: an override exists only where a catalog example gets the
     // shape wrong. Only the reverse direction is a gate.
     optional: true,
@@ -214,7 +224,8 @@ export const COMPANIONS = [
     where:
       'shared/slide-types/types/<name>/authoring.js (description) — surfaced as ' +
       'SLIDE_TYPE_DESCRIPTION by shared/slide-types/authoring-companions.js',
-    degradesTo: 'the picker tile shows the bare label with no "what is this" tooltip',
+    degradesTo:
+      'the picker tile shows the bare label with no "what is this" tooltip',
     appliesTo: (name, def) => isAuthorable(def),
     // A fork type may declare its own `description` on the definition
     // (slideTypeDescription checks that first), so either source counts.
@@ -296,7 +307,8 @@ export const COMPANIONS = [
   {
     id: 'inline-edit-descriptor',
     label: 'inline-edit descriptor',
-    where: 'client/views/editor/inline-edit/descriptors.js (INLINE_DESCRIPTORS)',
+    where:
+      'client/views/editor/inline-edit/descriptors.js (INLINE_DESCRIPTORS)',
     degradesTo:
       'the slide has no on-canvas editing at all — every field is side-form only',
     // Editing outlives deprecation (see isEditable): stored decks still open.

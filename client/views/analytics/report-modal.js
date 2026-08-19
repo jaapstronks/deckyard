@@ -14,7 +14,13 @@ import { t } from '../../lib/ui-i18n.js';
  * @param {Object} options.presentation - Presentation data
  * @param {Object} options.dateRange - Current date range
  */
-export function createReportModal({ h, root, presentationId, presentation, dateRange }) {
+export function createReportModal({
+  h,
+  root,
+  presentationId,
+  presentation,
+  dateRange,
+}) {
   // State
   let reportType = 'summary';
   let isPublic = true; // Default to public so reports are viewable
@@ -22,7 +28,9 @@ export function createReportModal({ h, root, presentationId, presentation, dateR
   let isSubmitting = false;
 
   // Modal backdrop
-  const backdrop = h('div', { class: 'modal-backdrop analytics-report-modal-backdrop' });
+  const backdrop = h('div', {
+    class: 'modal-backdrop analytics-report-modal-backdrop',
+  });
 
   // Modal content
   const modal = h('div', { class: 'modal analytics-report-modal' });
@@ -53,34 +61,59 @@ export function createReportModal({ h, root, presentationId, presentation, dateR
     h('div', { class: 'form-group' }, [
       h('label', { text: t('analytics.reportTitle', 'Title') }),
       titleInput,
-    ])
+    ]),
   );
 
   // Report type
-  const typeSelect = h('select', {
-    class: 'form-input',
-    onchange: (e) => { reportType = e.target.value; },
-  }, [
-    h('option', { value: 'summary', text: t('analytics.reportTypeSummary', 'Summary - Overview metrics and completion rate') }),
-    h('option', { value: 'detailed', text: t('analytics.reportTypeDetailed', 'Detailed - Per-slide breakdown and viewer journeys') }),
-    h('option', { value: 'engagement', text: t('analytics.reportTypeEngagement', 'Engagement - Polls, Q&A, and feedback') }),
-  ]);
+  const typeSelect = h(
+    'select',
+    {
+      class: 'form-input',
+      onchange: (e) => {
+        reportType = e.target.value;
+      },
+    },
+    [
+      h('option', {
+        value: 'summary',
+        text: t(
+          'analytics.reportTypeSummary',
+          'Summary - Overview metrics and completion rate',
+        ),
+      }),
+      h('option', {
+        value: 'detailed',
+        text: t(
+          'analytics.reportTypeDetailed',
+          'Detailed - Per-slide breakdown and viewer journeys',
+        ),
+      }),
+      h('option', {
+        value: 'engagement',
+        text: t(
+          'analytics.reportTypeEngagement',
+          'Engagement - Polls, Q&A, and feedback',
+        ),
+      }),
+    ],
+  );
   body.append(
     h('div', { class: 'form-group' }, [
       h('label', { text: t('analytics.reportType', 'Report Type') }),
       typeSelect,
-    ])
+    ]),
   );
 
   // Date range display
-  const rangeText = dateRange?.since && dateRange?.until
-    ? `${dateRange.since} to ${dateRange.until}`
-    : t('analytics.allTime', 'All time');
+  const rangeText =
+    dateRange?.since && dateRange?.until
+      ? `${dateRange.since} to ${dateRange.until}`
+      : t('analytics.allTime', 'All time');
   body.append(
     h('div', { class: 'form-group' }, [
       h('label', { text: t('analytics.dateRange', 'Date Range') }),
       h('div', { class: 'analytics-report-range', text: rangeText }),
-    ])
+    ]),
   );
 
   // Public sharing toggle
@@ -96,20 +129,38 @@ export function createReportModal({ h, root, presentationId, presentation, dateR
   body.append(
     h('div', { class: 'form-group form-group-checkbox' }, [
       publicCheckbox,
-      h('label', { for: 'report-public', text: t('analytics.makePublic', 'Create shareable link') }),
-    ])
+      h('label', {
+        for: 'report-public',
+        text: t('analytics.makePublic', 'Create shareable link'),
+      }),
+    ]),
   );
 
   // Expiration (visible by default since checkbox is checked)
-  const expirationSelect = h('select', {
-    class: 'form-input',
-    onchange: (e) => { expiresInDays = parseInt(e.target.value, 10); },
-  }, [
-    h('option', { value: '7', text: t('analytics.expires7Days', '7 days') }),
-    h('option', { value: '30', text: t('analytics.expires30Days', '30 days') }),
-    h('option', { value: '90', text: t('analytics.expires90Days', '90 days') }),
-    h('option', { value: '0', text: t('analytics.neverExpires', 'Never expires') }),
-  ]);
+  const expirationSelect = h(
+    'select',
+    {
+      class: 'form-input',
+      onchange: (e) => {
+        expiresInDays = parseInt(e.target.value, 10);
+      },
+    },
+    [
+      h('option', { value: '7', text: t('analytics.expires7Days', '7 days') }),
+      h('option', {
+        value: '30',
+        text: t('analytics.expires30Days', '30 days'),
+      }),
+      h('option', {
+        value: '90',
+        text: t('analytics.expires90Days', '90 days'),
+      }),
+      h('option', {
+        value: '0',
+        text: t('analytics.neverExpires', 'Never expires'),
+      }),
+    ],
+  );
   const expirationGroup = h('div', { class: 'form-group' }, [
     h('label', { text: t('analytics.expiration', 'Link expiration') }),
     expirationSelect,
@@ -117,8 +168,14 @@ export function createReportModal({ h, root, presentationId, presentation, dateR
   body.append(expirationGroup);
 
   // Status messages (above footer)
-  const errorEl = h('div', { class: 'analytics-report-error', style: 'display: none;' });
-  const successEl = h('div', { class: 'analytics-report-success', style: 'display: none;' });
+  const errorEl = h('div', {
+    class: 'analytics-report-error',
+    style: 'display: none;',
+  });
+  const successEl = h('div', {
+    class: 'analytics-report-success',
+    style: 'display: none;',
+  });
   body.append(errorEl, successEl);
 
   // Footer
@@ -170,17 +227,20 @@ export function createReportModal({ h, root, presentationId, presentation, dateR
     errorEl.style.display = 'none';
 
     try {
-      const result = await api(`/api/presentations/${presentationId}/analytics/reports`, {
-        method: 'POST',
-        body: {
-          title,
-          reportType,
-          startDate: dateRange?.since || new Date(0).toISOString(),
-          endDate: dateRange?.until || new Date().toISOString(),
-          isPublic,
-          expiresInDays: isPublic ? expiresInDays : null,
+      const result = await api(
+        `/api/presentations/${presentationId}/analytics/reports`,
+        {
+          method: 'POST',
+          body: {
+            title,
+            reportType,
+            startDate: dateRange?.since || new Date(0).toISOString(),
+            endDate: dateRange?.until || new Date().toISOString(),
+            isPublic,
+            expiresInDays: isPublic ? expiresInDays : null,
+          },
         },
-      });
+      );
 
       if (result?.id) {
         showSuccess(result);
@@ -208,8 +268,13 @@ export function createReportModal({ h, root, presentationId, presentation, dateR
 
     successEl.append(
       h('div', { class: 'analytics-report-success-message' }, [
-        h('span', { text: t('analytics.reportGeneratedCheck', '✓ Report generated successfully!') }),
-      ])
+        h('span', {
+          text: t(
+            'analytics.reportGeneratedCheck',
+            '✓ Report generated successfully!',
+          ),
+        }),
+      ]),
     );
 
     if (report.shareToken) {
@@ -236,8 +301,11 @@ export function createReportModal({ h, root, presentationId, presentation, dateR
       successEl.append(
         h('div', { class: 'analytics-report-share-link' }, [
           h('label', { text: t('analytics.shareLink', 'Shareable link:') }),
-          h('div', { class: 'analytics-report-share-input' }, [linkInput, copyBtn]),
-        ])
+          h('div', { class: 'analytics-report-share-input' }, [
+            linkInput,
+            copyBtn,
+          ]),
+        ]),
       );
 
       // Add View Report button
@@ -249,14 +317,19 @@ export function createReportModal({ h, root, presentationId, presentation, dateR
             class: 'btn btn-primary',
             text: t('analytics.viewReport', 'View Report'),
           }),
-        ])
+        ]),
       );
     } else {
       // No share token - report is private, explain how to access it
       successEl.append(
         h('div', { class: 'analytics-report-private-note' }, [
-          h('p', { text: t('analytics.reportSavedPrivate', 'Your report has been saved. Enable "Create shareable link" to generate a viewable link.') }),
-        ])
+          h('p', {
+            text: t(
+              'analytics.reportSavedPrivate',
+              'Your report has been saved. Enable "Create shareable link" to generate a viewable link.',
+            ),
+          }),
+        ]),
       );
     }
 

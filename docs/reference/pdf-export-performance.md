@@ -15,11 +15,11 @@ at its original resolution.
 The difference is not marginal:
 
 | 80-slide deck, PDFKit @2× | without compression | with compression |
-|---|---|---|
-| file size | 328,7 MB | 28,6 MB |
-| first page visible | 502 ms | 45 ms |
-| scroll all pages | 91,6 s | 1,71 s |
-| median per page | 1364 ms | 9,3 ms |
+| ------------------------- | ------------------- | ---------------- |
+| file size                 | 328,7 MB            | 28,6 MB          |
+| first page visible        | 502 ms              | 45 ms            |
+| scroll all pages          | 91,6 s              | 1,71 s           |
+| median per page           | 1364 ms             | 9,3 ms           |
 
 The transform is threaded into `buildSlidesPdfHtml` **by hand, at two call sites**
 — the slide-field embed pass and the rendered `<img src>` pass. Dropping either
@@ -29,7 +29,7 @@ the PDF. `tests/export-pdf-image-compression-wired.test.js` guards that seam;
 
 ## The cap is display-aware on the `<img src>` pass
 
-`PDF_EXPORT_IMAGE_MAX_PX` is a *flat* ceiling: it looks at the source resolution,
+`PDF_EXPORT_IMAGE_MAX_PX` is a _flat_ ceiling: it looks at the source resolution,
 never at how big the image is drawn. A portrait shown ~150 px wide in a 24-up
 grid therefore embedded at the same 2600 px as a full-bleed photo, roughly
 1000 ppi for a 2.5-inch box. On the deck measured above, 50.7% of the image
@@ -65,7 +65,7 @@ Consequences worth knowing:
 browser and asserts the end-to-end split (grid item shrinks, full-bleed does not)
 behind a Chrome gate.
 
-## What does *not* cost render time
+## What does _not_ cost render time
 
 Measured, so nobody re-litigates these:
 
@@ -81,7 +81,7 @@ Measured, so nobody re-litigates these:
   tokens into slide rendering, but it costs no measurable render time.
 - **Lowering `PDF_EXPORT_IMAGE_MAX_PX` below the default.** It buys bytes
   (2600 → 1600 halves the file) but not speed, and it is not monotonic: pages
-  with a full-bleed background photo get *slower* at 1100 px because the viewer
+  with a full-bleed background photo get _slower_ at 1100 px because the viewer
   has to upscale.
 
 ## Measuring
@@ -110,17 +110,17 @@ render all pages in one process.
 
 ## Knobs
 
-| Env var | Default | Effect |
-|---|---|---|
-| `PDF_EXPORT_IMAGE_COMPRESSION` | on | `0`/`off`/`false`/`no` disables the transform entirely |
-| `PDF_EXPORT_IMAGE_MAX_PX` | 2600 | Flat longest-edge ceiling; `0` disables |
-| `PDF_EXPORT_IMAGE_RETINA_SCALE` | 2 | Margin over the measured display size on the `<img src>` pass; clamped to `[1, 4]` |
-| `PDF_EXPORT_IMAGE_QUALITY` | 80 | JPEG quality (mozjpeg) |
-| `PDF_EXPORT_TIMEOUT_MS` | 120000 | Puppeteer `setContent` + `pdf` cap; `0` disables |
+| Env var                         | Default | Effect                                                                             |
+| ------------------------------- | ------- | ---------------------------------------------------------------------------------- |
+| `PDF_EXPORT_IMAGE_COMPRESSION`  | on      | `0`/`off`/`false`/`no` disables the transform entirely                             |
+| `PDF_EXPORT_IMAGE_MAX_PX`       | 2600    | Flat longest-edge ceiling; `0` disables                                            |
+| `PDF_EXPORT_IMAGE_RETINA_SCALE` | 2       | Margin over the measured display size on the `<img src>` pass; clamped to `[1, 4]` |
+| `PDF_EXPORT_IMAGE_QUALITY`      | 80      | JPEG quality (mozjpeg)                                                             |
+| `PDF_EXPORT_TIMEOUT_MS`         | 120000  | Puppeteer `setContent` + `pdf` cap; `0` disables                                   |
 
 ## Known open edge
 
-`--t-gradient-enabled: 0` gates only the *generated* theme gradient from
+`--t-gradient-enabled: 0` gates only the _generated_ theme gradient from
 `shared/theme-normalize.js`. A theme that ships its background through
 `slideBackgrounds` (`shared/theme-slide-backgrounds.js`) sets a gradient straight
 onto `--t-slide-bg-<id>`, which the gate never sees. No measured cost so far, but

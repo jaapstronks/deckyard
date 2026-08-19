@@ -16,7 +16,10 @@
 export { sendEmail, getSenderIdentity, BREVO_API_URL } from './core.js';
 
 // Template building (for internal use)
-export { trySendCustomTemplate, buildFromResolvedTemplate } from './template-builder.js';
+export {
+  trySendCustomTemplate,
+  buildFromResolvedTemplate,
+} from './template-builder.js';
 
 // Authentication emails
 export {
@@ -41,6 +44,4 @@ export {
 } from './senders-digests.js';
 
 // Lead capture emails
-export {
-  maybeSendLeadNotification,
-} from './senders-leads.js';
+export { maybeSendLeadNotification } from './senders-leads.js';

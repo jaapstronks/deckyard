@@ -5,7 +5,12 @@
 
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
-import { getTemplateLabel, getLocaleLabel, getFieldLabel, TEMPLATE_TYPES } from './labels.js';
+import {
+  getTemplateLabel,
+  getLocaleLabel,
+  getFieldLabel,
+  TEMPLATE_TYPES,
+} from './labels.js';
 
 /**
  * Build template selector options.
@@ -48,7 +53,14 @@ export function buildDefaultLocaleOptions(defaultLocaleSelect, data) {
  * @param {Function} onLocaleChange - Callback when locale changes
  * @param {Function} isBusy - Function to check busy state
  */
-export function buildLocaleTabs(localeTabs, data, currentType, currentLocale, onLocaleChange, isBusy) {
+export function buildLocaleTabs(
+  localeTabs,
+  data,
+  currentType,
+  currentLocale,
+  onLocaleChange,
+  isBusy,
+) {
   localeTabs.innerHTML = '';
   const locales = data?.supportedLocales || ['en'];
 
@@ -95,18 +107,27 @@ export function buildPlaceholders(container, placeholders) {
 
   const title = h('div', {
     class: 'field-label',
-    text: t('settings.admin.emailTemplates.placeholders', 'Available Placeholders'),
+    text: t(
+      'settings.admin.emailTemplates.placeholders',
+      'Available Placeholders',
+    ),
   });
 
-  const list = h('ul', { style: 'margin: 0; padding-left: 20px; color: var(--text-muted);' });
+  const list = h('ul', {
+    style: 'margin: 0; padding-left: 20px; color: var(--text-muted);',
+  });
 
   for (const p of placeholders) {
     const li = h('li', { style: 'margin-bottom: 4px;' });
     const code = h('code', {
       text: `{${p.key}}`,
-      style: 'background: var(--bg-muted); padding: 2px 6px; border-radius: 3px;',
+      style:
+        'background: var(--bg-muted); padding: 2px 6px; border-radius: 3px;',
     });
-    const desc = h('span', { text: ` - ${p.description}`, style: 'font-size: 13px;' });
+    const desc = h('span', {
+      text: ` - ${p.description}`,
+      style: 'font-size: 13px;',
+    });
     li.append(code, desc);
     list.append(li);
   }
@@ -130,7 +151,13 @@ export function buildForm(formContainer, data, currentType, currentLocale) {
   if (!templateData) return formInputs;
 
   const localeData = templateData.locales?.[currentLocale];
-  const fields = templateData.fields || ['subject', 'greeting', 'body', 'buttonLabel', 'footer'];
+  const fields = templateData.fields || [
+    'subject',
+    'greeting',
+    'body',
+    'buttonLabel',
+    'footer',
+  ];
 
   for (const field of fields) {
     const fieldWrap = h('div', { style: 'margin-bottom: 12px;' });
@@ -171,16 +198,28 @@ export function buildForm(formContainer, data, currentType, currentLocale) {
     const fieldHint = h('div', {
       class: 'help',
       text: override
-        ? t('settings.admin.emailTemplates.fieldCustomized', 'Using custom value')
-        : t('settings.admin.emailTemplates.fieldDefault', 'Using default (type to customize)'),
+        ? t(
+            'settings.admin.emailTemplates.fieldCustomized',
+            'Using custom value',
+          )
+        : t(
+            'settings.admin.emailTemplates.fieldDefault',
+            'Using default (type to customize)',
+          ),
       style: override ? 'color: var(--color-primary);' : '',
     });
 
     input.addEventListener('input', () => {
       const hasValue = input.value.trim() !== '';
       fieldHint.textContent = hasValue
-        ? t('settings.admin.emailTemplates.fieldCustomized', 'Using custom value')
-        : t('settings.admin.emailTemplates.fieldDefault', 'Using default (type to customize)');
+        ? t(
+            'settings.admin.emailTemplates.fieldCustomized',
+            'Using custom value',
+          )
+        : t(
+            'settings.admin.emailTemplates.fieldDefault',
+            'Using default (type to customize)',
+          );
       fieldHint.style.color = hasValue ? 'var(--color-primary)' : '';
     });
 

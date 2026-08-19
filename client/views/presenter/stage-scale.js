@@ -1,7 +1,7 @@
 export function attachStageScale(
   stageWrap,
   stage,
-  { baseW = 1600, baseH = 900 } = {}
+  { baseW = 1600, baseH = 900 } = {},
 ) {
   if (!stageWrap || !stage) return () => {};
 

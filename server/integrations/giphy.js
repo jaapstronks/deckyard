@@ -27,7 +27,12 @@ export const isGiphyConfigured = createConfigChecker('GIPHY_API_KEY');
  * @param {string} [options.rating='g'] - Content rating (g, pg, pg-13, r)
  * @returns {Promise<{ results: Array, total: number, offset: number }>}
  */
-export async function searchGiphy({ query, offset = 0, limit = 20, rating = 'g' }) {
+export async function searchGiphy({
+  query,
+  offset = 0,
+  limit = 20,
+  rating = 'g',
+}) {
   if (!isGiphyConfigured()) {
     throw new Error('Giphy API is not configured');
   }
@@ -59,7 +64,11 @@ export async function searchGiphy({ query, offset = 0, limit = 20, rating = 'g' 
  * @param {string} [options.rating='g'] - Content rating
  * @returns {Promise<{ results: Array, total: number, offset: number }>}
  */
-export async function getTrendingGiphy({ offset = 0, limit = 20, rating = 'g' } = {}) {
+export async function getTrendingGiphy({
+  offset = 0,
+  limit = 20,
+  rating = 'g',
+} = {}) {
   if (!isGiphyConfigured()) {
     throw new Error('Giphy API is not configured');
   }

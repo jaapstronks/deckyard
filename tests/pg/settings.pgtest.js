@@ -17,7 +17,12 @@
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { closeTestDb, openTestDb, pgDescribe, truncate } from './helpers/harness.js';
+import {
+  closeTestDb,
+  openTestDb,
+  pgDescribe,
+  truncate,
+} from './helpers/harness.js';
 import {
   getAppSettings,
   writeAppSettings,
@@ -73,7 +78,10 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
 
     const settings = await getAppSettings(testScope());
     // The webhook landed...
-    assert.equal(settings.webhooks.commentCreatedUrl, 'https://example.com/hook');
+    assert.equal(
+      settings.webhooks.commentCreatedUrl,
+      'https://example.com/hook',
+    );
     // ...and the earlier field survived the partial write.
     assert.equal(settings.sessionDurationDays, 45);
   });
@@ -99,7 +107,10 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
   });
 
   it('keeps a stock-media source a partial write does not mention', async () => {
-    assert.equal((await getAppSettings(testScope())).stockMedia.bundled.enabled, false);
+    assert.equal(
+      (await getAppSettings(testScope())).stockMedia.bundled.enabled,
+      false,
+    );
 
     await writeAppSettings(testScope(), {
       stockMedia: { bundled: { enabled: true }, unsplash: { enabled: true } },
@@ -112,7 +123,10 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
     assert.equal(after.stockMedia.unsplash.enabled, true);
     assert.equal(after.stockMedia.giphy.enabled, true);
     // And the merge is durable, not just in the return value.
-    assert.equal((await getAppSettings(testScope())).stockMedia.bundled.enabled, true);
+    assert.equal(
+      (await getAppSettings(testScope())).stockMedia.bundled.enabled,
+      true,
+    );
   });
 
   // The dead internal/external analytics chain was removed. A settings bag that
@@ -130,7 +144,10 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
         settings: JSON.stringify({
           analytics: {
             enabled: true,
-            teamAnalytics: { policy: 'opt-in-detailed', allowDetailedOptIn: false },
+            teamAnalytics: {
+              policy: 'opt-in-detailed',
+              allowDetailedOptIn: false,
+            },
             externalAnalytics: { enabled: false },
             retention: { sessionDataDays: 90, ipAnonymizationDays: 7 },
           },
@@ -150,7 +167,10 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
       .selectFrom('app_settings')
       .select('settings')
       .executeTakeFirst();
-    const stored = typeof row.settings === 'string' ? JSON.parse(row.settings) : row.settings;
+    const stored =
+      typeof row.settings === 'string'
+        ? JSON.parse(row.settings)
+        : row.settings;
     assert.equal('teamAnalytics' in stored.analytics, false);
     assert.equal('externalAnalytics' in stored.analytics, false);
   });
@@ -172,18 +192,26 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
     assert.equal('includeTeamAnalytics' in read.digest, false);
 
     // A later write does not persist the dropped key.
-    await writeUserSettings(testScope(), 'legacy@example.com', { uiLocale: 'nl' });
+    await writeUserSettings(testScope(), 'legacy@example.com', {
+      uiLocale: 'nl',
+    });
     const row = await db
       .selectFrom('user_settings')
       .select('settings')
       .where('email', '=', 'legacy@example.com')
       .executeTakeFirst();
-    const stored = typeof row.settings === 'string' ? JSON.parse(row.settings) : row.settings;
+    const stored =
+      typeof row.settings === 'string'
+        ? JSON.parse(row.settings)
+        : row.settings;
     assert.equal('includeTeamAnalytics' in stored.digest, false);
   });
 
   it('reads code defaults from an empty user_settings', async () => {
-    assert.deepEqual(await getUserSettings(testScope(), 'jaap@ciiic.nl'), defaultUserSettings());
+    assert.deepEqual(
+      await getUserSettings(testScope(), 'jaap@ciiic.nl'),
+      defaultUserSettings(),
+    );
   });
 
   it('round-trips user settings keyed on the e-mail, case-insensitively', async () => {
@@ -215,8 +243,14 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
     await writeUserSettings(testScope(), 'a@x.test', { uiLocale: 'nl' });
     await writeUserSettings(testScope(), 'b@x.test', { uiLocale: 'en' });
 
-    assert.equal((await getUserSettings(testScope(), 'a@x.test')).uiLocale, 'nl');
-    assert.equal((await getUserSettings(testScope(), 'b@x.test')).uiLocale, 'en');
+    assert.equal(
+      (await getUserSettings(testScope(), 'a@x.test')).uiLocale,
+      'nl',
+    );
+    assert.equal(
+      (await getUserSettings(testScope(), 'b@x.test')).uiLocale,
+      'en',
+    );
 
     const count = await db
       .selectFrom('user_settings')

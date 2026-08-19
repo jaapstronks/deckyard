@@ -73,7 +73,8 @@ function isMissingSession(err) {
  */
 function toMillis(value) {
   if (!value) return 0;
-  const ms = value instanceof Date ? value.getTime() : new Date(value).getTime();
+  const ms =
+    value instanceof Date ? value.getTime() : new Date(value).getTime();
   return Number.isFinite(ms) ? ms : 0;
 }
 
@@ -161,11 +162,13 @@ export async function ensureInteractionSlide({
             type: values.type,
             option_count: values.option_count,
             updated_at: values.updated_at,
-          })
+          }),
         )
         .returning(SLIDE_COLUMNS)
         .executeTakeFirst();
-      return row ? { ok: true, slide: rowToSlide(row) } : { ok: false, reason: 'not_found' };
+      return row
+        ? { ok: true, slide: rowToSlide(row) }
+        : { ok: false, reason: 'not_found' };
     } catch (err) {
       if (isMissingSession(err)) return { ok: false, reason: 'not_found' };
       throw err;
@@ -214,7 +217,12 @@ export async function getInteractionSlide({ sessionId, slideId }) {
  *   `invalid` for a blank id, `not_found` when no such interaction exists,
  *   `unavailable` when the pool is down.
  */
-export async function updateInteractionSlide({ sessionId, slideId, status, optionCount }) {
+export async function updateInteractionSlide({
+  sessionId,
+  slideId,
+  status,
+  optionCount,
+}) {
   const sid = String(sessionId || '').trim();
   const slide = String(slideId || '').trim();
   if (!sid || !slide) return { ok: false, reason: 'invalid' };
@@ -234,6 +242,8 @@ export async function updateInteractionSlide({ sessionId, slideId, status, optio
       .where('slide_id', '=', slide)
       .returning(SLIDE_COLUMNS)
       .executeTakeFirst();
-    return row ? { ok: true, slide: rowToSlide(row) } : { ok: false, reason: 'not_found' };
+    return row
+      ? { ok: true, slide: rowToSlide(row) }
+      : { ok: false, reason: 'not_found' };
   });
 }

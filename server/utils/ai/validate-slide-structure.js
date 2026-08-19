@@ -31,7 +31,9 @@ export const STRUCTURE_VALIDATORS = {
     if (!Array.isArray(content.items)) {
       issues.push('Missing items array');
     } else if (content.items.length < 2) {
-      issues.push(`items array has ${content.items.length} items, need at least 2`);
+      issues.push(
+        `items array has ${content.items.length} items, need at least 2`,
+      );
     } else {
       content.items.forEach((item, i) => {
         if (!item?.title) issues.push(`items[${i}] missing title`);
@@ -71,7 +73,8 @@ export const STRUCTURE_VALIDATORS = {
     } else {
       const row1Count = parseInt(content.row1Count, 10);
       for (let i = 1; i <= row1Count; i++) {
-        if (!content[`row1Block${i}Title`]) issues.push(`Missing row1Block${i}Title`);
+        if (!content[`row1Block${i}Title`])
+          issues.push(`Missing row1Block${i}Title`);
       }
       if (content.row2Enabled === 'yes' && !content.row2Count) {
         issues.push('row2Enabled but missing row2Count');
@@ -100,7 +103,8 @@ export const STRUCTURE_VALIDATORS = {
     if (Array.isArray(content.members) && content.members.length > 0) {
       // New format: validate members[]
       for (let i = 0; i < content.members.length; i++) {
-        if (!content.members[i]?.name) issues.push(`Missing members[${i}].name`);
+        if (!content.members[i]?.name)
+          issues.push(`Missing members[${i}].name`);
       }
     } else if (content.cardCount) {
       // Legacy format
@@ -120,7 +124,8 @@ export const STRUCTURE_VALIDATORS = {
     // least a name or an image to render as anything.
     if (Array.isArray(content.logos) && content.logos.length > 0) {
       content.logos.forEach((logo, i) => {
-        if (!logo?.name && !logo?.image) issues.push(`logos[${i}] missing name or image`);
+        if (!logo?.name && !logo?.image)
+          issues.push(`logos[${i}] missing name or image`);
       });
     } else if (content.logoCount) {
       const count = parseInt(content.logoCount, 10);
@@ -154,7 +159,9 @@ export const STRUCTURE_VALIDATORS = {
     if (!Array.isArray(content.cells)) {
       issues.push('Missing cells array');
     } else if (content.cells.length !== 4) {
-      issues.push(`cells array has ${content.cells.length} items, need exactly 4`);
+      issues.push(
+        `cells array has ${content.cells.length} items, need exactly 4`,
+      );
     } else {
       content.cells.forEach((cell, i) => {
         if (!cell?.title) issues.push(`cells[${i}] missing title`);
@@ -241,7 +248,12 @@ export const STRUCTURE_VALIDATORS = {
     if (!content.question) issues.push('Missing question');
     const options = Array.isArray(content.options)
       ? content.options.filter(Boolean)
-      : [content.option1, content.option2, content.option3, content.option4].filter(Boolean);
+      : [
+          content.option1,
+          content.option2,
+          content.option3,
+          content.option4,
+        ].filter(Boolean);
     if (options.length < 2) {
       issues.push(`poll has ${options.length} options, need at least 2`);
     }
@@ -253,7 +265,9 @@ export const STRUCTURE_VALIDATORS = {
     if (!content.question) issues.push('Missing question');
     const options = Array.isArray(content.options)
       ? content.options.filter(Boolean)
-      : Array.from({ length: 10 }, (_v, i) => content[`option${i + 1}`]).filter(Boolean);
+      : Array.from({ length: 10 }, (_v, i) => content[`option${i + 1}`]).filter(
+          Boolean,
+        );
     if (options.length < 2) {
       issues.push(`likert has ${options.length} options, need at least 2`);
     }

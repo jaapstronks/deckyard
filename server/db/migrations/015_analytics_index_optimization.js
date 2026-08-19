@@ -54,6 +54,12 @@ export const down = async (db) => {
   await db.schema.dropIndex('idx_slide_views_current').ifExists().execute();
   await db.schema.dropIndex('idx_slide_views_entered').ifExists().execute();
   await db.schema.dropIndex('idx_view_sessions_cleanup').ifExists().execute();
-  await db.schema.dropIndex('idx_view_sessions_org_presentation').ifExists().execute();
-  await db.schema.dropIndex('idx_view_sessions_viewer_email').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_view_sessions_org_presentation')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_view_sessions_viewer_email')
+    .ifExists()
+    .execute();
 };

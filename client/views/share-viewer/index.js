@@ -12,10 +12,16 @@ import { spinner } from '../../lib/dom/spinner.js';
 import { api } from '../../lib/api.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
 import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
-import { cleanupSlideRuntimes, renderSlideElement } from '../../lib/slide-runtime/slide-render.js';
+import {
+  cleanupSlideRuntimes,
+  renderSlideElement,
+} from '../../lib/slide-runtime/slide-render.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { t } from '../../lib/ui-i18n.js';
-import { createAnalyticsTracker, isAnalyticsEnabled } from '../../lib/format/analytics-tracker.js';
+import {
+  createAnalyticsTracker,
+  isAnalyticsEnabled,
+} from '../../lib/format/analytics-tracker.js';
 
 // Extracted components
 import { renderPasswordPrompt } from './password-form.js';
@@ -84,11 +90,14 @@ export async function renderShareViewer(root, token) {
     }
 
     // No password required - verify and load
-    const verifyResp = await fetch(`/api/share/${encodeURIComponent(token)}/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    });
+    const verifyResp = await fetch(
+      `/api/share/${encodeURIComponent(token)}/verify`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      },
+    );
     const verifyData = await verifyResp.json();
 
     if (!verifyResp.ok) {
@@ -117,7 +126,11 @@ export async function renderShareViewer(root, token) {
 
     await loadAndRenderPresentation();
   } catch (err) {
-    renderError(h, shell, err.message || t('share.error.loadLink', 'Failed to load share link'));
+    renderError(
+      h,
+      shell,
+      err.message || t('share.error.loadLink', 'Failed to load share link'),
+    );
   }
 
   async function loadAndRenderPresentation() {
@@ -125,13 +138,18 @@ export async function renderShareViewer(root, token) {
 
     const loading = h('div', { class: 'share-viewer-loading' }, [
       spinner('lg'),
-      h('div', { class: 'share-viewer-loading-text', text: t('share.loading', 'Loading presentation...') }),
+      h('div', {
+        class: 'share-viewer-loading-text',
+        text: t('share.loading', 'Loading presentation...'),
+      }),
     ]);
     shell.append(loading);
 
     try {
       // Fetch the presentation
-      const presResp = await api(`/api/presentations/${shareLink.presentationId}`);
+      const presResp = await api(
+        `/api/presentations/${shareLink.presentationId}`,
+      );
       presentation = presResp;
 
       if (!presentation) {
@@ -163,7 +181,8 @@ export async function renderShareViewer(root, token) {
       renderError(
         h,
         shell,
-        err.message || t('share.error.loadPresentation', 'Failed to load presentation')
+        err.message ||
+          t('share.error.loadPresentation', 'Failed to load presentation'),
       );
     }
   }
@@ -234,9 +253,18 @@ export async function renderShareViewer(root, token) {
     }
 
     const nav = h('div', { class: 'share-viewer-nav' });
-    const prevBtn = h('button', { class: 'btn btn-secondary share-viewer-nav-btn', text: '←' });
-    const slideCounter = h('div', { class: 'share-viewer-counter', text: '1 / 1' });
-    const nextBtn = h('button', { class: 'btn btn-secondary share-viewer-nav-btn', text: '→' });
+    const prevBtn = h('button', {
+      class: 'btn btn-secondary share-viewer-nav-btn',
+      text: '←',
+    });
+    const slideCounter = h('div', {
+      class: 'share-viewer-counter',
+      text: '1 / 1',
+    });
+    const nextBtn = h('button', {
+      class: 'btn btn-secondary share-viewer-nav-btn',
+      text: '→',
+    });
     nav.append(prevBtn, slideCounter, nextBtn);
 
     // Auto-advance setup (skip entirely in pacing mode — pacing is presenter-only)
@@ -257,11 +285,16 @@ export async function renderShareViewer(root, token) {
     // Keyboard navigation
     const handleKeydown = (e) => {
       // Don't navigate when typing in comment input
-      if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+      if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT')
+        return;
 
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         navigateSlide(-1);
-      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+      } else if (
+        e.key === 'ArrowRight' ||
+        e.key === 'ArrowDown' ||
+        e.key === ' '
+      ) {
         navigateSlide(1);
       }
     };
@@ -319,7 +352,10 @@ export async function renderShareViewer(root, token) {
     if (!slide) {
       slideWrap.innerHTML = '';
       slideWrap.append(
-        h('div', { class: 'share-viewer-empty', text: t('share.noSlides', 'No slides') })
+        h('div', {
+          class: 'share-viewer-empty',
+          text: t('share.noSlides', 'No slides'),
+        }),
       );
       return;
     }
@@ -370,7 +406,9 @@ export async function renderShareViewer(root, token) {
  */
 async function checkGuestSession(token) {
   try {
-    guestSession = await api(`/api/share/${encodeURIComponent(token)}/guest/me`);
+    guestSession = await api(
+      `/api/share/${encodeURIComponent(token)}/guest/me`,
+    );
   } catch {
     guestSession = null;
   }

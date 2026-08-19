@@ -11,14 +11,8 @@ function renderQrToCanvas(canvas, text, { pad = 12 } = {}) {
   const count = qr.getModuleCount();
   const ctx = canvas.getContext('2d');
 
-  const maxPx = Math.min(
-    560,
-    Math.max(220, window.innerWidth - 40)
-  );
-  const scale = Math.max(
-    2,
-    Math.floor((maxPx - pad * 2) / count)
-  );
+  const maxPx = Math.min(560, Math.max(220, window.innerWidth - 40));
+  const scale = Math.max(2, Math.floor((maxPx - pad * 2) / count));
   const size = count * scale + pad * 2;
 
   canvas.width = size;
@@ -31,21 +25,12 @@ function renderQrToCanvas(canvas, text, { pad = 12 } = {}) {
   for (let r = 0; r < count; r += 1) {
     for (let c = 0; c < count; c += 1) {
       if (!qr.isDark(r, c)) continue;
-      ctx.fillRect(
-        pad + c * scale,
-        pad + r * scale,
-        scale,
-        scale
-      );
+      ctx.fillRect(pad + c * scale, pad + r * scale, scale, scale);
     }
   }
 }
 
-export async function renderNotesJoin(
-  root,
-  sessionId,
-  { nav } = {}
-) {
+export async function renderNotesJoin(root, sessionId, { nav } = {}) {
   const u = new URL(`/notes/${sessionId}`, location.origin);
   const url = u.toString();
 
@@ -56,7 +41,7 @@ export async function renderNotesJoin(
     class: 'help',
     text: t(
       'notesJoin.help',
-      'Scan the QR code on your phone to open the notes companion.'
+      'Scan the QR code on your phone to open the notes companion.',
     ),
   });
 
@@ -77,7 +62,7 @@ export async function renderNotesJoin(
     onclick: async () => {
       await copyToClipboardWithPromptFallback(
         url,
-        t('notesJoin.copyPrompt', 'Copy this link:')
+        t('notesJoin.copyPrompt', 'Copy this link:'),
       );
     },
   });
@@ -103,13 +88,7 @@ export async function renderNotesJoin(
   });
 
   panel.append(title, help, canvas, link);
-  panel.append(
-    h('div', { class: 'row is-wrap' }, [
-      copyBtn,
-      openBtn,
-      backBtn,
-    ])
-  );
+  panel.append(h('div', { class: 'row is-wrap' }, [copyBtn, openBtn, backBtn]));
   shell.append(panel);
   root.append(shell);
 

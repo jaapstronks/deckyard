@@ -25,7 +25,7 @@ const MIGRATIONS_DIR = path.join(
   '..',
   'server',
   'db',
-  'migrations'
+  'migrations',
 );
 
 /** Migration that fixed the columns; anything at or before it is grandfathered. */
@@ -71,7 +71,7 @@ test('no migration after 051 declares a slide-id column as uuid', async () => {
       offenders,
       [],
       `${file} declares slide-id column(s) as uuid: ${offenders.join(', ')}. ` +
-        `Slide IDs are arbitrary strings from the deck JSON — use 'text'.`
+        `Slide IDs are arbitrary strings from the deck JSON — use 'text'.`,
     );
   }
 });
@@ -92,7 +92,7 @@ test('051 covers every slide-id column the earlier migrations got wrong', async 
   for (const column of declared) {
     assert.ok(
       converted.has(column),
-      `Column '${column}' was created as uuid but migration 051 never converts it.`
+      `Column '${column}' was created as uuid but migration 051 never converts it.`,
     );
   }
 });
@@ -102,10 +102,17 @@ test('the conversion list is well formed and has no duplicates', () => {
 
   const seen = new Set();
   for (const entry of SLIDE_ID_COLUMNS) {
-    assert.equal(entry.length, 2, `Expected [table, column], got ${JSON.stringify(entry)}`);
+    assert.equal(
+      entry.length,
+      2,
+      `Expected [table, column], got ${JSON.stringify(entry)}`,
+    );
     const [table, column] = entry;
     assert.match(table, /^[a-z0-9_]+$/);
-    assert.ok(isSlideIdColumn(column), `'${column}' is not a slide-id column name`);
+    assert.ok(
+      isSlideIdColumn(column),
+      `'${column}' is not a slide-id column name`,
+    );
 
     const key = `${table}.${column}`;
     assert.ok(!seen.has(key), `Duplicate entry: ${key}`);

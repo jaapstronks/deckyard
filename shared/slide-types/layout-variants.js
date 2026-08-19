@@ -41,13 +41,14 @@ function effectiveValue(content, def, key) {
  * @returns {string|null} variant id
  */
 export function activeLayoutVariantId(slide, def = SLIDE_TYPES?.[slide?.type]) {
-  const content = slide?.content && typeof slide.content === 'object' ? slide.content : {};
+  const content =
+    slide?.content && typeof slide.content === 'object' ? slide.content : {};
   for (const variant of getLayoutVariants(def)) {
     if (variant?.convertTo) continue;
     const set = variant?.set;
     if (!set || typeof set !== 'object' || !Object.keys(set).length) continue;
     const matches = Object.entries(set).every(
-      ([key, value]) => effectiveValue(content, def, key) === String(value)
+      ([key, value]) => effectiveValue(content, def, key) === String(value),
     );
     if (matches) return variant.id || null;
   }

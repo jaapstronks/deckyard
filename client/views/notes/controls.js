@@ -69,13 +69,11 @@ export function createNotesControls({ sessionId, enabled, flashHint }) {
     }
   };
   controls.append(
-    h('div', { class: 'help', text: t('notes.remoteControl', 'Remote control') }),
-    h('div', { class: 'row' }, [
-      prevBtn,
-      nextBtn,
-      gotoInput,
-      gotoBtn,
-    ])
+    h('div', {
+      class: 'help',
+      text: t('notes.remoteControl', 'Remote control'),
+    }),
+    h('div', { class: 'row' }, [prevBtn, nextBtn, gotoInput, gotoBtn]),
   );
 
   return {

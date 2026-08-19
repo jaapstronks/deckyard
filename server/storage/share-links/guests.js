@@ -4,7 +4,13 @@
 
 import { getOrgId } from '../../utils/context.js';
 import { toStorageContext } from '../scope.js';
-import { norm, nowIso, isoAfter, isoBefore, normalizeEmail } from '../../utils/normalize.js';
+import {
+  norm,
+  nowIso,
+  isoAfter,
+  isoBefore,
+  normalizeEmail,
+} from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
 import { generateGuestToken } from './index.js';
 import { formatShareLink, getValidShareLinkById } from './crud.js';
@@ -183,8 +189,10 @@ export async function verifyGuestEmail(verificationToken) {
     }
 
     // Check token expiration
-    if (guest.verification_token_expires_at &&
-        new Date(guest.verification_token_expires_at) < new Date()) {
+    if (
+      guest.verification_token_expires_at &&
+      new Date(guest.verification_token_expires_at) < new Date()
+    ) {
       return { ok: false, reason: 'token_expired' };
     }
 
@@ -199,9 +207,19 @@ export async function verifyGuestEmail(verificationToken) {
       return { ok: false, reason: 'share_link_revoked' };
     }
 
-    const validation = await getValidShareLinkById(db, guest.share_link_id, shareLinkRow.organization_id);
+    const validation = await getValidShareLinkById(
+      db,
+      guest.share_link_id,
+      shareLinkRow.organization_id,
+    );
     if (!validation.ok) {
-      return { ok: false, reason: validation.reason === 'share_link_not_found' ? 'share_link_revoked' : validation.reason };
+      return {
+        ok: false,
+        reason:
+          validation.reason === 'share_link_not_found'
+            ? 'share_link_revoked'
+            : validation.reason,
+      };
     }
     const { shareLink } = validation;
 
@@ -261,8 +279,10 @@ export async function getGuestBySessionToken(sessionToken) {
     if (!guest) return null;
 
     // Check session expiration
-    if (guest.session_expires_at &&
-        new Date(guest.session_expires_at) < new Date()) {
+    if (
+      guest.session_expires_at &&
+      new Date(guest.session_expires_at) < new Date()
+    ) {
       return null;
     }
 
@@ -270,7 +290,11 @@ export async function getGuestBySessionToken(sessionToken) {
     if (!guest.verified_at) return null;
 
     // Verify the share link is still valid
-    const validation = await getValidShareLinkById(db, guest.share_link_id, guest.organization_id);
+    const validation = await getValidShareLinkById(
+      db,
+      guest.share_link_id,
+      guest.organization_id,
+    );
     if (!validation.ok) return null;
     const { shareLink } = validation;
 
@@ -299,7 +323,12 @@ export async function getGuestBySessionToken(sessionToken) {
  * @param {string} invitedBy - Email of the inviter
  * @returns {Promise<Object>} - Result with guest info
  */
-export async function preRegisterGuest(scope, shareLinkId, guestData, invitedBy) {
+export async function preRegisterGuest(
+  scope,
+  shareLinkId,
+  guestData,
+  invitedBy,
+) {
   toStorageContext(scope, 'preRegisterGuest');
   const id = norm(shareLinkId);
   if (!id) {

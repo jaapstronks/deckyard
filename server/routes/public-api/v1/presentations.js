@@ -11,10 +11,24 @@ import {
   deletePresentation,
   duplicatePresentation,
 } from '../../../storage/presentations/index.js';
-import { getTagsForPresentations, getTagsForPresentation } from '../../../storage/tags/index.js';
+import {
+  getTagsForPresentations,
+  getTagsForPresentation,
+} from '../../../storage/tags/index.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { canonicalSlideType } from '../../../../shared/slide-types.js';
-import { requirePermission, v1MethodNotAllowed, withV1ErrorHandler, canAccessPresentation, getPresentationWithAccess, readApiV1Body, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
+import {
+  requirePermission,
+  v1MethodNotAllowed,
+  withV1ErrorHandler,
+  canAccessPresentation,
+  getPresentationWithAccess,
+  readApiV1Body,
+  parsePaginationParams,
+  apiSuccess,
+  apiCreated,
+  apiError,
+} from './middleware.js';
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -135,7 +149,7 @@ async function handleList(ctx) {
 
   // Build response
   const presentations = paginated.map((p) =>
-    sanitizeForList(p, tagsMap.get(p.id) || [], apiKey.ownerEmail)
+    sanitizeForList(p, tagsMap.get(p.id) || [], apiKey.ownerEmail),
   );
 
   await apiSuccess(ctx, {
@@ -158,7 +172,9 @@ async function handleCreate(ctx) {
 
   if (!requirePermission(ctx, 'write')) return true;
 
-  const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req, { requireObject: true });
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req, {
+    requireObject: true,
+  });
   if (!bodyOk) return true;
 
   // Create presentation with API key owner as the owner
@@ -201,7 +217,9 @@ async function handleUpdate(ctx, id) {
   const { ok } = await getPresentationWithAccess(ctx, id, { access: 'write' });
   if (!ok) return true;
 
-  const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req, { requireObject: true });
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req, {
+    requireObject: true,
+  });
   if (!bodyOk) return true;
 
   // Don't allow changing ownership via API
@@ -296,34 +314,39 @@ async function handleDuplicate(ctx, id) {
 /**
  * Main handler for /api/v1/presentations routes.
  */
-export const handlePresentations = withV1ErrorHandler('public-api-v1:presentations', async (ctx) => {
-  const { req, res, url } = ctx;
+export const handlePresentations = withV1ErrorHandler(
+  'public-api-v1:presentations',
+  async (ctx) => {
+    const { req, res, url } = ctx;
 
-  // Duplicate endpoint
-  const dupMatch = url.pathname.match(/^\/api\/v1\/presentations\/([^/]+)\/duplicate$/);
-  if (dupMatch) {
-    if (req.method !== 'POST') {
-      return v1MethodNotAllowed(res, ['POST']);
+    // Duplicate endpoint
+    const dupMatch = url.pathname.match(
+      /^\/api\/v1\/presentations\/([^/]+)\/duplicate$/,
+    );
+    if (dupMatch) {
+      if (req.method !== 'POST') {
+        return v1MethodNotAllowed(res, ['POST']);
+      }
+      return handleDuplicate(ctx, dupMatch[1]);
     }
-    return handleDuplicate(ctx, dupMatch[1]);
-  }
 
-  // Single presentation routes
-  const presMatch = url.pathname.match(/^\/api\/v1\/presentations\/([^/]+)$/);
-  if (presMatch) {
-    const id = presMatch[1];
-    if (req.method === 'GET') return handleGet(ctx, id);
-    if (req.method === 'PUT') return handleUpdate(ctx, id);
-    if (req.method === 'DELETE') return handleDelete(ctx, id);
-    return v1MethodNotAllowed(res, ['GET', 'PUT', 'DELETE']);
-  }
+    // Single presentation routes
+    const presMatch = url.pathname.match(/^\/api\/v1\/presentations\/([^/]+)$/);
+    if (presMatch) {
+      const id = presMatch[1];
+      if (req.method === 'GET') return handleGet(ctx, id);
+      if (req.method === 'PUT') return handleUpdate(ctx, id);
+      if (req.method === 'DELETE') return handleDelete(ctx, id);
+      return v1MethodNotAllowed(res, ['GET', 'PUT', 'DELETE']);
+    }
 
-  // Collection routes
-  if (url.pathname === '/api/v1/presentations') {
-    if (req.method === 'GET') return handleList(ctx);
-    if (req.method === 'POST') return handleCreate(ctx);
-    return v1MethodNotAllowed(res, ['GET', 'POST']);
-  }
+    // Collection routes
+    if (url.pathname === '/api/v1/presentations') {
+      if (req.method === 'GET') return handleList(ctx);
+      if (req.method === 'POST') return handleCreate(ctx);
+      return v1MethodNotAllowed(res, ['GET', 'POST']);
+    }
 
-  return false;
-});
+    return false;
+  },
+);

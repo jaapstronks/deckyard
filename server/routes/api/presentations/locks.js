@@ -55,7 +55,10 @@ import { matchesIdentity } from '../../../../shared/identity-match.js';
  */
 function isLockHolder(user, lock) {
   if (!lock) return false;
-  return matchesIdentity(user, { userId: lock.holderId, email: lock.holderEmail });
+  return matchesIdentity(user, {
+    userId: lock.holderId,
+    email: lock.holderEmail,
+  });
 }
 
 /** The identity an authed user carries into a lock write. */
@@ -69,10 +72,16 @@ function lockActor(authedUser) {
 
 export async function handlePresentationLockStatus(
   { storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'read',
+  });
   if (!pres) return true;
 
   const lock = await getPresentationLock(storageScope, id);
@@ -83,7 +92,10 @@ export async function handlePresentationLockStatus(
   // Also include user's pending request status if they have one
   let myRequest = null;
   if (authedUser?.email) {
-    myRequest = await getUserLockRequestStatus(storageScope, id, { email: authedUser.email, userId: authedUser?.id || null });
+    myRequest = await getUserLockRequestStatus(storageScope, id, {
+      email: authedUser.email,
+      userId: authedUser?.id || null,
+    });
   }
 
   serveJson(res, 200, { ok: true, lock, myRequest, isHolder });
@@ -92,13 +104,23 @@ export async function handlePresentationLockStatus(
 
 export async function handlePresentationLockAcquire(
   { storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
   if (!pres) return true;
 
-  const result = await acquirePresentationLock(storageScope, id, lockActor(authedUser));
+  const result = await acquirePresentationLock(
+    storageScope,
+    id,
+    lockActor(authedUser),
+  );
 
   if (!result.ok) return lockError(res, result);
   serveJson(res, 200, result);
@@ -107,13 +129,22 @@ export async function handlePresentationLockAcquire(
 
 export async function handlePresentationLockRefresh(
   { storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
   if (!pres) return true;
 
-  const result = await refreshPresentationLock(storageScope, id, { email: authedUser?.email, userId: authedUser?.id || null });
+  const result = await refreshPresentationLock(storageScope, id, {
+    email: authedUser?.email,
+    userId: authedUser?.id || null,
+  });
 
   // Include pending requests count if user is the holder
   let pendingRequestsCount = 0;
@@ -129,13 +160,22 @@ export async function handlePresentationLockRefresh(
 
 export async function handlePresentationLockRelease(
   { storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
   if (!pres) return true;
 
-  const result = await releasePresentationLock(storageScope, id, { email: authedUser?.email, userId: authedUser?.id || null });
+  const result = await releasePresentationLock(storageScope, id, {
+    email: authedUser?.email,
+    userId: authedUser?.id || null,
+  });
 
   if (!result.ok) return lockError(res, result);
   serveJson(res, 200, result);
@@ -144,10 +184,16 @@ export async function handlePresentationLockRelease(
 
 export async function handlePresentationLockForceRelease(
   { storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'forceLock' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'forceLock',
+  });
   if (!pres) return true;
 
   const result = await forceReleasePresentationLock(storageScope, id);
@@ -164,10 +210,16 @@ export async function handlePresentationLockForceRelease(
 
 export async function handlePresentationLockRequest(
   { storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
   if (!pres) return true;
 
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
@@ -186,12 +238,17 @@ export async function handlePresentationLockRequest(
 
 export async function handlePresentationLockRequestsList(
   { storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
   if (!pres) return true;
-
 
   // Verify user is the current lock holder
   const lock = await getPresentationLock(storageScope, id);
@@ -207,12 +264,17 @@ export async function handlePresentationLockRequestsList(
 export async function handlePresentationLockRequestAccept(
   { storageScope, req, res, authedUser } = {},
   id,
-  requestId
+  requestId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
   if (!pres) return true;
-
 
   // Verify user is the current lock holder
   const lock = await getPresentationLock(storageScope, id);
@@ -238,12 +300,17 @@ export async function handlePresentationLockRequestAccept(
 export async function handlePresentationLockRequestReject(
   { storageScope, req, res, authedUser } = {},
   id,
-  requestId
+  requestId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
   if (!pres) return true;
-
 
   // Verify user is the current lock holder
   const lock = await getPresentationLock(storageScope, id);
@@ -266,13 +333,22 @@ export async function handlePresentationLockRequestReject(
 
 export async function handlePresentationLockMyRequest(
   { storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'read',
+  });
   if (!pres) return true;
 
-  const request = await getUserLockRequestStatus(storageScope, id, { email: authedUser?.email, userId: authedUser?.id || null });
+  const request = await getUserLockRequestStatus(storageScope, id, {
+    email: authedUser?.email,
+    userId: authedUser?.id || null,
+  });
 
   serveJson(res, 200, { ok: true, request });
   return true;

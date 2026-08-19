@@ -33,7 +33,7 @@ export function buildThemeSection({
     class: 'help',
     text: t(
       'editor.deckSettings.theme.help',
-      'Visual styling for your presentation. Changing themes may affect some slides.'
+      'Visual styling for your presentation. Changing themes may affect some slides.',
     ),
   });
 
@@ -44,9 +44,9 @@ export function buildThemeSection({
         class: 'help',
         text: t(
           'editor.deckSettings.theme.unavailable',
-          'Theme selection is not available.'
+          'Theme selection is not available.',
         ),
-      })
+      }),
     );
     return { el: wrap };
   }

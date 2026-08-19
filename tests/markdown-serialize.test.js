@@ -31,11 +31,8 @@ globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 
 const { markdownToSafeHtml } = await import('../shared/markdown.js');
-const {
-  serializeMarkdownDom,
-  markdownNeedsModal,
-  canInlineEditMarkdown,
-} = await import('../client/lib/slide-authoring/markdown-serialize.js');
+const { serializeMarkdownDom, markdownNeedsModal, canInlineEditMarkdown } =
+  await import('../client/lib/slide-authoring/markdown-serialize.js');
 
 /** Parse an HTML string into a detached container. */
 function domOf(html) {
@@ -59,7 +56,10 @@ describe('canonical round trips (serialize(render(md)) === md)', () => {
     ['mixed nesting', '1. First\n  - detail\n2. Second'],
     ['paragraph then list', 'Intro line:\n\n- item a\n- item b'],
     ['list then paragraph', '- item a\n- item b\n\nOutro line'],
-    ['formatting inside list items', '- has **bold**\n- has [link](https://x.dev/p)'],
+    [
+      'formatting inside list items',
+      '- has **bold**\n- has [link](https://x.dev/p)',
+    ],
     ['single-# line as paragraph', '# not a heading'],
     ['blockquote', '> Quoted line'],
     ['multi-paragraph blockquote', '> First para\n>\n> Second para'],
@@ -112,17 +112,41 @@ describe('render-equivalence for non-canonical input', () => {
 
 describe('contenteditable-shaped DOM', () => {
   const cases = [
-    ['div line wrappers become paragraphs', '<div>line one</div><div>line two</div>', 'line one\n\nline two'],
-    ['b/i map to strong/em markers', '<p>foo <b>x</b> and <i>y</i></p>', 'foo **x** and *y*'],
+    [
+      'div line wrappers become paragraphs',
+      '<div>line one</div><div>line two</div>',
+      'line one\n\nline two',
+    ],
+    [
+      'b/i map to strong/em markers',
+      '<p>foo <b>x</b> and <i>y</i></p>',
+      'foo **x** and *y*',
+    ],
     ['block-level br splits paragraphs', '<p>one<br>two</p>', 'one\n\ntwo'],
     ['bare text node at root', 'just text', 'just text'],
     ['text node next to a block', 'lead <div>block</div>', 'lead\n\nblock'],
-    ['style span keeps its text', '<p><span style="font-weight:600">kept</span></p>', 'kept'],
-    ['non-http link keeps only its text', '<p><a href="javascript:alert(1)">evil</a></p>', 'evil'],
+    [
+      'style span keeps its text',
+      '<p><span style="font-weight:600">kept</span></p>',
+      'kept',
+    ],
+    [
+      'non-http link keeps only its text',
+      '<p><a href="javascript:alert(1)">evil</a></p>',
+      'evil',
+    ],
     ['empty paragraphs vanish', '<p></p><div><br></div><p>real</p>', 'real'],
     ['li text wrapped in p unwraps', '<ul><li><p>item</p></li></ul>', '- item'],
-    ['unknown inline formatting degrades to text', '<p><u>under</u> <s>gone</s></p>', 'under gone'],
-    ['nested bold inside italic degrades flat', '<p><em>a <strong>b</strong></em></p>', '*a **b***'],
+    [
+      'unknown inline formatting degrades to text',
+      '<p><u>under</u> <s>gone</s></p>',
+      'under gone',
+    ],
+    [
+      'nested bold inside italic degrades flat',
+      '<p><em>a <strong>b</strong></em></p>',
+      '*a **b***',
+    ],
   ];
   for (const [name, html, expected] of cases) {
     it(name, () => {
@@ -154,35 +178,60 @@ describe('markdownNeedsModal', () => {
     it(`modal: ${name}`, () => assert.equal(markdownNeedsModal(md), true));
   }
   for (const [name, md] of inline) {
-    it(`inline-editable: ${name}`, () => assert.equal(markdownNeedsModal(md), false));
+    it(`inline-editable: ${name}`, () =>
+      assert.equal(markdownNeedsModal(md), false));
   }
 });
 
 describe('canInlineEditMarkdown (the in-place gate)', () => {
   it('accepts empty and simple content', () => {
     assert.equal(canInlineEditMarkdown('', markdownToSafeHtml), true);
-    assert.equal(canInlineEditMarkdown('Hello **world**', markdownToSafeHtml), true);
     assert.equal(
-      canInlineEditMarkdown('## H\n\n- a\n  - b\n\n[l](https://x.dev)', markdownToSafeHtml),
-      true
+      canInlineEditMarkdown('Hello **world**', markdownToSafeHtml),
+      true,
+    );
+    assert.equal(
+      canInlineEditMarkdown(
+        '## H\n\n- a\n  - b\n\n[l](https://x.dev)',
+        markdownToSafeHtml,
+      ),
+      true,
     );
   });
   it('rejects modal-only constructs', () => {
-    assert.equal(canInlineEditMarkdown('```js\nx\n```', markdownToSafeHtml), false);
-    assert.equal(canInlineEditMarkdown('| A | B |\n| --- | --- |\n| 1 | 2 |', markdownToSafeHtml), false);
+    assert.equal(
+      canInlineEditMarkdown('```js\nx\n```', markdownToSafeHtml),
+      false,
+    );
+    assert.equal(
+      canInlineEditMarkdown(
+        '| A | B |\n| --- | --- |\n| 1 | 2 |',
+        markdownToSafeHtml,
+      ),
+      false,
+    );
     assert.equal(canInlineEditMarkdown('a $x+y$ b', markdownToSafeHtml), false);
   });
   it('accepts blockquotes and underscore/star constructs', () => {
     assert.equal(canInlineEditMarkdown('> a quote', markdownToSafeHtml), true);
-    assert.equal(canInlineEditMarkdown('_i_ and __b__', markdownToSafeHtml), true);
-    assert.equal(canInlineEditMarkdown('* one\n* two', markdownToSafeHtml), true);
+    assert.equal(
+      canInlineEditMarkdown('_i_ and __b__', markdownToSafeHtml),
+      true,
+    );
+    assert.equal(
+      canInlineEditMarkdown('* one\n* two', markdownToSafeHtml),
+      true,
+    );
     assert.equal(canInlineEditMarkdown('a \\* b', markdownToSafeHtml), true);
   });
   it('rejects when the round trip does not reproduce the render', () => {
     // Nested emphasis: the dialect's non-nested regexes mangle it
     // (render gives "*<em>a </em>b<em> c</em>*"), so serialization cannot
     // reproduce the render — the gate must send this to the modal.
-    assert.equal(canInlineEditMarkdown('**a *b* c**', markdownToSafeHtml), false);
+    assert.equal(
+      canInlineEditMarkdown('**a *b* c**', markdownToSafeHtml),
+      false,
+    );
     // Fully-escaped would-be emphasis: render gives literal "*x*", but the
     // serializer can't re-emit the escapes, so serialize→render re-italicizes.
     // The gate must keep this on the modal.

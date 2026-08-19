@@ -20,7 +20,8 @@
  * @returns {{value: string, label: string, title: string, ariaLabel: string, labelKey?: string, titleKey?: string, ariaLabelKey?: string}}
  */
 export function normalizeOption(opt) {
-  if (typeof opt === 'string') return { value: opt, label: opt, title: opt, ariaLabel: opt };
+  if (typeof opt === 'string')
+    return { value: opt, label: opt, title: opt, ariaLabel: opt };
   if (opt && typeof opt === 'object') {
     const value = String(opt.value ?? '');
     const label = String(opt.label ?? opt.title ?? value);
@@ -57,16 +58,20 @@ function slideTypeUiStrings(slideTypes) {
       if (!fk) continue;
       const base = `slideType.${type}.field.${fk}`;
       add(f.labelKey || `${base}.label`, f?.label || fk);
-      if (typeof f?.placeholder === 'string') add(f.placeholderKey || `${base}.placeholder`, f.placeholder);
-      if (typeof f?.helpText === 'string') add(f.helpTextKey || `${base}.help`, f.helpText);
+      if (typeof f?.placeholder === 'string')
+        add(f.placeholderKey || `${base}.placeholder`, f.placeholder);
+      if (typeof f?.helpText === 'string')
+        add(f.helpTextKey || `${base}.help`, f.helpText);
 
       for (const it of Array.isArray(f?.itemFields) ? f.itemFields : []) {
         const ik = String(it?.key || '').trim();
         if (!ik) continue;
         const ibase = `${base}.item.${ik}`;
         add(it.labelKey || `${ibase}.label`, it?.label || ik);
-        if (typeof it?.placeholder === 'string') add(it.placeholderKey || `${ibase}.placeholder`, it.placeholder);
-        if (typeof it?.helpText === 'string') add(it.helpTextKey || `${ibase}.help`, it.helpText);
+        if (typeof it?.placeholder === 'string')
+          add(it.placeholderKey || `${ibase}.placeholder`, it.placeholder);
+        if (typeof it?.helpText === 'string')
+          add(it.helpTextKey || `${ibase}.help`, it.helpText);
       }
 
       for (const raw of Array.isArray(f?.options) ? f.options : []) {

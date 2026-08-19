@@ -93,7 +93,7 @@ test('when maintenance ends under a standing lock, the caption returns to the lo
   assert.equal(
     shell.banner(),
     LOCK_BANNER,
-    'caption must stop claiming "paused for maintenance" once maintenance is over'
+    'caption must stop claiming "paused for maintenance" once maintenance is over',
   );
 });
 

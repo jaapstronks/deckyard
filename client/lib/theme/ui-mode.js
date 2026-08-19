@@ -8,7 +8,9 @@ let media = null;
 let onChange = new Set();
 
 function normalizePref(raw) {
-  const v = String(raw || '').trim().toLowerCase();
+  const v = String(raw || '')
+    .trim()
+    .toLowerCase();
   if (v === 'light' || v === 'dark' || v === 'system') return v;
   return 'system';
 }

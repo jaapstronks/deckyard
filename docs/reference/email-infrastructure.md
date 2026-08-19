@@ -12,7 +12,7 @@ which, per template type and locale.
 
 This document covers that stack: transport, senders, template builders, the
 override store, the admin API, and what happens when nothing is configured. The
-notification *preferences* that decide whether a comment even warrants an email
+notification _preferences_ that decide whether a comment even warrants an email
 live with the notification system; this doc covers the sending half.
 
 ## Module map
@@ -22,7 +22,7 @@ Transport and senders (`server/integrations/email/`, 8 modules):
 - `server/integrations/email/index.js` — the barrel; re-exports the transport,
   the template-builder helpers and the four sender families.
 - `server/integrations/email/core.js` — `sendEmail({to, toName, subject,
-  htmlContent, textContent, senderOverride})` (a `POST` to
+htmlContent, textContent, senderOverride})` (a `POST` to
   `https://api.brevo.com/v3/smtp/email` with a 10 s abort), `getSenderIdentity()`
   and `BREVO_API_URL`. **Never throws**: it returns `{ok:false, error}`.
 - `server/integrations/email/template-builder.js` — `trySendCustomTemplate()`
@@ -65,8 +65,8 @@ Override store and resolution:
   `getEmailTemplates`, `writeEmailTemplate`, `deleteEmailTemplate`,
   `getEmailTemplateOverride`, `updateDefaultLocale`, `getEmailDefaultLocale`.
 - `server/integrations/email-template-resolver.js` (360 lines) —
-  `resolveTemplate(repoRoot, type, locale)` with the fallback chain *custom
-  override → code default → `en` default*, plus `interpolatePlaceholders` and the
+  `resolveTemplate(repoRoot, type, locale)` with the fallback chain _custom
+  override → code default → `en` default_, plus `interpolatePlaceholders` and the
   preview builders.
 - `shared/constants/email-templates.js` — `TEMPLATE_TYPES`, `SUPPORTED_LOCALES`
   (9: en, nl, de, fr, es, pt, da, sv, no), `DEFAULT_LOCALE` (`en`),
@@ -92,10 +92,10 @@ Two tables, both created by
 whatever the old on-disk `email-templates.json` held (idempotent, `ON CONFLICT
 DO NOTHING`):
 
-| Table | Shape |
-|---|---|
-| `email_templates` | `(type, locale)` composite primary key, `fields` jsonb, `created_at`, `updated_at`. The jsonb bag holds **only the fields the admin actually overrode**; an empty override is represented by the *absence* of the row. |
-| `email_template_settings` | Singleton: `id boolean PRIMARY KEY DEFAULT true` with a `CHECK (id)`, plus `default_locale`. A missing row means "unset", which the storage layer reads as the code `DEFAULT_LOCALE`. |
+| Table                     | Shape                                                                                                                                                                                                                  |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `email_templates`         | `(type, locale)` composite primary key, `fields` jsonb, `created_at`, `updated_at`. The jsonb bag holds **only the fields the admin actually overrode**; an empty override is represented by the _absence_ of the row. |
+| `email_template_settings` | Singleton: `id boolean PRIMARY KEY DEFAULT true` with a `CHECK (id)`, plus `default_locale`. A missing row means "unset", which the storage layer reads as the code `DEFAULT_LOCALE`.                                  |
 
 Neither table is organization-scoped: template overrides and the default locale
 are **instance-level**, set by an admin, applied to every organization.
@@ -141,12 +141,12 @@ not, and that result is discarded by most call sites.
 
 ## Config & flags
 
-| Name | Where | Purpose |
-|---|---|---|
-| `BREVO_API_KEY` | `server/integrations/email/core.js` | The only credential. Absent = every send fails softly. |
-| `BREVO_SENDER_EMAIL` | idem | Fallback sender address when app settings carry none. Default `noreply@example.com`. |
-| `BREVO_SENDER_NAME` | idem | Fallback sender name; defaults to `getAppName()` so a white-label deployment sends under its own brand. |
-| `APP_NAME` | `server/config/branding.js` | Feeds the sender-name default. |
+| Name                 | Where                               | Purpose                                                                                                 |
+| -------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `BREVO_API_KEY`      | `server/integrations/email/core.js` | The only credential. Absent = every send fails softly.                                                  |
+| `BREVO_SENDER_EMAIL` | idem                                | Fallback sender address when app settings carry none. Default `noreply@example.com`.                    |
+| `BREVO_SENDER_NAME`  | idem                                | Fallback sender name; defaults to `getAppName()` so a white-label deployment sends under its own brand. |
+| `APP_NAME`           | `server/config/branding.js`         | Feeds the sender-name default.                                                                          |
 
 Settings, not env: `settings.emailSender.{email,name}` (admin-set sender
 identity, takes precedence over the env vars) and the instance default locale in
@@ -163,7 +163,7 @@ whether `BREVO_API_KEY` is set.
   `user.isAdmin`, for every verb including preview and test-send.
 - **Overrides are instance-level**, not per organization: one admin's edit
   changes the mail every organization on the instance sends. This is a deliberate
-  simplification, not an oversight, but it does mean template editing is *not*
+  simplification, not an oversight, but it does mean template editing is _not_
   covered by the tenancy rules in
   [`tenant-isolation.md`](tenant-isolation.md) — there is no scope to narrow.
 - **Recipient addresses come from the triggering flow**, which has already done

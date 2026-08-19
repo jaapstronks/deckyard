@@ -105,19 +105,32 @@ export function createLiveDocBinder({
   let undoManager = null;
   let shadowLang = null;
   /** Active-language snapshot of the doc, kept ≡ pres between edits. */
-  let shadow = { title: '', slides: [], extra: {}, langs: [], dominant: '', i18nExtra: null };
+  let shadow = {
+    title: '',
+    slides: [],
+    extra: {},
+    langs: [],
+    dominant: '',
+    i18nExtra: null,
+  };
 
   const activeLang = () =>
-    (typeof getActiveLang === 'function' && getActiveLang()) || codec.getDocDominant(doc);
+    (typeof getActiveLang === 'function' && getActiveLang()) ||
+    codec.getDocDominant(doc);
 
   function snapshotFromDoc(lang) {
     const ytitle = meta.get('title');
     const yt = ytitle instanceof Y.Map ? ytitle.get(lang) : undefined;
     return {
-      title: yt instanceof Y.Text ? yt.toString() : typeof yt === 'string' ? yt : '',
+      title:
+        yt instanceof Y.Text ? yt.toString() : typeof yt === 'string' ? yt : '',
       slides: yslides
         .toArray()
-        .map((s) => (s instanceof Y.Map ? codec.projectSlideForLang(s, lang) : deepClone(s))),
+        .map((s) =>
+          s instanceof Y.Map
+            ? codec.projectSlideForLang(s, lang)
+            : deepClone(s),
+        ),
       extra: deepClone(meta.get('extra')) || {},
       langs: codec.getDocLangs(doc),
       dominant: codec.getDocDominant(doc),
@@ -153,7 +166,14 @@ export function createLiveDocBinder({
    * this level ({textKeys, items}); `force` skips the equality short-circuit
    * (used after a slide type change, when field classification shifted).
    */
-  function diffContentMap(ymap, oldC, newC, spec, lang, { force = false } = {}) {
+  function diffContentMap(
+    ymap,
+    oldC,
+    newC,
+    spec,
+    lang,
+    { force = false } = {},
+  ) {
     const keys = new Set([
       ...Object.keys(isPlainObject(oldC) ? oldC : {}),
       ...Object.keys(isPlainObject(newC) ? newC : {}),
@@ -196,7 +216,10 @@ export function createLiveDocBinder({
       // Shadow out of step with the doc (shouldn't happen with synchronous
       // projection, but never corrupt): rebuild the field wholesale.
       yarr.delete(0, yarr.length);
-      yarr.insert(0, newArr.map((it) => codec.buildItemForLang(it, spec, lang)));
+      yarr.insert(
+        0,
+        newArr.map((it) => codec.buildItemForLang(it, spec, lang)),
+      );
       return;
     }
     let start = 0;
@@ -204,14 +227,22 @@ export function createLiveDocBinder({
     while (start < minLen && jsonEq(oldArr[start], newArr[start])) start += 1;
     let endOld = oldArr.length;
     let endNew = newArr.length;
-    while (endOld > start && endNew > start && jsonEq(oldArr[endOld - 1], newArr[endNew - 1])) {
+    while (
+      endOld > start &&
+      endNew > start &&
+      jsonEq(oldArr[endOld - 1], newArr[endNew - 1])
+    ) {
       endOld -= 1;
       endNew -= 1;
     }
     if (endOld - start === endNew - start) {
       for (let i = start; i < endOld; i += 1) {
         const entry = yarr.get(i);
-        if (entry instanceof Y.Map && isPlainObject(oldArr[i]) && isPlainObject(newArr[i])) {
+        if (
+          entry instanceof Y.Map &&
+          isPlainObject(oldArr[i]) &&
+          isPlainObject(newArr[i])
+        ) {
           diffContentMap(entry, oldArr[i], newArr[i], spec, lang);
         } else {
           yarr.delete(i, 1);
@@ -224,7 +255,9 @@ export function createLiveDocBinder({
     if (endNew > start) {
       yarr.insert(
         start,
-        newArr.slice(start, endNew).map((it) => codec.buildItemForLang(it, spec, lang))
+        newArr
+          .slice(start, endNew)
+          .map((it) => codec.buildItemForLang(it, spec, lang)),
       );
     }
   }
@@ -249,7 +282,7 @@ export function createLiveDocBinder({
    */
   function reconcileSlidesToDoc(lang) {
     const target = (pres.slides || []).filter(
-      (s) => isPlainObject(s) && typeof s.id === 'string' && s.id
+      (s) => isPlainObject(s) && typeof s.id === 'string' && s.id,
     );
     const targetIds = target.map((s) => s.id);
     const targetIdSet = new Set(targetIds);
@@ -273,7 +306,8 @@ export function createLiveDocBinder({
         yslides.insert(i, [codec.buildSlideForLang(target[i], lang)]);
       }
     }
-    while (yslides.length > targetIds.length) yslides.delete(targetIds.length, 1);
+    while (yslides.length > targetIds.length)
+      yslides.delete(targetIds.length, 1);
   }
 
   /** Field-level diff of one slide (matched by id) against its shadow. */
@@ -299,7 +333,8 @@ export function createLiveDocBinder({
 
     const nextNotes = typeof next.notes === 'string' ? next.notes : '';
     const prevNotes = typeof prev.notes === 'string' ? prev.notes : '';
-    if (nextNotes !== prevNotes) writeTextField(yslide, 'notes', nextNotes, lang);
+    if (nextNotes !== prevNotes)
+      writeTextField(yslide, 'notes', nextNotes, lang);
 
     let ycontent = yslide.get('content');
     if (!(ycontent instanceof Y.Map)) {
@@ -307,9 +342,16 @@ export function createLiveDocBinder({
       yslide.set('content', ycontent);
     }
     const spec = codec.textSpecForType(next.type);
-    diffContentMap(ycontent, prev.content || {}, next.content || {}, spec, lang, {
-      force: typeChanged,
-    });
+    diffContentMap(
+      ycontent,
+      prev.content || {},
+      next.content || {},
+      spec,
+      lang,
+      {
+        force: typeChanged,
+      },
+    );
   }
 
   function applyTitleToDoc(lang) {
@@ -324,7 +366,12 @@ export function createLiveDocBinder({
       if (current[k] !== undefined) next[k] = deepClone(current[k]);
     }
     for (const [k, v] of Object.entries(pres)) {
-      if (PRES_SPECIAL_KEYS.has(k) || SERVER_MANAGED_KEYS.has(k) || v === undefined) continue;
+      if (
+        PRES_SPECIAL_KEYS.has(k) ||
+        SERVER_MANAGED_KEYS.has(k) ||
+        v === undefined
+      )
+        continue;
       next[k] = deepClone(v);
     }
     meta.set('extra', next);
@@ -343,8 +390,12 @@ export function createLiveDocBinder({
 
   /** Sync langs (additive), dominant and the i18n envelope into meta. */
   function applyI18nToDoc() {
-    const versions = isPlainObject(pres.i18n?.versions) ? pres.i18n.versions : null;
-    const versionLangs = versions ? Object.keys(versions).filter((l) => isPlainObject(versions[l])) : [];
+    const versions = isPlainObject(pres.i18n?.versions)
+      ? pres.i18n.versions
+      : null;
+    const versionLangs = versions
+      ? Object.keys(versions).filter((l) => isPlainObject(versions[l]))
+      : [];
     // Never invent an i18n block for a single-language deck.
     if (!versionLangs.length && !isPlainObject(meta.get('i18n'))) return;
 
@@ -355,7 +406,8 @@ export function createLiveDocBinder({
       merged.push(l);
       // Seed the new language's title so the created version keeps the
       // title the editor copied over (texts stay empty → '' on projection).
-      const seed = typeof versions[l]?.title === 'string' ? versions[l].title : '';
+      const seed =
+        typeof versions[l]?.title === 'string' ? versions[l].title : '';
       let ytitle = meta.get('title');
       if (!(ytitle instanceof Y.Map)) {
         meta.set('title', codec.buildTextFieldForLang(seed, l));
@@ -365,12 +417,14 @@ export function createLiveDocBinder({
     }
     if (merged.length !== docLangs.length) meta.set('langs', merged);
 
-    const dom = typeof pres.i18n?.dominant === 'string' ? pres.i18n.dominant : '';
+    const dom =
+      typeof pres.i18n?.dominant === 'string' ? pres.i18n.dominant : '';
     if (dom && merged.includes(dom) && dom !== codec.getDocDominant(doc)) {
       meta.set('dominant', dom);
     }
     const extra = presI18nExtra();
-    if (extra && !jsonEq(extra, meta.get('i18n') ?? null)) meta.set('i18n', extra);
+    if (extra && !jsonEq(extra, meta.get('i18n') ?? null))
+      meta.set('i18n', extra);
   }
 
   function detectLocalChanges() {
@@ -382,12 +436,18 @@ export function createLiveDocBinder({
       i18nChanged: false,
     };
 
-    const presIds = (pres.slides || []).map((s) => (isPlainObject(s) ? s.id : undefined));
-    const shadowIds = shadow.slides.map((s) => (isPlainObject(s) ? s.id : undefined));
+    const presIds = (pres.slides || []).map((s) =>
+      isPlainObject(s) ? s.id : undefined,
+    );
+    const shadowIds = shadow.slides.map((s) =>
+      isPlainObject(s) ? s.id : undefined,
+    );
     changed.structureChanged = presIds.join(' ') !== shadowIds.join(' ');
 
     const shadowById = new Map(
-      shadow.slides.filter((s) => isPlainObject(s) && s.id).map((s) => [s.id, s])
+      shadow.slides
+        .filter((s) => isPlainObject(s) && s.id)
+        .map((s) => [s.id, s]),
     );
     for (const slide of pres.slides || []) {
       if (!isPlainObject(slide) || !slide.id) continue;
@@ -398,21 +458,32 @@ export function createLiveDocBinder({
     const filterExtra = (obj) => {
       const out = {};
       for (const [k, v] of Object.entries(isPlainObject(obj) ? obj : {})) {
-        if (PRES_SPECIAL_KEYS.has(k) || SERVER_MANAGED_KEYS.has(k) || v === undefined) continue;
+        if (
+          PRES_SPECIAL_KEYS.has(k) ||
+          SERVER_MANAGED_KEYS.has(k) ||
+          v === undefined
+        )
+          continue;
         out[k] = v;
       }
       return out;
     };
-    changed.extraChanged = !jsonEq(filterExtra(pres), filterExtra(shadow.extra));
+    changed.extraChanged = !jsonEq(
+      filterExtra(pres),
+      filterExtra(shadow.extra),
+    );
 
     const versionLangs = isPlainObject(pres.i18n?.versions)
-      ? Object.keys(pres.i18n.versions).filter((l) => isPlainObject(pres.i18n.versions[l]))
+      ? Object.keys(pres.i18n.versions).filter((l) =>
+          isPlainObject(pres.i18n.versions[l]),
+        )
       : [];
     const langsGrew = versionLangs.some((l) => !shadow.langs.includes(l));
     const dominantChanged =
       typeof pres.i18n?.dominant === 'string' &&
       pres.i18n.dominant !== shadow.dominant &&
-      (shadow.langs.includes(pres.i18n.dominant) || versionLangs.includes(pres.i18n.dominant));
+      (shadow.langs.includes(pres.i18n.dominant) ||
+        versionLangs.includes(pres.i18n.dominant));
     const i18nExtraChanged =
       isPlainObject(shadow.i18nExtra) || versionLangs.length
         ? !jsonEq(presI18nExtra(), shadow.i18nExtra)
@@ -457,7 +528,9 @@ export function createLiveDocBinder({
     const changes = detectLocalChanges();
     if (!changes.any) return;
     const shadowById = new Map(
-      shadow.slides.filter((s) => isPlainObject(s) && s.id).map((s) => [s.id, s])
+      shadow.slides
+        .filter((s) => isPlainObject(s) && s.id)
+        .map((s) => [s.id, s]),
     );
     doc.transact(() => {
       if (changes.structureChanged) reconcileSlidesToDoc(lang);
@@ -502,10 +575,17 @@ export function createLiveDocBinder({
         buf.slides = pres.slides;
       } else {
         const yt = ytitle instanceof Y.Map ? ytitle.get(l) : undefined;
-        buf.title = yt instanceof Y.Text ? yt.toString() : typeof yt === 'string' ? yt : '';
+        buf.title =
+          yt instanceof Y.Text
+            ? yt.toString()
+            : typeof yt === 'string'
+              ? yt
+              : '';
         buf.slides = yslides
           .toArray()
-          .map((s) => (s instanceof Y.Map ? codec.projectSlideForLang(s, l) : deepClone(s)));
+          .map((s) =>
+            s instanceof Y.Map ? codec.projectSlideForLang(s, l) : deepClone(s),
+          );
       }
     }
   }
@@ -525,14 +605,19 @@ export function createLiveDocBinder({
   function reconcilePresFromDoc(changedIds) {
     const lang = shadowLang;
     const byId = new Map(
-      (pres.slides || []).filter((s) => isPlainObject(s) && s.id).map((s) => [s.id, s])
+      (pres.slides || [])
+        .filter((s) => isPlainObject(s) && s.id)
+        .map((s) => [s.id, s]),
     );
     const nextSlides = [];
     for (let i = 0; i < yslides.length; i += 1) {
       const ys = yslides.get(i);
       const json =
-        ys instanceof Y.Map ? codec.projectSlideForLang(ys, lang) : deepClone(ys);
-      const existing = isPlainObject(json) && json.id ? byId.get(json.id) : null;
+        ys instanceof Y.Map
+          ? codec.projectSlideForLang(ys, lang)
+          : deepClone(ys);
+      const existing =
+        isPlainObject(json) && json.id ? byId.get(json.id) : null;
       if (existing) {
         if (!jsonEq(existing, json)) {
           mutateSlideInPlace(existing, json);
@@ -574,7 +659,8 @@ export function createLiveDocBinder({
     let structureChanged = false;
     const changedIndices = new Set();
     for (const ev of events) {
-      if (!Array.isArray(ev.path) || ev.path.length === 0) structureChanged = true;
+      if (!Array.isArray(ev.path) || ev.path.length === 0)
+        structureChanged = true;
       else if (typeof ev.path[0] === 'number') changedIndices.add(ev.path[0]);
       else structureChanged = true;
     }
@@ -582,7 +668,8 @@ export function createLiveDocBinder({
     if (structureChanged) {
       reconcilePresFromDoc(changedSlideIds);
     } else {
-      for (const idx of changedIndices) projectSlideIntoPres(idx, changedSlideIds);
+      for (const idx of changedIndices)
+        projectSlideIntoPres(idx, changedSlideIds);
     }
     if (!structureChanged && changedSlideIds.size === 0) return;
     notifyRemote({ changedSlideIds, structureChanged });
@@ -600,10 +687,13 @@ export function createLiveDocBinder({
 
     const ytitle = meta.get('title');
     const yt = ytitle instanceof Y.Map ? ytitle.get(lang) : undefined;
-    const nextTitle = yt instanceof Y.Text ? yt.toString() : typeof yt === 'string' ? yt : '';
+    const nextTitle =
+      yt instanceof Y.Text ? yt.toString() : typeof yt === 'string' ? yt : '';
     if (nextTitle !== String(pres.title ?? '')) {
       pres.title = nextTitle;
-      const buf = isPlainObject(pres.i18n?.versions) ? pres.i18n.versions[lang] : null;
+      const buf = isPlainObject(pres.i18n?.versions)
+        ? pres.i18n.versions[lang]
+        : null;
       if (isPlainObject(buf)) buf.title = nextTitle;
       titleChanged = true;
     }
@@ -653,7 +743,12 @@ export function createLiveDocBinder({
   function handleRemoteMeta() {
     const { titleChanged, metaChanged } = applyMetaFromDoc();
     if (titleChanged || metaChanged) {
-      notifyRemote({ changedSlideIds: new Set(), structureChanged: false, titleChanged, metaChanged });
+      notifyRemote({
+        changedSlideIds: new Set(),
+        structureChanged: false,
+        titleChanged,
+        metaChanged,
+      });
     }
   }
 
@@ -664,7 +759,12 @@ export function createLiveDocBinder({
     metaChanged = false,
   }) {
     try {
-      onRemoteApplied?.({ changedSlideIds, structureChanged, titleChanged, metaChanged });
+      onRemoteApplied?.({
+        changedSlideIds,
+        structureChanged,
+        titleChanged,
+        metaChanged,
+      });
     } catch {
       // rerender callbacks are best-effort
     }

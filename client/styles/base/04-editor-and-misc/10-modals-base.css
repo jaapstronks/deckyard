@@ -406,9 +406,9 @@
   .modal .form-input,
   .modal .form-select,
   .modal select,
-  .modal input[type="text"],
-  .modal input[type="email"],
-  .modal input[type="password"] {
+  .modal input[type='text'],
+  .modal input[type='email'],
+  .modal input[type='password'] {
     min-height: 44px;
     font-size: var(--ps-text-lg); /* Prevents zoom on iOS */
   }

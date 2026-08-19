@@ -61,7 +61,9 @@ const ALICE = 'alice@example.com';
 const BOB_ID = '22222222-2222-2222-2222-222222222222';
 const BOB = 'bob@example.com';
 
-const SLIDES_THEN = [{ id: 's1', type: 'title-slide', content: { title: 'Then' } }];
+const SLIDES_THEN = [
+  { id: 's1', type: 'title-slide', content: { title: 'Then' } },
+];
 const SLIDES_NOW = [
   { id: 's1', type: 'title-slide', content: { title: 'Now' } },
   { id: 's2', type: 'content-slide', content: { title: 'Added later' } },
@@ -87,8 +89,20 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
     await db
       .insertInto('users')
       .values([
-        { id: ALICE_ID, organization_id: ORG, email: ALICE, name: 'Alice', role: 'user' },
-        { id: BOB_ID, organization_id: ORG, email: BOB, name: 'Bob', role: 'user' },
+        {
+          id: ALICE_ID,
+          organization_id: ORG,
+          email: ALICE,
+          name: 'Alice',
+          role: 'user',
+        },
+        {
+          id: BOB_ID,
+          organization_id: ORG,
+          email: BOB,
+          name: 'Bob',
+          role: 'user',
+        },
       ])
       .execute();
     await db
@@ -154,15 +168,24 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
     const pres = await getPresentation(storageScope, DECK_ID);
     assert.equal(pres.ownerEmail, ALICE, 'the live deck does carry identity');
 
-    const created = await createPresentationVersion(storageScope, DECK_ID, pres, {
-      actorEmail: ALICE,
-      reason: 'manual',
-      label: 'checkpoint',
-    });
+    const created = await createPresentationVersion(
+      storageScope,
+      DECK_ID,
+      pres,
+      {
+        actorEmail: ALICE,
+        reason: 'manual',
+        label: 'checkpoint',
+      },
+    );
 
     const bag = await storedSnapshot(created.id);
     for (const field of SNAPSHOT_IDENTITY_FIELDS) {
-      assert.equal(field in bag, false, `${field} must not be embedded in the snapshot`);
+      assert.equal(
+        field in bag,
+        false,
+        `${field} must not be embedded in the snapshot`,
+      );
     }
     // And the content a restore consumes is all still there.
     assert.equal(bag.title, 'Deck');
@@ -171,10 +194,15 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
 
   it('who took the snapshot is still recorded, in its own dual-keyed column', async () => {
     const pres = await getPresentation(storageScope, DECK_ID);
-    const created = await createPresentationVersion(storageScope, DECK_ID, pres, {
-      actorEmail: ALICE,
-      reason: 'manual',
-    });
+    const created = await createPresentationVersion(
+      storageScope,
+      DECK_ID,
+      pres,
+      {
+        actorEmail: ALICE,
+        reason: 'manual',
+      },
+    );
 
     // `created_by` is a first-class column, not part of the embedded copy: the
     // version list renders it. Stripping the bag must not have taken it too.
@@ -182,8 +210,16 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
     // halves are stamped from one resolution of the acting user's address.
     const [summary] = await listPresentationVersions(storageScope, DECK_ID);
     assert.equal(summary.createdBy, ALICE);
-    assert.equal(summary.createdById, ALICE_ID, 'the version author id is stamped');
-    assert.equal(created.createdById, ALICE_ID, 'and returned from the create call');
+    assert.equal(
+      summary.createdById,
+      ALICE_ID,
+      'the version author id is stamped',
+    );
+    assert.equal(
+      created.createdById,
+      ALICE_ID,
+      'and returned from the create call',
+    );
 
     // Pin the actual stored column, not just the mapped shape.
     const row = await db
@@ -196,38 +232,72 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
 
   it('an external snapshot author (no users row) stamps a NULL id, not a failure', async () => {
     const pres = await getPresentation(storageScope, DECK_ID);
-    const created = await createPresentationVersion(storageScope, DECK_ID, pres, {
-      actorEmail: 'stranger@example.com',
-      reason: 'manual',
-    });
+    const created = await createPresentationVersion(
+      storageScope,
+      DECK_ID,
+      pres,
+      {
+        actorEmail: 'stranger@example.com',
+        reason: 'manual',
+      },
+    );
 
     const [summary] = await listPresentationVersions(storageScope, DECK_ID);
-    assert.equal(summary.createdBy, 'stranger@example.com', 'the e-mail is still recorded');
-    assert.equal(summary.createdById, null, 'and the id half is a defined NULL (external)');
+    assert.equal(
+      summary.createdBy,
+      'stranger@example.com',
+      'the e-mail is still recorded',
+    );
+    assert.equal(
+      summary.createdById,
+      null,
+      'and the id half is a defined NULL (external)',
+    );
     assert.equal(created.createdById, null);
   });
 
   it('snapshotting does not strip the live deck', async () => {
     const pres = await getPresentation(storageScope, DECK_ID);
-    await createPresentationVersion(storageScope, DECK_ID, pres, { actorEmail: ALICE, reason: 'manual' });
+    await createPresentationVersion(storageScope, DECK_ID, pres, {
+      actorEmail: ALICE,
+      reason: 'manual',
+    });
 
     // The caller's object is often a cache entry and is used again after the
     // snapshot (the restore route answers its request from it).
     assert.equal(pres.ownerEmail, ALICE);
-    assert.equal((await getPresentation(storageScope, DECK_ID)).ownerEmail, ALICE);
+    assert.equal(
+      (await getPresentation(storageScope, DECK_ID)).ownerEmail,
+      ALICE,
+    );
   });
 
   it('restoring an identity-bearing legacy snapshot does not move ownership back', async () => {
     const versionId = await seedLegacySnapshot();
 
     // The deck changes hands after that snapshot was taken.
-    const transfer = await transferPresentationOwnership(storageScope, DECK_ID, { newOwnerEmail: BOB, actorEmail: ALICE, keepAsCollaborator: false });
+    const transfer = await transferPresentationOwnership(
+      storageScope,
+      DECK_ID,
+      { newOwnerEmail: BOB, actorEmail: ALICE, keepAsCollaborator: false },
+    );
     assert.equal(transfer.ok, true, 'the transfer landed');
-    assert.equal((await getPresentation(storageScope, DECK_ID)).ownerEmail, BOB);
+    assert.equal(
+      (await getPresentation(storageScope, DECK_ID)).ownerEmail,
+      BOB,
+    );
 
     // Restore, exactly as routes/api/presentations/restore.js does it.
-    const version = await getPresentationVersion(storageScope, DECK_ID, versionId);
-    assert.equal(version.presentation.ownerEmail, ALICE, 'the old bag really does carry Alice');
+    const version = await getPresentationVersion(
+      storageScope,
+      DECK_ID,
+      versionId,
+    );
+    assert.equal(
+      version.presentation.ownerEmail,
+      ALICE,
+      'the old bag really does carry Alice',
+    );
 
     const before = await getPresentation(storageScope, DECK_ID);
     await updatePresentation(storageScope, DECK_ID, version.presentation, {
@@ -240,16 +310,24 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
     const after = await getPresentation(storageScope, DECK_ID);
     // Restore moves slides, not ownership: identity is re-derived from the
     // living deck simply by not being consumed from the body.
-    assert.equal(after.ownerEmail, BOB, 'the deck did not hand itself back to Alice');
+    assert.equal(
+      after.ownerEmail,
+      BOB,
+      'the deck did not hand itself back to Alice',
+    );
     assert.equal(after.ownerId, BOB_ID);
-    assert.equal(after.createdBy, ALICE, 'who made it is create-only and unchanged');
+    assert.equal(
+      after.createdBy,
+      ALICE,
+      'who made it is create-only and unchanged',
+    );
     assert.equal(after.updatedBy, BOB, 'the restorer is the last writer');
     // Slide shape, not object identity: the write path normalizes slides (it
     // fills `parentId`), so compare what the restore was for.
     assert.deepEqual(
       after.slides.map((s) => [s.id, s.content.title]),
       [['s1', 'Then']],
-      'and the slides did come back'
+      'and the slides did come back',
     );
   });
 
@@ -261,12 +339,20 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
       storageScope,
       DECK_ID,
       { ...pres, slides: SLIDES_THEN, title: 'Deck as it was' },
-      { actorEmail: ALICE, reason: 'manual' }
+      { actorEmail: ALICE, reason: 'manual' },
     );
 
-    await transferPresentationOwnership(storageScope, DECK_ID, { newOwnerEmail: BOB, actorEmail: ALICE, keepAsCollaborator: false });
+    await transferPresentationOwnership(storageScope, DECK_ID, {
+      newOwnerEmail: BOB,
+      actorEmail: ALICE,
+      keepAsCollaborator: false,
+    });
 
-    const version = await getPresentationVersion(storageScope, DECK_ID, created.id);
+    const version = await getPresentationVersion(
+      storageScope,
+      DECK_ID,
+      created.id,
+    );
     const before = await getPresentation(storageScope, DECK_ID);
     await updatePresentation(storageScope, DECK_ID, version.presentation, {
       expectedRevision: before.revision,
@@ -283,7 +369,7 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
     assert.equal(after.title, 'Deck as it was');
     assert.deepEqual(
       after.slides.map((s) => [s.id, s.content.title]),
-      [['s1', 'Then']]
+      [['s1', 'Then']],
     );
   });
 
@@ -292,12 +378,21 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
     // `version.presentation` (and `.slides` in particular) and hand it to the
     // client. Stripping identity must leave that intact.
     const pres = await getPresentation(storageScope, DECK_ID);
-    const created = await createPresentationVersion(storageScope, DECK_ID, pres, {
-      actorEmail: ALICE,
-      reason: 'manual',
-    });
+    const created = await createPresentationVersion(
+      storageScope,
+      DECK_ID,
+      pres,
+      {
+        actorEmail: ALICE,
+        reason: 'manual',
+      },
+    );
 
-    const version = await getPresentationVersion(storageScope, DECK_ID, created.id);
+    const version = await getPresentationVersion(
+      storageScope,
+      DECK_ID,
+      created.id,
+    );
     assert.deepEqual(version.presentation.slides, SLIDES_NOW);
     assert.equal(version.title, 'Deck');
     assert.equal(version.createdBy, ALICE);

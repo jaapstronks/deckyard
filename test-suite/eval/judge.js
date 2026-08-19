@@ -8,7 +8,11 @@
 
 import { requestJson } from '../lib/anthropic.js';
 import { cacheKey, withCache } from '../lib/cache.js';
-import { MODEL, REFERENCE_DIMENSION, RUBRIC_DIMENSIONS } from '../lib/config.js';
+import {
+  MODEL,
+  REFERENCE_DIMENSION,
+  RUBRIC_DIMENSIONS,
+} from '../lib/config.js';
 import { extractSlideText } from './metrics.js';
 
 const JUDGE_VERSION = 'judge-v1';
@@ -122,7 +126,7 @@ function renderReference(reference) {
     .map((slide, index) =>
       [`Slide ${index + 1}`, slide.title && `Title: ${slide.title}`, slide.text]
         .filter(Boolean)
-        .join('\n')
+        .join('\n'),
     )
     .join('\n\n');
 }
@@ -156,7 +160,9 @@ export async function judgeDeck({
   const withReference = Boolean(referenceDeck?.slides?.length);
   const schema = buildSchema(withReference);
   const deckText = renderDeckForJudge(deck);
-  const topicList = topics.map((t, i) => `${i + 1}. ${t.topic} (${t.importance})`).join('\n');
+  const topicList = topics
+    .map((t, i) => `${i + 1}. ${t.topic} (${t.importance})`)
+    .join('\n');
 
   // The source is the large, stable part of the prompt and is identical across
   // repeats of a case, so it is what a cache breakpoint would cover.
@@ -174,12 +180,12 @@ export async function judgeDeck({
         'other dimensions, score humanLikeness: how close does the generated deck come ' +
         'to the human deck in the choices it makes -- what to include, what to leave ' +
         'out, how to sequence it, and how much text to put on a slide? Do not reward ' +
-        'mere similarity of wording; reward similarity of editorial judgement.'
+        'mere similarity of wording; reward similarity of editorial judgement.',
     );
   }
 
   promptParts.push(
-    'Score the generated deck against the source document. Return only the JSON object.'
+    'Score the generated deck against the source document. Return only the JSON object.',
   );
 
   const prompt = promptParts.join('\n\n');
@@ -198,7 +204,7 @@ export async function judgeDeck({
         maxTokens: 8000,
         onUsage,
       }),
-    { skip: refresh }
+    { skip: refresh },
   );
 
   return { verdict: value, cached };
@@ -215,5 +221,7 @@ export function meanScore(scores = {}) {
     .map((entry) => entry?.score)
     .filter((n) => Number.isFinite(n));
   if (!values.length) return 0;
-  return Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 100) / 100;
+  return (
+    Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 100) / 100
+  );
 }

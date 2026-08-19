@@ -19,7 +19,10 @@ import { fileURLToPath } from 'node:url';
  * a plain local `npm test` catches, without needing the lint pass to have run.
  */
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 /** The only directory allowed to import zod. */
 const ALLOWED = 'server/utils/ai/schemas';
@@ -53,7 +56,10 @@ test('zod is imported only from server/utils/ai/schemas', async () => {
     if (rel.startsWith(ALLOWED + path.sep)) continue;
     const src = await fs.readFile(path.join(REPO_ROOT, rel), 'utf8');
     for (const [i, line] of src.split('\n').entries()) {
-      if (/\bfrom\s+['"]zod['"]/.test(line) || /\brequire\(\s*['"]zod['"]\s*\)/.test(line)) {
+      if (
+        /\bfrom\s+['"]zod['"]/.test(line) ||
+        /\brequire\(\s*['"]zod['"]\s*\)/.test(line)
+      ) {
         offenders.push(`${rel}:${i + 1}`);
       }
     }
@@ -63,7 +69,7 @@ test('zod is imported only from server/utils/ai/schemas', async () => {
     offenders,
     [],
     'zod belongs to the AI output schemas. Validate request bodies with ' +
-      `server/utils/request-validators.js instead:\n${offenders.join('\n')}`
+      `server/utils/request-validators.js instead:\n${offenders.join('\n')}`,
   );
 });
 
@@ -73,12 +79,12 @@ test('the allowed directory actually uses zod — the allowance is not stale', a
   const sources = await Promise.all(
     files
       .filter((f) => f.endsWith('.js'))
-      .map((f) => fs.readFile(path.join(dir, f), 'utf8'))
+      .map((f) => fs.readFile(path.join(dir, f), 'utf8')),
   );
 
   assert.ok(
     sources.some((src) => /\bfrom\s+['"]zod['"]/.test(src)),
     `nothing in ${ALLOWED} imports zod any more — drop the dependency and this ` +
-      'allowance rather than leaving a carve-out for a use that no longer exists'
+      'allowance rather than leaving a carve-out for a use that no longer exists',
   );
 });

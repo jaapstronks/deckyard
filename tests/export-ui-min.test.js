@@ -28,7 +28,7 @@ const deck = {
 test('the ui param is read before the shell renders', async () => {
   const html = await buildStandaloneHtml(repoRoot, deck, {});
   const bodyStart = html.indexOf('<body');
-  const script = html.indexOf("window.__DECK_UI__");
+  const script = html.indexOf('window.__DECK_UI__');
   const shell = html.indexOf('class="presenter-shell"');
   assert.ok(script > bodyStart, 'the ui script sits inside <body>');
   assert.ok(script < shell, 'the ui script runs before the chrome is parsed');
@@ -48,8 +48,14 @@ test('ui=min collapses both chrome rows and keeps the progress fill', async () =
     /html\.ui-min \.presenter-topbar,\s*html\.ui-min \.ps-standalone-progress-row,\s*html\.ui-min \.ps-standalone-loop-bar \{\s*display: none;/,
   );
   // … while the progress bar survives as a 3px overlay that costs no height.
-  assert.match(html, /html\.ui-min \.presenter-progress \{[^}]*position: absolute;/);
-  assert.match(html, /html\.ui-min \.presenter-progress-bar \{[^}]*height: 3px;/);
+  assert.match(
+    html,
+    /html\.ui-min \.presenter-progress \{[^}]*position: absolute;/,
+  );
+  assert.match(
+    html,
+    /html\.ui-min \.presenter-progress-bar \{[^}]*height: 3px;/,
+  );
 });
 
 test('the chrome is still in the DOM, so nothing else has to change', async () => {

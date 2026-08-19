@@ -28,14 +28,14 @@ export function buildTransitionsSection({ h, pres, markDirty, requestSave }) {
     class: 'field-label',
     text: t(
       'editor.deckSettings.transitions.title',
-      'Presenter transition (slide → slide)'
+      'Presenter transition (slide → slide)',
     ),
   });
   const help = h('div', {
     class: 'help',
     text: t(
       'editor.deckSettings.transitions.help',
-      'Presenter only. Editor and follow-along remain static by default.'
+      'Presenter only. Editor and follow-along remain static by default.',
     ),
   });
   const sel = h('select', { class: 'form-input' });
@@ -54,7 +54,7 @@ export function buildTransitionsSection({ h, pres, markDirty, requestSave }) {
     h('option', {
       value: 'cube',
       text: t('editor.transitions.cube', '3D (Cube)'),
-    })
+    }),
   );
   sel.value = preset;
   sel.addEventListener('change', () => {

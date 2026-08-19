@@ -29,7 +29,7 @@ const sampleSlides = () => [
       title: t('settings.themes.preview.title', 'Your presentation title'),
       subheading: t(
         'settings.themes.preview.subtitle',
-        'A subtitle, in the body font'
+        'A subtitle, in the body font',
       ),
       background: 'lime',
     },
@@ -41,7 +41,7 @@ const sampleSlides = () => [
       title: t('settings.themes.preview.contentTitle', 'A content slide'),
       body: t(
         'settings.themes.preview.body',
-        '- Body text in the body font\n- A second point\n- A third point'
+        '- Body text in the body font\n- A second point\n- A third point',
       ),
       background: 'mist',
     },
@@ -52,7 +52,7 @@ const sampleSlides = () => [
     content: {
       quote: t(
         'settings.themes.preview.quote',
-        'A quote, on the theme’s dark surface.'
+        'A quote, on the theme’s dark surface.',
       ),
       authorName: t('settings.themes.preview.quoteAuthor', 'Someone'),
       authorTitle: t('settings.themes.preview.quoteRole', 'Their role'),
@@ -114,7 +114,7 @@ export function createThemePreview() {
           virtualWidth: 1600,
           virtualHeight: 900,
           containerEl: frame,
-        })
+        }),
       );
     }
   }
@@ -142,7 +142,7 @@ export function createThemePreview() {
       // Keep the last good render on screen rather than blanking the panel.
       status.textContent = t(
         'settings.themes.preview.error',
-        'Preview unavailable right now.'
+        'Preview unavailable right now.',
       );
     }
   }

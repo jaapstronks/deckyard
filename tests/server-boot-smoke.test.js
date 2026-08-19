@@ -58,7 +58,7 @@ test('server.js exports a buildServer() factory', () => {
   assert.equal(
     typeof buildServer,
     'function',
-    'server.js must export buildServer() so a test can boot the real dispatch pipeline'
+    'server.js must export buildServer() so a test can boot the real dispatch pipeline',
   );
 });
 
@@ -70,13 +70,17 @@ test('the built server boots and answers /health without a database', async () =
   });
 
   const { status, body } = await get(server.address().port, '/health');
-  assert.equal(status, 200, '/health must answer 200 on a freshly booted server');
+  assert.equal(
+    status,
+    200,
+    '/health must answer 200 on a freshly booted server',
+  );
 
   const payload = JSON.parse(body);
   assert.equal(payload.status, 'ok', '/health must report status: ok');
   assert.equal(
     typeof payload.timestamp,
     'number',
-    '/health must carry a numeric timestamp'
+    '/health must carry a numeric timestamp',
   );
 });

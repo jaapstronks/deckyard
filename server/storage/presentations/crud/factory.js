@@ -6,7 +6,10 @@ import { newPresentation } from '../../../../shared/slide-schemas.js';
 import { cryptoUuid } from '../../../../shared/slide-types/helpers.js';
 import { normalizeI18n } from '../i18n.js';
 import { attachSandboxMeta } from '../sandbox.js';
-import { sandboxDefaultThemeId, sandboxEnabled } from '../../../config/sandbox.js';
+import {
+  sandboxDefaultThemeId,
+  sandboxEnabled,
+} from '../../../config/sandbox.js';
 import { resolveThemeId, loadThemeAssets } from '../../../utils/themes.js';
 import { normalizeMeta } from './helpers.js';
 import { normalizeRevealStyle } from '../../../../shared/reveal-style.js';
@@ -25,12 +28,14 @@ export async function prepareNewPresentation(repoRoot, body) {
     typeof body?.title === 'string' && body.title.trim()
       ? body.title.trim()
       : 'Naamloze presentatie';
-  const initialLang = body?.lang === 'nl' || body?.lang === 'en-GB' ? body.lang : 'nl';
+  const initialLang =
+    body?.lang === 'nl' || body?.lang === 'en-GB' ? body.lang : 'nl';
   const requestedTheme =
     typeof body?.theme === 'string' && body.theme.trim()
       ? body.theme.trim()
       : null;
-  const effectiveTheme = requestedTheme || (sandboxEnabled() ? sandboxDefaultThemeId() : 'default');
+  const effectiveTheme =
+    requestedTheme || (sandboxEnabled() ? sandboxDefaultThemeId() : 'default');
 
   // Default title slide differs per theme.
   // Themes can specify a custom title slide via the `defaultTitleSlide` property.
@@ -79,7 +84,8 @@ export async function prepareNewPresentation(repoRoot, body) {
     for (const s of base) {
       if (!s.contentByLang) continue;
       for (const l of SUPPORTED_LANGS) {
-        if (s.contentByLang[l] && typeof s.contentByLang[l] === 'object') langSet.add(l);
+        if (s.contentByLang[l] && typeof s.contentByLang[l] === 'object')
+          langSet.add(l);
       }
     }
 
@@ -129,7 +135,8 @@ export async function prepareNewPresentation(repoRoot, body) {
   // (Keep this allowlisted; do not accept arbitrary settings blobs from clients.)
   try {
     if (typeof body?.settings?.stepParagraphs === 'boolean') {
-      pres.settings = pres.settings && typeof pres.settings === 'object' ? pres.settings : {};
+      pres.settings =
+        pres.settings && typeof pres.settings === 'object' ? pres.settings : {};
       pres.settings.stepParagraphs = body.settings.stepParagraphs;
     }
     // Reveal style for builds (default | typewriter). Lets an AI-authored deck
@@ -137,7 +144,8 @@ export async function prepareNewPresentation(repoRoot, body) {
     // AI agents" stance. Unknown values are ignored by normalizeRevealStyle.
     const revealStyle = normalizeRevealStyle(body?.settings?.revealStyle);
     if (revealStyle) {
-      pres.settings = pres.settings && typeof pres.settings === 'object' ? pres.settings : {};
+      pres.settings =
+        pres.settings && typeof pres.settings === 'object' ? pres.settings : {};
       pres.settings.revealStyle = revealStyle;
     }
     const presetRaw =
@@ -147,9 +155,11 @@ export async function prepareNewPresentation(repoRoot, body) {
     const preset = String(presetRaw || '').trim();
     const allowed = new Set(['none', 'fade', 'slide', 'push', 'cube']);
     if (allowed.has(preset)) {
-      pres.settings = pres.settings && typeof pres.settings === 'object' ? pres.settings : {};
+      pres.settings =
+        pres.settings && typeof pres.settings === 'object' ? pres.settings : {};
       pres.settings.transitions =
-        pres.settings.transitions && typeof pres.settings.transitions === 'object'
+        pres.settings.transitions &&
+        typeof pres.settings.transitions === 'object'
           ? pres.settings.transitions
           : {};
       pres.settings.transitions.preset = preset;
@@ -168,7 +178,8 @@ export async function prepareNewPresentation(repoRoot, body) {
     try {
       const s0 = Array.isArray(pres.slides) ? pres.slides[0] : null;
       if (s0?.type === 'title-slide') {
-        s0.content = s0.content && typeof s0.content === 'object' ? s0.content : {};
+        s0.content =
+          s0.content && typeof s0.content === 'object' ? s0.content : {};
         // Respect schema max length (120) with a conservative trim.
         s0.content.title =
           title.length > 120 ? title.slice(0, 119).trimEnd() + '…' : title;
@@ -186,7 +197,10 @@ export async function prepareNewPresentation(repoRoot, body) {
   pres.revision = 1;
 
   // Store Notion source page ID if provided (for "Publish to Notion" feature).
-  if (typeof body?.notionSourcePageId === 'string' && body.notionSourcePageId.trim()) {
+  if (
+    typeof body?.notionSourcePageId === 'string' &&
+    body.notionSourcePageId.trim()
+  ) {
     pres.notionSourcePageId = body.notionSourcePageId.trim().toLowerCase();
   }
 
@@ -204,7 +218,7 @@ export async function prepareNewPresentation(repoRoot, body) {
           Object.entries(providedVersions).map(([lang, slides]) => [
             lang,
             { title: pres.title, slides },
-          ])
+          ]),
         )
       : {
           [initialLang]: {

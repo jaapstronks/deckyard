@@ -24,7 +24,7 @@ function safeScale(n) {
 export async function buildPptxBuffer(
   repoRoot,
   pres,
-  { scale = 2, theme = null, slideTypes = null } = {}
+  { scale = 2, theme = null, slideTypes = null } = {},
 ) {
   const warnings = [];
 
@@ -34,14 +34,13 @@ export async function buildPptxBuffer(
     pptxgen = await import('pptxgenjs');
   } catch {
     const err = new Error(
-      'PPTX export requires pptxgenjs. Install it with: npm i pptxgenjs'
+      'PPTX export requires pptxgenjs. Install it with: npm i pptxgenjs',
     );
     err.code = 'PPTXGEN_MISSING';
     throw err;
   }
 
-  const PptxGen =
-    pptxgen?.default || pptxgen?.PptxGenJS || pptxgen;
+  const PptxGen = pptxgen?.default || pptxgen?.PptxGenJS || pptxgen;
   const pptx = new PptxGen();
   // 16:9 widescreen (PowerPoint default)
   pptx.layout = 'LAYOUT_WIDE';
@@ -76,11 +75,12 @@ export async function buildPptxBuffer(
     }
 
     // Regular slide: render as PNG
-    const pngBuf = await renderSlideToPngBuffer(
-      repoRoot,
-      slide,
-      { scale: s, theme, slideTypes, lang: deckLang }
-    );
+    const pngBuf = await renderSlideToPngBuffer(repoRoot, slide, {
+      scale: s,
+      theme,
+      slideTypes,
+      lang: deckLang,
+    });
 
     const pptxSlide = pptx.addSlide();
     pptxSlide.addImage({
@@ -101,7 +101,12 @@ export async function buildPptxBuffer(
  * For Bunny videos: attempts to embed the MP4 directly.
  * For YouTube/Vimeo: creates a placeholder with instructions.
  */
-async function handleVideoSlide(pptx, slide, slideNum, { slideWidth, slideHeight }) {
+async function handleVideoSlide(
+  pptx,
+  slide,
+  slideNum,
+  { slideWidth, slideHeight },
+) {
   const content = slide?.content || {};
   const source = String(content.source || '').trim();
   const title = String(content.title || '').trim();
@@ -126,7 +131,8 @@ async function handleVideoSlide(pptx, slide, slideNum, { slideWidth, slideHeight
         slideHeight,
         message: 'Bunny video kon niet worden ingesloten',
         detail: 'BUNNY_PULLZONE is niet geconfigureerd op de server.',
-        instruction: 'Vraag de beheerder om de Bunny CDN-instellingen te configureren, of voeg de video handmatig toe.',
+        instruction:
+          'Vraag de beheerder om de Bunny CDN-instellingen te configureren, of voeg de video handmatig toe.',
         videoUrl: `https://iframe.mediadelivery.net/embed/${parsed.libraryId}/${parsed.videoId}`,
       });
       return {
@@ -189,8 +195,11 @@ async function handleVideoSlide(pptx, slide, slideNum, { slideWidth, slideHeight
         slideWidth,
         slideHeight,
         message: 'Bunny video kon niet worden gedownload',
-        detail: fetchResult.error || 'Controleer of MP4 Fallback is ingeschakeld in Bunny.',
-        instruction: 'Download de video handmatig en voeg deze toe in PowerPoint.',
+        detail:
+          fetchResult.error ||
+          'Controleer of MP4 Fallback is ingeschakeld in Bunny.',
+        instruction:
+          'Download de video handmatig en voeg deze toe in PowerPoint.',
         videoUrl: mp4Url,
       });
       return {
@@ -207,8 +216,10 @@ async function handleVideoSlide(pptx, slide, slideNum, { slideWidth, slideHeight
       slideWidth,
       slideHeight,
       message: 'YouTube video',
-      detail: 'YouTube-video\'s kunnen niet offline worden afgespeeld in PowerPoint.',
-      instruction: 'Download de video van YouTube en voeg deze handmatig toe, of gebruik "Online video invoegen" in PowerPoint (vereist internet tijdens presentatie).',
+      detail:
+        "YouTube-video's kunnen niet offline worden afgespeeld in PowerPoint.",
+      instruction:
+        'Download de video van YouTube en voeg deze handmatig toe, of gebruik "Online video invoegen" in PowerPoint (vereist internet tijdens presentatie).',
       videoUrl: youtubeUrl,
     });
     return {
@@ -224,7 +235,8 @@ async function handleVideoSlide(pptx, slide, slideNum, { slideWidth, slideHeight
       slideWidth,
       slideHeight,
       message: 'Vimeo video',
-      detail: 'Vimeo-video\'s kunnen niet offline worden afgespeeld in PowerPoint.',
+      detail:
+        "Vimeo-video's kunnen niet offline worden afgespeeld in PowerPoint.",
       instruction: 'Download de video van Vimeo en voeg deze handmatig toe.',
       videoUrl: vimeoUrl,
     });
@@ -251,15 +263,10 @@ async function handleVideoSlide(pptx, slide, slideNum, { slideWidth, slideHeight
 /**
  * Add a video placeholder slide with instructions.
  */
-function addVideoPlaceholder(pptxSlide, {
-  title,
-  slideWidth,
-  slideHeight,
-  message,
-  detail,
-  instruction,
-  videoUrl,
-}) {
+function addVideoPlaceholder(
+  pptxSlide,
+  { title, slideWidth, slideHeight, message, detail, instruction, videoUrl },
+) {
   let yPos = 0.5;
 
   // Title
@@ -344,18 +351,23 @@ function addVideoPlaceholder(pptxSlide, {
 
   // Video URL (as clickable link if possible)
   if (videoUrl) {
-    pptxSlide.addText([{
-      text: videoUrl,
-      options: {
-        hyperlink: { url: videoUrl },
-        color: '0066cc',
-        fontSize: 10,
+    pptxSlide.addText(
+      [
+        {
+          text: videoUrl,
+          options: {
+            hyperlink: { url: videoUrl },
+            color: '0066cc',
+            fontSize: 10,
+          },
+        },
+      ],
+      {
+        x: 0.5,
+        y: yPos,
+        w: slideWidth - 1,
+        h: 0.3,
       },
-    }], {
-      x: 0.5,
-      y: yPos,
-      w: slideWidth - 1,
-      h: 0.3,
-    });
+    );
   }
 }

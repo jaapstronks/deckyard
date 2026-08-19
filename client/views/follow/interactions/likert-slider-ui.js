@@ -18,8 +18,8 @@ export function renderLikertSliderUi({
 } = {}) {
   const scoreText = (n) =>
     myVote != null
-      ? copy?.likertSliderYourScore?.(n) ?? `Your score: ${n}`
-      : copy?.likertSliderChooseScore?.(n) ?? `Choose a score: ${n}`;
+      ? (copy?.likertSliderYourScore?.(n) ?? `Your score: ${n}`)
+      : (copy?.likertSliderChooseScore?.(n) ?? `Choose a score: ${n}`);
 
   const min = 1;
   const max = 10;

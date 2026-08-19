@@ -28,7 +28,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const SLIDES_DIR = fileURLToPath(new URL('../client/styles/slides/', import.meta.url));
+import { formatGenerated } from './lib/format-generated.js';
+
+const SLIDES_DIR = fileURLToPath(
+  new URL('../client/styles/slides/', import.meta.url),
+);
 
 /**
  * The tiers, in the order `slides.css` imports them. Each is one aggregator
@@ -39,7 +43,8 @@ export const TIERS = [
   {
     dir: '01-layout-and-title',
     aggregator: '01-layout-and-title.css',
-    header: '/* Shared slide rendering (used by preview, presenter, and exports) */',
+    header:
+      '/* Shared slide rendering (used by preview, presenter, and exports) */',
   },
   {
     dir: '02-content-and-media',
@@ -49,7 +54,8 @@ export const TIERS = [
   {
     dir: '03-components',
     aggregator: '03-components.css',
-    header: '/* Shared slide rendering (used by preview, presenter, and exports) */',
+    header:
+      '/* Shared slide rendering (used by preview, presenter, and exports) */',
   },
 ];
 
@@ -66,7 +72,9 @@ export const TYPE_CSS = {
   // Tier 01 — layout and title
   'payoff-slide': [{ tier: '01-layout-and-title', file: '10-payoff.css' }],
   'end-slide': [{ tier: '01-layout-and-title', file: '11-end-slide.css' }],
-  'title-slide': [{ tier: '01-layout-and-title', file: '21-title-slide-universal.css' }],
+  'title-slide': [
+    { tier: '01-layout-and-title', file: '21-title-slide-universal.css' },
+  ],
   'content-slide': [{ tier: '01-layout-and-title', file: '30-content.css' }],
   'table-slide': [{ tier: '01-layout-and-title', file: '35-table-slide.css' }],
   'image-slide': [{ tier: '01-layout-and-title', file: '40-image-slide.css' }],
@@ -75,21 +83,39 @@ export const TYPE_CSS = {
     { tier: '02-content-and-media', file: '10-image-text.css' },
   ],
   'list-slide': [{ tier: '01-layout-and-title', file: '60-list-slide.css' }],
-  'kpi-metrics-slide': [{ tier: '01-layout-and-title', file: '80-kpi-metrics-slide.css' }],
-  'comparison-slide': [{ tier: '01-layout-and-title', file: '82-comparison-slide.css' }],
-  'process-slide': [{ tier: '01-layout-and-title', file: '84-process-slide.css' }],
-  'timeline-slide': [{ tier: '01-layout-and-title', file: '86-timeline-slide.css' }],
-  'matrix-slide': [{ tier: '01-layout-and-title', file: '88-matrix-slide.css' }],
-  'funnel-slide': [{ tier: '01-layout-and-title', file: '90-funnel-slide.css' }],
-  'pyramid-slide': [{ tier: '01-layout-and-title', file: '91-pyramid-slide.css' }],
+  'kpi-metrics-slide': [
+    { tier: '01-layout-and-title', file: '80-kpi-metrics-slide.css' },
+  ],
+  'comparison-slide': [
+    { tier: '01-layout-and-title', file: '82-comparison-slide.css' },
+  ],
+  'process-slide': [
+    { tier: '01-layout-and-title', file: '84-process-slide.css' },
+  ],
+  'timeline-slide': [
+    { tier: '01-layout-and-title', file: '86-timeline-slide.css' },
+  ],
+  'matrix-slide': [
+    { tier: '01-layout-and-title', file: '88-matrix-slide.css' },
+  ],
+  'funnel-slide': [
+    { tier: '01-layout-and-title', file: '90-funnel-slide.css' },
+  ],
+  'pyramid-slide': [
+    { tier: '01-layout-and-title', file: '91-pyramid-slide.css' },
+  ],
   'cycle-slide': [{ tier: '01-layout-and-title', file: '92-cycle-slide.css' }],
-  'gallery-slide': [{ tier: '01-layout-and-title', file: '93-gallery-slide.css' }],
+  'gallery-slide': [
+    { tier: '01-layout-and-title', file: '93-gallery-slide.css' },
+  ],
 
   // Tier 02 — content and media
   'video-slide': [{ tier: '02-content-and-media', file: '20-video.css' }],
   'embed-slide': [{ tier: '02-content-and-media', file: '30-embed.css' }],
   'quote-slide': [{ tier: '02-content-and-media', file: '40-quote.css' }],
-  'text-blocks-slide': [{ tier: '02-content-and-media', file: '80-text-blocks.css' }],
+  'text-blocks-slide': [
+    { tier: '02-content-and-media', file: '80-text-blocks.css' },
+  ],
 
   // Tier 03 — components
   'icon-card-grid-slide': [
@@ -97,9 +123,13 @@ export const TYPE_CSS = {
     { tier: '02-content-and-media', file: '75-icon-card-grid-variants.css' },
     { tier: '03-components', file: '00-icon-card-grid.css' },
   ],
-  'follow-invite-slide': [{ tier: '03-components', file: '15-follow-invite.css' }],
+  'follow-invite-slide': [
+    { tier: '03-components', file: '15-follow-invite.css' },
+  ],
   'feedback-slide': [{ tier: '03-components', file: '16-feedback.css' }],
-  'lead-capture-slide': [{ tier: '03-components', file: '17-lead-capture.css' }],
+  'lead-capture-slide': [
+    { tier: '03-components', file: '17-lead-capture.css' },
+  ],
   'countdown-slide': [{ tier: '03-components', file: '18-countdown.css' }],
   // Filename says 10, but this has always loaded after 18-countdown.css.
   // The cascade position is 19; the filename is not touched (that would be a
@@ -107,7 +137,9 @@ export const TYPE_CSS = {
   'poll-slide': [{ tier: '03-components', file: '10-poll.css', order: 19 }],
   'chart-slide': [{ tier: '03-components', file: '20-chart.css' }],
   'custom-html-slide': [{ tier: '03-components', file: '26-custom-html.css' }],
-  'chapter-title-slide': [{ tier: '03-components', file: '30-chapter-title.css' }],
+  'chapter-title-slide': [
+    { tier: '03-components', file: '30-chapter-title.css' },
+  ],
   'team-cards-slide': [{ tier: '03-components', file: '45-team-cards.css' }],
   'logo-wall-slide': [
     { tier: '02-content-and-media', file: '72-logo-wall-links.css' },
@@ -121,7 +153,7 @@ export const TYPE_CSS = {
  */
 export function typeCssEntries() {
   return Object.entries(TYPE_CSS).flatMap(([type, list]) =>
-    list.map((e) => ({ type, ...e }))
+    list.map((e) => ({ type, ...e })),
   );
 }
 
@@ -188,19 +220,22 @@ export function tierEntries(tierDir) {
 /** The exact bytes the aggregator file for one tier should contain. */
 function buildAggregator(tier) {
   const lines = tierEntries(tier.dir).map(
-    (e) => `@import url('./${tier.dir}/${e.file}');`
+    (e) => `@import url('./${tier.dir}/${e.file}');`,
   );
   return `${tier.header}\n${lines.join('\n')}\n`;
 }
 
 /**
- * Map of every aggregator's repo-relative path → expected content.
- * @returns {Map<string, string>}
+ * Map of every aggregator's repo-relative path → expected content,
+ * Prettier-formatted with the repo config so `npm run format` and this
+ * generator agree (see scripts/lib/format-generated.js).
+ * @returns {Promise<Map<string, string>>}
  */
-export function buildAllAggregators() {
+export async function buildAllAggregators() {
   const out = new Map();
   for (const tier of TIERS) {
-    out.set(path.join('client', 'styles', 'slides', tier.aggregator), buildAggregator(tier));
+    const rel = path.join('client', 'styles', 'slides', tier.aggregator);
+    out.set(rel, await formatGenerated(rel, buildAggregator(tier)));
   }
   return out;
 }
@@ -213,9 +248,9 @@ export function aggregatorAbsPath(tier) {
 /** Repo root, for turning the relative paths above into absolute ones. */
 export const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 
-function main() {
+async function main() {
   let changed = 0;
-  for (const [rel, content] of buildAllAggregators()) {
+  for (const [rel, content] of await buildAllAggregators()) {
     const abs = path.join(REPO_ROOT, rel);
     const current = fs.existsSync(abs) ? fs.readFileSync(abs, 'utf8') : '';
     if (current !== content) {
@@ -224,12 +259,19 @@ function main() {
       changed += 1;
     }
   }
-  console.log(changed ? `\n${changed} aggregator(s) rewritten.` : 'Aggregators already up to date.');
+  console.log(
+    changed
+      ? `\n${changed} aggregator(s) rewritten.`
+      : 'Aggregators already up to date.',
+  );
 }
 
 // pathToFileURL, not a template literal: the repo path may contain spaces,
 // which import.meta.url percent-encodes and a raw `file://${argv[1]}` does not
 // — the mismatch would make this script a silent no-op (see scripts/i18n-audit.js).
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main();
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  await main();
 }

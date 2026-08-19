@@ -14,7 +14,9 @@ import { openShortcutsOverlay } from '../../lib/dom/shortcuts-overlay.js';
 // Show the platform-appropriate modifier caption. The handlers accept both
 // Cmd and Ctrl; the overlay just reflects the user's likely key.
 const IS_MAC = /Mac|iPhone|iPad|iPod/i.test(
-  (typeof navigator !== 'undefined' && (navigator.platform || navigator.userAgent)) || ''
+  (typeof navigator !== 'undefined' &&
+    (navigator.platform || navigator.userAgent)) ||
+    '',
 );
 const MOD = IS_MAC ? '⌘' : 'Ctrl';
 const SHIFT = IS_MAC ? '⇧' : 'Shift';
@@ -29,14 +31,26 @@ function getEditorShortcutGroups() {
     {
       title: t('editor.shortcuts.group.slides', 'Slides'),
       rows: [
-        { keys: ['↑', '↓'], desc: t('editor.shortcuts.navigate', 'Previous / next slide') },
+        {
+          keys: ['↑', '↓'],
+          desc: t('editor.shortcuts.navigate', 'Previous / next slide'),
+        },
         {
           keys: [combo(SHIFT, '↑'), combo(SHIFT, '↓')],
           desc: t('editor.shortcuts.extend', 'Extend selection'),
         },
-        { keys: [combo(MOD, 'D')], desc: t('editor.shortcuts.duplicate', 'Duplicate slide(s)') },
-        { keys: [combo(MOD, 'C')], desc: t('editor.shortcuts.copy', 'Copy slide(s)') },
-        { keys: [combo(MOD, 'V')], desc: t('editor.shortcuts.paste', 'Paste slide(s)') },
+        {
+          keys: [combo(MOD, 'D')],
+          desc: t('editor.shortcuts.duplicate', 'Duplicate slide(s)'),
+        },
+        {
+          keys: [combo(MOD, 'C')],
+          desc: t('editor.shortcuts.copy', 'Copy slide(s)'),
+        },
+        {
+          keys: [combo(MOD, 'V')],
+          desc: t('editor.shortcuts.paste', 'Paste slide(s)'),
+        },
         {
           keys: ['Delete', 'Backspace'],
           desc: t('editor.shortcuts.delete', 'Delete selected slide(s)'),
@@ -47,14 +61,23 @@ function getEditorShortcutGroups() {
       title: t('editor.shortcuts.group.editing', 'Editing'),
       rows: [
         { keys: [combo(MOD, 'Z')], desc: t('editor.shortcuts.undo', 'Undo') },
-        { keys: [combo(SHIFT, MOD, 'Z')], desc: t('editor.shortcuts.redo', 'Redo') },
-        { keys: [combo(MOD, 'F')], desc: t('editor.shortcuts.find', 'Search slides') },
+        {
+          keys: [combo(SHIFT, MOD, 'Z')],
+          desc: t('editor.shortcuts.redo', 'Redo'),
+        },
+        {
+          keys: [combo(MOD, 'F')],
+          desc: t('editor.shortcuts.find', 'Search slides'),
+        },
       ],
     },
     {
       title: t('editor.shortcuts.group.general', 'General'),
       rows: [
-        { keys: ['?', combo(MOD, '/')], desc: t('editor.shortcuts.help', 'Show this help') },
+        {
+          keys: ['?', combo(MOD, '/')],
+          desc: t('editor.shortcuts.help', 'Show this help'),
+        },
         { keys: ['Esc'], desc: t('editor.shortcuts.escape', 'Close dialogs') },
       ],
     },

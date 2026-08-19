@@ -23,7 +23,7 @@ export function compareToReference(deck, reference) {
   const referenceWords = referenceSlides.map((slide) =>
     Number.isFinite(slide.wordCount)
       ? slide.wordCount
-      : wordCount([slide.title, slide.text].filter(Boolean).join(' '))
+      : wordCount([slide.title, slide.text].filter(Boolean).join(' ')),
   );
 
   const referenceMeanWords = average(referenceWords);
@@ -40,7 +40,9 @@ export function compareToReference(deck, reference) {
     textDensity: {
       generatedMeanWords,
       referenceMeanWords: round(referenceMeanWords),
-      ratio: referenceMeanWords ? round(generatedMeanWords / referenceMeanWords) : null,
+      ratio: referenceMeanWords
+        ? round(generatedMeanWords / referenceMeanWords)
+        : null,
     },
     titleOverlap: titleOverlap(deck, referenceSlides),
   };
@@ -58,17 +60,23 @@ export function compareToReference(deck, reference) {
  */
 function titleOverlap(deck, referenceSlides) {
   const generatedTerms = termSet(
-    (deck.slides || []).map((slide) => extractSlideText(slide).title).join(' ')
+    (deck.slides || []).map((slide) => extractSlideText(slide).title).join(' '),
   );
-  const referenceTerms = termSet(referenceSlides.map((slide) => slide.title || '').join(' '));
+  const referenceTerms = termSet(
+    referenceSlides.map((slide) => slide.title || '').join(' '),
+  );
 
   const shared = [...referenceTerms].filter((term) => generatedTerms.has(term));
-  const missed = [...referenceTerms].filter((term) => !generatedTerms.has(term));
+  const missed = [...referenceTerms].filter(
+    (term) => !generatedTerms.has(term),
+  );
 
   return {
     sharedTermCount: shared.length,
     referenceTermCount: referenceTerms.size,
-    overlapRate: referenceTerms.size ? round(shared.length / referenceTerms.size) : 0,
+    overlapRate: referenceTerms.size
+      ? round(shared.length / referenceTerms.size)
+      : 0,
     // Title terms the human thought worth a slide heading but the generator
     // never mentions -- a fast pointer at structural blind spots.
     missedReferenceTerms: missed.slice(0, 25),
@@ -77,10 +85,50 @@ function titleOverlap(deck, referenceSlides) {
 
 /** Very common words carry no topical signal in either language. */
 const STOPWORDS = new Set([
-  'the', 'a', 'an', 'and', 'or', 'of', 'to', 'in', 'for', 'on', 'with', 'our', 'we', 'is',
-  'are', 'at', 'by', 'from', 'as', 'that', 'this', 'it', 'be',
-  'de', 'het', 'een', 'en', 'van', 'voor', 'op', 'met', 'in', 'te', 'is', 'zijn', 'we',
-  'onze', 'aan', 'door', 'dat', 'die', 'bij', 'naar', 'over',
+  'the',
+  'a',
+  'an',
+  'and',
+  'or',
+  'of',
+  'to',
+  'in',
+  'for',
+  'on',
+  'with',
+  'our',
+  'we',
+  'is',
+  'are',
+  'at',
+  'by',
+  'from',
+  'as',
+  'that',
+  'this',
+  'it',
+  'be',
+  'de',
+  'het',
+  'een',
+  'en',
+  'van',
+  'voor',
+  'op',
+  'met',
+  'in',
+  'te',
+  'is',
+  'zijn',
+  'we',
+  'onze',
+  'aan',
+  'door',
+  'dat',
+  'die',
+  'bij',
+  'naar',
+  'over',
 ]);
 
 function termSet(text) {
@@ -89,7 +137,7 @@ function termSet(text) {
       .toLowerCase()
       .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
       .split(/\s+/)
-      .filter((word) => word.length > 3 && !STOPWORDS.has(word))
+      .filter((word) => word.length > 3 && !STOPWORDS.has(word)),
   );
 }
 

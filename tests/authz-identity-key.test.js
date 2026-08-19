@@ -40,8 +40,10 @@ const {
   hasIdentity,
 } = await import('../server/utils/presentation-authz.js');
 
-const { belongsInCollection } = await import('../server/routes/api/presentations/list.js');
-const { canAccessPresentation } = await import('../server/routes/public-api/v1/middleware.js');
+const { belongsInCollection } =
+  await import('../server/routes/api/presentations/list.js');
+const { canAccessPresentation } =
+  await import('../server/routes/public-api/v1/middleware.js');
 
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
 const OTHER_ID = '22222222-2222-4222-8222-222222222222';
@@ -70,13 +72,31 @@ const renamedOwner = { id: OWNER_ID, email: 'owner-new@example.com' };
 
 describe('identity-match — the rule itself', () => {
   it('two ids present: only the ids decide', () => {
-    assert.equal(matchesIdentity(owner, { userId: OWNER_ID, email: 'nobody@example.com' }), true);
-    assert.equal(matchesIdentity(emailTwin, { userId: OWNER_ID, email: 'owner@example.com' }), false);
+    assert.equal(
+      matchesIdentity(owner, { userId: OWNER_ID, email: 'nobody@example.com' }),
+      true,
+    );
+    assert.equal(
+      matchesIdentity(emailTwin, {
+        userId: OWNER_ID,
+        email: 'owner@example.com',
+      }),
+      false,
+    );
   });
   it('an id missing on either side: the emails decide', () => {
-    assert.equal(matchesIdentity({ email: 'a@example.com' }, { userId: OWNER_ID, email: 'a@example.com' }), true);
+    assert.equal(
+      matchesIdentity(
+        { email: 'a@example.com' },
+        { userId: OWNER_ID, email: 'a@example.com' },
+      ),
+      true,
+    );
     assert.equal(matchesIdentity(owner, { email: 'owner@example.com' }), true);
-    assert.equal(matchesIdentity(owner, { email: 'someone@example.com' }), false);
+    assert.equal(
+      matchesIdentity(owner, { email: 'someone@example.com' }),
+      false,
+    );
   });
   it('an actor is identifiable by id alone, by email alone, or not at all', () => {
     assert.equal(hasIdentity({ id: OWNER_ID }), true);
@@ -94,30 +114,78 @@ describe('identity-match — the rule itself', () => {
 
 describe('a matching email is not an identity', () => {
   it('the email twin gets nothing the deck grants its owner', () => {
-    assert.equal(canReadPresentation({ user: emailTwin, pres: dualKeyDeck }), false);
-    assert.equal(canWritePresentation({ user: emailTwin, pres: dualKeyDeck }), false);
-    assert.equal(canDeletePresentation({ user: emailTwin, pres: dualKeyDeck }), false);
-    assert.equal(canManageCollaborators({ user: emailTwin, pres: dualKeyDeck }), false);
-    assert.equal(canCommentOnPresentation({ user: emailTwin, pres: dualKeyDeck }), false);
-    assert.equal(isPresentationAuthor({ user: emailTwin, pres: dualKeyDeck }), false);
-    assert.equal(getEffectivePermission({ user: emailTwin, pres: dualKeyDeck }), 'view');
-    assert.equal(canResolveComment({ user: emailTwin, pres: dualKeyDeck }), false);
-    assert.equal(canDeleteComment({ user: emailTwin, pres: dualKeyDeck, comment: {} }), false);
+    assert.equal(
+      canReadPresentation({ user: emailTwin, pres: dualKeyDeck }),
+      false,
+    );
+    assert.equal(
+      canWritePresentation({ user: emailTwin, pres: dualKeyDeck }),
+      false,
+    );
+    assert.equal(
+      canDeletePresentation({ user: emailTwin, pres: dualKeyDeck }),
+      false,
+    );
+    assert.equal(
+      canManageCollaborators({ user: emailTwin, pres: dualKeyDeck }),
+      false,
+    );
+    assert.equal(
+      canCommentOnPresentation({ user: emailTwin, pres: dualKeyDeck }),
+      false,
+    );
+    assert.equal(
+      isPresentationAuthor({ user: emailTwin, pres: dualKeyDeck }),
+      false,
+    );
+    assert.equal(
+      getEffectivePermission({ user: emailTwin, pres: dualKeyDeck }),
+      'view',
+    );
+    assert.equal(
+      canResolveComment({ user: emailTwin, pres: dualKeyDeck }),
+      false,
+    );
+    assert.equal(
+      canDeleteComment({ user: emailTwin, pres: dualKeyDeck, comment: {} }),
+      false,
+    );
   });
   it('the email twin is not shown the deck in a collection or an API listing', () => {
-    assert.equal(belongsInCollection({ user: emailTwin, pres: dualKeyDeck }), false);
+    assert.equal(
+      belongsInCollection({ user: emailTwin, pres: dualKeyDeck }),
+      false,
+    );
     assert.equal(canAccessPresentation(dualKeyDeck, emailTwin), false);
   });
 });
 
 describe('a mismatched email does not remove an identity', () => {
   it('the owner keeps every right under a different email', () => {
-    assert.equal(canReadPresentation({ user: renamedOwner, pres: dualKeyDeck }), true);
-    assert.equal(canWritePresentation({ user: renamedOwner, pres: dualKeyDeck }), true);
-    assert.equal(canDeletePresentation({ user: renamedOwner, pres: dualKeyDeck }), true);
-    assert.equal(isPresentationAuthor({ user: renamedOwner, pres: dualKeyDeck }), true);
-    assert.equal(getEffectivePermission({ user: renamedOwner, pres: dualKeyDeck }), 'edit');
-    assert.equal(belongsInCollection({ user: renamedOwner, pres: dualKeyDeck }), true);
+    assert.equal(
+      canReadPresentation({ user: renamedOwner, pres: dualKeyDeck }),
+      true,
+    );
+    assert.equal(
+      canWritePresentation({ user: renamedOwner, pres: dualKeyDeck }),
+      true,
+    );
+    assert.equal(
+      canDeletePresentation({ user: renamedOwner, pres: dualKeyDeck }),
+      true,
+    );
+    assert.equal(
+      isPresentationAuthor({ user: renamedOwner, pres: dualKeyDeck }),
+      true,
+    );
+    assert.equal(
+      getEffectivePermission({ user: renamedOwner, pres: dualKeyDeck }),
+      'edit',
+    );
+    assert.equal(
+      belongsInCollection({ user: renamedOwner, pres: dualKeyDeck }),
+      true,
+    );
     assert.equal(canAccessPresentation(dualKeyDeck, renamedOwner), true);
   });
 });
@@ -137,16 +205,40 @@ describe('the email fallback covers the id-less shapes', () => {
   const legacyUser = { id: OTHER_ID, email: 'legacy@example.com' };
 
   it('an id-carrying user still matches a deck stamped only by email', () => {
-    assert.equal(canReadPresentation({ user: legacyUser, pres: legacyDeck }), true);
-    assert.equal(canWritePresentation({ user: legacyUser, pres: legacyDeck }), true);
-    assert.equal(canDeletePresentation({ user: legacyUser, pres: legacyDeck }), true);
+    assert.equal(
+      canReadPresentation({ user: legacyUser, pres: legacyDeck }),
+      true,
+    );
+    assert.equal(
+      canWritePresentation({ user: legacyUser, pres: legacyDeck }),
+      true,
+    );
+    assert.equal(
+      canDeletePresentation({ user: legacyUser, pres: legacyDeck }),
+      true,
+    );
   });
   it('an id-less user (file mode, dev bypass) still matches a deck that has ids', () => {
-    assert.equal(canReadPresentation({ user: { email: 'owner@example.com' }, pres: dualKeyDeck }), true);
+    assert.equal(
+      canReadPresentation({
+        user: { email: 'owner@example.com' },
+        pres: dualKeyDeck,
+      }),
+      true,
+    );
   });
   it('an unrelated user is still refused on both shapes', () => {
-    assert.equal(canReadPresentation({ user: stranger, pres: legacyDeck }), false);
-    assert.equal(canReadPresentation({ user: { email: 'other@example.com' }, pres: dualKeyDeck }), false);
+    assert.equal(
+      canReadPresentation({ user: stranger, pres: legacyDeck }),
+      false,
+    );
+    assert.equal(
+      canReadPresentation({
+        user: { email: 'other@example.com' },
+        pres: dualKeyDeck,
+      }),
+      false,
+    );
   });
 });
 
@@ -164,7 +256,13 @@ describe('one stamp resolved, the other not', () => {
 
   it('the owner matches on the id, the external creator on the email', () => {
     assert.equal(isOwnerOrCreator(owner, halfDeck), true);
-    assert.equal(isOwnerOrCreator({ id: OTHER_ID, email: 'external@example.com' }, halfDeck), true);
+    assert.equal(
+      isOwnerOrCreator(
+        { id: OTHER_ID, email: 'external@example.com' },
+        halfDeck,
+      ),
+      true,
+    );
   });
   it('the email twin of the id-stamped owner is still refused', () => {
     assert.equal(isOwnerOrCreator(emailTwin, halfDeck), false);

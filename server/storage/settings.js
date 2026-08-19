@@ -41,7 +41,10 @@ import { sql } from 'kysely';
 import { toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
-import { DEFAULT_AI_NAME, DEFAULT_AI_EMAIL } from '../../shared/constants/ai.js';
+import {
+  DEFAULT_AI_NAME,
+  DEFAULT_AI_EMAIL,
+} from '../../shared/constants/ai.js';
 import { getAppName } from '../config/branding.js';
 import { envStr } from '../config/utils.js';
 import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
@@ -61,7 +64,11 @@ const ANONYMOUS_KEY = 'anonymous';
  * @returns {string}
  */
 function userEmailKey(email) {
-  return String(email || '').trim().toLowerCase() || ANONYMOUS_KEY;
+  return (
+    String(email || '')
+      .trim()
+      .toLowerCase() || ANONYMOUS_KEY
+  );
 }
 
 /**
@@ -239,8 +246,18 @@ function normalizePositiveInt(v, fallback, min = 1, max = 365) {
  */
 function seedRetentionDefaults() {
   return {
-    sessionDataDays: normalizePositiveInt(envStr('ANALYTICS_RETENTION_DAYS'), 90, 1, 365),
-    ipAnonymizationDays: normalizePositiveInt(envStr('ANALYTICS_IP_ANONYMIZATION_DAYS'), 7, 1, 90),
+    sessionDataDays: normalizePositiveInt(
+      envStr('ANALYTICS_RETENTION_DAYS'),
+      90,
+      1,
+      365,
+    ),
+    ipAnonymizationDays: normalizePositiveInt(
+      envStr('ANALYTICS_IP_ANONYMIZATION_DAYS'),
+      7,
+      1,
+      90,
+    ),
   };
 }
 
@@ -277,9 +294,14 @@ function normalizeExternalProviders(obj) {
   if (!obj || typeof obj !== 'object') return null;
 
   const umamiObj = obj?.umami && typeof obj.umami === 'object' ? obj.umami : {};
-  const plausibleObj = obj?.plausible && typeof obj.plausible === 'object' ? obj.plausible : {};
-  const matomoObj = obj?.matomo && typeof obj.matomo === 'object' ? obj.matomo : {};
-  const gaObj = obj?.googleAnalytics && typeof obj.googleAnalytics === 'object' ? obj.googleAnalytics : {};
+  const plausibleObj =
+    obj?.plausible && typeof obj.plausible === 'object' ? obj.plausible : {};
+  const matomoObj =
+    obj?.matomo && typeof obj.matomo === 'object' ? obj.matomo : {};
+  const gaObj =
+    obj?.googleAnalytics && typeof obj.googleAnalytics === 'object'
+      ? obj.googleAnalytics
+      : {};
 
   return {
     umami: {
@@ -313,45 +335,68 @@ function normalizeDayOfWeek(v) {
 }
 
 export async function getAppSettings(scope) {
-  toStorageContext(scope, 'getAppSettings', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'getAppSettings',
+    {},
+    { allowCrossOrganization: true },
+  );
   const raw = await withDbGuard(null, async (db) => {
-    const row = await db.selectFrom('app_settings').select('settings').executeTakeFirst();
+    const row = await db
+      .selectFrom('app_settings')
+      .select('settings')
+      .executeTakeFirst();
     // jsonb reads back parsed; guard against a null column.
     return row?.settings ?? null;
   });
   const obj = raw && typeof raw === 'object' ? raw : {};
   const defaults = defaultAppSettings();
   const supportedSlideLangs =
-    normalizeSupportedLangList(obj.supportedSlideLangs) ||
-    [];
-  const wh = obj?.webhooks && typeof obj.webhooks === 'object' ? obj.webhooks : {};
+    normalizeSupportedLangList(obj.supportedSlideLangs) || [];
+  const wh =
+    obj?.webhooks && typeof obj.webhooks === 'object' ? obj.webhooks : {};
   const webhooks = {
     presentationMovedToOrganizationUrl: normalizeWebhookUrl(
-      wh?.presentationMovedToOrganizationUrl
+      wh?.presentationMovedToOrganizationUrl,
     ),
-    slideAddedToOrganizationLibraryUrl: normalizeWebhookUrl(wh?.slideAddedToOrganizationLibraryUrl),
+    slideAddedToOrganizationLibraryUrl: normalizeWebhookUrl(
+      wh?.slideAddedToOrganizationLibraryUrl,
+    ),
     presentationPublishedUrl: normalizeWebhookUrl(wh?.presentationPublishedUrl),
     commentCreatedUrl: normalizeWebhookUrl(wh?.commentCreatedUrl),
     interactionPollClosedUrl: normalizeWebhookUrl(wh?.interactionPollClosedUrl),
-    interactionFeedbackSubmittedUrl: normalizeWebhookUrl(wh?.interactionFeedbackSubmittedUrl),
-    interactionLikertClosedUrl: normalizeWebhookUrl(wh?.interactionLikertClosedUrl),
+    interactionFeedbackSubmittedUrl: normalizeWebhookUrl(
+      wh?.interactionFeedbackSubmittedUrl,
+    ),
+    interactionLikertClosedUrl: normalizeWebhookUrl(
+      wh?.interactionLikertClosedUrl,
+    ),
     leadSubmittedUrl: normalizeWebhookUrl(wh?.leadSubmittedUrl),
     signingSecret: normalizeWebhookSecret(wh?.signingSecret),
   };
-  const notif = obj?.notifications && typeof obj.notifications === 'object' ? obj.notifications : {};
+  const notif =
+    obj?.notifications && typeof obj.notifications === 'object'
+      ? obj.notifications
+      : {};
   const notifications = {
     emailEnabled: notif?.emailEnabled === true,
   };
 
   // AI assistant identity
-  const ai = obj?.aiAssistant && typeof obj.aiAssistant === 'object' ? obj.aiAssistant : {};
+  const ai =
+    obj?.aiAssistant && typeof obj.aiAssistant === 'object'
+      ? obj.aiAssistant
+      : {};
   const aiAssistant = {
     name: normalizeString(ai?.name, 64),
     email: normalizeString(ai?.email, 255),
   };
 
   // Email sender identity
-  const sender = obj?.emailSender && typeof obj.emailSender === 'object' ? obj.emailSender : {};
+  const sender =
+    obj?.emailSender && typeof obj.emailSender === 'object'
+      ? obj.emailSender
+      : {};
   const emailSender = {
     email: normalizeString(sender?.email, 255),
     name: normalizeString(sender?.name, 128),
@@ -362,7 +407,7 @@ export async function getAppSettings(scope) {
     obj?.sessionDurationDays,
     defaults.sessionDurationDays,
     1,
-    365
+    365,
   );
 
   // Enabled themes (empty = all enabled)
@@ -375,30 +420,55 @@ export async function getAppSettings(scope) {
   // bag are ignored here (store-raw / normalize-on-read), so they never reach
   // a caller and drop out on the next write — see PR "drop the dead
   // internal/external chain" (done/decisions.md § analytics-privacy-naden).
-  const analyticsObj = obj?.analytics && typeof obj.analytics === 'object' ? obj.analytics : {};
-  const retentionObj = analyticsObj?.retention && typeof analyticsObj.retention === 'object'
-    ? analyticsObj.retention : {};
-  const externalProvidersObj = analyticsObj?.externalProviders && typeof analyticsObj.externalProviders === 'object'
-    ? analyticsObj.externalProviders : {};
+  const analyticsObj =
+    obj?.analytics && typeof obj.analytics === 'object' ? obj.analytics : {};
+  const retentionObj =
+    analyticsObj?.retention && typeof analyticsObj.retention === 'object'
+      ? analyticsObj.retention
+      : {};
+  const externalProvidersObj =
+    analyticsObj?.externalProviders &&
+    typeof analyticsObj.externalProviders === 'object'
+      ? analyticsObj.externalProviders
+      : {};
 
   const retentionSeed = seedRetentionDefaults();
   const analytics = {
     enabled: analyticsObj?.enabled !== false,
     retention: {
-      sessionDataDays: normalizePositiveInt(retentionObj?.sessionDataDays, retentionSeed.sessionDataDays, 1, 365),
-      ipAnonymizationDays: normalizePositiveInt(retentionObj?.ipAnonymizationDays, retentionSeed.ipAnonymizationDays, 1, 90),
+      sessionDataDays: normalizePositiveInt(
+        retentionObj?.sessionDataDays,
+        retentionSeed.sessionDataDays,
+        1,
+        365,
+      ),
+      ipAnonymizationDays: normalizePositiveInt(
+        retentionObj?.ipAnonymizationDays,
+        retentionSeed.ipAnonymizationDays,
+        1,
+        90,
+      ),
     },
-    externalProviders: normalizeExternalProviders(externalProvidersObj) || defaults.analytics.externalProviders,
+    externalProviders:
+      normalizeExternalProviders(externalProvidersObj) ||
+      defaults.analytics.externalProviders,
   };
 
   // Stock media settings
-  const stockMediaObj = obj?.stockMedia && typeof obj.stockMedia === 'object' ? obj.stockMedia : {};
-  const bundledObj = stockMediaObj?.bundled && typeof stockMediaObj.bundled === 'object'
-    ? stockMediaObj.bundled : {};
-  const unsplashObj = stockMediaObj?.unsplash && typeof stockMediaObj.unsplash === 'object'
-    ? stockMediaObj.unsplash : {};
-  const giphyObj = stockMediaObj?.giphy && typeof stockMediaObj.giphy === 'object'
-    ? stockMediaObj.giphy : {};
+  const stockMediaObj =
+    obj?.stockMedia && typeof obj.stockMedia === 'object' ? obj.stockMedia : {};
+  const bundledObj =
+    stockMediaObj?.bundled && typeof stockMediaObj.bundled === 'object'
+      ? stockMediaObj.bundled
+      : {};
+  const unsplashObj =
+    stockMediaObj?.unsplash && typeof stockMediaObj.unsplash === 'object'
+      ? stockMediaObj.unsplash
+      : {};
+  const giphyObj =
+    stockMediaObj?.giphy && typeof stockMediaObj.giphy === 'object'
+      ? stockMediaObj.giphy
+      : {};
 
   const stockMedia = {
     bundled: { enabled: bundledObj?.enabled === true },
@@ -437,41 +507,39 @@ export async function writeAppSettings(scope, next) {
   const defaults = defaultAppSettings();
 
   const supportedSlideLangs = normalizeSupportedLangList(
-    next?.supportedSlideLangs
+    next?.supportedSlideLangs,
   );
   const nextWh =
     next?.webhooks && typeof next.webhooks === 'object' ? next.webhooks : null;
   const webhooks = nextWh
     ? {
         presentationMovedToOrganizationUrl: normalizeWebhookUrl(
-          nextWh?.presentationMovedToOrganizationUrl
+          nextWh?.presentationMovedToOrganizationUrl,
         ),
         slideAddedToOrganizationLibraryUrl: normalizeWebhookUrl(
-          nextWh?.slideAddedToOrganizationLibraryUrl
+          nextWh?.slideAddedToOrganizationLibraryUrl,
         ),
         presentationPublishedUrl: normalizeWebhookUrl(
-          nextWh?.presentationPublishedUrl
+          nextWh?.presentationPublishedUrl,
         ),
-        commentCreatedUrl: normalizeWebhookUrl(
-          nextWh?.commentCreatedUrl
-        ),
+        commentCreatedUrl: normalizeWebhookUrl(nextWh?.commentCreatedUrl),
         interactionPollClosedUrl: normalizeWebhookUrl(
-          nextWh?.interactionPollClosedUrl
+          nextWh?.interactionPollClosedUrl,
         ),
         interactionFeedbackSubmittedUrl: normalizeWebhookUrl(
-          nextWh?.interactionFeedbackSubmittedUrl
+          nextWh?.interactionFeedbackSubmittedUrl,
         ),
         interactionLikertClosedUrl: normalizeWebhookUrl(
-          nextWh?.interactionLikertClosedUrl
+          nextWh?.interactionLikertClosedUrl,
         ),
-        leadSubmittedUrl: normalizeWebhookUrl(
-          nextWh?.leadSubmittedUrl
-        ),
+        leadSubmittedUrl: normalizeWebhookUrl(nextWh?.leadSubmittedUrl),
         signingSecret: normalizeWebhookSecret(nextWh?.signingSecret),
       }
     : null;
   const nextNotif =
-    next?.notifications && typeof next.notifications === 'object' ? next.notifications : null;
+    next?.notifications && typeof next.notifications === 'object'
+      ? next.notifications
+      : null;
   const notifications = nextNotif
     ? {
         emailEnabled: nextNotif?.emailEnabled === true,
@@ -480,7 +548,9 @@ export async function writeAppSettings(scope, next) {
 
   // AI assistant identity
   const nextAi =
-    next?.aiAssistant && typeof next.aiAssistant === 'object' ? next.aiAssistant : null;
+    next?.aiAssistant && typeof next.aiAssistant === 'object'
+      ? next.aiAssistant
+      : null;
   const aiAssistant = nextAi
     ? {
         name: normalizeString(nextAi?.name, 64),
@@ -490,7 +560,9 @@ export async function writeAppSettings(scope, next) {
 
   // Email sender identity
   const nextSender =
-    next?.emailSender && typeof next.emailSender === 'object' ? next.emailSender : null;
+    next?.emailSender && typeof next.emailSender === 'object'
+      ? next.emailSender
+      : null;
   const emailSender = nextSender
     ? {
         email: normalizeString(nextSender?.email, 255),
@@ -501,7 +573,12 @@ export async function writeAppSettings(scope, next) {
   // Session duration
   const sessionDurationDays =
     next?.sessionDurationDays !== undefined
-      ? normalizePositiveInt(next.sessionDurationDays, defaults.sessionDurationDays, 1, 365)
+      ? normalizePositiveInt(
+          next.sessionDurationDays,
+          defaults.sessionDurationDays,
+          1,
+          365,
+        )
       : null;
 
   // Enabled themes
@@ -518,13 +595,20 @@ export async function writeAppSettings(scope, next) {
 
   // Analytics settings
   const nextAnalytics =
-    next?.analytics && typeof next.analytics === 'object' ? next.analytics : null;
+    next?.analytics && typeof next.analytics === 'object'
+      ? next.analytics
+      : null;
   let analytics = null;
   if (nextAnalytics) {
-    const nextRetention = nextAnalytics?.retention && typeof nextAnalytics.retention === 'object'
-      ? nextAnalytics.retention : {};
-    const nextExternalProviders = nextAnalytics?.externalProviders && typeof nextAnalytics.externalProviders === 'object'
-      ? nextAnalytics.externalProviders : null;
+    const nextRetention =
+      nextAnalytics?.retention && typeof nextAnalytics.retention === 'object'
+        ? nextAnalytics.retention
+        : {};
+    const nextExternalProviders =
+      nextAnalytics?.externalProviders &&
+      typeof nextAnalytics.externalProviders === 'object'
+        ? nextAnalytics.externalProviders
+        : null;
 
     // Legacy team/external-analytics keys in the payload are dropped, not
     // persisted: `analytics.enabled` is the only tracking switch.
@@ -533,23 +617,32 @@ export async function writeAppSettings(scope, next) {
       enabled: nextAnalytics?.enabled !== false,
       retention: {
         sessionDataDays: normalizePositiveInt(
-          nextRetention?.sessionDataDays ?? prev.analytics?.retention?.sessionDataDays,
-          retentionSeed.sessionDataDays, 1, 365
+          nextRetention?.sessionDataDays ??
+            prev.analytics?.retention?.sessionDataDays,
+          retentionSeed.sessionDataDays,
+          1,
+          365,
         ),
         ipAnonymizationDays: normalizePositiveInt(
-          nextRetention?.ipAnonymizationDays ?? prev.analytics?.retention?.ipAnonymizationDays,
-          retentionSeed.ipAnonymizationDays, 1, 90
+          nextRetention?.ipAnonymizationDays ??
+            prev.analytics?.retention?.ipAnonymizationDays,
+          retentionSeed.ipAnonymizationDays,
+          1,
+          90,
         ),
       },
       externalProviders: nextExternalProviders
         ? normalizeExternalProviders(nextExternalProviders)
-        : prev.analytics?.externalProviders || defaults.analytics.externalProviders,
+        : prev.analytics?.externalProviders ||
+          defaults.analytics.externalProviders,
     };
   }
 
   // Stock media settings
   const nextStockMedia =
-    next?.stockMedia && typeof next.stockMedia === 'object' ? next.stockMedia : null;
+    next?.stockMedia && typeof next.stockMedia === 'object'
+      ? next.stockMedia
+      : null;
   let stockMedia = null;
   if (nextStockMedia) {
     // A provider the payload does not mention keeps its stored value. Without
@@ -575,16 +668,16 @@ export async function writeAppSettings(scope, next) {
     leads = {
       retentionDays: normalizePositiveInt(
         nextLeads?.retentionDays ?? prev.leads?.retentionDays,
-        365, 1, 730
+        365,
+        1,
+        730,
       ),
     };
   }
 
   const merged = {
     ...prev,
-    ...(supportedSlideLangs.length
-      ? { supportedSlideLangs }
-      : null),
+    ...(supportedSlideLangs.length ? { supportedSlideLangs } : null),
     ...(webhooks ? { webhooks } : null),
     ...(notifications ? { notifications } : null),
     ...(aiAssistant ? { aiAssistant } : null),
@@ -599,9 +692,16 @@ export async function writeAppSettings(scope, next) {
   await withDbGuard(null, async (db) => {
     await db
       .insertInto('app_settings')
-      .values({ id: true, settings: JSON.stringify(merged), updated_at: sql`now()` })
+      .values({
+        id: true,
+        settings: JSON.stringify(merged),
+        updated_at: sql`now()`,
+      })
       .onConflict((oc) =>
-        oc.column('id').doUpdateSet({ settings: JSON.stringify(merged), updated_at: sql`now()` })
+        oc.column('id').doUpdateSet({
+          settings: JSON.stringify(merged),
+          updated_at: sql`now()`,
+        }),
       )
       .execute();
   });
@@ -682,7 +782,12 @@ function normalizeThickness(v, fallback = 4) {
 }
 
 export async function getUserSettings(scope, email) {
-  toStorageContext(scope, 'getUserSettings', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'getUserSettings',
+    {},
+    { allowCrossOrganization: true },
+  );
   const key = userEmailKey(email);
   return loadUserSettings(key, await resolveSettingsUserId(key));
 }
@@ -724,13 +829,14 @@ async function loadUserSettings(key, userId) {
   const defaults = defaultUserSettings();
   const profile =
     obj.profile && typeof obj.profile === 'object' ? obj.profile : {};
-  const name =
-    typeof profile.name === 'string' ? profile.name : '';
-  const imageUrl =
-    typeof profile.imageUrl === 'string' ? profile.imageUrl : '';
+  const name = typeof profile.name === 'string' ? profile.name : '';
+  const imageUrl = typeof profile.imageUrl === 'string' ? profile.imageUrl : '';
   const uiLang = normalizeSupportedLang(obj.uiLang);
   const uiLocale = normalizeUiLocale(obj.uiLocale) || defaults.uiLocale;
-  const notif = obj?.notifications && typeof obj.notifications === 'object' ? obj.notifications : {};
+  const notif =
+    obj?.notifications && typeof obj.notifications === 'object'
+      ? obj.notifications
+      : {};
   const notifications = {
     // Default to true if not explicitly set to false
     emailEnabled: notif?.emailEnabled !== false,
@@ -741,24 +847,33 @@ async function loadUserSettings(key, userId) {
   };
 
   // Privacy settings
-  const privacyObj = obj?.privacy && typeof obj.privacy === 'object' ? obj.privacy : {};
+  const privacyObj =
+    obj?.privacy && typeof obj.privacy === 'object' ? obj.privacy : {};
   const privacy = {
     allowViewAttribution: privacyObj?.allowViewAttribution === true,
     disableAllTracking: privacyObj?.disableAllTracking === true,
   };
 
   // Digest settings
-  const digestObj = obj?.digest && typeof obj.digest === 'object' ? obj.digest : {};
+  const digestObj =
+    obj?.digest && typeof obj.digest === 'object' ? obj.digest : {};
   const digest = {
     enabled: digestObj?.enabled !== false,
     dayOfWeek: normalizeDayOfWeek(digestObj?.dayOfWeek),
   };
 
   // Highlighter settings
-  const highlighterObj = obj?.highlighter && typeof obj.highlighter === 'object' ? obj.highlighter : {};
+  const highlighterObj =
+    obj?.highlighter && typeof obj.highlighter === 'object'
+      ? obj.highlighter
+      : {};
   const highlighter = {
-    color: normalizeHexColor(highlighterObj?.color) || defaults.highlighter.color,
-    thickness: normalizeThickness(highlighterObj?.thickness, defaults.highlighter.thickness),
+    color:
+      normalizeHexColor(highlighterObj?.color) || defaults.highlighter.color,
+    thickness: normalizeThickness(
+      highlighterObj?.thickness,
+      defaults.highlighter.thickness,
+    ),
     persistentDraw: highlighterObj?.persistentDraw === true,
   };
 
@@ -784,9 +899,7 @@ export async function writeUserSettings(scope, email, next) {
   const userId = await resolveSettingsUserId(key);
   const prev = await loadUserSettings(key, userId);
   const nextProfile =
-    next?.profile && typeof next.profile === 'object'
-      ? next.profile
-      : {};
+    next?.profile && typeof next.profile === 'object' ? next.profile : {};
   const name =
     typeof nextProfile?.name === 'string'
       ? String(nextProfile.name).trim()
@@ -806,15 +919,21 @@ export async function writeUserSettings(scope, email, next) {
   // API consumer updating one preference can't silently reset the rest.
   const notifications = nextNotif
     ? {
-        emailEnabled: (nextNotif?.emailEnabled ?? prev.notifications?.emailEnabled) !== false,
-        slackEnabled: (nextNotif?.slackEnabled ?? prev.notifications?.slackEnabled) !== false,
-        leadEmails: (nextNotif?.leadEmails ?? prev.notifications?.leadEmails) !== false,
+        emailEnabled:
+          (nextNotif?.emailEnabled ?? prev.notifications?.emailEnabled) !==
+          false,
+        slackEnabled:
+          (nextNotif?.slackEnabled ?? prev.notifications?.slackEnabled) !==
+          false,
+        leadEmails:
+          (nextNotif?.leadEmails ?? prev.notifications?.leadEmails) !== false,
         defaultLevel: normalizeSubscriptionLevel(
-          nextNotif?.defaultLevel ?? prev.notifications?.defaultLevel
+          nextNotif?.defaultLevel ?? prev.notifications?.defaultLevel,
         ),
         emailByType: normalizeEmailByType({
           ...prev.notifications?.emailByType,
-          ...(nextNotif?.emailByType && typeof nextNotif.emailByType === 'object'
+          ...(nextNotif?.emailByType &&
+          typeof nextNotif.emailByType === 'object'
             ? nextNotif.emailByType
             : {}),
         }),
@@ -823,9 +942,7 @@ export async function writeUserSettings(scope, email, next) {
 
   // Privacy settings
   const nextPrivacy =
-    next?.privacy && typeof next.privacy === 'object'
-      ? next.privacy
-      : null;
+    next?.privacy && typeof next.privacy === 'object' ? next.privacy : null;
   const privacy = nextPrivacy
     ? {
         allowViewAttribution: nextPrivacy?.allowViewAttribution === true,
@@ -835,13 +952,13 @@ export async function writeUserSettings(scope, email, next) {
 
   // Digest settings
   const nextDigest =
-    next?.digest && typeof next.digest === 'object'
-      ? next.digest
-      : null;
+    next?.digest && typeof next.digest === 'object' ? next.digest : null;
   const digest = nextDigest
     ? {
         enabled: nextDigest?.enabled !== false,
-        dayOfWeek: normalizeDayOfWeek(nextDigest?.dayOfWeek ?? prev.digest?.dayOfWeek),
+        dayOfWeek: normalizeDayOfWeek(
+          nextDigest?.dayOfWeek ?? prev.digest?.dayOfWeek,
+        ),
       }
     : prev.digest;
 
@@ -853,8 +970,14 @@ export async function writeUserSettings(scope, email, next) {
       : null;
   const highlighter = nextHighlighter
     ? {
-        color: normalizeHexColor(nextHighlighter?.color) || prev.highlighter?.color || defaults.highlighter.color,
-        thickness: normalizeThickness(nextHighlighter?.thickness ?? prev.highlighter?.thickness, defaults.highlighter.thickness),
+        color:
+          normalizeHexColor(nextHighlighter?.color) ||
+          prev.highlighter?.color ||
+          defaults.highlighter.color,
+        thickness: normalizeThickness(
+          nextHighlighter?.thickness ?? prev.highlighter?.thickness,
+          defaults.highlighter.thickness,
+        ),
         persistentDraw: nextHighlighter?.persistentDraw === true,
       }
     : prev.highlighter;
@@ -921,13 +1044,18 @@ export async function writeUserSettings(scope, email, next) {
     // bucket and for external addresses — the defined state, not an error.
     await db
       .insertInto('user_settings')
-      .values({ email: key, user_id: userId, settings: payload, updated_at: sql`now()` })
+      .values({
+        email: key,
+        user_id: userId,
+        settings: payload,
+        updated_at: sql`now()`,
+      })
       .onConflict((oc) =>
         oc.column('email').doUpdateSet({
           user_id: userId,
           settings: payload,
           updated_at: sql`now()`,
-        })
+        }),
       )
       .execute();
   });
@@ -945,7 +1073,12 @@ export async function writeUserSettings(scope, email, next) {
  * @returns {Promise<{ name: string, email: string }>}
  */
 export async function getAiIdentity(scope) {
-  toStorageContext(scope, 'getAiIdentity', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'getAiIdentity',
+    {},
+    { allowCrossOrganization: true },
+  );
   const settings = await getAppSettings(scope);
   return {
     name: settings.aiAssistant?.name || DEFAULT_AI_NAME,
@@ -960,7 +1093,12 @@ export async function getAiIdentity(scope) {
  * @returns {Promise<{ email: string, name: string }>}
  */
 export async function getEmailSender(scope) {
-  toStorageContext(scope, 'getEmailSender', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'getEmailSender',
+    {},
+    { allowCrossOrganization: true },
+  );
   const settings = await getAppSettings(scope);
   return {
     email:
@@ -968,9 +1106,7 @@ export async function getEmailSender(scope) {
       envStr('BREVO_SENDER_EMAIL') ||
       'noreply@example.com',
     name:
-      settings.emailSender?.name ||
-      envStr('BREVO_SENDER_NAME') ||
-      getAppName(),
+      settings.emailSender?.name || envStr('BREVO_SENDER_NAME') || getAppName(),
   };
 }
 
@@ -983,7 +1119,12 @@ export async function getEmailSender(scope) {
  * @returns {Promise<string>}
  */
 export async function getDefaultThemeId(scope) {
-  toStorageContext(scope, 'getDefaultThemeId', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'getDefaultThemeId',
+    {},
+    { allowCrossOrganization: true },
+  );
   const settings = await getAppSettings(scope);
   return (
     settings.defaultThemeId ||
@@ -1004,11 +1145,19 @@ export async function getDefaultThemeId(scope) {
  * @returns {Promise<{ sessionDataDays: number, ipAnonymizationDays: number }>}
  */
 export async function getAnalyticsRetention(scope) {
-  toStorageContext(scope, 'getAnalyticsRetention', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'getAnalyticsRetention',
+    {},
+    { allowCrossOrganization: true },
+  );
   const settings = await getAppSettings(scope);
   const seed = seedRetentionDefaults();
   return {
-    sessionDataDays: settings.analytics?.retention?.sessionDataDays ?? seed.sessionDataDays,
-    ipAnonymizationDays: settings.analytics?.retention?.ipAnonymizationDays ?? seed.ipAnonymizationDays,
+    sessionDataDays:
+      settings.analytics?.retention?.sessionDataDays ?? seed.sessionDataDays,
+    ipAnonymizationDays:
+      settings.analytics?.retention?.ipAnonymizationDays ??
+      seed.ipAnonymizationDays,
   };
 }

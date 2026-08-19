@@ -33,7 +33,12 @@ export function createPaneTabs({
   compact = false,
 } = {}) {
   const tabContent = (icon, label) => {
-    const iconEl = h('img', { class: 'pane-tab-icon', src: iconUrl(icon), alt: '', 'aria-hidden': 'true' });
+    const iconEl = h('img', {
+      class: 'pane-tab-icon',
+      src: iconUrl(icon),
+      alt: '',
+      'aria-hidden': 'true',
+    });
     if (compact) return [iconEl];
     return [iconEl, h('span', { class: 'pane-tab-label', text: label })];
   };
@@ -81,7 +86,7 @@ export function createPaneTabs({
    * @param {{ open: boolean, pane: string|null }} state
    */
   const setState = ({ open, pane } = {}) => {
-    segmented.setValue(open ? pane ?? null : null);
+    segmented.setValue(open ? (pane ?? null) : null);
   };
 
   /**
@@ -90,7 +95,8 @@ export function createPaneTabs({
    *   { count, hasNew } where hasNew=false renders the "seen" (grey) state
    */
   const updateBadge = (data) => {
-    const n = typeof data === 'object' ? (Number(data?.count) || 0) : (Number(data) || 0);
+    const n =
+      typeof data === 'object' ? Number(data?.count) || 0 : Number(data) || 0;
     const hasNew = typeof data === 'object' ? Boolean(data?.hasNew) : true;
     badgeEl.textContent = n > 0 ? String(n) : '';
     badgeEl.hidden = n === 0;

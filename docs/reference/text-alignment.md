@@ -33,7 +33,7 @@ paired with a `margin-inline` that follows the effective alignment.
 
 `shared/slide-types/text-roles.js`. Intrinsic to the text, reusable across
 types, a closed vocabulary of six (`heading`, `prose`, `list-item`, `quote`,
-`caption`, `label`). It answers which style options are *meaningful*: a list
+`caption`, `label`). It answers which style options are _meaningful_: a list
 item sits next to a bullet marker, so block alignment would detach the text from
 its marker — `list-item` therefore offers no alignment at all.
 
@@ -60,8 +60,8 @@ centre.
 
 ```js
 export default {
-  defaultAlign: 'center',   // the whole .slide-inner centres
-  fields: [ /* … */ ],
+  defaultAlign: 'center', // the whole .slide-inner centres
+  fields: [/* … */],
 };
 ```
 
@@ -98,8 +98,8 @@ export default {
   layoutVariants: HEADER_BLOCK.variants,
   fields: [
     HEADER_BLOCK.field,
-    { key: 'title', group: 'header-block', /* … */ },
-    { key: 'subheading', group: 'header-block', /* … */ },
+    { key: 'title', group: 'header-block' /* … */ },
+    { key: 'subheading', group: 'header-block' /* … */ },
   ],
 };
 ```
@@ -121,19 +121,19 @@ both call it, so they cannot disagree.
 { values: string[], owner: 'field' | 'role' | 'group', groupId: string | null }
 ```
 
-| owner | meaning | editor draws |
-| --- | --- | --- |
-| `field` | the field decides | the control, with `values` |
-| `role` | nothing can align this | no control — the answer is "never" |
-| `group` | the block decides | the control **disabled**, pointing at Layout |
+| owner   | meaning                | editor draws                                 |
+| ------- | ---------------------- | -------------------------------------------- |
+| `field` | the field decides      | the control, with `values`                   |
+| `role`  | nothing can align this | no control — the answer is "never"           |
+| `group` | the block decides      | the control **disabled**, pointing at Layout |
 
-`values` is empty for both non-field owners. Returning the *owner* is what makes
+`values` is empty for both non-field owners. Returning the _owner_ is what makes
 "cannot be aligned" distinguishable from "aligned somewhere else"; with only an
 empty array those collapse into one silent absence, and a silently missing
 control reads as a missing feature.
 
 `fieldAllowedAlignValues()` is the derived view. Because `injectTextStyles`
-already gates a stored `align` through it, a value stored on a field *before* it
+already gates a stored `align` through it, a value stored on a field _before_ it
 joined a group goes inert on render with no migration — the same gate that
 already drops a list item's alignment.
 
@@ -150,11 +150,11 @@ structural `layout` enums follow: the chip is its only control.
 
 Horizontal and vertical are owned by different parties:
 
-| axis | owner | where |
-| --- | --- | --- |
-| horizontal | the **author**, per slide | group align content field |
-| vertical (title slide) | the **theme** | `titleLayout` (`bottom \| center \| top`) |
-| vertical (chapter title) | the author | the type's own `layout` enum |
+| axis                     | owner                     | where                                     |
+| ------------------------ | ------------------------- | ----------------------------------------- |
+| horizontal               | the **author**, per slide | group align content field                 |
+| vertical (title slide)   | the **theme**             | `titleLayout` (`bottom \| center \| top`) |
+| vertical (chapter title) | the author                | the type's own `layout` enum              |
 
 One owner per axis, so there are no precedence rules to reason about. The theme
 sets a title slide's posture; the author composes this one slide.
@@ -179,8 +179,8 @@ One rule, in `01-layout-and-title/00-base.css`:
 (`<ul dir="auto">`, see `buildList` in `shared/markdown.js`) and keeps its
 markers, so it is exactly the case this guards — including the content-dependent
 one, where an author types `- bla` into a prose field and gets a list without
-ever touching an alignment control. The slide types that use a list as a *layout
-container* — poll options, funnel stages, pyramid levels, timeline, cycle,
+ever touching an alignment control. The slide types that use a list as a _layout
+container_ — poll options, funnel stages, pyramid levels, timeline, cycle,
 process — all carry a class, all set `list-style: none`, and several centre
 their labels inside a shape on purpose. Those are untouched.
 
@@ -212,15 +212,15 @@ Two CSS traps worth knowing:
 
 ## Which types declare groups
 
-| type | group | members |
-| --- | --- | --- |
-| `title-slide` | `title-block` | title, subheading, meta |
-| `chapter-title-slide` | `title-block` | title, subheading |
-| `list-slide` | `header-block` | title, subheading |
-| `logo-wall-slide` | `header-block` | title, subheading |
-| `chart-slide` | `header-block` | title, subheading |
-| `kpi-metrics-slide` | `header-block` | title, subheading |
-| `quote-slide` | `quote-block` | quote, authorName, authorTitle |
+| type                  | group          | members                        |
+| --------------------- | -------------- | ------------------------------ |
+| `title-slide`         | `title-block`  | title, subheading, meta        |
+| `chapter-title-slide` | `title-block`  | title, subheading              |
+| `list-slide`          | `header-block` | title, subheading              |
+| `logo-wall-slide`     | `header-block` | title, subheading              |
+| `chart-slide`         | `header-block` | title, subheading              |
+| `kpi-metrics-slide`   | `header-block` | title, subheading              |
+| `quote-slide`         | `quote-block`  | quote, authorName, authorTitle |
 
 Types whose repeated cells each own their box — `text-blocks`, `comparison`,
 `matrix`, `process`, `timeline`, `funnel`,

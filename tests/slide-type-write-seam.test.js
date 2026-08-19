@@ -23,17 +23,23 @@ const CANONICAL_TITLE = getSlideTypeId('title-slide');
 
 test('canonical reverse-DNS id normalizes to the registry key', () => {
   assert.equal(CANONICAL_TITLE, 'eu.deckyard.slide.title');
-  const [slide] = normalizeSlides([{ type: CANONICAL_TITLE, content: { title: 'Hi' } }]);
+  const [slide] = normalizeSlides([
+    { type: CANONICAL_TITLE, content: { title: 'Hi' } },
+  ]);
   assert.equal(slide.type, 'title-slide', 'stored as the bare registry key');
 });
 
 test('the legacy qualified spelling normalizes to the registry key', () => {
-  const [slide] = normalizeSlides([{ type: 'core/title-slide', content: { title: 'Hi' } }]);
+  const [slide] = normalizeSlides([
+    { type: 'core/title-slide', content: { title: 'Hi' } },
+  ]);
   assert.equal(slide.type, 'title-slide');
 });
 
 test('the bare registry key passes through unchanged', () => {
-  const [slide] = normalizeSlides([{ type: 'title-slide', content: { title: 'Hi' } }]);
+  const [slide] = normalizeSlides([
+    { type: 'title-slide', content: { title: 'Hi' } },
+  ]);
   assert.equal(slide.type, 'title-slide');
 });
 
@@ -42,7 +48,10 @@ test('a canonical poll id still gets its pollId filled in', () => {
   const [slide] = normalizeSlides([{ type: canonicalPoll, content: {} }]);
   assert.equal(slide.type, 'poll-slide');
   assert.equal(typeof slide.content.pollId, 'string');
-  assert.ok(slide.content.pollId.length > 0, 'pollId assigned regardless of the input spelling');
+  assert.ok(
+    slide.content.pollId.length > 0,
+    'pollId assigned regardless of the input spelling',
+  );
 });
 
 test('an unresolvable type is a 400, naming the canonical form', () => {
@@ -54,25 +63,36 @@ test('an unresolvable type is a 400, naming the canonical form', () => {
   }
   assert.ok(thrown, 'normalizeSlides throws on an unknown type');
   assert.equal(thrown.statusCode, 400);
-  assert.match(thrown.message, /eu\.deckyard\.slide\.title/, 'error names a canonical id');
+  assert.match(
+    thrown.message,
+    /eu\.deckyard\.slide\.title/,
+    'error names a canonical id',
+  );
   assert.equal(thrown.details.slideIndex, 0);
   assert.equal(thrown.details.type, 'text-slide');
 });
 
 test('a missing type is a 400, not a silent pass-through', () => {
-  assert.throws(() => normalizeSlides([{ content: { title: 'Hi' } }]), { statusCode: 400 });
+  assert.throws(() => normalizeSlides([{ content: { title: 'Hi' } }]), {
+    statusCode: 400,
+  });
 });
 
 test('MCP strict validation accepts a canonical id', () => {
   assert.doesNotThrow(() =>
-    validateRefinedSlidesStrict([{ type: CANONICAL_TITLE, content: { title: 'Hi' } }])
+    validateRefinedSlidesStrict([
+      { type: CANONICAL_TITLE, content: { title: 'Hi' } },
+    ]),
   );
 });
 
 test('MCP strict validation still rejects an unknown type', () => {
   assert.throws(
-    () => validateRefinedSlidesStrict([{ type: 'text-slide', content: { title: 'Hi' } }]),
-    /unknown slide type "text-slide"/
+    () =>
+      validateRefinedSlidesStrict([
+        { type: 'text-slide', content: { title: 'Hi' } },
+      ]),
+    /unknown slide type "text-slide"/,
   );
 });
 
@@ -94,7 +114,11 @@ test("a legacy 'on-view' refresh mode folds to 'manual' at the write seam", () =
     },
   ]);
   assert.equal(slide.dataSource.refresh.mode, 'manual');
-  assert.equal(slide.dataSource.provider, 'csv-url', 'rest of the dataSource preserved');
+  assert.equal(
+    slide.dataSource.provider,
+    'csv-url',
+    'rest of the dataSource preserved',
+  );
   assert.equal(slide.dataSource.lastSync, '2026-01-01T00:00:00.000Z');
 });
 

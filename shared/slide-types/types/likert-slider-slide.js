@@ -63,8 +63,10 @@ export default {
     const minLabel = nonEmpty(content?.minLabel);
     const maxLabel = nonEmpty(content?.maxLabel);
 
-    const axisHtml = Array.from({ length: n }, (_t, i) =>
-      `<div class="likert-axis-tick" aria-hidden="true" style="--i:${i};">${i + 1}</div>`
+    const axisHtml = Array.from(
+      { length: n },
+      (_t, i) =>
+        `<div class="likert-axis-tick" aria-hidden="true" style="--i:${i};">${i + 1}</div>`,
     ).join('');
 
     return `

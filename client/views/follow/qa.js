@@ -1,6 +1,9 @@
 import { debugLog } from '../../lib/util/debug.js';
 import { promptModal } from '../../lib/dom/modal.js';
-import { createSSEConnection, LONG_LIVED_STREAM } from '../../lib/net/sse-connection.js';
+import {
+  createSSEConnection,
+  LONG_LIVED_STREAM,
+} from '../../lib/net/sse-connection.js';
 
 export function createFollowQaController({
   h,
@@ -32,8 +35,7 @@ export function createFollowQaController({
   let questions = [];
   let capabilities = null;
 
-  const getCanUseQa = () =>
-    capabilities ? !!capabilities.canUseQa : true;
+  const getCanUseQa = () => (capabilities ? !!capabilities.canUseQa : true);
 
   const syncQaNameBtn = () => {
     const copy = getCopy?.() || {};
@@ -68,7 +70,7 @@ export function createFollowQaController({
     for (const item of q) {
       const qid = String(item?.id || '');
       const originalText = String(
-        item?.original?.text || item?.text || ''
+        item?.original?.text || item?.text || '',
       ).trim();
       // Questions are not auto-translated (for now). Always show original text.
       const displayText = originalText;
@@ -92,12 +94,12 @@ export function createFollowQaController({
           try {
             await api(
               `/api/follow/${encodeURIComponent(
-                presentationId
+                presentationId,
               )}/questions/${encodeURIComponent(qid)}/upvote`,
               {
                 method: 'POST',
                 body: JSON.stringify({}),
-              }
+              },
             );
             markUpvoted?.(presentationId, qid);
             renderQuestions();
@@ -125,12 +127,12 @@ export function createFollowQaController({
             try {
               await api(
                 `/api/follow/${encodeURIComponent(
-                  presentationId
+                  presentationId,
                 )}/questions/${encodeURIComponent(qid)}/cancel`,
                 {
                   method: 'POST',
                   body: JSON.stringify({}),
-                }
+                },
               );
               removeMyQuestionId?.(presentationId, qid);
             } catch (e) {
@@ -162,7 +164,7 @@ export function createFollowQaController({
                 text: `— ${authorName}`,
               })
             : null,
-        ])
+        ]),
       );
     }
   };
@@ -170,7 +172,7 @@ export function createFollowQaController({
   const refreshQuestionsIfLive = async () => {
     try {
       const resp = await api(
-        `/api/follow/${encodeURIComponent(presentationId)}/questions`
+        `/api/follow/${encodeURIComponent(presentationId)}/questions`,
       );
       if (resp?.capabilities && onCapabilities)
         onCapabilities(resp.capabilities);
@@ -285,7 +287,7 @@ export function createFollowQaController({
           {
             method: 'POST',
             body: JSON.stringify({ authorName, lang, text }),
-          }
+          },
         );
         const qid = String(resp?.question?.id || '').trim();
         if (qid) addMyQuestionId?.(presentationId, qid);
@@ -297,7 +299,7 @@ export function createFollowQaController({
             : null;
         if (created && String(created.id || '').trim()) {
           const exists = (Array.isArray(questions) ? questions : []).some(
-            (x) => String(x?.id || '') === String(created.id || '')
+            (x) => String(x?.id || '') === String(created.id || ''),
           );
           if (!exists) {
             questions = Array.isArray(questions) ? questions : [];

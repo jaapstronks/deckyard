@@ -53,14 +53,17 @@ export function createCommentLinkButton({ input, root, className = '' }) {
       message: selected
         ? t('comments.link.messageWithSelection', 'Link "{text}" to:').replace(
             '{text}',
-            selected.length > 40 ? `${selected.slice(0, 40)}…` : selected
+            selected.length > 40 ? `${selected.slice(0, 40)}…` : selected,
           )
         : t('comments.link.message', 'Paste a URL. It will show as a link.'),
       placeholder: 'https://',
       validate: (value) =>
         safeLinkUrl(value)
           ? null
-          : t('comments.link.invalid', 'Use an http://, https:// or mailto: address'),
+          : t(
+              'comments.link.invalid',
+              'Use an http://, https:// or mailto: address',
+            ),
     });
 
     if (!url) {

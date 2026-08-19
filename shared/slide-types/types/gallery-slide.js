@@ -18,7 +18,8 @@ function safeImagesArr(images) {
 
 function imageHtml(image, idx, copy) {
   const src = typeof image?.src === 'string' ? image.src.trim() : '';
-  const caption = typeof image?.caption === 'string' ? image.caption.trim() : '';
+  const caption =
+    typeof image?.caption === 'string' ? image.caption.trim() : '';
   const altExplicit = typeof image?.alt === 'string' ? image.alt.trim() : '';
   const imageNum = idx + 1;
 
@@ -160,10 +161,26 @@ export default {
       bottomSubheading: '',
       layout: 'grid',
       images: [
-         { src: '/assets/images/backgrounds/demo-aurora.jpg', caption: '', alt: '' },
-         { src: '/assets/images/backgrounds/demo-dusk.jpg', caption: '', alt: '' },
-         { src: '/assets/images/backgrounds/demo-paper.jpg', caption: '', alt: '' },
-         { src: '/assets/images/backgrounds/demo-moss.jpg', caption: '', alt: '' },
+        {
+          src: '/assets/images/backgrounds/demo-aurora.jpg',
+          caption: '',
+          alt: '',
+        },
+        {
+          src: '/assets/images/backgrounds/demo-dusk.jpg',
+          caption: '',
+          alt: '',
+        },
+        {
+          src: '/assets/images/backgrounds/demo-paper.jpg',
+          caption: '',
+          alt: '',
+        },
+        {
+          src: '/assets/images/backgrounds/demo-moss.jpg',
+          caption: '',
+          alt: '',
+        },
       ],
       background: 'mist',
     },
@@ -173,10 +190,26 @@ export default {
       bottomSubheading: '',
       layout: 'grid',
       images: [
-         { src: '/assets/images/backgrounds/demo-aurora.jpg', caption: '', alt: '' },
-         { src: '/assets/images/backgrounds/demo-dusk.jpg', caption: '', alt: '' },
-         { src: '/assets/images/backgrounds/demo-paper.jpg', caption: '', alt: '' },
-         { src: '/assets/images/backgrounds/demo-moss.jpg', caption: '', alt: '' },
+        {
+          src: '/assets/images/backgrounds/demo-aurora.jpg',
+          caption: '',
+          alt: '',
+        },
+        {
+          src: '/assets/images/backgrounds/demo-dusk.jpg',
+          caption: '',
+          alt: '',
+        },
+        {
+          src: '/assets/images/backgrounds/demo-paper.jpg',
+          caption: '',
+          alt: '',
+        },
+        {
+          src: '/assets/images/backgrounds/demo-moss.jpg',
+          caption: '',
+          alt: '',
+        },
       ],
       background: 'mist',
     },
@@ -187,10 +220,18 @@ export default {
     bottomSubheading: '',
     layout: 'grid',
     images: [
-       { src: '/assets/images/backgrounds/demo-aurora.jpg', caption: '', alt: '' },
-       { src: '/assets/images/backgrounds/demo-dusk.jpg', caption: '', alt: '' },
-       { src: '/assets/images/backgrounds/demo-paper.jpg', caption: '', alt: '' },
-       { src: '/assets/images/backgrounds/demo-moss.jpg', caption: '', alt: '' },
+      {
+        src: '/assets/images/backgrounds/demo-aurora.jpg',
+        caption: '',
+        alt: '',
+      },
+      { src: '/assets/images/backgrounds/demo-dusk.jpg', caption: '', alt: '' },
+      {
+        src: '/assets/images/backgrounds/demo-paper.jpg',
+        caption: '',
+        alt: '',
+      },
+      { src: '/assets/images/backgrounds/demo-moss.jpg', caption: '', alt: '' },
     ],
     background: 'mist',
   },
@@ -200,13 +241,21 @@ export default {
       typeof content?.title === 'string' && content.title.trim()
         ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
-    const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
+    const subheadingHtml = renderSubheadingHtml(
+      content,
+      'subheading',
+      'subtitle',
+    );
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);
     const hasHeader = !!(title || subheadingHtml);
 
-    const layout = content?.layout === 'masonry' ? 'masonry' :
-                   content?.layout === 'featured' ? 'featured' : 'grid';
+    const layout =
+      content?.layout === 'masonry'
+        ? 'masonry'
+        : content?.layout === 'featured'
+          ? 'featured'
+          : 'grid';
 
     const images = safeImagesArr(content?.images).slice(0, 6);
     const count = clampInt(images.length, 2, 6, 4);

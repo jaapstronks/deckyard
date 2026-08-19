@@ -46,7 +46,8 @@ function readStringField(value, Y) {
 export function extractCustomHtml(document, Y) {
   const map = new Map();
   for (const ys of document.getArray('slides').toArray()) {
-    if (!(ys instanceof Y.Map) || ys.get('type') !== 'custom-html-slide') continue;
+    if (!(ys instanceof Y.Map) || ys.get('type') !== 'custom-html-slide')
+      continue;
     const id = ys.get('id');
     if (typeof id !== 'string' || !id) continue;
     const yc = ys.get('content');
@@ -77,7 +78,8 @@ export function guardCustomHtml(document, prevSnapshot, { allowed, Y }) {
   let reverted = false;
   document.transact(() => {
     for (const ys of document.getArray('slides').toArray()) {
-      if (!(ys instanceof Y.Map) || ys.get('type') !== 'custom-html-slide') continue;
+      if (!(ys instanceof Y.Map) || ys.get('type') !== 'custom-html-slide')
+        continue;
       const id = ys.get('id');
       if (typeof id !== 'string' || !id) continue;
       const yc = ys.get('content');

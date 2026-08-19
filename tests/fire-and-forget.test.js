@@ -64,7 +64,7 @@ test("a task's own resolve handler still runs before the guard", async () => {
     Promise.resolve({ ok: false }).then((r) => {
       handled = r.ok === false;
     }),
-    'chained task'
+    'chained task',
   );
   await flush();
   assert.equal(handled, true);

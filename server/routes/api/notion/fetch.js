@@ -3,7 +3,12 @@
  * Handles fetching Notion pages and publishing embeds back to Notion.
  */
 
-import { badRequest, serveJson, jsonError, requireJsonBody } from '../../../utils/http.js';
+import {
+  badRequest,
+  serveJson,
+  jsonError,
+  requireJsonBody,
+} from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import {
   extractPageId,
@@ -74,10 +79,16 @@ export async function handleNotionPublish({ req, res }) {
   const lang = body?.lang === 'en-GB' ? 'en-GB' : 'nl';
 
   if (!pageId) {
-    return badRequest(res, 'Expected { pageId } - the Notion page ID to publish to');
+    return badRequest(
+      res,
+      'Expected { pageId } - the Notion page ID to publish to',
+    );
   }
   if (!embedUrl) {
-    return badRequest(res, 'Expected { embedUrl } - the presentation embed URL');
+    return badRequest(
+      res,
+      'Expected { embedUrl } - the presentation embed URL',
+    );
   }
 
   const normalizedPageId = extractPageId(pageId);
@@ -93,19 +104,26 @@ export async function handleNotionPublish({ req, res }) {
     });
     serveJson(res, 200, {
       success: true,
-      message: lang === 'nl'
-        ? 'Presentatie toegevoegd aan Notion-pagina'
-        : 'Presentation added to Notion page',
+      message:
+        lang === 'nl'
+          ? 'Presentatie toegevoegd aan Notion-pagina'
+          : 'Presentation added to Notion page',
       blocksAdded: result.blocksAdded,
     });
   } catch (e) {
     const msg = String(e?.message || e || 'Unknown error');
     const code = e?.statusCode || 500;
     if (msg.includes('Could not find') || code === 404) {
-      return badRequest(res, 'Notion page not found. Make sure the page is shared with your Notion integration.');
+      return badRequest(
+        res,
+        'Notion page not found. Make sure the page is shared with your Notion integration.',
+      );
     }
     if (msg.includes('unauthorized') || code === 401 || code === 403) {
-      return badRequest(res, 'Access denied. Make sure the page is shared with your Notion integration and has edit permissions.');
+      return badRequest(
+        res,
+        'Access denied. Make sure the page is shared with your Notion integration and has edit permissions.',
+      );
     }
     jsonError(res, code >= 400 && code < 600 ? code : 500, 'notion_error', msg);
   }

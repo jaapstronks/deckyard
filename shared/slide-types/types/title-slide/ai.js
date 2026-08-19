@@ -19,13 +19,13 @@
  */
 
 export const ai = {
-    category: 'structural',
-    resolveInPhase1: true,
-    description: `
+  category: 'structural',
+  resolveInPhase1: true,
+  description: `
       The opening slide of a presentation. Always the first slide.
       Contains the presentation title, an optional subtitle (subheading, a
       short tagline), and an optional meta line (speaker · date · organisation).
     `,
-    bestFor: ['Opening/first slide of any deck'],
-    notFor: ['Anything other than the deck opening'],
+  bestFor: ['Opening/first slide of any deck'],
+  notFor: ['Anything other than the deck opening'],
 };

@@ -38,7 +38,10 @@ export function textareaCaretAdapter(textarea) {
       if (atStart < 0 || textarea.value[atStart] !== '@') return false;
       const before = textarea.value.slice(0, atStart);
       const after = textarea.value.slice(caret);
-      const markup = mentionMarkup({ name: user.name || user.email, email: user.email });
+      const markup = mentionMarkup({
+        name: user.name || user.email,
+        email: user.email,
+      });
       textarea.value = `${before}${markup} ${after}`;
       const newCaret = before.length + markup.length + 1;
       textarea.setSelectionRange(newCaret, newCaret);
@@ -103,25 +106,34 @@ export function attachMentionAutocomplete({
   function render() {
     dropdown.innerHTML = '';
     if (results.length === 0) {
-      dropdown.append(h('div', {
-        class: 'mention-autocomplete-empty',
-        text: t('mentions.noResults', 'No matching users'),
-      }));
+      dropdown.append(
+        h('div', {
+          class: 'mention-autocomplete-empty',
+          text: t('mentions.noResults', 'No matching users'),
+        }),
+      );
       return;
     }
     results.forEach((user, i) => {
-      const item = h('button', {
-        type: 'button',
-        class: `mention-autocomplete-item${i === highlightIndex ? ' is-highlighted' : ''}`,
-        // mousedown so the textarea keeps focus (click fires after blur)
-        onmousedown: (e) => {
-          e.preventDefault();
-          pick(user);
+      const item = h(
+        'button',
+        {
+          type: 'button',
+          class: `mention-autocomplete-item${i === highlightIndex ? ' is-highlighted' : ''}`,
+          // mousedown so the textarea keeps focus (click fires after blur)
+          onmousedown: (e) => {
+            e.preventDefault();
+            pick(user);
+          },
         },
-      }, [
-        h('span', { class: 'mention-autocomplete-name', text: user.name || user.email }),
-        h('span', { class: 'mention-autocomplete-email', text: user.email }),
-      ]);
+        [
+          h('span', {
+            class: 'mention-autocomplete-name',
+            text: user.name || user.email,
+          }),
+          h('span', { class: 'mention-autocomplete-email', text: user.email }),
+        ],
+      );
       dropdown.append(item);
     });
   }
@@ -148,17 +160,22 @@ export function attachMentionAutocomplete({
 
   async function search(query) {
     const queryId = ++lastQueryId;
-    const priority = (getPriorityEmails?.() || []).map((e) => String(e).toLowerCase());
+    const priority = (getPriorityEmails?.() || []).map((e) =>
+      String(e).toLowerCase(),
+    );
     let found = [];
     try {
-      const resp = await api(`/api/users/search?q=${encodeURIComponent(query)}&limit=8`);
+      const resp = await api(
+        `/api/users/search?q=${encodeURIComponent(query)}&limit=8`,
+      );
       found = resp?.users || [];
     } catch {
       found = [];
     }
     if (queryId !== lastQueryId || !isOpen) return; // Stale response
     // Deck collaborators (+ owner) first, then the rest, stable within groups.
-    const rank = (u) => (priority.includes(String(u.email).toLowerCase()) ? 0 : 1);
+    const rank = (u) =>
+      priority.includes(String(u.email).toLowerCase()) ? 0 : 1;
     results = [...found].sort((a, b) => rank(a) - rank(b));
     highlightIndex = 0;
     render();
@@ -200,7 +217,12 @@ export function attachMentionAutocomplete({
       e.preventDefault();
       e.stopPropagation();
       close();
-    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') {
+    } else if (
+      e.key === 'ArrowLeft' ||
+      e.key === 'ArrowRight' ||
+      e.key === 'Home' ||
+      e.key === 'End'
+    ) {
       // Caret moves fire no input event, so the stored '@' anchor and the
       // results go stale — close instead of picking against a moved caret.
       close();

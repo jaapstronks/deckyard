@@ -2,7 +2,7 @@
 
 This repository is intentionally **simple, dependency-light, and modular**: plain Node.js + vanilla ESM on both server and client, **no bundler**, and a strong preference for **separation of concerns** so new features don’t create long-term maintenance debt.
 
-If you are an LLM agent working on this repo: optimize for **maintainability, extendability, and DRY**, and resist the temptation to “just patch it in place”. Follow the existing organization patterns; when in doubt, copy the *structure* of an existing feature (not the text/styles).
+If you are an LLM agent working on this repo: optimize for **maintainability, extendability, and DRY**, and resist the temptation to “just patch it in place”. Follow the existing organization patterns; when in doubt, copy the _structure_ of an existing feature (not the text/styles).
 
 ---
 
@@ -37,6 +37,20 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - Prefer small modules in `client/lib/*`, `client/views/**`, `server/utils/**`, `server/storage/**`.
   - Avoid adding dependencies unless there is a strong reason (this project works great without them).
 
+- **Formatting is Prettier's job, not a review topic**
+  - The whole repo is formatted with [Prettier](https://prettier.io) on its
+    defaults plus `singleQuote: true` (the one option in `.prettierrc` — it was
+    already the codebase's spelling; measured as the smallest diff). `npm run
+format` writes, `npm run format:check` gates in CI next to `npm run lint`.
+    No editor hooks, no lint-staged: CI is the gate. Generators that emit
+    committed source (`scripts/generate-slide-*.js`) run their output through
+    `scripts/lib/format-generated.js` so the byte-gates and the formatter agree.
+  - The repo-wide reformat is one commit, listed in `.git-blame-ignore-revs`;
+    run `git config blame.ignoreRevsFile .git-blame-ignore-revs` once per clone
+    so `git blame` skips it. Don't hand-format, don't argue style: if Prettier
+    output is unreadable in one spot, a `// prettier-ignore` with a reason is
+    the exception, not a second style.
+
 - **Optional dependencies match how the code loads them**
   - A package that is only reached through a gated `await import()` — behind a
     feature flag or with graceful "not installed" handling — lives in
@@ -46,7 +60,7 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
     media), `puppeteer-core` (Chrome exports), `pptxgenjs` (PPTX export),
     `pdf-parse` (PDF import), `bullmq` + `ioredis` (Redis job queue),
     `@hocuspocus/server` + `crossws` (live collaboration). A package that is
-    *statically* imported (e.g. `openid-client`) stays a hard `dependency` even
+    _statically_ imported (e.g. `openid-client`) stays a hard `dependency` even
     if its feature is off, because loading the module pulls it in regardless.
   - **`ciiic-translation-rules` is fork-only** and deliberately **not declared**
     in `package.json`: it's a private package that ships only in the CIIIC fork,
@@ -60,7 +74,7 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
     whose `index.js` is the sole public seam** (a barrel re-exporting the public
     API); the concern modules sit inside as plain siblings. Consumers import
     `X/index.js`, never the concern files.
-  - **Don't** put an eponymous wrapper file *beside* the folder (`X.js` next to
+  - **Don't** put an eponymous wrapper file _beside_ the folder (`X.js` next to
     `X/`, or a `foo-panel.js` re-export next to `foo-panel/`) — the folder's
     `index.js` already is the seam, so the wrapper is redundant indirection.
     Likewise don't suffix the folder with its role (`email-templates/`, not
@@ -69,7 +83,7 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
     module moves or a file decomposes into `X/index.js`, the default is **no
     shim at the old path** — a re-export is a second canonical form for one
     module, exactly the tolerance-creep the beta stance forbids (see the
-    eponymous-wrapper rule above; #348 *removed* such a wrapper). Forks sync on
+    eponymous-wrapper rule above; #348 _removed_ such a wrapper). Forks sync on
     tags, not `main`, so the move is a release-notes moment, not a mid-stream
     surprise. A temporary shim is allowed **only** when all three hold: (1) it
     lives **one release, then is deleted** — never longer; (2) the moved thing is
@@ -77,9 +91,9 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
     internal concern file); (3) the **removal date is stated in the same release
     notes** that ship the move. Absent all three, move the path and list it under
     breaking changes. This is the beta stance applied to module moves
-    (`docs/reference/versioning.md` § *The beta stance: purity over
-    compatibility*).
-  - A module that is *not* decomposed stays a single file — it is itself a
+    (`docs/reference/versioning.md` § _The beta stance: purity over
+    compatibility_).
+  - A module that is _not_ decomposed stays a single file — it is itself a
     concern module of its parent folder (e.g. each `settings/tabs/*-tab.js` is a
     concern of `tabs/`, whose `index.js` is the barrel). A tab that grows its own
     sub-concerns becomes `tabs/<name>-tab/` with an `index.js` seam, exactly like
@@ -88,7 +102,7 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
     `index.js` barrel (`api-keys/`, `admin-users/`, `theme-editor/`, …), no
     wrappers, no role suffixes.
   - **`server/storage/` applies this literally.** A bare `X.js` is an
-    *undecomposed* single-concern store (`feedback.js`, `settings.js`). The
+    _undecomposed_ single-concern store (`feedback.js`, `settings.js`). The
     moment a store splits into more than one module it becomes a folder `X/`
     whose `index.js` is the facade/seam — consumers import
     `server/storage/X/index.js`, never a concern file. So reading a storage
@@ -110,7 +124,7 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - Width-based `@media` queries must sit on the shared breakpoint ladder (480/640/768/1024/1280, `min-width` counterparts one pixel up, plus the ultra-wide 1400/1600/1800). See **`docs/reference/css-breakpoints.md`**; enforced by `tests/css-breakpoints.test.js`.
 
 - **Avoid hardcoded copy scattered across templates**
-  - UI copy belongs in view-specific modules (e.g. follow-along uses `client/views/follow/i18n.js`, whose `createFollowCopy(lang)` resolves `client/i18n/<locale>/follow.json` against the *deck* language).
+  - UI copy belongs in view-specific modules (e.g. follow-along uses `client/views/follow/i18n.js`, whose `createFollowCopy(lang)` resolves `client/i18n/<locale>/follow.json` against the _deck_ language).
   - Slide-specific “static” copy should be centralized in a small per-slide `COPY` map keyed by language if needed (see `follow-invite-slide`).
   - Don’t sprinkle ad-hoc strings across unrelated modules.
 
@@ -156,7 +170,7 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - `renderHtml(content, slide, ctx)`: returns the `.slide` markup string
 - **Companions**: every type also has a `shared/slide-types/types/<type>/`
   directory holding the per-type facets other subsystems read (`authoring.js`,
-  `inline-edit.js`, …). A definition is *not* complete without the companions
+  `inline-edit.js`, …). A definition is _not_ complete without the companions
   its features need — a missing one fails open and silently, which is why they
   have their own map. Read
   [`docs/reference/slide-type-directory.md`](docs/reference/slide-type-directory.md)
@@ -170,7 +184,7 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   globs type files must accept `<name>.js` **and** `<name>/index.js`; a bare
   `grep '\.js$'` over that directory counts companions as types.
 - **Identity**: the registry key (`title-slide`) is the internal lookup key;
-  the *published* id is reverse-DNS (`eu.deckyard.slide.title`, suffix dropped)
+  the _published_ id is reverse-DNS (`eu.deckyard.slide.title`, suffix dropped)
   and is the format's **only** spelling. Export and the read APIs emit it via
   `canonicalSlideType()`; imports and every write path fold any spelling back to
   the key via `resolveSlideTypeName()` — both live in `registry.js` and are the
@@ -233,7 +247,7 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
 ### 1) Add the shared slide type module (canonical)
 
 - Create `shared/slide-types/types/<your-slide>.js` (or `<your-slide>/index.js` —
-  both shapes are live, see *Where slide types live*)
+  both shapes are live, see _Where slide types live_)
 - Export `default { label, fields, defaults, renderHtml }`
 - **Add the companions too**, in `shared/slide-types/types/<your-slide>/`. The
   checklist of which ones a type needs, and what silently degrades when one is
@@ -271,7 +285,7 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   silently resolves to nothing there. Details and the spacing/z-index scales:
   `docs/reference/css-tokens.md`.
 - **The class names a type emits are a public contract.** Every one must resolve
-  to a CSS rule (`tests/slide-type-css-contract.test.js`), and a *rename* goes in
+  to a CSS rule (`tests/slide-type-css-contract.test.js`), and a _rename_ goes in
   the release notes under the breaking-changes heading — a fork styling its own
   slide types against core CSS has no other way to learn a name moved. This is
   the breakage that reached production in v1.8.0 with 2151 green tests behind it.
@@ -288,11 +302,13 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
 ### 5) If the slide needs runtime behavior, add it cleanly
 
 Preferred pattern:
+
 - **Markup**: add `data-*` attributes/classes in `renderHtml()` that the runtime can target.
 - **Runtime**: implement in `client/lib/<feature>.js` or a view module, returning a cleanup function.
 - **Mount**: call the runtime from `client/lib/slide-runtime/slide-render.js` (or the relevant view controller) and register cleanup via `__sbCleanup`.
 
 Avoid:
+
 - Starting runtimes inside `renderHtml()`
 - Attaching global listeners without cleanup
 - Hiding complexity in “random” views
@@ -300,6 +316,7 @@ Avoid:
 ### 6) Follow-along / interactions (only if relevant)
 
 If the slide is an audience interaction:
+
 - Decide whether it’s:
   - **dominant interaction UI** (follow view hides slide and shows interaction card), or
   - **slide shows results while audience interacts**
@@ -322,20 +339,7 @@ If the slide is an audience interaction:
 - **Do**: add small modules where the codebase already expects them (`shared/slide-types/types`, `client/views/*`, `client/lib/*`, `server/routes/*`, `server/storage/*`).
 - **Do**: reuse shared helpers instead of duplicating validation/escaping/URL logic.
 - **Do**: keep i18n in mind—translatable fields are detected by field `type === 'string' | 'markdown'`.
-- **Do**: test storage/identity/auth behaviour without a live database via the in-memory Kysely double (`tests/helpers/fake-db.js` + `__setTestDb()` from `server/db/client.js`) — it enforces UNIQUE constraints and logs every table touched so you can assert what was *not* queried. See **`docs/developer/dev-setup.md` → Testing storage behaviour without PostgreSQL**.
+- **Do**: test storage/identity/auth behaviour without a live database via the in-memory Kysely double (`tests/helpers/fake-db.js` + `__setTestDb()` from `server/db/client.js`) — it enforces UNIQUE constraints and logs every table touched so you can assert what was _not_ queried. See **`docs/developer/dev-setup.md` → Testing storage behaviour without PostgreSQL**.
 - **Don’t**: paste large blocks of CSS into JS templates; keep styling in CSS files.
 - **Don’t**: hardcode user-facing copy in multiple places; centralize it.
 - **Don’t**: special-case new behavior in many files; create one reusable abstraction/module and call it.
-
-
-
-
-
-
-
-
-
-
-
-
-

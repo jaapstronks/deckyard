@@ -54,89 +54,166 @@ const OWNER_ID = '11111111-1111-1111-1111-111111111111';
 // shape an email key cannot tell apart from the owner, and an id key can.
 const TWIN_ID = '22222222-2222-2222-2222-222222222222';
 
-pgDescribe('presentation authorization reads on users.id (real PostgreSQL)', () => {
-  /** @type {import('kysely').Kysely<any>} */
-  let db;
+pgDescribe(
+  'presentation authorization reads on users.id (real PostgreSQL)',
+  () => {
+    /** @type {import('kysely').Kysely<any>} */
+    let db;
 
-  before(async () => {
-    db = await openTestDb();
-    await installFacadeStorage();
-  });
+    before(async () => {
+      db = await openTestDb();
+      await installFacadeStorage();
+    });
 
-  after(async () => {
-    uninstallFacadeStorage();
-    await closeTestDb(db);
-  });
+    after(async () => {
+      uninstallFacadeStorage();
+      await closeTestDb(db);
+    });
 
-  beforeEach(async () => {
-    await truncate(db, 'organizations');
-    await seedDefaultOrganization(db);
-    await db
-      .insertInto('users')
-      .values([
-        { id: OWNER_ID, organization_id: ORG, email: OWNER_EMAIL, name: 'Owner', role: 'user' },
-        { id: TWIN_ID, organization_id: ORG, email: 'twin@example.com', name: 'Twin', role: 'user' },
-      ])
-      .execute();
-  });
+    beforeEach(async () => {
+      await truncate(db, 'organizations');
+      await seedDefaultOrganization(db);
+      await db
+        .insertInto('users')
+        .values([
+          {
+            id: OWNER_ID,
+            organization_id: ORG,
+            email: OWNER_EMAIL,
+            name: 'Owner',
+            role: 'user',
+          },
+          {
+            id: TWIN_ID,
+            organization_id: ORG,
+            email: 'twin@example.com',
+            name: 'Twin',
+            role: 'user',
+          },
+        ])
+        .execute();
+    });
 
-  it('a stored deck comes back carrying the owner and creator ids', async () => {
-    const created = await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
-    const pres = await getPresentation(storageScope, created.id);
+    it('a stored deck comes back carrying the owner and creator ids', async () => {
+      const created = await createPresentation(storageScope, {
+        title: 'Deck',
+        ownerEmail: OWNER_EMAIL,
+      });
+      const pres = await getPresentation(storageScope, created.id);
 
-    assert.equal(pres.ownerId, OWNER_ID);
-    assert.equal(pres.createdById, OWNER_ID);
-    // The email stays beside it as display/contact.
-    assert.equal(pres.ownerEmail, OWNER_EMAIL);
-  });
+      assert.equal(pres.ownerId, OWNER_ID);
+      assert.equal(pres.createdById, OWNER_ID);
+      // The email stays beside it as display/contact.
+      assert.equal(pres.ownerEmail, OWNER_EMAIL);
+    });
 
-  it('the owner is authorized by id, with an address the deck never saw', async () => {
-    const created = await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
-    const pres = await getPresentation(storageScope, created.id);
+    it('the owner is authorized by id, with an address the deck never saw', async () => {
+      const created = await createPresentation(storageScope, {
+        title: 'Deck',
+        ownerEmail: OWNER_EMAIL,
+      });
+      const pres = await getPresentation(storageScope, created.id);
 
-    const ownerUnderAnotherAddress = { id: OWNER_ID, email: 'owner-elsewhere@example.com' };
-    assert.equal(canReadPresentation({ user: ownerUnderAnotherAddress, pres }), true);
-    assert.equal(canWritePresentation({ user: ownerUnderAnotherAddress, pres }), true);
-  });
+      const ownerUnderAnotherAddress = {
+        id: OWNER_ID,
+        email: 'owner-elsewhere@example.com',
+      };
+      assert.equal(
+        canReadPresentation({ user: ownerUnderAnotherAddress, pres }),
+        true,
+      );
+      assert.equal(
+        canWritePresentation({ user: ownerUnderAnotherAddress, pres }),
+        true,
+      );
+    });
 
-  it("a different user carrying the owner's address is refused", async () => {
-    const created = await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
-    const pres = await getPresentation(storageScope, created.id);
+    it("a different user carrying the owner's address is refused", async () => {
+      const created = await createPresentation(storageScope, {
+        title: 'Deck',
+        ownerEmail: OWNER_EMAIL,
+      });
+      const pres = await getPresentation(storageScope, created.id);
 
-    const twin = { id: TWIN_ID, email: OWNER_EMAIL };
-    assert.equal(canReadPresentation({ user: twin, pres }), false);
-    assert.equal(canWritePresentation({ user: twin, pres }), false);
-    assert.equal(belongsInCollection({ user: twin, pres }), false);
-  });
+      const twin = { id: TWIN_ID, email: OWNER_EMAIL };
+      assert.equal(canReadPresentation({ user: twin, pres }), false);
+      assert.equal(canWritePresentation({ user: twin, pres }), false);
+      assert.equal(belongsInCollection({ user: twin, pres }), false);
+    });
 
-  it('a deck whose owner has no users row still resolves on the email', async () => {
-    const external = 'nobody@external.test'; // deliberately NOT in `users`
-    const created = await createPresentation(storageScope, { title: 'Deck', ownerEmail: external });
-    const pres = await getPresentation(storageScope, created.id);
+    it('a deck whose owner has no users row still resolves on the email', async () => {
+      const external = 'nobody@external.test'; // deliberately NOT in `users`
+      const created = await createPresentation(storageScope, {
+        title: 'Deck',
+        ownerEmail: external,
+      });
+      const pres = await getPresentation(storageScope, created.id);
 
-    assert.equal(pres.ownerId, null); // defined NULL, the external/legacy path
-    assert.equal(canReadPresentation({ user: { id: TWIN_ID, email: external }, pres }), true);
-    assert.equal(canReadPresentation({ user: { id: TWIN_ID, email: 'twin@example.com' }, pres }), false);
-  });
+      assert.equal(pres.ownerId, null); // defined NULL, the external/legacy path
+      assert.equal(
+        canReadPresentation({ user: { id: TWIN_ID, email: external }, pres }),
+        true,
+      );
+      assert.equal(
+        canReadPresentation({
+          user: { id: TWIN_ID, email: 'twin@example.com' },
+          pres,
+        }),
+        false,
+      );
+    });
 
-  it('the machine-client check resolves the actor email to the same id', async () => {
-    const created = await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
-    const pres = await getPresentation(storageScope, created.id);
+    it('the machine-client check resolves the actor email to the same id', async () => {
+      const created = await createPresentation(storageScope, {
+        title: 'Deck',
+        ownerEmail: OWNER_EMAIL,
+      });
+      const pres = await getPresentation(storageScope, created.id);
 
-    // The API-key/MCP surfaces know only an email; actor-access resolves it.
-    assert.equal(await canActorAccessPresentation(pres, { email: OWNER_EMAIL, organizationId: ORG }, 'write'), true);
-    assert.equal(await canActorAccessPresentation(pres, { email: 'twin@example.com', organizationId: ORG }, 'read'), false);
-  });
+      // The API-key/MCP surfaces know only an email; actor-access resolves it.
+      assert.equal(
+        await canActorAccessPresentation(
+          pres,
+          { email: OWNER_EMAIL, organizationId: ORG },
+          'write',
+        ),
+        true,
+      );
+      assert.equal(
+        await canActorAccessPresentation(
+          pres,
+          { email: 'twin@example.com', organizationId: ORG },
+          'read',
+        ),
+        false,
+      );
+    });
 
-  it('the collection listing projects the ids too, so the list filter keys on them', async () => {
-    await createPresentation(storageScope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
-    const list = await listPresentations(storageScope);
-    const summary = list.find((p) => p.title === 'Deck');
+    it('the collection listing projects the ids too, so the list filter keys on them', async () => {
+      await createPresentation(storageScope, {
+        title: 'Deck',
+        ownerEmail: OWNER_EMAIL,
+      });
+      const list = await listPresentations(storageScope);
+      const summary = list.find((p) => p.title === 'Deck');
 
-    assert.equal(summary.ownerId, OWNER_ID);
-    assert.equal(summary.createdById, OWNER_ID);
-    // Same conclusions as the per-deck reads, from the summary shape.
-    assert.equal(belongsInCollection({ user: { id: OWNER_ID, email: 'x@example.com' }, pres: summary }), true);
-    assert.equal(belongsInCollection({ user: { id: TWIN_ID, email: OWNER_EMAIL }, pres: summary }), false);
-  });
-});
+      assert.equal(summary.ownerId, OWNER_ID);
+      assert.equal(summary.createdById, OWNER_ID);
+      // Same conclusions as the per-deck reads, from the summary shape.
+      assert.equal(
+        belongsInCollection({
+          user: { id: OWNER_ID, email: 'x@example.com' },
+          pres: summary,
+        }),
+        true,
+      );
+      assert.equal(
+        belongsInCollection({
+          user: { id: TWIN_ID, email: OWNER_EMAIL },
+          pres: summary,
+        }),
+        false,
+      );
+    });
+  },
+);

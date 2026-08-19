@@ -49,7 +49,7 @@ const sourceFiles = SOURCE_TREES.flatMap((t) => walk(path.join(repoRoot, t)));
 function importTokensFrom(src, moduleBasename) {
   const re = new RegExp(
     `import\\s*\\{([^}]*)\\}\\s*from\\s*['"][^'"]*${moduleBasename}['"]`,
-    'g'
+    'g',
   );
   const tokens = [];
   for (const m of src.matchAll(re)) {
@@ -70,21 +70,41 @@ test('the escape helper is only ever named escapeHtml', () => {
     // No one imports the removed `esc` name from the slide-type helpers.
     for (const tok of importTokensFrom(src, 'helpers.js')) {
       if (tok === 'esc' || /\bas\s+esc$/.test(tok)) {
-        violations.push(`${rel}: imports '${tok}' from a helpers module — use escapeHtml`);
+        violations.push(
+          `${rel}: imports '${tok}' from a helpers module — use escapeHtml`,
+        );
       }
     }
     // No re-aliasing back to `esc` anywhere.
     if (/\bas\s+esc\b/.test(src)) {
-      violations.push(`${rel}: re-aliases something 'as esc' — escapeHtml is the only name`);
+      violations.push(
+        `${rel}: re-aliases something 'as esc' — escapeHtml is the only name`,
+      );
     }
     // The helper module itself exports escapeHtml, never a bare `esc`.
     if (rel === 'shared/slide-types/helpers.js') {
-      assert.match(src, /export function escapeHtml\b/, 'helpers.js must export escapeHtml');
-      assert.doesNotMatch(src, /export\s+function\s+esc\b/, 'helpers.js must not export esc');
-      assert.doesNotMatch(src, /export\s*\{[^}]*\besc\b/, 'helpers.js must not re-export esc');
+      assert.match(
+        src,
+        /export function escapeHtml\b/,
+        'helpers.js must export escapeHtml',
+      );
+      assert.doesNotMatch(
+        src,
+        /export\s+function\s+esc\b/,
+        'helpers.js must not export esc',
+      );
+      assert.doesNotMatch(
+        src,
+        /export\s*\{[^}]*\besc\b/,
+        'helpers.js must not re-export esc',
+      );
     }
   }
-  assert.equal(violations.length, 0, `esc alias re-introduced:\n  ${violations.join('\n  ')}`);
+  assert.equal(
+    violations.length,
+    0,
+    `esc alias re-introduced:\n  ${violations.join('\n  ')}`,
+  );
 });
 
 test('the markdown renderer is only ever named markdownToSafeHtml', () => {
@@ -95,23 +115,35 @@ test('the markdown renderer is only ever named markdownToSafeHtml', () => {
 
     for (const tok of importTokensFrom(src, 'markdown.js')) {
       if (tok === 'renderMarkdown' || /\bas\s+renderMarkdown$/.test(tok)) {
-        violations.push(`${rel}: imports '${tok}' from markdown.js — use markdownToSafeHtml`);
+        violations.push(
+          `${rel}: imports '${tok}' from markdown.js — use markdownToSafeHtml`,
+        );
       }
     }
     if (/\bas\s+renderMarkdown\b/.test(src)) {
-      violations.push(`${rel}: re-aliases something 'as renderMarkdown' — use markdownToSafeHtml`);
+      violations.push(
+        `${rel}: re-aliases something 'as renderMarkdown' — use markdownToSafeHtml`,
+      );
     }
     if (rel === 'shared/markdown.js') {
       assert.match(src, /export function markdownToSafeHtml\b/);
-      assert.doesNotMatch(src, /\bas\s+renderMarkdown\b/, 'markdown.js must not alias renderMarkdown');
+      assert.doesNotMatch(
+        src,
+        /\bas\s+renderMarkdown\b/,
+        'markdown.js must not alias renderMarkdown',
+      );
     }
   }
-  assert.equal(violations.length, 0, `renderMarkdown alias re-introduced:\n  ${violations.join('\n  ')}`);
+  assert.equal(
+    violations.length,
+    0,
+    `renderMarkdown alias re-introduced:\n  ${violations.join('\n  ')}`,
+  );
 });
 
 test('the local-esc file is documented and still exists (its esc is not the helper)', () => {
   assert.ok(
     fs.existsSync(path.join(repoRoot, LOCAL_ESC_FILE)),
-    `${LOCAL_ESC_FILE} named as the local-esc exception no longer exists — update this guard.`
+    `${LOCAL_ESC_FILE} named as the local-esc exception no longer exists — update this guard.`,
   );
 });

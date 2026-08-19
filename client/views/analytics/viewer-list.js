@@ -4,7 +4,10 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { formatRelativeTime } from '../../lib/format/format-time.js';
-import { formatDuration, getSourceLabel } from '../../lib/format/analytics-format.js';
+import {
+  formatDuration,
+  getSourceLabel,
+} from '../../lib/format/analytics-format.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 
 /**
@@ -17,7 +20,13 @@ import { iconUrl } from '../../../shared/icon-names.js';
  * @param {Function} options.onGenerateReport - Generate report callback
  * @returns {Object} List API with el and update method
  */
-export function createViewerList({ h, sessions, total, onLoadMore, onGenerateReport }) {
+export function createViewerList({
+  h,
+  sessions,
+  total,
+  onLoadMore,
+  onGenerateReport,
+}) {
   const el = h('div', { class: 'analytics-section analytics-viewers' });
 
   // Sorting state
@@ -33,7 +42,11 @@ export function createViewerList({ h, sessions, total, onLoadMore, onGenerateRep
     }),
   ]);
 
-  const container = h('div', { class: 'analytics-viewers-container', role: 'grid', 'aria-label': t('analytics.recentViewers', 'Recent Viewers') });
+  const container = h('div', {
+    class: 'analytics-viewers-container',
+    role: 'grid',
+    'aria-label': t('analytics.recentViewers', 'Recent Viewers'),
+  });
   const loadMoreBtn = h('button', {
     class: 'btn btn-secondary analytics-load-more',
     text: t('analytics.loadMore', 'Load More'),
@@ -99,10 +112,24 @@ export function createViewerList({ h, sessions, total, onLoadMore, onGenerateRep
     if (displaySessions.length === 0) {
       container.append(
         h('div', { class: 'analytics-empty-state' }, [
-          h('img', { class: 'analytics-empty-state-icon', src: iconUrl('eye'), alt: '', 'aria-hidden': 'true' }),
-          h('p', { class: 'analytics-empty-state-title', text: t('analytics.noViewersYet', 'No viewers yet') }),
-          h('p', { class: 'analytics-empty-state-description', text: t('analytics.shareToGetViewers', 'Once people view your presentation, their sessions will appear here.') }),
-        ])
+          h('img', {
+            class: 'analytics-empty-state-icon',
+            src: iconUrl('eye'),
+            alt: '',
+            'aria-hidden': 'true',
+          }),
+          h('p', {
+            class: 'analytics-empty-state-title',
+            text: t('analytics.noViewersYet', 'No viewers yet'),
+          }),
+          h('p', {
+            class: 'analytics-empty-state-description',
+            text: t(
+              'analytics.shareToGetViewers',
+              'Once people view your presentation, their sessions will appear here.',
+            ),
+          }),
+        ]),
       );
       loadMoreBtn.style.display = 'none';
       return;
@@ -111,25 +138,51 @@ export function createViewerList({ h, sessions, total, onLoadMore, onGenerateRep
     // Table header with ARIA roles for accessibility and sorting
     const createSortableHeader = (column, label) => {
       const isSorted = sortColumn === column;
-      const headerEl = h('div', {
-        class: `analytics-viewer-cell analytics-sortable-header ${isSorted ? 'is-sorted' : ''}`,
-        role: 'columnheader',
-        'aria-sort': isSorted ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none',
-        onclick: () => handleSort(column),
-      }, [
-        h('span', { text: label }),
-        h('span', { class: 'analytics-sort-indicator', text: isSorted ? (sortDirection === 'asc' ? '↑' : '↓') : '' }),
-      ]);
+      const headerEl = h(
+        'div',
+        {
+          class: `analytics-viewer-cell analytics-sortable-header ${isSorted ? 'is-sorted' : ''}`,
+          role: 'columnheader',
+          'aria-sort': isSorted
+            ? sortDirection === 'asc'
+              ? 'ascending'
+              : 'descending'
+            : 'none',
+          onclick: () => handleSort(column),
+        },
+        [
+          h('span', { text: label }),
+          h('span', {
+            class: 'analytics-sort-indicator',
+            text: isSorted ? (sortDirection === 'asc' ? '↑' : '↓') : '',
+          }),
+        ],
+      );
       return headerEl;
     };
 
-    const tableHeader = h('div', { class: 'analytics-viewer-row analytics-viewer-header', role: 'row' }, [
-      h('div', { class: 'analytics-viewer-cell', role: 'columnheader', text: t('analytics.viewer', 'Viewer') }),
-      h('div', { class: 'analytics-viewer-cell', role: 'columnheader', text: t('analytics.source', 'Source') }),
-      createSortableHeader('duration', t('analytics.duration', 'Duration')),
-      createSortableHeader('exitSlide', t('analytics.exitSlide', 'Exit Slide')),
-      createSortableHeader('when', t('analytics.when', 'When')),
-    ]);
+    const tableHeader = h(
+      'div',
+      { class: 'analytics-viewer-row analytics-viewer-header', role: 'row' },
+      [
+        h('div', {
+          class: 'analytics-viewer-cell',
+          role: 'columnheader',
+          text: t('analytics.viewer', 'Viewer'),
+        }),
+        h('div', {
+          class: 'analytics-viewer-cell',
+          role: 'columnheader',
+          text: t('analytics.source', 'Source'),
+        }),
+        createSortableHeader('duration', t('analytics.duration', 'Duration')),
+        createSortableHeader(
+          'exitSlide',
+          t('analytics.exitSlide', 'Exit Slide'),
+        ),
+        createSortableHeader('when', t('analytics.when', 'When')),
+      ],
+    );
     container.append(tableHeader);
 
     // Sort the sessions
@@ -195,7 +248,9 @@ function createSessionRow(h, session) {
   viewerText = session.viewerEmail
     ? session.viewerEmail
     : session.deviceId
-      ? t('analytics.deviceLabel', 'Device {{id}}...', { id: session.deviceId.substring(0, 8) })
+      ? t('analytics.deviceLabel', 'Device {{id}}...', {
+          id: session.deviceId.substring(0, 8),
+        })
       : t('analytics.anonymous', 'Anonymous');
 
   const viewerType = session.viewerType || 'anonymous';
@@ -207,30 +262,74 @@ function createSessionRow(h, session) {
   }
 
   // Exit slide display
-  const exitSlide = session.exitSlideIndex != null
-    ? t('analytics.slideNumber', 'Slide {{num}}', { num: session.exitSlideIndex + 1 })
-    : '-';
+  const exitSlide =
+    session.exitSlideIndex != null
+      ? t('analytics.slideNumber', 'Slide {{num}}', {
+          num: session.exitSlideIndex + 1,
+        })
+      : '-';
 
   // Time display
-  const when = session.startedAt
-    ? formatRelativeTime(session.startedAt)
-    : '-';
+  const when = session.startedAt ? formatRelativeTime(session.startedAt) : '-';
 
   const row = h('div', { class: 'analytics-viewer-row', role: 'row' }, [
-    h('div', { class: 'analytics-viewer-cell analytics-viewer-name', role: 'gridcell', 'data-label': '' }, [
-      viewerBadge
-        ? (viewerBadgeIsIcon
-          ? h('img', { class: 'analytics-viewer-badge', src: `/client/vendor/lucide-icons/${viewerBadge}.svg`, alt: '', 'aria-hidden': 'true' })
-          : h('span', { class: 'analytics-viewer-badge', 'aria-hidden': 'true', text: viewerBadge }))
-        : null,
-      h('span', { text: viewerText }),
-    ].filter(Boolean)),
-    h('div', { class: 'analytics-viewer-cell', role: 'gridcell', 'data-label': t('analytics.source', 'Source') }, [
-      h('span', { class: `analytics-source-badge analytics-source-${session.sourceType}`, text: getSourceLabel(session.sourceType) }),
-    ]),
-    h('div', { class: 'analytics-viewer-cell', role: 'gridcell', 'data-label': t('analytics.duration', 'Duration'), text: formatDuration(session.durationSeconds) }),
-    h('div', { class: 'analytics-viewer-cell', role: 'gridcell', 'data-label': t('analytics.exitSlide', 'Exit Slide'), text: exitSlide }),
-    h('div', { class: 'analytics-viewer-cell analytics-viewer-when', role: 'gridcell', 'data-label': t('analytics.when', 'When'), text: when }),
+    h(
+      'div',
+      {
+        class: 'analytics-viewer-cell analytics-viewer-name',
+        role: 'gridcell',
+        'data-label': '',
+      },
+      [
+        viewerBadge
+          ? viewerBadgeIsIcon
+            ? h('img', {
+                class: 'analytics-viewer-badge',
+                src: `/client/vendor/lucide-icons/${viewerBadge}.svg`,
+                alt: '',
+                'aria-hidden': 'true',
+              })
+            : h('span', {
+                class: 'analytics-viewer-badge',
+                'aria-hidden': 'true',
+                text: viewerBadge,
+              })
+          : null,
+        h('span', { text: viewerText }),
+      ].filter(Boolean),
+    ),
+    h(
+      'div',
+      {
+        class: 'analytics-viewer-cell',
+        role: 'gridcell',
+        'data-label': t('analytics.source', 'Source'),
+      },
+      [
+        h('span', {
+          class: `analytics-source-badge analytics-source-${session.sourceType}`,
+          text: getSourceLabel(session.sourceType),
+        }),
+      ],
+    ),
+    h('div', {
+      class: 'analytics-viewer-cell',
+      role: 'gridcell',
+      'data-label': t('analytics.duration', 'Duration'),
+      text: formatDuration(session.durationSeconds),
+    }),
+    h('div', {
+      class: 'analytics-viewer-cell',
+      role: 'gridcell',
+      'data-label': t('analytics.exitSlide', 'Exit Slide'),
+      text: exitSlide,
+    }),
+    h('div', {
+      class: 'analytics-viewer-cell analytics-viewer-when',
+      role: 'gridcell',
+      'data-label': t('analytics.when', 'When'),
+      text: when,
+    }),
   ]);
 
   return row;

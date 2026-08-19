@@ -26,12 +26,24 @@ export function createCommentsApi({ api, presentationId }) {
     };
   };
 
-  const createComment = async ({ body, slideId, parentId, positionX, positionY }) => {
+  const createComment = async ({
+    body,
+    slideId,
+    parentId,
+    positionX,
+    positionY,
+  }) => {
     // Validate position coordinates if provided
-    if (positionX !== undefined && (typeof positionX !== 'number' || positionX < 0 || positionX > 100)) {
+    if (
+      positionX !== undefined &&
+      (typeof positionX !== 'number' || positionX < 0 || positionX > 100)
+    ) {
       throw new Error('positionX must be a number between 0 and 100');
     }
-    if (positionY !== undefined && (typeof positionY !== 'number' || positionY < 0 || positionY > 100)) {
+    if (
+      positionY !== undefined &&
+      (typeof positionY !== 'number' || positionY < 0 || positionY > 100)
+    ) {
       throw new Error('positionY must be a number between 0 and 100');
     }
 
@@ -68,18 +80,24 @@ export function createCommentsApi({ api, presentationId }) {
   };
 
   const resolveComment = async (commentId) => {
-    const resp = await api(`/api/presentations/${pid}/comments/${commentId}/resolve`, {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
+    const resp = await api(
+      `/api/presentations/${pid}/comments/${commentId}/resolve`,
+      {
+        method: 'POST',
+        body: JSON.stringify({}),
+      },
+    );
     return resp;
   };
 
   const reopenComment = async (commentId) => {
-    const resp = await api(`/api/presentations/${pid}/comments/${commentId}/reopen`, {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
+    const resp = await api(
+      `/api/presentations/${pid}/comments/${commentId}/reopen`,
+      {
+        method: 'POST',
+        body: JSON.stringify({}),
+      },
+    );
     return resp;
   };
 

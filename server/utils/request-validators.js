@@ -203,7 +203,10 @@ const isValidPermission = _isValidPermission;
  */
 export function validatePermission(permission, res) {
   if (!isValidPermission(permission)) {
-    badRequest(res, 'Invalid permission. Must be view, comment, edit, or admin.');
+    badRequest(
+      res,
+      'Invalid permission. Must be view, comment, edit, or admin.',
+    );
     return false;
   }
   return true;
@@ -232,7 +235,10 @@ export function parsePaginationParams(searchParams, options = {}) {
 
   // Parse limit with clamping to [minLimit, maxLimit]
   const parsedLimit = rawLimit ? parseInt(rawLimit, 10) : defaultLimit;
-  const limit = Math.min(Math.max(parsedLimit || defaultLimit, minLimit), maxLimit);
+  const limit = Math.min(
+    Math.max(parsedLimit || defaultLimit, minLimit),
+    maxLimit,
+  );
 
   // Parse offset with minimum of 0
   const parsedOffset = rawOffset ? parseInt(rawOffset, 10) : 0;

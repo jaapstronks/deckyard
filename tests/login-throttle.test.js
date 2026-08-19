@@ -16,7 +16,11 @@ test('blocks after the per-email burst capacity is exhausted', async () => {
 
   let allowed = 0;
   for (let i = 0; i < cap; i++) {
-    assert.equal(await allowLoginAttempt({ ip, email }), true, `attempt ${i + 1}`);
+    assert.equal(
+      await allowLoginAttempt({ ip, email }),
+      true,
+      `attempt ${i + 1}`,
+    );
     allowed++;
   }
   assert.equal(allowed, cap);

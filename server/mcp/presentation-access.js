@@ -38,30 +38,44 @@ export async function loadPresentationChecked(
   storageScope,
   presentationId,
   ownerEmail,
-  { access = 'read' } = {}
+  { access = 'read' } = {},
 ) {
   if (!presentationId) {
-    throw new Error('A presentation id is required (pass `id` or `presentationId`).');
+    throw new Error(
+      'A presentation id is required (pass `id` or `presentationId`).',
+    );
   }
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
 
   if (!ownerEmail) return pres; // trusted local session, no owner configured
 
-  const actor = { email: ownerEmail, organizationId: storageScope?.organizationId || null };
+  const actor = {
+    email: ownerEmail,
+    organizationId: storageScope?.organizationId || null,
+  };
 
   // Read is the baseline for every access level. Fail with the same message
   // as "not found" so unreadable decks don't leak their existence.
   if (!(await canActorAccessPresentation(pres, actor, 'read'))) {
-    throw new Error(`Presentation not found or not accessible: ${presentationId}`);
+    throw new Error(
+      `Presentation not found or not accessible: ${presentationId}`,
+    );
   }
 
-  if (access === 'write' && !(await canActorAccessPresentation(pres, actor, 'write'))) {
-    throw new Error(`You have read-only access to this presentation: ${presentationId}`);
+  if (
+    access === 'write' &&
+    !(await canActorAccessPresentation(pres, actor, 'write'))
+  ) {
+    throw new Error(
+      `You have read-only access to this presentation: ${presentationId}`,
+    );
   }
 
   if (access === 'delete' && !(await canActorDeletePresentation(pres, actor))) {
-    throw new Error(`Only the presentation owner can delete it: ${presentationId}`);
+    throw new Error(
+      `Only the presentation owner can delete it: ${presentationId}`,
+    );
   }
 
   return pres;

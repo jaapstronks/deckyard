@@ -3,7 +3,10 @@
  * Includes resolve, reopen, dismiss, and apply operations.
  */
 
-import { getPresentation as getFullPresentation, updatePresentation } from '../../../storage/presentations/index.js';
+import {
+  getPresentation as getFullPresentation,
+  updatePresentation,
+} from '../../../storage/presentations/index.js';
 import {
   methodNotAllowed,
   serveJson,
@@ -30,7 +33,10 @@ import {
   broadcastToPresentation,
   CommentEventTypes,
 } from '../../../services/comment-events.js';
-import { withPresentationAuth, withPresentationReadAuth } from '../../../utils/route-middleware.js';
+import {
+  withPresentationAuth,
+  withPresentationReadAuth,
+} from '../../../utils/route-middleware.js';
 import { broadcastCommentCounts } from './comments-shared.js';
 
 /**
@@ -40,11 +46,17 @@ import { broadcastCommentCounts } from './comments-shared.js';
 export async function handlePresentationCommentResolve(
   { storageScope, req, res, authedUser } = {},
   id,
-  commentId
+  commentId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'read',
+  });
   if (!pres) return true;
 
   const comment = await getComment(storageScope, commentId);
@@ -58,7 +70,9 @@ export async function handlePresentationCommentResolve(
     return unauthorized(res);
   }
 
-  const result = await resolveComment(storageScope, commentId, { email: authedUser?.email });
+  const result = await resolveComment(storageScope, commentId, {
+    email: authedUser?.email,
+  });
 
   if (!result.ok) {
     return jsonError(res, getErrorStatus(result.reason), result.reason);
@@ -89,11 +103,17 @@ export async function handlePresentationCommentResolve(
 export async function handlePresentationCommentReopen(
   { storageScope, req, res, authedUser } = {},
   id,
-  commentId
+  commentId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'read',
+  });
   if (!pres) return true;
 
   const comment = await getComment(storageScope, commentId);
@@ -140,11 +160,17 @@ export async function handlePresentationCommentReopen(
 export async function handlePresentationCommentDismiss(
   { storageScope, req, res, authedUser } = {},
   id,
-  commentId
+  commentId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'read',
+  });
   if (!pres) return true;
 
   const comment = await getComment(storageScope, commentId);
@@ -158,7 +184,9 @@ export async function handlePresentationCommentDismiss(
     return unauthorized(res);
   }
 
-  const result = await dismissComment(storageScope, commentId, { email: authedUser?.email });
+  const result = await dismissComment(storageScope, commentId, {
+    email: authedUser?.email,
+  });
 
   if (!result.ok) {
     return jsonError(res, getErrorStatus(result.reason), result.reason);
@@ -184,11 +212,17 @@ export async function handlePresentationCommentDismiss(
 export async function handlePresentationCommentApply(
   { storageScope, req, res, authedUser } = {},
   id,
-  commentId
+  commentId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'read',
+  });
   if (!pres) return true;
 
   const comment = await getComment(storageScope, commentId);
@@ -203,7 +237,11 @@ export async function handlePresentationCommentApply(
   }
 
   // Verify comment has proposedSlide data
-  if (!comment.proposedSlide || !comment.proposedSlide.type || !comment.proposedSlide.content) {
+  if (
+    !comment.proposedSlide ||
+    !comment.proposedSlide.type ||
+    !comment.proposedSlide.content
+  ) {
     return badRequest(res, 'This suggestion does not have a proposed slide');
   }
 
@@ -213,7 +251,7 @@ export async function handlePresentationCommentApply(
 
   // Find the slide referenced by the comment
   const slides = fullPres.slides || [];
-  const originalSlideIndex = slides.findIndex(s => s.id === comment.slideId);
+  const originalSlideIndex = slides.findIndex((s) => s.id === comment.slideId);
 
   if (originalSlideIndex === -1) {
     return badRequest(res, 'Referenced slide not found');
@@ -236,7 +274,9 @@ export async function handlePresentationCommentApply(
   await updatePresentation(storageScope, id, fullPres, storageScope);
 
   // Mark the suggestion as resolved
-  const resolveResult = await resolveComment(storageScope, commentId, { email: authedUser?.email });
+  const resolveResult = await resolveComment(storageScope, commentId, {
+    email: authedUser?.email,
+  });
 
   // Broadcast comment update
   if (resolveResult.ok) {
@@ -266,11 +306,17 @@ export async function handlePresentationCommentApply(
  */
 export async function handlePresentationCommentsMarkRead(
   { storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const { pres } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
+  const { pres } = await withPresentationReadAuth({
+    storageScope,
+    req,
+    id,
+    authedUser,
+    res,
+  });
   if (!pres) return true;
 
   const jsonResult = await requireJsonBody(req, res);

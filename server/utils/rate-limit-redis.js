@@ -26,7 +26,10 @@ const DEFAULT_WINDOW_SECONDS = 60;
  * @param {number} [options.windowSeconds] - Window size in seconds (default: 60)
  * @returns {Promise<{allowed: boolean, remaining: number, resetAt: number}>}
  */
-async function checkRateLimitRedis(key, { capacity, windowSeconds = DEFAULT_WINDOW_SECONDS }) {
+async function checkRateLimitRedis(
+  key,
+  { capacity, windowSeconds = DEFAULT_WINDOW_SECONDS },
+) {
   const now = Date.now();
   const windowMs = windowSeconds * 1000;
   const windowStart = now - windowMs;
@@ -95,4 +98,3 @@ export async function allowRequestRedis(key, { capacity, refillPerSec }) {
 
   return result.allowed;
 }
-

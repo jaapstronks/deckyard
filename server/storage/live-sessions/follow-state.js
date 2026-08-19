@@ -14,9 +14,14 @@ import { sessions } from './state.js';
 export async function getFollowStateForPresentation(
   scope,
   presentationId,
-  { liveWindowMs = LIVE_WINDOW_MS } = {}
+  { liveWindowMs = LIVE_WINDOW_MS } = {},
 ) {
-  toStorageContext(scope, 'getFollowStateForPresentation', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'getFollowStateForPresentation',
+    {},
+    { allowCrossOrganization: true },
+  );
   const pid = String(presentationId || '').trim();
   if (!pid)
     return {
@@ -38,7 +43,8 @@ export async function getFollowStateForPresentation(
   for (const s of sessions.values()) {
     if (!s || s.presentationId !== pid) continue;
     foundAny = true;
-    const ts = Number(s?.state?.updatedAt || 0) || Number(s?.createdAt || 0) || 0;
+    const ts =
+      Number(s?.state?.updatedAt || 0) || Number(s?.createdAt || 0) || 0;
     if (ts > bestTs) {
       bestTs = ts;
       best = s;
@@ -60,7 +66,8 @@ export async function getFollowStateForPresentation(
   const now = Date.now();
   const isLive =
     updatedAt &&
-    now - updatedAt <= Math.max(10_000, Number(liveWindowMs || 0) || LIVE_WINDOW_MS);
+    now - updatedAt <=
+      Math.max(10_000, Number(liveWindowMs || 0) || LIVE_WINDOW_MS);
 
   return {
     status: isLive ? 'live' : foundAny ? 'ended' : 'not_started',

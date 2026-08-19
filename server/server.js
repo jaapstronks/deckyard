@@ -1,11 +1,7 @@
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
-import {
-  CLIENT_DIR,
-  SHARED_PUBLIC_DIRS,
-  repoRoot,
-} from './config/paths.js';
+import { CLIENT_DIR, SHARED_PUBLIC_DIRS, repoRoot } from './config/paths.js';
 import { loadDotEnv } from './config/env.js';
 import { authConfigError, authConfigWarnings } from './auth/auth.js';
 import { deprecatedFlagWarnings } from './config/features.js';
@@ -148,7 +144,11 @@ async function handleRequest(req, res) {
       } catch {}
       log.error(`${method} ${pathname} → 500`, err?.stack || err);
     }
-    const payload = JSON.stringify(buildTopLevelErrorBody(status, err), null, 2);
+    const payload = JSON.stringify(
+      buildTopLevelErrorBody(status, err),
+      null,
+      2,
+    );
 
     // Important for streaming endpoints (SSE): headers may already be sent.
     if (!res.headersSent && !res.writableEnded) {
@@ -197,7 +197,7 @@ async function main() {
     if (envBool('AUTH_DEV_BYPASS')) {
       console.error(
         '\n⚠️  SECURITY WARNING: AUTH_DEV_BYPASS is enabled in production!\n' +
-        '   This allows passwordless admin access. Set AUTH_DEV_BYPASS=false immediately.\n'
+          '   This allows passwordless admin access. Set AUTH_DEV_BYPASS=false immediately.\n',
       );
       process.exit(1);
     }
@@ -294,16 +294,14 @@ async function main() {
     // eslint-disable-next-line no-console
     console.error(
       `Server failed to start (${String(
-        err?.code || 'ERR'
-      )}): ${String(err?.message || err)}`
+        err?.code || 'ERR',
+      )}): ${String(err?.message || err)}`,
     );
     process.exit(1);
   });
   server.listen(PORT, HOST, () => {
     // eslint-disable-next-line no-console
-    console.log(
-      `Slide Deck Builder running at http://${HOST}:${PORT}`
-    );
+    console.log(`Slide Deck Builder running at http://${HOST}:${PORT}`);
   });
 
   // Graceful shutdown
@@ -315,7 +313,8 @@ async function main() {
     // nobody, because the connections are all on the container going down.
     try {
       const { notified } = announceMaintenance(true, { reason: 'shutdown' });
-      if (notified > 0) log.info(`Maintenance announced to ${notified} client(s)`);
+      if (notified > 0)
+        log.info(`Maintenance announced to ${notified} client(s)`);
     } catch {
       // Never let the announcement block the shutdown it precedes.
     }
@@ -344,6 +343,9 @@ async function main() {
 // the full dependency graph without opening a database or binding a port. The
 // pathToFileURL comparison (not a raw string) matches the idiom in
 // scripts/generate-slide-type-docs.js and survives paths containing spaces.
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   await main();
 }

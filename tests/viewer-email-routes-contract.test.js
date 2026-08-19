@@ -56,14 +56,13 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { handlePublishedPage, handlePublishedReader } = await import(
-  '../server/routes/static/published.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { handlePublishedPage, handlePublishedReader } =
+  await import('../server/routes/static/published.js');
 const { handleEmbed } = await import('../server/routes/static/embed.js');
-const { handleEmailTemplates } = await import('../server/routes/api/email-templates.js');
+const { handleEmailTemplates } =
+  await import('../server/routes/api/email-templates.js');
 
 const PUBLISH_ID = 'abcd1234'; // 8 hex chars, matches the route regexes
 const SLUG = 'my-deck';
@@ -74,7 +73,11 @@ const UNKNOWN_ID = 'deadbeef'; // well-formed, never published
 let db;
 
 test.before(async () => {
-  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    }),
+  );
   await initializeStorage();
 });
 
@@ -220,7 +223,11 @@ async function callEmail(method, pathAndQuery, { as = null, body } = {}) {
 
 test('a published page for an unknown publish id is a 404', async () => {
   seed();
-  const { handled, res } = await callViewer(handlePublishedPage, 'GET', `/p/${UNKNOWN_ID}-${SLUG}`);
+  const { handled, res } = await callViewer(
+    handlePublishedPage,
+    'GET',
+    `/p/${UNKNOWN_ID}-${SLUG}`,
+  );
 
   assert.equal(handled, true);
   assert.equal(res.statusCode, 404);
@@ -228,14 +235,26 @@ test('a published page for an unknown publish id is a 404', async () => {
 
 test('a published page whose deck no longer exists is a 404', async () => {
   seed();
-  const { res } = await callViewer(handlePublishedPage, 'GET', `/p/${GHOST_PUBLISH_ID}-${SLUG}`);
+  const { res } = await callViewer(
+    handlePublishedPage,
+    'GET',
+    `/p/${GHOST_PUBLISH_ID}-${SLUG}`,
+  );
 
-  assert.equal(res.statusCode, 404, 'the publish entry resolves, but its deck is gone');
+  assert.equal(
+    res.statusCode,
+    404,
+    'the publish entry resolves, but its deck is gone',
+  );
 });
 
 test('a published page with a missing slug redirects to the canonical path', async () => {
   seed();
-  const { res } = await callViewer(handlePublishedPage, 'GET', `/p/${PUBLISH_ID}`);
+  const { res } = await callViewer(
+    handlePublishedPage,
+    'GET',
+    `/p/${PUBLISH_ID}`,
+  );
 
   assert.equal(res.statusCode, 302);
   assert.equal(res.headers.Location, `/p/${PUBLISH_ID}-${SLUG}`);
@@ -243,7 +262,11 @@ test('a published page with a missing slug redirects to the canonical path', asy
 
 test('a published page with the wrong slug redirects to the canonical path', async () => {
   seed();
-  const { res } = await callViewer(handlePublishedPage, 'GET', `/p/${PUBLISH_ID}-not-the-slug`);
+  const { res } = await callViewer(
+    handlePublishedPage,
+    'GET',
+    `/p/${PUBLISH_ID}-not-the-slug`,
+  );
 
   assert.equal(res.statusCode, 302);
   assert.equal(res.headers.Location, `/p/${PUBLISH_ID}-${SLUG}`);
@@ -251,7 +274,11 @@ test('a published page with the wrong slug redirects to the canonical path', asy
 
 test('a non-GET method on a published path falls through unmatched', async () => {
   seed();
-  const { handled, res } = await callViewer(handlePublishedPage, 'POST', `/p/${PUBLISH_ID}-${SLUG}`);
+  const { handled, res } = await callViewer(
+    handlePublishedPage,
+    'POST',
+    `/p/${PUBLISH_ID}-${SLUG}`,
+  );
 
   assert.equal(handled, false, 'only GET is served');
   assert.equal(res.statusCode, null);
@@ -259,14 +286,22 @@ test('a non-GET method on a published path falls through unmatched', async () =>
 
 test('the reader view refuses an unknown publish id with a 404', async () => {
   seed();
-  const { res } = await callViewer(handlePublishedReader, 'GET', `/p/${UNKNOWN_ID}-${SLUG}/reader`);
+  const { res } = await callViewer(
+    handlePublishedReader,
+    'GET',
+    `/p/${UNKNOWN_ID}-${SLUG}/reader`,
+  );
 
   assert.equal(res.statusCode, 404);
 });
 
 test('the reader view redirects a wrong slug to the canonical reader path', async () => {
   seed();
-  const { res } = await callViewer(handlePublishedReader, 'GET', `/p/${PUBLISH_ID}-wrong/reader`);
+  const { res } = await callViewer(
+    handlePublishedReader,
+    'GET',
+    `/p/${PUBLISH_ID}-wrong/reader`,
+  );
 
   assert.equal(res.statusCode, 302);
   assert.equal(res.headers.Location, `/p/${PUBLISH_ID}-${SLUG}/reader`);
@@ -278,21 +313,33 @@ test('the reader view redirects a wrong slug to the canonical reader path', asyn
 
 test('an embed for an unknown publish id is a 404', async () => {
   seed();
-  const { res } = await callViewer(handleEmbed, 'GET', `/embed/${UNKNOWN_ID}-${SLUG}`);
+  const { res } = await callViewer(
+    handleEmbed,
+    'GET',
+    `/embed/${UNKNOWN_ID}-${SLUG}`,
+  );
 
   assert.equal(res.statusCode, 404);
 });
 
 test('an embed whose deck no longer exists is a 404', async () => {
   seed();
-  const { res } = await callViewer(handleEmbed, 'GET', `/embed/${GHOST_PUBLISH_ID}-${SLUG}`);
+  const { res } = await callViewer(
+    handleEmbed,
+    'GET',
+    `/embed/${GHOST_PUBLISH_ID}-${SLUG}`,
+  );
 
   assert.equal(res.statusCode, 404);
 });
 
 test('an embed with a wrong slug redirects to the canonical embed path', async () => {
   seed();
-  const { res } = await callViewer(handleEmbed, 'GET', `/embed/${PUBLISH_ID}-not-the-slug`);
+  const { res } = await callViewer(
+    handleEmbed,
+    'GET',
+    `/embed/${PUBLISH_ID}-not-the-slug`,
+  );
 
   assert.equal(res.statusCode, 302, 'a supplied-but-wrong slug is corrected');
   assert.equal(res.headers.Location, `/embed/${PUBLISH_ID}-${SLUG}`);
@@ -315,7 +362,11 @@ test('the email-template routes refuse an unauthenticated caller with a 401', as
 
 test('the email-template routes refuse a non-admin caller with a 401', async () => {
   seed();
-  const { res } = await callEmail('GET', '/api/admin/email-templates/metadata', { as: PLAIN });
+  const { res } = await callEmail(
+    'GET',
+    '/api/admin/email-templates/metadata',
+    { as: PLAIN },
+  );
 
   assert.equal(res.statusCode, 401);
   assert.match(res.body.message, /Admin access required/);
@@ -323,17 +374,25 @@ test('the email-template routes refuse a non-admin caller with a 401', async () 
 
 test('an admin may read the template metadata', async () => {
   seed();
-  const { res } = await callEmail('GET', '/api/admin/email-templates/metadata', { as: ADMIN });
+  const { res } = await callEmail(
+    'GET',
+    '/api/admin/email-templates/metadata',
+    { as: ADMIN },
+  );
 
   assert.equal(res.statusCode, 200, 'the admin gate opens for an admin');
 });
 
 test('the test-send rejects an unknown template type with a 400', async () => {
   seed();
-  const { res } = await callEmail('POST', '/api/admin/email-templates/no-such-type/test', {
-    as: ADMIN,
-    body: { locale: 'en' },
-  });
+  const { res } = await callEmail(
+    'POST',
+    '/api/admin/email-templates/no-such-type/test',
+    {
+      as: ADMIN,
+      body: { locale: 'en' },
+    },
+  );
 
   assert.equal(res.statusCode, 400);
   assert.match(res.body.message, /Invalid template type/);
@@ -341,10 +400,14 @@ test('the test-send rejects an unknown template type with a 400', async () => {
 
 test('the test-send rejects an unsupported locale with a 400', async () => {
   seed();
-  const { res } = await callEmail('POST', '/api/admin/email-templates/userInvitation/test', {
-    as: ADMIN,
-    body: { locale: 'zz' },
-  });
+  const { res } = await callEmail(
+    'POST',
+    '/api/admin/email-templates/userInvitation/test',
+    {
+      as: ADMIN,
+      body: { locale: 'zz' },
+    },
+  );
 
   assert.equal(res.statusCode, 400);
   assert.match(res.body.message, /Invalid locale/);
@@ -352,11 +415,19 @@ test('the test-send rejects an unsupported locale with a 400', async () => {
 
 test('the test-send is a 501 when outgoing email is not configured', async () => {
   seed();
-  const { res } = await callEmail('POST', '/api/admin/email-templates/userInvitation/test', {
-    as: ADMIN,
-    body: { locale: 'en' },
-  });
+  const { res } = await callEmail(
+    'POST',
+    '/api/admin/email-templates/userInvitation/test',
+    {
+      as: ADMIN,
+      body: { locale: 'en' },
+    },
+  );
 
-  assert.equal(res.statusCode, 501, 'no BREVO_API_KEY means nothing was attempted');
+  assert.equal(
+    res.statusCode,
+    501,
+    'no BREVO_API_KEY means nothing was attempted',
+  );
   assert.equal(res.body.error, 'email_not_configured');
 });

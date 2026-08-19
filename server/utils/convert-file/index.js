@@ -17,7 +17,10 @@ import {
   SUPPORTED_EXTENSIONS,
   SUPPORTED_MIME_TYPES,
 } from './helpers.js';
-import { convertMarkdownText, convertMarkdownBundle } from '../markdown-import/index.js';
+import {
+  convertMarkdownText,
+  convertMarkdownBundle,
+} from '../markdown-import/index.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('convert-file');
@@ -68,7 +71,7 @@ export async function convertFile(buffer, options = {}) {
   if (!fileType) {
     report.errors.push(
       `Unsupported file type. Please upload a .pptx, .pdf, .docx, .rtf, .odt, .md, or .zip file. ` +
-        `(filename: ${filename}, mimeType: ${mimeType})`
+        `(filename: ${filename}, mimeType: ${mimeType})`,
     );
     return { deck: null, report };
   }
@@ -76,7 +79,9 @@ export async function convertFile(buffer, options = {}) {
   // Markdown files bypass AI entirely — deterministic conversion
   if (fileType === 'md') {
     const mdText = buffer.toString('utf-8');
-    const mdResult = await convertMarkdownText(mdText, { lang: lang !== 'auto' ? lang : undefined });
+    const mdResult = await convertMarkdownText(mdText, {
+      lang: lang !== 'auto' ? lang : undefined,
+    });
     return {
       deck: mdResult.deck,
       report: {
@@ -89,7 +94,9 @@ export async function convertFile(buffer, options = {}) {
 
   // Zip bundles — markdown + images, deterministic conversion
   if (fileType === 'zip') {
-    const zipResult = await convertMarkdownBundle(buffer, { lang: lang !== 'auto' ? lang : undefined });
+    const zipResult = await convertMarkdownBundle(buffer, {
+      lang: lang !== 'auto' ? lang : undefined,
+    });
     return {
       deck: zipResult.deck,
       report: {
@@ -135,15 +142,15 @@ export async function convertFile(buffer, options = {}) {
   }
 
   // Process image-only slides: upload images and create image-slides directly
-  const { imageOnlySlides, regularSlides, titleSlideCandidate } = await processImageOnlySlides(
-    parseResult.slides,
-    { onStatusMessage }
-  );
+  const { imageOnlySlides, regularSlides, titleSlideCandidate } =
+    await processImageOnlySlides(parseResult.slides, { onStatusMessage });
 
   if (imageOnlySlides.length > 0) {
     log.info(`Found ${imageOnlySlides.length} image-only slide(s)`);
     if (typeof onStatusMessage === 'function') {
-      onStatusMessage(`${imageOnlySlides.length} afbeelding-slide(s) direct converteren...`);
+      onStatusMessage(
+        `${imageOnlySlides.length} afbeelding-slide(s) direct converteren...`,
+      );
     }
   }
 
@@ -152,7 +159,10 @@ export async function convertFile(buffer, options = {}) {
   }
 
   // Format remaining content for AI conversion
-  const formattedContent = formatSlidesForAi(regularSlides, parseResult.metadata);
+  const formattedContent = formatSlidesForAi(
+    regularSlides,
+    parseResult.metadata,
+  );
 
   // Get first slide content for title slide detection
   const firstSlideContent = parseResult.slides?.[0]?.textContent || '';
@@ -160,9 +170,10 @@ export async function convertFile(buffer, options = {}) {
   // Calculate the starting index offset for AI slides
   // This is needed to correctly merge image-only slides (which have real source indices)
   // with AI-processed slides (which have sequential 0-based indices)
-  const aiSlideIndexOffset = regularSlides.length > 0
-    ? Math.min(...regularSlides.map(s => s._originalIndex ?? 0))
-    : 0;
+  const aiSlideIndexOffset =
+    regularSlides.length > 0
+      ? Math.min(...regularSlides.map((s) => s._originalIndex ?? 0))
+      : 0;
 
   // Use AI V2 to convert to deck format
   try {
@@ -198,7 +209,7 @@ export async function convertFile(buffer, options = {}) {
     if (difference > parseResult.slides.length * 0.3) {
       report.warnings.push(
         `The original had ${parseResult.slides.length} slides, but ${deck.slides.length} were generated. ` +
-          `Some content may have been combined or split differently.`
+          `Some content may have been combined or split differently.`,
       );
     }
 
@@ -216,7 +227,7 @@ export async function convertFile(buffer, options = {}) {
 
     if (report.slidesWithIssues.length > 0) {
       report.warnings.push(
-        `${report.slidesWithIssues.length} slide(s) may need manual review.`
+        `${report.slidesWithIssues.length} slide(s) may need manual review.`,
       );
     }
 

@@ -11,7 +11,12 @@ import { newSlide, validateSlide } from '../shared/slide-types/presentation.js';
 
 test('normalizeSlideBackgrounds keeps valid entries and fills defaults', () => {
   const out = normalizeSlideBackgrounds([
-    { id: 'Calm', value: ' #140a26 ', textColor: '#fff', textColorMuted: 'rgba(255,255,255,0.7)' },
+    {
+      id: 'Calm',
+      value: ' #140a26 ',
+      textColor: '#fff',
+      textColorMuted: 'rgba(255,255,255,0.7)',
+    },
     { id: 'plain-tint', value: 'linear-gradient(#fff, #eee)' },
   ]);
   assert.equal(out.length, 2);
@@ -45,7 +50,12 @@ test('normalizeSlideBackgrounds drops reserved, unsafe, duplicate and empty entr
 
 test('normalizeSlideBackgrounds ignores textColorMuted and linkColor without textColor', () => {
   const out = normalizeSlideBackgrounds([
-    { id: 'calm', value: '#111', textColorMuted: 'rgba(0,0,0,0.5)', linkColor: '#8fd0ff' },
+    {
+      id: 'calm',
+      value: '#111',
+      textColorMuted: 'rgba(0,0,0,0.5)',
+      linkColor: '#8fd0ff',
+    },
   ]);
   assert.equal(out[0].textColor, undefined);
   assert.equal(out[0].textColorMuted, undefined);
@@ -62,8 +72,13 @@ test('normalizeSlideBackgrounds keeps linkColor alongside textColor', () => {
 test('slideBackgroundCssVars emits --t-slide-bg-<id>* vars', () => {
   const vars = slideBackgroundCssVars(
     normalizeSlideBackgrounds([
-      { id: 'calm', value: '#140a26', textColor: '#fff', textColorMuted: 'rgba(255,255,255,0.72)' },
-    ])
+      {
+        id: 'calm',
+        value: '#140a26',
+        textColor: '#fff',
+        textColorMuted: 'rgba(255,255,255,0.72)',
+      },
+    ]),
   );
   assert.deepEqual(vars, {
     '--t-slide-bg-calm': '#140a26',
@@ -76,7 +91,7 @@ test('slideBackgroundCssVars emits --t-slide-bg-<id>-link when linkColor is set'
   const vars = slideBackgroundCssVars(
     normalizeSlideBackgrounds([
       { id: 'calm', value: '#140a26', textColor: '#fff', linkColor: '#8fd0ff' },
-    ])
+    ]),
   );
   assert.equal(vars['--t-slide-bg-calm-link'], '#8fd0ff');
 });
@@ -88,13 +103,16 @@ test('slideBackgroundsCssText generates guarded rules; contrast block only with 
   ]);
   const css = slideBackgroundsCssText(entries);
   assert.match(css, /\.slide\.slide-bg-calm \{/);
-  assert.match(css, /--slide-bg: var\(--t-slide-bg-calm, var\(--slide-surface\)\);/);
+  assert.match(
+    css,
+    /--slide-bg: var\(--t-slide-bg-calm, var\(--slide-surface\)\);/,
+  );
   assert.match(css, /--slide-on-surface: var\(--slide-bg-text\);/);
   // A text-flipping variant also redirects --slide-link, derived from the
   // accent mixed toward the variant's own text colour (no author declaration).
   assert.match(
     css,
-    /--slide-link: var\(--t-slide-bg-calm-link, color-mix\(in srgb, var\(--slide-accent\) 42%, var\(--slide-bg-text\)\)\);/
+    /--slide-link: var\(--t-slide-bg-calm-link, color-mix\(in srgb, var\(--slide-accent\) 42%, var\(--slide-bg-text\)\)\);/,
   );
   assert.match(css, /\.slide\.slide-bg-tint \{/);
   // No contrast redirect for the textColor-less variant
@@ -114,9 +132,12 @@ test('a text-flipping variant pairs the inverted plane with the opposite pole', 
     normalizeSlideBackgrounds([
       { id: 'calm', value: '#140a26', textColor: '#ffffff' },
       { id: 'paper', value: '#f5f3ef', textColor: '#1c1917' },
-    ])
+    ]),
   );
-  const calmRule = css.slice(css.indexOf('.slide.slide-bg-calm'), css.indexOf('.slide.slide-bg-paper'));
+  const calmRule = css.slice(
+    css.indexOf('.slide.slide-bg-calm'),
+    css.indexOf('.slide.slide-bg-paper'),
+  );
   const paperRule = css.slice(css.indexOf('.slide.slide-bg-paper'));
   assert.match(calmRule, /--slide-on-inverted: var\(--slide-on-light\);/);
   assert.match(paperRule, /--slide-on-inverted: var\(--slide-on-dark\);/);
@@ -144,12 +165,12 @@ test('validateSlide accepts theme variant ids for the background field only', ()
   slide.content.background = 'calm';
   assert.deepEqual(
     validateSlide(slide).filter((e) => e.includes('background')),
-    []
+    [],
   );
 
   slide.content.background = 'not a slug!';
   assert.equal(
     validateSlide(slide).filter((e) => e.includes('background')).length,
-    1
+    1,
   );
 });

@@ -1,7 +1,10 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { getFeatures } from '../../../lib/state/features.js';
 import { buildSectionHeader } from './section-header.js';
-import { createEmptyState, createNoPresentationsEmptyState } from '../empty-state.js';
+import {
+  createEmptyState,
+  createNoPresentationsEmptyState,
+} from '../empty-state.js';
 import { createSandboxExamplesSection } from './sandbox-examples.js';
 import { createOnboardingChecklist } from '../onboarding-checklist.js';
 import { displayNameFromEmail } from '../../../lib/user/user-format.js';
@@ -74,21 +77,24 @@ export function createHomeView({
           title: t('sandbox.home.title', 'Welcome to the Deckyard sandbox'),
           message: t(
             'sandbox.home.message',
-            'Start a new presentation, or open one of the examples below to explore the editor.'
+            'Start a new presentation, or open one of the examples below to explore the editor.',
           ),
           primaryLabel: t('sandbox.home.create', 'New presentation'),
           onPrimary: onCreate,
         }),
-        createSandboxExamplesSection({ h, api, nav, detachThumbs })
+        createSandboxExamplesSection({ h, api, nav, detachThumbs }),
       );
     } else {
       homeView.append(
         themePicker.el,
         createNoPresentationsEmptyState({
           h,
-          title: t('list.home.firstRunTitle', 'Welcome — let’s make your first deck'),
+          title: t(
+            'list.home.firstRunTitle',
+            'Welcome — let’s make your first deck',
+          ),
           onCreate,
-        })
+        }),
       );
     }
     if (onboardingChecklist) homeView.append(onboardingChecklist);
@@ -104,7 +110,10 @@ export function createHomeView({
   }
 
   // Recent presentations section
-  const homeRecentSection = h('div', { class: 'presentation-section', 'data-section': 'recent' });
+  const homeRecentSection = h('div', {
+    class: 'presentation-section',
+    'data-section': 'recent',
+  });
   const homeRecentList = h('div', { class: 'list presentation-grid' });
 
   homeRecentSection.append(
@@ -117,22 +126,33 @@ export function createHomeView({
     }),
     allByDate.length
       ? homeRecentList
-      : h('div', { class: 'help', text: t('list.home.recentEmpty', 'No presentations yet.') })
+      : h('div', {
+          class: 'help',
+          text: t('list.home.recentEmpty', 'No presentations yet.'),
+        }),
   );
 
   for (const p of allByDate.slice(0, 4)) {
-    homeRecentList.append(renderCard(p, {
-      isOrganization: p.visibility === 'organization',
-      isSharedWithMe: p.isSharedWithMe,
-      sharedBy: p.sharedBy,
-      permission: p.permission,
-    }));
+    homeRecentList.append(
+      renderCard(p, {
+        isOrganization: p.visibility === 'organization',
+        isSharedWithMe: p.isSharedWithMe,
+        sharedBy: p.sharedBy,
+        permission: p.permission,
+      }),
+    );
   }
 
   // Popular presentations section
-  const homePopularSection = h('div', { class: 'presentation-section', 'data-section': 'popular' });
+  const homePopularSection = h('div', {
+    class: 'presentation-section',
+    'data-section': 'popular',
+  });
   const homePopularList = h('div', { class: 'list presentation-grid' });
-  const homePopularLoading = h('div', { class: 'help', text: t('list.home.popularLoading', 'Loading popular...') });
+  const homePopularLoading = h('div', {
+    class: 'help',
+    text: t('list.home.popularLoading', 'Loading popular...'),
+  });
 
   homePopularSection.append(
     buildSectionHeader({
@@ -145,13 +165,19 @@ export function createHomeView({
       badge: '',
       hideViewAll: true,
     }),
-    homePopularLoading
+    homePopularLoading,
   );
 
   // Activity preview section
-  const homeActivitySection = h('div', { class: 'presentation-section', 'data-section': 'activity' });
+  const homeActivitySection = h('div', {
+    class: 'presentation-section',
+    'data-section': 'activity',
+  });
   const homeActivityList = h('div', { class: 'home-activity-preview' });
-  const homeActivityLoading = h('div', { class: 'help', text: t('list.home.activityLoading', 'Loading activity...') });
+  const homeActivityLoading = h('div', {
+    class: 'help',
+    text: t('list.home.activityLoading', 'Loading activity...'),
+  });
 
   homeActivitySection.append(
     buildSectionHeader({
@@ -159,19 +185,28 @@ export function createHomeView({
       icon: 'bell',
       title: t('list.home.activityFromOthers', 'From others'),
       count: unreadCount,
-      badge: unreadCount > 0 ? t('list.home.activityNew', '{count} new', { count: unreadCount }) : '',
+      badge:
+        unreadCount > 0
+          ? t('list.home.activityNew', '{count} new', { count: unreadCount })
+          : '',
       onViewAll: () => setView('activity'),
     }),
-    homeActivityLoading
+    homeActivityLoading,
   );
 
   // Building-blocks shelf — the create affordance, backed by reusable slide
   // collections + individual organization slides. Replaces the theme-picker "start
   // something new" zone: on a returning Home, "start from a building block" is
   // the more useful create path now that starter kits are gone.
-  const homeBlocksSection = h('div', { class: 'presentation-section', 'data-section': 'building-blocks' });
+  const homeBlocksSection = h('div', {
+    class: 'presentation-section',
+    'data-section': 'building-blocks',
+  });
   const homeBlocksList = h('div', { class: 'home-blocks-grid' });
-  const homeBlocksLoading = h('div', { class: 'help', text: t('list.home.blocks.loading', 'Loading building blocks...') });
+  const homeBlocksLoading = h('div', {
+    class: 'help',
+    text: t('list.home.blocks.loading', 'Loading building blocks...'),
+  });
 
   homeBlocksSection.append(
     buildSectionHeader({
@@ -181,7 +216,7 @@ export function createHomeView({
       badge: '',
       onViewAll: () => setView('slideLibrary'),
     }),
-    homeBlocksLoading
+    homeBlocksLoading,
   );
 
   // Greeting header — a real page anchor at the top of the column, replacing
@@ -209,7 +244,7 @@ export function createHomeView({
     // signal, and no collaborators, so those sections are permanently empty.
     homeMain.append(
       createSandboxExamplesSection({ h, api, nav, detachThumbs }),
-      homeRecentSection
+      homeRecentSection,
     );
     homeColumns.append(homeMain);
     homeColumns.classList.add('is-single-column');
@@ -237,7 +272,9 @@ export function createHomeView({
   async function loadPopularPresentations() {
     try {
       const agg = await fetchHomeAggregate();
-      const presentations = agg ? agg.popular : await api('/api/presentations/popular');
+      const presentations = agg
+        ? agg.popular
+        : await api('/api/presentations/popular');
       homePopularLoading.remove();
 
       if (!presentations || presentations.length === 0) {
@@ -248,14 +285,19 @@ export function createHomeView({
         homePopularSection.remove();
       } else {
         for (const p of presentations.slice(0, 4)) {
-          homePopularList.append(renderCard(p, {
-            isOrganization: p.visibility === 'organization',
-          }));
+          homePopularList.append(
+            renderCard(p, {
+              isOrganization: p.visibility === 'organization',
+            }),
+          );
         }
         homePopularSection.append(homePopularList);
       }
     } catch {
-      homePopularLoading.textContent = t('list.home.popularError', 'Failed to load popular.');
+      homePopularLoading.textContent = t(
+        'list.home.popularError',
+        'Failed to load popular.',
+      );
     }
   }
 
@@ -283,12 +325,17 @@ export function createHomeView({
         homeColumns.classList.add('is-single-column');
       } else {
         for (const bundle of bundles) {
-          homeActivityList.append(renderActivityPreviewItem(h, nav, bundle, detachThumbs));
+          homeActivityList.append(
+            renderActivityPreviewItem(h, nav, bundle, detachThumbs),
+          );
         }
         homeActivitySection.append(homeActivityList);
       }
     } catch {
-      homeActivityLoading.textContent = t('list.home.activityError', 'Failed to load activity.');
+      homeActivityLoading.textContent = t(
+        'list.home.activityError',
+        'Failed to load activity.',
+      );
     }
   }
 
@@ -303,13 +350,20 @@ export function createHomeView({
       let organizationResp;
       let usageResp;
       if (agg) {
-        collections = agg.buildingBlocks?.collections || { personal: [], organization: [] };
-        organizationResp = { items: agg.buildingBlocks?.organizationSlides || [] };
+        collections = agg.buildingBlocks?.collections || {
+          personal: [],
+          organization: [],
+        };
+        organizationResp = {
+          items: agg.buildingBlocks?.organizationSlides || [],
+        };
         usageResp = agg.usage || { items: [] };
       } else {
         const collectionsApi = createCollectionsApi({ api });
         [collections, organizationResp, usageResp] = await Promise.all([
-          collectionsApi.listAll().catch(() => ({ personal: [], organization: [] })),
+          collectionsApi
+            .listAll()
+            .catch(() => ({ personal: [], organization: [] })),
           api('/api/slide-library/organization').catch(() => ({ items: [] })),
           api('/api/slide-library/usage').catch(() => ({ items: [] })),
         ]);
@@ -319,8 +373,9 @@ export function createHomeView({
       // Set of {itemType}:{itemId} the current user has already used, so organization
       // building blocks they've never started from get a "new to you" badge.
       const usedSet = new Set(
-        (Array.isArray(usageResp?.items) ? usageResp.items : [])
-          .map((u) => `${u?.itemType}:${u?.itemId}`)
+        (Array.isArray(usageResp?.items) ? usageResp.items : []).map(
+          (u) => `${u?.itemType}:${u?.itemId}`,
+        ),
       );
       // The badge is a per-user "you haven't tried this shared item yet" nudge, so
       // it only makes sense on organization-shelf items (you made your personal ones).
@@ -328,8 +383,13 @@ export function createHomeView({
         col?.shelf === 'organization' && !usedSet.has(`collection:${col.id}`);
       const isNewSlide = (item) => !usedSet.has(`slide:${item.id}`);
 
-      const cols = [...(collections?.organization || []), ...(collections?.personal || [])];
-      const organizationSlides = (Array.isArray(organizationResp?.items) ? organizationResp.items : [])
+      const cols = [
+        ...(collections?.organization || []),
+        ...(collections?.personal || []),
+      ];
+      const organizationSlides = (
+        Array.isArray(organizationResp?.items) ? organizationResp.items : []
+      )
         .filter((it) => it?.id && !it.isTrashed && !it.trashedAt)
         .sort((a, b) => blockTimestamp(b) - blockTimestamp(a));
 
@@ -339,10 +399,19 @@ export function createHomeView({
 
       homeBlocksList.append(renderBlankBlockCard(h, onCreate));
       for (const col of shownCols) {
-        homeBlocksList.append(renderCollectionBlockCard(h, col, onComposeFrom, isNewCollection(col)));
+        homeBlocksList.append(
+          renderCollectionBlockCard(
+            h,
+            col,
+            onComposeFrom,
+            isNewCollection(col),
+          ),
+        );
       }
       for (const item of organizationSlides.slice(0, slideBudget)) {
-        homeBlocksList.append(renderSlideBlockCard(h, item, onComposeFrom, isNewSlide(item)));
+        homeBlocksList.append(
+          renderSlideBlockCard(h, item, onComposeFrom, isNewSlide(item)),
+        );
       }
       homeBlocksSection.append(homeBlocksList);
 
@@ -352,13 +421,16 @@ export function createHomeView({
             class: 'help',
             text: t(
               'list.home.blocks.empty',
-              'Save slides to your team library or group them into a collection to reuse them here.'
+              'Save slides to your team library or group them into a collection to reuse them here.',
             ),
-          })
+          }),
         );
       }
     } catch {
-      homeBlocksLoading.textContent = t('list.home.blocks.error', 'Failed to load building blocks.');
+      homeBlocksLoading.textContent = t(
+        'list.home.blocks.error',
+        'Failed to load building blocks.',
+      );
     }
   }
 
@@ -381,7 +453,9 @@ export function createHomeView({
  * @returns {string}
  */
 function cleanSnippet(preview) {
-  const text = String(preview || '').replace(/\s+/g, ' ').trim();
+  const text = String(preview || '')
+    .replace(/\s+/g, ' ')
+    .trim();
   if (!text) return '';
   return text.length >= 100 ? `${text}…` : text;
 }
@@ -399,15 +473,29 @@ function blockTimestamp(item) {
  * @param {Function} [onCreate]
  */
 function renderBlankBlockCard(h, onCreate) {
-  return h('button', {
-    class: 'home-block-card is-blank',
-    type: 'button',
-    onclick: () => onCreate?.(),
-  }, [
-    h('span', { class: 'home-block-kicker', text: t('list.home.blocks.blankKicker', 'New') }),
-    h('span', { class: 'home-block-glyph', text: '+', 'aria-hidden': 'true' }),
-    h('span', { class: 'home-block-name', text: t('list.home.blocks.blank', 'Blank presentation') }),
-  ]);
+  return h(
+    'button',
+    {
+      class: 'home-block-card is-blank',
+      type: 'button',
+      onclick: () => onCreate?.(),
+    },
+    [
+      h('span', {
+        class: 'home-block-kicker',
+        text: t('list.home.blocks.blankKicker', 'New'),
+      }),
+      h('span', {
+        class: 'home-block-glyph',
+        text: '+',
+        'aria-hidden': 'true',
+      }),
+      h('span', {
+        class: 'home-block-name',
+        text: t('list.home.blocks.blank', 'Blank presentation'),
+      }),
+    ],
+  );
 }
 
 /**
@@ -418,30 +506,45 @@ function renderBlankBlockCard(h, onCreate) {
  * @param {boolean} [isNew] - show a "new to you" badge (shared item, never used).
  */
 function renderCollectionBlockCard(h, col, onComposeFrom, isNew = false) {
-  const count = col.slideCount ?? (Array.isArray(col.slideIds) ? col.slideIds.length : 0);
+  const count =
+    col.slideCount ?? (Array.isArray(col.slideIds) ? col.slideIds.length : 0);
   const meta = h('span', { class: 'home-block-meta' });
   if (col.shelf === 'organization') {
-    meta.append(h('span', { class: 'home-block-badge', text: t('slideLibrary.shelf.organization', 'Team') }));
+    meta.append(
+      h('span', {
+        class: 'home-block-badge',
+        text: t('slideLibrary.shelf.organization', 'Team'),
+      }),
+    );
   }
   meta.append(
     h('span', {
       class: 'home-block-count',
-      text: t('list.creationView.library.collectionCount', '{count} slides', { count: String(count) }),
-    })
+      text: t('list.creationView.library.collectionCount', '{count} slides', {
+        count: String(count),
+      }),
+    }),
   );
 
-  const card = h('button', {
-    class: 'home-block-card is-collection',
-    type: 'button',
-    onclick: () => onComposeFrom?.({ collection: col }),
-  }, [
-    h('span', { class: 'home-block-kicker', text: t('list.home.blocks.collectionKicker', 'Collection') }),
-    h('span', {
-      class: 'home-block-name',
-      text: col.name || t('slideLibrary.preview.untitled', 'Untitled'),
-    }),
-    meta,
-  ]);
+  const card = h(
+    'button',
+    {
+      class: 'home-block-card is-collection',
+      type: 'button',
+      onclick: () => onComposeFrom?.({ collection: col }),
+    },
+    [
+      h('span', {
+        class: 'home-block-kicker',
+        text: t('list.home.blocks.collectionKicker', 'Collection'),
+      }),
+      h('span', {
+        class: 'home-block-name',
+        text: col.name || t('slideLibrary.preview.untitled', 'Untitled'),
+      }),
+      meta,
+    ],
+  );
   if (isNew) card.append(renderNewToYouBadge(h));
   return card;
 }
@@ -455,17 +558,27 @@ function renderCollectionBlockCard(h, col, onComposeFrom, isNew = false) {
  * @param {boolean} [isNew] - show a "new to you" badge (shared item, never used).
  */
 function renderSlideBlockCard(h, item, onComposeFrom, isNew = false) {
-  const card = h('button', {
-    class: 'home-block-card is-slide',
-    type: 'button',
-    onclick: () => onComposeFrom?.({ items: [item] }),
-  }, [
-    h('span', { class: 'home-block-kicker', text: t('list.home.blocks.slideKicker', 'Reusable slide') }),
-    h('span', {
-      class: 'home-block-name',
-      text: item.name || item.slideType || t('slideLibrary.preview.untitled', 'Untitled'),
-    }),
-  ]);
+  const card = h(
+    'button',
+    {
+      class: 'home-block-card is-slide',
+      type: 'button',
+      onclick: () => onComposeFrom?.({ items: [item] }),
+    },
+    [
+      h('span', {
+        class: 'home-block-kicker',
+        text: t('list.home.blocks.slideKicker', 'Reusable slide'),
+      }),
+      h('span', {
+        class: 'home-block-name',
+        text:
+          item.name ||
+          item.slideType ||
+          t('slideLibrary.preview.untitled', 'Untitled'),
+      }),
+    ],
+  );
   if (isNew) card.append(renderNewToYouBadge(h));
   return card;
 }
@@ -513,7 +626,9 @@ function buildHomeHeader({ h, user, count }) {
     dateLabel = '';
   }
 
-  const countLabel = t('list.home.greetingCount', '{count} presentations', { count });
+  const countLabel = t('list.home.greetingCount', '{count} presentations', {
+    count,
+  });
   const subtitleText = dateLabel ? `${dateLabel} · ${countLabel}` : countLabel;
 
   return h('header', { class: 'home-header' }, [
@@ -598,7 +713,9 @@ function renderActivityPreviewItem(h, nav, { event, count }, detachThumbs) {
       break;
     case 'slide.added': {
       const n = Number(event.data?.count) || 1;
-      actionText = t('activity.slidesAdded', 'added {count} slides to', { count: n });
+      actionText = t('activity.slidesAdded', 'added {count} slides to', {
+        count: n,
+      });
       break;
     }
     default:
@@ -623,7 +740,10 @@ function renderActivityPreviewItem(h, nav, { event, count }, detachThumbs) {
   // just "someone commented". The server already ships a ≤100-char preview in
   // the event data, so this needs no extra fetch. Only for new comments — a
   // resolved-comment event has no body worth echoing.
-  const snippet = event.eventType === 'comment.created' ? cleanSnippet(event.data?.bodyPreview) : '';
+  const snippet =
+    event.eventType === 'comment.created'
+      ? cleanSnippet(event.data?.bodyPreview)
+      : '';
   if (snippet) {
     content.append(h('div', { class: 'home-activity-snippet', text: snippet }));
   }
@@ -634,7 +754,10 @@ function renderActivityPreviewItem(h, nav, { event, count }, detachThumbs) {
   const thumb = renderActivityThumb(h, event, detachThumbs);
   if (thumb) content.append(thumb);
 
-  item.append(h('div', { class: 'home-activity-avatar', text: initials }), content);
+  item.append(
+    h('div', { class: 'home-activity-avatar', text: initials }),
+    content,
+  );
 
   // Count pill for a bundled run — language-neutral, with an accessible label.
   if (count > 1) {
@@ -643,7 +766,7 @@ function renderActivityPreviewItem(h, nav, { event, count }, detachThumbs) {
         class: 'home-activity-count',
         text: String(count),
         title: t('list.home.activityCount', '{count} updates', { count }),
-      })
+      }),
     );
   }
 
@@ -678,7 +801,7 @@ function renderActivityThumb(h, event, detachThumbs) {
           mode: 'thumb',
           theme,
           presentationId: event.presentationId,
-        })
+        }),
       );
     } catch {
       // A thumb that fails to render just stays empty — never break the rail.

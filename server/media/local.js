@@ -45,7 +45,12 @@ export class LocalProvider extends MediaProvider {
     throw new Error('LocalProvider does not support presigned uploads');
   }
 
-  async uploadBuffer({ buffer, filename, contentType, maxBytes = MAX_FILE_SIZE }) {
+  async uploadBuffer({
+    buffer,
+    filename,
+    contentType,
+    maxBytes = MAX_FILE_SIZE,
+  }) {
     const ext = MIME_TO_EXT[contentType];
     if (!ext) {
       throw new ValidationError(`Unsupported content type: ${contentType}`);
@@ -58,7 +63,11 @@ export class LocalProvider extends MediaProvider {
 
     // Optimize raster images
     let finalBuffer = buffer;
-    if (['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(contentType)) {
+    if (
+      ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(
+        contentType,
+      )
+    ) {
       finalBuffer = await optimizeRasterImage(buffer, contentType);
     }
 
@@ -177,7 +186,9 @@ export class LocalProvider extends MediaProvider {
 export function parseDataUrl(dataUrl) {
   const m = String(dataUrl).match(/^data:([^;]+);base64,(.*)$/);
   if (!m) {
-    throw new ValidationError('Invalid data URL (expected data:<mime>;base64,...)');
+    throw new ValidationError(
+      'Invalid data URL (expected data:<mime>;base64,...)',
+    );
   }
   return { mime: m[1], base64: m[2] };
 }

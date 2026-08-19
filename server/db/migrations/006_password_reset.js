@@ -29,7 +29,7 @@ export const up = async (db) => {
     .createTable('password_reset_tokens')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('user_email', 'varchar(320)', (col) => col.notNull())
     .addColumn('token_hash', 'varchar(128)', (col) => col.notNull())
@@ -67,7 +67,7 @@ export const up = async (db) => {
     .createTable('auth_audit_log')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('user_email', 'varchar(320)')
     .addColumn('event_type', 'varchar(50)', (col) => col.notNull())
@@ -105,27 +105,30 @@ export const down = async (db) => {
   await db.schema.dropIndex('idx_auth_audit_log_ip').ifExists().execute();
   await db.schema.dropIndex('idx_auth_audit_log_event').ifExists().execute();
   await db.schema.dropIndex('idx_auth_audit_log_email').ifExists().execute();
-  await db.schema.dropIndex('idx_password_reset_tokens_expires').ifExists().execute();
-  await db.schema.dropIndex('idx_password_reset_tokens_email_created').ifExists().execute();
-  await db.schema.dropIndex('idx_password_reset_tokens_hash').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_password_reset_tokens_expires')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_password_reset_tokens_email_created')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_password_reset_tokens_hash')
+    .ifExists()
+    .execute();
 
   // Drop tables
   await db.schema.dropTable('auth_audit_log').ifExists().execute();
   await db.schema.dropTable('password_reset_tokens').ifExists().execute();
 
   // Remove columns from users table
-  await db.schema
-    .alterTable('users')
-    .dropColumn('auth_source')
-    .execute();
+  await db.schema.alterTable('users').dropColumn('auth_source').execute();
 
   await db.schema
     .alterTable('users')
     .dropColumn('password_changed_at')
     .execute();
 
-  await db.schema
-    .alterTable('users')
-    .dropColumn('password_hash')
-    .execute();
+  await db.schema.alterTable('users').dropColumn('password_hash').execute();
 };

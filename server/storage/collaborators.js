@@ -193,7 +193,12 @@ export async function addCollaborator(presentationId, options) {
  * @param {string} [options.message] - Optional revocation message
  * @returns {Promise<Object>} - Result
  */
-export async function removeCollaborator(presentationId, userEmail, revokedBy, options) {
+export async function removeCollaborator(
+  presentationId,
+  userEmail,
+  revokedBy,
+  options,
+) {
   const pid = norm(presentationId);
   if (!pid) {
     return { ok: false, reason: 'invalid' };
@@ -241,7 +246,11 @@ export async function removeCollaborator(presentationId, userEmail, revokedBy, o
  * @param {string} permission - New permission level
  * @returns {Promise<Object>} - Result with updated collaborator
  */
-export async function updateCollaboratorPermission(presentationId, userEmail, permission) {
+export async function updateCollaboratorPermission(
+  presentationId,
+  userEmail,
+  permission,
+) {
   const pid = norm(presentationId);
   if (!pid) {
     return { ok: false, reason: 'invalid' };

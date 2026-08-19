@@ -208,7 +208,11 @@ export default {
       typeof content?.title === 'string' && content.title.trim()
         ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
-    const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
+    const subheadingHtml = renderSubheadingHtml(
+      content,
+      'subheading',
+      'subtitle',
+    );
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);
     const hasHeader = !!(title || subheadingHtml);

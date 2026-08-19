@@ -103,7 +103,12 @@ export async function createFollowCode(scope, followUrl) {
  */
 export async function resolveFollowCode(scope, code) {
   // Public audience path: the typed code is the authorization.
-  toStorageContext(scope, 'resolveFollowCode', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'resolveFollowCode',
+    {},
+    { allowCrossOrganization: true },
+  );
   const upperCode = String(code || '').toUpperCase();
   if (!upperCode) return null;
 
@@ -116,7 +121,10 @@ export async function resolveFollowCode(scope, code) {
     if (!row) return null;
 
     if (new Date(row.expires_at).getTime() <= Date.now()) {
-      await db.deleteFrom('follow_codes').where('code', '=', upperCode).execute();
+      await db
+        .deleteFrom('follow_codes')
+        .where('code', '=', upperCode)
+        .execute();
       return null;
     }
 
@@ -134,7 +142,12 @@ export async function resolveFollowCode(scope, code) {
  */
 export async function cleanupExpiredCodes(scope) {
   // Instance-wide maintenance sweep; expiry is the filter, not the organization.
-  toStorageContext(scope, 'cleanupExpiredCodes', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'cleanupExpiredCodes',
+    {},
+    { allowCrossOrganization: true },
+  );
   const now = new Date().toISOString();
   return withDbGuard(0, async (db) => {
     const result = await db

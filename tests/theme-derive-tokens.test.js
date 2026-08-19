@@ -45,16 +45,25 @@ test('the dark surface really is dark (quote slides paint white text on it)', ()
     const { cssVars } = deriveThemeTokens({ colors: { ...colors, primary } });
     const dark = cssVars['--t-slide-bg-dark'];
     const n = parseInt(dark.slice(1), 16);
-    const lightness = ((n >> 16) & 255) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114;
-    assert.ok(lightness < 90, `${primary} produced a light "dark" surface: ${dark}`);
+    const lightness =
+      ((n >> 16) & 255) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114;
+    assert.ok(
+      lightness < 90,
+      `${primary} produced a light "dark" surface: ${dark}`,
+    );
   }
 });
 
 test('the logo URL token is emitted only when a logo is set', () => {
-  assert.equal(deriveThemeTokens({ colors }).cssVars['--t-logo-url'], undefined);
   assert.equal(
-    deriveThemeTokens({ colors, logoUrl: '/uploads/logo.svg' }).cssVars['--t-logo-url'],
-    "url('/uploads/logo.svg')"
+    deriveThemeTokens({ colors }).cssVars['--t-logo-url'],
+    undefined,
+  );
+  assert.equal(
+    deriveThemeTokens({ colors, logoUrl: '/uploads/logo.svg' }).cssVars[
+      '--t-logo-url'
+    ],
+    "url('/uploads/logo.svg')",
   );
 });
 

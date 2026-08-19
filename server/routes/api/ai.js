@@ -20,11 +20,31 @@ import { handleAiIterate } from './ai/iterate.js';
 const ROUTES = [
   { method: 'GET', pattern: '/api/ai/vendors', handler: handleAiVendors },
   { method: 'POST', pattern: '/api/ai/wizard', handler: handleAiWizard },
-  { method: 'POST', pattern: '/api/ai/wizard-v2/stream', handler: handleAiWizardV2Stream },
-  { method: 'POST', pattern: '/api/ai/append-slides', handler: handleAiAppendSlides },
-  { method: 'POST', pattern: '/api/ai/refine-section', handler: handleAiRefineSection },
-  { method: 'POST', pattern: '/api/ai/convert-slide', handler: handleAiConvertSlide },
-  { method: 'POST', pattern: '/api/ai/compress-deck', handler: handleAiCompressDeck },
+  {
+    method: 'POST',
+    pattern: '/api/ai/wizard-v2/stream',
+    handler: handleAiWizardV2Stream,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/ai/append-slides',
+    handler: handleAiAppendSlides,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/ai/refine-section',
+    handler: handleAiRefineSection,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/ai/convert-slide',
+    handler: handleAiConvertSlide,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/ai/compress-deck',
+    handler: handleAiCompressDeck,
+  },
   { method: 'POST', pattern: '/api/ai/iterate', handler: handleAiIterate },
 ];
 
@@ -34,5 +54,5 @@ const ROUTES = [
  * @returns {Promise<boolean>} true if a route handled the request.
  */
 export const handleAi = withErrorHandler('ai', (ctx) =>
-  dispatchRoutes(ROUTES, ctx)
+  dispatchRoutes(ROUTES, ctx),
 );

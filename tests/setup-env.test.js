@@ -55,12 +55,27 @@ test('generateSecret clears the 32-char boot floor and varies per call', () => {
 });
 
 test('parseFlags handles --flag=value, --flag value, and bare flags', () => {
-  const flags = parseFlags(['--ai=claude', '--ai-key', 'sk-ant-x', '--yes', '--auth', 'on']);
-  assert.deepEqual(flags, { ai: 'claude', 'ai-key': 'sk-ant-x', yes: 'true', auth: 'on' });
+  const flags = parseFlags([
+    '--ai=claude',
+    '--ai-key',
+    'sk-ant-x',
+    '--yes',
+    '--auth',
+    'on',
+  ]);
+  assert.deepEqual(flags, {
+    ai: 'claude',
+    'ai-key': 'sk-ant-x',
+    yes: 'true',
+    auth: 'on',
+  });
 });
 
 test('parseFlags does not swallow a following flag as a value', () => {
-  assert.deepEqual(parseFlags(['--yes', '--ai=openai']), { yes: 'true', ai: 'openai' });
+  assert.deepEqual(parseFlags(['--yes', '--ai=openai']), {
+    yes: 'true',
+    ai: 'openai',
+  });
 });
 
 test('flagUpdates with no flags = safe local default (auth off, no AI)', () => {

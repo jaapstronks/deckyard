@@ -18,7 +18,10 @@ test('a full run keeps every structural slide, in deck order', () => {
     ],
     partial: false,
   });
-  assert.deepEqual(slides.map((s) => s.originalIndex), [0, 1, 4, 5, 9]);
+  assert.deepEqual(
+    slides.map((s) => s.originalIndex),
+    [0, 1, 4, 5, 9],
+  );
 });
 
 test('a partial run drops structural slides beyond the refined span', () => {
@@ -32,7 +35,10 @@ test('a partial run drops structural slides beyond the refined span', () => {
     ],
     partial: true,
   });
-  assert.deepEqual(slides.map((s) => s.originalIndex), [0, 1, 2]);
+  assert.deepEqual(
+    slides.map((s) => s.originalIndex),
+    [0, 1, 2],
+  );
 });
 
 test('a partial run with no refined slides yields nothing beyond index zero', () => {
@@ -41,5 +47,8 @@ test('a partial run with no refined slides yields nothing beyond index zero', ()
     refinedContentSlides: [],
     partial: true,
   });
-  assert.deepEqual(slides.map((s) => s.originalIndex), [0]);
+  assert.deepEqual(
+    slides.map((s) => s.originalIndex),
+    [0],
+  );
 });

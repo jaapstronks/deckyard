@@ -10,7 +10,11 @@
  * @param {Array<{id?: string}>} updatedSlides - deck after the save
  * @returns {string[]} newly added slide ids (deduped, order of first appearance)
  */
-export function diffAddedSlideIds(existingSlides, submittedSlides, updatedSlides) {
+export function diffAddedSlideIds(
+  existingSlides,
+  submittedSlides,
+  updatedSlides,
+) {
   const ids = (arr) =>
     (Array.isArray(arr) ? arr : []).map((s) => s?.id).filter(Boolean);
   const existingIds = new Set(ids(existingSlides));

@@ -15,7 +15,12 @@
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { closeTestDb, openTestDb, pgDescribe, truncate } from './helpers/harness.js';
+import {
+  closeTestDb,
+  openTestDb,
+  pgDescribe,
+  truncate,
+} from './helpers/harness.js';
 import { testScope } from '../helpers/storage-scope.js';
 import {
   getEmailTemplates,
@@ -46,7 +51,10 @@ pgDescribe('email-templates storage (real PostgreSQL)', () => {
     const config = await getEmailTemplates(testScope());
     assert.deepEqual(config, { defaultLocale: 'en', templates: {} });
     assert.equal(await getEmailDefaultLocale(testScope()), 'en');
-    assert.equal(await getEmailTemplateOverride(testScope(), 'userInvitation', 'en'), null);
+    assert.equal(
+      await getEmailTemplateOverride(testScope(), 'userInvitation', 'en'),
+      null,
+    );
   });
 
   it('round-trips an override through write and read', async () => {
@@ -58,7 +66,11 @@ pgDescribe('email-templates storage (real PostgreSQL)', () => {
       footer: 42,
     });
 
-    const override = await getEmailTemplateOverride(testScope(), 'userInvitation', 'nl');
+    const override = await getEmailTemplateOverride(
+      testScope(),
+      'userInvitation',
+      'nl',
+    );
     assert.deepEqual(override, { subject: 'Welkom', body: 'Doe mee' });
 
     const config = await getEmailTemplates(testScope());
@@ -68,10 +80,19 @@ pgDescribe('email-templates storage (real PostgreSQL)', () => {
   });
 
   it('upserts on the (type, locale) conflict rather than duplicating', async () => {
-    await writeEmailTemplate(testScope(), 'userInvitation', 'en', { subject: 'First' });
-    await writeEmailTemplate(testScope(), 'userInvitation', 'en', { subject: 'Second', body: 'More' });
+    await writeEmailTemplate(testScope(), 'userInvitation', 'en', {
+      subject: 'First',
+    });
+    await writeEmailTemplate(testScope(), 'userInvitation', 'en', {
+      subject: 'Second',
+      body: 'More',
+    });
 
-    const override = await getEmailTemplateOverride(testScope(), 'userInvitation', 'en');
+    const override = await getEmailTemplateOverride(
+      testScope(),
+      'userInvitation',
+      'en',
+    );
     assert.deepEqual(override, { subject: 'Second', body: 'More' });
 
     const count = await db
@@ -84,19 +105,38 @@ pgDescribe('email-templates storage (real PostgreSQL)', () => {
   });
 
   it('deletes the row when an override normalizes to no fields', async () => {
-    await writeEmailTemplate(testScope(), 'userInvitation', 'en', { subject: 'Set' });
-    assert.notEqual(await getEmailTemplateOverride(testScope(), 'userInvitation', 'en'), null);
+    await writeEmailTemplate(testScope(), 'userInvitation', 'en', {
+      subject: 'Set',
+    });
+    assert.notEqual(
+      await getEmailTemplateOverride(testScope(), 'userInvitation', 'en'),
+      null,
+    );
 
     // Re-writing with only blanks removes the override (old file semantics).
-    await writeEmailTemplate(testScope(), 'userInvitation', 'en', { subject: '  ' });
-    assert.equal(await getEmailTemplateOverride(testScope(), 'userInvitation', 'en'), null);
+    await writeEmailTemplate(testScope(), 'userInvitation', 'en', {
+      subject: '  ',
+    });
+    assert.equal(
+      await getEmailTemplateOverride(testScope(), 'userInvitation', 'en'),
+      null,
+    );
   });
 
   it('deleteEmailTemplate resets a locale to code defaults', async () => {
-    await writeEmailTemplate(testScope(), 'userInvitation', 'en', { subject: 'Set' });
-    const config = await deleteEmailTemplate(testScope(), 'userInvitation', 'en');
+    await writeEmailTemplate(testScope(), 'userInvitation', 'en', {
+      subject: 'Set',
+    });
+    const config = await deleteEmailTemplate(
+      testScope(),
+      'userInvitation',
+      'en',
+    );
 
-    assert.equal(await getEmailTemplateOverride(testScope(), 'userInvitation', 'en'), null);
+    assert.equal(
+      await getEmailTemplateOverride(testScope(), 'userInvitation', 'en'),
+      null,
+    );
     assert.deepEqual(config.templates, {});
   });
 
@@ -121,12 +161,18 @@ pgDescribe('email-templates storage (real PostgreSQL)', () => {
   it('rejects an unknown type or locale before touching the database', async () => {
     await assert.rejects(
       () => writeEmailTemplate(testScope(), 'nopeType', 'en', { subject: 'x' }),
-      /Invalid template type/
+      /Invalid template type/,
     );
     await assert.rejects(
-      () => writeEmailTemplate(testScope(), 'userInvitation', 'xx', { subject: 'x' }),
-      /Invalid locale/
+      () =>
+        writeEmailTemplate(testScope(), 'userInvitation', 'xx', {
+          subject: 'x',
+        }),
+      /Invalid locale/,
     );
-    await assert.rejects(() => updateDefaultLocale(testScope(), 'xx'), /Invalid locale/);
+    await assert.rejects(
+      () => updateDefaultLocale(testScope(), 'xx'),
+      /Invalid locale/,
+    );
   });
 });

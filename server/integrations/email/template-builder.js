@@ -2,7 +2,10 @@
  * Template building helpers for emails.
  */
 
-import { resolveTemplate, interpolatePlaceholders } from '../email-template-resolver.js';
+import {
+  resolveTemplate,
+  interpolatePlaceholders,
+} from '../email-template-resolver.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 import { TEMPLATE_METADATA } from '../../storage/email-templates.js';
 import {
@@ -29,14 +32,23 @@ const log = createLogger('email');
  * @param {Object} options.emailOpts - Email options (to, toName)
  * @returns {Promise<{ok: boolean, status?: number, error?: string}|null>}
  */
-export async function trySendCustomTemplate({ repoRoot, templateType, locale, vars, actionUrl, emailOpts }) {
+export async function trySendCustomTemplate({
+  repoRoot,
+  templateType,
+  locale,
+  vars,
+  actionUrl,
+  emailOpts,
+}) {
   if (!repoRoot) return null;
 
   // An unknown template type is a programmer error (a sender referencing a type
   // that isn't in the canonical list), not a transient failure — log it loudly
   // instead of letting the catch-all below swallow it silently.
   if (!TEMPLATE_METADATA[templateType]) {
-    log.error(`Unknown email template type "${templateType}"; falling back to code default`);
+    log.error(
+      `Unknown email template type "${templateType}"; falling back to code default`,
+    );
     return null;
   }
 
@@ -44,8 +56,15 @@ export async function trySendCustomTemplate({ repoRoot, templateType, locale, va
     const resolved = await resolveTemplate(repoRoot, templateType, locale);
     if (!resolved.isCustom) return null;
 
-    const subject = interpolatePlaceholders(resolved.fields.subject || '', vars);
-    const { htmlContent, textContent } = buildFromResolvedTemplate(resolved.fields, vars, actionUrl);
+    const subject = interpolatePlaceholders(
+      resolved.fields.subject || '',
+      vars,
+    );
+    const { htmlContent, textContent } = buildFromResolvedTemplate(
+      resolved.fields,
+      vars,
+      actionUrl,
+    );
 
     return sendEmail({
       ...emailOpts,
@@ -56,7 +75,10 @@ export async function trySendCustomTemplate({ repoRoot, templateType, locale, va
   } catch (err) {
     // Custom override unavailable or a transport hiccup: fall back to the code
     // default. These are expected at runtime, so warn rather than error.
-    log.warn(`Custom template "${templateType}" unavailable, using default:`, err.message);
+    log.warn(
+      `Custom template "${templateType}" unavailable, using default:`,
+      err.message,
+    );
     return null;
   }
 }

@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { outlineDuplication, outlineMetrics } from '../test-suite/eval/judge-outline.js';
+import {
+  outlineDuplication,
+  outlineMetrics,
+} from '../test-suite/eval/judge-outline.js';
 
 const outline = (roughContents) => ({
   slides: roughContents.map((roughContent, i) => ({
@@ -18,10 +21,13 @@ test('two slides restating the same figures are flagged', () => {
       'Something entirely unrelated about hiring',
       'Bookings recap: EUR 7.1bn total, EUV EUR 3.0bn',
       'Another unrelated topic on logistics',
-    ])
+    ]),
   );
   assert.ok(result.duplicatePairs >= 1, 'the restating pair is caught');
-  assert.ok(result.examples[0].includes('1+3'), `expected slides 1+3, got ${result.examples[0]}`);
+  assert.ok(
+    result.examples[0].includes('1+3'),
+    `expected slides 1+3, got ${result.examples[0]}`,
+  );
 });
 
 test('tokens recurring across the whole deck are discounted', () => {
@@ -33,14 +39,21 @@ test('tokens recurring across the whole deck are discounted', () => {
       'Revenue in 2024 fell in the Asia region',
       'Revenue in 2024 was flat in the Europe region',
       'Revenue in 2024 outlook for the Africa region',
-    ])
+    ]),
   );
-  assert.equal(result.duplicatePairs, 0, 'shared topic vocabulary is not duplication');
+  assert.equal(
+    result.duplicatePairs,
+    0,
+    'shared topic vocabulary is not duplication',
+  );
 });
 
 test('an outline with nothing in common reports no duplication', () => {
   const result = outlineDuplication(
-    outline(['Hiring plans for the new team', 'Warehouse logistics in Rotterdam'])
+    outline([
+      'Hiring plans for the new team',
+      'Warehouse logistics in Rotterdam',
+    ]),
   );
   assert.equal(result.duplicatePairs, 0);
   assert.equal(result.duplicateRate, 0);

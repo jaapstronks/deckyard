@@ -4,24 +4,24 @@
 version: 2
 updates:
   # Keep GitHub Actions in workflows current (e.g. actions/checkout, setup-node).
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     commit-message:
-      prefix: "chore(ci)"
+      prefix: 'chore(ci)'
 
   # npm dependencies. Deckyard is intentionally dependency-light, so this stays
   # low-volume; grouped so a quiet week doesn't open a pile of separate PRs.
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     open-pull-requests-limit: 5
     commit-message:
-      prefix: "chore(deps)"
+      prefix: 'chore(deps)'
     groups:
       npm-minor-and-patch:
         update-types:
-          - "minor"
-          - "patch"
+          - 'minor'
+          - 'patch'

@@ -26,7 +26,10 @@ function getShortcutGroups() {
         },
         {
           keys: ['↑'],
-          desc: t('presenter.shortcuts.collapse', 'Collapse builds / step back'),
+          desc: t(
+            'presenter.shortcuts.collapse',
+            'Collapse builds / step back',
+          ),
         },
         {
           keys: ['Home'],

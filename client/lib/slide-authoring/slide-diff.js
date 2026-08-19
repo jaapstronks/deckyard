@@ -38,8 +38,12 @@ export function computeSlideDiff(currentSlides, snapshotSlides) {
   const snapshotById = new Map(snapshot.map((s) => [s.id, s]));
 
   // Build content hash maps
-  const currentHashes = new Map(current.map((s) => [s.id, slideContentHash(s)]));
-  const snapshotHashes = new Map(snapshot.map((s) => [s.id, slideContentHash(s)]));
+  const currentHashes = new Map(
+    current.map((s) => [s.id, slideContentHash(s)]),
+  );
+  const snapshotHashes = new Map(
+    snapshot.map((s) => [s.id, slideContentHash(s)]),
+  );
 
   const added = []; // In current only
   const removed = []; // In snapshot only
@@ -92,7 +96,11 @@ export function computeSlideDiff(currentSlides, snapshotSlides) {
 function getSlideCategory(slideId, diff) {
   if (diff.added.some((d) => d.slide.id === slideId)) return 'added';
   if (diff.removed.some((d) => d.slide.id === slideId)) return 'removed';
-  if (diff.modified.some((d) => d.current.id === slideId || d.snapshot.id === slideId))
+  if (
+    diff.modified.some(
+      (d) => d.current.id === slideId || d.snapshot.id === slideId,
+    )
+  )
     return 'modified';
   return 'unchanged';
 }
@@ -116,7 +124,9 @@ export function alignSlidesForComparison(currentSlides, snapshotSlides, diff) {
   for (const slide of current) {
     const category = getSlideCategory(slide.id, diff);
     if (category === 'modified') {
-      const snapshotSlide = diff.modified.find((m) => m.current.id === slide.id)?.snapshot;
+      const snapshotSlide = diff.modified.find(
+        (m) => m.current.id === slide.id,
+      )?.snapshot;
       result.push({ current: slide, snapshot: snapshotSlide, category });
       if (snapshotSlide) usedSnapshotIds.add(snapshotSlide.id);
     } else if (category === 'added') {

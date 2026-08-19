@@ -21,7 +21,8 @@ export function buildFeed({ org, presentations, baseUrl, format = 'rss' }) {
 
   const feed = new Feed({
     title: rssSettings.title || `${orgName} — Presentations`,
-    description: rssSettings.description || `Published presentations from ${orgName}`,
+    description:
+      rssSettings.description || `Published presentations from ${orgName}`,
     id: `${baseUrl}/`,
     link: `${baseUrl}/`,
     language: rssSettings.language || 'en',
@@ -31,7 +32,9 @@ export function buildFeed({ org, presentations, baseUrl, format = 'rss' }) {
       atom: `${baseUrl}/feed/atom.xml`,
       json: `${baseUrl}/feed/feed.json`,
     },
-    author: rssSettings.authorName ? { name: rssSettings.authorName } : undefined,
+    author: rssSettings.authorName
+      ? { name: rssSettings.authorName }
+      : undefined,
     image: org.logoUrl ? `${baseUrl}${org.logoUrl}` : undefined,
   });
 
@@ -51,14 +54,19 @@ export function buildFeed({ org, presentations, baseUrl, format = 'rss' }) {
       // published to the feed (see docs/plans/briefs/identity-decoupling.md).
       author: pres.ownerName ? [{ name: pres.ownerName }] : [],
       image: pres.published?.ogImageUrl
-        ? (pres.published.ogImageUrl.startsWith('http') ? pres.published.ogImageUrl : `${baseUrl}${pres.published.ogImageUrl}`)
+        ? pres.published.ogImageUrl.startsWith('http')
+          ? pres.published.ogImageUrl
+          : `${baseUrl}${pres.published.ogImageUrl}`
         : undefined,
     });
   }
 
   switch (format) {
-    case 'atom': return feed.atom1();
-    case 'json': return feed.json1();
-    default: return feed.rss2();
+    case 'atom':
+      return feed.atom1();
+    case 'json':
+      return feed.json1();
+    default:
+      return feed.rss2();
   }
 }

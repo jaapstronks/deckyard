@@ -11,14 +11,23 @@ import {
   formatNotionContentForAi,
   notionEnabled,
 } from './notion/index.js';
-import { generateOutline, separateSlidesForProcessing } from './ai/generate-outline.js';
+import {
+  generateOutline,
+  separateSlidesForProcessing,
+} from './ai/generate-outline.js';
 import { refineAllSlideGroups } from './ai/refine-slides.js';
 import { validateAndFixRefinedSlides } from './ai/validate-slides.js';
 import { createSessionLogger, generateSessionId } from './ai/logging.js';
 import { cryptoUuid } from '../../shared/slide-types/helpers.js';
 import { DECK_FORMAT_ID } from '../../shared/slide-types/deck-format-id.js';
-import { uploadImageKitUrl, getImageKitConfigFromEnv } from '../media/imagekit.js';
-import { getMediaProvider, isMediaProviderInitialized } from '../media/index.js';
+import {
+  uploadImageKitUrl,
+  getImageKitConfigFromEnv,
+} from '../media/imagekit.js';
+import {
+  getMediaProvider,
+  isMediaProviderInitialized,
+} from '../media/index.js';
 import { safeFetchRemoteImage } from './ssrf-guard.js';
 import { createLogger } from './logger.js';
 
@@ -60,7 +69,9 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
 
   // Check if Notion is configured
   if (!notionEnabled()) {
-    report.errors.push('Notion is not configured. Set NOTION_SECRET environment variable.');
+    report.errors.push(
+      'Notion is not configured. Set NOTION_SECRET environment variable.',
+    );
     return { deck: null, report, pageId: null };
   }
 
@@ -77,7 +88,10 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
     if (typeof onStatusMessage === 'function') {
       onStatusMessage('Fetching Notion page content...');
     }
-    richContent = await extractRichContentFromPage(pageId, { depth: 3, limit: 600 });
+    richContent = await extractRichContentFromPage(pageId, {
+      depth: 3,
+      limit: 600,
+    });
   } catch (e) {
     report.errors.push(`Failed to fetch Notion page: ${e.message}`);
     return { deck: null, report, pageId };
@@ -90,7 +104,10 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
 
   report.sectionsExtracted = richContent.sections.length;
   report.imagesExtracted = richContent.allImages.length;
-  report.tablesExtracted = richContent.sections.reduce((sum, s) => sum + s.tables.length, 0);
+  report.tablesExtracted = richContent.sections.reduce(
+    (sum, s) => sum + s.tables.length,
+    0,
+  );
   report.metadata = {
     title: richContent.title,
     lastEdited: richContent.metadata.lastEdited,
@@ -102,7 +119,9 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
     if (typeof onStatusMessage === 'function') {
       onStatusMessage(`Processing ${richContent.allImages.length} image(s)...`);
     }
-    const uploadedImages = await processNotionImages(richContent.allImages, { onStatusMessage });
+    const uploadedImages = await processNotionImages(richContent.allImages, {
+      onStatusMessage,
+    });
     processedImages.push(...uploadedImages);
   }
 
@@ -165,12 +184,16 @@ async function rehostImageToMediaLibrary(img) {
   // could hop into private space after the check), times out, and caps the body
   // at maxBytes. A null return throws here, and processNotionImages falls back
   // to the original URL for this one image.
-  const fetched = await safeFetchRemoteImage(img.url, { maxBytes: 20 * 1024 * 1024 });
+  const fetched = await safeFetchRemoteImage(img.url, {
+    maxBytes: 20 * 1024 * 1024,
+  });
   if (!fetched) {
     throw new Error('Blocked or failed to fetch image');
   }
   const contentType =
-    fetched.contentType === 'application/octet-stream' ? 'image/jpeg' : fetched.contentType;
+    fetched.contentType === 'application/octet-stream'
+      ? 'image/jpeg'
+      : fetched.contentType;
 
   const provider = getMediaProvider();
   const { publicUrl } = await provider.uploadBuffer({
@@ -275,7 +298,9 @@ async function convertWithAi(formattedContent, options = {}) {
   const logger = enableLogging ? createSessionLogger(sessionId) : null;
 
   log.info(`Starting AI conversion session ${sessionId}`);
-  log.info(`Content length: ${formattedContent.length} chars, ${sectionCount} sections`);
+  log.info(
+    `Content length: ${formattedContent.length} chars, ${sectionCount} sections`,
+  );
 
   // Phase 1: Generate outline
   if (typeof onStatusMessage === 'function') {
@@ -297,7 +322,9 @@ async function convertWithAi(formattedContent, options = {}) {
         outline.metadata?.requestedLang ||
         'nl';
 
-  log.info(`Outline generated: ${outline.slides.length} slides planned, lang=${effectiveLang}`);
+  log.info(
+    `Outline generated: ${outline.slides.length} slides planned, lang=${effectiveLang}`,
+  );
 
   // Notify about status messages
   const statusMessages = outline.statusMessages || [];
@@ -306,9 +333,13 @@ async function convertWithAi(formattedContent, options = {}) {
   }
 
   // Separate structural vs content slides
-  const { structuralSlides, contentGroups } = separateSlidesForProcessing(outline.slides);
+  const { structuralSlides, contentGroups } = separateSlidesForProcessing(
+    outline.slides,
+  );
 
-  log.info(`Separated: ${structuralSlides.length} structural, ${contentGroups.length} content groups`);
+  log.info(
+    `Separated: ${structuralSlides.length} structural, ${contentGroups.length} content groups`,
+  );
 
   // Phase 2: Refine content slides
   if (typeof onStatusMessage === 'function') {
@@ -341,7 +372,7 @@ async function convertWithAi(formattedContent, options = {}) {
     })),
     ...validatedSlides.map((s, i) => ({
       ...s,
-      originalIndex: s.originalIndex ?? (structuralSlides.length + i),
+      originalIndex: s.originalIndex ?? structuralSlides.length + i,
     })),
   ].sort((a, b) => (a.originalIndex ?? 0) - (b.originalIndex ?? 0));
 
@@ -356,7 +387,10 @@ async function convertWithAi(formattedContent, options = {}) {
   };
 
   // Check if we have an image for the title slide
-  if (processedImages.length > 0 && richContent?.sections?.[0]?.images?.length > 0) {
+  if (
+    processedImages.length > 0 &&
+    richContent?.sections?.[0]?.images?.length > 0
+  ) {
     // Use the first image as title background if available
     const firstImg = processedImages[0];
     if (firstImg?.uploadedUrl) {

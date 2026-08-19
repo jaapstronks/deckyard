@@ -1,11 +1,20 @@
-import { duplicatePresentation, getPresentation } from '../../../storage/presentations/index.js';
+import {
+  duplicatePresentation,
+  getPresentation,
+} from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
-import { methodNotAllowed, notFound, serveJson, unauthorized, requireJsonBody } from '../../../utils/http.js';
+import {
+  methodNotAllowed,
+  notFound,
+  serveJson,
+  unauthorized,
+  requireJsonBody,
+} from '../../../utils/http.js';
 import { canReadPresentation } from '../../../utils/presentation-authz.js';
 
 export async function handlePresentationDuplicate(
   { repoRoot, storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
@@ -15,10 +24,14 @@ export async function handlePresentationDuplicate(
   // Fetch collaborator permission for ACL check
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      pres.id,
+      authedUser.email,
+    );
   }
 
-  if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) return unauthorized(res);
+  if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission }))
+    return unauthorized(res);
 
   // For now we only support simple server-side duplication. Keep request body as a
   // forward-compatible hook for future options (e.g. scope override for admins).

@@ -66,23 +66,23 @@
    quadrant block. The asymmetry is the shape; each corner is still a scale
    step (--slide-radius-md outside, -sm inside). */
 .slide-matrix .matrix-cell[data-position='tl'] {
-  border-radius: var(--slide-radius-md) var(--slide-radius-sm) var(--slide-radius-sm)
-    var(--slide-radius-sm);
+  border-radius: var(--slide-radius-md) var(--slide-radius-sm)
+    var(--slide-radius-sm) var(--slide-radius-sm);
 }
 
 .slide-matrix .matrix-cell[data-position='tr'] {
-  border-radius: var(--slide-radius-sm) var(--slide-radius-md) var(--slide-radius-sm)
-    var(--slide-radius-sm);
+  border-radius: var(--slide-radius-sm) var(--slide-radius-md)
+    var(--slide-radius-sm) var(--slide-radius-sm);
 }
 
 .slide-matrix .matrix-cell[data-position='bl'] {
-  border-radius: var(--slide-radius-sm) var(--slide-radius-sm) var(--slide-radius-sm)
-    var(--slide-radius-md);
+  border-radius: var(--slide-radius-sm) var(--slide-radius-sm)
+    var(--slide-radius-sm) var(--slide-radius-md);
 }
 
 .slide-matrix .matrix-cell[data-position='br'] {
-  border-radius: var(--slide-radius-sm) var(--slide-radius-sm) var(--slide-radius-md)
-    var(--slide-radius-sm);
+  border-radius: var(--slide-radius-sm) var(--slide-radius-sm)
+    var(--slide-radius-md) var(--slide-radius-sm);
 }
 
 /* Tone-based color coding using theme colors */

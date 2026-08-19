@@ -6,12 +6,20 @@ import { createIconFields } from './fields/icons.js';
 import { createImageFields } from './fields/images.js';
 
 export function createFieldRenderers(deps = {}) {
-  const { fieldText, fieldNumber, fieldTextarea, fieldMarkdown, fieldCode, fieldSelect } = createBasicFields(deps);
+  const {
+    fieldText,
+    fieldNumber,
+    fieldTextarea,
+    fieldMarkdown,
+    fieldCode,
+    fieldSelect,
+  } = createBasicFields(deps);
   const { fieldEnum, fieldGrid } = createEnumFields({ ...deps, fieldSelect });
   const { fieldBackground } = createBackgroundFields(deps);
   const { fieldColor } = createColorFields(deps);
   const { fieldIconPicker } = createIconFields(deps);
-  const { fieldImage, fieldTitleBgImage, fieldImages } = createImageFields(deps);
+  const { fieldImage, fieldTitleBgImage, fieldImages } =
+    createImageFields(deps);
 
   return {
     fieldText,

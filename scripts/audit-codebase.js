@@ -10,14 +10,7 @@ const SKIP_DIRS = new Set([
   'server/uploads',
 ]);
 
-const EXTENSIONS = new Set([
-  '.js',
-  '.mjs',
-  '.cjs',
-  '.css',
-  '.html',
-  '.md',
-]);
+const EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.css', '.html', '.md']);
 
 const isSkipped = (relPath) => {
   const parts = relPath.split(path.sep);
@@ -129,7 +122,8 @@ async function main() {
     for (const [rel, hits] of rows.slice(0, 30)) {
       console.log(`  ${pad(hits, 4)}  ${rel}`);
     }
-    if (rows.length > 30) console.log(`  ... and ${rows.length - 30} more files`);
+    if (rows.length > 30)
+      console.log(`  ... and ${rows.length - 30} more files`);
     console.log(`  Total hits: ${tokenHits}`);
   }
 }
@@ -138,5 +132,3 @@ main().catch((err) => {
   console.error(err);
   process.exitCode = 1;
 });
-
-

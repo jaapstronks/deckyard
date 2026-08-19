@@ -75,32 +75,32 @@ anything the editor does not cover.
 
 Both surface controls are multipliers/scales over the slide design system in
 `client/styles/slides/00-tokens.css`, not raw values — a theme adjusts the
-*feel*, the design system keeps the proportions.
+_feel_, the design system keeps the proportions.
 
 | `surfaces.radius` | `--t-radius-sm` / `--t-radius` / `--t-radius-lg` |
-|---|---|
-| `none` | `0px` / `0px` / `0px` |
-| `soft` | `12px` / `16px` / `20px` |
-| `round` | `20px` / `28px` / `36px` |
+| ----------------- | ------------------------------------------------ |
+| `none`            | `0px` / `0px` / `0px`                            |
+| `soft`            | `12px` / `16px` / `20px`                         |
+| `round`           | `20px` / `28px` / `36px`                         |
 
 Consumed by `--slide-radius-sm/-md/-lg`, which every rounded surface reads.
 
 **Leaving `radius` unset is not the same as `soft`.** `buildThemeConfig` always
 emits its own radius triple, which currently happens to match `soft`, so an
-unconfigured *DB* theme lands on `12/16/20`. A *file* theme that sets no
+unconfigured _DB_ theme lands on `12/16/20`. A _file_ theme that sets no
 `--t-radius*` at all falls through to the stylesheet's own fallbacks —
 `10px` / `18px` / `24px` (`00-tokens.css`) — which are deliberately a slightly
 different scale. Setting `soft` explicitly is therefore meaningful on a file
 theme and a no-op on a DB one.
 
-(An *invalid* radius value clamps to `soft`; an *absent* one stays absent. Same
+(An _invalid_ radius value clamps to `soft`; an _absent_ one stays absent. Same
 for shadow.)
 
-| `surfaces.shadow` | `--t-shadow-scale` |
-|---|---|
-| `none` | `0` — elevation flattened away |
-| `soft` | `1` — same as leaving it unset |
-| `strong` | `1.8` |
+| `surfaces.shadow` | `--t-shadow-scale`             |
+| ----------------- | ------------------------------ |
+| `none`            | `0` — elevation flattened away |
+| `soft`            | `1` — same as leaving it unset |
+| `strong`          | `1.8`                          |
 
 `--t-shadow-scale` multiplies the **alpha** of all five `--slide-shadow-*`
 tokens at once. The geometry (offset, blur) is fixed: a theme changes how
@@ -138,7 +138,7 @@ and a stored config is always safe to merge without further checking.
 - **Only contract tokens do anything.** Slide CSS reads the theme exclusively
   through the role layer, so an override outside the contract set — pinned in
   `tests/fixtures/theme-contract.json` and documented in
-  `docs/reference/slide-roles.md` § *The theme seam* — is accepted but has no
+  `docs/reference/slide-roles.md` § _The theme seam_ — is accepted but has no
   effect. The per-type `--t-<slide-type>-*` families were removed during beta
   (see the release notes); their former meanings live on the role tokens
   (`--t-color-accent-soft`, `--t-color-surface-raised`,
@@ -166,16 +166,16 @@ column reads as `{}`, which is what makes the migration safe on a live install;
 - **`open`** (the default for everything) — the theme supplies a default and a
   per-slide override wins. Today's behaviour.
 - **`locked`** — the theme wins. The editor omits the control and explains why,
-  *and* the renderer ignores an override the slide already carries, so a deck
+  _and_ the renderer ignores an override the slide already carries, so a deck
   authored before the lock cannot leak past the branding.
 
-| Lock | Slide content it governs |
-|---|---|
+| Lock         | Slide content it governs                                                                                                                     |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `background` | `background`, `bgCustomColor`, `bgImage`, and the whole `slideBg*` group (image, fit, focus, overlay, text, plus the derived contrast hints) |
-| `logo` | `slideLogo` |
+| `logo`       | `slideLogo`                                                                                                                                  |
 
 **Enforcement is non-destructive.** `applyLocksToContent` returns a filtered
-*view* of the content; stored slide data is never rewritten. Unlocking a
+_view_ of the content; stored slide data is never rewritten. Unlocking a
 property restores every slide's own value.
 
 **A missing theme locks nothing.** A render path that forgets to pass

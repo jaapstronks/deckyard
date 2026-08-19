@@ -17,9 +17,7 @@ export function attachSandboxMeta(pres) {
   const createdMs = safeIsoToMs(pres?.created) || Date.now();
   const expires = new Date(createdMs + sandboxTtlMs()).toISOString();
   pres.sandbox =
-    pres?.sandbox && typeof pres.sandbox === 'object'
-      ? pres.sandbox
-      : {};
+    pres?.sandbox && typeof pres.sandbox === 'object' ? pres.sandbox : {};
   pres.sandbox.enabled = true;
   pres.sandbox.expires = expires;
   return pres;

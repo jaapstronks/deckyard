@@ -68,8 +68,15 @@ describe('unresolvedContentEntries', () => {
     });
     const keys = entries.map((e) => e.key);
     assert.deepEqual(keys, ['title', 'col1Title']);
-    assert.equal(entries[1].label, 'Col 1 title', 'stored key humanised honestly');
-    assert.ok(!keys.includes('empty'), 'blank values are not listed as content');
+    assert.equal(
+      entries[1].label,
+      'Col 1 title',
+      'stored key humanised honestly',
+    );
+    assert.ok(
+      !keys.includes('empty'),
+      'blank values are not listed as content',
+    );
   });
 
   it('flattens nested items one level instead of showing [object Object]', () => {
@@ -77,7 +84,11 @@ describe('unresolvedContentEntries', () => {
       items: [{ title: 'One', body: 'First' }, { title: 'Two' }],
     });
     assert.equal(entries.length, 1);
-    assert.deepEqual(entries[0].lines, ['Title: One', 'Body: First', 'Title: Two']);
+    assert.deepEqual(entries[0].lines, [
+      'Title: One',
+      'Body: First',
+      'Title: Two',
+    ]);
   });
 });
 
@@ -89,16 +100,27 @@ describe('the canvas placeholder', () => {
 
   it('names the type, the removal and the successor, and keeps the content', () => {
     const html = renderUnresolvedSlideHtml(slide);
-    assert.match(html, /class="slide slide-unresolved"/, 'still a slide, not an error');
+    assert.match(
+      html,
+      /class="slide slide-unresolved"/,
+      'still a slide, not an error',
+    );
     assert.match(html, /agenda-timeline-slide/, 'names the missing type');
     assert.match(html, /was removed from Deckyard/);
     assert.match(html, /Rebuild this slide as a/, 'points at the successor');
-    assert.match(html, /Programme/, 'the slide keeps its own title as the heading');
+    assert.match(
+      html,
+      /Programme/,
+      'the slide keeps its own title as the heading',
+    );
     assert.match(html, /Welcome/, 'stored content stays visible');
   });
 
   it('says a type is unavailable rather than removed when it is merely unknown', () => {
-    const html = renderUnresolvedSlideHtml({ type: 'acme-hero-slide', content: { title: 'Hi' } });
+    const html = renderUnresolvedSlideHtml({
+      type: 'acme-hero-slide',
+      content: { title: 'Hi' },
+    });
     assert.match(html, /Unavailable slide type/);
     assert.match(html, /acme-hero-slide/);
     assert.doesNotMatch(html, /was removed from Deckyard/);
@@ -112,7 +134,11 @@ describe('the canvas placeholder', () => {
     for (let i = 1; i <= 12; i += 1) content[`field${i}`] = `value ${i}`;
     const html = renderUnresolvedSlideHtml({ type: 'freeform-slide', content });
     assert.match(html, /\+6 more fields/);
-    assert.match(html, /reader view/, 'points at the surface that shows the rest');
+    assert.match(
+      html,
+      /reader view/,
+      'points at the surface that shows the rest',
+    );
   });
 
   it('escapes stored content (no live type definition validated it)', () => {
@@ -125,13 +151,21 @@ describe('the canvas placeholder', () => {
   });
 
   it('is what renderSlideHtml falls back to', () => {
-    const html = renderSlideHtml({ type: 'freeform-slide', content: { title: 'Old' } });
+    const html = renderSlideHtml({
+      type: 'freeform-slide',
+      content: { title: 'Old' },
+    });
     assert.match(html, /slide-unresolved/);
     assert.match(html, /Old/);
   });
 
   it('never throws, whatever the slide looks like', () => {
-    for (const bad of [undefined, {}, { type: 'x' }, { type: 'x', content: null }]) {
+    for (const bad of [
+      undefined,
+      {},
+      { type: 'x' },
+      { type: 'x', content: null },
+    ]) {
       assert.doesNotThrow(() => renderSlideHtml(bad));
     }
   });
@@ -141,7 +175,10 @@ describe('the reader projection', () => {
   it('is complete where the canvas is bounded', () => {
     const content = {};
     for (let i = 1; i <= 12; i += 1) content[`field${i}`] = `value ${i}`;
-    const html = renderUnresolvedSlideSemanticHtml({ type: 'freeform-slide', content });
+    const html = renderUnresolvedSlideSemanticHtml({
+      type: 'freeform-slide',
+      content,
+    });
     for (let i = 1; i <= 12; i += 1) {
       assert.match(html, new RegExp(`value ${i}`), `field ${i} is readable`);
     }
@@ -149,8 +186,11 @@ describe('the reader projection', () => {
 
   it('does not repeat the content key the reader already used as the heading', () => {
     const html = renderUnresolvedSlideSemanticHtml(
-      { type: 'freeform-slide', content: { title: 'Heading text', note: 'Body text' } },
-      { headingKey: 'title' }
+      {
+        type: 'freeform-slide',
+        content: { title: 'Heading text', note: 'Body text' },
+      },
+      { headingKey: 'title' },
     );
     assert.match(html, /Body text/);
     assert.doesNotMatch(html, /Heading text/);

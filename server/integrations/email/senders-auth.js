@@ -94,7 +94,10 @@ export async function sendUserInvitationEmail({
   if (customResult) return customResult;
 
   // Default behavior
-  const subject = tr('email.userInvitation.subject', "You've been invited to join");
+  const subject = tr(
+    'email.userInvitation.subject',
+    "You've been invited to join",
+  );
 
   const { htmlContent, textContent } = buildUserInvitationEmail({
     tr,
@@ -145,7 +148,10 @@ export async function sendActivationReminderEmail({
   if (customResult) return customResult;
 
   // Default behavior
-  const subject = tr('email.activationReminder.subject', 'Reminder: Complete your account setup');
+  const subject = tr(
+    'email.activationReminder.subject',
+    'Reminder: Complete your account setup',
+  );
 
   const { htmlContent, textContent } = buildActivationReminderEmail({
     tr,

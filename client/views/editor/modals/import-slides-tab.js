@@ -48,12 +48,18 @@ export function createImportSlidesTab({
 
   const dropzoneText = h('div', {
     class: 'import-slides-dropzone-text',
-    text: t('editor.importSlides.dropzone.text', 'Drop PDF here or click to upload'),
+    text: t(
+      'editor.importSlides.dropzone.text',
+      'Drop PDF here or click to upload',
+    ),
   });
 
   const dropzoneHint = h('div', {
     class: 'import-slides-dropzone-hint help',
-    text: t('editor.importSlides.dropzone.hint', 'Each page becomes an image slide'),
+    text: t(
+      'editor.importSlides.dropzone.hint',
+      'Each page becomes an image slide',
+    ),
   });
 
   const dropzone = h('div', { class: 'import-slides-dropzone' }, [
@@ -71,29 +77,39 @@ export function createImportSlidesTab({
     text: t('common.clear', 'Clear'),
     onclick: clearFile,
   });
-  const fileInfo = h('div', { class: 'import-slides-file-info', hidden: true }, [
-    h('div', { class: 'import-slides-file-icon' }, [
-      (() => {
-        const icon = h('span');
-        icon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  const fileInfo = h(
+    'div',
+    { class: 'import-slides-file-info', hidden: true },
+    [
+      h('div', { class: 'import-slides-file-icon' }, [
+        (() => {
+          const icon = h('span');
+          icon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
           <polyline points="14 2 14 8 20 8"/>
         </svg>`;
-        return icon;
-      })(),
-    ]),
-    h('div', { class: 'import-slides-file-details' }, [fileInfoName, fileInfoSize]),
-    btnClear,
-  ]);
+          return icon;
+        })(),
+      ]),
+      h('div', { class: 'import-slides-file-details' }, [
+        fileInfoName,
+        fileInfoSize,
+      ]),
+      btnClear,
+    ],
+  );
 
   // Progress section
   const progressBar = h('div', { class: 'import-slides-progress-bar' });
-  const progressTrack = h('div', { class: 'import-slides-progress-track' }, [progressBar]);
-  const progressText = h('div', { class: 'import-slides-progress-text help' });
-  const progressSection = h('div', { class: 'import-slides-progress', hidden: true }, [
-    progressTrack,
-    progressText,
+  const progressTrack = h('div', { class: 'import-slides-progress-track' }, [
+    progressBar,
   ]);
+  const progressText = h('div', { class: 'import-slides-progress-text help' });
+  const progressSection = h(
+    'div',
+    { class: 'import-slides-progress', hidden: true },
+    [progressTrack, progressText],
+  );
 
   // Import button
   const btnImport = h('button', {
@@ -103,10 +119,15 @@ export function createImportSlidesTab({
     onclick: startImport,
   });
 
-  const actionsSection = h('div', { class: 'import-slides-actions' }, [btnImport]);
+  const actionsSection = h('div', { class: 'import-slides-actions' }, [
+    btnImport,
+  ]);
 
   // Status message
-  const statusMessage = h('div', { class: 'import-slides-status help', hidden: true });
+  const statusMessage = h('div', {
+    class: 'import-slides-status help',
+    hidden: true,
+  });
 
   function showFile(file) {
     selectedFile = file;
@@ -125,7 +146,10 @@ export function createImportSlidesTab({
     fileInfo.hidden = true;
     progressSection.hidden = true;
     btnImport.disabled = true;
-    btnImport.textContent = t('editor.importSlides.importButton', 'Import slides');
+    btnImport.textContent = t(
+      'editor.importSlides.importButton',
+      'Import slides',
+    );
     statusMessage.hidden = true;
   }
 
@@ -149,13 +173,21 @@ export function createImportSlidesTab({
     btnImport.textContent = t('editor.importSlides.importing', 'Importing...');
     btnClear.disabled = true;
     progressSection.hidden = false;
-    setProgress(0, 100, t('editor.importSlides.progress.reading', 'Reading file...'));
+    setProgress(
+      0,
+      100,
+      t('editor.importSlides.progress.reading', 'Reading file...'),
+    );
 
     try {
       // Read file as data URL
       const dataUrl = await readFileAsDataUrl(selectedFile);
 
-      setProgress(5, 100, t('editor.importSlides.progress.uploading', 'Uploading...'));
+      setProgress(
+        5,
+        100,
+        t('editor.importSlides.progress.uploading', 'Uploading...'),
+      );
 
       // Call the API with SSE for progress
       const url = `/api/presentations/${encodeURIComponent(presentationId)}/import-slides-as-images`;
@@ -217,20 +249,29 @@ export function createImportSlidesTab({
                 }
                 setProgress(pct, 100, message);
               } else if (event === 'error') {
-                throw new Error(parsed.message || t('editor.import.failed', 'Import failed'));
+                throw new Error(
+                  parsed.message || t('editor.import.failed', 'Import failed'),
+                );
               } else if (event === 'complete') {
-                setProgress(100, 100, t('editor.importSlides.progress.complete', 'Complete!'));
+                setProgress(
+                  100,
+                  100,
+                  t('editor.importSlides.progress.complete', 'Complete!'),
+                );
                 showStatus(
-                  t('editor.importSlides.success', '{count} slides imported').replace(
-                    '{count}',
-                    String(parsed.slidesAdded || 0)
-                  )
+                  t(
+                    'editor.importSlides.success',
+                    '{count} slides imported',
+                  ).replace('{count}', String(parsed.slidesAdded || 0)),
                 );
                 onComplete?.(parsed);
                 return;
               }
             } catch (parseErr) {
-              console.error('[import-slides] Failed to parse SSE data:', parseErr);
+              console.error(
+                '[import-slides] Failed to parse SSE data:',
+                parseErr,
+              );
             }
             event = '';
             data = '';
@@ -239,12 +280,18 @@ export function createImportSlidesTab({
       }
     } catch (err) {
       console.error('[import-slides] Error:', err);
-      showStatus(err.message || t('editor.import.failed', 'Import failed'), true);
+      showStatus(
+        err.message || t('editor.import.failed', 'Import failed'),
+        true,
+      );
       onError?.(err);
     } finally {
       importing = false;
       btnImport.disabled = false;
-      btnImport.textContent = t('editor.importSlides.importButton', 'Import slides');
+      btnImport.textContent = t(
+        'editor.importSlides.importButton',
+        'Import slides',
+      );
       btnClear.disabled = false;
     }
   }
@@ -253,8 +300,14 @@ export function createImportSlidesTab({
   inputFile.addEventListener('change', () => {
     const file = inputFile.files?.[0];
     if (file) {
-      if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
-        showStatus(t('editor.importSlides.error.notPdf', 'Please select a PDF file'), true);
+      if (
+        !file.type.includes('pdf') &&
+        !file.name.toLowerCase().endsWith('.pdf')
+      ) {
+        showStatus(
+          t('editor.importSlides.error.notPdf', 'Please select a PDF file'),
+          true,
+        );
         return;
       }
       showFile(file);
@@ -277,8 +330,14 @@ export function createImportSlidesTab({
     dropzone.classList.remove('is-dragover');
     const file = e.dataTransfer?.files?.[0];
     if (file) {
-      if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
-        showStatus(t('editor.importSlides.error.notPdf', 'Please select a PDF file'), true);
+      if (
+        !file.type.includes('pdf') &&
+        !file.name.toLowerCase().endsWith('.pdf')
+      ) {
+        showStatus(
+          t('editor.importSlides.error.notPdf', 'Please select a PDF file'),
+          true,
+        );
         return;
       }
       showFile(file);
@@ -290,7 +349,7 @@ export function createImportSlidesTab({
     class: 'import-slides-help help',
     text: t(
       'editor.importSlides.help',
-      'Import slides from a PDF file. Each page will be converted to an image slide at 1920×1080 resolution.'
+      'Import slides from a PDF file. Each page will be converted to an image slide at 1920×1080 resolution.',
     ),
   });
 
@@ -302,7 +361,7 @@ export function createImportSlidesTab({
     fileInfo,
     progressSection,
     actionsSection,
-    statusMessage
+    statusMessage,
   );
 
   return wrap;

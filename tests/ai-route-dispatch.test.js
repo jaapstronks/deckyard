@@ -78,7 +78,7 @@ test('all AI handler modules export a handler function', async () => {
     assert.equal(
       typeof mod[exportName],
       'function',
-      `${file} exports ${exportName}`
+      `${file} exports ${exportName}`,
     );
   }
 });

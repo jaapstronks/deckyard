@@ -19,27 +19,27 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       The default "text" slide for paragraphs and bullet lists.
       USE THIS AS A LAST RESORT - prefer specialized slide types when they fit.
 
       Good for: general explanatory text, mixed content that doesn't fit other types.
       Layout: default is one-column. Only use two-column for dense content.
     `,
-    bestFor: [
-      'General explanatory text that does not fit other slide types',
-      'Mixed content (some bullets + some paragraphs)',
-      'Content that is truly freeform',
-    ],
-    notFor: [
-      'Lists with title+description pairs (use list-slide)',
-      'Parallel items/categories with no causal relationship (use list-slide, or icon-card-grid-slide if each needs an icon)',
-      'Timelines or sequences (use timeline-slide)',
-      'Tables (use table-slide or chart-slide)',
-      'Genuine cause→effect / input→output flows between groups (use text-blocks-slide)',
-    ],
+  bestFor: [
+    'General explanatory text that does not fit other slide types',
+    'Mixed content (some bullets + some paragraphs)',
+    'Content that is truly freeform',
+  ],
+  notFor: [
+    'Lists with title+description pairs (use list-slide)',
+    'Parallel items/categories with no causal relationship (use list-slide, or icon-card-grid-slide if each needs an icon)',
+    'Timelines or sequences (use timeline-slide)',
+    'Tables (use table-slide or chart-slide)',
+    'Genuine cause→effect / input→output flows between groups (use text-blocks-slide)',
+  ],
 };
 
 /**

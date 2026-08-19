@@ -31,7 +31,9 @@ import { sql } from 'kysely';
 
 export const up = async (db) => {
   await sql`DROP INDEX IF EXISTS idx_view_sessions_internal`.execute(db);
-  await sql`ALTER TABLE view_sessions DROP COLUMN IF EXISTS is_internal`.execute(db);
+  await sql`ALTER TABLE view_sessions DROP COLUMN IF EXISTS is_internal`.execute(
+    db,
+  );
 };
 
 export const down = async (db) => {

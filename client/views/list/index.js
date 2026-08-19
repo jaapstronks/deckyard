@@ -42,7 +42,10 @@ import { LOCAL_STORAGE_KEY_VIEW, resolveInitialView } from './view-routing.js';
 
 export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   const features = getFeatures() || {};
-  const shell = h('div', { class: 'app-shell has-sidebar', role: 'application' });
+  const shell = h('div', {
+    class: 'app-shell has-sidebar',
+    role: 'application',
+  });
   const detachThumbs = [];
   const detachers = [];
   const openOverlayClosers = new Set();
@@ -53,7 +56,11 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
 
   const closeAllOverlays = () => {
     for (const close of Array.from(openOverlayClosers)) {
-      try { close(); } catch { /* ignore */ }
+      try {
+        close();
+      } catch {
+        /* ignore */
+      }
     }
     openOverlayClosers.clear();
   };
@@ -70,7 +77,10 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   // MODAL WRAPPERS
   // ============================================================
 
-  const openNewPresentationModalWrapper = ({ preselectedTheme, preselect } = {}) =>
+  const openNewPresentationModalWrapper = ({
+    preselectedTheme,
+    preselect,
+  } = {}) =>
     openCreationView({
       h,
       api,
@@ -132,7 +142,11 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   // CONTENT AREA
   // ============================================================
 
-  const content = h('main', { id: 'main-content', class: 'presentation-grid-content', role: 'main' });
+  const content = h('main', {
+    id: 'main-content',
+    class: 'presentation-grid-content',
+    role: 'main',
+  });
   const frame = h('div', { class: 'presentation-grid-frame' });
   content.append(frame);
   shell.append(content);
@@ -142,7 +156,8 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   // LOAD PRESENTATIONS
   // ============================================================
 
-  const { workspace, priv, sharedPresentations, allByDate } = await loadPresentationList(api);
+  const { workspace, priv, sharedPresentations, allByDate } =
+    await loadPresentationList(api);
 
   // ============================================================
   // SELECTION STATE
@@ -183,7 +198,8 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   const themePicker = createThemePickerRow({
     h,
     api,
-    onThemeSelect: (theme) => openNewPresentationModalWrapper({ preselectedTheme: theme }),
+    onThemeSelect: (theme) =>
+      openNewPresentationModalWrapper({ preselectedTheme: theme }),
     onShowAll: () => openNewPresentationModalWrapper(),
   });
   detachers.push(() => themePicker.detach?.());
@@ -215,7 +231,8 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     unreadCount,
     user,
     onCreate: () => openNewPresentationModalWrapper(),
-    onComposeFrom: (preselect) => openNewPresentationModalWrapper({ preselect }),
+    onComposeFrom: (preselect) =>
+      openNewPresentationModalWrapper({ preselect }),
     detachThumbs,
   });
 
@@ -268,7 +285,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     trashViewObj.el,
     slideLibraryViewObj.el,
     activityFeed.el,
-    searchViewObj.el
+    searchViewObj.el,
   );
 
   // ============================================================
@@ -386,7 +403,10 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   // Handle permalink navigation to slide library
   if (openSlideLibrary?.shelf && openSlideLibrary?.slideId) {
     setView('slideLibrary');
-    slideLibraryViewObj.openSlide(openSlideLibrary.shelf, openSlideLibrary.slideId);
+    slideLibraryViewObj.openSlide(
+      openSlideLibrary.shelf,
+      openSlideLibrary.slideId,
+    );
   } else {
     setView(currentView);
   }
@@ -398,10 +418,18 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   return () => {
     closeAllOverlays();
     for (const d of detachThumbs) {
-      try { if (typeof d === 'function') d(); } catch { /* ignore */ }
+      try {
+        if (typeof d === 'function') d();
+      } catch {
+        /* ignore */
+      }
     }
     for (const d of detachers) {
-      try { if (typeof d === 'function') d(); } catch { /* ignore */ }
+      try {
+        if (typeof d === 'function') d();
+      } catch {
+        /* ignore */
+      }
     }
   };
 }

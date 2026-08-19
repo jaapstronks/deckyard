@@ -26,8 +26,10 @@ globalThis.Element = dom.window.Element;
 globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.KeyboardEvent = dom.window.KeyboardEvent;
 globalThis.getComputedStyle = dom.window.getComputedStyle;
-globalThis.requestAnimationFrame = dom.window.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
-globalThis.cancelAnimationFrame = dom.window.cancelAnimationFrame || clearTimeout;
+globalThis.requestAnimationFrame =
+  dom.window.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
+globalThis.cancelAnimationFrame =
+  dom.window.cancelAnimationFrame || clearTimeout;
 globalThis.ResizeObserver =
   dom.window.ResizeObserver ||
   class {
@@ -37,11 +39,18 @@ globalThis.ResizeObserver =
   };
 
 const { h } = await import('../client/lib/dom.js');
-const { createFieldRenderers } = await import('../client/views/editor/fields.js');
-const { createRerenderEditor } = await import('../client/views/editor/editor-form.js');
+const { createFieldRenderers } =
+  await import('../client/views/editor/fields.js');
+const { createRerenderEditor } =
+  await import('../client/views/editor/editor-form.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 
-function renderForm({ type, content, contentOnly = true, onEditChartData } = {}) {
+function renderForm({
+  type,
+  content,
+  contentOnly = true,
+  onEditChartData,
+} = {}) {
   const editorMount = document.createElement('div');
   document.body.append(editorMount);
   const slide = {
@@ -83,17 +92,23 @@ function renderForm({ type, content, contentOnly = true, onEditChartData } = {})
 
 const labelsOf = (root) =>
   Array.from(root.querySelectorAll('label, .field-label')).map((el) =>
-    el.textContent.trim()
+    el.textContent.trim(),
   );
 
 test('table: the rows field renders the table-grid widget, not a collection editor', () => {
   const { editorMount } = renderForm({ type: 'table-slide' });
-  assert.ok(editorMount.querySelector('.table-editor-grid'), 'cell grid renders');
-  assert.ok(editorMount.querySelector('.table-editor-import'), 'markdown import renders');
+  assert.ok(
+    editorMount.querySelector('.table-editor-grid'),
+    'cell grid renders',
+  );
+  assert.ok(
+    editorMount.querySelector('.table-editor-import'),
+    'markdown import renders',
+  );
   assert.equal(
     editorMount.querySelector('.collection-editor'),
     null,
-    'no generic collection editor for the c1…cN rows'
+    'no generic collection editor for the c1…cN rows',
   );
   // colCount is managed by the widget (hidden: true) — never its own control.
   assert.ok(!labelsOf(editorMount).includes('Columns'), 'no raw colCount enum');
@@ -101,13 +116,13 @@ test('table: the rows field renders the table-grid widget, not a collection edit
 
 test('table: headerRow and tableStyle pair on one declared row', () => {
   const { editorMount } = renderForm({ type: 'table-slide' });
-  const grid = Array.from(editorMount.querySelectorAll('.field-grid')).find((g) =>
-    labelsOf(g).some((l) => l.includes('Header row'))
+  const grid = Array.from(editorMount.querySelectorAll('.field-grid')).find(
+    (g) => labelsOf(g).some((l) => l.includes('Header row')),
   );
   assert.ok(grid, 'headerRow renders inside a field-grid row');
   assert.ok(
     labelsOf(grid).some((l) => l.includes('Table style')),
-    'tableStyle shares the row'
+    'tableStyle shares the row',
   );
 });
 
@@ -140,18 +155,24 @@ test('chart: visibleWhen shows only the controls the chart type draws', () => {
   assert.ok(has('line', 'Series 1 label'), 'line: series labels');
   assert.ok(has('line', 'X label'), 'line: axis labels');
 
-  assert.ok(has('pie', 'Pie labels') && has('pie', 'Legend'), 'pie: pie toggles');
+  assert.ok(
+    has('pie', 'Pie labels') && has('pie', 'Legend'),
+    'pie: pie toggles',
+  );
   assert.ok(!has('pie', 'X label'), 'pie: no axis labels');
   assert.ok(!has('pie', 'Series 1 label'), 'pie: no series labels');
 });
 
 test('chart: bulk modal renders the inline csv grid', () => {
   const { editorMount } = renderForm({ type: 'chart-slide' });
-  assert.ok(editorMount.querySelector('.csv-grid-host'), 'inline data grid renders');
+  assert.ok(
+    editorMount.querySelector('.csv-grid-host'),
+    'inline data grid renders',
+  );
   assert.equal(
     editorMount.querySelector('.chart-data-entry'),
     null,
-    'no entry-point button in the bulk modal'
+    'no entry-point button in the bulk modal',
   );
 });
 
@@ -166,7 +187,11 @@ test('chart: inspector renders the "Edit data…" entry point instead of the gri
   });
   const entry = editorMount.querySelector('.chart-data-entry');
   assert.ok(entry, 'entry point renders in the inspector');
-  assert.equal(editorMount.querySelector('.csv-grid-host'), null, 'no inline grid');
+  assert.equal(
+    editorMount.querySelector('.csv-grid-host'),
+    null,
+    'no inline grid',
+  );
   entry.querySelector('button').click();
   assert.equal(opened, 1, 'the button opens the data surface');
 });

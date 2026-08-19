@@ -44,11 +44,14 @@ await initSanitizer();
 
 const BASE_CSS = readFileSync(
   join(repoRoot, 'client/styles/slides/01-layout-and-title/00-base.css'),
-  'utf8'
+  'utf8',
 );
 
 test('the marker-anchored-list rule exists exactly once, in 00-base.css', () => {
-  assert.match(BASE_CSS, /\.slide :is\(ul, ol\):not\(\[class\]\) \{\s*text-align: start;/);
+  assert.match(
+    BASE_CSS,
+    /\.slide :is\(ul, ol\):not\(\[class\]\) \{\s*text-align: start;/,
+  );
 });
 
 test('a markdown list is emitted classless, so the rule reaches it', () => {
@@ -59,7 +62,10 @@ test('a markdown list is emitted classless, so the rule reaches it', () => {
   const openTags = html.match(/<(?:ul|ol)\b[^>]*>/g) || [];
   assert.ok(openTags.length > 0);
   for (const tag of openTags) {
-    assert.ok(!/\bclass=/.test(tag), `markdown list must carry no class: ${tag}`);
+    assert.ok(
+      !/\bclass=/.test(tag),
+      `markdown list must carry no class: ${tag}`,
+    );
   }
 });
 
@@ -99,14 +105,17 @@ test('every structural list container carries a class, so the rule spares it', (
   assert.deepEqual(
     offenders,
     [],
-    `structural lists must be classed:\n${offenders.join('\n')}`
+    `structural lists must be classed:\n${offenders.join('\n')}`,
   );
 });
 
 // --- The declaration side ---------------------------------------------------
 
 test('an ordinary field defaults to left', () => {
-  assert.equal(fieldDefaultAlign(SLIDE_TYPES['content-slide'], 'title'), 'left');
+  assert.equal(
+    fieldDefaultAlign(SLIDE_TYPES['content-slide'], 'title'),
+    'left',
+  );
   assert.equal(fieldDefaultAlign(null, 'anything'), DEFAULT_ALIGN);
 });
 
@@ -131,7 +140,7 @@ test('the affordance resolver reports the default the editor should show', () =>
   assert.equal(out.defaultAlign, 'center');
 });
 
-test('a declared default outside the role\'s allowed set is ignored', () => {
+test("a declared default outside the role's allowed set is ignored", () => {
   // A list item cannot align at all, so no type may default it to centre.
   const def = {
     defaultAlign: 'center',
@@ -163,9 +172,12 @@ test('on an ordinary type the reverse holds, unchanged', () => {
 test('"left" on a centring type emits a class that can beat the slide rule', () => {
   assert.equal(
     textStyleClasses({ align: 'left' }, { defaultAlign: 'center' }),
-    'tf-align-left'
+    'tf-align-left',
   );
-  assert.equal(textStyleClasses({ align: 'center' }, { defaultAlign: 'center' }), '');
+  assert.equal(
+    textStyleClasses({ align: 'center' }, { defaultAlign: 'center' }),
+    '',
+  );
   // Unchanged for everything else.
   assert.equal(textStyleClasses({ align: 'left' }), '');
   assert.equal(textStyleClasses({ align: 'center' }), 'tf-align-center');
@@ -176,12 +188,12 @@ test('the renderer wires the type default through end to end', () => {
   const html = def.renderHtml(
     { title: 'Thanks', body: 'hello', textStyles: { body: { align: 'left' } } },
     { type: 'end-slide' },
-    {}
+    {},
   );
   const withStyles = injectTextStyles(
     html,
     { textStyles: { body: { align: 'left' } } },
-    def
+    def,
   );
   assert.match(withStyles, /tf-align-left/);
 });
@@ -189,14 +201,19 @@ test('the renderer wires the type default through end to end', () => {
 test('an untouched deck stays byte-identical', () => {
   // The whole point of pruning defaults: adding defaultAlign must not start
   // emitting classes on decks nobody has styled.
-  for (const type of ['end-slide', 'funnel-slide', 'pyramid-slide', 'content-slide']) {
+  for (const type of [
+    'end-slide',
+    'funnel-slide',
+    'pyramid-slide',
+    'content-slide',
+  ]) {
     const def = SLIDE_TYPES[type];
     const content = def.defaults || {};
     const html = def.renderHtml(content, { type }, {});
     assert.equal(
       injectTextStyles(html, content, def),
       html,
-      `${type}: an unstyled slide must render unchanged`
+      `${type}: an unstyled slide must render unchanged`,
     );
   }
 });

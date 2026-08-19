@@ -1,5 +1,16 @@
-import { badRequest, jsonError, serveJson, serverError, unauthorized, requireJsonBody, withErrorHandler } from '../../utils/http.js';
-import { getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
+import {
+  badRequest,
+  jsonError,
+  serveJson,
+  serverError,
+  unauthorized,
+  requireJsonBody,
+  withErrorHandler,
+} from '../../utils/http.js';
+import {
+  getMediaProvider,
+  isMediaProviderInitialized,
+} from '../../media/index.js';
 import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { getDataUrl } from '../../utils/request-validators.js';
@@ -19,10 +30,7 @@ async function handleUploadCreate({ req, res, authedUser }) {
   const { originalName } = body || {};
   const dataUrl = getDataUrl(body, 'dataUrl');
   if (!dataUrl) {
-    return badRequest(
-      res,
-      'Expected { dataUrl: "data:<mime>;base64,..." }'
-    );
+    return badRequest(res, 'Expected { dataUrl: "data:<mime>;base64,..." }');
   }
 
   if (!isMediaProviderInitialized()) {
@@ -68,5 +76,5 @@ export const ROUTES = [
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
 export const handleUploads = withErrorHandler('uploads', (ctx) =>
-  dispatchRoutes(ROUTES, ctx)
+  dispatchRoutes(ROUTES, ctx),
 );

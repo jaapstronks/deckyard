@@ -51,7 +51,7 @@ function contentFields(def) {
       f.deprecated !== true &&
       !GLOBAL.has(f.key) &&
       f.key !== 'actions' &&
-      f.key !== 'background'
+      f.key !== 'background',
   );
 }
 
@@ -96,13 +96,14 @@ test('every core slide type declares a structure from the vocabulary', () => {
   const missing = [];
   for (const name of CORE_SLIDE_TYPE_NAMES) {
     const declared = SLIDE_TYPES[name]?.structure;
-    if (!isSlideStructure(declared)) missing.push(`${name} (${declared ?? 'none'})`);
+    if (!isSlideStructure(declared))
+      missing.push(`${name} (${declared ?? 'none'})`);
   }
   assert.deepEqual(
     missing,
     [],
     `every type must declare one of ${SLIDE_STRUCTURE_NAMES.join(', ')}:\n` +
-      missing.join('\n')
+      missing.join('\n'),
   );
 });
 
@@ -110,13 +111,19 @@ test('every structure in the vocabulary states an item contract', () => {
   // The vocabulary is what a type declares; the contract is what a reader may
   // rely on. A structure with no contract is a bucket name promising nothing,
   // which is the state this facet was made normative to leave.
-  assert.deepEqual(Object.keys(SLIDE_STRUCTURE_CONTRACTS).sort(), [...SLIDE_STRUCTURE_NAMES].sort());
+  assert.deepEqual(
+    Object.keys(SLIDE_STRUCTURE_CONTRACTS).sort(),
+    [...SLIDE_STRUCTURE_NAMES].sort(),
+  );
   for (const [name, contract] of Object.entries(SLIDE_STRUCTURE_CONTRACTS)) {
-    assert.ok(contract.reader.length > 40, `${name}: the reader rule must say something`);
+    assert.ok(
+      contract.reader.length > 40,
+      `${name}: the reader rule must say something`,
+    );
     assert.ok(contract.itemsPhrase, `${name}: missing itemsPhrase`);
     assert.ok(
       contract.itemArrays === null || Number.isInteger(contract.itemArrays),
-      `${name}: itemArrays must be a count or null (not derivable)`
+      `${name}: itemArrays must be a count or null (not derivable)`,
     );
   }
 });
@@ -128,14 +135,44 @@ test('the contract rejects the shapes it describes', () => {
   // the whole facet vacuously green.
   const one = [{ key: 'items', minItems: 1, maxItems: 9 }];
   const fixed = [{ key: 'options', minItems: 4, maxItems: 4 }];
-  assert.equal(structureContractViolation('singleton', { itemArrays: [], contentFieldKeys: ['title'] }), '');
-  assert.match(structureContractViolation('singleton', { itemArrays: one }), /must carry no items\[\]/);
-  assert.equal(structureContractViolation('collection', { itemArrays: one }), '');
-  assert.match(structureContractViolation('collection', { itemArrays: [] }), /exactly one items\[\]/);
-  assert.equal(structureContractViolation('fixed-collection', { itemArrays: fixed }), '');
-  assert.match(structureContractViolation('fixed-collection', { itemArrays: one }), /minItems === maxItems/);
-  assert.equal(structureContractViolation('chrome', { itemArrays: [], contentFieldKeys: [] }), '');
-  assert.match(structureContractViolation('chrome', { contentFieldKeys: ['title'] }), /no content fields/);
+  assert.equal(
+    structureContractViolation('singleton', {
+      itemArrays: [],
+      contentFieldKeys: ['title'],
+    }),
+    '',
+  );
+  assert.match(
+    structureContractViolation('singleton', { itemArrays: one }),
+    /must carry no items\[\]/,
+  );
+  assert.equal(
+    structureContractViolation('collection', { itemArrays: one }),
+    '',
+  );
+  assert.match(
+    structureContractViolation('collection', { itemArrays: [] }),
+    /exactly one items\[\]/,
+  );
+  assert.equal(
+    structureContractViolation('fixed-collection', { itemArrays: fixed }),
+    '',
+  );
+  assert.match(
+    structureContractViolation('fixed-collection', { itemArrays: one }),
+    /minItems === maxItems/,
+  );
+  assert.equal(
+    structureContractViolation('chrome', {
+      itemArrays: [],
+      contentFieldKeys: [],
+    }),
+    '',
+  );
+  assert.match(
+    structureContractViolation('chrome', { contentFieldKeys: ['title'] }),
+    /no content fields/,
+  );
   // A dataset's payload is an encoded blob (chart-slide's CSV `data`), not a
   // field shape the registry can count — the contract says so with a null.
   assert.equal(structureContractViolation('dataset', { itemArrays: one }), '');
@@ -163,7 +200,7 @@ test('the declared structure matches what the field schema actually says', () =>
     unexpected,
     [],
     `a type's declared structure contradicts its schema. Fix the schema or the ` +
-      `declaration — do not add to BURNDOWN without a reason:\n${unexpected.join('\n')}`
+      `declaration — do not add to BURNDOWN without a reason:\n${unexpected.join('\n')}`,
   );
 
   // Reverse direction: a burndown entry that no longer fails is rot, the same
@@ -173,7 +210,7 @@ test('the declared structure matches what the field schema actually says', () =>
   assert.deepEqual(
     stale,
     [],
-    `these types now match their declaration — drop them from BURNDOWN:\n${stale.join('\n')}`
+    `these types now match their declaration — drop them from BURNDOWN:\n${stale.join('\n')}`,
   );
 });
 
@@ -193,7 +230,8 @@ test('the declared structure matches what the field schema actually says', () =>
 function fieldSignature(def) {
   return contentFields(def)
     .map((f) => {
-      if (f.type !== 'items' || !Array.isArray(f.itemFields)) return `${f.key}:${f.type}`;
+      if (f.type !== 'items' || !Array.isArray(f.itemFields))
+        return `${f.key}:${f.type}`;
       const shape = f.itemFields
         .filter((i) => i && typeof i.key === 'string')
         .map((i) => `${i.key}:${i.type}`)
@@ -241,21 +279,23 @@ test('no two slide types offer the same field signature', () => {
     [],
     `these types offer the author the same slots under different names. Either ` +
       `they are one type, or one of them owes a field that makes it a different ` +
-      `contract:\n${unexpected.join('\n')}`
+      `contract:\n${unexpected.join('\n')}`,
   );
 
-  const stale = Object.keys(SIGNATURE_BURNDOWN).filter((c) => !clashes.includes(c));
+  const stale = Object.keys(SIGNATURE_BURNDOWN).filter(
+    (c) => !clashes.includes(c),
+  );
   assert.deepEqual(
     stale,
     [],
     `these pairs no longer share a signature — drop them from ` +
-      `SIGNATURE_BURNDOWN:\n${stale.join('\n')}`
+      `SIGNATURE_BURNDOWN:\n${stale.join('\n')}`,
   );
 
   // A signature map that collapsed to nothing would pass vacuously.
   assert.ok(
     bySignature.size > 30,
-    `expected a signature per non-chrome type, got ${bySignature.size}`
+    `expected a signature per non-chrome type, got ${bySignature.size}`,
   );
 });
 
@@ -278,8 +318,8 @@ function sampleValue(field, path) {
         Object.fromEntries(
           (field.itemFields || [])
             .filter((f) => f && typeof f.key === 'string')
-            .map((f) => [f.key, sampleValue(f, `${path}_${i}_${f.key}`)])
-        )
+            .map((f) => [f.key, sampleValue(f, `${path}_${i}_${f.key}`)]),
+        ),
       );
     }
     case 'number':
@@ -305,7 +345,10 @@ function sentinelsFor(def) {
       value.forEach((item, i) => {
         for (const [k, v] of Object.entries(item)) {
           if (typeof v === 'string' && v.includes('ZZ')) {
-            out.push({ label: `${field.key}[${i}].${k}`, sentinel: sentinel(`${path}_${i}_${k}`) });
+            out.push({
+              label: `${field.key}[${i}].${k}`,
+              sentinel: sentinel(`${path}_${i}_${k}`),
+            });
           }
         }
       });
@@ -349,14 +392,19 @@ test('every layout variant of a type carries the same content', () => {
   for (const name of CORE_SLIDE_TYPE_NAMES) {
     const def = SLIDE_TYPES[name];
     if (typeof def?.renderHtml !== 'function') continue;
-    const variants = getLayoutVariants(def).filter((v) => v && !v.convertTo && v.set);
+    const variants = getLayoutVariants(def).filter(
+      (v) => v && !v.convertTo && v.set,
+    );
     if (variants.length < 2) continue;
 
     const base = Object.fromEntries(
-      contentFields(def).map((f) => [f.key, sampleValue(f, f.key)])
+      contentFields(def).map((f) => [f.key, sampleValue(f, f.key)]),
     );
     const probes = sentinelsFor(def);
-    assert.ok(probes.length, `${name}: no content to probe — the sample is empty`);
+    assert.ok(
+      probes.length,
+      `${name}: no content to probe — the sample is empty`,
+    );
 
     const carried = new Map();
     for (const variant of variants) {
@@ -364,12 +412,17 @@ test('every layout variant of a type carries the same content', () => {
       const html = def.renderHtml(content, { id: 's1', type: name }, {}) || '';
       carried.set(
         variant.id,
-        new Set(probes.filter((p) => html.includes(p.sentinel)).map((p) => p.label))
+        new Set(
+          probes.filter((p) => html.includes(p.sentinel)).map((p) => p.label),
+        ),
       );
     }
 
     const union = new Set([...carried.values()].flatMap((s) => [...s]));
-    assert.ok(union.size, `${name}: no variant rendered any content — the probe is broken`);
+    assert.ok(
+      union.size,
+      `${name}: no variant rendered any content — the probe is broken`,
+    );
     checked += 1;
 
     for (const [id, keys] of carried) {
@@ -380,23 +433,28 @@ test('every layout variant of a type carries the same content', () => {
     }
   }
 
-  assert.ok(checked > 5, `expected several types with layout variants, checked ${checked}`);
+  assert.ok(
+    checked > 5,
+    `expected several types with layout variants, checked ${checked}`,
+  );
 
   const unexpected = lossy.filter((l) => !VARIANT_BURNDOWN[l.split(':')[0]]);
   assert.deepEqual(
     unexpected,
     [],
     `a layout variant throws content away, so it is a second contract under one ` +
-      `type id rather than a render choice:\n${unexpected.join('\n')}`
+      `type id rather than a render choice:\n${unexpected.join('\n')}`,
   );
 
   const stillFailing = new Set(lossy.map((l) => l.split(':')[0]));
-  const stale = Object.keys(VARIANT_BURNDOWN).filter((n) => !stillFailing.has(n));
+  const stale = Object.keys(VARIANT_BURNDOWN).filter(
+    (n) => !stillFailing.has(n),
+  );
   assert.deepEqual(
     stale,
     [],
     `these types' variants are interchangeable now — drop them from ` +
-      `VARIANT_BURNDOWN:\n${stale.join('\n')}`
+      `VARIANT_BURNDOWN:\n${stale.join('\n')}`,
   );
 });
 
@@ -408,16 +466,31 @@ test('the burndowns are worklists, not hiding places', () => {
   // from being kept honest.
   for (const [name, reason] of Object.entries(BURNDOWN)) {
     assert.ok(SLIDE_TYPES[name], `burndown names a registered type: ${name}`);
-    assert.ok(reason.length > 60, `burndown entry for ${name} needs a real reason`);
+    assert.ok(
+      reason.length > 60,
+      `burndown entry for ${name} needs a real reason`,
+    );
   }
   for (const [name, reason] of Object.entries(VARIANT_BURNDOWN)) {
-    assert.ok(SLIDE_TYPES[name], `variant burndown names a registered type: ${name}`);
-    assert.ok(reason.length > 60, `variant burndown entry for ${name} needs a real reason`);
+    assert.ok(
+      SLIDE_TYPES[name],
+      `variant burndown names a registered type: ${name}`,
+    );
+    assert.ok(
+      reason.length > 60,
+      `variant burndown entry for ${name} needs a real reason`,
+    );
   }
   for (const [pair, reason] of Object.entries(SIGNATURE_BURNDOWN)) {
     for (const name of pair.split(' == ')) {
-      assert.ok(SLIDE_TYPES[name], `signature burndown names a registered type: ${name}`);
+      assert.ok(
+        SLIDE_TYPES[name],
+        `signature burndown names a registered type: ${name}`,
+      );
     }
-    assert.ok(reason.length > 60, `signature burndown entry for ${pair} needs a real reason`);
+    assert.ok(
+      reason.length > 60,
+      `signature burndown entry for ${pair} needs a real reason`,
+    );
   }
 });

@@ -108,7 +108,7 @@ export function reattachAiMeta(normalizedSlides, sourceSlides) {
  */
 export async function createPresentationWithI18n(
   storageScope,
-  { parts, lang, authedUser, theme, settings, notionSourcePageId }
+  { parts, lang, authedUser, theme, settings, notionSourcePageId },
 ) {
   const created = await createPresentation(storageScope, {
     title: parts.title,

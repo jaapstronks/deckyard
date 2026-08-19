@@ -47,9 +47,8 @@ const ORG = '00000000-0000-0000-0000-0000000000bb';
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { isMultiOrgEnabled } = await import('../server/config/features.js');
-const { handleOrganizationMembers } = await import(
-  '../server/routes/api/organization-members.js'
-);
+const { handleOrganizationMembers } =
+  await import('../server/routes/api/organization-members.js');
 const { handleSettings } = await import('../server/routes/api/settings.js');
 const {
   listOrganizationMembers,
@@ -59,7 +58,11 @@ const {
 } = await import('../server/storage/user-organizations/index.js');
 
 test.before(() => {
-  assert.equal(isMultiOrgEnabled(), true, 'multi-organization flag is on for this file');
+  assert.equal(
+    isMultiOrgEnabled(),
+    true,
+    'multi-organization flag is on for this file',
+  );
 });
 
 /**
@@ -68,10 +71,30 @@ test.before(() => {
  * the rows happen to be sorted some other way is not available.
  */
 const PEOPLE = [
-  { key: 'owner', email: 'zoe@example.com', role: 'owner', joined: '2026-01-01T00:00:00.000Z' },
-  { key: 'admin', email: 'adam@example.com', role: 'admin', joined: '2026-02-01T00:00:00.000Z' },
-  { key: 'member', email: 'mia@example.com', role: 'member', joined: '2026-03-01T00:00:00.000Z' },
-  { key: 'member2', email: 'ben@example.com', role: 'member', joined: '2026-04-01T00:00:00.000Z' },
+  {
+    key: 'owner',
+    email: 'zoe@example.com',
+    role: 'owner',
+    joined: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    key: 'admin',
+    email: 'adam@example.com',
+    role: 'admin',
+    joined: '2026-02-01T00:00:00.000Z',
+  },
+  {
+    key: 'member',
+    email: 'mia@example.com',
+    role: 'member',
+    joined: '2026-03-01T00:00:00.000Z',
+  },
+  {
+    key: 'member2',
+    email: 'ben@example.com',
+    role: 'member',
+    joined: '2026-04-01T00:00:00.000Z',
+  },
 ];
 
 /**
@@ -168,12 +191,15 @@ async function callMembers(method, actorKey, targetKey, body) {
 
 /** The stored role of one membership. */
 function roleOf(db, key) {
-  return db.__tables.user_organizations.find((r) => r.id === `membership-${key}`)?.role;
+  return db.__tables.user_organizations.find(
+    (r) => r.id === `membership-${key}`,
+  )?.role;
 }
 
 /** How many owners the organization has right now. */
 function ownerCount(db) {
-  return db.__tables.user_organizations.filter((r) => r.role === 'owner').length;
+  return db.__tables.user_organizations.filter((r) => r.role === 'owner')
+    .length;
 }
 
 // ---------------------------------------------------------------------------
@@ -182,24 +208,38 @@ function ownerCount(db) {
 
 test('an admin cannot demote the owner', async () => {
   const db = seed();
-  const { status } = await callMembers('PATCH', 'admin', 'owner', { role: 'member' });
+  const { status } = await callMembers('PATCH', 'admin', 'owner', {
+    role: 'member',
+  });
 
-  assert.equal(status, 403, 'the guard the comment describes must actually refuse this');
+  assert.equal(
+    status,
+    403,
+    'the guard the comment describes must actually refuse this',
+  );
   assert.equal(roleOf(db, 'owner'), 'owner');
   assert.equal(ownerCount(db), 1, 'the organization still has an owner');
 });
 
 test('an admin cannot demote another admin', async () => {
-  const people = [...PEOPLE, {
-    key: 'admin2', email: 'ada@example.com', role: 'admin', joined: '2026-02-15T00:00:00.000Z',
-  }];
+  const people = [
+    ...PEOPLE,
+    {
+      key: 'admin2',
+      email: 'ada@example.com',
+      role: 'admin',
+      joined: '2026-02-15T00:00:00.000Z',
+    },
+  ];
   const db = seed({ people });
   const { req, res } = fakeExchange('PATCH', { role: 'member' });
   await handleOrganizationMembers({
     repoRoot: process.cwd(),
     req,
     res,
-    url: new URL(`http://localhost/api/organizations/${ORG}/members/membership-admin2`),
+    url: new URL(
+      `http://localhost/api/organizations/${ORG}/members/membership-admin2`,
+    ),
     authedUser: {
       email: 'adam@example.com',
       isAdmin: false,
@@ -214,7 +254,9 @@ test('an admin cannot demote another admin', async () => {
 
 test('an admin cannot promote a member', async () => {
   const db = seed();
-  const { status } = await callMembers('PATCH', 'admin', 'member', { role: 'admin' });
+  const { status } = await callMembers('PATCH', 'admin', 'member', {
+    role: 'admin',
+  });
   assert.equal(status, 403);
   assert.equal(roleOf(db, 'member'), 'member');
 });
@@ -222,16 +264,24 @@ test('an admin cannot promote a member', async () => {
 test('the owner promotes and demotes freely', async () => {
   const db = seed();
 
-  assert.equal((await callMembers('PATCH', 'owner', 'member', { role: 'admin' })).status, 200);
+  assert.equal(
+    (await callMembers('PATCH', 'owner', 'member', { role: 'admin' })).status,
+    200,
+  );
   assert.equal(roleOf(db, 'member'), 'admin');
 
-  assert.equal((await callMembers('PATCH', 'owner', 'admin', { role: 'member' })).status, 200);
+  assert.equal(
+    (await callMembers('PATCH', 'owner', 'admin', { role: 'member' })).status,
+    200,
+  );
   assert.equal(roleOf(db, 'admin'), 'member');
 });
 
 test('nobody changes their own role', async () => {
   const db = seed();
-  const { status } = await callMembers('PATCH', 'admin', 'admin', { role: 'member' });
+  const { status } = await callMembers('PATCH', 'admin', 'admin', {
+    role: 'member',
+  });
   assert.equal(status, 400);
   assert.equal(roleOf(db, 'admin'), 'admin');
 });
@@ -255,7 +305,7 @@ test('the last owner cannot be demoted, even below the route', async () => {
 
 test('an owner may be demoted once there is a second one', async () => {
   const people = PEOPLE.map((p) =>
-    p.key === 'admin' ? { ...p, role: 'owner' } : p
+    p.key === 'admin' ? { ...p, role: 'owner' } : p,
   );
   const db = seed({ people });
 
@@ -268,11 +318,17 @@ test('ownership transfer promotes before it demotes', async () => {
   // Order matters for the failure case: a transfer interrupted between its two
   // statements should leave two owners (recoverable) rather than none.
   const db = seed();
-  const { status } = await callMembers('PATCH', 'owner', 'member', { role: 'owner' });
+  const { status } = await callMembers('PATCH', 'owner', 'member', {
+    role: 'owner',
+  });
 
   assert.equal(status, 200);
   assert.equal(roleOf(db, 'member'), 'owner', 'the new owner');
-  assert.equal(roleOf(db, 'owner'), 'admin', 'the old owner steps down to admin');
+  assert.equal(
+    roleOf(db, 'owner'),
+    'admin',
+    'the old owner steps down to admin',
+  );
   assert.equal(ownerCount(db), 1);
 });
 
@@ -283,7 +339,9 @@ test('an owner handing the organization to themselves keeps it', async () => {
   // the storage layer — self is only refused for roles other than `owner` —
   // and the UI never draws it, so the guard belongs where the writes are.
   const db = seed();
-  const { status } = await callMembers('PATCH', 'owner', 'owner', { role: 'owner' });
+  const { status } = await callMembers('PATCH', 'owner', 'owner', {
+    role: 'owner',
+  });
 
   assert.equal(status, 200);
   assert.equal(roleOf(db, 'owner'), 'owner', 'still the owner afterwards');
@@ -301,7 +359,9 @@ test('transferring to yourself changes nothing, below the route too', async () =
 
 test('only the owner transfers ownership', async () => {
   const db = seed();
-  const { status } = await callMembers('PATCH', 'admin', 'member', { role: 'owner' });
+  const { status } = await callMembers('PATCH', 'admin', 'member', {
+    role: 'owner',
+  });
   assert.equal(status, 403);
   assert.equal(roleOf(db, 'member'), 'member');
 });
@@ -327,7 +387,11 @@ test('anyone but the owner may leave', async () => {
   assert.equal(roleOf(db, 'member'), undefined);
 
   const stuck = await callMembers('DELETE', 'owner', 'owner');
-  assert.equal(stuck.status, 400, 'the owner has to hand the organization over first');
+  assert.equal(
+    stuck.status,
+    400,
+    'the owner has to hand the organization over first',
+  );
   assert.equal(roleOf(db, 'owner'), 'owner');
 });
 
@@ -349,12 +413,12 @@ test('members come back owner, then admins, then members', async () => {
   assert.deepEqual(
     members.map((m) => m.role),
     ['owner', 'admin', 'member', 'member'],
-    'ORDER BY role DESC sorts the strings: owner → member → admin, which is not this'
+    'ORDER BY role DESC sorts the strings: owner → member → admin, which is not this',
   );
   assert.deepEqual(
     members.filter((m) => m.role === 'member').map((m) => m.user.email),
     ['mia@example.com', 'ben@example.com'],
-    'within a role, oldest membership first'
+    'within a role, oldest membership first',
   );
 });
 
@@ -363,9 +427,19 @@ test('the order survives paging, so page two is the tail and not a reshuffle', a
   const first = await listOrganizationMembers(ORG, { limit: 2, offset: 0 });
   const second = await listOrganizationMembers(ORG, { limit: 2, offset: 2 });
 
-  assert.deepEqual(first.map((m) => m.role), ['owner', 'admin']);
-  assert.deepEqual(second.map((m) => m.role), ['member', 'member']);
-  assert.equal(await countOrganizationMembers(ORG), 4, 'total counts the organization, not the page');
+  assert.deepEqual(
+    first.map((m) => m.role),
+    ['owner', 'admin'],
+  );
+  assert.deepEqual(
+    second.map((m) => m.role),
+    ['member', 'member'],
+  );
+  assert.equal(
+    await countOrganizationMembers(ORG),
+    4,
+    'total counts the organization, not the page',
+  );
 });
 
 test('the route passes limit and offset through and reports the total', async () => {
@@ -375,7 +449,9 @@ test('the route passes limit and offset through and reports the total', async ()
     repoRoot: process.cwd(),
     req,
     res,
-    url: new URL(`http://localhost/api/organizations/${ORG}/members?limit=2&offset=2`),
+    url: new URL(
+      `http://localhost/api/organizations/${ORG}/members?limit=2&offset=2`,
+    ),
     authedUser: {
       email: 'mia@example.com',
       isAdmin: false,
@@ -421,8 +497,14 @@ test('a member past the hundredth row can still be changed and removed', async (
   const people = crowd(120);
   const db = seed({ people });
 
-  const promoted = await callMembers('PATCH', 'owner', 'm119', { role: 'admin' });
-  assert.equal(promoted.status, 200, 'the target is found, not just the first page of them');
+  const promoted = await callMembers('PATCH', 'owner', 'm119', {
+    role: 'admin',
+  });
+  assert.equal(
+    promoted.status,
+    200,
+    'the target is found, not just the first page of them',
+  );
   assert.equal(roleOf(db, 'm119'), 'admin');
 
   const removed = await callMembers('DELETE', 'owner', 'm118');
@@ -443,7 +525,9 @@ test('a member id that belongs to another organization is not found', async () =
     joined_at: '2026-01-01T00:00:00.000Z',
   });
 
-  const { status } = await callMembers('PATCH', 'owner', 'outsider', { role: 'admin' });
+  const { status } = await callMembers('PATCH', 'owner', 'outsider', {
+    role: 'admin',
+  });
   assert.equal(status, 404);
 });
 
@@ -475,26 +559,33 @@ const instanceAdmin = (email) => ({
 test('an instance admin who is a plain member cannot write organization settings', async () => {
   seed();
   assert.equal(
-    await patchOrgSettings(instanceAdmin('mia@example.com'), { adminsAreDesigners: false }),
+    await patchOrgSettings(instanceAdmin('mia@example.com'), {
+      adminsAreDesigners: false,
+    }),
     401,
-    'the instance flag stops at the edge of an organization someone only belongs to'
+    'the instance flag stops at the edge of an organization someone only belongs to',
   );
   assert.equal(
-    await patchOrgSettings(instanceAdmin('mia@example.com'), { rss: { enabled: true } }),
-    401
+    await patchOrgSettings(instanceAdmin('mia@example.com'), {
+      rss: { enabled: true },
+    }),
+    401,
   );
 });
 
 test('an instance admin who is an admin there writes them', async () => {
   const db = seed();
   assert.equal(
-    await patchOrgSettings(instanceAdmin('adam@example.com'), { adminsAreDesigners: false }),
-    200
+    await patchOrgSettings(instanceAdmin('adam@example.com'), {
+      adminsAreDesigners: false,
+    }),
+    200,
   );
   assert.equal(
-    db.__tables.organizations.find((o) => o.id === ORG).settings.adminsAreDesigners,
+    db.__tables.organizations.find((o) => o.id === ORG).settings
+      .adminsAreDesigners,
     false,
-    'and the write actually landed'
+    'and the write actually landed',
   );
 });
 
@@ -505,10 +596,15 @@ test('the membership narrows the instance role, it does not replace it', async (
   seed();
   assert.equal(
     await patchOrgSettings(
-      { email: 'zoe@example.com', isAdmin: false, isDesigner: true, organizationId: ORG },
-      { adminsAreDesigners: false }
+      {
+        email: 'zoe@example.com',
+        isAdmin: false,
+        isDesigner: true,
+        organizationId: ORG,
+      },
+      { adminsAreDesigners: false },
     ),
-    401
+    401,
   );
 });
 
@@ -518,10 +614,15 @@ test('the designer key is still judged on the designer capability', async () => 
   seed();
   assert.equal(
     await patchOrgSettings(
-      { email: 'mia@example.com', isAdmin: false, isDesigner: true, organizationId: ORG },
-      { disabledSlideTypes: ['title-slide'] }
+      {
+        email: 'mia@example.com',
+        isAdmin: false,
+        isDesigner: true,
+        organizationId: ORG,
+      },
+      { disabledSlideTypes: ['title-slide'] },
     ),
     200,
-    'a designer who is a plain member still disables slide types'
+    'a designer who is a plain member still disables slide types',
   );
 });

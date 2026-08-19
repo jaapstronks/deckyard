@@ -17,8 +17,14 @@ import {
   fetchStockMediaStatus,
   invalidateStockMediaStatus,
 } from '../../../lib/net/stock-media.js';
-import { getSupportedLangs, setSupportedLangs } from '../../../lib/format/i18n.js';
-import { DEFAULT_AI_NAME, DEFAULT_AI_EMAIL } from '../../../../shared/constants/ai.js';
+import {
+  getSupportedLangs,
+  setSupportedLangs,
+} from '../../../lib/format/i18n.js';
+import {
+  DEFAULT_AI_NAME,
+  DEFAULT_AI_EMAIL,
+} from '../../../../shared/constants/ai.js';
 
 /**
  * Create the admin tab component.
@@ -44,7 +50,7 @@ export function createAdminTab({ user }) {
     class: 'settings-tab-description',
     text: t(
       'settings.admin.description',
-      'Configure workspace-wide settings that apply to all users.'
+      'Configure workspace-wide settings that apply to all users.',
     ),
   });
 
@@ -55,15 +61,15 @@ export function createAdminTab({ user }) {
       class: 'field-label',
       text: t(
         'settings.admin.supportedSlideLangs.title',
-        'Supported slide languages'
+        'Supported slide languages',
       ),
-    })
+    }),
   );
   const langHint = h('div', {
     class: 'help',
     text: t(
       'settings.admin.supportedSlideLangs.hint',
-      'Controls which languages are available in language mode and translation tools.'
+      'Controls which languages are available in language mode and translation tools.',
     ),
   });
 
@@ -79,13 +85,13 @@ export function createAdminTab({ user }) {
     h('div', {
       class: 'field-label',
       text: t('settings.admin.aiAssistant.title', 'AI Assistant Identity'),
-    })
+    }),
   );
   const aiHint = h('div', {
     class: 'help',
     text: t(
       'settings.admin.aiAssistant.hint',
-      'Customize the name and email shown for AI-generated content.'
+      'Customize the name and email shown for AI-generated content.',
     ),
   });
   const aiNameInput = h('input', {
@@ -102,11 +108,17 @@ export function createAdminTab({ user }) {
   });
   const aiFields = h('div', { class: 'stack gap-2' }, [
     h('label', { class: 'field-row' }, [
-      h('span', { class: 'field-row-label', text: t('settings.admin.aiAssistant.name', 'Name') }),
+      h('span', {
+        class: 'field-row-label',
+        text: t('settings.admin.aiAssistant.name', 'Name'),
+      }),
       aiNameInput,
     ]),
     h('label', { class: 'field-row' }, [
-      h('span', { class: 'field-row-label', text: t('settings.admin.aiAssistant.email', 'Email') }),
+      h('span', {
+        class: 'field-row-label',
+        text: t('settings.admin.aiAssistant.email', 'Email'),
+      }),
       aiEmailInput,
     ]),
   ]);
@@ -118,13 +130,13 @@ export function createAdminTab({ user }) {
     h('div', {
       class: 'field-label',
       text: t('settings.admin.emailSender.title', 'Email Sender Identity'),
-    })
+    }),
   );
   const senderHint = h('div', {
     class: 'help',
     text: t(
       'settings.admin.emailSender.hint',
-      'From address for system emails. Falls back to environment variables if empty.'
+      'From address for system emails. Falls back to environment variables if empty.',
     ),
   });
   const senderEmailInput = h('input', {
@@ -141,11 +153,17 @@ export function createAdminTab({ user }) {
   });
   const senderFields = h('div', { class: 'stack gap-2' }, [
     h('label', { class: 'field-row' }, [
-      h('span', { class: 'field-row-label', text: t('settings.admin.emailSender.email', 'Email') }),
+      h('span', {
+        class: 'field-row-label',
+        text: t('settings.admin.emailSender.email', 'Email'),
+      }),
       senderEmailInput,
     ]),
     h('label', { class: 'field-row' }, [
-      h('span', { class: 'field-row-label', text: t('settings.admin.emailSender.name', 'Name') }),
+      h('span', {
+        class: 'field-row-label',
+        text: t('settings.admin.emailSender.name', 'Name'),
+      }),
       senderNameInput,
     ]),
   ]);
@@ -157,25 +175,46 @@ export function createAdminTab({ user }) {
     h('div', {
       class: 'field-label',
       text: t('settings.admin.sessionDuration.title', 'Session Duration'),
-    })
+    }),
   );
   const sessionHint = h('div', {
     class: 'help',
     text: t(
       'settings.admin.sessionDuration.hint',
-      'How long users stay logged in before needing to sign in again.'
+      'How long users stay logged in before needing to sign in again.',
     ),
   });
   const sessionSelect = h('select', { class: 'select' }, [
-    h('option', { value: '1', text: t('settings.admin.sessionDuration.1day', '1 day') }),
-    h('option', { value: '7', text: t('settings.admin.sessionDuration.7days', '7 days') }),
-    h('option', { value: '14', text: t('settings.admin.sessionDuration.14days', '14 days') }),
-    h('option', { value: '30', text: t('settings.admin.sessionDuration.30days', '30 days (default)') }),
-    h('option', { value: '90', text: t('settings.admin.sessionDuration.90days', '90 days') }),
-    h('option', { value: '365', text: t('settings.admin.sessionDuration.365days', '1 year') }),
+    h('option', {
+      value: '1',
+      text: t('settings.admin.sessionDuration.1day', '1 day'),
+    }),
+    h('option', {
+      value: '7',
+      text: t('settings.admin.sessionDuration.7days', '7 days'),
+    }),
+    h('option', {
+      value: '14',
+      text: t('settings.admin.sessionDuration.14days', '14 days'),
+    }),
+    h('option', {
+      value: '30',
+      text: t('settings.admin.sessionDuration.30days', '30 days (default)'),
+    }),
+    h('option', {
+      value: '90',
+      text: t('settings.admin.sessionDuration.90days', '90 days'),
+    }),
+    h('option', {
+      value: '365',
+      text: t('settings.admin.sessionDuration.365days', '1 year'),
+    }),
   ]);
   const sessionField = h('label', { class: 'field-row' }, [
-    h('span', { class: 'field-row-label', text: t('settings.admin.sessionDuration.duration', 'Duration') }),
+    h('span', {
+      class: 'field-row-label',
+      text: t('settings.admin.sessionDuration.duration', 'Duration'),
+    }),
     sessionSelect,
   ]);
   sessionCard.append(sessionHint, sessionField);
@@ -189,13 +228,13 @@ export function createAdminTab({ user }) {
     h('div', {
       class: 'field-label',
       text: t('settings.admin.analytics.title', 'Engagement Insights'),
-    })
+    }),
   );
   const analyticsHint = h('div', {
     class: 'help',
     text: t(
       'settings.admin.analytics.hint',
-      'Configure how presentation engagement is tracked and reported.'
+      'Configure how presentation engagement is tracked and reported.',
     ),
   });
 
@@ -203,38 +242,110 @@ export function createAdminTab({ user }) {
   // detailed-opt-in and external-viewer toggles gated a distinction the data
   // never carried; they were removed with the internal/external chain
   // (done/decisions.md § analytics-privacy-naden).
-  const { element: analyticsEnabledLabel, input: analyticsEnabledCheck } = labeledCheckbox({
-    text: t('settings.admin.analytics.enabled', 'Enable engagement insights'),
-    checked: true,
-  });
+  const { element: analyticsEnabledLabel, input: analyticsEnabledCheck } =
+    labeledCheckbox({
+      text: t('settings.admin.analytics.enabled', 'Enable engagement insights'),
+      checked: true,
+    });
 
   // Retention settings
-  const retentionSessionSelect = h('select', { class: 'select', 'aria-label': t('settings.admin.analytics.retentionDays', 'Keep session data for') }, [
-    h('option', { value: '30', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 30 }) }),
-    h('option', { value: '60', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 60 }) }),
-    h('option', { value: '90', text: t('settings.admin.analytics.daysOptionDefault', '{n} days (default)', { n: 90 }) }),
-    h('option', { value: '180', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 180 }) }),
-    h('option', { value: '365', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 365 }) }),
-  ]);
+  const retentionSessionSelect = h(
+    'select',
+    {
+      class: 'select',
+      'aria-label': t(
+        'settings.admin.analytics.retentionDays',
+        'Keep session data for',
+      ),
+    },
+    [
+      h('option', {
+        value: '30',
+        text: t('settings.admin.analytics.daysOption', '{n} days', { n: 30 }),
+      }),
+      h('option', {
+        value: '60',
+        text: t('settings.admin.analytics.daysOption', '{n} days', { n: 60 }),
+      }),
+      h('option', {
+        value: '90',
+        text: t(
+          'settings.admin.analytics.daysOptionDefault',
+          '{n} days (default)',
+          { n: 90 },
+        ),
+      }),
+      h('option', {
+        value: '180',
+        text: t('settings.admin.analytics.daysOption', '{n} days', { n: 180 }),
+      }),
+      h('option', {
+        value: '365',
+        text: t('settings.admin.analytics.daysOption', '{n} days', { n: 365 }),
+      }),
+    ],
+  );
   const retentionSessionField = h('label', { class: 'field-row' }, [
-    h('span', { class: 'field-row-label', text: t('settings.admin.analytics.retentionDays', 'Keep session data for') }),
+    h('span', {
+      class: 'field-row-label',
+      text: t(
+        'settings.admin.analytics.retentionDays',
+        'Keep session data for',
+      ),
+    }),
     retentionSessionSelect,
   ]);
 
-  const retentionIpSelect = h('select', { class: 'select', 'aria-label': t('settings.admin.analytics.retentionIpDays', 'Anonymize IP addresses after') }, [
-    h('option', { value: '1', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 1 }) }),
-    h('option', { value: '7', text: t('settings.admin.analytics.daysOptionDefault', '{n} days (default)', { n: 7 }) }),
-    h('option', { value: '14', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 14 }) }),
-    h('option', { value: '30', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 30 }) }),
-  ]);
+  const retentionIpSelect = h(
+    'select',
+    {
+      class: 'select',
+      'aria-label': t(
+        'settings.admin.analytics.retentionIpDays',
+        'Anonymize IP addresses after',
+      ),
+    },
+    [
+      h('option', {
+        value: '1',
+        text: t('settings.admin.analytics.daysOption', '{n} days', { n: 1 }),
+      }),
+      h('option', {
+        value: '7',
+        text: t(
+          'settings.admin.analytics.daysOptionDefault',
+          '{n} days (default)',
+          { n: 7 },
+        ),
+      }),
+      h('option', {
+        value: '14',
+        text: t('settings.admin.analytics.daysOption', '{n} days', { n: 14 }),
+      }),
+      h('option', {
+        value: '30',
+        text: t('settings.admin.analytics.daysOption', '{n} days', { n: 30 }),
+      }),
+    ],
+  );
   const retentionIpField = h('label', { class: 'field-row' }, [
-    h('span', { class: 'field-row-label', text: t('settings.admin.analytics.retentionIpDays', 'Anonymize IP addresses after') }),
+    h('span', {
+      class: 'field-row-label',
+      text: t(
+        'settings.admin.analytics.retentionIpDays',
+        'Anonymize IP addresses after',
+      ),
+    }),
     retentionIpSelect,
   ]);
 
   const analyticsOptions = h('div', { class: 'stack gap-3' }, [
     analyticsEnabledLabel,
-    h('div', { class: 'field-label', style: 'margin-top: var(--ps-space-3);', text: t('settings.admin.analytics.retention', 'Data retention') }),
+    h('div', {
+      class: 'field-label',
+      style: 'margin-top: var(--ps-space-3);',
+      text: t('settings.admin.analytics.retention', 'Data retention'),
+    }),
     retentionSessionField,
     retentionIpField,
   ]);
@@ -246,43 +357,53 @@ export function createAdminTab({ user }) {
     h('div', {
       class: 'field-label',
       text: t('settings.admin.stockMedia.title', 'Stock Media'),
-    })
+    }),
   );
   const stockMediaHint = h('div', {
     class: 'help',
     text: t(
       'settings.admin.stockMedia.hint',
-      'Enable stock photo and GIF integrations for the image picker.'
+      'Enable stock photo and GIF integrations for the image picker.',
     ),
   });
 
   // Bundled gradients toggle. No key to check, so no status span: the assets
   // ship with the app and are always "configured".
-  const { element: bundledLabel, input: bundledEnabledCheck } = labeledCheckbox({
-    text: t('settings.admin.stockMedia.bundled', 'Enable bundled gradients'),
-  });
+  const { element: bundledLabel, input: bundledEnabledCheck } = labeledCheckbox(
+    {
+      text: t('settings.admin.stockMedia.bundled', 'Enable bundled gradients'),
+    },
+  );
   const bundledHint = h('div', {
     class: 'help',
     text: t(
       'settings.admin.stockMedia.bundledHint',
-      'Abstract backgrounds generated from the built-in themes. No API key, no attribution, no external requests.'
+      'Abstract backgrounds generated from the built-in themes. No API key, no attribution, no external requests.',
     ),
   });
 
   // Unsplash toggle
   const unsplashStatusSpan = h('span', { class: 'help stock-media-status' });
-  const { element: unsplashLabel, input: unsplashEnabledCheck } = labeledCheckbox({
-    content: [
-      h('span', { text: t('settings.admin.stockMedia.unsplash', 'Enable Unsplash photos') }),
-      unsplashStatusSpan,
-    ],
-  });
+  const { element: unsplashLabel, input: unsplashEnabledCheck } =
+    labeledCheckbox({
+      content: [
+        h('span', {
+          text: t(
+            'settings.admin.stockMedia.unsplash',
+            'Enable Unsplash photos',
+          ),
+        }),
+        unsplashStatusSpan,
+      ],
+    });
 
   // Giphy toggle
   const giphyStatusSpan = h('span', { class: 'help stock-media-status' });
   const { element: giphyLabel, input: giphyEnabledCheck } = labeledCheckbox({
     content: [
-      h('span', { text: t('settings.admin.stockMedia.giphy', 'Enable Giphy GIFs') }),
+      h('span', {
+        text: t('settings.admin.stockMedia.giphy', 'Enable Giphy GIFs'),
+      }),
       giphyStatusSpan,
     ],
   });
@@ -304,34 +425,68 @@ export function createAdminTab({ user }) {
     h('div', {
       class: 'field-label',
       text: t('settings.admin.leads.title', 'Lead capture'),
-    })
+    }),
   );
   const leadsHint = h('div', {
     class: 'help',
     text: t(
       'settings.admin.leads.hint',
-      'How long lead-capture form submissions are kept before they are anonymized.'
+      'How long lead-capture form submissions are kept before they are anonymized.',
     ),
   });
   const leadsRetentionSelect = h(
     'select',
-    { class: 'select', 'aria-label': t('settings.admin.leads.retentionDays', 'Keep lead data for') },
+    {
+      class: 'select',
+      'aria-label': t(
+        'settings.admin.leads.retentionDays',
+        'Keep lead data for',
+      ),
+    },
     [
-      h('option', { value: '30', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 30 }) }),
-      h('option', { value: '90', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 90 }) }),
-      h('option', { value: '180', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 180 }) }),
-      h('option', { value: '365', text: t('settings.admin.analytics.daysOptionDefault', '{n} days (default)', { n: 365 }) }),
-      h('option', { value: '730', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 730 }) }),
-    ]
+      h('option', {
+        value: '30',
+        text: t('settings.admin.analytics.daysOption', '{n} days', { n: 30 }),
+      }),
+      h('option', {
+        value: '90',
+        text: t('settings.admin.analytics.daysOption', '{n} days', { n: 90 }),
+      }),
+      h('option', {
+        value: '180',
+        text: t('settings.admin.analytics.daysOption', '{n} days', { n: 180 }),
+      }),
+      h('option', {
+        value: '365',
+        text: t(
+          'settings.admin.analytics.daysOptionDefault',
+          '{n} days (default)',
+          { n: 365 },
+        ),
+      }),
+      h('option', {
+        value: '730',
+        text: t('settings.admin.analytics.daysOption', '{n} days', { n: 730 }),
+      }),
+    ],
   );
   const leadsRetentionField = h('label', { class: 'field-row' }, [
-    h('span', { class: 'field-row-label', text: t('settings.admin.leads.retentionDays', 'Keep lead data for') }),
+    h('span', {
+      class: 'field-row-label',
+      text: t('settings.admin.leads.retentionDays', 'Keep lead data for'),
+    }),
     leadsRetentionSelect,
   ]);
-  leadsCard.append(leadsHint, h('div', { class: 'stack gap-3' }, [leadsRetentionField]));
+  leadsCard.append(
+    leadsHint,
+    h('div', { class: 'stack gap-3' }, [leadsRetentionField]),
+  );
 
   // Save button
-  const actions = h('div', { class: 'row is-end', style: 'margin-top: var(--ps-space-4);' });
+  const actions = h('div', {
+    class: 'row is-end',
+    style: 'margin-top: var(--ps-space-4);',
+  });
   const btnSave = h('button', {
     class: 'btn btn-primary',
     text: t('common.save', 'Save'),
@@ -372,7 +527,9 @@ export function createAdminTab({ user }) {
   const setBusy = (v) => {
     busy = v;
     btnSave.disabled = busy;
-    allInputs.forEach((el) => { el.disabled = busy; });
+    allInputs.forEach((el) => {
+      el.disabled = busy;
+    });
   };
 
   const load = async () => {
@@ -386,7 +543,8 @@ export function createAdminTab({ user }) {
         : getSupportedLangs();
 
       chkNl.querySelector('input').checked = supportedSlideLangs.includes('nl');
-      chkEn.querySelector('input').checked = supportedSlideLangs.includes('en-GB');
+      chkEn.querySelector('input').checked =
+        supportedSlideLangs.includes('en-GB');
 
       // AI assistant identity
       aiNameInput.value = app?.aiAssistant?.name || '';
@@ -407,8 +565,12 @@ export function createAdminTab({ user }) {
       // Analytics settings
       const analytics = app?.analytics || {};
       analyticsEnabledCheck.checked = analytics?.enabled !== false;
-      retentionSessionSelect.value = String(analytics?.retention?.sessionDataDays || 90);
-      retentionIpSelect.value = String(analytics?.retention?.ipAnonymizationDays || 7);
+      retentionSessionSelect.value = String(
+        analytics?.retention?.sessionDataDays || 90,
+      );
+      retentionIpSelect.value = String(
+        analytics?.retention?.ipAnonymizationDays || 7,
+      );
 
       // Lead capture retention (top-level `leads` key). Fall back to the default
       // if the stored value isn't one of the offered options.
@@ -427,8 +589,14 @@ export function createAdminTab({ user }) {
       // Fetch stock media status to show if API keys are configured
       try {
         const status = await fetchStockMediaStatus({ maxAgeMs: 0 });
-        const notConfigured = t('settings.admin.stockMedia.notConfiguredParen', '(Not configured)');
-        const configured = t('settings.admin.stockMedia.configuredParen', '(API key configured)');
+        const notConfigured = t(
+          'settings.admin.stockMedia.notConfiguredParen',
+          '(Not configured)',
+        );
+        const configured = t(
+          'settings.admin.stockMedia.configuredParen',
+          '(API key configured)',
+        );
 
         if (status?.unsplash?.configured) {
           unsplashStatusSpan.textContent = ` ${configured}`;

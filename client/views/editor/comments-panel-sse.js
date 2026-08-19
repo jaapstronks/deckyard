@@ -60,7 +60,8 @@ export function createCommentSSE({
           }
           if (data.counts) {
             const currentCounts = getSlideCommentCounts();
-            const countsChanged = JSON.stringify(data.counts) !== JSON.stringify(currentCounts);
+            const countsChanged =
+              JSON.stringify(data.counts) !== JSON.stringify(currentCounts);
             if (countsChanged) {
               setSlideCommentCounts(data.counts);
               onSlideCommentCountsChange?.(data.counts);
@@ -94,9 +95,11 @@ export function createCommentSSE({
           try {
             onSlideLockEvent?.({ type: event.type, data });
             // Also dispatch a custom event for the slide lock manager
-            window.dispatchEvent(new CustomEvent('sse:slide-lock', {
-              detail: { type: event.type, data },
-            }));
+            window.dispatchEvent(
+              new CustomEvent('sse:slide-lock', {
+                detail: { type: event.type, data },
+              }),
+            );
           } catch {
             // ignore
           }
@@ -105,9 +108,11 @@ export function createCommentSSE({
         // Presentation update events (real-time sync between editors)
         case 'presentation:updated':
           try {
-            window.dispatchEvent(new CustomEvent('sse:presentation-updated', {
-              detail: { type: event.type, data },
-            }));
+            window.dispatchEvent(
+              new CustomEvent('sse:presentation-updated', {
+                detail: { type: event.type, data },
+              }),
+            );
           } catch {
             // ignore
           }

@@ -44,7 +44,10 @@ test('a deck with no code, math or video makes zero third-party requests', async
     {},
   );
   assert.doesNotMatch(html, /cdn\.jsdelivr\.net/);
-  assert.doesNotMatch(html, /<script src="https:\/\/assets\.mediadelivery\.net/);
+  assert.doesNotMatch(
+    html,
+    /<script src="https:\/\/assets\.mediadelivery\.net/,
+  );
 });
 
 test('a code block loads Prism and only the languages the deck uses', async () => {
@@ -57,7 +60,10 @@ test('a code block loads Prism and only the languages the deck uses', async () =
   assert.match(html, /themes\/prism-tomorrow\.min\.css/);
   assert.match(html, /components\/prism-python\.min\.js/);
   // The other nine packs the head used to hardcode stay out.
-  assert.doesNotMatch(html, /components\/prism-(java|sql|bash|markdown)\.min\.js/);
+  assert.doesNotMatch(
+    html,
+    /components\/prism-(java|sql|bash|markdown)\.min\.js/,
+  );
   // No math on any slide, so KaTeX is not loaded either.
   assert.doesNotMatch(html, /cdn\.jsdelivr\.net\/npm\/katex/);
 });
@@ -82,7 +88,11 @@ test('the init script only initializes the library that was loaded', async () =>
   assert.match(codeOnly, /Prism\.highlightElement/);
   assert.doesNotMatch(codeOnly, /katex\.render/);
 
-  const plain = await buildStandaloneHtml(repoRoot, deck([contentSlide('hi')]), {});
+  const plain = await buildStandaloneHtml(
+    repoRoot,
+    deck([contentSlide('hi')]),
+    {},
+  );
   assert.doesNotMatch(plain, /Prism\.highlightElement/);
   assert.doesNotMatch(plain, /katex\.render/);
 });
@@ -97,11 +107,18 @@ test('the published context gets the same treatment as the download', async () =
 });
 
 test('player.js is left to the lazy loader in both runtimes', async () => {
-  const html = await buildStandaloneHtml(repoRoot, deck([contentSlide('hi')]), {});
+  const html = await buildStandaloneHtml(
+    repoRoot,
+    deck([contentSlide('hi')]),
+    {},
+  );
   const embed = renderEmbedHtmlDocument({ title: 'T', totalSlides: 1 });
   for (const doc of [html, embed]) {
     // No eager <script src> tag …
-    assert.doesNotMatch(doc, /<script src="https:\/\/assets\.mediadelivery\.net/);
+    assert.doesNotMatch(
+      doc,
+      /<script src="https:\/\/assets\.mediadelivery\.net/,
+    );
     // … but the runtime can still fetch it when a video slide needs it.
     assert.match(doc, /function ensureBunnyPlayerJs/);
     assert.match(
@@ -124,11 +141,13 @@ test('detectPrismKatexNeeds reads the markup the init script queries', () => {
     { prism: true, katex: false, languages: ['ts'] },
   );
   assert.equal(
-    detectPrismKatexNeeds('<span class="md-math-inline" data-math="x">x</span>').katex,
+    detectPrismKatexNeeds('<span class="md-math-inline" data-math="x">x</span>')
+      .katex,
     true,
   );
   assert.equal(
-    detectPrismKatexNeeds('<div class="md-math-block" data-math="x">x</div>').katex,
+    detectPrismKatexNeeds('<div class="md-math-block" data-math="x">x</div>')
+      .katex,
     true,
   );
   // Escaped markup is inert text, not a rendered code block.
@@ -139,7 +158,8 @@ test('detectPrismKatexNeeds reads the markup the init script queries', () => {
 });
 
 test('language packs resolve through aliases and dependencies', () => {
-  const tags = (languages) => buildPrismKatexCdnTags({ katex: false, languages });
+  const tags = (languages) =>
+    buildPrismKatexCdnTags({ katex: false, languages });
   const components = (languages) =>
     [...tags(languages).matchAll(/components\/prism-([\w-]+)\.min\.js/g)].map(
       (m) => m[1],

@@ -135,6 +135,6 @@
    SVG icons are black strokes; invert to white in dark mode.
    Targets all vendored Lucide <img> icons in UI chrome.
    ───────────────────────────────────────────────────────────── */
-:root[data-ui-mode='dark'] img[src*="lucide-icons"] {
+:root[data-ui-mode='dark'] img[src*='lucide-icons'] {
   filter: invert(1);
 }

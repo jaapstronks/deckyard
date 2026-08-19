@@ -19,12 +19,14 @@ export const up = async (db) => {
     .createTable('slide_library_usage')
     .ifNotExists()
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade').notNull()
+      col.references('organizations.id').onDelete('cascade').notNull(),
     )
     .addColumn('user_email', 'varchar(320)', (col) => col.notNull())
     .addColumn('item_type', 'varchar(20)', (col) => col.notNull())
     .addColumn('item_id', 'varchar(200)', (col) => col.notNull())
-    .addColumn('first_used_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('first_used_at', 'timestamptz', (col) =>
+      col.defaultTo(sql`now()`),
+    )
     .addColumn('use_count', 'integer', (col) => col.notNull().defaultTo(1))
     .addColumn('updated_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
     .execute();
@@ -45,6 +47,9 @@ export const up = async (db) => {
 };
 
 export const down = async (db) => {
-  await db.schema.dropIndex('idx_slide_library_usage_org_user').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_slide_library_usage_org_user')
+    .ifExists()
+    .execute();
   await db.schema.dropTable('slide_library_usage').ifExists().execute();
 };

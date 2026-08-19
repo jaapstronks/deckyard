@@ -97,7 +97,10 @@ test('v1->v2 folds legacy text-blocks fields into rows[] non-destructively', () 
   const c = migrated.slides[0].content;
   assert.equal(migrated.schemaVersion, CURRENT_SCHEMA_VERSION);
   // rows[] is now populated from the legacy numbered fields …
-  assert.ok(Array.isArray(c.rows) && c.rows.length === 1, JSON.stringify(c.rows));
+  assert.ok(
+    Array.isArray(c.rows) && c.rows.length === 1,
+    JSON.stringify(c.rows),
+  );
   assert.equal(c.rows[0].blocks.length, 2);
   assert.equal(c.rows[0].blocks[0].title, 'A');
   assert.equal(c.rows[0].blocks[1].body, 'bb');
@@ -106,12 +109,20 @@ test('v1->v2 folds legacy text-blocks fields into rows[] non-destructively', () 
 });
 
 test('v1->v2 leaves a text-blocks slide that already has rows[] untouched', () => {
-  const rows = [{ title: 'R', arrow: 'none', blocks: [{ title: 'X', body: 'x' }] }];
+  const rows = [
+    { title: 'R', arrow: 'none', blocks: [{ title: 'X', body: 'x' }] },
+  ];
   const deck = {
     id: randomUUID(),
     schemaVersion: 1,
     title: 'TB',
-    slides: [{ id: randomUUID(), type: 'text-blocks-slide', content: { title: 'T', rows } }],
+    slides: [
+      {
+        id: randomUUID(),
+        type: 'text-blocks-slide',
+        content: { title: 'T', rows },
+      },
+    ],
   };
   const migrated = migratePresentation(deck);
   assert.deepEqual(migrated.slides[0].content.rows, rows);
@@ -123,7 +134,11 @@ test('v3->v4 folds a canonical reverse-DNS type down to the registry key', () =>
     schemaVersion: 3,
     title: 'Canon',
     slides: [
-      { id: randomUUID(), type: 'eu.deckyard.slide.title', content: { title: 'Hi' } },
+      {
+        id: randomUUID(),
+        type: 'eu.deckyard.slide.title',
+        content: { title: 'Hi' },
+      },
       { id: randomUUID(), type: 'core/title-slide', content: { title: 'Bye' } },
     ],
   };
@@ -154,7 +169,13 @@ test('v3->v4 is idempotent — a second run rewrites nothing', () => {
     id: randomUUID(),
     schemaVersion: 3,
     title: 'Canon',
-    slides: [{ id: randomUUID(), type: 'eu.deckyard.slide.title', content: { title: 'Hi' } }],
+    slides: [
+      {
+        id: randomUUID(),
+        type: 'eu.deckyard.slide.title',
+        content: { title: 'Hi' },
+      },
+    ],
   };
   const once = migratePresentation(deck);
   const twice = migratePresentation(structuredClone(once));
@@ -196,14 +217,14 @@ test('v4->v5 renders a folded deck exactly as the legacy read fallback did', () 
   const html = SLIDE_TYPES['quote-slide'].renderHtml(
     migrated.slides[0].content,
     { id: 's' },
-    {}
+    {},
   );
   assert.match(html, /is-align-center/);
 });
 
 test('v4->v5 keeps the group value when both forms are stored', () => {
   const migrated = migratePresentation(
-    legacyQuoteDeck({ align: 'center' }, { quoteAlign: 'left' })
+    legacyQuoteDeck({ align: 'center' }, { quoteAlign: 'left' }),
   );
   const content = migrated.slides[0].content;
   assert.equal(content.quoteAlign, 'left');
@@ -211,7 +232,9 @@ test('v4->v5 keeps the group value when both forms are stored', () => {
 });
 
 test('v4->v5 keeps per-field colour/size on the same field', () => {
-  const migrated = migratePresentation(legacyQuoteDeck({ align: 'center', color: 'accent' }));
+  const migrated = migratePresentation(
+    legacyQuoteDeck({ align: 'center', color: 'accent' }),
+  );
   const content = migrated.slides[0].content;
   assert.equal(content.quoteAlign, 'center');
   assert.deepEqual(content.textStyles, { quote: { color: 'accent' } });
@@ -244,7 +267,10 @@ test('v5->v6 folds inert per-field align on every group member, across types', (
       {
         id: randomUUID(),
         type: 'quote-slide',
-        content: { quote: 'Q', textStyles: { authorName: { align: 'center' } } },
+        content: {
+          quote: 'Q',
+          textStyles: { authorName: { align: 'center' } },
+        },
       },
     ],
   };
@@ -265,12 +291,19 @@ test('v5->v6 drops only align, keeping per-field colour/size on the same member'
       {
         id: randomUUID(),
         type: 'title-slide',
-        content: { title: 'T', textStyles: { title: { align: 'center', color: 'muted', size: 'lg' } } },
+        content: {
+          title: 'T',
+          textStyles: {
+            title: { align: 'center', color: 'muted', size: 'lg' },
+          },
+        },
       },
     ],
   };
   const migrated = migratePresentation(deck);
-  assert.deepEqual(migrated.slides[0].content.textStyles, { title: { color: 'muted', size: 'lg' } });
+  assert.deepEqual(migrated.slides[0].content.textStyles, {
+    title: { color: 'muted', size: 'lg' },
+  });
 });
 
 test('v5->v6 leaves a non-group field and unknown types untouched, and is idempotent', () => {
@@ -284,7 +317,10 @@ test('v5->v6 leaves a non-group field and unknown types untouched, and is idempo
         // align is a live text-align and must survive.
         id: randomUUID(),
         type: 'text-blocks-slide',
-        content: { rows: [{ blocks: [] }], textStyles: { body: { align: 'center' } } },
+        content: {
+          rows: [{ blocks: [] }],
+          textStyles: { body: { align: 'center' } },
+        },
       },
       {
         // A foreign/unknown type has no registry def; the sweep must skip it.
@@ -295,8 +331,12 @@ test('v5->v6 leaves a non-group field and unknown types untouched, and is idempo
     ],
   };
   const once = migratePresentation(deck);
-  assert.deepEqual(once.slides[0].content.textStyles, { body: { align: 'center' } });
-  assert.deepEqual(once.slides[1].content.textStyles, { whatever: { align: 'center' } });
+  assert.deepEqual(once.slides[0].content.textStyles, {
+    body: { align: 'center' },
+  });
+  assert.deepEqual(once.slides[1].content.textStyles, {
+    whatever: { align: 'center' },
+  });
   const twice = migratePresentation(structuredClone(once));
   assert.deepEqual(twice, once);
 });
@@ -312,18 +352,21 @@ test('gate: the v5->v6 sweep clears inert align for every declared group member 
     const groupIds = new Set(
       (Array.isArray(def.fieldGroups) ? def.fieldGroups : [])
         .map((g) => (g && typeof g.id === 'string' ? g.id : ''))
-        .filter(Boolean)
+        .filter(Boolean),
     );
     if (!groupIds.size) continue;
     const members = (Array.isArray(def.fields) ? def.fields : []).filter(
-      (f) => typeof f?.group === 'string' && groupIds.has(f.group.trim())
+      (f) => typeof f?.group === 'string' && groupIds.has(f.group.trim()),
     );
     if (!members.length) continue;
     const textStyles = {};
     for (const m of members) textStyles[m.key] = { align: 'center' };
     slides.push({ id: randomUUID(), type, content: { textStyles } });
   }
-  assert.ok(slides.length >= 5, 'the registry still has adopting types to sweep');
+  assert.ok(
+    slides.length >= 5,
+    'the registry still has adopting types to sweep',
+  );
 
   const migrated = migratePresentation({
     id: randomUUID(),
@@ -337,7 +380,7 @@ test('gate: the v5->v6 sweep clears inert align for every declared group member 
     for (const [key, fieldStyle] of Object.entries(styles)) {
       assert.ok(
         !Object.prototype.hasOwnProperty.call(fieldStyle || {}, 'align'),
-        `${slide.type}.${key} still carries an inert align after migration`
+        `${slide.type}.${key} still carries an inert align after migration`,
       );
     }
   }
@@ -349,7 +392,7 @@ test('the renderer no longer reads the legacy quote align at all', () => {
   const html = SLIDE_TYPES['quote-slide'].renderHtml(
     { quote: 'Q', authorName: 'N', textStyles: { quote: { align: 'center' } } },
     { id: 's' },
-    {}
+    {},
   );
   assert.doesNotMatch(html, /is-align-center/);
 });
@@ -372,9 +415,8 @@ test('the read funnel migrates a stored legacy deck in memory', async () => {
   process.env.DEFAULT_ORGANIZATION_ID = ORG;
   const { createFakeDb } = await import('./helpers/fake-db.js');
   const { __setTestDb } = await import('../server/db/client.js');
-  const { initializeStorage, __resetStorageForTests } = await import(
-    '../server/storage/lifecycle.js'
-  );
+  const { initializeStorage, __resetStorageForTests } =
+    await import('../server/storage/lifecycle.js');
   const legacy = legacyDeck();
   __setTestDb(
     createFakeDb({
@@ -397,13 +439,12 @@ test('the read funnel migrates a stored legacy deck in memory', async () => {
           published: null,
         },
       ],
-    })
+    }),
   );
   await initializeStorage();
   try {
-    const { getPresentation } = await import(
-      '../server/storage/presentations/index.js'
-    );
+    const { getPresentation } =
+      await import('../server/storage/presentations/index.js');
     const storageScope = { repoRoot: null, organizationId: ORG };
     const read = await getPresentation(storageScope, legacy.id);
     assert.equal(read.schemaVersion, CURRENT_SCHEMA_VERSION);
@@ -419,7 +460,9 @@ test('the read funnel migrates a stored legacy deck in memory', async () => {
 });
 
 test('validatePresentation accepts a freshly stamped deck', () => {
-  const { ok, errors } = validatePresentation(newPresentation({ theme: 'amethyst' }));
+  const { ok, errors } = validatePresentation(
+    newPresentation({ theme: 'amethyst' }),
+  );
   assert.equal(ok, true, `unexpected errors: ${errors.join(', ')}`);
 });
 

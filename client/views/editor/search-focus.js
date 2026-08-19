@@ -48,7 +48,7 @@ export function focusSearchHitInEditor({
   // Generic fallback: find the first matching input/textarea in the edit pane.
   try {
     const fields = Array.from(
-      editorMount.querySelectorAll('input.form-input, textarea.form-input')
+      editorMount.querySelectorAll('input.form-input, textarea.form-input'),
     );
     for (const el of fields) {
       const val = String(el?.value || '');

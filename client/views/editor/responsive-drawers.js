@@ -18,7 +18,8 @@ const DRAWER_BREAKPOINT = 820;
  * Call detach() when the editor unmounts.
  */
 export function createResponsiveDrawers({ h, root } = {}) {
-  if (!h || !root) throw new Error('createResponsiveDrawers: h and root required');
+  if (!h || !root)
+    throw new Error('createResponsiveDrawers: h and root required');
 
   const doc = document.documentElement;
 

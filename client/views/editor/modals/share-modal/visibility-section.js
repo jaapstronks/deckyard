@@ -58,10 +58,16 @@ export function createVisibilitySection({
   /** Persist pending edits before a visibility change; returns false if save failed. */
   async function ensureSaved(toastId) {
     if (!isDirty?.()) return true;
-    toast?.info?.(t('common.savingFirst', 'Saving first...'), { id: toastId, durationMs: 5200 });
+    toast?.info?.(t('common.savingFirst', 'Saving first...'), {
+      id: toastId,
+      durationMs: 5200,
+    });
     await requestSave?.();
     if (isDirty?.()) {
-      toast?.error?.(t('common.saveFailedAborted', 'Could not save; aborted.'), { id: toastId });
+      toast?.error?.(
+        t('common.saveFailedAborted', 'Could not save; aborted.'),
+        { id: toastId },
+      );
       return false;
     }
     return true;
@@ -76,14 +82,20 @@ export function createVisibilitySection({
         method: 'PATCH',
         headers: { 'If-Match': await ifMatchRevision({ api, id, pres }) },
         body: JSON.stringify(
-          visibility === 'organization' ? { visibility, isViewOnly } : { visibility }
+          visibility === 'organization'
+            ? { visibility, isViewOnly }
+            : { visibility },
         ),
       });
       if (updated && typeof updated === 'object') {
-        if (typeof updated.visibility === 'string') pres.visibility = updated.visibility;
-        if (typeof updated.isViewOnly === 'boolean') pres.isViewOnly = updated.isViewOnly;
-        if (typeof updated.revision === 'number') pres.revision = updated.revision;
-        if (typeof updated.updatedBy === 'string') pres.updatedBy = updated.updatedBy;
+        if (typeof updated.visibility === 'string')
+          pres.visibility = updated.visibility;
+        if (typeof updated.isViewOnly === 'boolean')
+          pres.isViewOnly = updated.isViewOnly;
+        if (typeof updated.revision === 'number')
+          pres.revision = updated.revision;
+        if (typeof updated.updatedBy === 'string')
+          pres.updatedBy = updated.updatedBy;
       } else if (visibility === 'organization') {
         // Fallback for an unexpectedly empty response: reflect the requested
         // value so the pills stay in sync until the next refresh. The /visibility
@@ -92,8 +104,10 @@ export function createVisibilitySection({
         pres.isViewOnly = isViewOnly;
       }
       let msg;
-      if (visibility === 'private') msg = t('editor.share.private.done', 'Moved to private.');
-      else if (isViewOnly) msg = t('editor.share.visibility.doneViewOnly', 'Shared as view only.');
+      if (visibility === 'private')
+        msg = t('editor.share.private.done', 'Moved to private.');
+      else if (isViewOnly)
+        msg = t('editor.share.visibility.doneViewOnly', 'Shared as view only.');
       else msg = t('editor.share.visibility.done', 'Shared to workspace.');
       toast?.success?.(msg, { id: 'share-visibility', durationMs: 2200 });
       syncShareUi?.();
@@ -112,7 +126,8 @@ export function createVisibilitySection({
       render();
       return;
     }
-    const hasDesc = typeof pres?.description === 'string' && pres.description.trim();
+    const hasDesc =
+      typeof pres?.description === 'string' && pres.description.trim();
     if (!hasDesc) {
       const r = await openDescriptionModal?.({
         h,
@@ -147,11 +162,15 @@ export function createVisibilitySection({
         message: t(
           'editor.share.private.confirm',
           'Move "{title}" to private? It will no longer be visible to other workspace members.',
-          { title: pres?.title || t('editor.share.thisPresentation', 'this presentation') }
+          {
+            title:
+              pres?.title ||
+              t('editor.share.thisPresentation', 'this presentation'),
+          },
         ),
         confirmLabel: t('editor.share.private', 'Move to private'),
       },
-      openOverlayClosers
+      openOverlayClosers,
     );
     if (!ok) {
       render();
@@ -161,7 +180,14 @@ export function createVisibilitySection({
   }
 
   /** Build one visibility radio row. */
-  function radioRow({ value, checked, titleText, descText, disabled, onSelect }) {
+  function radioRow({
+    value,
+    checked,
+    titleText,
+    descText,
+    disabled,
+    onSelect,
+  }) {
     const label = h('label', {
       class: `share-option${disabled ? ' is-disabled' : ''}`,
     });
@@ -198,17 +224,29 @@ export function createVisibilitySection({
         disabled: lockPrivate,
         titleText: t('share.visibility.privateTitle', 'Only people you invite'),
         descText: lockPrivate
-          ? t('share.visibility.privateLocked', 'Only an admin can move this out of the workspace.')
-          : t('share.visibility.privateDesc', 'Stays private; only you and the people you invite below can see it.'),
+          ? t(
+              'share.visibility.privateLocked',
+              'Only an admin can move this out of the workspace.',
+            )
+          : t(
+              'share.visibility.privateDesc',
+              'Stays private; only you and the people you invite below can see it.',
+            ),
         onSelect: moveToPrivate,
-      })
+      }),
     );
 
     const organizationRow = radioRow({
       value: 'organization',
       checked: isOrganization,
-      titleText: t('share.visibility.everyoneTitle', 'Everyone in your workspace'),
-      descText: t('share.visibility.everyoneDesc', 'Appears in the shared workspace for all members.'),
+      titleText: t(
+        'share.visibility.everyoneTitle',
+        'Everyone in your workspace',
+      ),
+      descText: t(
+        'share.visibility.everyoneDesc',
+        'Appears in the shared workspace for all members.',
+      ),
       onSelect: () => shareToOrganization(isViewOnly),
     });
     optionsWrap.append(organizationRow);
@@ -225,13 +263,16 @@ export function createVisibilitySection({
           text: labelText,
           onclick: () => {
             if (active || busy) return;
-            applyVisibility({ visibility: 'organization', isViewOnly: viewOnly });
+            applyVisibility({
+              visibility: 'organization',
+              isViewOnly: viewOnly,
+            });
           },
         });
       };
       sub.append(
         mkPill(true, t('editor.share.visibility.viewOnly', 'View & comment')),
-        mkPill(false, t('editor.share.visibility.regular', 'Full access'))
+        mkPill(false, t('editor.share.visibility.regular', 'Full access')),
       );
       optionsWrap.append(sub);
     }

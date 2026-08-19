@@ -66,7 +66,10 @@
   background: hsl(var(--app-bg-elevated));
   color: hsl(var(--app-text-secondary));
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease;
 }
 
 .share-access-pill:hover {

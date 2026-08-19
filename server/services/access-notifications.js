@@ -10,7 +10,10 @@ import {
   ACCESS_TYPES,
 } from '../storage/access-attempts.js';
 import { createNotification } from '../storage/notifications.js';
-import { broadcastToUser, NotificationEventTypes } from './notification-events.js';
+import {
+  broadcastToUser,
+  NotificationEventTypes,
+} from './notification-events.js';
 import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('access-notifications');
@@ -59,7 +62,7 @@ export async function notifyAuthorOfAccessAttempt({
       scope,
       presentationId,
       accessorEmail,
-      accessorIp
+      accessorIp,
     );
 
     if (!shouldNotify) {
@@ -74,23 +77,20 @@ export async function notifyAuthorOfAccessAttempt({
     const notificationBody = `Attempted to access "${presentationTitle}" via ${accessTypeLabel}.`;
 
     // 4. Create in-app notification for author (no email)
-    const notifResult = await createNotification(
-      scope,
-      {
-        userEmail: authorEmail,
-        notificationType: 'access_attempt',
-        title: notificationTitle,
-        body: notificationBody,
-        presentationId,
-        actorEmail: accessorEmail || null,
-        data: {
-          accessType,
-          accessorEmail,
-          accessorIp,
-          presentationTitle,
-        },
-      }
-    );
+    const notifResult = await createNotification(scope, {
+      userEmail: authorEmail,
+      notificationType: 'access_attempt',
+      title: notificationTitle,
+      body: notificationBody,
+      presentationId,
+      actorEmail: accessorEmail || null,
+      data: {
+        accessType,
+        accessorEmail,
+        accessorIp,
+        presentationTitle,
+      },
+    });
 
     if (!notifResult.ok) {
       // Log but don't fail - the access attempt is already logged
@@ -103,7 +103,11 @@ export async function notifyAuthorOfAccessAttempt({
 
     // 6. Broadcast via SSE for real-time bell icon update
     if (notifResult.notification) {
-      broadcastToUser(authorEmail, NotificationEventTypes.NEW, notifResult.notification);
+      broadcastToUser(
+        authorEmail,
+        NotificationEventTypes.NEW,
+        notifResult.notification,
+      );
     }
 
     return { ok: true, notified: true };

@@ -71,7 +71,9 @@ export function normalizeSlideBackgrounds(raw) {
   const seen = new Set();
   for (const e of list) {
     if (!e || typeof e !== 'object') continue;
-    const id = String(e.id || '').trim().toLowerCase();
+    const id = String(e.id || '')
+      .trim()
+      .toLowerCase();
     if (!SLIDE_BG_ID_RE.test(id)) continue;
     if (RESERVED_SLIDE_BG_IDS.has(id)) continue;
     if (seen.has(id)) continue;
@@ -169,7 +171,7 @@ export function slideBackgroundsCssText(entries) {
             ? 'var(--slide-on-dark)'
             : 'var(--slide-on-light)'
         };`,
-        '  color: var(--slide-bg-text);'
+        '  color: var(--slide-bg-text);',
       );
     }
     rules.push(`.slide.slide-bg-${e.id} {\n${lines.join('\n')}\n}`);

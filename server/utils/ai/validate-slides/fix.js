@@ -111,7 +111,9 @@ export function validateAndFixSlide(slide) {
       ...truncatedContent,
       [req.field]: arr,
     };
-    fixedSlide.reasoning = (fixedSlide.reasoning || '') + ` [Truncated from ${originalCount} to ${req.max} items]`;
+    fixedSlide.reasoning =
+      (fixedSlide.reasoning || '') +
+      ` [Truncated from ${originalCount} to ${req.max} items]`;
   }
 
   // Check if we have enough items
@@ -142,7 +144,9 @@ export function validateAndFixSlide(slide) {
           layout: 'one-column',
           background: truncatedContent.background || 'lime',
         },
-        reasoning: (fixedSlide.reasoning || '') + ' [Converted from list-slide due to insufficient items]',
+        reasoning:
+          (fixedSlide.reasoning || '') +
+          ' [Converted from list-slide due to insufficient items]',
       };
     }
 
@@ -164,7 +168,9 @@ export function validateAndFixSlide(slide) {
           layout: 'one-column',
           background: truncatedContent.background || 'lime',
         },
-        reasoning: (fixedSlide.reasoning || '') + ' [Converted from timeline-slide due to insufficient items]',
+        reasoning:
+          (fixedSlide.reasoning || '') +
+          ' [Converted from timeline-slide due to insufficient items]',
       };
     }
 
@@ -191,7 +197,8 @@ export function validateAndFixSlide(slide) {
           ...truncatedContent,
           [req.field]: paddedArr,
         },
-        reasoning: (fixedSlide.reasoning || '') + ' [Items padded to meet minimum]',
+        reasoning:
+          (fixedSlide.reasoning || '') + ' [Items padded to meet minimum]',
       };
     }
   }
@@ -216,66 +223,100 @@ function getContentWarnings(slide, prevSlide = null) {
 
   // Density checks
   if (type === 'list-slide' && content.items?.length > 6) {
-    warnings.push('This list has many items — consider splitting into two slides or using two-column layout.');
+    warnings.push(
+      'This list has many items — consider splitting into two slides or using two-column layout.',
+    );
   }
   if (type === 'icon-card-grid-slide' && content.items?.length > 5) {
-    warnings.push('Dense card grid — consider reducing to 4 cards for better readability.');
+    warnings.push(
+      'Dense card grid — consider reducing to 4 cards for better readability.',
+    );
   }
   if (type === 'content-slide' && content.body && content.body.length > 1200) {
-    warnings.push('Long content slide — consider splitting into two slides or using a more specialized type.');
+    warnings.push(
+      'Long content slide — consider splitting into two slides or using a more specialized type.',
+    );
   }
   if (type === 'timeline-slide' && content.items?.length > 6) {
-    warnings.push('Timeline has many items — consider splitting into multiple slides for clarity.');
+    warnings.push(
+      'Timeline has many items — consider splitting into multiple slides for clarity.',
+    );
   }
   if (type === 'text-blocks-slide' && content.rows?.length >= 3) {
-    const totalBlocks = (content.rows || []).reduce((sum, r) => sum + (r.blocks?.length || 0), 0);
+    const totalBlocks = (content.rows || []).reduce(
+      (sum, r) => sum + (r.blocks?.length || 0),
+      0,
+    );
     if (totalBlocks > 8) {
-      warnings.push('Dense text-blocks layout — consider reducing blocks or splitting into two slides.');
+      warnings.push(
+        'Dense text-blocks layout — consider reducing blocks or splitting into two slides.',
+      );
     }
   }
 
   // Readability: title approaching max length
   if (content.title && content.title.length > 100) {
-    warnings.push('Long title — consider shortening for better readability on screen.');
+    warnings.push(
+      'Long title — consider shortening for better readability on screen.',
+    );
   }
 
   // Readability: list items with long text
   if (type === 'list-slide' && content.items?.length) {
-    const longItems = content.items.filter(item => item?.text && item.text.length > 100);
+    const longItems = content.items.filter(
+      (item) => item?.text && item.text.length > 100,
+    );
     if (longItems.length >= 2) {
-      warnings.push('Several list items have long descriptions — consider trimming for slide readability.');
+      warnings.push(
+        'Several list items have long descriptions — consider trimming for slide readability.',
+      );
     }
   }
 
   // Readability: icon-card-grid items with long body text
   if (type === 'icon-card-grid-slide' && content.items?.length) {
-    const longCards = content.items.filter(item => item?.body && item.body.length > 200);
+    const longCards = content.items.filter(
+      (item) => item?.body && item.body.length > 200,
+    );
     if (longCards.length >= 2) {
-      warnings.push('Multiple cards have long body text — cards work best with concise descriptions (under 200 chars).');
+      warnings.push(
+        'Multiple cards have long body text — cards work best with concise descriptions (under 200 chars).',
+      );
     }
   }
 
   // Readability: KPI metrics with overlong labels or notes
   if (type === 'kpi-metrics-slide' && content.metrics?.length) {
-    const longLabels = content.metrics.filter(m => m?.label && m.label.length > 40);
+    const longLabels = content.metrics.filter(
+      (m) => m?.label && m.label.length > 40,
+    );
     if (longLabels.length >= 1) {
-      warnings.push('KPI label is quite long — shorter labels have more visual impact.');
+      warnings.push(
+        'KPI label is quite long — shorter labels have more visual impact.',
+      );
     }
   }
 
   // Readability: subheading approaching max length
   if (content.subheading && content.subheading.length > 180) {
-    warnings.push('Long subheading — consider shortening or moving detail into slide body.');
+    warnings.push(
+      'Long subheading — consider shortening or moving detail into slide body.',
+    );
   }
 
   // Repetition check
   if (prevSlide && prevSlide.type === type) {
     // Only warn for content-heavy types that might feel repetitive
     const repetitiveTypes = new Set([
-      'list-slide', 'icon-card-grid-slide', 'text-blocks-slide', 'content-slide',
+      'list-slide',
+      'icon-card-grid-slide',
+      'text-blocks-slide',
+      'content-slide',
     ]);
     if (repetitiveTypes.has(type)) {
-      warnings.push(`Same slide type as previous slide (${type}) — consider varying the layout for visual interest.`);
+      warnings.push(
+        `Same slide type as previous slide (${type}) — consider varying the layout for visual interest.`,
+      );
     }
   }
 
@@ -309,22 +350,33 @@ export function validateAndFixRefinedSlides(refinedSlides) {
   // Deck-level balance check: warn if too many content-slides
   const contentSlideTypes = new Set(['content-slide']);
   const specializedTypes = new Set([
-    'list-slide', 'icon-card-grid-slide', 'text-blocks-slide',
-    'timeline-slide', 'kpi-metrics-slide', 'team-cards-slide', 'process-slide',
-    'comparison-slide', 'matrix-slide',
+    'list-slide',
+    'icon-card-grid-slide',
+    'text-blocks-slide',
+    'timeline-slide',
+    'kpi-metrics-slide',
+    'team-cards-slide',
+    'process-slide',
+    'comparison-slide',
+    'matrix-slide',
   ]);
-  const contentSlides = fixedSlides.filter(s => contentSlideTypes.has(s.type));
-  const totalContentish = fixedSlides.filter(s =>
-    contentSlideTypes.has(s.type) || specializedTypes.has(s.type)
+  const contentSlides = fixedSlides.filter((s) =>
+    contentSlideTypes.has(s.type),
+  );
+  const totalContentish = fixedSlides.filter(
+    (s) => contentSlideTypes.has(s.type) || specializedTypes.has(s.type),
   );
 
-  if (totalContentish.length >= 4 && contentSlides.length / totalContentish.length > 0.6) {
+  if (
+    totalContentish.length >= 4 &&
+    contentSlides.length / totalContentish.length > 0.6
+  ) {
     // Add warning to first content-slide
-    const firstContent = fixedSlides.find(s => s.type === 'content-slide');
+    const firstContent = fixedSlides.find((s) => s.type === 'content-slide');
     if (firstContent) {
       firstContent._aiWarnings = firstContent._aiWarnings || [];
       firstContent._aiWarnings.push(
-        `${contentSlides.length} of ${totalContentish.length} content slides use the generic content-slide type — consider converting some to specialized types (list, icon-cards, text-blocks) for visual variety.`
+        `${contentSlides.length} of ${totalContentish.length} content slides use the generic content-slide type — consider converting some to specialized types (list, icon-cards, text-blocks) for visual variety.`,
       );
     }
   }
@@ -365,7 +417,11 @@ export function diffAppliedFixes(input, fixed) {
     for (const field of Object.keys(STRICT_TEXT_LIMITS)) {
       const av = aContent[field];
       const bv = bContent[field];
-      if (typeof av === 'string' && typeof bv === 'string' && av.length !== bv.length) {
+      if (
+        typeof av === 'string' &&
+        typeof bv === 'string' &&
+        av.length !== bv.length
+      ) {
         fixes.push({
           slideIndex: i,
           field,
@@ -383,9 +439,10 @@ export function diffAppliedFixes(input, fixed) {
         fixes.push({
           slideIndex: i,
           field,
-          change: delta > 0
-            ? `padded from ${av.length} to ${bv.length} entries`
-            : `truncated from ${av.length} to ${bv.length} entries`,
+          change:
+            delta > 0
+              ? `padded from ${av.length} to ${bv.length} entries`
+              : `truncated from ${av.length} to ${bv.length} entries`,
         });
       }
     }

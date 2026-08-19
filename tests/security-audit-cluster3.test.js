@@ -66,15 +66,25 @@ test('H8: app pages get frame/nosniff/referrer headers', () => {
   applySecurityHeaders({ headers: {} }, res, '/app');
   assert.equal(res.getHeader('X-Frame-Options'), 'DENY');
   assert.equal(res.getHeader('X-Content-Type-Options'), 'nosniff');
-  assert.equal(res.getHeader('Referrer-Policy'), 'strict-origin-when-cross-origin');
+  assert.equal(
+    res.getHeader('Referrer-Policy'),
+    'strict-origin-when-cross-origin',
+  );
 });
 
 test('H8: /embed/* stays frameable (no X-Frame-Options) but keeps nosniff/referrer', () => {
   const res = new MockRes();
   applySecurityHeaders({ headers: {} }, res, '/embed/abc123');
-  assert.equal(res.getHeader('X-Frame-Options'), undefined, 'embed must remain frameable');
+  assert.equal(
+    res.getHeader('X-Frame-Options'),
+    undefined,
+    'embed must remain frameable',
+  );
   assert.equal(res.getHeader('X-Content-Type-Options'), 'nosniff');
-  assert.equal(res.getHeader('Referrer-Policy'), 'strict-origin-when-cross-origin');
+  assert.equal(
+    res.getHeader('Referrer-Policy'),
+    'strict-origin-when-cross-origin',
+  );
 });
 
 test('H8: HSTS only when the connection is secure', () => {
@@ -87,7 +97,10 @@ test('H8: HSTS only when the connection is secure', () => {
   try {
     const secure = new MockRes();
     applySecurityHeaders({ headers: {} }, secure, '/app');
-    assert.match(secure.getHeader('Strict-Transport-Security') || '', /max-age=\d+/);
+    assert.match(
+      secure.getHeader('Strict-Transport-Security') || '',
+      /max-age=\d+/,
+    );
   } finally {
     if (prev === undefined) delete process.env.SECURE_COOKIES;
     else process.env.SECURE_COOKIES = prev;
@@ -119,9 +132,17 @@ test('H7: JSON import rejects a broken body as 400 (no stack, no parser text)', 
   const body = JSON.parse(res.bodyText());
   assert.equal(body.ok, false);
   assert.equal(body.error, 'bad_request');
-  assert.equal(body.message, 'Invalid JSON body', 'our literal, not the parser’s');
+  assert.equal(
+    body.message,
+    'Invalid JSON body',
+    'our literal, not the parser’s',
+  );
   assert.ok(!('stack' in body), 'stack must not be in the response');
-  assert.doesNotMatch(res.bodyText(), /Unexpected token/, 'parser text must not leak');
+  assert.doesNotMatch(
+    res.bodyText(),
+    /Unexpected token/,
+    'parser text must not leak',
+  );
 });
 
 test('H7: markdown import rejects a broken body as 400 (no stack, no parser text)', async () => {
@@ -136,7 +157,11 @@ test('H7: markdown import rejects a broken body as 400 (no stack, no parser text
   const body = JSON.parse(res.bodyText());
   assert.equal(body.error, 'bad_request');
   assert.ok(!('stack' in body), 'stack must not be in the response');
-  assert.doesNotMatch(res.bodyText(), /Unexpected token/, 'parser text must not leak');
+  assert.doesNotMatch(
+    res.bodyText(),
+    /Unexpected token/,
+    'parser text must not leak',
+  );
 });
 
 // ============================================================================

@@ -12,7 +12,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
-import { markdownToSafeHtml, inlineMarkdownToSafeHtml } from '../shared/markdown.js';
+import {
+  markdownToSafeHtml,
+  inlineMarkdownToSafeHtml,
+} from '../shared/markdown.js';
 
 // The sync sanitizer HTML-escapes when no DOM is present (Node); decode so the
 // assertions read the same in either environment.
@@ -55,11 +58,17 @@ describe('underscore emphasis', () => {
 describe('star and plus bullets', () => {
   it('renders * bullets as a <ul>', () => {
     const html = render('* one\n* two');
-    assert.ok(/<ul[^>]*><li[^>]*>one<\/li><li[^>]*>two<\/li><\/ul>/.test(html), html);
+    assert.ok(
+      /<ul[^>]*><li[^>]*>one<\/li><li[^>]*>two<\/li><\/ul>/.test(html),
+      html,
+    );
   });
   it('renders + bullets as a <ul>', () => {
     const html = render('+ one\n+ two');
-    assert.ok(/<ul[^>]*><li[^>]*>one<\/li><li[^>]*>two<\/li><\/ul>/.test(html), html);
+    assert.ok(
+      /<ul[^>]*><li[^>]*>one<\/li><li[^>]*>two<\/li><\/ul>/.test(html),
+      html,
+    );
   });
   it('does not treat **bold** at line start as a bullet', () => {
     const html = render('**bold** lead');
@@ -107,7 +116,10 @@ describe('backslash escapes', () => {
 describe('blockquotes', () => {
   it('renders a > line as a <blockquote> with a paragraph', () => {
     const html = render('> a quote');
-    assert.ok(/<blockquote[^>]*><p[^>]*>a quote<\/p><\/blockquote>/.test(html), html);
+    assert.ok(
+      /<blockquote[^>]*><p[^>]*>a quote<\/p><\/blockquote>/.test(html),
+      html,
+    );
   });
   it('joins consecutive > lines into one paragraph', () => {
     const html = render('> line one\n> line two');

@@ -8,7 +8,10 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { api } from '../../../lib/api.js';
 import { createAvatar, updateAvatar } from '../../../lib/user/avatar.js';
-import { invalidateProfile, getUserProfileAsync } from '../../../lib/user/user-profiles.js';
+import {
+  invalidateProfile,
+  getUserProfileAsync,
+} from '../../../lib/user/user-profiles.js';
 
 /**
  * Create profile image section with upload/remove buttons.
@@ -20,7 +23,10 @@ import { invalidateProfile, getUserProfileAsync } from '../../../lib/user/user-p
 function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
   let currentImageUrl = initialImageUrl;
 
-  const profileSection = h('div', { class: 'profile-image-section', style: 'margin-bottom: 12px;' });
+  const profileSection = h('div', {
+    class: 'profile-image-section',
+    style: 'margin-bottom: 12px;',
+  });
   const imageActions = h('div', { class: 'profile-image-actions' });
 
   const fileInput = h('input', {
@@ -42,18 +48,28 @@ function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
     style: currentImageUrl ? '' : 'display: none;',
   });
 
-  const imageStatus = h('div', { class: 'help', text: '', style: 'font-size: 11px;' });
+  const imageStatus = h('div', {
+    class: 'help',
+    text: '',
+    style: 'font-size: 11px;',
+  });
 
   fileInput.addEventListener('change', async () => {
     const file = fileInput.files?.[0];
     if (!file) return;
 
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
-      imageStatus.textContent = t('admin.users.invalidImageType', 'Invalid image type.');
+      imageStatus.textContent = t(
+        'admin.users.invalidImageType',
+        'Invalid image type.',
+      );
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      imageStatus.textContent = t('admin.users.imageTooLarge', 'Image too large (max 5MB).');
+      imageStatus.textContent = t(
+        'admin.users.imageTooLarge',
+        'Image too large (max 5MB).',
+      );
       return;
     }
 
@@ -68,10 +84,13 @@ function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
         reader.readAsDataURL(file);
       });
 
-      const resp = await api(`/api/profile/image/${encodeURIComponent(targetUser.email)}`, {
-        method: 'POST',
-        body: JSON.stringify({ dataUrl }),
-      });
+      const resp = await api(
+        `/api/profile/image/${encodeURIComponent(targetUser.email)}`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ dataUrl }),
+        },
+      );
 
       if (resp?.imageUrl) {
         currentImageUrl = resp.imageUrl;
@@ -81,7 +100,9 @@ function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
         invalidateProfile(targetUser.email);
       }
     } catch (err) {
-      imageStatus.textContent = String(err?.message || t('admin.users.uploadFailed', 'Upload failed'));
+      imageStatus.textContent = String(
+        err?.message || t('admin.users.uploadFailed', 'Upload failed'),
+      );
     } finally {
       uploadBtn.disabled = false;
       fileInput.value = '';
@@ -95,14 +116,18 @@ function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
     imageStatus.textContent = t('admin.users.removing', 'Removing...');
 
     try {
-      await api(`/api/profile/image/${encodeURIComponent(targetUser.email)}`, { method: 'DELETE' });
+      await api(`/api/profile/image/${encodeURIComponent(targetUser.email)}`, {
+        method: 'DELETE',
+      });
       currentImageUrl = '';
       updateAvatar(avatarEl, { imageUrl: '' });
       removeBtn.style.display = 'none';
       imageStatus.textContent = '';
       invalidateProfile(targetUser.email);
     } catch (err) {
-      imageStatus.textContent = String(err?.message || t('admin.users.removeFailed', 'Failed to remove'));
+      imageStatus.textContent = String(
+        err?.message || t('admin.users.removeFailed', 'Failed to remove'),
+      );
     } finally {
       removeBtn.disabled = false;
     }
@@ -152,12 +177,19 @@ export async function showEditModal(targetUser, onSuccess) {
     size: 'lg',
   });
 
-  const { section: profileSection } = createProfileImageSection(targetUser, avatarEl, currentImageUrl);
+  const { section: profileSection } = createProfileImageSection(
+    targetUser,
+    avatarEl,
+    currentImageUrl,
+  );
 
   const nameInput = h('input', {
     class: 'form-input',
     type: 'text',
-    placeholder: t('admin.users.addModal.namePlaceholder', 'Full name (optional)'),
+    placeholder: t(
+      'admin.users.addModal.namePlaceholder',
+      'Full name (optional)',
+    ),
     value: targetUser.name || '',
   });
 
@@ -172,7 +204,7 @@ export async function showEditModal(targetUser, onSuccess) {
       value: 'admin',
       text: t('admin.users.roleAdmin', 'Admin'),
       selected: targetUser.role === 'admin',
-    })
+    }),
   );
 
   // Designer capability toggle
@@ -180,11 +212,16 @@ export async function showEditModal(targetUser, onSuccess) {
     text: t('admin.users.designerCapability', 'Designer'),
     className: 'form-checkbox-row',
     checked: Boolean(targetUser.isExplicitDesigner),
-    labelAttrs: { style: 'display: flex; align-items: center; gap: 8px; margin-top: 4px;' },
+    labelAttrs: {
+      style: 'display: flex; align-items: center; gap: 8px; margin-top: 4px;',
+    },
   });
   const designerHelp = h('div', {
     class: 'help',
-    text: t('admin.users.designerHelp', 'Can manage themes and slide types. Admins and owners have this by default.'),
+    text: t(
+      'admin.users.designerHelp',
+      'Can manage themes and slide types. Admins and owners have this by default.',
+    ),
     style: 'font-size: 11px; margin-top: 2px;',
   });
 
@@ -222,11 +259,16 @@ export async function showEditModal(targetUser, onSuccess) {
         method: 'PATCH',
         body: { name, role, isDesigner },
       });
-      toast.success(t('admin.users.editModal.success', 'User updated successfully.'));
+      toast.success(
+        t('admin.users.editModal.success', 'User updated successfully.'),
+      );
       overlay.remove();
       onSuccess();
     } catch (e) {
-      status.textContent = t('admin.users.editModal.error', 'Failed to update user.');
+      status.textContent = t(
+        'admin.users.editModal.error',
+        'Failed to update user.',
+      );
       busy = false;
       btnSubmit.disabled = false;
       nameInput.disabled = false;
@@ -240,10 +282,22 @@ export async function showEditModal(targetUser, onSuccess) {
     if (e.target === overlay) overlay.remove();
   };
 
-  const btnRow = h('div', { class: 'row is-end', style: 'gap: 8px; margin-top: 16px;' });
+  const btnRow = h('div', {
+    class: 'row is-end',
+    style: 'gap: 8px; margin-top: 16px;',
+  });
   btnRow.append(btnCancel, btnSubmit);
 
-  form.append(emailDisplay, profileSection, nameInput, roleSelect, designerRow, designerHelp, status, btnRow);
+  form.append(
+    emailDisplay,
+    profileSection,
+    nameInput,
+    roleSelect,
+    designerRow,
+    designerHelp,
+    status,
+    btnRow,
+  );
   modal.append(modalTitle, form);
   overlay.append(modal);
   document.body.append(overlay);

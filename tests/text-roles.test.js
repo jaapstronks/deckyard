@@ -101,7 +101,11 @@ describe('allowedAlignValues (value-level affordances)', () => {
   });
 
   it('default roles offer the full set', () => {
-    assert.deepEqual(allowedAlignValues('heading'), ['left', 'center', 'right']);
+    assert.deepEqual(allowedAlignValues('heading'), [
+      'left',
+      'center',
+      'right',
+    ]);
   });
 });
 
@@ -160,12 +164,12 @@ describe('real schemas: marker-anchored fields are tagged, shapes are not', () =
       assert.notEqual(
         resolveFieldRole(def.fields, key),
         'list-item',
-        `${type} · ${key} must not be list-item — its text lives inside a shape node`
+        `${type} · ${key} must not be list-item — its text lives inside a shape node`,
       );
       assert.equal(
         fieldAllowsAlign(def.fields, key),
         true,
-        `${type} · ${key} should keep block alignment (centre-within-node is legitimate)`
+        `${type} · ${key} should keep block alignment (centre-within-node is legitimate)`,
       );
     }
   });
@@ -178,10 +182,16 @@ describe('real schemas: marker-anchored fields are tagged, shapes are not', () =
     // The role still says left/centre, but on this type the field joined the
     // quote-block group, which moves quote + byline + portraits together. The
     // group wins, so no per-field values are offered at all.
-    const out = fieldAlignAffordance(SLIDE_TYPES['quote-slide'].fields, 'quote');
+    const out = fieldAlignAffordance(
+      SLIDE_TYPES['quote-slide'].fields,
+      'quote',
+    );
     assert.equal(out.owner, 'group');
     assert.deepEqual(out.values, []);
-    assert.deepEqual(fieldAllowedAlignValues(SLIDE_TYPES['quote-slide'].fields, 'quote'), []);
+    assert.deepEqual(
+      fieldAllowedAlignValues(SLIDE_TYPES['quote-slide'].fields, 'quote'),
+      [],
+    );
   });
 });
 
@@ -193,8 +203,10 @@ describe('drift guard: declared roles stay in the vocabulary', () => {
   function collectRoles(fields, out, where) {
     if (!Array.isArray(fields)) return;
     for (const f of fields) {
-      if (f && f.role != null) out.push({ role: f.role, where: `${where}.${f.key}` });
-      if (f && Array.isArray(f.itemFields)) collectRoles(f.itemFields, out, `${where}.${f.key}[]`);
+      if (f && f.role != null)
+        out.push({ role: f.role, where: `${where}.${f.key}` });
+      if (f && Array.isArray(f.itemFields))
+        collectRoles(f.itemFields, out, `${where}.${f.key}[]`);
     }
   }
 
@@ -205,7 +217,10 @@ describe('drift guard: declared roles stay in the vocabulary', () => {
     }
     for (const { role, where } of declared) {
       assert.ok(TEXT_ROLES.includes(role), `${where}: unknown role '${role}'`);
-      assert.ok(ROLE_AFFORDANCES[role], `${where}: role '${role}' has no affordances`);
+      assert.ok(
+        ROLE_AFFORDANCES[role],
+        `${where}: role '${role}' has no affordances`,
+      );
     }
   });
 
@@ -213,7 +228,10 @@ describe('drift guard: declared roles stay in the vocabulary', () => {
     for (const [role, aff] of Object.entries(ROLE_AFFORDANCES)) {
       assert.ok(Array.isArray(aff.align), `${role}: align must be an array`);
       for (const v of aff.align) {
-        assert.ok(TEXT_ALIGN_VALUES.includes(v), `${role}: '${v}' is not a valid align value`);
+        assert.ok(
+          TEXT_ALIGN_VALUES.includes(v),
+          `${role}: '${v}' is not a valid align value`,
+        );
       }
     }
   });

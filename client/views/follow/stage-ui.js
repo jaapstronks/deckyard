@@ -1,8 +1,14 @@
-export function applyCapabilitiesToStage({ capabilities, slideWrap, interactionWrap } = {}) {
-  const caps = capabilities && typeof capabilities === 'object' ? capabilities : null;
+export function applyCapabilitiesToStage({
+  capabilities,
+  slideWrap,
+  interactionWrap,
+} = {}) {
+  const caps =
+    capabilities && typeof capabilities === 'object' ? capabilities : null;
   const interacting = !!caps?.interaction;
   // Ensure stage mode is consistent immediately.
-  if (interactionWrap) interactionWrap.style.display = interacting ? '' : 'none';
+  if (interactionWrap)
+    interactionWrap.style.display = interacting ? '' : 'none';
   if (slideWrap) slideWrap.style.display = interacting ? 'none' : '';
   // The stage is sized to a 16:9 slide on a portrait handheld. A poll or
   // feedback card has no such ratio and can be far taller, so the stage has
@@ -35,6 +41,6 @@ export function showFollowMessage({
       h('div', { class: 'slide-inner' }, [
         h('div', { class: 'follow-message-box', text: msg }),
       ]),
-    ])
+    ]),
   );
 }

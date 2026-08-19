@@ -3,15 +3,19 @@
 ## Setup
 
 1. Add to your `.env`:
+
    ```
    LIVE_DATA_ENABLED=true
    ```
+
    If testing with Notion, also ensure `NOTION_SECRET` and `NOTION_FEATURE=true` are set.
 
 2. Run the migration (if using PostgreSQL):
+
    ```
    npm run db:migrate
    ```
+
    This adds the `data_source` column to `slide_library`.
 
 3. Start the dev server:
@@ -46,15 +50,18 @@ Easiest to test without any external account.
 9. The data source bar should show "Snapshot from [today]" with a mode selector.
 
 **Refresh test:**
+
 - Change a value in the Google Sheet.
 - Click **Pull latest** on the data source bar.
 - The slide field should update.
 
 **Mode switching:**
+
 - Change the mode dropdown from "Snapshot" to "Manual refresh" — the status dot should turn green.
 - Change back to "Snapshot" — dot turns gray, shows "Snapshot from [date]".
 
 **Disconnect:**
+
 - Click **Disconnect** — the data source bar should revert to the "Connect data source" button.
 - The slide content should retain the last-fetched values.
 
@@ -84,14 +91,14 @@ Requires `NOTION_SECRET` with access to a Notion database.
 
 ### Slide types to test
 
-| Slide type | What to bind | Source suggestion |
-|---|---|---|
-| `kpi-metrics-slide` | `metrics[N].value`, `.label`, `.delta` | CSV or Notion DB |
-| `table-slide` | `rows[N].c1` through `.c10` | CSV |
-| `chart-slide` | `csvData` | CSV URL |
-| `quote-slide` | `quote`, `attribution` | Notion block |
-| `content-slide` | `title`, `body` | Notion block |
-| `timeline-slide` | `items[N].time`, `.title`, `.text` | Notion DB or CSV |
+| Slide type          | What to bind                           | Source suggestion |
+| ------------------- | -------------------------------------- | ----------------- |
+| `kpi-metrics-slide` | `metrics[N].value`, `.label`, `.delta` | CSV or Notion DB  |
+| `table-slide`       | `rows[N].c1` through `.c10`            | CSV               |
+| `chart-slide`       | `csvData`                              | CSV URL           |
+| `quote-slide`       | `quote`, `attribution`                 | Notion block      |
+| `content-slide`     | `title`, `body`                        | Notion block      |
+| `timeline-slide`    | `items[N].time`, `.title`, `.text`     | Notion DB or CSV  |
 
 ### API endpoints (manual testing)
 
@@ -123,14 +130,14 @@ curl -b cookies.txt -X POST http://localhost:4177/api/data-sources/refresh \
 
 ## Files involved
 
-| Layer | Key files |
-|---|---|
-| Shared schema | `shared/data-source.js` |
-| Feature flag | `server/config/features.js`, `server/config/flags-snapshot.js` |
-| Provider engine | `server/utils/data-source/` (index, provider-base, bindings, providers/) |
-| API routes | `server/routes/api/data-sources.js` |
-| Migration | `server/db/migrations/036_live_data_sources.js` |
-| Slide storage | `server/storage/presentations/slides.js` (normalizeSlides preserves dataSource) |
-| Editor UI | `client/views/editor/data-source-panel.js`, `data-source-modal.js` |
-| Editor form | `client/views/editor/editor-form.js` (wires in the indicator) |
-| CSS | `client/styles/base/04-editor-and-misc/103-data-source.css` |
+| Layer           | Key files                                                                       |
+| --------------- | ------------------------------------------------------------------------------- |
+| Shared schema   | `shared/data-source.js`                                                         |
+| Feature flag    | `server/config/features.js`, `server/config/flags-snapshot.js`                  |
+| Provider engine | `server/utils/data-source/` (index, provider-base, bindings, providers/)        |
+| API routes      | `server/routes/api/data-sources.js`                                             |
+| Migration       | `server/db/migrations/036_live_data_sources.js`                                 |
+| Slide storage   | `server/storage/presentations/slides.js` (normalizeSlides preserves dataSource) |
+| Editor UI       | `client/views/editor/data-source-panel.js`, `data-source-modal.js`              |
+| Editor form     | `client/views/editor/editor-form.js` (wires in the indicator)                   |
+| CSS             | `client/styles/base/04-editor-and-misc/103-data-source.css`                     |

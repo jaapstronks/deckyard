@@ -14,7 +14,10 @@
  * the MCP SSE mount (server/server.js:/mcp).
  */
 
-import { isCollabEnabled, isCollabLiveEditsEnabled } from '../config/features.js';
+import {
+  isCollabEnabled,
+  isCollabLiveEditsEnabled,
+} from '../config/features.js';
 import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('collab');
@@ -85,7 +88,8 @@ export async function maybeAttachCollab(server, { repoRoot }) {
         documentName,
         user: context?.user,
       });
-      if (organizationId) documentOrganizations.set(documentName, organizationId);
+      if (organizationId)
+        documentOrganizations.set(documentName, organizationId);
       connectionConfig.readOnly = readOnly;
     },
     ...persistence,
@@ -104,7 +108,7 @@ export async function maybeAttachCollab(server, { repoRoot }) {
         peer._hocuspocus = hocuspocus.handleConnection(
           peer.websocket,
           peer.request,
-          { user: peer.context?.user }
+          { user: peer.context?.user },
         );
       },
       message(peer, message) {
@@ -146,7 +150,7 @@ export async function maybeAttachCollab(server, { repoRoot }) {
 
   active = { hocuspocus, ws };
   log.info(
-    `${liveEdits ? 'presence + live-edits' : 'presence'} endpoint mounted at ${COLLAB_PATH}`
+    `${liveEdits ? 'presence + live-edits' : 'presence'} endpoint mounted at ${COLLAB_PATH}`,
   );
   return hocuspocus;
 }

@@ -35,7 +35,12 @@ import {
 /**
  * Reorder/add/remove wiring for the images collection.
  */
-function collectionActions({ content, markDirty, rerenderEditor, scheduleUiRefresh }) {
+function collectionActions({
+  content,
+  markDirty,
+  rerenderEditor,
+  scheduleUiRefresh,
+}) {
   const images = content.images;
   const refresh = () => {
     markDirty?.();
@@ -73,7 +78,7 @@ function cellControlButtons({ h, content, i, cellCount, isRow, actions }) {
         text: '↑',
         title: t('editor.gallery.dragToReorder', 'Reorder'),
         onclick: () => actions.swap(i, i - 1),
-      })
+      }),
     );
   }
   if (i < cellCount - 1) {
@@ -84,7 +89,7 @@ function cellControlButtons({ h, content, i, cellCount, isRow, actions }) {
         text: '↓',
         title: t('editor.gallery.dragToReorder', 'Reorder'),
         onclick: () => actions.swap(i, i + 1),
-      })
+      }),
     );
   }
   // Rows above the minimum can drop an image entirely (fewer columns);
@@ -96,9 +101,11 @@ function cellControlButtons({ h, content, i, cellCount, isRow, actions }) {
         class: 'btn btn-secondary btn-icon card-remove-btn',
         text: '×',
         title: t('editor.imageText.removeImage', 'Remove image'),
-        'aria-label': t('editor.imageText.removeImageN', 'Remove image {n}', { n: i + 1 }),
+        'aria-label': t('editor.imageText.removeImageN', 'Remove image {n}', {
+          n: i + 1,
+        }),
         onclick: () => actions.removeImage(i),
-      })
+      }),
     );
   }
   return controls.childNodes.length ? controls : null;
@@ -139,12 +146,20 @@ export function renderImageTextCollectionSection({
   // tab (and the canvas) fully cover it.
   if (cellCount < 2 && !canAdd) return null;
 
-  const actions = collectionActions({ content, markDirty, rerenderEditor, scheduleUiRefresh });
+  const actions = collectionActions({
+    content,
+    markDirty,
+    rerenderEditor,
+    scheduleUiRefresh,
+  });
 
   const wrap = h('div', { class: 'stack' });
   const headerRow = h('div', { class: 'row is-between' });
   headerRow.append(
-    h('div', { class: 'field-label', text: t('editor.imageText.images', 'Images') })
+    h('div', {
+      class: 'field-label',
+      text: t('editor.imageText.images', 'Images'),
+    }),
   );
   if (canAdd) {
     headerRow.append(
@@ -153,7 +168,7 @@ export function renderImageTextCollectionSection({
         class: 'btn btn-secondary btn-sm',
         text: t('editor.imageText.addImage', '+ Add image'),
         onclick: () => actions.addImage(),
-      })
+      }),
     );
   }
   wrap.append(headerRow);
@@ -170,16 +185,23 @@ export function renderImageTextCollectionSection({
             src,
             alt: '',
           })
-        : h('div', { class: 'editor-collection-thumb is-empty' })
+        : h('div', { class: 'editor-collection-thumb is-empty' }),
     );
     left.append(
       h('div', {
         class: 'card-group-title',
         text: t('editor.imageText.imageN', 'Image {n}', { n: i + 1 }),
-      })
+      }),
     );
     rowEl.append(left);
-    const controls = cellControlButtons({ h, content, i, cellCount, isRow, actions });
+    const controls = cellControlButtons({
+      h,
+      content,
+      i,
+      cellCount,
+      isRow,
+      actions,
+    });
     if (controls) rowEl.append(controls);
     wrap.append(rowEl);
   }
@@ -189,9 +211,9 @@ export function renderImageTextCollectionSection({
       class: 'help',
       text: t(
         'editor.imageText.collectionHelp',
-        'Click an image on the slide to edit its alt text, fit and focus.'
+        'Click an image on the slide to edit its alt text, fit and focus.',
       ),
-    })
+    }),
   );
 
   return wrap;

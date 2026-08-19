@@ -11,7 +11,17 @@ import {
   normalizeLang,
   TRANSLATION_LANGS,
 } from '../../../storage/presentations/i18n.js';
-import { requirePermission, v1MethodNotAllowed, withV1ErrorHandler, getPresentationWithAccess, readApiV1Body, checkAiLimit, trackAiRequest, apiSuccess, apiError } from './middleware.js';
+import {
+  requirePermission,
+  v1MethodNotAllowed,
+  withV1ErrorHandler,
+  getPresentationWithAccess,
+  readApiV1Body,
+  checkAiLimit,
+  trackAiRequest,
+  apiSuccess,
+  apiError,
+} from './middleware.js';
 
 // ============================================================
 // ROUTE HANDLERS
@@ -47,21 +57,28 @@ async function handleTranslate(ctx, presentationId) {
   if (!bodyOk) return true;
 
   // Load presentation
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, { access: 'write' });
+  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, {
+    access: 'write',
+  });
   if (!ok) return true;
 
   // Validate target language
   const targetLang = normalizeTranslationLang(body?.targetLang);
   if (!targetLang) {
-    await apiError(ctx, 400, `Invalid targetLang. Supported languages: ${TRANSLATION_LANGS.join(', ')}`);
+    await apiError(
+      ctx,
+      400,
+      `Invalid targetLang. Supported languages: ${TRANSLATION_LANGS.join(', ')}`,
+    );
     return true;
   }
 
   // Initialize i18n structure
   pres.i18n = pres.i18n && typeof pres.i18n === 'object' ? pres.i18n : {};
-  pres.i18n.versions = pres.i18n.versions && typeof pres.i18n.versions === 'object'
-    ? pres.i18n.versions
-    : {};
+  pres.i18n.versions =
+    pres.i18n.versions && typeof pres.i18n.versions === 'object'
+      ? pres.i18n.versions
+      : {};
 
   // Resolve source language
   const sourceLang =
@@ -81,7 +98,8 @@ async function handleTranslate(ctx, presentationId) {
   const vendor = body?.vendor || null;
 
   // Ensure source version exists
-  const dominant = normalizeLang(pres.i18n.dominant) || normalizeLang(sourceLang) || 'nl';
+  const dominant =
+    normalizeLang(pres.i18n.dominant) || normalizeLang(sourceLang) || 'nl';
   pres.i18n.dominant = dominant;
 
   // Only update active if source is a legacy language
@@ -98,19 +116,28 @@ async function handleTranslate(ctx, presentationId) {
 
   // Check if target already exists
   if (pres.i18n.versions[targetLang] && !overwrite && !fillMissing) {
-    await apiError(ctx, 400, `Target language version already exists (${targetLang}). Set overwrite: true to replace it.`);
+    await apiError(
+      ctx,
+      400,
+      `Target language version already exists (${targetLang}). Set overwrite: true to replace it.`,
+    );
     return true;
   }
 
   // Get source content
-  const src = pres.i18n.versions[sourceLang] && typeof pres.i18n.versions[sourceLang] === 'object'
-    ? pres.i18n.versions[sourceLang]
-    : { title: pres.title, slides: pres.slides };
+  const src =
+    pres.i18n.versions[sourceLang] &&
+    typeof pres.i18n.versions[sourceLang] === 'object'
+      ? pres.i18n.versions[sourceLang]
+      : { title: pres.title, slides: pres.slides };
 
   // Get existing target for fillMissing mode
-  const existingTarget = !overwrite && pres.i18n.versions[targetLang] && typeof pres.i18n.versions[targetLang] === 'object'
-    ? pres.i18n.versions[targetLang]
-    : null;
+  const existingTarget =
+    !overwrite &&
+    pres.i18n.versions[targetLang] &&
+    typeof pres.i18n.versions[targetLang] === 'object'
+      ? pres.i18n.versions[targetLang]
+      : null;
 
   // Perform translation (a thrown LLM/status error is answered in the v1
   // envelope by the mount-level withV1ErrorHandler wrap).
@@ -122,11 +149,14 @@ async function handleTranslate(ctx, presentationId) {
       existingTarget,
       fillMissing: !!fillMissing && !overwrite,
       vendor,
-    }
+    },
   );
 
   // Store translation
-  pres.i18n.versions[targetLang] = { title: translated.title, slides: translated.slides };
+  pres.i18n.versions[targetLang] = {
+    title: translated.title,
+    slides: translated.slides,
+  };
 
   // Update translation status
   pres.i18n.translation = pres.i18n.translation || {};
@@ -178,18 +208,18 @@ async function handleListLanguages(ctx) {
  */
 function getLangLabel(code) {
   const labels = {
-    'nl': 'Dutch',
+    nl: 'Dutch',
     'en-GB': 'English (British)',
-    'de': 'German',
-    'fr': 'French',
-    'es': 'Spanish',
-    'pt': 'Portuguese',
-    'it': 'Italian',
-    'pl': 'Polish',
-    'fi': 'Finnish',
-    'da': 'Danish',
-    'sv': 'Swedish',
-    'no': 'Norwegian',
+    de: 'German',
+    fr: 'French',
+    es: 'Spanish',
+    pt: 'Portuguese',
+    it: 'Italian',
+    pl: 'Polish',
+    fi: 'Finnish',
+    da: 'Danish',
+    sv: 'Swedish',
+    no: 'Norwegian',
   };
   return labels[code] || code;
 }
@@ -201,23 +231,26 @@ function getLangLabel(code) {
 /**
  * Main handler for /api/v1/presentations/:id/translate routes.
  */
-export const handleTranslation = withV1ErrorHandler('public-api-v1:translate', async (ctx) => {
-  const { req, res, url } = ctx;
+export const handleTranslation = withV1ErrorHandler(
+  'public-api-v1:translate',
+  async (ctx) => {
+    const { req, res, url } = ctx;
 
-  // GET /api/v1/translate/languages
-  if (url.pathname === '/api/v1/translate/languages') {
-    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-    return handleListLanguages(ctx);
-  }
+    // GET /api/v1/translate/languages
+    if (url.pathname === '/api/v1/translate/languages') {
+      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
+      return handleListLanguages(ctx);
+    }
 
-  // POST /api/v1/presentations/:id/translate
-  const translateMatch = url.pathname.match(
-    /^\/api\/v1\/presentations\/([^/]+)\/translate$/
-  );
-  if (translateMatch) {
-    if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
-    return handleTranslate(ctx, translateMatch[1]);
-  }
+    // POST /api/v1/presentations/:id/translate
+    const translateMatch = url.pathname.match(
+      /^\/api\/v1\/presentations\/([^/]+)\/translate$/,
+    );
+    if (translateMatch) {
+      if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
+      return handleTranslate(ctx, translateMatch[1]);
+    }
 
-  return false;
-});
+    return false;
+  },
+);

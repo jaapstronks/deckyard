@@ -108,6 +108,8 @@ export function buildRevisionUserPrompt(outline, rawContent) {
     lines.push('');
   }
 
-  lines.push('Review this plan against the source and return your operations as JSON.');
+  lines.push(
+    'Review this plan against the source and return your operations as JSON.',
+  );
   return lines.filter((line) => line !== '').join('\n');
 }

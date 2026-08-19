@@ -71,7 +71,9 @@ export function getInspectorKeepKeys(type, def) {
   const keeps = slideTypeInspectorKeeps(type, def);
   if (keeps) return new Set(keeps);
   const inlineCovered = new Set(getInlineFormTextKeys(type, def));
-  const all = (def?.fields || []).map((f) => f.key).filter((k) => !inlineCovered.has(k));
+  const all = (def?.fields || [])
+    .map((f) => f.key)
+    .filter((k) => !inlineCovered.has(k));
   return new Set(all);
 }
 
@@ -103,9 +105,24 @@ function collapsibleGroup(h, title, { open = false } = {}) {
  * @param {Object} ctx - Same context shape as renderSlideFormByType
  */
 export function renderInspectorExtrasByType(ctx) {
-  const { h, form, elementForm, selectedElement, slide, def, add, used, fieldByKey,
-    renderField, deckSlides, fieldRenderers, markDirty, rerenderEditor,
-    rerenderPreview, scheduleUiRefresh } = ctx;
+  const {
+    h,
+    form,
+    elementForm,
+    selectedElement,
+    slide,
+    def,
+    add,
+    used,
+    fieldByKey,
+    renderField,
+    deckSlides,
+    fieldRenderers,
+    markDirty,
+    rerenderEditor,
+    rerenderPreview,
+    scheduleUiRefresh,
+  } = ctx;
 
   // The shared "This image" card for a selected image element — every image
   // type, image-slide and image-text included. Renders into the element tab;
@@ -146,7 +163,8 @@ export function renderInspectorExtrasByType(ctx) {
       // construction — carries the slide-wide settings via the keeps loop,
       // plus the one thing no declaration expresses: the slim image
       // collection (add/reorder/remove, no per-image settings).
-      if (selectedElement?.kind === 'image') renderSelectedImageCard(elementForm);
+      if (selectedElement?.kind === 'image')
+        renderSelectedImageCard(elementForm);
       const collectionSection = renderImageTextCollectionSection({
         h,
         slide,
@@ -167,42 +185,50 @@ export function renderInspectorExtrasByType(ctx) {
       // Per-card icon picker + link: settings the wysiwyg deliberately never
       // covers. With a card selected, only that card's controls render in the
       // element tab; otherwise all cards render in the slide-tab collapsible.
-      const items = Array.isArray(slide.content?.items) ? slide.content.items : [];
+      const items = Array.isArray(slide.content?.items)
+        ? slide.content.items
+        : [];
       if (!items.length) return;
       const { fieldIconPicker } = fieldRenderers || {};
       const renderCard = (item, idx, container) => {
         const group = h('div', { class: 'stack card-group' });
-        group.append(h('div', {
-          class: 'help',
-          text: `${idx + 1}. ${String(item?.title || '').trim() || t('editor.inspector.cardUntitled', 'Untitled card')}`,
-        }));
+        group.append(
+          h('div', {
+            class: 'help',
+            text: `${idx + 1}. ${String(item?.title || '').trim() || t('editor.inspector.cardUntitled', 'Untitled card')}`,
+          }),
+        );
         if (typeof fieldIconPicker === 'function') {
-          group.append(fieldIconPicker(
-            t('editor.cards.icon', 'Icon'),
-            item.icon || '',
-            (v) => {
-              items[idx].icon = v;
+          group.append(
+            fieldIconPicker(
+              t('editor.cards.icon', 'Icon'),
+              item.icon || '',
+              (v) => {
+                items[idx].icon = v;
+                syncIconCardsToNumbered(slide);
+                markDirty?.();
+                scheduleUiRefresh?.();
+              },
+              {},
+            ),
+          );
+        }
+        group.append(
+          fieldCardLink({
+            value: item.link || '',
+            slides: deckSlides,
+            onChange: (v) => {
+              items[idx].link = v;
               syncIconCardsToNumbered(slide);
               markDirty?.();
               scheduleUiRefresh?.();
             },
-            {}
-          ));
-        }
-        group.append(fieldCardLink({
-          value: item.link || '',
-          slides: deckSlides,
-          onChange: (v) => {
-            items[idx].link = v;
-            syncIconCardsToNumbered(slide);
-            markDirty?.();
-            scheduleUiRefresh?.();
-          },
-          help: t(
-            'editor.cards.linkHelp2',
-            'Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).'
-          ),
-        }));
+            help: t(
+              'editor.cards.linkHelp2',
+              'Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).',
+            ),
+          }),
+        );
         container.append(group);
       };
 
@@ -215,7 +241,7 @@ export function renderInspectorExtrasByType(ctx) {
       } else {
         const section = collapsibleGroup(
           h,
-          t('editor.inspector.cardsConfig', 'Card icons & links')
+          t('editor.inspector.cardsConfig', 'Card icons & links'),
         );
         items.forEach((item, idx) => renderCard(item, idx, section.body));
         form.append(section.el);
@@ -243,9 +269,9 @@ export function renderInspectorExtrasByType(ctx) {
             class: 'help',
             text: t(
               'editor.list.sizeSteppedDown',
-              'Large does not fit these items, so they are shown at the default size. Shorten the item text, or use fewer items, to get Large back.'
+              'Large does not fit these items, so they are shown at the default size. Shorten the item text, or use fewer items, to get Large back.',
             ),
-          })
+          }),
         );
       } else if (!twoCol && slide?.content?.layout === 'two-column') {
         // Defensive: the resolver honours an explicit two-column choice, so
@@ -254,8 +280,11 @@ export function renderInspectorExtrasByType(ctx) {
         el.append(
           h('div', {
             class: 'help',
-            text: t('editor.list.oneColumnFallback', 'Shown in one column: two columns do not fit.'),
-          })
+            text: t(
+              'editor.list.oneColumnFallback',
+              'Shown in one column: two columns do not fit.',
+            ),
+          }),
         );
       }
       return;
@@ -269,7 +298,8 @@ export function renderInspectorExtrasByType(ctx) {
     case 'team-cards-slide':
     case 'logo-wall-slide':
     case 'quote-slide':
-      if (selectedElement?.kind === 'image') renderSelectedImageCard(elementForm);
+      if (selectedElement?.kind === 'image')
+        renderSelectedImageCard(elementForm);
       return;
 
     default:

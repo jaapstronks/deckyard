@@ -28,7 +28,10 @@ import {
   COLLAB_DOC_PREFIX,
 } from '../server/collab/auth.js';
 import { deckYdocCodec } from '../server/collab/deck-doc.js';
-import { extractCustomHtml, guardCustomHtml } from '../server/collab/custom-html-guard.js';
+import {
+  extractCustomHtml,
+  guardCustomHtml,
+} from '../server/collab/custom-html-guard.js';
 import { createCollabPersistence } from '../server/collab/persistence.js';
 import { applyServerWriteToActiveDoc } from '../server/collab/live-apply.js';
 import { testScope } from './helpers/storage-scope.js';
@@ -37,20 +40,20 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const {
-  createPresentation,
-  getPresentation,
-  updatePresentation,
-} = await import('../server/storage/presentations/index.js');
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { createPresentation, getPresentation, updatePresentation } =
+  await import('../server/storage/presentations/index.js');
 
 // The collab hooks still take a `repoRoot` for their scope shape; storage
 // ignores it entirely now that PostgreSQL is the only backend.
 const REPO_ROOT = process.cwd();
 
-__setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+__setTestDb(
+  createFakeDb({
+    organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+  }),
+);
 await initializeStorage();
 
 // `closeStorage()` would call `db.destroy()`, which the in-memory double does
@@ -93,7 +96,7 @@ describe('presentationIdFromDocumentName: charset guard (traversal)', () => {
       assert.equal(
         presentationIdFromDocumentName(docName(bad)),
         null,
-        `expected ${JSON.stringify(bad)} to be rejected`
+        `expected ${JSON.stringify(bad)} to be rejected`,
       );
     }
   });
@@ -112,9 +115,18 @@ function customHtmlDeck() {
       id: 'ch1',
       type: 'custom-html-slide',
       notes: '',
-      content: { html: '<p>origineel</p>', css: '.x{color:red}', background: 'lime' },
+      content: {
+        html: '<p>origineel</p>',
+        css: '.x{color:red}',
+        background: 'lime',
+      },
     },
-    { id: 's2', type: 'content-slide', notes: '', content: { title: 'Gewoon', body: '' } },
+    {
+      id: 's2',
+      type: 'content-slide',
+      notes: '',
+      content: { title: 'Gewoon', body: '' },
+    },
   ];
   return { id: 'deck-ch', title: 'CH deck', lang: 'nl', slides };
 }
@@ -141,7 +153,10 @@ describe('guardCustomHtml: reverts non-capable raw HTML/CSS edits', () => {
     c.set('html', '<script>evil</script>');
     c.set('css', 'body{display:none}');
 
-    const { snapshot, reverted } = guardCustomHtml(doc, snap, { allowed: false, Y });
+    const { snapshot, reverted } = guardCustomHtml(doc, snap, {
+      allowed: false,
+      Y,
+    });
     assert.equal(reverted, true);
     assert.equal(chContent(doc, 'ch1').get('html'), '<p>origineel</p>');
     assert.equal(chContent(doc, 'ch1').get('css'), '.x{color:red}');
@@ -154,9 +169,15 @@ describe('guardCustomHtml: reverts non-capable raw HTML/CSS edits', () => {
     const snap = extractCustomHtml(doc, Y);
 
     chContent(doc, 'ch1').set('html', '<p>nieuw en toegestaan</p>');
-    const { snapshot, reverted } = guardCustomHtml(doc, snap, { allowed: true, Y });
+    const { snapshot, reverted } = guardCustomHtml(doc, snap, {
+      allowed: true,
+      Y,
+    });
     assert.equal(reverted, false);
-    assert.equal(chContent(doc, 'ch1').get('html'), '<p>nieuw en toegestaan</p>');
+    assert.equal(
+      chContent(doc, 'ch1').get('html'),
+      '<p>nieuw en toegestaan</p>',
+    );
     assert.equal(snapshot.get('ch1').html, '<p>nieuw en toegestaan</p>');
   });
 
@@ -165,13 +186,24 @@ describe('guardCustomHtml: reverts non-capable raw HTML/CSS edits', () => {
       id: 'd',
       title: 't',
       lang: 'nl',
-      slides: [{ id: 'ch1', type: 'custom-html-slide', notes: '', content: { background: 'lime' } }],
+      slides: [
+        {
+          id: 'ch1',
+          type: 'custom-html-slide',
+          notes: '',
+          content: { background: 'lime' },
+        },
+      ],
     });
     const snap = extractCustomHtml(doc, Y); // html baseline ''
     chContent(doc, 'ch1').set('html', '<p>injected</p>');
     const { reverted } = guardCustomHtml(doc, snap, { allowed: false, Y });
     assert.equal(reverted, true);
-    assert.equal(chContent(doc, 'ch1').has('html'), false, 'added html field removed');
+    assert.equal(
+      chContent(doc, 'ch1').has('html'),
+      false,
+      'added html field removed',
+    );
   });
 
   it('leaves non-markup fields (background) alone for non-capable editors', () => {
@@ -198,7 +230,12 @@ describe('persistence onChange gate (wired end-to-end via a real deck)', () => {
     chId = crypto.randomUUID(); // the facade validates slide ids as uuids
     const pres = await getPresentation(testScope(), deckId);
     pres.slides = [
-      { id: chId, type: 'custom-html-slide', notes: '', content: { html: '<p>ok</p>', css: '', background: 'lime' } },
+      {
+        id: chId,
+        type: 'custom-html-slide',
+        notes: '',
+        content: { html: '<p>ok</p>', css: '', background: 'lime' },
+      },
     ];
     // The facade does not enforce the capability (that's the route's job) —
     // exactly the gap the doc-level gate closes.
@@ -209,11 +246,17 @@ describe('persistence onChange gate (wired end-to-end via a real deck)', () => {
     const log = makeLog();
     const hooks = createCollabPersistence({
       repoRoot: REPO_ROOT,
-      deps: { log, canEditCustomHtmlFn: (u) => u?.email === 'boss@example.com' },
+      deps: {
+        log,
+        canEditCustomHtmlFn: (u) => u?.email === 'boss@example.com',
+      },
     });
 
     const doc = new Y.Doc();
-    await hooks.onLoadDocument({ documentName: docName(deckId), document: doc });
+    await hooks.onLoadDocument({
+      documentName: docName(deckId),
+      document: doc,
+    });
 
     // Non-capable editor injects raw HTML → reverted by onChange.
     chContent(doc, chId).set('html', '<script>steal()</script>');
@@ -222,8 +265,15 @@ describe('persistence onChange gate (wired end-to-end via a real deck)', () => {
       document: doc,
       context: { user: { email: 'intern@example.com', isAdmin: false } },
     });
-    assert.equal(chContent(doc, chId).get('html'), '<p>ok</p>', 'non-capable edit reverted');
-    assert.equal(log.lines.warn.filter((l) => l.includes('canEditCustomHtml')).length, 1);
+    assert.equal(
+      chContent(doc, chId).get('html'),
+      '<p>ok</p>',
+      'non-capable edit reverted',
+    );
+    assert.equal(
+      log.lines.warn.filter((l) => l.includes('canEditCustomHtml')).length,
+      1,
+    );
 
     // Capable editor's edit sticks.
     chContent(doc, chId).set('html', '<p>legit update</p>');
@@ -232,12 +282,24 @@ describe('persistence onChange gate (wired end-to-end via a real deck)', () => {
       document: doc,
       context: { user: { email: 'boss@example.com', isAdmin: false } },
     });
-    assert.equal(chContent(doc, chId).get('html'), '<p>legit update</p>', 'capable edit kept');
+    assert.equal(
+      chContent(doc, chId).get('html'),
+      '<p>legit update</p>',
+      'capable edit kept',
+    );
 
     // Server-origin write (no context.user) is accepted (route-gated already).
     chContent(doc, chId).set('html', '<p>server</p>');
-    hooks.onChange({ documentName: docName(deckId), document: doc, context: {} });
-    assert.equal(chContent(doc, chId).get('html'), '<p>server</p>', 'server write kept');
+    hooks.onChange({
+      documentName: docName(deckId),
+      document: doc,
+      context: {},
+    });
+    assert.equal(
+      chContent(doc, chId).get('html'),
+      '<p>server</p>',
+      'server write kept',
+    );
 
     hooks.afterUnloadDocument({ documentName: docName(deckId) });
   });
@@ -249,7 +311,10 @@ describe('applyServerWriteToActiveDoc: treats loading docs as active', () => {
   function fakeDoc() {
     return { getMap: () => ({ get: () => ({}) }) }; // meta.extra defined
   }
-  function fakeHocuspocus({ documents = new Map(), loadingDocuments = new Map() } = {}) {
+  function fakeHocuspocus({
+    documents = new Map(),
+    loadingDocuments = new Map(),
+  } = {}) {
     let opened = 0;
     return {
       documents,
@@ -272,7 +337,9 @@ describe('applyServerWriteToActiveDoc: treats loading docs as active', () => {
   const pres = { id: 'x', title: 't', slides: [] };
 
   it('applies to a doc that is still loading (not yet in documents)', async () => {
-    const hp = fakeHocuspocus({ loadingDocuments: new Map([[docName('x'), {}]]) });
+    const hp = fakeHocuspocus({
+      loadingDocuments: new Map([[docName('x'), {}]]),
+    });
     const applied = await applyServerWriteToActiveDoc('x', pres, {
       hocuspocus: hp,
       codec,
@@ -311,9 +378,15 @@ describe('onStoreDocument: a failed binary store does not write JSON', () => {
   it('leaves the JSON untouched (no revision bump) and logs the failure', async () => {
     const log = makeLog();
     // Load with a working store to seed the doc, then swap in a failing one.
-    const loader = createCollabPersistence({ repoRoot: REPO_ROOT, deps: { log: makeLog() } });
+    const loader = createCollabPersistence({
+      repoRoot: REPO_ROOT,
+      deps: { log: makeLog() },
+    });
     const doc = new Y.Doc();
-    await loader.onLoadDocument({ documentName: docName(deckId), document: doc });
+    await loader.onLoadDocument({
+      documentName: docName(deckId),
+      document: doc,
+    });
     const before = await getPresentation(testScope(), deckId);
 
     let jsonWriteAttempted = false;
@@ -333,7 +406,10 @@ describe('onStoreDocument: a failed binary store does not write JSON', () => {
 
     const title = doc.getMap('meta').get('title').get('nl');
     title.insert(title.length, ' (edit)');
-    await failing.onStoreDocument({ documentName: docName(deckId), document: doc });
+    await failing.onStoreDocument({
+      documentName: docName(deckId),
+      document: doc,
+    });
 
     assert.equal(jsonWriteAttempted, false, 'must not attempt the JSON write');
     const stored = await getPresentation(testScope(), deckId);

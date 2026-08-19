@@ -85,16 +85,14 @@ globalThis.fetch = async (input, init = {}) => {
 };
 
 const { setFeatures } = await import('../client/lib/state/features.js');
-const { createUsersTab } = await import('../client/views/settings/tabs/users-tab.js');
-const { renderMembersList } = await import(
-  '../client/views/settings/organization-members/member-list.js'
-);
-const { renderOrganizationMembersPanel } = await import(
-  '../client/views/settings/organization-members/panel.js'
-);
-const { createSettingsSidebar } = await import(
-  '../client/views/settings/settings-sidebar.js'
-);
+const { createUsersTab } =
+  await import('../client/views/settings/tabs/users-tab.js');
+const { renderMembersList } =
+  await import('../client/views/settings/organization-members/member-list.js');
+const { renderOrganizationMembersPanel } =
+  await import('../client/views/settings/organization-members/panel.js');
+const { createSettingsSidebar } =
+  await import('../client/views/settings/settings-sidebar.js');
 
 /** The signed-in instance admin, inside organization B. */
 const USER = {
@@ -126,12 +124,12 @@ test('single-organization keeps the instance user list and never asks the organi
 
   assert.ok(
     requested.some((r) => r.includes('/api/admin/users')),
-    'the instance-wide list is still what a single-organization instance shows'
+    'the instance-wide list is still what a single-organization instance shows',
   );
   assert.equal(
     requested.filter((r) => r.includes('/api/organizations/')).length,
     0,
-    'the organization surface is behind the feature flag and answers 403 — do not ask'
+    'the organization surface is behind the feature flag and answers 403 — do not ask',
   );
 });
 
@@ -147,10 +145,13 @@ test('multi-organization asks the active organization for its members', async ()
   assert.equal(
     requested.filter((r) => r.includes('/api/admin/users')).length,
     0,
-    'the instance-wide list is the wrong population here — measurement 2.1'
+    'the instance-wide list is the wrong population here — measurement 2.1',
   );
   // And the answer actually reaches the screen.
-  assert.equal(tab.el.querySelectorAll('.admin-user-card').length, MEMBERS.length);
+  assert.equal(
+    tab.el.querySelectorAll('.admin-user-card').length,
+    MEMBERS.length,
+  );
   assert.match(tab.el.textContent, /designer@example\.com/);
 });
 
@@ -168,7 +169,9 @@ test('the organization on the request is the session’s, not the default one', 
 
 test('a session with no active organization asks nothing and says so', async () => {
   setFeatures({ multiOrganization: true });
-  const panel = renderOrganizationMembersPanel({ user: { email: 'a@example.com' } });
+  const panel = renderOrganizationMembersPanel({
+    user: { email: 'a@example.com' },
+  });
   await panel.ready;
 
   assert.deepEqual(requested, [], 'nothing to ask for');
@@ -202,24 +205,34 @@ function renderList(members, currentUser = USER, options = {}) {
 
 test('every member carries a role', async () => {
   const container = renderList(MEMBERS);
-  const badges = Array.from(container.querySelectorAll('.admin-user-role-badge')).map(
-    (b) => b.textContent
-  );
+  const badges = Array.from(
+    container.querySelectorAll('.admin-user-role-badge'),
+  ).map((b) => b.textContent);
   assert.ok(badges.includes('Owner'));
   assert.ok(badges.includes('Admin'));
   assert.ok(badges.includes('Member'));
 });
 
 test('the designer badge follows the explicit flag, not the role', async () => {
-  const cards = Array.from(renderList(MEMBERS).querySelectorAll('.admin-user-card'));
+  const cards = Array.from(
+    renderList(MEMBERS).querySelectorAll('.admin-user-card'),
+  );
   const designerOn = (card) =>
     Boolean(card.querySelector('.admin-user-role-badge.is-designer'));
 
   // The owner *has* designer capability through their role, but no flag is set
   // on the membership — badging them would show a flag that is not there. Only
   // the member with `isDesigner: true` is badged.
-  assert.equal(designerOn(cards[0]), false, 'owner: capability by role, no flag');
-  assert.equal(designerOn(cards[1]), false, 'admin: capability by role, no flag');
+  assert.equal(
+    designerOn(cards[0]),
+    false,
+    'owner: capability by role, no flag',
+  );
+  assert.equal(
+    designerOn(cards[1]),
+    false,
+    'admin: capability by role, no flag',
+  );
   assert.equal(designerOn(cards[2]), true, 'member: explicit is_designer');
 });
 
@@ -228,9 +241,13 @@ test('the signed-in person is marked in the list', async () => {
   const cards = Array.from(container.querySelectorAll('.admin-user-card'));
   const youOn = (card) =>
     Array.from(card.querySelectorAll('.admin-user-role-badge')).some(
-      (b) => b.textContent === 'You'
+      (b) => b.textContent === 'You',
     );
-  assert.equal(youOn(cards[1]), true, 'admin@example.com is the signed-in user');
+  assert.equal(
+    youOn(cards[1]),
+    true,
+    'admin@example.com is the signed-in user',
+  );
   assert.equal(youOn(cards[0]), false);
 });
 

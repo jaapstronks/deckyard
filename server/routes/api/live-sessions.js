@@ -36,7 +36,10 @@ import {
 import { liveInteractionKind } from '../../../shared/slide-types/runtime.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { dispatchRoutes } from '../../utils/router.js';
-import { getString, getOptionalBoolean } from '../../utils/request-validators.js';
+import {
+  getString,
+  getOptionalBoolean,
+} from '../../utils/request-validators.js';
 
 /**
  * Presenter-only live-session routes.
@@ -58,7 +61,12 @@ import { getString, getOptionalBoolean } from '../../utils/request-validators.js
  * @returns {Promise<Object|null>} the presentation if authorized, or null after
  *   the helper has already sent a 404/401 response.
  */
-async function requirePresentationControl({ storageScope, presentationId, authedUser, res }) {
+async function requirePresentationControl({
+  storageScope,
+  presentationId,
+  authedUser,
+  res,
+}) {
   return withPresentationAuth({
     storageScope,
     id: presentationId,
@@ -70,7 +78,12 @@ async function requirePresentationControl({ storageScope, presentationId, authed
 
 function csvEscapeCell(v) {
   const s = String(v ?? '');
-  if (s.includes('"') || s.includes(',') || s.includes('\n') || s.includes('\r'))
+  if (
+    s.includes('"') ||
+    s.includes(',') ||
+    s.includes('\n') ||
+    s.includes('\r')
+  )
     return `"${s.replace(/"/g, '""')}"`;
   return s;
 }
@@ -109,7 +122,10 @@ async function handleLiveSessionCreate({ storageScope, req, res, authedUser }) {
 // session-existence check answers 404 before the method decision (an unknown
 // session must not learn which methods exist), so the whole path stays one
 // no-method handler (route-dispatch.md, guard-before-method exception).
-async function handleLiveSessionStatePush({ storageScope, req, res, authedUser }, sessionId) {
+async function handleLiveSessionStatePush(
+  { storageScope, req, res, authedUser },
+  sessionId,
+) {
   const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   // GET is capability-based (the session id is the authorization) and is
@@ -135,11 +151,11 @@ async function handleLiveSessionStatePush({ storageScope, req, res, authedUser }
     if (!Number.isFinite(slideIndex))
       return badRequest(res, 'slideIndex must be a number');
     const stepIdxRaw = body?.stepIdx;
-    const stepIdx =
-      stepIdxRaw == null ? undefined : Number(stepIdxRaw ?? NaN);
+    const stepIdx = stepIdxRaw == null ? undefined : Number(stepIdxRaw ?? NaN);
     if (stepIdx != null && !Number.isFinite(stepIdx))
       return badRequest(res, 'stepIdx must be a number');
-    const stepParagraphs = getOptionalBoolean(body, 'stepParagraphs') ?? undefined;
+    const stepParagraphs =
+      getOptionalBoolean(body, 'stepParagraphs') ?? undefined;
     const updatedAt =
       body?.updatedAt != null ? Number(body.updatedAt) : Date.now();
     const next = await updateLiveSessionState(storageScope, sessionId, {
@@ -197,7 +213,12 @@ async function handleLiveSessionStatePush({ storageScope, req, res, authedUser }
 }
 
 // POST /api/live-sessions/:id/interactions/:slideId/(open|close|reset)
-async function handleLiveSessionInteractionAction({ storageScope, res, authedUser }, sessionId, slideId, action) {
+async function handleLiveSessionInteractionAction(
+  { storageScope, res, authedUser },
+  sessionId,
+  slideId,
+  action,
+) {
   const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   // Opening/closing/resetting an interaction is a presenter action.
@@ -219,7 +240,7 @@ async function handleLiveSessionInteractionAction({ storageScope, res, authedUse
   if (kind !== 'feedback' && !optionCount)
     return badRequest(
       res,
-      kind === 'likert' ? 'likert has no options' : 'poll has no options'
+      kind === 'likert' ? 'likert has no options' : 'poll has no options',
     );
 
   // Ensure interaction exists first.
@@ -281,7 +302,8 @@ async function handleLiveSessionInteractionAction({ storageScope, res, authedUse
 
   // Broadcast branch event when closing an interaction with onClose configured
   if (action === 'close' && kind !== 'feedback') {
-    const content = slide?.content || slide?.contentNl || slide?.contentEn || {};
+    const content =
+      slide?.content || slide?.contentNl || slide?.contentEn || {};
     const onClose = String(content?.onClose || 'stay').trim();
     const onCloseTarget = String(content?.onCloseTarget || '').trim();
     if (onClose !== 'stay') {
@@ -299,7 +321,12 @@ async function handleLiveSessionInteractionAction({ storageScope, res, authedUse
 
 // GET /api/live-sessions/:id/feedback/:slideId.(csv|json) - Export feedback
 // (audience PII, deck-write only)
-async function handleLiveSessionFeedbackExport({ storageScope, res, authedUser }, sessionId, slideId, fmt) {
+async function handleLiveSessionFeedbackExport(
+  { storageScope, res, authedUser },
+  sessionId,
+  slideId,
+  fmt,
+) {
   const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   // Feedback entries are audience PII (free text + deviceId) → deck-write only.
@@ -315,7 +342,9 @@ async function handleLiveSessionFeedbackExport({ storageScope, res, authedUser }
   if (liveInteractionKind(String(slide?.type || '')) !== 'feedback')
     return badRequest(res, 'slide is not a feedback slide');
 
-  const entries = await listFeedbackEntries(storageScope, sessionId, { slideId });
+  const entries = await listFeedbackEntries(storageScope, sessionId, {
+    slideId,
+  });
   if (fmt === 'json') {
     serveJson(res, 200, {
       ok: true,
@@ -328,13 +357,9 @@ async function handleLiveSessionFeedbackExport({ storageScope, res, authedUser }
     return true;
   }
 
-  const header = [
-    'slideId',
-    'deviceId',
-    'createdAt',
-    'updatedAt',
-    'text',
-  ].join(',');
+  const header = ['slideId', 'deviceId', 'createdAt', 'updatedAt', 'text'].join(
+    ',',
+  );
   const lines = entries.map((e) =>
     [
       csvEscapeCell(e.slideId),
@@ -342,7 +367,7 @@ async function handleLiveSessionFeedbackExport({ storageScope, res, authedUser }
       csvEscapeCell(new Date(Number(e.createdAt || 0) || 0).toISOString()),
       csvEscapeCell(new Date(Number(e.updatedAt || 0) || 0).toISOString()),
       csvEscapeCell(e.text),
-    ].join(',')
+    ].join(','),
   );
   const body = `${header}\n${lines.join('\n')}\n`;
   const filename = `feedback-${slideId}.csv`;
@@ -356,7 +381,10 @@ async function handleLiveSessionFeedbackExport({ storageScope, res, authedUser }
 }
 
 // POST /api/live-sessions/:id/control/enable - Enable remote control
-async function handleLiveSessionControlEnable({ storageScope, res, authedUser }, sessionId) {
+async function handleLiveSessionControlEnable(
+  { storageScope, res, authedUser },
+  sessionId,
+) {
   const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   const pres = await requirePresentationControl({
@@ -373,7 +401,10 @@ async function handleLiveSessionControlEnable({ storageScope, res, authedUser },
 }
 
 // POST /api/live-sessions/:id/control/disable - Disable remote control
-async function handleLiveSessionControlDisable({ storageScope, res, authedUser }, sessionId) {
+async function handleLiveSessionControlDisable(
+  { storageScope, res, authedUser },
+  sessionId,
+) {
   const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   const pres = await requirePresentationControl({
@@ -390,7 +421,10 @@ async function handleLiveSessionControlDisable({ storageScope, res, authedUser }
 }
 
 // POST /api/live-sessions/:id/control - Send a remote-control command
-async function handleLiveSessionControlCommand({ storageScope, req, res, authedUser }, sessionId) {
+async function handleLiveSessionControlCommand(
+  { storageScope, req, res, authedUser },
+  sessionId,
+) {
   const s = await getLiveSession(storageScope, sessionId);
   if (!s) return notFound(res);
   const pres = await requirePresentationControl({
@@ -403,13 +437,14 @@ async function handleLiveSessionControlCommand({ storageScope, req, res, authedU
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const result = await sendLiveSessionControlCommand(storageScope, sessionId, body);
+  const result = await sendLiveSessionControlCommand(
+    storageScope,
+    sessionId,
+    body,
+  );
   if (!result.ok) {
     if (result.reason === 'disabled')
-      return unauthorized(
-        res,
-        'Remote control is disabled for this session'
-      );
+      return unauthorized(res, 'Remote control is disabled for this session');
     return badRequest(res, `Control failed: ${result.reason}`);
   }
   serveJson(res, 200, { ok: true });
@@ -429,13 +464,41 @@ async function handleLiveSessionControlCommand({ storageScope, req, res, authedU
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'POST', pattern: '/api/live-sessions', handler: handleLiveSessionCreate },
-  { pattern: /^\/api\/live-sessions\/([^/]+)\/state$/, handler: handleLiveSessionStatePush },
-  { method: 'POST', pattern: /^\/api\/live-sessions\/([^/]+)\/interactions\/([^/]+)\/(open|close|reset)$/, handler: handleLiveSessionInteractionAction },
-  { method: 'GET', pattern: /^\/api\/live-sessions\/([^/]+)\/feedback\/([^/]+)\.(csv|json)$/, handler: handleLiveSessionFeedbackExport },
-  { method: 'POST', pattern: /^\/api\/live-sessions\/([^/]+)\/control\/enable$/, handler: handleLiveSessionControlEnable },
-  { method: 'POST', pattern: /^\/api\/live-sessions\/([^/]+)\/control\/disable$/, handler: handleLiveSessionControlDisable },
-  { method: 'POST', pattern: /^\/api\/live-sessions\/([^/]+)\/control$/, handler: handleLiveSessionControlCommand },
+  {
+    method: 'POST',
+    pattern: '/api/live-sessions',
+    handler: handleLiveSessionCreate,
+  },
+  {
+    pattern: /^\/api\/live-sessions\/([^/]+)\/state$/,
+    handler: handleLiveSessionStatePush,
+  },
+  {
+    method: 'POST',
+    pattern:
+      /^\/api\/live-sessions\/([^/]+)\/interactions\/([^/]+)\/(open|close|reset)$/,
+    handler: handleLiveSessionInteractionAction,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/live-sessions\/([^/]+)\/feedback\/([^/]+)\.(csv|json)$/,
+    handler: handleLiveSessionFeedbackExport,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/live-sessions\/([^/]+)\/control\/enable$/,
+    handler: handleLiveSessionControlEnable,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/live-sessions\/([^/]+)\/control\/disable$/,
+    handler: handleLiveSessionControlDisable,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/live-sessions\/([^/]+)\/control$/,
+    handler: handleLiveSessionControlCommand,
+  },
 ];
 
 /**
@@ -445,5 +508,5 @@ export const ROUTES = [
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
 export const handleLiveSessions = withErrorHandler('live-sessions', (ctx) =>
-  dispatchRoutes(ROUTES, ctx)
+  dispatchRoutes(ROUTES, ctx),
 );

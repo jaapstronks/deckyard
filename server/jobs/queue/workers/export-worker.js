@@ -18,7 +18,10 @@ import { loadThemeAssets } from '../../../utils/themes.js';
 import { buildPptxBuffer } from '../../../export/pptx.js';
 import { buildHandoffZipBuffer } from '../../../export/handoff-zip.js';
 import { renderSlidesToPdfBuffer } from '../../../render/pdf.js';
-import { buildNotesDocxBuffer, buildNotesMarkdown } from '../../../export/notes.js';
+import {
+  buildNotesDocxBuffer,
+  buildNotesMarkdown,
+} from '../../../export/notes.js';
 import { buildStandaloneHtml } from '../../../export/html.js';
 import { projectPresentationToLang } from '../../../storage/presentations/i18n.js';
 import { stripLiveOnlySlides } from '../../../export/pipeline.js';
@@ -76,7 +79,10 @@ async function prepareExportContext(job) {
   const { presentationId, lang, stripLiveOnly = true, repoRoot } = job.data;
 
   // Load presentation
-  const pres = await getPresentation(jobScope(job.data, 'export job'), presentationId);
+  const pres = await getPresentation(
+    jobScope(job.data, 'export job'),
+    presentationId,
+  );
   if (!pres) {
     throw new Error('Presentation not found');
   }
@@ -140,34 +146,47 @@ async function processExportJob(job) {
 
   switch (type) {
     case 'pptx': {
-      const result = await buildPptxBuffer(job.data.repoRoot, ctx.filteredPres, {
-        scale,
-        theme: ctx.theme,
-        slideTypes: ctx.slideTypes,
-      });
+      const result = await buildPptxBuffer(
+        job.data.repoRoot,
+        ctx.filteredPres,
+        {
+          scale,
+          theme: ctx.theme,
+          slideTypes: ctx.slideTypes,
+        },
+      );
       buffer = result.buffer;
-      contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+      contentType =
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation';
       extension = '.pptx';
       break;
     }
 
     case 'handoff-zip': {
-      buffer = await buildHandoffZipBuffer(job.data.repoRoot, ctx.filteredPres, {
-        scale,
-        theme: ctx.theme,
-        lang: ctx.lang || '',
-        slideTypes: ctx.slideTypes,
-      });
+      buffer = await buildHandoffZipBuffer(
+        job.data.repoRoot,
+        ctx.filteredPres,
+        {
+          scale,
+          theme: ctx.theme,
+          lang: ctx.lang || '',
+          slideTypes: ctx.slideTypes,
+        },
+      );
       contentType = 'application/zip';
       extension = '-handoff.zip';
       break;
     }
 
     case 'pdf-slides': {
-      buffer = await renderSlidesToPdfBuffer(job.data.repoRoot, ctx.filteredPres, {
-        theme: ctx.theme,
-        slideTypes: ctx.slideTypes,
-      });
+      buffer = await renderSlidesToPdfBuffer(
+        job.data.repoRoot,
+        ctx.filteredPres,
+        {
+          theme: ctx.theme,
+          slideTypes: ctx.slideTypes,
+        },
+      );
       contentType = 'application/pdf';
       extension = '.pdf';
       break;
@@ -176,23 +195,30 @@ async function processExportJob(job) {
     case 'notes-docx': {
       const md = buildNotesMarkdown(ctx.filteredPres, { includeEmpty: true });
       buffer = await buildNotesDocxBuffer(md);
-      contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      contentType =
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
       extension = '-notes.docx';
       break;
     }
 
     case 'notes-md': {
-      buffer = Buffer.from(buildNotesMarkdown(ctx.filteredPres, { includeEmpty: true }));
+      buffer = Buffer.from(
+        buildNotesMarkdown(ctx.filteredPres, { includeEmpty: true }),
+      );
       contentType = 'text/markdown; charset=utf-8';
       extension = '-notes.md';
       break;
     }
 
     case 'html': {
-      const html = await buildStandaloneHtml(job.data.repoRoot, ctx.filteredPres, {
-        theme: ctx.theme,
-        slideTypes: ctx.slideTypes,
-      });
+      const html = await buildStandaloneHtml(
+        job.data.repoRoot,
+        ctx.filteredPres,
+        {
+          theme: ctx.theme,
+          slideTypes: ctx.slideTypes,
+        },
+      );
       buffer = Buffer.from(html);
       contentType = 'text/html; charset=utf-8';
       extension = '.html';
@@ -232,11 +258,7 @@ async function processExportJob(job) {
  * @returns {Promise<Object|null>} Worker instance
  */
 export async function initializeExportWorker() {
-  return registerWorker(
-    QUEUE_NAMES.EXPORT,
-    processExportJob,
-    {
-      concurrency: 2, // Max 2 concurrent exports
-    }
-  );
+  return registerWorker(QUEUE_NAMES.EXPORT, processExportJob, {
+    concurrency: 2, // Max 2 concurrent exports
+  });
 }

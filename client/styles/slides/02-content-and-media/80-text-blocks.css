@@ -140,9 +140,7 @@
 }
 
 /* Single block styling - centered and larger */
-.slide-text-blocks
-  .text-blocks-row[data-count='1']
-  .text-block {
+.slide-text-blocks .text-blocks-row[data-count='1'] .text-block {
   --slide-card-padding: var(--slide-space-10);
   --slide-font-size-card-title: var(--slide-text-xl);
   --slide-font-size-card-body: var(--slide-text-lg);
@@ -151,24 +149,16 @@
 }
 
 /* Three blocks - slightly smaller */
-.slide-text-blocks
-  .text-blocks-row[data-count='3']
-  .text-block {
+.slide-text-blocks .text-blocks-row[data-count='3'] .text-block {
   /* ladder rung: the title stays under the base block title (lg) */
   --slide-font-size-card-title: var(--slide-text-md);
   --slide-font-size-card-body: var(--slide-text-base);
 }
 
 /* Four or more blocks - smaller */
-.slide-text-blocks
-  .text-blocks-row[data-count='4']
-  .text-block,
-.slide-text-blocks
-  .text-blocks-row[data-count='5']
-  .text-block,
-.slide-text-blocks
-  .text-blocks-row[data-count='6']
-  .text-block {
+.slide-text-blocks .text-blocks-row[data-count='4'] .text-block,
+.slide-text-blocks .text-blocks-row[data-count='5'] .text-block,
+.slide-text-blocks .text-blocks-row[data-count='6'] .text-block {
   /* ladder rung: both stay under the 3-block rung (md / base) */
   --slide-font-size-card-title: var(--slide-text-base);
   --slide-font-size-card-body: var(--slide-text-sm);
@@ -204,10 +194,16 @@
   font-size: var(--slide-text-lg);
   margin: 0 0 var(--slide-space-3);
 }
-.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row + .text-blocks-row {
+.slide-text-blocks
+  .text-blocks-content[data-rows='3']
+  .text-blocks-row
+  + .text-blocks-row {
   margin-top: var(--slide-space-5);
 }
-.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row + .text-blocks-row-title {
+.slide-text-blocks
+  .text-blocks-content[data-rows='3']
+  .text-blocks-row
+  + .text-blocks-row-title {
   margin-top: var(--slide-space-5);
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-block {
@@ -220,16 +216,28 @@
 }
 
 /* Compact mode + 3 blocks per row */
-.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='3'] .text-block {
+.slide-text-blocks
+  .text-blocks-content[data-rows='3']
+  .text-blocks-row[data-count='3']
+  .text-block {
   /* ladder rung: the title stays under the 3-row block title (base) */
   --slide-font-size-card-title: var(--slide-text-sm);
   --slide-font-size-card-body: var(--slide-text-sm);
 }
 
 /* Compact mode + 4 or more blocks per row */
-.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='4'] .text-block,
-.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='5'] .text-block,
-.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='6'] .text-block {
+.slide-text-blocks
+  .text-blocks-content[data-rows='3']
+  .text-blocks-row[data-count='4']
+  .text-block,
+.slide-text-blocks
+  .text-blocks-content[data-rows='3']
+  .text-blocks-row[data-count='5']
+  .text-block,
+.slide-text-blocks
+  .text-blocks-content[data-rows='3']
+  .text-blocks-row[data-count='6']
+  .text-block {
   /* ladder rung: the body stays under the 3-row 3-block rung (sm) */
   --slide-font-size-card-title: var(--slide-text-sm);
   --slide-font-size-card-body: var(--slide-text-xs);
@@ -256,10 +264,16 @@
   font-size: var(--slide-text-base);
   margin: 0 0 var(--slide-space-2);
 }
-.slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row + .text-blocks-row {
+.slide-text-blocks
+  .text-blocks-content[data-rows='4']
+  .text-blocks-row
+  + .text-blocks-row {
   margin-top: var(--slide-space-3);
 }
-.slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row + .text-blocks-row-title {
+.slide-text-blocks
+  .text-blocks-content[data-rows='4']
+  .text-blocks-row
+  + .text-blocks-row-title {
   margin-top: var(--slide-space-3);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-block {
@@ -282,11 +296,19 @@
    specificity tie to it (slide-roles.md § Snapping a value to the scale). */
 
 /* Compact 4-row + 4 or more blocks per row */
-.slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='4'] .text-block,
-.slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='5'] .text-block,
-.slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='6'] .text-block {
+.slide-text-blocks
+  .text-blocks-content[data-rows='4']
+  .text-blocks-row[data-count='4']
+  .text-block,
+.slide-text-blocks
+  .text-blocks-content[data-rows='4']
+  .text-blocks-row[data-count='5']
+  .text-block,
+.slide-text-blocks
+  .text-blocks-content[data-rows='4']
+  .text-blocks-row[data-count='6']
+  .text-block {
   /* ladder rung + overflow: the title stays under the 4-row tier (sm) */
   --slide-font-size-card-title: var(--slide-text-xs);
   --slide-font-size-card-body: var(--slide-text-xs);
 }
-

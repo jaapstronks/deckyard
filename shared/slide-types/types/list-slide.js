@@ -1,4 +1,9 @@
-import { bgClass, escapeHtml, renderSubheadingHtml, BACKGROUND_FIELD } from '../helpers.js';
+import {
+  bgClass,
+  escapeHtml,
+  renderSubheadingHtml,
+  BACKGROUND_FIELD,
+} from '../helpers.js';
 import { alignGroup, groupAlignClass } from '../field-groups.js';
 
 /**
@@ -133,7 +138,10 @@ export function resolveListLayout(content) {
   const items = Array.isArray(content?.items) ? content.items : [];
   const len = (v) => (typeof v === 'string' ? v.trim().length : 0);
   const itemCount = items.length;
-  const longestTitle = items.reduce((mx, it) => Math.max(mx, len(it?.title)), 0);
+  const longestTitle = items.reduce(
+    (mx, it) => Math.max(mx, len(it?.title)),
+    0,
+  );
   const longestText = items.reduce((mx, it) => Math.max(mx, len(it?.text)), 0);
   const hasSubheading = len(content?.subheading) > 0;
   const shape = { longestTitle, longestText, hasSubheading };
@@ -370,9 +378,7 @@ export default {
   renderHtml: (content) => {
     const bg = bgClass(content?.background);
     const variant =
-      content?.variant === 'numbers'
-        ? 'is-numbers'
-        : 'is-bullets';
+      content?.variant === 'numbers' ? 'is-numbers' : 'is-bullets';
     // Text size and column count are resolved together, against a measured
     // capacity table — see resolveListLayout above. 'comfortable' (Large)
     // scales titles and text up so a short list fills the slide instead of its
@@ -405,17 +411,13 @@ export default {
     const rowsPerColumn = resolved.twoCol
       ? Math.ceil(resolved.itemCount / 2)
       : resolved.itemCount;
-    const fillClass = rowsPerColumn >= 3 && isSingleLine(resolved) ? ' is-fill' : '';
+    const fillClass =
+      rowsPerColumn >= 3 && isSingleLine(resolved) ? ' is-fill' : '';
     const subheading = renderSubheadingHtml(content, 'subheading', 'subtitle');
-    const items = Array.isArray(content?.items)
-      ? content.items
-      : [];
+    const items = Array.isArray(content?.items) ? content.items : [];
 
     const renderItem = (it, idx) => {
-      const t =
-        typeof it?.title === 'string'
-          ? it.title.trim()
-          : '';
+      const t = typeof it?.title === 'string' ? it.title.trim() : '';
       // Force single-line text (also enforced visually via CSS).
       const x =
         typeof it?.text === 'string'
@@ -454,7 +456,9 @@ export default {
       const leftItems = items.slice(0, midpoint);
       const rightItems = items.slice(midpoint);
       const leftHtml = leftItems.map((it, i) => renderItem(it, i)).join('');
-      const rightHtml = rightItems.map((it, i) => renderItem(it, midpoint + i)).join('');
+      const rightHtml = rightItems
+        .map((it, i) => renderItem(it, midpoint + i))
+        .join('');
       listHtml = `
         <div class="lijst">
           <${listTag} class="lijst-col">${leftHtml}</${listTag}>

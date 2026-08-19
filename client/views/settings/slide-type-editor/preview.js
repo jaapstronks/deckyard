@@ -43,7 +43,10 @@ export function createSlideTypePreview() {
     const template = state?.template || '';
     const css = state?.css || '';
     const fields = Array.isArray(state?.fields) ? state.fields : [];
-    const defaults = state?.defaults && typeof state.defaults === 'object' ? state.defaults : {};
+    const defaults =
+      state?.defaults && typeof state.defaults === 'object'
+        ? state.defaults
+        : {};
 
     if (!template) {
       writeIframe(buildPlaceholderHtml());
@@ -65,24 +68,38 @@ export function createSlideTypePreview() {
     let html = template;
 
     // Handle {{#if key}}...{{/if}}
-    html = html.replace(/\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (_, key, content) => {
-      return sampleData[key] ? content : '';
-    });
+    html = html.replace(
+      /\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g,
+      (_, key, content) => {
+        return sampleData[key] ? content : '';
+      },
+    );
 
     // Handle {{#each key}}...{{/each}}
-    html = html.replace(/\{\{#each\s+(\w+)\}\}([\s\S]*?)\{\{\/each\}\}/g, (_, key, content) => {
-      const items = Array.isArray(sampleData[key]) ? sampleData[key] : [];
-      return items.map(item => {
-        let row = content;
-        if (item && typeof item === 'object') {
-          for (const [k, v] of Object.entries(item)) {
-            row = row.replace(new RegExp(`\\{\\{(?:esc\\s+)?${escapeRegExp(k)}\\}\\}`, 'g'), escapeHtml(String(v ?? '')));
-            row = row.replace(new RegExp(`\\{\\{markdown\\s+${escapeRegExp(k)}\\}\\}`, 'g'), String(v ?? ''));
-          }
-        }
-        return row;
-      }).join('');
-    });
+    html = html.replace(
+      /\{\{#each\s+(\w+)\}\}([\s\S]*?)\{\{\/each\}\}/g,
+      (_, key, content) => {
+        const items = Array.isArray(sampleData[key]) ? sampleData[key] : [];
+        return items
+          .map((item) => {
+            let row = content;
+            if (item && typeof item === 'object') {
+              for (const [k, v] of Object.entries(item)) {
+                row = row.replace(
+                  new RegExp(`\\{\\{(?:esc\\s+)?${escapeRegExp(k)}\\}\\}`, 'g'),
+                  escapeHtml(String(v ?? '')),
+                );
+                row = row.replace(
+                  new RegExp(`\\{\\{markdown\\s+${escapeRegExp(k)}\\}\\}`, 'g'),
+                  String(v ?? ''),
+                );
+              }
+            }
+            return row;
+          })
+          .join('');
+      },
+    );
 
     // Handle {{esc key}}, {{markdown key}}, {{key}}
     html = html.replace(/\{\{(?:esc\s+)?(\w+)\}\}/g, (_, key) => {
@@ -141,13 +158,22 @@ export function createSlideTypePreview() {
 
 function getSampleValue(field) {
   switch (field.type) {
-    case 'string': return field.placeholder || field.label || 'Sample text';
-    case 'markdown': return field.placeholder || `**${field.label || 'Sample'}** content`;
-    case 'image': return '';
-    case 'images': return [];
-    case 'enum': return Array.isArray(field.options) && field.options.length ? field.options[0] : '';
-    case 'items': return [];
-    default: return '';
+    case 'string':
+      return field.placeholder || field.label || 'Sample text';
+    case 'markdown':
+      return field.placeholder || `**${field.label || 'Sample'}** content`;
+    case 'image':
+      return '';
+    case 'images':
+      return [];
+    case 'enum':
+      return Array.isArray(field.options) && field.options.length
+        ? field.options[0]
+        : '';
+    case 'items':
+      return [];
+    default:
+      return '';
   }
 }
 

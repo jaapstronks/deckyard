@@ -104,7 +104,11 @@
   display: inline-block;
   padding: 0 5px;
   border-radius: 4px;
-  background: color-mix(in srgb, hsl(var(--app-accent-primary)) 12%, transparent);
+  background: color-mix(
+    in srgb,
+    hsl(var(--app-accent-primary)) 12%,
+    transparent
+  );
   color: hsl(var(--app-accent-text));
   font-weight: 600;
   font-size: 0.95em;
@@ -809,15 +813,42 @@
   flex-shrink: 0;
 }
 
-.analyze-category-language { background: hsl(210 60% 92%); color: hsl(210 60% 35%); }
-.analyze-category-slide-type { background: hsl(270 60% 92%); color: hsl(270 60% 35%); }
-.analyze-category-visual-balance { background: hsl(45 80% 90%); color: hsl(45 80% 30%); }
-.analyze-category-structure { background: hsl(180 50% 90%); color: hsl(180 50% 30%); }
-.analyze-category-tone { background: hsl(330 60% 92%); color: hsl(330 60% 35%); }
-.analyze-category-spelling { background: hsl(0 60% 92%); color: hsl(0 60% 35%); }
-.analyze-category-brevity { background: hsl(90 50% 90%); color: hsl(90 50% 30%); }
-.analyze-category-logic { background: hsl(30 70% 90%); color: hsl(30 70% 30%); }
-.analyze-category-repetition { background: hsl(150 50% 90%); color: hsl(150 50% 30%); }
+.analyze-category-language {
+  background: hsl(210 60% 92%);
+  color: hsl(210 60% 35%);
+}
+.analyze-category-slide-type {
+  background: hsl(270 60% 92%);
+  color: hsl(270 60% 35%);
+}
+.analyze-category-visual-balance {
+  background: hsl(45 80% 90%);
+  color: hsl(45 80% 30%);
+}
+.analyze-category-structure {
+  background: hsl(180 50% 90%);
+  color: hsl(180 50% 30%);
+}
+.analyze-category-tone {
+  background: hsl(330 60% 92%);
+  color: hsl(330 60% 35%);
+}
+.analyze-category-spelling {
+  background: hsl(0 60% 92%);
+  color: hsl(0 60% 35%);
+}
+.analyze-category-brevity {
+  background: hsl(90 50% 90%);
+  color: hsl(90 50% 30%);
+}
+.analyze-category-logic {
+  background: hsl(30 70% 90%);
+  color: hsl(30 70% 30%);
+}
+.analyze-category-repetition {
+  background: hsl(150 50% 90%);
+  color: hsl(150 50% 30%);
+}
 
 .analyze-suggestion-body {
   color: var(--text-muted, #666);

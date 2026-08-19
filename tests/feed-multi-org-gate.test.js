@@ -36,13 +36,21 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const { createFakeDb, touchedTables } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { handleFeed } = await import('../server/routes/feed.js');
-const { injectFeedDiscovery } = await import('../server/routes/static/app-shell.js');
+const { injectFeedDiscovery } =
+  await import('../server/routes/static/app-shell.js');
 
 // An org that *would* serve a feed if it were reachable — RSS enabled — so a 404
 // here can only be the multi-organization gate, never a missing/disabled org.
 function installDb() {
   const db = createFakeDb({
-    organizations: [{ id: ORG, name: 'Alpha', slug: 'alpha', settings: { rss: { enabled: true } } }],
+    organizations: [
+      {
+        id: ORG,
+        name: 'Alpha',
+        slug: 'alpha',
+        settings: { rss: { enabled: true } },
+      },
+    ],
   });
   __setTestDb(db);
   return db;
@@ -81,7 +89,7 @@ for (const [pathname, format] of [
     assert.equal(res.statusCode, 404, 'the feed 404s under multi-organization');
     assert.ok(
       !touchedTables(db).includes('organizations'),
-      'the 404 came from the gate, before any organization was resolved'
+      'the 404 came from the gate, before any organization was resolved',
     );
   });
 }
@@ -92,10 +100,10 @@ test('injectFeedDiscovery omits the autodiscovery links under multi-organization
 
   assert.ok(
     !html.includes('rel="alternate"'),
-    'no feed <link> is advertised under multi-organization'
+    'no feed <link> is advertised under multi-organization',
   );
   assert.ok(
     !touchedTables(db).includes('organizations'),
-    'discovery short-circuits before resolving an organization'
+    'discovery short-circuits before resolving an organization',
   );
 });

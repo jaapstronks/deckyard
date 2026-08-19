@@ -34,7 +34,7 @@ export function createExportTab({ user }) {
     class: 'settings-tab-description',
     text: t(
       'settings.export.description',
-      'Download a backup of your presentations and related data as a ZIP archive.'
+      'Download a backup of your presentations and related data as a ZIP archive.',
     ),
   });
 
@@ -44,7 +44,7 @@ export function createExportTab({ user }) {
     h('div', {
       class: 'field-label',
       text: t('settings.export.optionsTitle', 'Export options'),
-    })
+    }),
   );
 
   const hint = h('div', {
@@ -52,7 +52,7 @@ export function createExportTab({ user }) {
     style: 'margin-bottom: var(--ps-space-3);',
     text: t(
       'settings.export.optionsHint',
-      'All your presentations are always included. Select additional data to include:'
+      'All your presentations are always included. Select additional data to include:',
     ),
   });
   optionsCard.append(hint);
@@ -64,7 +64,8 @@ export function createExportTab({ user }) {
     const id = `export-opt-${key}`;
     const text = h('span', {}, [
       h('span', {
-        style: 'font-size: var(--ps-text-sm); color: hsl(var(--app-text-primary));',
+        style:
+          'font-size: var(--ps-text-sm); color: hsl(var(--app-text-primary));',
         text: label,
       }),
       h('div', {
@@ -87,22 +88,34 @@ export function createExportTab({ user }) {
     createCheckbox(
       'includeVersions',
       t('settings.export.versions', 'Version history'),
-      t('settings.export.versionsDesc', 'Saved snapshots and autosaves for each presentation.')
+      t(
+        'settings.export.versionsDesc',
+        'Saved snapshots and autosaves for each presentation.',
+      ),
     ),
     createCheckbox(
       'includeImageLibrary',
       t('settings.export.imageLibrary', 'Image library'),
-      t('settings.export.imageLibraryDesc', 'Shared image library metadata and referenced images.')
+      t(
+        'settings.export.imageLibraryDesc',
+        'Shared image library metadata and referenced images.',
+      ),
     ),
     createCheckbox(
       'includeSlideLibrary',
       t('settings.export.slideLibrary', 'Slide library'),
-      t('settings.export.slideLibraryDesc', 'Personal and team saved slide templates.')
+      t(
+        'settings.export.slideLibraryDesc',
+        'Personal and team saved slide templates.',
+      ),
     ),
     createCheckbox(
       'includeThemes',
       t('settings.export.themes', 'Custom themes'),
-      t('settings.export.themesDesc', 'Organization theme configurations and logos.')
+      t(
+        'settings.export.themesDesc',
+        'Organization theme configurations and logos.',
+      ),
     ),
   );
   optionsCard.append(checkboxList);
@@ -177,7 +190,7 @@ export function createExportTab({ user }) {
     content: optionsCard,
     message: t(
       'sandbox.settings.export',
-      'Data export is off in the sandbox — your work here is temporary. In your own Deckyard you can download a full backup of your presentations and library.'
+      'Data export is off in the sandbox — your work here is temporary. In your own Deckyard you can download a full backup of your presentations and library.',
     ),
   });
 
@@ -187,13 +200,32 @@ export function createExportTab({ user }) {
   let sseSource = null;
 
   function getProgressText(pct) {
-    if (pct < 15) return t('settings.export.progress.collecting', 'Collecting presentations...');
-    if (pct < 35) return t('settings.export.progress.versions', 'Collecting version history...');
-    if (pct < 45) return t('settings.export.progress.images', 'Collecting image library...');
-    if (pct < 50) return t('settings.export.progress.slides', 'Collecting slide library...');
-    if (pct < 55) return t('settings.export.progress.themes', 'Collecting themes...');
-    if (pct < 85) return t('settings.export.progress.downloading', 'Downloading images...');
-    if (pct < 95) return t('settings.export.progress.building', 'Building ZIP archive...');
+    if (pct < 15)
+      return t(
+        'settings.export.progress.collecting',
+        'Collecting presentations...',
+      );
+    if (pct < 35)
+      return t(
+        'settings.export.progress.versions',
+        'Collecting version history...',
+      );
+    if (pct < 45)
+      return t(
+        'settings.export.progress.images',
+        'Collecting image library...',
+      );
+    if (pct < 50)
+      return t(
+        'settings.export.progress.slides',
+        'Collecting slide library...',
+      );
+    if (pct < 55)
+      return t('settings.export.progress.themes', 'Collecting themes...');
+    if (pct < 85)
+      return t('settings.export.progress.downloading', 'Downloading images...');
+    if (pct < 95)
+      return t('settings.export.progress.building', 'Building ZIP archive...');
     return t('settings.export.progress.finishing', 'Finishing up...');
   }
 
@@ -223,13 +255,19 @@ export function createExportTab({ user }) {
 
     const parts = [];
     if (stats?.presentations != null) {
-      parts.push(t('settings.export.presentationCount', '{count} presentation(s)', { count: stats.presentations }));
+      parts.push(
+        t('settings.export.presentationCount', '{count} presentation(s)', {
+          count: stats.presentations,
+        }),
+      );
     }
     if (stats?.size) {
       parts.push(formatBytes(stats.size));
     }
     downloadHint.textContent = parts.length
-      ? t('settings.export.readySummary', 'Ready: {summary}', { summary: parts.join(', ') })
+      ? t('settings.export.readySummary', 'Ready: {summary}', {
+          summary: parts.join(', '),
+        })
       : '';
 
     downloadBtn.onclick = () => {
@@ -261,10 +299,7 @@ export function createExportTab({ user }) {
         stopPolling();
         progressFill.style.width = '100%';
         statusText.textContent = t('settings.export.done', 'Export complete!');
-        showDownload(
-          status.downloadUrl || downloadUrl,
-          status.result,
-        );
+        showDownload(status.downloadUrl || downloadUrl, status.result);
         return;
       }
 
@@ -273,7 +308,7 @@ export function createExportTab({ user }) {
         setExporting(false);
         toast.error(
           t('settings.export.failed', 'Export failed. Please try again.'),
-          { id: 'bulk-export' }
+          { id: 'bulk-export' },
         );
         return;
       }
@@ -297,14 +332,14 @@ export function createExportTab({ user }) {
     currentJobId = jobId;
     setExporting(true);
     progressFill.style.width = '0%';
-    statusText.textContent = t('settings.export.progress.collecting', 'Collecting presentations...');
+    statusText.textContent = t(
+      'settings.export.progress.collecting',
+      'Collecting presentations...',
+    );
 
     // Poll immediately, then on interval
     pollJobStatus(jobId, downloadUrl);
-    pollInterval = setInterval(
-      () => pollJobStatus(jobId, downloadUrl),
-      2000
-    );
+    pollInterval = setInterval(() => pollJobStatus(jobId, downloadUrl), 2000);
   }
 
   /**
@@ -314,7 +349,9 @@ export function createExportTab({ user }) {
     if (sseSource) return;
 
     try {
-      sseSource = new EventSource('/api/notifications/events', { withCredentials: true });
+      sseSource = new EventSource('/api/notifications/events', {
+        withCredentials: true,
+      });
 
       sseSource.addEventListener('notification:new', (e) => {
         try {
@@ -324,7 +361,10 @@ export function createExportTab({ user }) {
             const downloadUrl = `/api/jobs/${notif.data.jobId}/download`;
             stopPolling();
             progressFill.style.width = '100%';
-            statusText.textContent = t('settings.export.done', 'Export complete!');
+            statusText.textContent = t(
+              'settings.export.done',
+              'Export complete!',
+            );
             showDownload(downloadUrl, {
               size: notif.data.size,
             });
@@ -362,7 +402,10 @@ export function createExportTab({ user }) {
 
     setExporting(true);
     progressFill.style.width = '0%';
-    statusText.textContent = t('settings.export.starting', 'Starting export...');
+    statusText.textContent = t(
+      'settings.export.starting',
+      'Starting export...',
+    );
     downloadSection.style.display = 'none';
 
     try {
@@ -390,8 +433,11 @@ export function createExportTab({ user }) {
       const msg = String(err?.message || err);
       if (err?.code === 'export_in_progress') {
         toast.error(
-          t('settings.export.alreadyRunning', 'An export is already in progress.'),
-          { id: 'bulk-export' }
+          t(
+            'settings.export.alreadyRunning',
+            'An export is already in progress.',
+          ),
+          { id: 'bulk-export' },
         );
       } else {
         toast.error(msg, { id: 'bulk-export' });
@@ -402,8 +448,11 @@ export function createExportTab({ user }) {
   cancelBtn.addEventListener('click', () => {
     reset();
     toast.info(
-      t('settings.export.hiddenNotice', 'Progress hidden. The export continues in the background — you\'ll be notified when it\'s ready.'),
-      { id: 'bulk-export', durationMs: 4000 }
+      t(
+        'settings.export.hiddenNotice',
+        "Progress hidden. The export continues in the background — you'll be notified when it's ready.",
+      ),
+      { id: 'bulk-export', durationMs: 4000 },
     );
   });
 

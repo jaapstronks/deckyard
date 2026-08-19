@@ -1,4 +1,8 @@
-import { hasLangVersion, normalizeLang, otherLang } from '../../../lib/format/i18n.js';
+import {
+  hasLangVersion,
+  normalizeLang,
+  otherLang,
+} from '../../../lib/format/i18n.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { openDescriptionModal } from '../modals/description-modal.js';
@@ -122,7 +126,7 @@ export async function doPublish({
       title: t('editor.publish.publish', 'Publish'),
       message: t(
         'editor.publish.confirm',
-        'Publish?\n\nThis makes the presentation publicly accessible to anyone with the link.'
+        'Publish?\n\nThis makes the presentation publicly accessible to anyone with the link.',
       ),
       confirmLabel: t('editor.publish.publish', 'Publish'),
     });
@@ -131,9 +135,7 @@ export async function doPublish({
 
   const first = pres?.slides?.[0];
   if (!first)
-    throw new Error(
-      t('editor.publish.noSlides', 'No slides to publish')
-    );
+    throw new Error(t('editor.publish.noSlides', 'No slides to publish'));
 
   // Hint about missing alt text on image-based slides (non-blocking, but recommended).
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
@@ -154,7 +156,7 @@ export async function doPublish({
     const msg = t(
       'editor.publish.missingAltConfirm',
       'Warning: these slides contain an image without alt text: {slides}\n\nPublish anyway?',
-      { slides: missingAlt.join(', ') }
+      { slides: missingAlt.join(', ') },
     );
     const ok = await confirmModal(h, root, {
       title: t('editor.publish.missingAltTitle', 'Missing alt text'),
@@ -180,9 +182,9 @@ export async function doPublish({
         toast.info(
           t(
             'editor.publish.rssFeedNotice',
-            'This presentation will appear in your public RSS feed. You can exclude it in Deck Settings.'
+            'This presentation will appear in your public RSS feed. You can exclude it in Deck Settings.',
           ),
-          { id: 'publish-rss-notice', durationMs: 5200 }
+          { id: 'publish-rss-notice', durationMs: 5200 },
         );
       }
     } catch {
@@ -195,13 +197,12 @@ export async function doPublish({
     body: JSON.stringify({}),
   });
 
-  const currentLang =
-    activeLang || normalizeLang(pres?.i18n?.active) || 'nl';
+  const currentLang = activeLang || normalizeLang(pres?.i18n?.active) || 'nl';
   const other = otherLang(currentLang);
   const hasOther = hasLangVersion(pres, other);
 
   const url = `${location.origin}${pub.path}?lang=${encodeURIComponent(
-    currentLang
+    currentLang,
   )}`;
   const urlOther = hasOther
     ? `${location.origin}${pub.path}?lang=${encodeURIComponent(other)}`

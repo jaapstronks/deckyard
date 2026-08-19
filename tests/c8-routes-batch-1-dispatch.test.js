@@ -17,11 +17,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ROUTES as SLIDE_TYPES_ROUTES, handleSlideTypes } from '../server/routes/api/slide-types.js';
-import { ROUTES as ASSETS_ROUTES, handleAssets } from '../server/routes/api/assets.js';
-import { ROUTES as TAGS_ROUTES, handleTags } from '../server/routes/api/tags.js';
-import { ROUTES as PUBLISH_ROUTES, handlePublish } from '../server/routes/api/publish.js';
-import { ROUTES as COLLAB_ROUTES, handleCollaborators } from '../server/routes/api/collaborators.js';
+import {
+  ROUTES as SLIDE_TYPES_ROUTES,
+  handleSlideTypes,
+} from '../server/routes/api/slide-types.js';
+import {
+  ROUTES as ASSETS_ROUTES,
+  handleAssets,
+} from '../server/routes/api/assets.js';
+import {
+  ROUTES as TAGS_ROUTES,
+  handleTags,
+} from '../server/routes/api/tags.js';
+import {
+  ROUTES as PUBLISH_ROUTES,
+  handlePublish,
+} from '../server/routes/api/publish.js';
+import {
+  ROUTES as COLLAB_ROUTES,
+  handleCollaborators,
+} from '../server/routes/api/collaborators.js';
 
 /**
  * Mirror of `dispatchRoutes`' matching, but returning the matched route instead
@@ -64,14 +79,26 @@ function suite(name, spec) {
     for (const [method, path, handlerName] of spec.served) {
       const route = select(spec.routes, method, path);
       assert.ok(route, `${method} ${path} matches a route`);
-      assert.equal(route.handler.name, handlerName, `${method} ${path} → ${handlerName}`);
+      assert.equal(
+        route.handler.name,
+        handlerName,
+        `${method} ${path} → ${handlerName}`,
+      );
     }
   });
 
   test(`${name}: a wrong or unowned method falls through (no 405)`, async () => {
     for (const [method, path] of spec.falls) {
-      assert.equal(select(spec.routes, method, path), null, `${method} ${path} matches nothing`);
-      assert.equal(await spec.handle(ctx(method, path)), false, `${method} ${path} not handled`);
+      assert.equal(
+        select(spec.routes, method, path),
+        null,
+        `${method} ${path} matches nothing`,
+      );
+      assert.equal(
+        await spec.handle(ctx(method, path)),
+        false,
+        `${method} ${path} not handled`,
+      );
     }
   });
 
@@ -90,7 +117,10 @@ suite('slide-types', {
   routes: SLIDE_TYPES_ROUTES,
   handle: handleSlideTypes,
   served: [['GET', '/api/slide-types', 'handleSlideTypeList']],
-  falls: [['POST', '/api/slide-types'], ['DELETE', '/api/slide-types']],
+  falls: [
+    ['POST', '/api/slide-types'],
+    ['DELETE', '/api/slide-types'],
+  ],
 });
 
 suite('assets', {
@@ -100,7 +130,10 @@ suite('assets', {
     ['GET', '/api/assets/partnerlogos', 'handlePartnerLogos'],
     ['GET', '/api/assets/backgrounds', 'handleBackgrounds'],
   ],
-  falls: [['POST', '/api/assets/partnerlogos'], ['PUT', '/api/assets/backgrounds']],
+  falls: [
+    ['POST', '/api/assets/partnerlogos'],
+    ['PUT', '/api/assets/backgrounds'],
+  ],
 });
 
 suite('tags', {
@@ -126,7 +159,11 @@ suite('publish', {
     ['POST', '/api/presentations/deck1/publish', 'handlePublishCreate'],
     ['DELETE', '/api/presentations/deck1/publish', 'handlePublishDelete'],
     ['PATCH', '/api/presentations/deck1/publish/slug', 'handlePublishSlug'],
-    ['POST', '/api/presentations/deck1/preview/regenerate', 'handlePreviewRegenerate'],
+    [
+      'POST',
+      '/api/presentations/deck1/preview/regenerate',
+      'handlePreviewRegenerate',
+    ],
   ],
   falls: [
     ['GET', '/api/presentations/deck1/publish'],
@@ -142,8 +179,16 @@ suite('collaborators', {
     ['GET', '/api/presentations/shared-with-me', 'handleSharedWithMe'],
     ['POST', '/api/presentations/deck1/collaborators', 'handleCollaboratorAdd'],
     ['GET', '/api/presentations/deck1/collaborators', 'handleCollaboratorList'],
-    ['DELETE', '/api/presentations/deck1/collaborators/a%40b.test', 'handleCollaboratorRemove'],
-    ['PATCH', '/api/presentations/deck1/collaborators/a%40b.test', 'handleCollaboratorUpdate'],
+    [
+      'DELETE',
+      '/api/presentations/deck1/collaborators/a%40b.test',
+      'handleCollaboratorRemove',
+    ],
+    [
+      'PATCH',
+      '/api/presentations/deck1/collaborators/a%40b.test',
+      'handleCollaboratorUpdate',
+    ],
   ],
   falls: [
     ['POST', '/api/presentations/shared-with-me'],

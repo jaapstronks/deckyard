@@ -49,7 +49,12 @@ const STOCK_MAX_BYTES = 20 * 1024 * 1024; // 20MB for stock media (GIFs can be l
  * @param {string} contentType - MIME type
  * @returns {Promise<string>} Local URL path
  */
-export async function writeUploadedFile(repoRoot, buffer, filename, contentType) {
+export async function writeUploadedFile(
+  repoRoot,
+  buffer,
+  filename,
+  contentType,
+) {
   if (!MIME_TO_EXT[contentType]) {
     throw new ValidationError(`Unsupported image type: ${contentType}`);
   }
@@ -83,15 +88,21 @@ export async function replaceUploadFromDataUrl(repoRoot, targetUrl, dataUrl) {
     throw new ValidationError('Invalid upload filename');
   }
 
-  const ext = filename.includes('.') ? filename.split('.').pop().toLowerCase() : '';
+  const ext = filename.includes('.')
+    ? filename.split('.').pop().toLowerCase()
+    : '';
   const allowedMimes = EXT_TO_MIMES[ext] || null;
   if (!allowedMimes) {
-    throw new ValidationError(`Unsupported upload extension: ${ext || '(none)'}`);
+    throw new ValidationError(
+      `Unsupported upload extension: ${ext || '(none)'}`,
+    );
   }
 
   const { mime, base64 } = parseDataUrl(dataUrl);
   if (!allowedMimes.includes(mime)) {
-    throw new ValidationError(`Replacement type mismatch: ${mime} does not match .${ext}`);
+    throw new ValidationError(
+      `Replacement type mismatch: ${mime} does not match .${ext}`,
+    );
   }
 
   let buf = Buffer.from(base64, 'base64');

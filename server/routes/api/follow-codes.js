@@ -13,9 +13,21 @@
  * Table order mirrors the old branch order exactly.
  */
 
-import { createFollowCode, resolveFollowCode } from '../../storage/follow-codes.js';
+import {
+  createFollowCode,
+  resolveFollowCode,
+} from '../../storage/follow-codes.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
-import { badRequest, methodNotAllowed, requireJsonBody, serveJson, serverError, unauthorized, rateLimited, withErrorHandler } from '../../utils/http.js';
+import {
+  badRequest,
+  methodNotAllowed,
+  requireJsonBody,
+  serveJson,
+  serverError,
+  unauthorized,
+  rateLimited,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { getClientIp } from '../../utils/context.js';
 import { allowRequest } from '../../utils/rate-limit.js';
 import { FOLLOW_CODE_LIMITS } from '../../config/rate-limits.js';
@@ -36,7 +48,12 @@ async function handleFollowCodeCreate({ storageScope, req, res, authedUser }) {
 
   // Rate limit by IP
   const clientIp = getClientIp(req) || 'unknown';
-  if (!(await allowRequest(`follow-codes:create:${clientIp}`, FOLLOW_CODE_LIMITS.create))) {
+  if (
+    !(await allowRequest(
+      `follow-codes:create:${clientIp}`,
+      FOLLOW_CODE_LIMITS.create,
+    ))
+  ) {
     rateLimited(res, 3600, 'Too many requests. Please try again later.');
     return true;
   }
@@ -76,7 +93,12 @@ async function handleFollowCodeCreate({ storageScope, req, res, authedUser }) {
 async function handleFollowCodeResolve({ repoRoot, req, res }, codeParam) {
   // Rate limit resolution to prevent brute-force enumeration
   const clientIp = getClientIp(req) || 'unknown';
-  if (!(await allowRequest(`follow-codes:resolve:${clientIp}`, FOLLOW_CODE_LIMITS.resolve))) {
+  if (
+    !(await allowRequest(
+      `follow-codes:resolve:${clientIp}`,
+      FOLLOW_CODE_LIMITS.resolve,
+    ))
+  ) {
     rateLimited(res, 3600, 'Too many requests. Please try again later.');
     return true;
   }
@@ -87,8 +109,11 @@ async function handleFollowCodeResolve({ repoRoot, req, res }, codeParam) {
   // An unexpected throw here is infrastructure failing, not the caller's
   // request: it falls through to the withErrorHandler wrapper as a 500.
   const followUrl = await resolveFollowCode(
-    crossOrganizationScope(repoRoot, 'follow code resolve: the typed code is the authorization'),
-    code
+    crossOrganizationScope(
+      repoRoot,
+      'follow code resolve: the typed code is the authorization',
+    ),
+    code,
   );
 
   if (!followUrl) {
@@ -121,9 +146,16 @@ const RESOLVE_PATTERN = /^\/api\/follow-codes\/([A-Z]{4,6})$/i;
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'POST', pattern: '/api/follow-codes', handler: handleFollowCodeCreate },
+  {
+    method: 'POST',
+    pattern: '/api/follow-codes',
+    handler: handleFollowCodeCreate,
+  },
   { method: 'GET', pattern: RESOLVE_PATTERN, handler: handleFollowCodeResolve },
-  { pattern: /^\/api\/follow-codes(?:\/.*)?$/, handler: (ctx) => methodNotAllowed(ctx.res, ['GET', 'POST']) },
+  {
+    pattern: /^\/api\/follow-codes(?:\/.*)?$/,
+    handler: (ctx) => methodNotAllowed(ctx.res, ['GET', 'POST']),
+  },
 ];
 
 /**
@@ -145,7 +177,7 @@ export const PUBLIC_ROUTES = [
  * @param {import('../../utils/context.js').PublicContext & { authedUser: null }} ctx
  */
 export const handleFollowCodesPublic = withErrorHandler('follow-codes', (ctx) =>
-  dispatchRoutes(PUBLIC_ROUTES, ctx)
+  dispatchRoutes(PUBLIC_ROUTES, ctx),
 );
 
 /**
@@ -157,6 +189,8 @@ export const handleFollowCodesPublic = withErrorHandler('follow-codes', (ctx) =>
  */
 export const handleFollowCodes = withErrorHandler('follow-codes', (ctx) => {
   if (!ctx.url.pathname.startsWith('/api/follow-codes')) return false;
-  log.info(`[Follow Codes] Handler called: ${ctx.req.method} ${ctx.url.pathname}`);
+  log.info(
+    `[Follow Codes] Handler called: ${ctx.req.method} ${ctx.url.pathname}`,
+  );
   return dispatchRoutes(ROUTES, ctx);
 });

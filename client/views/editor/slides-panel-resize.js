@@ -45,12 +45,18 @@ export function createSlidesPanelResize({ h, panelEl, isSlidesCollapsed }) {
 
   const applyWidth = (w) => {
     const clamped = Math.max(MIN_WIDTH, Math.min(maxWidth(), w));
-    document.documentElement.style.setProperty('--slides-panel-width', `${clamped}px`);
+    document.documentElement.style.setProperty(
+      '--slides-panel-width',
+      `${clamped}px`,
+    );
     // Calculate thumb scale: panel width minus padding, borders, and scrollbar gutter divided by slide width (1600)
     // List padding: 8px each side = 16px, Thumb border: 1px each side = 2px, Scrollbar gutter: ~15px
     const thumbWidth = clamped - 16 - 2 - 15;
     const thumbScale = thumbWidth / 1600;
-    document.documentElement.style.setProperty('--slides-thumb-scale', thumbScale.toFixed(4));
+    document.documentElement.style.setProperty(
+      '--slides-thumb-scale',
+      thumbScale.toFixed(4),
+    );
     return clamped;
   };
 

@@ -25,7 +25,9 @@ export const up = async (db) => {
     // hex of 32 random bytes = 64 chars.
     .addColumn('token', 'varchar(64)', (col) => col.notNull())
     .addColumn('expires_at', 'timestamptz', (col) => col.notNull())
-    .addColumn('created_at', 'timestamptz', (col) => col.notNull().defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .execute();
 
   // Sweep index for expired-token cleanup.
@@ -37,6 +39,9 @@ export const up = async (db) => {
 };
 
 export const down = async (db) => {
-  await db.schema.dropIndex('idx_gdpr_verification_tokens_expiry').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_gdpr_verification_tokens_expiry')
+    .ifExists()
+    .execute();
   await db.schema.dropTable('gdpr_verification_tokens').ifExists().execute();
 };

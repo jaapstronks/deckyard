@@ -19,7 +19,10 @@ import {
   groupAlignClass,
 } from '../shared/slide-types/field-groups.js';
 import { resolveFieldDef } from '../shared/slide-types/field-lookup.js';
-import { fieldAlignAffordance, fieldAllowedAlignValues } from '../shared/slide-types/text-roles.js';
+import {
+  fieldAlignAffordance,
+  fieldAllowedAlignValues,
+} from '../shared/slide-types/text-roles.js';
 import { TEXT_ALIGN_VALUES } from '../shared/slide-types/text-styles.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
@@ -29,7 +32,13 @@ const DEF = {
     { key: 'title', group: 'title-block' },
     { key: 'subheading', group: 'title-block' },
     { key: 'caption', role: 'caption' },
-    { key: 'items', itemFields: [{ key: 'text', role: 'list-item' }, { key: 'label', group: 'title-block' }] },
+    {
+      key: 'items',
+      itemFields: [
+        { key: 'text', role: 'list-item' },
+        { key: 'label', group: 'title-block' },
+      ],
+    },
     { key: 'blockAlign', type: 'enum', options: ['left', 'center'] },
   ],
   fieldGroups: [
@@ -84,29 +93,62 @@ describe('field-groups: declaration readers', () => {
 
 describe('field-groups: alignment resolution', () => {
   it('offers the declared values, falling back to the full vocabulary', () => {
-    assert.deepEqual(groupAlignValues(getFieldGroup(DEF, 'title-block')), ['left', 'center']);
+    assert.deepEqual(groupAlignValues(getFieldGroup(DEF, 'title-block')), [
+      'left',
+      'center',
+    ]);
     assert.deepEqual(groupAlignValues({ id: 'g' }), TEXT_ALIGN_VALUES);
     assert.deepEqual(groupAlignValues(getFieldGroup(DEF, 'absent')), []);
   });
 
   it('drops values the vocabulary does not know', () => {
-    assert.deepEqual(groupAlignValues({ id: 'g', align: ['left', 'diagonal'] }), ['left']);
+    assert.deepEqual(
+      groupAlignValues({ id: 'g', align: ['left', 'diagonal'] }),
+      ['left'],
+    );
   });
 
   it('an all-junk align list falls back rather than offering nothing', () => {
-    assert.deepEqual(groupAlignValues({ id: 'g', align: ['diagonal'] }), TEXT_ALIGN_VALUES);
+    assert.deepEqual(
+      groupAlignValues({ id: 'g', align: ['diagonal'] }),
+      TEXT_ALIGN_VALUES,
+    );
   });
 
   it('resolveGroupAlign reads the content key and validates it', () => {
-    assert.equal(resolveGroupAlign(getFieldGroup(DEF, 'title-block'), { blockAlign: 'center' }), 'center');
-    assert.equal(resolveGroupAlign(getFieldGroup(DEF, 'title-block'), { blockAlign: 'right' }), 'left');
-    assert.equal(resolveGroupAlign(getFieldGroup(DEF, 'title-block'), {}), 'left');
-    assert.equal(resolveGroupAlign(getFieldGroup(DEF, 'title-block'), null), 'left');
-    assert.equal(resolveGroupAlign(getFieldGroup(DEF, 'absent'), { blockAlign: 'center' }), 'left');
+    assert.equal(
+      resolveGroupAlign(getFieldGroup(DEF, 'title-block'), {
+        blockAlign: 'center',
+      }),
+      'center',
+    );
+    assert.equal(
+      resolveGroupAlign(getFieldGroup(DEF, 'title-block'), {
+        blockAlign: 'right',
+      }),
+      'left',
+    );
+    assert.equal(
+      resolveGroupAlign(getFieldGroup(DEF, 'title-block'), {}),
+      'left',
+    );
+    assert.equal(
+      resolveGroupAlign(getFieldGroup(DEF, 'title-block'), null),
+      'left',
+    );
+    assert.equal(
+      resolveGroupAlign(getFieldGroup(DEF, 'absent'), { blockAlign: 'center' }),
+      'left',
+    );
   });
 
   it('a defaultAlign outside the offered set falls back to the first offered', () => {
-    const odd = { id: 'g', alignKey: 'k', align: ['center'], defaultAlign: 'left' };
+    const odd = {
+      id: 'g',
+      alignKey: 'k',
+      align: ['center'],
+      defaultAlign: 'left',
+    };
     assert.equal(resolveGroupAlign(odd, {}), 'center');
   });
 });
@@ -114,21 +156,40 @@ describe('field-groups: alignment resolution', () => {
 describe('field-groups: root class', () => {
   it('emits nothing for the default value, so untouched markup is unchanged', () => {
     assert.equal(groupAlignClass(getFieldGroup(DEF, 'title-block'), {}), '');
-    assert.equal(groupAlignClass(getFieldGroup(DEF, 'title-block'), { blockAlign: 'left' }), '');
+    assert.equal(
+      groupAlignClass(getFieldGroup(DEF, 'title-block'), {
+        blockAlign: 'left',
+      }),
+      '',
+    );
   });
 
   it('emits <alignClass>-<value> for a non-default value', () => {
-    assert.equal(groupAlignClass(getFieldGroup(DEF, 'title-block'), { blockAlign: 'center' }), 'is-align-center');
+    assert.equal(
+      groupAlignClass(getFieldGroup(DEF, 'title-block'), {
+        blockAlign: 'center',
+      }),
+      'is-align-center',
+    );
   });
 
   it('honours a custom class prefix and falls back to is-align', () => {
     const custom = { id: 'g', alignKey: 'k', alignClass: 'is-caption-align' };
-    assert.equal(groupAlignClass(custom, { k: 'center' }), 'is-caption-align-center');
-    assert.equal(groupAlignClass({ id: 'g', alignKey: 'k' }, { k: 'center' }), 'is-align-center');
+    assert.equal(
+      groupAlignClass(custom, { k: 'center' }),
+      'is-caption-align-center',
+    );
+    assert.equal(
+      groupAlignClass({ id: 'g', alignKey: 'k' }, { k: 'center' }),
+      'is-align-center',
+    );
   });
 
   it('an unknown group contributes no class', () => {
-    assert.equal(groupAlignClass(getFieldGroup(DEF, 'absent'), { blockAlign: 'center' }), '');
+    assert.equal(
+      groupAlignClass(getFieldGroup(DEF, 'absent'), { blockAlign: 'center' }),
+      '',
+    );
   });
 });
 
@@ -164,7 +225,10 @@ describe('fieldAlignAffordance: one resolver, three owners', () => {
 
   it('fieldAllowedAlignValues stays the derived view, so the renderer gates for free', () => {
     assert.deepEqual(fieldAllowedAlignValues(DEF.fields, 'title'), []);
-    assert.deepEqual(fieldAllowedAlignValues(DEF.fields, 'caption'), TEXT_ALIGN_VALUES);
+    assert.deepEqual(
+      fieldAllowedAlignValues(DEF.fields, 'caption'),
+      TEXT_ALIGN_VALUES,
+    );
   });
 });
 
@@ -175,7 +239,8 @@ describe('every real slide type declares coherent groups', () => {
       if (f && typeof f.group === 'string' && f.group.trim()) {
         out.push({ group: f.group.trim(), where: `${where}.${f.key}` });
       }
-      if (f && Array.isArray(f.itemFields)) collectGroups(f.itemFields, out, `${where}.${f.key}[]`);
+      if (f && Array.isArray(f.itemFields))
+        collectGroups(f.itemFields, out, `${where}.${f.key}[]`);
     }
   }
 
@@ -185,7 +250,10 @@ describe('every real slide type declares coherent groups', () => {
       collectGroups(def?.fields, used, type);
       const declared = new Set(getFieldGroups(def).map((g) => g?.id));
       for (const { group, where } of used) {
-        assert.ok(declared.has(group), `${where}: group '${group}' is not in fieldGroups`);
+        assert.ok(
+          declared.has(group),
+          `${where}: group '${group}' is not in fieldGroups`,
+        );
       }
     }
   });
@@ -198,16 +266,25 @@ describe('every real slide type declares coherent groups', () => {
       for (const group of getFieldGroups(def)) {
         const where = `${type}.fieldGroups.${group?.id}`;
         assert.ok(group?.id, `${type}: a fieldGroups entry has no id`);
-        assert.ok(usedIds.has(group.id), `${where}: declared but no field joins it`);
+        assert.ok(
+          usedIds.has(group.id),
+          `${where}: declared but no field joins it`,
+        );
         assert.equal(
           typeof group.alignKey,
           'string',
-          `${where}: needs an alignKey naming the content field that stores the value`
+          `${where}: needs an alignKey naming the content field that stores the value`,
         );
         const values = groupAlignValues(group);
-        assert.ok(values.length >= 2, `${where}: a group offering fewer than two values is not a choice`);
+        assert.ok(
+          values.length >= 2,
+          `${where}: a group offering fewer than two values is not a choice`,
+        );
         for (const v of values) {
-          assert.ok(TEXT_ALIGN_VALUES.includes(v), `${where}: '${v}' is not a valid align value`);
+          assert.ok(
+            TEXT_ALIGN_VALUES.includes(v),
+            `${where}: '${v}' is not a valid align value`,
+          );
         }
       }
     }
@@ -218,13 +295,22 @@ describe('every real slide type declares coherent groups', () => {
       for (const group of getFieldGroups(def)) {
         const where = `${type}.fieldGroups.${group?.id}`;
         const field = resolveFieldDef(def?.fields, group?.alignKey);
-        assert.ok(field, `${where}: alignKey '${group?.alignKey}' is not a declared field`);
-        assert.equal(field.type, 'enum', `${where}: alignKey field must be an enum`);
-        const options = (field.options || []).map((o) => (typeof o === 'string' ? o : o?.value));
+        assert.ok(
+          field,
+          `${where}: alignKey '${group?.alignKey}' is not a declared field`,
+        );
+        assert.equal(
+          field.type,
+          'enum',
+          `${where}: alignKey field must be an enum`,
+        );
+        const options = (field.options || []).map((o) =>
+          typeof o === 'string' ? o : o?.value,
+        );
         assert.deepEqual(
           options,
           groupAlignValues(group),
-          `${where}: enum options and group align values must match`
+          `${where}: enum options and group align values must match`,
         );
       }
     }

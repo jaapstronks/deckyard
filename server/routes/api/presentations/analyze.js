@@ -49,7 +49,7 @@ function sendSSE(res, event, data) {
  */
 export async function handlePresentationAnalyze(
   { storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
@@ -66,7 +66,9 @@ export async function handlePresentationAnalyze(
   // once the 200 + event-stream headers are out there is no way back to a 400.
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
   if (!parsed.ok) return true;
-  const categories = Array.isArray(parsed.body?.categories) ? parsed.body.categories : null;
+  const categories = Array.isArray(parsed.body?.categories)
+    ? parsed.body.categories
+    : null;
 
   const stream = openSseStream(req, res);
   if (!stream.ok) return true;
@@ -79,7 +81,10 @@ export async function handlePresentationAnalyze(
 
   try {
     // Run analysis
-    sendSSE(res, 'progress', { phase: 'analyzing', slideCount: pres.slides?.length || 0 });
+    sendSSE(res, 'progress', {
+      phase: 'analyzing',
+      slideCount: pres.slides?.length || 0,
+    });
 
     const result = await analyzePresentation(pres, {
       categories,
@@ -91,7 +96,10 @@ export async function handlePresentationAnalyze(
     const { suggestions } = result;
 
     if (suggestions.length === 0) {
-      sendSSE(res, 'complete', { suggestionCount: 0, message: 'No suggestions found' });
+      sendSSE(res, 'complete', {
+        suggestionCount: 0,
+        message: 'No suggestions found',
+      });
       res.end();
       return true;
     }

@@ -18,9 +18,16 @@ import { createCurationThumbnail } from './curation-thumbnails.js';
  * @param {Function} ctx.duplicateCoreType - (typeKey, meta) => open editor
  */
 export function openTypePreview(type, allTypesList, ctx) {
-  const { slideTypeMeta, disabledTypes, curationSection, theme, saveCuration, duplicateCoreType } = ctx;
+  const {
+    slideTypeMeta,
+    disabledTypes,
+    curationSection,
+    theme,
+    saveCuration,
+    duplicateCoreType,
+  } = ctx;
 
-  let currentIdx = allTypesList.findIndex(entry => entry.type === type);
+  let currentIdx = allTypesList.findIndex((entry) => entry.type === type);
   if (currentIdx < 0) currentIdx = 0;
 
   // Backdrop
@@ -74,7 +81,9 @@ export function openTypePreview(type, allTypesList, ctx) {
   const footer = h('div', { class: 'slide-type-preview-footer' });
   const toggleLabel = h('label', { class: 'slide-type-preview-toggle' });
   const toggleCheckbox = h('input', { type: 'checkbox' });
-  const toggleText = h('span', { text: t('settings.slideTypes.enabledInPicker', 'Enabled in picker') });
+  const toggleText = h('span', {
+    text: t('settings.slideTypes.enabledInPicker', 'Enabled in picker'),
+  });
   toggleLabel.append(toggleCheckbox, toggleText);
 
   toggleCheckbox.addEventListener('change', () => {
@@ -85,7 +94,9 @@ export function openTypePreview(type, allTypesList, ctx) {
       disabledTypes.add(entry.type);
     }
     // Sync grid card
-    const gridCard = curationSection.querySelector(`[data-type="${entry.type}"]`);
+    const gridCard = curationSection.querySelector(
+      `[data-type="${entry.type}"]`,
+    );
     if (gridCard) {
       gridCard.classList.toggle('is-disabled', !toggleCheckbox.checked);
       const gridToggle = gridCard.querySelector('input[type="checkbox"]');
@@ -97,7 +108,10 @@ export function openTypePreview(type, allTypesList, ctx) {
   const dupBtn = h('button', {
     class: 'btn btn-secondary btn-sm',
     type: 'button',
-    text: t('settings.slideTypes.duplicateAsCustom', 'Duplicate as custom type'),
+    text: t(
+      'settings.slideTypes.duplicateAsCustom',
+      'Duplicate as custom type',
+    ),
     onclick: () => {
       const entry = allTypesList[currentIdx];
       const meta = slideTypeMeta[entry.type];
@@ -122,21 +136,36 @@ export function openTypePreview(type, allTypesList, ctx) {
 
     stage.innerHTML = '';
     stage.append(
-      createCurationThumbnail(entry.type, 'slide-type-preview-thumb', theme, slideTypeMeta)
+      createCurationThumbnail(
+        entry.type,
+        'slide-type-preview-thumb',
+        theme,
+        slideTypeMeta,
+      ),
     );
 
     toggleCheckbox.checked = !disabledTypes.has(entry.type);
   }
 
   function navigate(delta) {
-    currentIdx = (currentIdx + delta + allTypesList.length) % allTypesList.length;
+    currentIdx =
+      (currentIdx + delta + allTypesList.length) % allTypesList.length;
     renderCurrent();
   }
 
   function onKeyDown(e) {
-    if (e.key === 'Escape') { close(); e.preventDefault(); }
-    if (e.key === 'ArrowLeft') { navigate(-1); e.preventDefault(); }
-    if (e.key === 'ArrowRight') { navigate(1); e.preventDefault(); }
+    if (e.key === 'Escape') {
+      close();
+      e.preventDefault();
+    }
+    if (e.key === 'ArrowLeft') {
+      navigate(-1);
+      e.preventDefault();
+    }
+    if (e.key === 'ArrowRight') {
+      navigate(1);
+      e.preventDefault();
+    }
   }
 
   function close() {

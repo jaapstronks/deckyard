@@ -34,12 +34,22 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
 
 const ALLOWLIST = [
-  { file: 'server/utils/logger.js', reason: 'the logger implementation itself' },
-  { file: 'server/utils/debug-log.js', reason: 'logger family: DEBUG_LOG-gated raw output is the contract' },
-  { file: 'server/db/migrate.js', reason: 'CLI output for a human running migrations' },
+  {
+    file: 'server/utils/logger.js',
+    reason: 'the logger implementation itself',
+  },
+  {
+    file: 'server/utils/debug-log.js',
+    reason: 'logger family: DEBUG_LOG-gated raw output is the contract',
+  },
+  {
+    file: 'server/db/migrate.js',
+    reason: 'CLI output for a human running migrations',
+  },
   {
     file: 'server/server.js',
-    reason: 'boot banners (pre/at-listen fatals and warnings) go to stdout unadorned; shutdown logs through createLogger',
+    reason:
+      'boot banners (pre/at-listen fatals and warnings) go to stdout unadorned; shutdown logs through createLogger',
     count: 8,
   },
 ];
@@ -53,7 +63,8 @@ const CONSOLE_CALL =
 // guard with its opening brace on the same line. A braceless or differently
 // shaped guard is NOT masked — the brace-balancing below would otherwise run
 // past the guard and mask unrelated code.
-const CLI_TAIL_GUARD = /if\s*\(\s*process\.argv\[1\]\?\.endsWith\(.*\)\s*\{\s*$/;
+const CLI_TAIL_GUARD =
+  /if\s*\(\s*process\.argv\[1\]\?\.endsWith\(.*\)\s*\{\s*$/;
 
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -101,7 +112,8 @@ function consoleCallLines(file) {
     const trimmed = line.trimStart();
     // Skip comment-only lines so documentation mentioning console is fine.
     if (trimmed.startsWith('//') || trimmed.startsWith('*')) return;
-    if (CONSOLE_CALL.test(line)) hits.push({ line: i + 1, text: trimmed.trim() });
+    if (CONSOLE_CALL.test(line))
+      hits.push({ line: i + 1, text: trimmed.trim() });
   });
   return hits;
 }
@@ -120,7 +132,7 @@ test('no bare console.* under server/ (log through createLogger)', () => {
       if (hits.length !== entry.count) {
         violations.push(
           `${rel}: ${hits.length} raw console sites, allowlist pins ${entry.count} — ` +
-            'use createLogger() for new logging, or re-pin with a reason'
+            'use createLogger() for new logging, or re-pin with a reason',
         );
       }
       continue;
@@ -131,7 +143,7 @@ test('no bare console.* under server/ (log through createLogger)', () => {
   assert.equal(
     violations.length,
     0,
-    `Use createLogger() instead of console.* in server code:\n  ${violations.join('\n  ')}`
+    `Use createLogger() instead of console.* in server code:\n  ${violations.join('\n  ')}`,
   );
 });
 
@@ -139,7 +151,7 @@ test('the allowlist only names files that still exist', () => {
   for (const { file } of ALLOWLIST) {
     assert.ok(
       fs.existsSync(path.join(repoRoot, file)),
-      `Stale allowlist entry: ${file} no longer exists — remove it.`
+      `Stale allowlist entry: ${file} no longer exists — remove it.`,
     );
   }
 });
@@ -164,6 +176,6 @@ test('createLogger namespaces are kebab-case', () => {
   assert.equal(
     bad.length,
     0,
-    `Logger namespaces must be kebab-case:\n  ${bad.join('\n  ')}`
+    `Logger namespaces must be kebab-case:\n  ${bad.join('\n  ')}`,
   );
 });

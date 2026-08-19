@@ -14,7 +14,10 @@
 import { api } from '../../lib/api.js';
 import { toast } from '../../lib/dom/toast.js';
 import { h } from '../../lib/dom.js';
-import { attachThumbScale, attachThumbScaleContain } from '../../lib/slide-runtime/thumb-scale.js';
+import {
+  attachThumbScale,
+  attachThumbScaleContain,
+} from '../../lib/slide-runtime/thumb-scale.js';
 import {
   cleanupSlideRuntimes,
   mountSlideInto,
@@ -76,7 +79,10 @@ import { createResponsiveDrawers } from './responsive-drawers.js';
 import { createEditorStateUpdater } from '../../lib/state/editor-state.js';
 import { createEditorDropdowns } from './editor-dropdowns.js';
 import { createEditorCleanupRegistry } from './editor-cleanup.js';
-import { isPresentationAuthor, isSlideLockedForUser } from '../../lib/slide-authoring/slide-lock-authz.js';
+import {
+  isPresentationAuthor,
+  isSlideLockedForUser,
+} from '../../lib/slide-authoring/slide-lock-authz.js';
 import { createUndoManager } from '../../lib/state/undo-manager.js';
 import { createUndoActions } from './slide-list/undo-actions.js';
 import { createSlideUpdateHandler } from './slide-update-handler.js';
@@ -104,7 +110,11 @@ export async function createEditorController({
   // not attached (changes arrive through the doc) and slide locks are not
   // acquired (CRDT merging replaces edit exclusivity; presence shows who is
   // where). With the flag off, every one of those paths is untouched.
-  const liveEditsActive = !!(features.collab && features.collabLiveEdits && user?.email);
+  const liveEditsActive = !!(
+    features.collab &&
+    features.collabLiveEdits &&
+    user?.email
+  );
   let liveEdits = null; // handle from ./live-edits/index.js (dynamic import)
   let liveEditsHadEarlyEdits = false;
 
@@ -234,11 +244,23 @@ export async function createEditorController({
         shell?.classList?.toggle?.('is-slide-locked', isLocked);
         shell?.classList?.toggle?.('is-author-locked-slide', authorLocked);
         if (currentSlideIsLocked) {
-          const bannerText = t('editor.slideLocked.banner', 'This slide is being edited by someone else');
-          shell?.style?.setProperty?.('--slide-locked-banner-text', `"${bannerText}"`);
+          const bannerText = t(
+            'editor.slideLocked.banner',
+            'This slide is being edited by someone else',
+          );
+          shell?.style?.setProperty?.(
+            '--slide-locked-banner-text',
+            `"${bannerText}"`,
+          );
         } else if (authorLocked) {
-          const bannerText = t('editor.authorLocked.banner', 'This slide is locked by the author');
-          shell?.style?.setProperty?.('--slide-locked-banner-text', `"${bannerText}"`);
+          const bannerText = t(
+            'editor.authorLocked.banner',
+            'This slide is locked by the author',
+          );
+          shell?.style?.setProperty?.(
+            '--slide-locked-banner-text',
+            `"${bannerText}"`,
+          );
         }
       } catch {
         // ignore
@@ -246,7 +268,11 @@ export async function createEditorController({
     },
     onLockFailed: ({ slideId, lock }) => {
       const name = lock?.holderName || lock?.holderEmail || 'another user';
-      toast?.warn?.(t('editor.slideLocked.toast', 'This slide is being edited by {name}', { name }));
+      toast?.warn?.(
+        t('editor.slideLocked.toast', 'This slide is being edited by {name}', {
+          name,
+        }),
+      );
     },
   });
 
@@ -256,7 +282,8 @@ export async function createEditorController({
   // state, not stylesheets. The server enforces the same rules (423).
   const getSlideLockKind = (slideId) => {
     if (isSlideAuthorLockedForUser(slideId)) return 'author';
-    if (!liveEditsActive && slideLockManager.isLockedByOther?.(slideId)) return 'other';
+    if (!liveEditsActive && slideLockManager.isLockedByOther?.(slideId))
+      return 'other';
     return null;
   };
 
@@ -284,10 +311,18 @@ export async function createEditorController({
       shell?.classList?.toggle?.('is-author-locked-slide', authorLocked);
       shell?.classList?.toggle?.('is-slide-locked', authorLocked);
       if (authorLocked) {
-        const bannerText = t('editor.authorLocked.banner', 'This slide is locked by the author');
-        shell?.style?.setProperty?.('--slide-locked-banner-text', `"${bannerText}"`);
+        const bannerText = t(
+          'editor.authorLocked.banner',
+          'This slide is locked by the author',
+        );
+        shell?.style?.setProperty?.(
+          '--slide-locked-banner-text',
+          `"${bannerText}"`,
+        );
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     // Acquire lock on the newly selected slide (not in live-edit mode:
     // concurrent editing is the point, presence covers awareness)
     if (!liveEditsActive) slideLockManager.onSlideSelected(v).catch(() => {});
@@ -295,7 +330,8 @@ export async function createEditorController({
     commentsPanel?.onSlideChanged?.();
   };
 
-  const { openOverlayClosers, closeAll: closeAllOverlays } = createOverlayRegistry();
+  const { openOverlayClosers, closeAll: closeAllOverlays } =
+    createOverlayRegistry();
   let conflictModalShown = false;
 
   // ============================================================
@@ -330,15 +366,33 @@ export async function createEditorController({
     onRemoteMerge: ({ changedSlideIds } = {}) => {
       // The server merged our save with another editor's changes and we
       // adopted their slides locally — reflect that in the UI.
-      try { rerenderSlideList(); } catch { /* ignore */ }
-      try { rerenderPreview(); } catch { /* ignore */ }
-      if (Array.isArray(changedSlideIds) && changedSlideIds.includes(selectedSlideId)) {
-        try { rerenderEditor(); } catch { /* ignore */ }
+      try {
+        rerenderSlideList();
+      } catch {
+        /* ignore */
+      }
+      try {
+        rerenderPreview();
+      } catch {
+        /* ignore */
+      }
+      if (
+        Array.isArray(changedSlideIds) &&
+        changedSlideIds.includes(selectedSlideId)
+      ) {
+        try {
+          rerenderEditor();
+        } catch {
+          /* ignore */
+        }
       }
       if (changedSlideIds?.length) {
         const mergedIds = [...changedSlideIds];
         toast.info(
-          t('editor.save.remoteMerged', 'Changes from another editor were merged in'),
+          t(
+            'editor.save.remoteMerged',
+            'Changes from another editor were merged in',
+          ),
           {
             id: 'remote-update',
             durationMs: 8000,
@@ -352,14 +406,26 @@ export async function createEditorController({
                   changedSlideIds: mergedIds,
                   onJumpToSlide: (sid) => {
                     setSelectedSlideIdWithLock(sid);
-                    try { rerenderSlideList(); } catch { /* ignore */ }
-                    try { rerenderEditor(); } catch { /* ignore */ }
-                    try { rerenderPreview(); } catch { /* ignore */ }
+                    try {
+                      rerenderSlideList();
+                    } catch {
+                      /* ignore */
+                    }
+                    try {
+                      rerenderEditor();
+                    } catch {
+                      /* ignore */
+                    }
+                    try {
+                      rerenderPreview();
+                    } catch {
+                      /* ignore */
+                    }
                   },
                   openOverlayClosers,
                 }),
             },
-          }
+          },
         );
       }
     },
@@ -502,8 +568,12 @@ export async function createEditorController({
       markDirty,
       editorState,
     });
-  const performUndo = liveEditsActive ? () => !!liveEdits?.undo() : performSnapshotUndo;
-  const performRedo = liveEditsActive ? () => !!liveEdits?.redo() : performSnapshotRedo;
+  const performUndo = liveEditsActive
+    ? () => !!liveEdits?.undo()
+    : performSnapshotUndo;
+  const performRedo = liveEditsActive
+    ? () => !!liveEdits?.redo()
+    : performSnapshotRedo;
   const canUndo = liveEditsActive
     ? () => !!liveEdits?.canUndo()
     : () => undoManager.canUndo();
@@ -536,23 +606,22 @@ export async function createEditorController({
   // Deck-overview + AI-review openers and the slide-jump they share. The
   // renderers and slide-list element are bound later, so they're passed as
   // indirections read at call time.
-  const { openDeckOverview, openAiDeckReview } =
-    createDeckReviewOpeners({
-      h,
-      root,
-      api,
-      pres,
-      theme,
-      SLIDE_TYPES,
-      openOverlayClosers,
-      editorState,
-      nav,
-      setSelectedSlideId: setSelectedSlideIdWithLock,
-      rerenderSlideList: () => rerenderSlideList(),
-      rerenderEditor: () => rerenderEditor(),
-      rerenderPreview: () => rerenderPreview(),
-      getSlideListEl: () => slideListEl,
-    });
+  const { openDeckOverview, openAiDeckReview } = createDeckReviewOpeners({
+    h,
+    root,
+    api,
+    pres,
+    theme,
+    SLIDE_TYPES,
+    openOverlayClosers,
+    editorState,
+    nav,
+    setSelectedSlideId: setSelectedSlideIdWithLock,
+    rerenderSlideList: () => rerenderSlideList(),
+    rerenderEditor: () => rerenderEditor(),
+    rerenderPreview: () => rerenderPreview(),
+    getSlideListEl: () => slideListEl,
+  });
 
   // ============================================================
   // TOPBAR
@@ -585,7 +654,8 @@ export async function createEditorController({
     // live doc (null/undefined handles fall back to the server fetch).
     collabLanguage: liveEditsActive
       ? {
-          loadLanguageVersion: (lang) => liveEdits?.projectLanguage(lang) || null,
+          loadLanguageVersion: (lang) =>
+            liveEdits?.projectLanguage(lang) || null,
         }
       : null,
     // Defined later in this controller; the button is only clickable afterwards.
@@ -617,7 +687,9 @@ export async function createEditorController({
       });
       cleanup.register('presenceLock', detachPresenceLock);
     },
-    setLockStateCallback: (fn) => { setLockStateCallbackFn = fn; },
+    setLockStateCallback: (fn) => {
+      setLockStateCallbackFn = fn;
+    },
     onOpenOverview: openDeckOverview,
     onAnalyze: () => {
       openAnalyzeModalImpl({
@@ -644,10 +716,17 @@ export async function createEditorController({
       return (isReadOnly, lockInfo) => {
         readOnlyController.setLockReadOnly(isReadOnly);
         if (isReadOnly && !wasReadOnly && lockInfo) {
-          const who = lockInfo.holderName || lockInfo.holderEmail || t('editor.readOnly.someone', 'someone else');
+          const who =
+            lockInfo.holderName ||
+            lockInfo.holderEmail ||
+            t('editor.readOnly.someone', 'someone else');
           toast.info(
-            t('editor.readOnly.toast', 'This presentation is being edited by {who}. You can view but not edit.', { who }),
-            { id: 'editor-read-only', durationMs: 6000 }
+            t(
+              'editor.readOnly.toast',
+              'This presentation is being edited by {who}. You can view but not edit.',
+              { who },
+            ),
+            { id: 'editor-read-only', durationMs: 6000 },
           );
         }
         wasReadOnly = isReadOnly;
@@ -700,7 +779,9 @@ export async function createEditorController({
     setSelectedSlideIds: (ids) => {
       selectedSlideIds = ids instanceof Set ? ids : new Set(ids);
     },
-    clearMultiSelection: () => { selectedSlideIds = new Set(); },
+    clearMultiSelection: () => {
+      selectedSlideIds = new Set();
+    },
     openOverlayClosers,
     openAiAppendWizardModal,
     openDeckOverview,
@@ -708,14 +789,23 @@ export async function createEditorController({
       document.documentElement.classList.contains('is-slides-collapsed'),
     setSlidesCollapsed: (collapsed) => {
       slidesCollapsedPref.set(collapsed);
-      try { rerenderSlideList(); } catch { /* ignore */ }
+      try {
+        rerenderSlideList();
+      } catch {
+        /* ignore */
+      }
     },
     isAuthor,
   });
 
   cleanup.register('slidesPanel', slidesPanel.detach);
 
-  const { leftEl: left, slideListEl, openSlideTypeModal, openSlideLibraryModal } = slidesPanel;
+  const {
+    leftEl: left,
+    slideListEl,
+    openSlideTypeModal,
+    openSlideLibraryModal,
+  } = slidesPanel;
 
   // ============================================================
   // INSPECTOR PANEL (rail with swappable panes)
@@ -829,13 +919,19 @@ export async function createEditorController({
         try {
           const active = slideListEl?.querySelector?.('.list-item.is-active');
           active?.scrollIntoView?.({ block: 'nearest' });
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       });
     },
     notesStripEl: notesStrip.el,
   });
 
-  const { previewEl: preview, thumbEl: thumb, slideBarEl: slideBar } = previewPanel;
+  const {
+    previewEl: preview,
+    thumbEl: thumb,
+    slideBarEl: slideBar,
+  } = previewPanel;
   // Dock the pane openers (labeled) at the far right of the slide bar, above
   // the inspector column they control (Option A). They live in the slide bar,
   // not the deck-level topbar, and the bar is always present, so the rail stays
@@ -878,35 +974,38 @@ export async function createEditorController({
 
         // Live edits ride on the same provider/doc as presence.
         if (!liveEditsActive) return undefined;
-        return import('./live-edits/index.js').then(({ initEditorLiveEdits }) => {
-          if (presenceClosed) return;
-          liveEdits = initEditorLiveEdits({
-            session: presenceHandle.session,
-            pres,
-            normalizeLang,
-            hadEarlyEdits: liveEditsHadEarlyEdits,
-            getSelectedSlideId: () => selectedSlideId,
-            setSelectedSlideId: setSelectedSlideIdWithLock,
-            rerenderSlideList: () => rerenderSlideList(),
-            rerenderEditor: () => rerenderEditor(),
-            rerenderPreview: () => rerenderPreview(),
-            updateSelectedSlideListItem: () => updateSelectedSlideListItem?.(),
-            editorMount,
-            previewNotesTa,
-            setSaveStatus: (s) => setSaveStatus(s),
-            onTitleChanged: (next) => {
-              if (!topbarTitle) return;
-              topbarTitle.textContent = next;
-              topbarTitle.title = next;
-              setDocumentTitle(next);
-            },
-            onUndoStateChanged: () => syncTopbarUndo(),
-          });
-          cleanup.register('liveEdits', () => {
-            liveEdits?.destroy();
-            liveEdits = null;
-          });
-        });
+        return import('./live-edits/index.js').then(
+          ({ initEditorLiveEdits }) => {
+            if (presenceClosed) return;
+            liveEdits = initEditorLiveEdits({
+              session: presenceHandle.session,
+              pres,
+              normalizeLang,
+              hadEarlyEdits: liveEditsHadEarlyEdits,
+              getSelectedSlideId: () => selectedSlideId,
+              setSelectedSlideId: setSelectedSlideIdWithLock,
+              rerenderSlideList: () => rerenderSlideList(),
+              rerenderEditor: () => rerenderEditor(),
+              rerenderPreview: () => rerenderPreview(),
+              updateSelectedSlideListItem: () =>
+                updateSelectedSlideListItem?.(),
+              editorMount,
+              previewNotesTa,
+              setSaveStatus: (s) => setSaveStatus(s),
+              onTitleChanged: (next) => {
+                if (!topbarTitle) return;
+                topbarTitle.textContent = next;
+                topbarTitle.title = next;
+                setDocumentTitle(next);
+              },
+              onUndoStateChanged: () => syncTopbarUndo(),
+            });
+            cleanup.register('liveEdits', () => {
+              liveEdits?.destroy();
+              liveEdits = null;
+            });
+          },
+        );
       })
       .catch((e) => {
         console.warn('[collab] presence unavailable:', e?.message || e);
@@ -918,9 +1017,9 @@ export async function createEditorController({
           toast.error(
             t(
               'editor.collab.liveEditsUnavailable',
-              'Live collaboration failed to load; changes are not being saved. Reload the editor.'
+              'Live collaboration failed to load; changes are not being saved. Reload the editor.',
             ),
-            { durationMs: 15000 }
+            { durationMs: 15000 },
           );
         }
       });
@@ -935,7 +1034,12 @@ export async function createEditorController({
   // spans preview + inspector on row 1; preview and inspector sit on row 2.
   // Placement is by class (see 20-editor-layout.css), so DOM order here is not
   // load-bearing.
-  const layout = h('div', { class: 'layout' }, [left, slideBar, preview, inspectorPanel]);
+  const layout = h('div', { class: 'layout' }, [
+    left,
+    slideBar,
+    preview,
+    inspectorPanel,
+  ]);
   shell.append(layout);
 
   // ============================================================
@@ -953,7 +1057,11 @@ export async function createEditorController({
     onCommentCountChange: (count) => setCommentsBadgeFn?.(count),
     onSlideCommentCountsChange: (counts) => {
       slideCommentCounts = counts || {};
-      try { rerenderSlideList?.(); } catch { /* ignore */ }
+      try {
+        rerenderSlideList?.();
+      } catch {
+        /* ignore */
+      }
     },
     onJumpToSlide: (slideId) => {
       if (slideId && pres.slides?.some((s) => s?.id === slideId)) {
@@ -967,7 +1075,9 @@ export async function createEditorController({
           try {
             const active = slideListEl?.querySelector?.('.list-item.is-active');
             active?.scrollIntoView?.({ block: 'nearest' });
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
         });
       }
     },
@@ -1033,8 +1143,12 @@ export async function createEditorController({
     setSelectedSlideIds: (ids) => {
       selectedSlideIds = ids instanceof Set ? ids : new Set(ids);
     },
-    clearMultiSelection: () => { selectedSlideIds = new Set(); },
-    onMultiSelectionChange: () => { slidesPanel?.updateBulkActionBar?.(); },
+    clearMultiSelection: () => {
+      selectedSlideIds = new Set();
+    },
+    onMultiSelectionChange: () => {
+      slidesPanel?.updateBulkActionBar?.();
+    },
     SLIDE_TYPES,
     renderSlideElement: (s, opts) =>
       renderSlideElement(s, {
@@ -1047,7 +1161,8 @@ export async function createEditorController({
     markDirty,
     rerenderEditor: () => rerenderEditor(),
     rerenderPreview: () => rerenderPreview(),
-    onRequestInsert: ({ afterSlideId, parentId } = {}) => openSlideTypeModal({ afterSlideId, parentId }),
+    onRequestInsert: ({ afterSlideId, parentId } = {}) =>
+      openSlideTypeModal({ afterSlideId, parentId }),
     getSearchQuery: () => slidesPanel?.getSearchQuery?.() || '',
     onAfterSelectSlide: ({ slideId, query } = {}) => {
       focusSearchHitInEditor({
@@ -1063,7 +1178,8 @@ export async function createEditorController({
     },
     getSlideCommentCount: (slideId) => slideCommentCounts?.[slideId] || 0,
     getSlideLockInfo: (slideId) => slideLockManager.getLockInfo(slideId),
-    isSlideLockedByOther: (slideId) => slideLockManager.isLockedByOther(slideId),
+    isSlideLockedByOther: (slideId) =>
+      slideLockManager.isLockedByOther(slideId),
     isSlideAuthorLocked: (slideId) => {
       const slide = pres.slides?.find((s) => s.id === slideId);
       return !!slide?.lockedByAuthor;
@@ -1079,7 +1195,9 @@ export async function createEditorController({
     try {
       slidesPanel?.setSearchStats?.(stats);
       slidesPanel?.updateBulkActionBar?.();
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     return stats;
   };
   updateSelectedSlideListItem = slideListApi.updateSelectedSlideListItem;
@@ -1095,9 +1213,12 @@ export async function createEditorController({
   // (lockedByAuthor) are checked directly on the slide data and keep
   // working in both modes. The flag-off path is untouched.
   if (!liveEditsActive) {
-    slideLockManager.init().then((cleanupSSE) => {
-      if (cleanupSSE) cleanup.register('slideLockSSE', cleanupSSE);
-    }).catch(() => {});
+    slideLockManager
+      .init()
+      .then((cleanupSSE) => {
+        if (cleanupSSE) cleanup.register('slideLockSSE', cleanupSSE);
+      })
+      .catch(() => {});
     cleanup.register('slideLockManager', () => slideLockManager.destroy());
 
     // Acquire lock on initial slide
@@ -1138,17 +1259,33 @@ export async function createEditorController({
     onRefreshed: ({ changedSlideIds } = {}) => {
       let reselected = false;
       // The selected slide may be gone after adopting the server state.
-      if (selectedSlideId && !pres.slides.some((s) => s?.id === selectedSlideId)) {
+      if (
+        selectedSlideId &&
+        !pres.slides.some((s) => s?.id === selectedSlideId)
+      ) {
         setSelectedSlideIdWithLock(pres.slides[0]?.id || null);
         reselected = true;
       }
-      try { rerenderSlideList(); } catch { /* ignore */ }
-      try { rerenderPreview(); } catch { /* ignore */ }
+      try {
+        rerenderSlideList();
+      } catch {
+        /* ignore */
+      }
+      try {
+        rerenderPreview();
+      } catch {
+        /* ignore */
+      }
       if (
         reselected ||
-        (Array.isArray(changedSlideIds) && changedSlideIds.includes(selectedSlideId))
+        (Array.isArray(changedSlideIds) &&
+          changedSlideIds.includes(selectedSlideId))
       ) {
-        try { rerenderEditor(); } catch { /* ignore */ }
+        try {
+          rerenderEditor();
+        } catch {
+          /* ignore */
+        }
       }
     },
   });
@@ -1174,9 +1311,9 @@ export async function createEditorController({
         toast.info(
           t(
             'maintenance.toast.paused',
-            'Deckyard is briefly unavailable. Editing is paused and your work is kept here.'
+            'Deckyard is briefly unavailable. Editing is paused and your work is kept here.',
           ),
-          { id: 'editor-maintenance', durationMs: 8000 }
+          { id: 'editor-maintenance', durationMs: 8000 },
         );
         return;
       }
@@ -1184,10 +1321,13 @@ export async function createEditorController({
       // flushes it; a clean deck needs nothing and must not be written.
       if (saveManager.isDirty()) saveManager.requestSave();
       toast.success(
-        t('maintenance.toast.resumed', 'Deckyard is back. Your work is saving again.'),
-        { id: 'editor-maintenance', durationMs: 4000 }
+        t(
+          'maintenance.toast.resumed',
+          'Deckyard is back. Your work is saving again.',
+        ),
+        { id: 'editor-maintenance', durationMs: 4000 },
       );
-    })
+    }),
   );
 
   // ============================================================
@@ -1233,26 +1373,27 @@ export async function createEditorController({
   // TRANSLATE MODALS
   // ============================================================
 
-  const { openTranslateSlideModal, openTranslateFieldModal } = createTranslateOpeners({
-    h,
-    api,
-    id,
-    pres,
-    SLIDE_TYPES,
-    toast,
-    root,
-    lockDocumentScroll,
-    openOverlayClosers,
-    normalizeLang,
-    otherLang,
-    translatableKeysForType: translatableKeysForSlideType,
-    markDirty,
-    // Late-bound: the real renderers are assigned further down, so pass
-    // indirections that read the current binding at open time.
-    rerenderEditor: () => rerenderEditor(),
-    rerenderPreview: () => rerenderPreview(),
-    requestSave,
-  });
+  const { openTranslateSlideModal, openTranslateFieldModal } =
+    createTranslateOpeners({
+      h,
+      api,
+      id,
+      pres,
+      SLIDE_TYPES,
+      toast,
+      root,
+      lockDocumentScroll,
+      openOverlayClosers,
+      normalizeLang,
+      otherLang,
+      translatableKeysForType: translatableKeysForSlideType,
+      markDirty,
+      // Late-bound: the real renderers are assigned further down, so pass
+      // indirections that read the current binding at open time.
+      rerenderEditor: () => rerenderEditor(),
+      rerenderPreview: () => rerenderPreview(),
+      requestSave,
+    });
 
   // ============================================================
   // EDITOR FORM
@@ -1283,7 +1424,8 @@ export async function createEditorController({
     // control instead of offering an edit the renderer will ignore.
     theme,
     onTranslateSlide: ({ slideId }) => openTranslateSlideModal({ slideId }),
-    onTranslateField: ({ slideId, key }) => openTranslateFieldModal({ slideId, key }),
+    onTranslateField: ({ slideId, key }) =>
+      openTranslateFieldModal({ slideId, key }),
     user,
     openOverlayClosers,
     isAuthor: isAuthor(),
@@ -1368,7 +1510,8 @@ export async function createEditorController({
     getSlideDef: (type) => SLIDE_TYPES[type],
     // State-driven, not classList-driven: the lock seam is the source of
     // truth; the shell classes are presentation only.
-    getCanEdit: () => !readOnlyController.isReadOnly() && !getSlideLockKind(selectedSlideId),
+    getCanEdit: () =>
+      !readOnlyController.isReadOnly() && !getSlideLockKind(selectedSlideId),
     // While placing a positioned comment, the inline editor must yield its
     // click capture so the pin lands anywhere on the slide (not just margins).
     isCommentAddMode: () => previewPanel.isCommentAddMode?.(),
@@ -1420,7 +1563,7 @@ export async function createEditorController({
   const onSlideServerRendered = () => inlineEditor.refresh();
   thumb.addEventListener('slide-server-rendered', onSlideServerRendered);
   cleanup.register('inlineServerRenderRefresh', () =>
-    thumb.removeEventListener('slide-server-rendered', onSlideServerRendered)
+    thumb.removeEventListener('slide-server-rendered', onSlideServerRendered),
   );
 
   // ============================================================
@@ -1478,8 +1621,14 @@ export async function createEditorController({
     if (authorLocked) {
       shell?.classList?.add?.('is-slide-locked');
       shell?.classList?.add?.('is-author-locked-slide');
-      const bannerText = t('editor.authorLocked.banner', 'This slide is locked by the author');
-      shell?.style?.setProperty?.('--slide-locked-banner-text', `"${bannerText}"`);
+      const bannerText = t(
+        'editor.authorLocked.banner',
+        'This slide is locked by the author',
+      );
+      shell?.style?.setProperty?.(
+        '--slide-locked-banner-text',
+        `"${bannerText}"`,
+      );
     }
   }
 
@@ -1488,7 +1637,9 @@ export async function createEditorController({
       try {
         const active = slideListEl?.querySelector?.('.list-item.is-active');
         active?.scrollIntoView?.({ block: 'nearest' });
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     });
   }
 
@@ -1498,8 +1649,14 @@ export async function createEditorController({
     try {
       const cleanUrl = new URL(location.href);
       cleanUrl.searchParams.delete('aiReview');
-      history.replaceState(history.state, '', cleanUrl.pathname + cleanUrl.search);
-    } catch { /* ignore */ }
+      history.replaceState(
+        history.state,
+        '',
+        cleanUrl.pathname + cleanUrl.search,
+      );
+    } catch {
+      /* ignore */
+    }
     requestAnimationFrame(() => openAiDeckReview({ postGeneration: true }));
   }
 
@@ -1531,7 +1688,9 @@ export async function createEditorController({
       commentsPanel?.detach?.();
       slidesCollapsedPref.clearClass();
       inspectorCollapsedPref.clearClass();
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
 
   return { detach, pres, theme, SLIDE_TYPES };

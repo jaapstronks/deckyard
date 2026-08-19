@@ -11,20 +11,33 @@
 
 /** @type {Object} InlineDescriptor for list-slide. */
 export const inlineEdit = {
-    ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after', chip: 'below-end' }],
-    // "+ Text" chip on any item that has a title but no single-line text yet.
-    // The renderer omits the empty .item-text div, so this is the only
-    // affordance for adding it inline.
-    itemGhosts: [
-      { list: 'items', field: 'text', item: '.lijst-item', within: '.lijst-item-body', pos: 'append' },
-    ],
-    cards: {
-      field: 'items',
-      container: '.lijst',
-      itemSelector: '.lijst-item',
+  ghosts: [
+    {
+      field: 'subheading',
+      anchor: '.heading',
+      pos: 'after',
+      chip: 'below-end',
     },
-    formText: ['title', 'subheading', 'items'],
-  };
+  ],
+  // "+ Text" chip on any item that has a title but no single-line text yet.
+  // The renderer omits the empty .item-text div, so this is the only
+  // affordance for adding it inline.
+  itemGhosts: [
+    {
+      list: 'items',
+      field: 'text',
+      item: '.lijst-item',
+      within: '.lijst-item-body',
+      pos: 'append',
+    },
+  ],
+  cards: {
+    field: 'items',
+    container: '.lijst',
+    itemSelector: '.lijst-item',
+  },
+  formText: ['title', 'subheading', 'items'],
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the

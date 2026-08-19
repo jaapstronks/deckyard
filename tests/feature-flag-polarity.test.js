@@ -21,7 +21,11 @@ import {
 
 const FLAGS = [
   { read: isAiEnabled, name: 'AI_ENABLED', legacy: 'DISABLE_AI' },
-  { read: isUploadsEnabled, name: 'UPLOADS_ENABLED', legacy: 'DISABLE_UPLOADS' },
+  {
+    read: isUploadsEnabled,
+    name: 'UPLOADS_ENABLED',
+    legacy: 'DISABLE_UPLOADS',
+  },
   {
     read: isImageLibraryEnabled,
     name: 'IMAGE_LIBRARY_ENABLED',
@@ -63,7 +67,11 @@ for (const { read, name, legacy } of FLAGS) {
     });
     // Legacy disable spelling, still honored until 2026-11-01.
     withEnv({ [legacy]: 'true' }, () => {
-      assert.equal(read(), false, `${legacy}=true must still turn the feature off`);
+      assert.equal(
+        read(),
+        false,
+        `${legacy}=true must still turn the feature off`,
+      );
     });
     withEnv({ [legacy]: 'false' }, () => {
       assert.equal(read(), true);
@@ -75,7 +83,11 @@ for (const { read, name, legacy } of FLAGS) {
       assert.equal(read(), true, `${name}=true must override ${legacy}=true`);
     });
     withEnv({ [name]: 'false', [legacy]: 'false' }, () => {
-      assert.equal(read(), false, `${name}=false must override ${legacy}=false`);
+      assert.equal(
+        read(),
+        false,
+        `${name}=false must override ${legacy}=false`,
+      );
     });
   });
 
@@ -86,11 +98,11 @@ for (const { read, name, legacy } of FLAGS) {
       assert.match(warnings[0], new RegExp(`^${legacy} is deprecated`));
       assert.ok(
         warnings[0].includes(`${name}=false`),
-        'the warning must name the equivalent enable-form setting'
+        'the warning must name the equivalent enable-form setting',
       );
       assert.ok(
         warnings[0].includes('2026-11-01'),
-        'the warning must name the removal date'
+        'the warning must name the removal date',
       );
     });
   });

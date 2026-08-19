@@ -27,7 +27,10 @@ export async function getSenderIdentity(repoRoot) {
   }
   try {
     return await getEmailSender(
-      crossOrganizationScope(repoRoot ?? null, 'outgoing mail: sender identity is instance-level')
+      crossOrganizationScope(
+        repoRoot ?? null,
+        'outgoing mail: sender identity is instance-level',
+      ),
     );
   } catch {
     return {
@@ -54,10 +57,21 @@ export async function getSenderIdentity(repoRoot) {
  *   the provider was tried and failed (HTTP error, network, timeout). Callers
  *   that surface the failure over HTTP map the two differently (501 vs 502).
  */
-export async function sendEmail({ to, toName, subject, htmlContent, textContent, senderOverride }) {
+export async function sendEmail({
+  to,
+  toName,
+  subject,
+  htmlContent,
+  textContent,
+  senderOverride,
+}) {
   const apiKey = envStr('BREVO_API_KEY');
   if (!apiKey) {
-    return { ok: false, reason: 'not_configured', error: 'BREVO_API_KEY not configured' };
+    return {
+      ok: false,
+      reason: 'not_configured',
+      error: 'BREVO_API_KEY not configured',
+    };
   }
 
   // Priority: senderOverride (from app settings) > env vars > defaults
@@ -66,9 +80,7 @@ export async function sendEmail({ to, toName, subject, htmlContent, textContent,
     envStr('BREVO_SENDER_EMAIL') ||
     DEFAULT_SENDER_EMAIL;
   const senderName =
-    senderOverride?.name ||
-    envStr('BREVO_SENDER_NAME') ||
-    getAppName();
+    senderOverride?.name || envStr('BREVO_SENDER_NAME') || getAppName();
 
   const payload = {
     sender: {
@@ -93,7 +105,7 @@ export async function sendEmail({ to, toName, subject, htmlContent, textContent,
     const resp = await fetch(BREVO_API_URL, {
       method: 'POST',
       headers: {
-        'accept': 'application/json',
+        accept: 'application/json',
         'api-key': apiKey,
         'content-type': 'application/json',
       },
@@ -103,7 +115,12 @@ export async function sendEmail({ to, toName, subject, htmlContent, textContent,
 
     if (!resp.ok) {
       const text = await resp.text().catch(() => '');
-      return { ok: false, reason: 'upstream', status: resp.status, error: text || `HTTP ${resp.status}` };
+      return {
+        ok: false,
+        reason: 'upstream',
+        status: resp.status,
+        error: text || `HTTP ${resp.status}`,
+      };
     }
 
     return { ok: true, status: resp.status };

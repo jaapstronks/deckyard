@@ -121,7 +121,10 @@ export function createCalloutBlock(text, emoji = '\uD83C\uDFAF') {
  * @param {string} options.lang - Language for labels ('nl' or 'en-GB')
  * @returns {Object} Result with success status
  */
-export async function publishEmbedToNotionPage(pageId, { embedUrl, title, lang = 'nl' } = {}) {
+export async function publishEmbedToNotionPage(
+  pageId,
+  { embedUrl, title, lang = 'nl' } = {},
+) {
   const id = extractPageId(pageId);
   if (!id) {
     throw new ValidationError('Invalid Notion page ID');
@@ -132,9 +135,8 @@ export async function publishEmbedToNotionPage(pageId, { embedUrl, title, lang =
   }
 
   const headingText = lang === 'nl' ? 'Presentatie' : 'Presentation';
-  const linkText = lang === 'nl'
-    ? 'Bekijk de presentatie'
-    : 'View the presentation';
+  const linkText =
+    lang === 'nl' ? 'Bekijk de presentatie' : 'View the presentation';
 
   const blocks = [
     createDividerBlock(),

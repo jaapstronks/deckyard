@@ -40,7 +40,10 @@ import {
 import { renderSlidesToPdfBuffer } from '../server/render/pdf.js';
 import { loadThemeAssets } from '../server/utils/themes.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 const chromePath = await resolveChromeExecutablePath();
 const isCi = /^(1|true|yes)$/i.test(String(process.env.CI || '').trim());
@@ -117,53 +120,75 @@ function timelineDeck() {
   };
 }
 
-test('the dark timeline variant exports without luminosity masks', { skip }, async () => {
-  // The regression this file was added for. `86-timeline-slide.css` sets
-  // `--timeline-card-shadow` to a literal blurred shadow on the dark variants —
-  // the light variant uses `var(--slide-shadow-card)` and is flattened for free,
-  // the dark one sets its own value (10%-black is invisible on a dark ground)
-  // and so slipped past the print guard. One mask per card: this deck measured
-  // **9** before the fix and **0** after, and the file halved (174 → 91 KB).
-  const theme = await loadThemeAssets(repoRoot, 'amethyst');
-  const pdf = await renderSlidesToPdfBuffer(repoRoot, timelineDeck(), { theme });
+test(
+  'the dark timeline variant exports without luminosity masks',
+  { skip },
+  async () => {
+    // The regression this file was added for. `86-timeline-slide.css` sets
+    // `--timeline-card-shadow` to a literal blurred shadow on the dark variants —
+    // the light variant uses `var(--slide-shadow-card)` and is flattened for free,
+    // the dark one sets its own value (10%-black is invisible on a dark ground)
+    // and so slipped past the print guard. One mask per card: this deck measured
+    // **9** before the fix and **0** after, and the file halved (174 → 91 KB).
+    const theme = await loadThemeAssets(repoRoot, 'amethyst');
+    const pdf = await renderSlidesToPdfBuffer(repoRoot, timelineDeck(), {
+      theme,
+    });
 
-  assert.equal(pdf.subarray(0, 5).toString('latin1'), '%PDF-', 'a real PDF came back');
-  assert.equal(
-    countLuminosityMasks(pdf),
-    0,
-    'a blurred box-shadow reached the PDF as a luminosity mask — CoreGraphics ' +
-      'paints those as solid rectangles. Add an @media print rule that sets the ' +
-      'offending shadow to none, next to its definition.',
-  );
-});
+    assert.equal(
+      pdf.subarray(0, 5).toString('latin1'),
+      '%PDF-',
+      'a real PDF came back',
+    );
+    assert.equal(
+      countLuminosityMasks(pdf),
+      0,
+      'a blurred box-shadow reached the PDF as a luminosity mask — CoreGraphics ' +
+        'paints those as solid rectangles. Add an @media print rule that sets the ' +
+        'offending shadow to none, next to its definition.',
+    );
+  },
+);
 
-test('the shadow-carrying slide types export without luminosity masks', { skip }, async () => {
-  // The family bound, not a single symptom. Every slide type below sets a blurred
-  // shadow outside the `--slide-shadow-*` tokens and therefore needs its own
-  // `@media print` rule: poll and lead-capture already had one, the timeline did
-  // not, and the video placeholder's `.vpdf-screen`/`.vpdf-base` live in the
-  // export CSS itself (`PDF_DOC_CSS` in server/export/pdf-slides.js). A new type
-  // that repeats the pattern fails here rather than in someone's Preview.
-  const theme = await loadThemeAssets(repoRoot, 'amethyst');
-  const deck = {
-    title: 'Alles wat een schaduw draagt',
-    slides: [
-      // No `source`: the placeholder renders its laptop frame without a poster
-      // fetch, which is exactly the part that carries the shadows.
-      { id: 'v', type: 'video-slide', content: { title: 'Video' } },
-      { id: 'p', type: 'poll-slide', content: { question: 'Welke kant op?' } },
-      { id: 'l', type: 'lead-capture-slide', content: { title: 'Blijf op de hoogte' } },
-      ...timelineDeck().slides,
-    ],
-  };
-  const pdf = await renderSlidesToPdfBuffer(repoRoot, deck, { theme });
+test(
+  'the shadow-carrying slide types export without luminosity masks',
+  { skip },
+  async () => {
+    // The family bound, not a single symptom. Every slide type below sets a blurred
+    // shadow outside the `--slide-shadow-*` tokens and therefore needs its own
+    // `@media print` rule: poll and lead-capture already had one, the timeline did
+    // not, and the video placeholder's `.vpdf-screen`/`.vpdf-base` live in the
+    // export CSS itself (`PDF_DOC_CSS` in server/export/pdf-slides.js). A new type
+    // that repeats the pattern fails here rather than in someone's Preview.
+    const theme = await loadThemeAssets(repoRoot, 'amethyst');
+    const deck = {
+      title: 'Alles wat een schaduw draagt',
+      slides: [
+        // No `source`: the placeholder renders its laptop frame without a poster
+        // fetch, which is exactly the part that carries the shadows.
+        { id: 'v', type: 'video-slide', content: { title: 'Video' } },
+        {
+          id: 'p',
+          type: 'poll-slide',
+          content: { question: 'Welke kant op?' },
+        },
+        {
+          id: 'l',
+          type: 'lead-capture-slide',
+          content: { title: 'Blijf op de hoogte' },
+        },
+        ...timelineDeck().slides,
+      ],
+    };
+    const pdf = await renderSlidesToPdfBuffer(repoRoot, deck, { theme });
 
-  assert.equal(
-    countLuminosityMasks(pdf),
-    0,
-    'one of the shadow-carrying slide types leaked a luminosity mask into the PDF',
-  );
-});
+    assert.equal(
+      countLuminosityMasks(pdf),
+      0,
+      'one of the shadow-carrying slide types leaked a luminosity mask into the PDF',
+    );
+  },
+);
 
 after(async () => {
   await closePuppeteerBrowser();

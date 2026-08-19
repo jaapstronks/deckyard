@@ -19,7 +19,10 @@ function getPresets() {
       getRange: () => {
         const since = new Date(today);
         since.setDate(since.getDate() - 7);
-        return { since: since.toISOString().split('T')[0], until: today.toISOString().split('T')[0] };
+        return {
+          since: since.toISOString().split('T')[0],
+          until: today.toISOString().split('T')[0],
+        };
       },
     },
     {
@@ -28,7 +31,10 @@ function getPresets() {
       getRange: () => {
         const since = new Date(today);
         since.setDate(since.getDate() - 30);
-        return { since: since.toISOString().split('T')[0], until: today.toISOString().split('T')[0] };
+        return {
+          since: since.toISOString().split('T')[0],
+          until: today.toISOString().split('T')[0],
+        };
       },
     },
     {
@@ -37,7 +43,10 @@ function getPresets() {
       getRange: () => {
         const since = new Date(today);
         since.setDate(since.getDate() - 90);
-        return { since: since.toISOString().split('T')[0], until: today.toISOString().split('T')[0] };
+        return {
+          since: since.toISOString().split('T')[0],
+          until: today.toISOString().split('T')[0],
+        };
       },
     },
     {
@@ -45,7 +54,10 @@ function getPresets() {
       value: 'month',
       getRange: () => {
         const since = new Date(now.getFullYear(), now.getMonth(), 1);
-        return { since: since.toISOString().split('T')[0], until: today.toISOString().split('T')[0] };
+        return {
+          since: since.toISOString().split('T')[0],
+          until: today.toISOString().split('T')[0],
+        };
       },
     },
     {
@@ -89,10 +101,16 @@ export function createDatePicker({ h, initialRange, onChange }) {
   updateButtonText();
 
   // Dropdown
-  const dropdown = h('div', { class: 'analytics-date-picker-dropdown', style: 'display: none;' });
+  const dropdown = h('div', {
+    class: 'analytics-date-picker-dropdown',
+    style: 'display: none;',
+  });
 
   // Preset buttons
-  const presetList = h('div', { class: 'analytics-date-picker-presets', role: 'listbox' });
+  const presetList = h('div', {
+    class: 'analytics-date-picker-presets',
+    role: 'listbox',
+  });
   presets.forEach((preset, index) => {
     const btn = h('button', {
       class: `analytics-date-picker-preset ${preset.value === currentPreset ? 'is-active' : ''}`,
@@ -117,7 +135,9 @@ export function createDatePicker({ h, initialRange, onChange }) {
         value: initialRange?.since || '',
         onchange: (e) => {
           const since = e.target.value;
-          const until = dropdown.querySelector('.analytics-date-input:last-child')?.value;
+          const until = dropdown.querySelector(
+            '.analytics-date-input:last-child',
+          )?.value;
           if (since && until) {
             applyCustomRange(since, until);
           }
@@ -215,7 +235,9 @@ export function createDatePicker({ h, initialRange, onChange }) {
    * @param {number} index
    */
   function focusPreset(index) {
-    const buttons = presetList.querySelectorAll('.analytics-date-picker-preset');
+    const buttons = presetList.querySelectorAll(
+      '.analytics-date-picker-preset',
+    );
     if (buttons[index]) {
       buttons.forEach((btn, i) => {
         btn.tabIndex = i === index ? 0 : -1;
@@ -243,14 +265,19 @@ export function createDatePicker({ h, initialRange, onChange }) {
 
   function updateButtonText(text) {
     const preset = presets.find((p) => p.value === currentPreset);
-    button.textContent = text || preset?.label || t('analytics.selectRange', 'Select range');
-    button.append(h('span', { class: 'analytics-date-picker-arrow', text: ' ▾' }));
+    button.textContent =
+      text || preset?.label || t('analytics.selectRange', 'Select range');
+    button.append(
+      h('span', { class: 'analytics-date-picker-arrow', text: ' ▾' }),
+    );
   }
 
   function updatePresetButtons() {
-    presetList.querySelectorAll('.analytics-date-picker-preset').forEach((btn, i) => {
-      btn.classList.toggle('is-active', presets[i].value === currentPreset);
-    });
+    presetList
+      .querySelectorAll('.analytics-date-picker-preset')
+      .forEach((btn, i) => {
+        btn.classList.toggle('is-active', presets[i].value === currentPreset);
+      });
   }
 
   return { el };

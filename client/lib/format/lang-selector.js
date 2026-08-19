@@ -84,7 +84,10 @@ export function createLangSelector({
   }
 
   const wrap = h('div', { class: `stack is-field ${className}`.trim() });
-  const label = h('div', { class: 'field-label', text: t('common.language', 'Language') });
+  const label = h('div', {
+    class: 'field-label',
+    text: t('common.language', 'Language'),
+  });
 
   // Hide entire selector if only one language supported
   if (supportedList.length < 2) {

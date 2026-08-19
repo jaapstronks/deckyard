@@ -114,7 +114,8 @@ export default {
       type: 'string',
       required: false,
       maxLength: 60,
-      helpText: 'Shown big when the timer hits zero, e.g. "Tijd!". Leave empty for none.',
+      helpText:
+        'Shown big when the timer hits zero, e.g. "Tijd!". Leave empty for none.',
     },
     BACKGROUND_FIELD_EXTENDED,
   ],
@@ -158,7 +159,7 @@ export default {
           ${title}
           <div class="cd-stage">
             <time class="cd-time" data-countdown-display="1" role="timer" aria-live="off">${formatMmSs(
-              seconds
+              seconds,
             )}</time>
             ${zeroEl}
           </div>

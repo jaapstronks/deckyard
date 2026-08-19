@@ -15,7 +15,10 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { createHash } from 'node:crypto';
 
-import { renderSlideHtml, validateSlide } from '../shared/slide-types/presentation.js';
+import {
+  renderSlideHtml,
+  validateSlide,
+} from '../shared/slide-types/presentation.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { validateSlideContentStructure } from '../server/utils/ai/validate-slide-structure.js';
 
@@ -112,11 +115,20 @@ describe('text-blocks rows[] shape', () => {
 
   it('emits item indexes on rows and blocks (inline add/remove contract)', () => {
     const html = render(ARRAY_CONTENT);
-    assert.match(html, /class="text-blocks-row" data-count="2" data-inline-item-index="0"/);
-    assert.match(html, /class="text-blocks-row" data-count="1" data-inline-item-index="1"/);
+    assert.match(
+      html,
+      /class="text-blocks-row" data-count="2" data-inline-item-index="0"/,
+    );
+    assert.match(
+      html,
+      /class="text-blocks-row" data-count="1" data-inline-item-index="1"/,
+    );
     // Block indexes restart per row
-    const blockIndexes = [...html.matchAll(/text-block text-blocks-step[^"]*"[^>]*data-inline-item-index="(\d+)"/g)]
-      .map((m) => m[1]);
+    const blockIndexes = [
+      ...html.matchAll(
+        /text-block text-blocks-step[^"]*"[^>]*data-inline-item-index="(\d+)"/g,
+      ),
+    ].map((m) => m[1]);
     assert.deepEqual(blockIndexes, ['0', '1', '0']);
   });
 
@@ -186,10 +198,30 @@ describe('text-blocks defaults', () => {
 const FOUR_ROW_CONTENT = {
   title: 'Four rows',
   rows: [
-    { title: '', color: 'yellow', arrow: 'down', blocks: [{ title: 'R1', body: 'a' }] },
-    { title: 'Row two', color: 'black', arrow: 'down', blocks: [{ title: 'R2', body: 'b' }] },
-    { title: 'Row three', color: 'yellow', arrow: 'down', blocks: [{ title: 'R3', body: 'c' }] },
-    { title: 'Row four', color: 'black', arrow: 'none', blocks: [{ title: 'R4', body: 'd' }] },
+    {
+      title: '',
+      color: 'yellow',
+      arrow: 'down',
+      blocks: [{ title: 'R1', body: 'a' }],
+    },
+    {
+      title: 'Row two',
+      color: 'black',
+      arrow: 'down',
+      blocks: [{ title: 'R2', body: 'b' }],
+    },
+    {
+      title: 'Row three',
+      color: 'yellow',
+      arrow: 'down',
+      blocks: [{ title: 'R3', body: 'c' }],
+    },
+    {
+      title: 'Row four',
+      color: 'black',
+      arrow: 'none',
+      blocks: [{ title: 'R4', body: 'd' }],
+    },
   ],
 };
 
@@ -215,7 +247,12 @@ describe('text-blocks four rows (A0.4)', () => {
       title: 'Five rows',
       rows: [
         ...FOUR_ROW_CONTENT.rows,
-        { title: 'Row five', color: 'yellow', arrow: 'none', blocks: [{ title: 'R5', body: 'e' }] },
+        {
+          title: 'Row five',
+          color: 'yellow',
+          arrow: 'none',
+          blocks: [{ title: 'R5', body: 'e' }],
+        },
       ],
     };
     const errors = validateSlide({
@@ -230,7 +267,10 @@ describe('text-blocks four rows (A0.4)', () => {
   it('passes AI structure validation via the rows[] branch', () => {
     // rows[]-canonical (no numbered mirror at all): the AI validator must read
     // the array directly rather than demanding row1Count/row1Block1Title.
-    const issues = validateSlideContentStructure('text-blocks-slide', FOUR_ROW_CONTENT);
+    const issues = validateSlideContentStructure(
+      'text-blocks-slide',
+      FOUR_ROW_CONTENT,
+    );
     assert.deepEqual(issues, []);
   });
 });
@@ -242,13 +282,26 @@ describe('text-blocks legacy mirror stays frozen at 3 (A0.4)', () => {
   // change to the legacy output.
   const LEGACY_3_ROW = {
     title: 'Roadmap',
-    row1Count: '2', row1Color: 'yellow', arrow1: 'down',
-    row1Block1Title: 'Now', row1Block1Body: 'Ship it',
-    row1Block2Title: 'Next', row1Block2Body: 'Refine',
-    row2Enabled: 'yes', row2Title: 'Phase two', row2Count: '1', row2Color: 'black', arrow2: 'down',
-    row2Block1Title: 'Later', row2Block1Body: 'Scale',
-    row3Enabled: 'yes', row3Title: 'Phase three', row3Count: '1', row3Color: 'yellow',
-    row3Block1Title: 'Someday', row3Block1Body: 'Dream',
+    row1Count: '2',
+    row1Color: 'yellow',
+    arrow1: 'down',
+    row1Block1Title: 'Now',
+    row1Block1Body: 'Ship it',
+    row1Block2Title: 'Next',
+    row1Block2Body: 'Refine',
+    row2Enabled: 'yes',
+    row2Title: 'Phase two',
+    row2Count: '1',
+    row2Color: 'black',
+    arrow2: 'down',
+    row2Block1Title: 'Later',
+    row2Block1Body: 'Scale',
+    row3Enabled: 'yes',
+    row3Title: 'Phase three',
+    row3Count: '1',
+    row3Color: 'yellow',
+    row3Block1Title: 'Someday',
+    row3Block1Body: 'Dream',
   };
   const LEGACY_3_ROW_SHA256 =
     '15f50455903ff774d41d4c30d8bc68aec10a8e712293c5eaf0c4f7bdc362843d';

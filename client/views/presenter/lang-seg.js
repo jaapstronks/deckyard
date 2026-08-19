@@ -1,4 +1,7 @@
-import { getLangShortLabel, getLangDisplayName } from '../../lib/format/lang-selector.js';
+import {
+  getLangShortLabel,
+  getLangDisplayName,
+} from '../../lib/format/lang-selector.js';
 import { t } from '../../lib/ui-i18n.js';
 
 /**
@@ -17,9 +20,10 @@ export function createPresenterLangSeg({
   getCurrentSlideId,
   supportedLangs = ['nl', 'en-GB'],
 } = {}) {
-  const langs = Array.isArray(supportedLangs) && supportedLangs.length > 0
-    ? supportedLangs
-    : ['nl', 'en-GB'];
+  const langs =
+    Array.isArray(supportedLangs) && supportedLangs.length > 0
+      ? supportedLangs
+      : ['nl', 'en-GB'];
 
   // Hide if only one language
   if (langs.length < 2) {

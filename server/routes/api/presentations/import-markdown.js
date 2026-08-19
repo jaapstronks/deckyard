@@ -10,14 +10,20 @@
  * (public in sandbox/demo mode, security-audit H7).
  */
 
-import { createPresentation, updatePresentation } from '../../../storage/presentations/index.js';
+import {
+  createPresentation,
+  updatePresentation,
+} from '../../../storage/presentations/index.js';
 import {
   jsonError,
   serveJson,
   badRequest,
   requireJsonBody,
 } from '../../../utils/http.js';
-import { getString, getTrimmedString } from '../../../utils/request-validators.js';
+import {
+  getString,
+  getTrimmedString,
+} from '../../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { convertMarkdownText } from '../../../utils/markdown-import/index.js';
 import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
@@ -72,7 +78,14 @@ export async function handlePresentationsImportMarkdown({
 
   // Normalize through deckToPresentationParts (same as JSON import)
   const parts = deckToPresentationParts(deck, { theme: themeConfig });
-  log.info('[import-markdown] Normalized - title:', parts.title, 'theme:', parts.theme, 'slides:', parts.slides?.length);
+  log.info(
+    '[import-markdown] Normalized - title:',
+    parts.title,
+    'theme:',
+    parts.theme,
+    'slides:',
+    parts.slides?.length,
+  );
 
   // Create presentation
   const created = await createPresentation(storageScope, {
@@ -95,7 +108,8 @@ export async function handlePresentationsImportMarkdown({
     },
   };
 
-  const updated = await updatePresentation(storageScope,
+  const updated = await updatePresentation(
+    storageScope,
     created.id,
     {
       title: parts.title,
@@ -106,7 +120,7 @@ export async function handlePresentationsImportMarkdown({
     },
     {
       actorEmail: authedUser?.email || null,
-    }
+    },
   );
   log.info('[import-markdown] Updated presentation successfully');
 

@@ -32,6 +32,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { formatGenerated } from './lib/format-generated.js';
+
 import {
   SLIDE_TYPES,
   CORE_SLIDE_TYPE_NAMES,
@@ -104,11 +106,13 @@ function renderInventoryDoc() {
       fallback ? `\`${fallback}\`` : '—'
     } |`;
   });
-  const active = CORE_SLIDE_TYPE_NAMES.filter((n) => !SLIDE_TYPES[n]?.deprecated).length;
+  const active = CORE_SLIDE_TYPE_NAMES.filter(
+    (n) => !SLIDE_TYPES[n]?.deprecated,
+  ).length;
   const deprecated = coreCount() - active;
   const declaredRows = Object.entries(DECLARED_SLIDE_TYPES).map(
     ([name, entry]) =>
-      `| \`${name}\` | ${entry.tier} | \`${entry.fallback}\` | ${entry.structure} |`
+      `| \`${name}\` | ${entry.tier} | \`${entry.fallback}\` | ${entry.structure} |`,
   );
 
   return [
@@ -152,7 +156,7 @@ function renderInventoryDoc() {
 function applyCountMarkers(text, count = coreCount()) {
   const re = new RegExp(
     `${escapeRe(MARKER_OPEN)}[\\s\\S]*?${escapeRe(MARKER_CLOSE)}`,
-    'g'
+    'g',
   );
   return text.replace(re, `${MARKER_OPEN}${count}${MARKER_CLOSE}`);
 }
@@ -182,7 +186,7 @@ export function applyRegions(text, regions, rel) {
     if (!re.test(out)) {
       throw new Error(
         `${rel}: missing generated region "${name}" — the doc must contain ` +
-          `${open} … ${close} for this script to fill.`
+          `${open} … ${close} for this script to fill.`,
       );
     }
     out = out.replace(re, `${open}\n${render()}\n${close}`);
@@ -192,26 +196,35 @@ export function applyRegions(text, regions, rel) {
 
 /**
  * Map of every doc this script owns → expected content. The test compares these
- * against disk; the CLI writes them.
- * @returns {Map<string, string>}
+ * against disk; the CLI writes them. Each doc is Prettier-formatted with the
+ * repo config (tables re-aligned, etc.) so `npm run format` and this generator
+ * agree — see scripts/lib/format-generated.js.
+ * @returns {Promise<Map<string, string>>}
  */
-export function buildAllDocs() {
+export async function buildAllDocs() {
   const out = new Map();
-  out.set(INVENTORY_DOC, renderInventoryDoc());
-  const partial = new Set([...COUNT_MARKER_FILES, ...Object.keys(TABLE_REGION_FILES)]);
+  out.set(
+    INVENTORY_DOC,
+    await formatGenerated(INVENTORY_DOC, renderInventoryDoc()),
+  );
+  const partial = new Set([
+    ...COUNT_MARKER_FILES,
+    ...Object.keys(TABLE_REGION_FILES),
+  ]);
   for (const rel of partial) {
     const abs = path.join(REPO_ROOT, rel);
     let text = fs.readFileSync(abs, 'utf8');
     if (COUNT_MARKER_FILES.includes(rel)) text = applyCountMarkers(text);
-    if (TABLE_REGION_FILES[rel]) text = applyRegions(text, TABLE_REGION_FILES[rel], rel);
-    out.set(rel, text);
+    if (TABLE_REGION_FILES[rel])
+      text = applyRegions(text, TABLE_REGION_FILES[rel], rel);
+    out.set(rel, await formatGenerated(rel, text));
   }
   return out;
 }
 
-function main() {
+async function main() {
   let changed = 0;
-  for (const [rel, content] of buildAllDocs()) {
+  for (const [rel, content] of await buildAllDocs()) {
     const abs = path.join(REPO_ROOT, rel);
     const current = fs.existsSync(abs) ? fs.readFileSync(abs, 'utf8') : '';
     if (current !== content) {
@@ -220,12 +233,17 @@ function main() {
       changed += 1;
     }
   }
-  console.log(changed ? `\n${changed} file(s) rewritten.` : 'Docs already up to date.');
+  console.log(
+    changed ? `\n${changed} file(s) rewritten.` : 'Docs already up to date.',
+  );
 }
 
 // pathToFileURL, not a template literal: the repo path may contain spaces,
 // which import.meta.url percent-encodes and a raw `file://${argv[1]}` does not
 // — the mismatch would make this script a silent no-op (see scripts/i18n-audit.js).
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main();
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  await main();
 }

@@ -8,7 +8,10 @@ import {
 } from '../server/export/css-bundle.js';
 import { stripFontFacesFromCss } from '../server/utils/embed-fonts.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 /**
  * The export style block must anchor the slide's base font to the theme

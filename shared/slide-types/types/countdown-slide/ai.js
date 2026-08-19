@@ -19,20 +19,20 @@
  */
 
 export const ai = {
-    category: 'interactive',
-    resolveInPhase1: false,
-    description: `
+  category: 'interactive',
+  resolveInPhase1: false,
+  description: `
       A large presenter-controlled countdown timer. Place it where the audience
       works or pauses: a break, a group exercise, a writing round. Only add one
       when the deck actually has such a moment — a timer nobody runs is dead
       weight.
     `,
-    bestFor: [
-      'Breaks with a stated length ("15 minutes")',
-      'Timeboxed exercises in a workshop deck',
-    ],
-    notFor: [
-      'Marking a section boundary (use chapter-title-slide)',
-      'A deck that is presented straight through without pauses',
-    ],
+  bestFor: [
+    'Breaks with a stated length ("15 minutes")',
+    'Timeboxed exercises in a workshop deck',
+  ],
+  notFor: [
+    'Marking a section boundary (use chapter-title-slide)',
+    'A deck that is presented straight through without pauses',
+  ],
 };

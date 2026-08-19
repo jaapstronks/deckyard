@@ -58,7 +58,7 @@ export async function parseDocx(buffer) {
       }
     } else if (rawText.trim()) {
       // Fallback: split by double newlines or large text blocks
-      const paragraphs = rawText.split(/\n{2,}/).filter(p => p.trim());
+      const paragraphs = rawText.split(/\n{2,}/).filter((p) => p.trim());
 
       if (paragraphs.length === 0) {
         slides.push({
@@ -90,7 +90,9 @@ export async function parseDocx(buffer) {
   }
 
   if (slides.length === 0 && errors.length === 0) {
-    errors.push('Could not extract any text from the document. It may be empty or protected.');
+    errors.push(
+      'Could not extract any text from the document. It may be empty or protected.',
+    );
   }
 
   return { slides, metadata, errors };
@@ -160,22 +162,24 @@ function parseHtmlToSections(html) {
  * Strip HTML tags and decode entities.
  */
 function stripHtml(html) {
-  return String(html || '')
-    // Remove HTML tags
-    .replace(/<[^>]+>/g, '\n')
-    // Decode common entities
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    // Clean up whitespace
-    .replace(/[ \t]+/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/ +\n/g, '\n')
-    .replace(/\n +/g, '\n')
-    .trim();
+  return (
+    String(html || '')
+      // Remove HTML tags
+      .replace(/<[^>]+>/g, '\n')
+      // Decode common entities
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      // Clean up whitespace
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/ +\n/g, '\n')
+      .replace(/\n +/g, '\n')
+      .trim()
+  );
 }
 
 /**
@@ -193,7 +197,8 @@ function groupParagraphsIntoSections(paragraphs) {
     if (!trimmed) continue;
 
     // Check if this paragraph looks like a heading (short, no punctuation at end)
-    const looksLikeHeading = trimmed.length < 80 &&
+    const looksLikeHeading =
+      trimmed.length < 80 &&
       !trimmed.match(/[.!?;,]$/) &&
       !trimmed.includes('\n');
 
@@ -202,7 +207,10 @@ function groupParagraphsIntoSections(paragraphs) {
       sections.push(currentSection.join('\n\n'));
       currentSection = [trimmed];
       currentLength = trimmed.length;
-    } else if (currentLength + trimmed.length > maxLength && currentSection.length > 0) {
+    } else if (
+      currentLength + trimmed.length > maxLength &&
+      currentSection.length > 0
+    ) {
       // Current section is getting too long, start a new one
       sections.push(currentSection.join('\n\n'));
       currentSection = [trimmed];

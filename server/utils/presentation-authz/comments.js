@@ -10,7 +10,10 @@
  */
 
 import { normalizeEmail } from '../normalize.js';
-import { hasIdentity, isOwnerOrCreator } from '../../../shared/identity-match.js';
+import {
+  hasIdentity,
+  isOwnerOrCreator,
+} from '../../../shared/identity-match.js';
 
 /**
  * Check if a user can resolve/reopen a comment.

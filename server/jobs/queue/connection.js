@@ -112,7 +112,9 @@ export async function initializeQueues() {
 
       queues = {
         [QUEUE_NAMES.EXPORT]: new Queue(QUEUE_NAMES.EXPORT, { connection }),
-        [QUEUE_NAMES.TRANSLATE]: new Queue(QUEUE_NAMES.TRANSLATE, { connection }),
+        [QUEUE_NAMES.TRANSLATE]: new Queue(QUEUE_NAMES.TRANSLATE, {
+          connection,
+        }),
         [QUEUE_NAMES.HEAVY]: new Queue(QUEUE_NAMES.HEAVY, { connection }),
       };
 

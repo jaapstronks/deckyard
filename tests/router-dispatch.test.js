@@ -24,7 +24,11 @@ function ctx(method, pathname) {
 test('a string pattern is an exact pathname match', () => {
   const routes = [{ method: 'GET', pattern: '/api/x', handler: () => 'hit' }];
   assert.equal(dispatchRoutes(routes, ctx('GET', '/api/x')), 'hit');
-  assert.equal(dispatchRoutes(routes, ctx('GET', '/api/x/y')), false, 'no prefix match');
+  assert.equal(
+    dispatchRoutes(routes, ctx('GET', '/api/x/y')),
+    false,
+    'no prefix match',
+  );
 });
 
 test('a RegExp pattern passes its capture groups as trailing args', () => {
@@ -45,7 +49,15 @@ test('a RegExp pattern passes its capture groups as trailing args', () => {
 test('the context is forwarded verbatim as the first handler argument', () => {
   const c = ctx('GET', '/api/x');
   let received = null;
-  const routes = [{ pattern: '/api/x', handler: (given) => { received = given; return true; } }];
+  const routes = [
+    {
+      pattern: '/api/x',
+      handler: (given) => {
+        received = given;
+        return true;
+      },
+    },
+  ];
   dispatchRoutes(routes, c);
   assert.equal(received, c, 'same context object, not a copy');
 });
@@ -55,8 +67,16 @@ test('a method mismatch falls through to the next route, it is not a 405', () =>
     { method: 'GET', pattern: '/api/x', handler: () => 'get' },
     { method: 'POST', pattern: '/api/x', handler: () => 'post' },
   ];
-  assert.equal(dispatchRoutes(routes, ctx('POST', '/api/x')), 'post', 'second route wins');
-  assert.equal(dispatchRoutes(routes, ctx('DELETE', '/api/x')), false, 'no route, falls through');
+  assert.equal(
+    dispatchRoutes(routes, ctx('POST', '/api/x')),
+    'post',
+    'second route wins',
+  );
+  assert.equal(
+    dispatchRoutes(routes, ctx('DELETE', '/api/x')),
+    false,
+    'no route, falls through',
+  );
 });
 
 test('a route with no method matches any method', () => {
@@ -66,15 +86,22 @@ test('a route with no method matches any method', () => {
 
 test('first match wins: a specific path ahead of a generic one is not shadowed', () => {
   const routes = [
-    { method: 'GET', pattern: '/api/presentations/search', handler: () => 'search' },
+    {
+      method: 'GET',
+      pattern: '/api/presentations/search',
+      handler: () => 'search',
+    },
     { pattern: /^\/api\/presentations\/([^/]+)$/, handler: () => 'item' },
   ];
   assert.equal(
     dispatchRoutes(routes, ctx('GET', '/api/presentations/search')),
     'search',
-    'the earlier exact route wins over the later :id pattern'
+    'the earlier exact route wins over the later :id pattern',
   );
-  assert.equal(dispatchRoutes(routes, ctx('GET', '/api/presentations/abc')), 'item');
+  assert.equal(
+    dispatchRoutes(routes, ctx('GET', '/api/presentations/abc')),
+    'item',
+  );
 });
 
 test('no matching route returns false so the caller can fall through', () => {

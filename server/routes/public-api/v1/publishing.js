@@ -3,12 +3,19 @@
  * Handles publish/unpublish operations for presentations.
  */
 
-import {
-  removePublishedEntry,
-} from '../../../storage/published/index.js';
+import { removePublishedEntry } from '../../../storage/published/index.js';
 import { updatePresentation } from '../../../storage/presentations/index.js';
-import { publishPresentation, assertPublishingEnabled } from '../../../services/publish-presentation.js';
-import { requirePermission, v1MethodNotAllowed, withV1ErrorHandler, getPresentationWithAccess, apiSuccess } from './middleware.js';
+import {
+  publishPresentation,
+  assertPublishingEnabled,
+} from '../../../services/publish-presentation.js';
+import {
+  requirePermission,
+  v1MethodNotAllowed,
+  withV1ErrorHandler,
+  getPresentationWithAccess,
+  apiSuccess,
+} from './middleware.js';
 
 // ============================================================
 // ROUTE HANDLERS
@@ -26,14 +33,22 @@ async function handlePublish(ctx, id) {
 
   if (!requirePermission(ctx, 'write')) return true;
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, id, { access: 'write' });
+  const { ok, pres } = await getPresentationWithAccess(ctx, id, {
+    access: 'write',
+  });
   if (!ok) return true;
 
   // The publish flow (sandbox refusal, OG preview, entry upsert, thumbnail
   // warm, webhook) is shared with the internal route — one canonical form. A
   // sandbox refusal surfaces as a thrown ForbiddenError; withV1ErrorHandler
   // renders it in the v1 envelope.
-  const result = await publishPresentation({ repoRoot, storageScope, req, pres, actor: authedUser });
+  const result = await publishPresentation({
+    repoRoot,
+    storageScope,
+    req,
+    pres,
+    actor: authedUser,
+  });
   await apiSuccess(ctx, result);
   return true;
 }
@@ -74,7 +89,9 @@ async function handleUnpublish(ctx, id) {
 
   if (!requirePermission(ctx, 'write')) return true;
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, id, { access: 'write' });
+  const { ok, pres } = await getPresentationWithAccess(ctx, id, {
+    access: 'write',
+  });
   if (!ok) return true;
 
   const publishId = String(pres?.published?.id || '').trim();
@@ -101,21 +118,24 @@ async function handleUnpublish(ctx, id) {
 /**
  * Main handler for /api/v1/presentations/:id/publish routes.
  */
-export const handlePublishing = withV1ErrorHandler('public-api-v1:publishing', async (ctx) => {
-  const { req, res, url } = ctx;
+export const handlePublishing = withV1ErrorHandler(
+  'public-api-v1:publishing',
+  async (ctx) => {
+    const { req, res, url } = ctx;
 
-  const publishMatch = url.pathname.match(
-    /^\/api\/v1\/presentations\/([^/]+)\/publish$/
-  );
-  if (!publishMatch) {
-    return false;
-  }
+    const publishMatch = url.pathname.match(
+      /^\/api\/v1\/presentations\/([^/]+)\/publish$/,
+    );
+    if (!publishMatch) {
+      return false;
+    }
 
-  const id = publishMatch[1];
+    const id = publishMatch[1];
 
-  if (req.method === 'POST') return handlePublish(ctx, id);
-  if (req.method === 'GET') return handleGetPublishStatus(ctx, id);
-  if (req.method === 'DELETE') return handleUnpublish(ctx, id);
+    if (req.method === 'POST') return handlePublish(ctx, id);
+    if (req.method === 'GET') return handleGetPublishStatus(ctx, id);
+    if (req.method === 'DELETE') return handleUnpublish(ctx, id);
 
-  return v1MethodNotAllowed(res, ['GET', 'POST', 'DELETE']);
-});
+    return v1MethodNotAllowed(res, ['GET', 'POST', 'DELETE']);
+  },
+);

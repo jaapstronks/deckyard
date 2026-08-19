@@ -383,7 +383,9 @@
   font-size: var(--slide-text-md);
   color: var(--slide-on-surface-muted);
   text-decoration: none;
-  transition: color 0.15s ease, transform 0.15s ease;
+  transition:
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .slide-team-cards .team-card-linkedin:hover,
@@ -593,19 +595,22 @@
 }
 
 /* Keep an empty placeholder visible (no intrinsic image to size it). */
-.slide-team-cards.aspect-original:not(.has-column-split) .team-card-photo.is-empty {
+.slide-team-cards.aspect-original:not(.has-column-split)
+  .team-card-photo.is-empty {
   width: var(--team-orig-photo-h);
 }
 
 /* Text-below (default): title + caption under the image, matched to width. */
-.slide-team-cards.aspect-original:not(.has-column-split).text-below .team-card-text {
+.slide-team-cards.aspect-original:not(.has-column-split).text-below
+  .team-card-text {
   margin-top: 0;
   width: 100%;
 }
 
 /* Text-split: title above the image, caption below — same image-width hug.
    Override the base text-split grid card back to a simple flex column. */
-.slide-team-cards.aspect-original:not(.has-column-split).text-split .team-cards-grid {
+.slide-team-cards.aspect-original:not(.has-column-split).text-split
+  .team-cards-grid {
   align-items: flex-end; /* baseline the images across a row */
 }
 
@@ -615,14 +620,16 @@
   height: auto;
 }
 
-.slide-team-cards.aspect-original:not(.has-column-split).text-split .team-card-name {
+.slide-team-cards.aspect-original:not(.has-column-split).text-split
+  .team-card-name {
   align-self: start;
   min-height: 0;
   margin-bottom: var(--slide-space-2);
   display: block;
 }
 
-.slide-team-cards.aspect-original:not(.has-column-split).text-split .team-card-byline {
+.slide-team-cards.aspect-original:not(.has-column-split).text-split
+  .team-card-byline {
   align-self: start;
   margin-top: 0;
 }
@@ -637,7 +644,8 @@
     height: 100%;
   }
 
-  .slide-team-cards.has-column-split.aspect-original.text-split .team-card-name {
+  .slide-team-cards.has-column-split.aspect-original.text-split
+    .team-card-name {
     flex: 0 0 auto;
   }
 
@@ -646,8 +654,10 @@
     min-height: 0;
   }
 
-  .slide-team-cards.has-column-split.aspect-original.text-split .team-card-byline,
-  .slide-team-cards.has-column-split.aspect-original.text-below .team-card-text {
+  .slide-team-cards.has-column-split.aspect-original.text-split
+    .team-card-byline,
+  .slide-team-cards.has-column-split.aspect-original.text-below
+    .team-card-text {
     flex: 0 0 auto;
   }
 }
@@ -753,4 +763,3 @@
 .slide-team-cards.has-column-split.aspect-original .team-cards-split-container {
   align-items: start;
 }
-

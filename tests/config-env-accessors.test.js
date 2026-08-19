@@ -1,11 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  envStr,
-  envBool,
-  envInt,
-  envList,
-} from '../server/config/utils.js';
+import { envStr, envBool, envInt, envList } from '../server/config/utils.js';
 
 /**
  * The env accessor family (server/config/utils.js) is the one way server code

@@ -27,12 +27,12 @@ globalThis.Event = dom.window.Event;
 globalThis.getComputedStyle = dom.window.getComputedStyle;
 globalThis.requestAnimationFrame =
   dom.window.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
-globalThis.cancelAnimationFrame = dom.window.cancelAnimationFrame || clearTimeout;
+globalThis.cancelAnimationFrame =
+  dom.window.cancelAnimationFrame || clearTimeout;
 
 const { h } = await import('../client/lib/dom.js');
-const { openSettingsModal } = await import(
-  '../client/views/editor/modals/settings-modal.js'
-);
+const { openSettingsModal } =
+  await import('../client/views/editor/modals/settings-modal.js');
 
 function messyPres() {
   return {
@@ -73,17 +73,30 @@ test('modal assembles all sections and normalizes each slice', () => {
   assert.equal(grid.children.length, 11, 'eleven grid sections');
 
   // Full-width tags + description sections mounted after the grid.
-  assert.ok(document.querySelector('textarea.form-input'), 'description textarea');
+  assert.ok(
+    document.querySelector('textarea.form-input'),
+    'description textarea',
+  );
 
   // Normalization ran per slice.
   assert.equal(pres.lang, 'nl', 'invalid lang → nl');
-  assert.equal(pres.settings.transitions.preset, 'none', 'invalid preset → none');
-  assert.equal(pres.settings.autoAdvance.intervalSeconds, 17, 'interval coerced to number');
+  assert.equal(
+    pres.settings.transitions.preset,
+    'none',
+    'invalid preset → none',
+  );
+  assert.equal(
+    pres.settings.autoAdvance.intervalSeconds,
+    17,
+    'interval coerced to number',
+  );
   assert.equal(pres.description, '', 'non-string description → empty');
   assert.equal(pres.settings.qaEnabled === false, false, 'qa defaults on');
 
   // A change handler wires through to markDirty/requestSave.
-  const cb = document.querySelector('.settings-modal-grid input[type="checkbox"]');
+  const cb = document.querySelector(
+    '.settings-modal-grid input[type="checkbox"]',
+  );
   assert.ok(cb, 'a checkbox exists');
   cb.checked = !cb.checked;
   cb.dispatchEvent(new Event('change', { bubbles: true }));

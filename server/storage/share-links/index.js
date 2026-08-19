@@ -82,10 +82,7 @@ export {
 } from './crud.js';
 
 // Access logging
-export {
-  logShareLinkAccess,
-  getShareLinkAccessLog,
-} from './access-log.js';
+export { logShareLinkAccess, getShareLinkAccessLog } from './access-log.js';
 
 // Guest management
 export {

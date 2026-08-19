@@ -14,7 +14,17 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const DEFAULT_LOCALE = 'en';
-const SUPPORTED_LOCALES = ['en', 'nl', 'de', 'fr', 'es', 'pt', 'da', 'sv', 'no'];
+const SUPPORTED_LOCALES = [
+  'en',
+  'nl',
+  'de',
+  'fr',
+  'es',
+  'pt',
+  'da',
+  'sv',
+  'no',
+];
 
 // Cache for loaded translations
 const translationCache = new Map();
@@ -28,7 +38,9 @@ let currentLocale = DEFAULT_LOCALE;
  * @returns {string|null} Normalized locale or null if invalid
  */
 function normalizeLocale(locale) {
-  const s = String(locale || '').trim().toLowerCase();
+  const s = String(locale || '')
+    .trim()
+    .toLowerCase();
   if (!s) return null;
   // Handle full locale codes like 'en-GB' -> 'en'
   const base = s.split('-')[0];
@@ -90,11 +102,13 @@ export function t(key, fallback, vars, locale) {
   const k = String(key || '').trim();
   if (!k) return '';
 
-  const useLocale = locale ? (normalizeLocale(locale) || currentLocale) : currentLocale;
+  const useLocale = locale
+    ? normalizeLocale(locale) || currentLocale
+    : currentLocale;
   const dict = loadTranslations(useLocale);
 
   const has = dict && typeof dict === 'object' && typeof dict[k] === 'string';
-  const raw = has ? dict[k] : (typeof fallback === 'string' ? fallback : k);
+  const raw = has ? dict[k] : typeof fallback === 'string' ? fallback : k;
 
   return interpolate(raw, vars);
 }
@@ -109,4 +123,3 @@ export function createTranslator(locale) {
   const boundLocale = normalizeLocale(locale) || DEFAULT_LOCALE;
   return (key, fallback, vars) => t(key, fallback, vars, boundLocale);
 }
-

@@ -32,12 +32,10 @@ The complete documentation index lives in `docs/README.md`.
 
 Custom files go in gitignored directories that persist through updates:
 
-| Directory | Purpose |
-|-----------|---------|
+| Directory             | Purpose                                              |
+| --------------------- | ---------------------------------------------------- |
 | `custom/slide-types/` | Custom slide type definitions with AI wizard support |
-| `custom/themes/` | Custom theme configurations |
-| `custom/assets/` | Custom fonts, images, logos |
+| `custom/themes/`      | Custom theme configurations                          |
+| `custom/assets/`      | Custom fonts, images, logos                          |
 
 See `docs/developer/slide-types.md` for detailed instructions on creating custom slides that integrate with the AI wizard.
-
-

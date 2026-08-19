@@ -27,7 +27,10 @@ import { getThemeRecord } from '../server/storage/themes.js';
  * These tests pin the swap itself, so putting it back turns something red.
  */
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 test('loadThemeAssets and storage getThemeRecord are not interchangeable', async () => {
   // The exact call the worker used to make: repoRoot in the scope slot. Since
@@ -36,7 +39,7 @@ test('loadThemeAssets and storage getThemeRecord are not interchangeable', async
   await assert.rejects(
     () => getThemeRecord(repoRoot, 'midnight'),
     /getThemeRecord\(\) takes a storage scope, not a repoRoot string/,
-    'storage getThemeRecord must refuse a repoRoot in the scope slot — the silent null is what hid the swap'
+    'storage getThemeRecord must refuse a repoRoot in the scope slot — the silent null is what hid the swap',
   );
 
   // The call it makes now, with the same two values, resolves a real theme.
@@ -49,27 +52,36 @@ test('loadThemeAssets always resolves a theme, never null', async () => {
   // The failure mode was `theme = null` reaching every export builder, so pin
   // the invariant the worker now relies on: named, unknown and absent all
   // resolve to a usable theme object.
-  for (const themeName of ['midnight', 'editorial', 'no-such-theme', '', undefined]) {
+  for (const themeName of [
+    'midnight',
+    'editorial',
+    'no-such-theme',
+    '',
+    undefined,
+  ]) {
     const theme = await loadThemeAssets(repoRoot, themeName);
-    assert.ok(theme?.id, `theme ${String(themeName)} must resolve to a theme object`);
+    assert.ok(
+      theme?.id,
+      `theme ${String(themeName)} must resolve to a theme object`,
+    );
   }
 });
 
 test('the export worker loads its theme through utils/themes.js', async () => {
   const src = await fs.readFile(
     path.join(repoRoot, 'server/jobs/queue/workers/export-worker.js'),
-    'utf8'
+    'utf8',
   );
 
   assert.match(
     src,
     /import\s*\{[^}]*\bloadThemeAssets\b[^}]*\}\s*from\s*'[^']*utils\/themes\.js'/,
-    'export-worker must import loadThemeAssets from utils/themes.js'
+    'export-worker must import loadThemeAssets from utils/themes.js',
   );
   assert.doesNotMatch(
     src,
     /from\s*'[^']*storage\/themes\.js'/,
-    'export-worker must not reach for the storage-layer theme accessor: its signature is (scope, themeId)'
+    'export-worker must not reach for the storage-layer theme accessor: its signature is (scope, themeId)',
   );
 });
 
@@ -83,14 +95,18 @@ test('the export worker reads the export type from the job name, not job.data', 
   // masked the theme swap above).
   const src = await fs.readFile(
     path.join(repoRoot, 'server/jobs/queue/workers/export-worker.js'),
-    'utf8'
+    'utf8',
   );
 
-  assert.match(src, /const type = job\.name/, 'the job name is the type’s one canonical carrier');
+  assert.match(
+    src,
+    /const type = job\.name/,
+    'the job name is the type’s one canonical carrier',
+  );
   assert.doesNotMatch(
     src,
     /\{[^}\n]*\btype\b[^}\n]*\}\s*=\s*job\.data/,
-    'job.data has no type field — destructuring one reintroduces the undefined-type failure'
+    'job.data has no type field — destructuring one reintroduces the undefined-type failure',
   );
 });
 
@@ -117,6 +133,6 @@ test('no server call site passes a repoRoot into storage getThemeRecord', async 
   assert.deepEqual(
     offenders,
     [],
-    'getThemeRecord takes (scope, themeId); passing a repoRoot as the scope throws'
+    'getThemeRecord takes (scope, themeId); passing a repoRoot as the scope throws',
   );
 });

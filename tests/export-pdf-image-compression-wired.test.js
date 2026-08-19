@@ -24,7 +24,10 @@ import { buildSlidesPdfHtml } from '../server/export/pdf-slides.js';
  * these two call sites still pass `transform`.
  */
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 /**
  * A large opaque photo-like PNG: mid-frequency content so PNG can't deflate it
@@ -52,7 +55,10 @@ async function withUpload(buf) {
 }
 
 function dataUrlPayloads(html, mime) {
-  const re = new RegExp(`data:${mime.replace('/', '\\/')};base64,([A-Za-z0-9+/=]+)`, 'g');
+  const re = new RegExp(
+    `data:${mime.replace('/', '\\/')};base64,([A-Za-z0-9+/=]+)`,
+    'g',
+  );
   return [...html.matchAll(re)].map((m) => m[1]);
 }
 
@@ -66,17 +72,27 @@ test('PDF export still applies image compression to embedded slide images', asyn
       theme: 'default',
       lang: 'en',
       slides: [
-        { id: 's1', type: 'image-slide', content: { title: 'Photo', image: url } },
+        {
+          id: 's1',
+          type: 'image-slide',
+          content: { title: 'Photo', image: url },
+        },
       ],
     };
 
     const html = await buildSlidesPdfHtml(repoRoot, pres, {});
 
     // The original upload must not survive as a raw path or as PNG bytes.
-    assert.ok(!html.includes(url), 'image src should be inlined, not left as a path');
+    assert.ok(
+      !html.includes(url),
+      'image src should be inlined, not left as a path',
+    );
 
     const jpegs = dataUrlPayloads(html, 'image/jpeg');
-    assert.ok(jpegs.length > 0, 'opaque photo should be embedded as JPEG, not PNG');
+    assert.ok(
+      jpegs.length > 0,
+      'opaque photo should be embedded as JPEG, not PNG',
+    );
 
     // The embedded payload must be far smaller than the untouched original.
     const rawBase64Len = raw.toString('base64').length;
@@ -102,7 +118,11 @@ test('compression can be switched off for the PDF export', async () => {
       theme: 'default',
       lang: 'en',
       slides: [
-        { id: 's1', type: 'image-slide', content: { title: 'Photo', image: url } },
+        {
+          id: 's1',
+          type: 'image-slide',
+          content: { title: 'Photo', image: url },
+        },
       ],
     };
     const html = await buildSlidesPdfHtml(repoRoot, pres, {});

@@ -48,22 +48,28 @@ export function slugifyVariantId(name) {
  */
 export function variantIdProblem(id, existingIds) {
   if (!id) {
-    return t('settings.themes.config.variantNeedsName', 'Give the variant a name.');
+    return t(
+      'settings.themes.config.variantNeedsName',
+      'Give the variant a name.',
+    );
   }
   if (!SLIDE_BG_ID_RE.test(id)) {
     return t(
       'settings.themes.config.variantBadName',
-      'A name needs at least one letter or digit.'
+      'A name needs at least one letter or digit.',
     );
   }
   if (RESERVED_SLIDE_BG_IDS.has(id)) {
     return t(
       'settings.themes.config.variantReserved',
-      'That name is taken by a built-in background.'
+      'That name is taken by a built-in background.',
     );
   }
   if (existingIds.includes(id)) {
-    return t('settings.themes.config.variantDuplicate', 'You already have a variant with that name.');
+    return t(
+      'settings.themes.config.variantDuplicate',
+      'You already have a variant with that name.',
+    );
   }
   return '';
 }
@@ -88,9 +94,9 @@ export function createVariantsSection({ config, colors, onChange }) {
       class: 'help',
       text: t(
         'settings.themes.config.variantsHint',
-        'Extra background choices on top of the built-in ones. Each appears in the Background picker on every slide, and its text colour follows automatically so a dark option stays readable.'
+        'Extra background choices on top of the built-in ones. Each appears in the Background picker on every slide, and its text colour follows automatically so a dark option stays readable.',
       ),
-    })
+    }),
   );
 
   // The two built-in slots come first: they are the options every deck already
@@ -101,9 +107,9 @@ export function createVariantsSection({ config, colors, onChange }) {
       class: 'help',
       text: t(
         'settings.themes.config.builtinsHint',
-        'Every theme has two built-in backgrounds. They are storage slots, not colours — name them for what yours actually are, or they show as "Color 1" and "Color 2".'
+        'Every theme has two built-in backgrounds. They are storage slots, not colours — name them for what yours actually are, or they show as "Color 1" and "Color 2".',
       ),
-    })
+    }),
   );
 
   // No swatch here on purpose: lime and mist are *derived* (mist from the
@@ -136,7 +142,7 @@ export function createVariantsSection({ config, colors, onChange }) {
             onChange();
           },
         }),
-      ])
+      ]),
     );
   }
 
@@ -161,7 +167,7 @@ export function createVariantsSection({ config, colors, onChange }) {
 
   function update(index, patch) {
     const next = list().map((entry, i) =>
-      i === index ? { ...entry, ...patch } : entry
+      i === index ? { ...entry, ...patch } : entry,
     );
     // Absent means "no override", which is not the same as a stored empty
     // string — normalizeSlideBackgrounds treats the latter as unset anyway,
@@ -190,7 +196,8 @@ export function createVariantsSection({ config, colors, onChange }) {
 
     // Variant text is slide body copy, so it is judged at the body bar.
     const badge = createContrastBadge({ size: 'body' });
-    const remeasure = () => badge.update(textPicker.getValue(), bgPicker.getValue());
+    const remeasure = () =>
+      badge.update(textPicker.getValue(), bgPicker.getValue());
 
     const bgPicker = createColorPicker({
       label: t('settings.themes.config.variantColor', 'Background'),
@@ -229,7 +236,7 @@ export function createVariantsSection({ config, colors, onChange }) {
         bgPicker.el,
         textPicker.el,
         badge.el,
-      ])
+      ]),
     );
     return row;
   }
@@ -244,8 +251,11 @@ export function createVariantsSection({ config, colors, onChange }) {
       rows.append(
         h('p', {
           class: 'help',
-          text: t('settings.themes.config.noVariants', 'No extra backgrounds yet.'),
-        })
+          text: t(
+            'settings.themes.config.noVariants',
+            'No extra backgrounds yet.',
+          ),
+        }),
       );
     }
   }
@@ -254,7 +264,10 @@ export function createVariantsSection({ config, colors, onChange }) {
     class: 'input form-input',
     type: 'text',
     maxlength: '40',
-    placeholder: t('settings.themes.config.variantNamePlaceholder', 'e.g. Calm'),
+    placeholder: t(
+      'settings.themes.config.variantNamePlaceholder',
+      'e.g. Calm',
+    ),
     'aria-label': t('settings.themes.config.variantName', 'Name'),
     onkeydown: (e) => {
       if (e.key === 'Enter') {
@@ -269,7 +282,7 @@ export function createVariantsSection({ config, colors, onChange }) {
     const id = slugifyVariantId(label);
     const problem = variantIdProblem(
       id,
-      list().map((entry) => entry.id)
+      list().map((entry) => entry.id),
     );
     if (problem) {
       toast.error(problem);
@@ -278,7 +291,10 @@ export function createVariantsSection({ config, colors, onChange }) {
     }
     if (list().length >= MAX_VARIANTS) {
       toast.error(
-        t('settings.themes.config.variantsFull', 'That is as many background options as a theme can hold.')
+        t(
+          'settings.themes.config.variantsFull',
+          'That is as many background options as a theme can hold.',
+        ),
       );
       return;
     }
@@ -287,10 +303,7 @@ export function createVariantsSection({ config, colors, onChange }) {
     // colour, so it looks like part of the theme before you touch it.
     const value = '#e8f0ee';
     nameInput.value = '';
-    write([
-      ...list(),
-      { id, label, value, textColor: autoTextColor(value) },
-    ]);
+    write([...list(), { id, label, value, textColor: autoTextColor(value) }]);
   }
 
   render();
@@ -309,7 +322,7 @@ export function createVariantsSection({ config, colors, onChange }) {
         text: t('settings.themes.config.addVariant', 'Add'),
         onclick: add,
       }),
-    ])
+    ]),
   );
 
   return { el };

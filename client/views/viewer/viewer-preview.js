@@ -4,7 +4,10 @@
  */
 
 import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
-import { cleanupSlideRuntimes, mountSlideInto } from '../../lib/slide-runtime/slide-render.js';
+import {
+  cleanupSlideRuntimes,
+  mountSlideInto,
+} from '../../lib/slide-runtime/slide-render.js';
 import { t } from '../../lib/ui-i18n.js';
 
 export function createViewerPreview({
@@ -76,9 +79,8 @@ export function createViewerPreview({
     const currentIndex = slides.findIndex((s) => s.id === selectedId);
 
     // Update counter
-    counterEl.textContent = slides.length > 0
-      ? `${currentIndex + 1} / ${slides.length}`
-      : '0 / 0';
+    counterEl.textContent =
+      slides.length > 0 ? `${currentIndex + 1} / ${slides.length}` : '0 / 0';
 
     // Update nav button states
     prevBtn.disabled = currentIndex <= 0;

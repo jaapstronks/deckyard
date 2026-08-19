@@ -34,7 +34,7 @@ deck from; it clears after first use. Usage is tracked per-user in
 
 ## The "From others" rail
 
-An activity feed of what *other* people did (`excludeSelf`), bundled: a run of
+An activity feed of what _other_ people did (`excludeSelf`), bundled: a run of
 same-actor / same-deck / same-type events collapses into one line with a count
 pill (`bundleActivityEvents`). Each line reads "{actor} {action} \"{deck}\"".
 

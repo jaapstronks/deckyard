@@ -35,15 +35,17 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { createPresentation, getPresentation, updatePresentation } = await import(
-  '../server/storage/presentations/index.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { createPresentation, getPresentation, updatePresentation } =
+  await import('../server/storage/presentations/index.js');
 
 test.before(async () => {
-  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    }),
+  );
   await initializeStorage();
 });
 
@@ -86,7 +88,11 @@ test('thumbCacheKey is deterministic and filesystem-safe', () => {
   const b = thumbCacheKey(pres, { id: 'default' });
   assert.equal(a.filename, b.filename, 'same inputs → same filename');
   assert.match(a.filename, /\.webp$/, 'served as webp');
-  assert.doesNotMatch(a.filename, /[/.]{2}/, 'no path traversal in the filename');
+  assert.doesNotMatch(
+    a.filename,
+    /[/.]{2}/,
+    'no path traversal in the filename',
+  );
 });
 
 test('cache key ignores the deck revision', () => {
@@ -94,42 +100,81 @@ test('cache key ignores the deck revision', () => {
   // Keying on it made "open a deck and close it again" a guaranteed cache miss,
   // and a miss costs the card a ~10s placeholder shimmer.
   const theme = { id: 'default' };
-  const slides = [{ id: 's1', type: 'title-slide', content: { title: 'Hello' } }];
-  const r1 = thumbCacheKey({ id: 'deck1', revision: 1, theme: 'default', slides }, theme);
-  const r2 = thumbCacheKey({ id: 'deck1', revision: 9, theme: 'default', slides }, theme);
-  assert.equal(r1.filename, r2.filename, 'an edit elsewhere in the deck keeps the raster valid');
+  const slides = [
+    { id: 's1', type: 'title-slide', content: { title: 'Hello' } },
+  ];
+  const r1 = thumbCacheKey(
+    { id: 'deck1', revision: 1, theme: 'default', slides },
+    theme,
+  );
+  const r2 = thumbCacheKey(
+    { id: 'deck1', revision: 9, theme: 'default', slides },
+    theme,
+  );
+  assert.equal(
+    r1.filename,
+    r2.filename,
+    'an edit elsewhere in the deck keeps the raster valid',
+  );
 });
 
 test('cache key changes when slide 1 changes', () => {
   const theme = { id: 'default' };
   const base = { id: 'deck1', revision: 1, theme: 'default' };
   const r1 = thumbCacheKey(
-    { ...base, slides: [{ id: 's1', type: 'title-slide', content: { title: 'Hello' } }] },
-    theme
+    {
+      ...base,
+      slides: [{ id: 's1', type: 'title-slide', content: { title: 'Hello' } }],
+    },
+    theme,
   );
   const r2 = thumbCacheKey(
-    { ...base, slides: [{ id: 's1', type: 'title-slide', content: { title: 'Changed' } }] },
-    theme
+    {
+      ...base,
+      slides: [
+        { id: 's1', type: 'title-slide', content: { title: 'Changed' } },
+      ],
+    },
+    theme,
   );
-  assert.notEqual(r1.filename, r2.filename, 'editing slide 1 invalidates the raster');
+  assert.notEqual(
+    r1.filename,
+    r2.filename,
+    'editing slide 1 invalidates the raster',
+  );
 });
 
 test('cache key ignores slides after the first', () => {
   const theme = { id: 'default' };
   const first = { id: 's1', type: 'title-slide', content: { title: 'Hello' } };
-  const r1 = thumbCacheKey({ id: 'deck1', theme: 'default', slides: [first] }, theme);
-  const r2 = thumbCacheKey(
-    { id: 'deck1', theme: 'default', slides: [first, { id: 's2', type: 'content-slide' }] },
-    theme
+  const r1 = thumbCacheKey(
+    { id: 'deck1', theme: 'default', slides: [first] },
+    theme,
   );
-  assert.equal(r1.filename, r2.filename, 'only slide 1 is rasterized, so only slide 1 counts');
+  const r2 = thumbCacheKey(
+    {
+      id: 'deck1',
+      theme: 'default',
+      slides: [first, { id: 's2', type: 'content-slide' }],
+    },
+    theme,
+  );
+  assert.equal(
+    r1.filename,
+    r2.filename,
+    'only slide 1 is rasterized, so only slide 1 counts',
+  );
 });
 
 test('cache key changes when the theme changes', () => {
   const pres = { id: 'deck1', revision: 1, theme: 'default' };
   const t1 = thumbCacheKey(pres, { id: 'default', colors: { bg: '#fff' } });
   const t2 = thumbCacheKey(pres, { id: 'default', colors: { bg: '#000' } });
-  assert.notEqual(t1.filename, t2.filename, 'editing the theme invalidates the raster');
+  assert.notEqual(
+    t1.filename,
+    t2.filename,
+    'editing the theme invalidates the raster',
+  );
 });
 
 // ── Cache read + single-flight ──────────────────────────────────────────────
@@ -157,7 +202,13 @@ test('requestThumbnailGeneration short-circuits (no render) when already cached'
 
   // A null slide would throw inside the real renderer; the cache short-circuit
   // means we never reach it.
-  const ok = await requestThumbnailGeneration(repoRoot, pres, null, theme, null);
+  const ok = await requestThumbnailGeneration(
+    repoRoot,
+    pres,
+    null,
+    theme,
+    null,
+  );
   assert.equal(ok, true, 'resolves true from the cache without rendering');
 });
 
@@ -186,8 +237,14 @@ test('route serves a cached webp to the owner', async () => {
 
   const res = mockRes();
   const handled = await handlePresentationThumbnail(
-    { repoRoot, storageScope: testScope(), req: { method: 'GET' }, res, authedUser: { email: 'owner@example.com' } },
-    created.id
+    {
+      repoRoot,
+      storageScope: testScope(),
+      req: { method: 'GET' },
+      res,
+      authedUser: { email: 'owner@example.com' },
+    },
+    created.id,
   );
   assert.equal(handled, true);
   assert.equal(res.statusCode, 200);
@@ -206,18 +263,34 @@ test('route denies a non-owner on a private deck', async () => {
 
   const res = mockRes();
   await handlePresentationThumbnail(
-    { repoRoot, storageScope: testScope(), req: { method: 'GET' }, res, authedUser: { email: 'intruder@example.com' } },
-    created.id
+    {
+      repoRoot,
+      storageScope: testScope(),
+      req: { method: 'GET' },
+      res,
+      authedUser: { email: 'intruder@example.com' },
+    },
+    created.id,
   );
-  assert.equal(res.statusCode, 401, 'private deck thumbnails require read access');
+  assert.equal(
+    res.statusCode,
+    401,
+    'private deck thumbnails require read access',
+  );
 });
 
 test('route 404s for an unknown deck', async () => {
   const repoRoot = await tmpRoot();
   const res = mockRes();
   await handlePresentationThumbnail(
-    { repoRoot, storageScope: testScope(), req: { method: 'GET' }, res, authedUser: { email: 'owner@example.com' } },
-    'does-not-exist'
+    {
+      repoRoot,
+      storageScope: testScope(),
+      req: { method: 'GET' },
+      res,
+      authedUser: { email: 'owner@example.com' },
+    },
+    'does-not-exist',
   );
   assert.equal(res.statusCode, 404);
 });
@@ -226,8 +299,14 @@ test('route rejects non-GET methods', async () => {
   const repoRoot = await tmpRoot();
   const res = mockRes();
   await handlePresentationThumbnail(
-    { repoRoot, storageScope: testScope(), req: { method: 'POST' }, res, authedUser: { email: 'x@example.com' } },
-    'whatever'
+    {
+      repoRoot,
+      storageScope: testScope(),
+      req: { method: 'POST' },
+      res,
+      authedUser: { email: 'x@example.com' },
+    },
+    'whatever',
   );
   assert.equal(res.statusCode, 405);
 });
@@ -239,20 +318,33 @@ test('readStaleThumbnail returns the newest other raster for the same deck', asy
   const dir = path.join(dataDir(repoRoot), 'deck-thumbs');
   await fs.mkdir(dir, { recursive: true });
 
-  await fs.writeFile(path.join(dir, 'deck1-aaaaaaaaaaaaaaaa.webp'), Buffer.from('old'));
-  await fs.writeFile(path.join(dir, 'deck1-bbbbbbbbbbbbbbbb.webp'), Buffer.from('newer'));
+  await fs.writeFile(
+    path.join(dir, 'deck1-aaaaaaaaaaaaaaaa.webp'),
+    Buffer.from('old'),
+  );
+  await fs.writeFile(
+    path.join(dir, 'deck1-bbbbbbbbbbbbbbbb.webp'),
+    Buffer.from('newer'),
+  );
   // Make the ordering unambiguous regardless of filesystem timestamp resolution.
   const past = new Date(Date.now() - 60_000);
   await fs.utimes(path.join(dir, 'deck1-aaaaaaaaaaaaaaaa.webp'), past, past);
   // A different deck must never be borrowed from.
-  await fs.writeFile(path.join(dir, 'deck2-cccccccccccccccc.webp'), Buffer.from('other deck'));
+  await fs.writeFile(
+    path.join(dir, 'deck2-cccccccccccccccc.webp'),
+    Buffer.from('other deck'),
+  );
 
   const stale = await readStaleThumbnail(repoRoot, 'deck1', 'deck1-fresh.webp');
   assert.ok(stale, 'found a previous raster');
   assert.equal(stale.buffer.toString(), 'newer');
 
   // The key we are waiting on is never offered back as its own stale fallback.
-  const self = await readStaleThumbnail(repoRoot, 'deck1', 'deck1-bbbbbbbbbbbbbbbb.webp');
+  const self = await readStaleThumbnail(
+    repoRoot,
+    'deck1',
+    'deck1-bbbbbbbbbbbbbbbb.webp',
+  );
   assert.equal(self.buffer.toString(), 'old');
 
   assert.equal(await readStaleThumbnail(repoRoot, 'deck-none', 'x.webp'), null);
@@ -265,7 +357,10 @@ test('pruneOldThumbnails keeps only the current raster for that deck', async () 
   await fs.writeFile(path.join(dir, 'deck1-keep.webp'), Buffer.from('keep'));
   await fs.writeFile(path.join(dir, 'deck1-old1.webp'), Buffer.from('drop'));
   await fs.writeFile(path.join(dir, 'deck1-old2.webp'), Buffer.from('drop'));
-  await fs.writeFile(path.join(dir, 'deck2-other.webp'), Buffer.from('untouched'));
+  await fs.writeFile(
+    path.join(dir, 'deck2-other.webp'),
+    Buffer.from('untouched'),
+  );
 
   await pruneOldThumbnails(repoRoot, 'deck1', 'deck1-keep.webp');
 
@@ -286,9 +381,14 @@ test('route serves the previous raster instead of 404 while the new one renders'
     slides: [],
   });
   const seeded = await getPresentation(testScope(), created.id);
-  await updatePresentation(testScope(), created.id, { ...seeded, slides: [] }, {
-    expectedRevision: seeded.revision,
-  });
+  await updatePresentation(
+    testScope(),
+    created.id,
+    { ...seeded, slides: [] },
+    {
+      expectedRevision: seeded.revision,
+    },
+  );
   const pres = await getPresentation(testScope(), created.id);
   const theme = await loadThemeAssets(repoRoot, pres.theme);
   const { prefix, filename } = thumbCacheKey(pres, theme);
@@ -306,8 +406,14 @@ test('route serves the previous raster instead of 404 while the new one renders'
 
   const res = mockRes();
   await handlePresentationThumbnail(
-    { repoRoot, storageScope: testScope(), req: { method: 'GET' }, res, authedUser: { email: 'owner@example.com' } },
-    created.id
+    {
+      repoRoot,
+      storageScope: testScope(),
+      req: { method: 'GET' },
+      res,
+      authedUser: { email: 'owner@example.com' },
+    },
+    created.id,
   );
   assert.equal(res.statusCode, 200, 'stale beats a placeholder');
   assert.equal(res.headers['Content-Type'], 'image/webp');
@@ -315,6 +421,6 @@ test('route serves the previous raster instead of 404 while the new one renders'
   assert.match(
     res.headers['Cache-Control'],
     /max-age=10\b/,
-    'stale is served with a short max-age so it revalidates quickly'
+    'stale is served with a short max-age so it revalidates quickly',
   );
 });

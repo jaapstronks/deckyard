@@ -7,8 +7,17 @@
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { getUserByEmailGlobal } from './identity.js';
-import { nowIso, isoAfter, isoBefore, normalizeEmail } from '../utils/normalize.js';
-import { generateSecureToken, hashToken, isValidEmail } from '../utils/secure-tokens.js';
+import {
+  nowIso,
+  isoAfter,
+  isoBefore,
+  normalizeEmail,
+} from '../utils/normalize.js';
+import {
+  generateSecureToken,
+  hashToken,
+  isValidEmail,
+} from '../utils/secure-tokens.js';
 import {
   hashPassword,
   verifyPassword,
@@ -177,9 +186,8 @@ export async function validateResetToken(rawToken) {
     // Mask email for display (show first 2 chars, then ***, then domain)
     const email = row.user_email;
     const [localPart, domain] = email.split('@');
-    const maskedLocal = localPart.length > 2
-      ? localPart.slice(0, 2) + '***'
-      : '***';
+    const maskedLocal =
+      localPart.length > 2 ? localPart.slice(0, 2) + '***' : '***';
     const maskedEmail = `${maskedLocal}@${domain}`;
 
     return {

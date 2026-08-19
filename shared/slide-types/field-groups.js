@@ -89,7 +89,10 @@ const DEFAULT_ALIGN_CLASS = 'is-align';
  * @returns {{group: Object, field: Object, variants: Array<Object>}}
  */
 export function alignGroup(id, alignKey, opts = {}) {
-  const align = Array.isArray(opts.align) && opts.align.length ? opts.align : [...DEFAULT_BLOCK_ALIGN];
+  const align =
+    Array.isArray(opts.align) && opts.align.length
+      ? opts.align
+      : [...DEFAULT_BLOCK_ALIGN];
   const group = {
     id,
     alignKey,
@@ -108,9 +111,21 @@ export function alignGroup(id, alignKey, opts = {}) {
   // inspector-form.js): the toolbar "Layout" chip is the block's only control,
   // the convention the structural `layout` enums already follow.
   const TILE = {
-    left: { id: 'block-left', labelKey: 'editor.layoutVariant.blockLeft', label: 'Left' },
-    center: { id: 'block-center', labelKey: 'editor.layoutVariant.blockCenter', label: 'Centred' },
-    right: { id: 'block-right', labelKey: 'editor.layoutVariant.blockRight', label: 'Right' },
+    left: {
+      id: 'block-left',
+      labelKey: 'editor.layoutVariant.blockLeft',
+      label: 'Left',
+    },
+    center: {
+      id: 'block-center',
+      labelKey: 'editor.layoutVariant.blockCenter',
+      label: 'Centred',
+    },
+    right: {
+      id: 'block-right',
+      labelKey: 'editor.layoutVariant.blockRight',
+      label: 'Right',
+    },
   };
   const variants = align.map((value) => ({
     ...TILE[value],
@@ -148,7 +163,8 @@ export function getFieldGroup(def, groupId) {
  */
 export function fieldGroupId(fields, key) {
   const field = resolveFieldDef(fields, key);
-  const group = field && typeof field.group === 'string' ? field.group.trim() : '';
+  const group =
+    field && typeof field.group === 'string' ? field.group.trim() : '';
   return group || null;
 }
 

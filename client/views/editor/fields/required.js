@@ -51,7 +51,7 @@ export function markFieldRequired({ h = defaultH, wrap, control } = {}) {
         // The label already reads "required" to screen readers via
         // aria-required on the control; the asterisk is decoration.
         'aria-hidden': 'true',
-      })
+      }),
     );
   }
 

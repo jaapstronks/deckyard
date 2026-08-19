@@ -1,6 +1,9 @@
 import { h } from '../../lib/dom.js';
 import { createAutoAdvance } from '../presenter/auto-advance.js';
-import { getSlideEffectiveDuration, DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../../shared/slide-timing.js';
+import {
+  getSlideEffectiveDuration,
+  DEFAULT_ADVANCE_INTERVAL_SECONDS,
+} from '../../../shared/slide-timing.js';
 
 /**
  * Wire up auto-advance for the share viewer: appends a progress bar to the
@@ -17,7 +20,12 @@ import { getSlideEffectiveDuration, DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../
  * @param {() => void} opts.onLoopReset - reset the deck to the first slide on loop.
  * @returns {object|null} the auto-advance instance, or null when inactive.
  */
-export function setupShareAutoAdvance({ presentation, stage, onAdvance, onLoopReset }) {
+export function setupShareAutoAdvance({
+  presentation,
+  stage,
+  onAdvance,
+  onLoopReset,
+}) {
   // Skip entirely in pacing mode — pacing is presenter-only.
   const cfg = presentation?.settings?.autoAdvance;
   const mode = cfg?.mode === 'pacing' ? 'pacing' : 'auto';
@@ -33,7 +41,10 @@ export function setupShareAutoAdvance({ presentation, stage, onAdvance, onLoopRe
   // Per-slide duration lookup
   const getSlideInterval = (idx) => {
     const slides = presentation.slides || [];
-    return getSlideEffectiveDuration(slides[idx], cfg?.intervalSeconds || DEFAULT_ADVANCE_INTERVAL_SECONDS);
+    return getSlideEffectiveDuration(
+      slides[idx],
+      cfg?.intervalSeconds || DEFAULT_ADVANCE_INTERVAL_SECONDS,
+    );
   };
 
   const instance = createAutoAdvance({

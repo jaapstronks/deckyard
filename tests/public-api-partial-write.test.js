@@ -25,7 +25,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 // The bug is Postgres-only. The presentations store reaches the database
 // through `getDb()`, which hands back the double installed by `__setTestDb`
@@ -39,10 +41,9 @@ const DECK_ID = 'deck-partial-write';
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
-const { handleSlides } = await import('../server/routes/public-api/v1/slides.js');
-const { __store } = await import(
-  '../server/storage/presentations/index.js'
-);
+const { handleSlides } =
+  await import('../server/routes/public-api/v1/slides.js');
+const { __store } = await import('../server/storage/presentations/index.js');
 
 /**
  * Install a freshly seeded double and point the storage facade at Postgres.
@@ -65,7 +66,12 @@ const STORED_I18N = {
   },
 };
 const STORED_SETTINGS = { stepParagraphs: true, revealStyle: 'fade' };
-const STORED_PUBLISHED = { id: 'pub-1', slug: 'a-deck', ogImageUrl: '', created: '2026-07-01T00:00:00.000Z' };
+const STORED_PUBLISHED = {
+  id: 'pub-1',
+  slug: 'a-deck',
+  ogImageUrl: '',
+  created: '2026-07-01T00:00:00.000Z',
+};
 
 /**
  * One deck with every column this bug emptied filled in.
@@ -89,7 +95,14 @@ function seedDb() {
         revision: 7,
         settings: STORED_SETTINGS,
         i18n: STORED_I18N,
-        slides: [{ id: 'slide-1', type: 'title-slide', content: { title: 'Hoi' }, parentId: null }],
+        slides: [
+          {
+            id: 'slide-1',
+            type: 'title-slide',
+            content: { title: 'Hoi' },
+            parentId: null,
+          },
+        ],
         published: STORED_PUBLISHED,
         created_at: '2026-07-01T00:00:00.000Z',
         modified_at: '2026-07-01T00:00:00.000Z',
@@ -113,7 +126,9 @@ function storedDeck(db) {
  * @returns {Object} ctx, with `res.statusCode` / `res.body` recorded
  */
 function makeCtx(method, pathname, body = null) {
-  const req = Readable.from(body === null ? [] : [Buffer.from(JSON.stringify(body))]);
+  const req = Readable.from(
+    body === null ? [] : [Buffer.from(JSON.stringify(body))],
+  );
   req.method = method;
   req.headers = { 'content-type': 'application/json' };
 
@@ -121,9 +136,15 @@ function makeCtx(method, pathname, body = null) {
     statusCode: null,
     body: null,
     headers: {},
-    setHeader(name, value) { this.headers[name] = value; },
-    writeHead(status) { this.statusCode = status; },
-    end(payload) { this.body = payload ? JSON.parse(payload) : null; },
+    setHeader(name, value) {
+      this.headers[name] = value;
+    },
+    writeHead(status) {
+      this.statusCode = status;
+    },
+    end(payload) {
+      this.body = payload ? JSON.parse(payload) : null;
+    },
   };
 
   return {
@@ -131,8 +152,18 @@ function makeCtx(method, pathname, body = null) {
     res,
     url: new URL(`http://localhost${pathname}`),
     repoRoot: process.cwd(),
-    storageScope: { repoRoot: process.cwd(), organizationId: ORG, actorEmail: OWNER },
-    apiKey: { id: 'key-1', tier: 'free', ownerEmail: OWNER, permissions: ['read', 'write'], organizationId: ORG },
+    storageScope: {
+      repoRoot: process.cwd(),
+      organizationId: ORG,
+      actorEmail: OWNER,
+    },
+    apiKey: {
+      id: 'key-1',
+      tier: 'free',
+      ownerEmail: OWNER,
+      permissions: ['read', 'write'],
+      organizationId: ORG,
+    },
     // What authenticateApiKey puts on the context: who is acting and in which
     // organization. Per-deck checks read the actor from here, not off the deck.
     authedUser: { id: null, email: OWNER, role: 'user', organizationId: ORG },
@@ -148,19 +179,35 @@ test('POST /api/v1/presentations/:id/slides leaves untouched deck columns alone'
   });
   await handleSlides(ctx);
 
-  assert.equal(ctx.res.statusCode, 201, `expected 201, got ${ctx.res.statusCode}: ${JSON.stringify(ctx.res.body)}`);
+  assert.equal(
+    ctx.res.statusCode,
+    201,
+    `expected 201, got ${ctx.res.statusCode}: ${JSON.stringify(ctx.res.body)}`,
+  );
 
   const row = storedDeck(db);
   assert.equal(row.slides.length, 2, 'the slide the request added is stored');
 
   // The four columns the incident emptied.
   assert.deepEqual(row.i18n, STORED_I18N, 'i18n survives a partial write');
-  assert.deepEqual(row.settings, STORED_SETTINGS, 'settings survives a partial write');
+  assert.deepEqual(
+    row.settings,
+    STORED_SETTINGS,
+    'settings survives a partial write',
+  );
   assert.deepEqual(row.published, STORED_PUBLISHED, 'the deck stays published');
-  assert.equal(row.description, 'Deck description', 'description survives a partial write');
+  assert.equal(
+    row.description,
+    'Deck description',
+    'description survives a partial write',
+  );
 
   // And the columns a slide write does legitimately move.
-  assert.equal(row.title, 'Nederlandse titel', 'title was never in the body either');
+  assert.equal(
+    row.title,
+    'Nederlandse titel',
+    'title was never in the body either',
+  );
   assert.equal(row.revision, 8, 'the revision still increments');
   assert.equal(row.updated_by, OWNER);
 });
@@ -168,14 +215,31 @@ test('POST /api/v1/presentations/:id/slides leaves untouched deck columns alone'
 test('DELETE of a slide leaves untouched deck columns alone', async () => {
   const db = await installDb();
   storedDeck(db).slides = [
-    { id: 'slide-1', type: 'title-slide', content: { title: 'Hoi' }, parentId: null },
-    { id: 'slide-2', type: 'title-slide', content: { title: 'Twee' }, parentId: null },
+    {
+      id: 'slide-1',
+      type: 'title-slide',
+      content: { title: 'Hoi' },
+      parentId: null,
+    },
+    {
+      id: 'slide-2',
+      type: 'title-slide',
+      content: { title: 'Twee' },
+      parentId: null,
+    },
   ];
 
-  const ctx = makeCtx('DELETE', `/api/v1/presentations/${DECK_ID}/slides/slide-2`);
+  const ctx = makeCtx(
+    'DELETE',
+    `/api/v1/presentations/${DECK_ID}/slides/slide-2`,
+  );
   await handleSlides(ctx);
 
-  assert.equal(ctx.res.statusCode, 200, `expected 200, got ${ctx.res.statusCode}: ${JSON.stringify(ctx.res.body)}`);
+  assert.equal(
+    ctx.res.statusCode,
+    200,
+    `expected 200, got ${ctx.res.statusCode}: ${JSON.stringify(ctx.res.body)}`,
+  );
 
   const row = storedDeck(db);
   assert.equal(row.slides.length, 1);
@@ -188,19 +252,40 @@ test('DELETE of a slide leaves untouched deck columns alone', async () => {
 test('POST /slides/reorder leaves untouched deck columns alone', async () => {
   const db = await installDb();
   storedDeck(db).slides = [
-    { id: 'slide-1', type: 'title-slide', content: { title: 'Hoi' }, parentId: null },
-    { id: 'slide-2', type: 'title-slide', content: { title: 'Twee' }, parentId: null },
+    {
+      id: 'slide-1',
+      type: 'title-slide',
+      content: { title: 'Hoi' },
+      parentId: null,
+    },
+    {
+      id: 'slide-2',
+      type: 'title-slide',
+      content: { title: 'Twee' },
+      parentId: null,
+    },
   ];
 
-  const ctx = makeCtx('POST', `/api/v1/presentations/${DECK_ID}/slides/reorder`, {
-    slideIds: ['slide-2', 'slide-1'],
-  });
+  const ctx = makeCtx(
+    'POST',
+    `/api/v1/presentations/${DECK_ID}/slides/reorder`,
+    {
+      slideIds: ['slide-2', 'slide-1'],
+    },
+  );
   await handleSlides(ctx);
 
-  assert.equal(ctx.res.statusCode, 200, `expected 200, got ${ctx.res.statusCode}: ${JSON.stringify(ctx.res.body)}`);
+  assert.equal(
+    ctx.res.statusCode,
+    200,
+    `expected 200, got ${ctx.res.statusCode}: ${JSON.stringify(ctx.res.body)}`,
+  );
 
   const row = storedDeck(db);
-  assert.deepEqual(row.slides.map((s) => s.id), ['slide-2', 'slide-1']);
+  assert.deepEqual(
+    row.slides.map((s) => s.id),
+    ['slide-2', 'slide-1'],
+  );
   assert.deepEqual(row.i18n, STORED_I18N);
   assert.deepEqual(row.settings, STORED_SETTINGS);
   assert.deepEqual(row.published, STORED_PUBLISHED);
@@ -212,7 +297,7 @@ test('an explicit null still clears the column', async () => {
   await __store.updatePresentationRow(
     DECK_ID,
     { description: null, settings: null, i18n: null, published: null },
-    { organizationId: ORG, actorEmail: OWNER }
+    { organizationId: ORG, actorEmail: OWNER },
   );
 
   const row = storedDeck(db);
@@ -229,7 +314,7 @@ test('a body that mentions nothing but the title moves nothing but the title', a
   await __store.updatePresentationRow(
     DECK_ID,
     { title: 'Andere titel' },
-    { organizationId: ORG, actorEmail: OWNER }
+    { organizationId: ORG, actorEmail: OWNER },
   );
 
   const row = storedDeck(db);

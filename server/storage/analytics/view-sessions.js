@@ -221,7 +221,10 @@ export async function getViewSessionByToken(sessionToken) {
  * @param {string} [opts.until] - End date filter
  * @returns {Promise<{sessions: Object[], total: number}>}
  */
-export async function getViewSessionsForPresentation(presentationId, opts = {}) {
+export async function getViewSessionsForPresentation(
+  presentationId,
+  opts = {},
+) {
   const presId = norm(presentationId);
   if (!presId) return { sessions: [], total: 0 };
 
@@ -245,10 +248,7 @@ export async function getViewSessionsForPresentation(presentationId, opts = {}) 
     const limit = Math.min(opts?.limit || 50, 100);
     const offset = opts?.offset || 0;
 
-    query = query
-      .orderBy('started_at', 'desc')
-      .limit(limit)
-      .offset(offset);
+    query = query.orderBy('started_at', 'desc').limit(limit).offset(offset);
 
     const rows = await query.execute();
 
@@ -271,7 +271,9 @@ export async function getActiveViewerCount(presentationId) {
   if (!presId) return 0;
 
   return withDbGuard(0, async (db) => {
-    const threshold = new Date(Date.now() - ANALYTICS_CONFIG.ACTIVE_THRESHOLD_SECONDS * 1000).toISOString();
+    const threshold = new Date(
+      Date.now() - ANALYTICS_CONFIG.ACTIVE_THRESHOLD_SECONDS * 1000,
+    ).toISOString();
 
     const result = await db
       .selectFrom('view_sessions')

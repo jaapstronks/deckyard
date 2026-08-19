@@ -13,7 +13,9 @@
 export const up = async (db) => {
   await db.schema
     .alterTable('presentations')
-    .addColumn('is_view_only', 'boolean', (col) => col.notNull().defaultTo(false))
+    .addColumn('is_view_only', 'boolean', (col) =>
+      col.notNull().defaultTo(false),
+    )
     .execute();
 };
 

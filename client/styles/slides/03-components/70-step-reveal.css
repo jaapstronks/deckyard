@@ -11,7 +11,9 @@
 .slide-text-blocks .text-blocks-step,
 .slide-table .table-step-row,
 .slide-table .table-step-cell {
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
 /*
@@ -19,13 +21,34 @@
  * hide step-able content by default UNTIL JS has initialized stepping.
  * The .sb-steps-ready class is added after JS applies initial step visibility.
  */
-.deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-kpi-metrics .kpi-metric,
-.deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-icon-card-grid .icon-card,
-.deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-lijstje .lijst-item,
-.deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-timeline .timeline-item,
-.deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-text-blocks .text-blocks-step,
-.deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-table .table-step-row,
-.deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-table .table-step-cell {
+.deck-stage[data-step-mode='on'][data-slide-transition='none']
+  .deck-slide:not(.sb-steps-ready)
+  .slide-kpi-metrics
+  .kpi-metric,
+.deck-stage[data-step-mode='on'][data-slide-transition='none']
+  .deck-slide:not(.sb-steps-ready)
+  .slide-icon-card-grid
+  .icon-card,
+.deck-stage[data-step-mode='on'][data-slide-transition='none']
+  .deck-slide:not(.sb-steps-ready)
+  .slide-lijstje
+  .lijst-item,
+.deck-stage[data-step-mode='on'][data-slide-transition='none']
+  .deck-slide:not(.sb-steps-ready)
+  .slide-timeline
+  .timeline-item,
+.deck-stage[data-step-mode='on'][data-slide-transition='none']
+  .deck-slide:not(.sb-steps-ready)
+  .slide-text-blocks
+  .text-blocks-step,
+.deck-stage[data-step-mode='on'][data-slide-transition='none']
+  .deck-slide:not(.sb-steps-ready)
+  .slide-table
+  .table-step-row,
+.deck-stage[data-step-mode='on'][data-slide-transition='none']
+  .deck-slide:not(.sb-steps-ready)
+  .slide-table
+  .table-step-cell {
   opacity: 0;
   transform: translateY(10px);
   pointer-events: none;
@@ -88,5 +111,3 @@
     transition: none;
   }
 }
-
-

@@ -77,9 +77,15 @@ export function createEnumFields({ h, fieldSelect } = {}) {
     }
     if (key === 'autoplay') {
       if (optionValue === 'on')
-        return h('span', { class: 'sb-toggle-text', text: t('common.on', 'On') });
+        return h('span', {
+          class: 'sb-toggle-text',
+          text: t('common.on', 'On'),
+        });
       if (optionValue === 'off')
-        return h('span', { class: 'sb-toggle-text', text: t('common.off', 'Off') });
+        return h('span', {
+          class: 'sb-toggle-text',
+          text: t('common.off', 'Off'),
+        });
       return h('span', { class: 'sb-toggle-text', text: String(optionValue) });
     }
     if (key === 'lang') {
@@ -122,16 +128,16 @@ export function createEnumFields({ h, fieldSelect } = {}) {
             ? opt.value === 'on'
               ? 'On'
               : opt.value === 'off'
-              ? 'Off'
-              : String(opt.title ?? opt.label ?? opt.value)
+                ? 'Off'
+                : String(opt.title ?? opt.label ?? opt.value)
             : String(opt.title ?? opt.label ?? opt.value),
         'aria-label':
           key === 'autoplay'
             ? opt.value === 'on'
               ? 'On'
               : opt.value === 'off'
-              ? 'Off'
-              : String(opt.ariaLabel ?? opt.title ?? opt.label ?? opt.value)
+                ? 'Off'
+                : String(opt.ariaLabel ?? opt.title ?? opt.label ?? opt.value)
             : String(opt.ariaLabel ?? opt.title ?? opt.label ?? opt.value),
         'aria-pressed': String(value ?? '') === opt.value ? 'true' : 'false',
         onclick: () => {
@@ -158,8 +164,8 @@ export function createEnumFields({ h, fieldSelect } = {}) {
       optionCount >= 5
         ? ' is-field-full'
         : optionCount >= 3
-        ? ' is-field-wide'
-        : '';
+          ? ' is-field-wide'
+          : '';
     return h('div', { class: `stack is-field${sizeClass}` }, [
       h('div', { class: 'field-label', text: enumFieldLabel(field) }),
       group,

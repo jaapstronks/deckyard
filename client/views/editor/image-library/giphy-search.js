@@ -30,7 +30,9 @@ export function createGiphySearch({ h, api, onSelect, setStatus, setBusy }) {
   const searchInput = h('input', {
     type: 'search',
     class: 'input stock-media-search-input',
-    placeholder: t('stockMedia.search.placeholder', 'Search {provider}...', { provider: 'Giphy' }),
+    placeholder: t('stockMedia.search.placeholder', 'Search {provider}...', {
+      provider: 'Giphy',
+    }),
   });
 
   const searchBtn = h('button', {
@@ -60,14 +62,18 @@ export function createGiphySearch({ h, api, onSelect, setStatus, setBusy }) {
   });
 
   // Powered by GIPHY badge (required by API terms)
-  const giphyBadge = h('div', { class: 'stock-media-attribution giphy-attribution' }, [
-    h('img', {
-      src: 'https://giphy.com/static/img/giphy-logo-static.png',
-      alt: 'Powered by GIPHY',
-      class: 'giphy-logo',
-    }),
-    h('span', { text: t('stockMedia.giphy.poweredBy', 'Powered by GIPHY') }),
-  ]);
+  const giphyBadge = h(
+    'div',
+    { class: 'stock-media-attribution giphy-attribution' },
+    [
+      h('img', {
+        src: 'https://giphy.com/static/img/giphy-logo-static.png',
+        alt: 'Powered by GIPHY',
+        class: 'giphy-logo',
+      }),
+      h('span', { text: t('stockMedia.giphy.poweredBy', 'Powered by GIPHY') }),
+    ],
+  );
 
   container.append(searchRow, grid, loadMoreBtn, giphyBadge);
 
@@ -81,7 +87,11 @@ export function createGiphySearch({ h, api, onSelect, setStatus, setBusy }) {
     showingTrending = false;
 
     try {
-      const params = new URLSearchParams({ q: query, offset: String(offset), limit: '20' });
+      const params = new URLSearchParams({
+        q: query,
+        offset: String(offset),
+        limit: '20',
+      });
       const data = await api(`/api/stock-media/giphy/search?${params}`);
 
       if (offset === 0) {
@@ -98,9 +108,11 @@ export function createGiphySearch({ h, api, onSelect, setStatus, setBusy }) {
       renderResults();
 
       loadMoreBtn.hidden = results.length >= totalCount;
-      setStatus(results.length === 0
-        ? t('stockMedia.search.noResults', 'No results found')
-        : '');
+      setStatus(
+        results.length === 0
+          ? t('stockMedia.search.noResults', 'No results found')
+          : '',
+      );
     } catch (e) {
       console.error('Giphy search error:', e);
       setStatus(t('stockMedia.search.error', 'Search failed'));
@@ -120,7 +132,10 @@ export function createGiphySearch({ h, api, onSelect, setStatus, setBusy }) {
     showingTrending = true;
 
     try {
-      const params = new URLSearchParams({ offset: String(offset), limit: '20' });
+      const params = new URLSearchParams({
+        offset: String(offset),
+        limit: '20',
+      });
       const data = await api(`/api/stock-media/giphy/trending?${params}`);
 
       if (offset === 0) {
@@ -136,7 +151,8 @@ export function createGiphySearch({ h, api, onSelect, setStatus, setBusy }) {
 
       renderResults();
 
-      loadMoreBtn.hidden = results.length >= totalCount || results.length >= 100; // Limit trending
+      loadMoreBtn.hidden =
+        results.length >= totalCount || results.length >= 100; // Limit trending
       setStatus('');
     } catch (e) {
       console.error('Giphy trending error:', e);
@@ -152,7 +168,10 @@ export function createGiphySearch({ h, api, onSelect, setStatus, setBusy }) {
     grid.innerHTML = '';
 
     for (const gif of results) {
-      const item = h('div', { class: 'stock-media-item giphy-item', 'data-id': gif.id });
+      const item = h('div', {
+        class: 'stock-media-item giphy-item',
+        'data-id': gif.id,
+      });
 
       // Use still image as preview, animate on hover
       const img = h('img', {
@@ -196,7 +215,9 @@ export function createGiphySearch({ h, api, onSelect, setStatus, setBusy }) {
         setStatus(t('stockMedia.download.success', 'Added to library'));
         onSelect(data.libraryItem);
       } else {
-        throw new Error(data.error || t('stockMedia.download.error', 'Download failed'));
+        throw new Error(
+          data.error || t('stockMedia.download.error', 'Download failed'),
+        );
       }
     } catch (e) {
       console.error('Giphy download error:', e);

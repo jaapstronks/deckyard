@@ -74,7 +74,10 @@ function scanServer() {
 }
 
 const burndown = JSON.parse(
-  readFileSync(join(repoRoot, 'tests', 'getstorage-strip-burndown.json'), 'utf8')
+  readFileSync(
+    join(repoRoot, 'tests', 'getstorage-strip-burndown.json'),
+    'utf8',
+  ),
 );
 const found = scanServer();
 
@@ -88,7 +91,7 @@ test('no new getStorage() caller: every caller is on the burndown allowlist', ()
     [],
     'new code must reach PostgreSQL through direct Kysely (getDb() / withDbGuard), ' +
       'not getStorage() → PostgresAdapter — the adapter class is being stripped (B79/D34). ' +
-      'Do not add lines to tests/getstorage-strip-burndown.json; it only shrinks.'
+      'Do not add lines to tests/getstorage-strip-burndown.json; it only shrinks.',
   );
 });
 
@@ -99,13 +102,17 @@ test('the burndown list only shrinks: every line still calls getStorage()', () =
     stale,
     [],
     'these facades no longer call getStorage() — delete their lines from ' +
-      'tests/getstorage-strip-burndown.json so the list keeps burning down'
+      'tests/getstorage-strip-burndown.json so the list keeps burning down',
   );
 });
 
 test('the burndown list is sorted and free of duplicates', () => {
   const sorted = [...burndown].sort();
-  assert.deepEqual(burndown, sorted, 'keep the list sorted so diffs stay reviewable');
+  assert.deepEqual(
+    burndown,
+    sorted,
+    'keep the list sorted so diffs stay reviewable',
+  );
   assert.equal(new Set(burndown).size, burndown.length, 'no duplicate lines');
 });
 
@@ -113,7 +120,8 @@ test('the burndown list is sorted and free of duplicates', () => {
 
 test('detector flags a getStorage() caller outside the allowlist', () => {
   const hits = detectCallers({
-    'server/routes/evil.js': 'import { getStorage } from "x";\nconst s = getStorage();',
+    'server/routes/evil.js':
+      'import { getStorage } from "x";\nconst s = getStorage();',
   });
   assert.deepEqual(hits, ['server/routes/evil.js']);
 });
@@ -121,12 +129,18 @@ test('detector flags a getStorage() caller outside the allowlist', () => {
 test('detector ignores the definition file and getStorageMode()', () => {
   const hits = detectCallers({
     [DEFINITION_FILE]: 'export function getStorage() { return adapter; }',
-    'server/config/database.js': 'export function getStorageMode() {}\nreturn getStorageMode();',
+    'server/config/database.js':
+      'export function getStorageMode() {}\nreturn getStorageMode();',
   });
   assert.deepEqual(hits, []);
 });
 
 test('detector matches through whitespace but not a bare mention', () => {
-  assert.deepEqual(detectCallers({ 'server/a.js': 'getStorage ()' }), ['server/a.js']);
-  assert.deepEqual(detectCallers({ 'server/b.js': 'the getStorage helper' }), []);
+  assert.deepEqual(detectCallers({ 'server/a.js': 'getStorage ()' }), [
+    'server/a.js',
+  ]);
+  assert.deepEqual(
+    detectCallers({ 'server/b.js': 'the getStorage helper' }),
+    [],
+  );
 });

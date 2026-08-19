@@ -302,7 +302,12 @@ export async function archiveAllNotifications(scope, userEmail) {
  * @param {string} presentationId
  * @param {string} threadId - Top-level comment id of the thread
  */
-export async function archiveThreadNotifications(scope, userEmail, presentationId, threadId) {
+export async function archiveThreadNotifications(
+  scope,
+  userEmail,
+  presentationId,
+  threadId,
+) {
   toStorageContext(scope, 'archiveThreadNotifications');
   const email = normalizeEmail(userEmail);
   const tid = String(threadId || '').trim();
@@ -322,11 +327,17 @@ export async function archiveThreadNotifications(scope, userEmail, presentationI
       .where('organization_id', '=', orgId)
       .where('presentation_id', '=', pid)
       .where('archived_at', 'is', null)
-      .where('notification_type', 'in', ['comment_created', 'comment_reply', 'comment_mention'])
-      .where((eb) => eb.or([
-        eb(sql`data->>'commentId'`, '=', tid),
-        eb(sql`data->>'parentId'`, '=', tid),
-      ]))
+      .where('notification_type', 'in', [
+        'comment_created',
+        'comment_reply',
+        'comment_mention',
+      ])
+      .where((eb) =>
+        eb.or([
+          eb(sql`data->>'commentId'`, '=', tid),
+          eb(sql`data->>'parentId'`, '=', tid),
+        ]),
+      )
       .execute();
 
     return {
@@ -354,7 +365,7 @@ export async function findUnreadDeckActivityNotification(
   userEmail,
   presentationId,
   actorEmail,
-  sinceIso
+  sinceIso,
 ) {
   toStorageContext(scope, 'findUnreadDeckActivityNotification');
   const email = normalizeEmail(userEmail);
@@ -375,7 +386,9 @@ export async function findUnreadDeckActivityNotification(
       .where('is_read', '=', false)
       .where('archived_at', 'is', null);
 
-    qb = actor ? qb.where('actor_email', '=', actor) : qb.where('actor_email', 'is', null);
+    qb = actor
+      ? qb.where('actor_email', '=', actor)
+      : qb.where('actor_email', 'is', null);
     if (sinceIso) qb = qb.where('created_at', '>', sinceIso);
 
     const row = await qb.orderBy('created_at', 'desc').executeTakeFirst();
@@ -395,7 +408,12 @@ export async function findUnreadDeckActivityNotification(
  * @param {{title?: string, body?: string|null, data?: Object}} updates
  * @returns {Promise<Object>} Result with the updated notification.
  */
-export async function refreshDeckActivityNotification(scope, notificationId, userEmail, updates) {
+export async function refreshDeckActivityNotification(
+  scope,
+  notificationId,
+  userEmail,
+  updates,
+) {
   toStorageContext(scope, 'refreshDeckActivityNotification');
   const email = normalizeEmail(userEmail);
   if (!email || !notificationId) {
@@ -405,10 +423,16 @@ export async function refreshDeckActivityNotification(scope, notificationId, use
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(scope);
 
-    const set = { created_at: nowIso(), is_read: false, read_at: null, archived_at: null };
+    const set = {
+      created_at: nowIso(),
+      is_read: false,
+      read_at: null,
+      archived_at: null,
+    };
     if (updates?.title != null) set.title = updates.title;
     if (updates?.body !== undefined) set.body = updates.body;
-    if (updates?.data !== undefined) set.data = JSON.stringify(updates.data || {});
+    if (updates?.data !== undefined)
+      set.data = JSON.stringify(updates.data || {});
 
     const row = await db
       .updateTable('user_notifications')
@@ -439,7 +463,8 @@ function formatNotification(row) {
   let parsedData = {};
   if (row.data) {
     try {
-      parsedData = typeof row.data === 'string' ? JSON.parse(row.data) : row.data;
+      parsedData =
+        typeof row.data === 'string' ? JSON.parse(row.data) : row.data;
     } catch {
       parsedData = {};
     }

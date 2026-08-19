@@ -10,6 +10,7 @@
 Compared against run `2026-07-18_15-45-37` (prompt version `2f0e86683435`).
 
 Prompt files changed since then:
+
 - `server/utils/ai/refine-slides.js`
 - `server/utils/ai/slide-catalog/examples/basic-slides.js`
 - `server/utils/ai/slide-catalog/examples/card-slides.js`
@@ -20,17 +21,18 @@ Prompt files changed since then:
 
 ## Scores by dimension
 
-| Dimension | Score | vs. previous |
-| --- | ---: | ---: |
-| Coverage | 4.36 | ▼ -0.37 |
-| Structure | 4.55 | · -0.09 |
-| Slide economy | 3.82 | ▼ -0.18 |
-| Faithfulness | 4.27 | ▼ -0.55 |
-| Presentability | 3.91 | ▼ -0.18 |
-| Closeness to human deck | 2.80 | · 0.00 |
-| **Overall** | **4.18** | ▼ -0.28 |
+| Dimension               |    Score | vs. previous |
+| ----------------------- | -------: | -----------: |
+| Coverage                |     4.36 |      ▼ -0.37 |
+| Structure               |     4.55 |      · -0.09 |
+| Slide economy           |     3.82 |      ▼ -0.18 |
+| Faithfulness            |     4.27 |      ▼ -0.55 |
+| Presentability          |     3.91 |      ▼ -0.18 |
+| Closeness to human deck |     2.80 |       · 0.00 |
+| **Overall**             | **4.18** |      ▼ -0.28 |
 
 > **Regression warning.** These dimensions moved down:
+>
 > - Coverage (-0.37)
 > - Slide economy (-0.18)
 > - Faithfulness (-0.55)
@@ -38,19 +40,19 @@ Prompt files changed since then:
 
 ## Per-case results
 
-| Case | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| asml-q4-2024 | A | 13 | 26.92 | 0 | 93% | 4/5 | 3.83 |
-| cbs-persbericht-criminaliteit | B | 11 | 24.64 | 0 | 67% | 4/5 | 3.80 |
-| cbs-veiligheidsmonitor-2025 | B | 32 | 31.97 | 0 | 100% | 5/5 | 4.40 |
-| cloudflare-nov-2025-outage | B | 14 | 38.71 | 0 | 100% | 5/5 | 4.60 |
-| deckyard-readme | B | 15 | 33.8 | 0 | 100% | 4/5 | 4.00 |
-| iea-weo-2024 | A | 25 | 43.88 | 1 | 60% | 5/5 | 4.17 |
-| naacl-good-conversation | A | 19 | 37.37 | 0 | 83% | 4/5 | 3.83 |
-| nl-kamerbrief-duurzame-digitalisering | B | 12 | 31 | 0 | 100% | 4/5 | 4.20 |
-| pbl-kev-2024 | A | 21 | 35.05 | 1 | 100% | 4/5 | 3.67 |
-| philips-q4-2024 | A | 19 | 28.16 | 0 | 100% | 4/5 | 4.33 |
-| wikipedia-zero-knowledge-proof | B | 25 | 39.96 | 0 | 100% | 5/5 | 4.00 |
+| Case                                  | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
+| ------------------------------------- | --- | -----: | ----------: | ----: | -------------: | -------: | ---: |
+| asml-q4-2024                          | A   |     13 |       26.92 |     0 |            93% |      4/5 | 3.83 |
+| cbs-persbericht-criminaliteit         | B   |     11 |       24.64 |     0 |            67% |      4/5 | 3.80 |
+| cbs-veiligheidsmonitor-2025           | B   |     32 |       31.97 |     0 |           100% |      5/5 | 4.40 |
+| cloudflare-nov-2025-outage            | B   |     14 |       38.71 |     0 |           100% |      5/5 | 4.60 |
+| deckyard-readme                       | B   |     15 |        33.8 |     0 |           100% |      4/5 | 4.00 |
+| iea-weo-2024                          | A   |     25 |       43.88 |     1 |            60% |      5/5 | 4.17 |
+| naacl-good-conversation               | A   |     19 |       37.37 |     0 |            83% |      4/5 | 3.83 |
+| nl-kamerbrief-duurzame-digitalisering | B   |     12 |          31 |     0 |           100% |      4/5 | 4.20 |
+| pbl-kev-2024                          | A   |     21 |       35.05 |     1 |           100% |      4/5 | 3.67 |
+| philips-q4-2024                       | A   |     19 |       28.16 |     0 |           100% |      4/5 | 4.33 |
+| wikipedia-zero-knowledge-proof        | B   |     25 |       39.96 |     0 |           100% |      5/5 | 4.00 |
 
 ## Weakest dimensions — judge rationales
 
@@ -108,9 +110,9 @@ These rationales are the input for the next prompt change.
 
 ## Cost breakdown
 
-| Category | Calls | Input | Output | Cache write | Cache read | USD |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| generation | 63 | 1588284 | 103834 | 0 | 0 | $10.5373 |
-| judge | 11 | 531889 | 24897 | 0 | 0 | $3.2819 |
-| topics | 1 | 11758 | 987 | 0 | 0 | $0.0835 |
-| **Total** | 75 | 2131931 | 129718 | 0 | 0 | **$13.9026** |
+| Category   | Calls |   Input | Output | Cache write | Cache read |          USD |
+| ---------- | ----: | ------: | -----: | ----------: | ---------: | -----------: |
+| generation |    63 | 1588284 | 103834 |           0 |          0 |     $10.5373 |
+| judge      |    11 |  531889 |  24897 |           0 |          0 |      $3.2819 |
+| topics     |     1 |   11758 |    987 |           0 |          0 |      $0.0835 |
+| **Total**  |    75 | 2131931 | 129718 |           0 |          0 | **$13.9026** |

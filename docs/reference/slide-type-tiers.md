@@ -17,11 +17,11 @@ and reversible. So nothing was removed and nothing moved to the fork.
 
 ## The three tiers
 
-| Tier | What | The promise |
-|---|---|---|
-| **1 — Core profile** | the nine types below | **Normative.** What a conforming implementation must render. Covered by the existing stability promise. |
-| **2 — Deckyard set** | every other core type | We ship, publish and document them, but they version with the app and may walk the removal ladder. |
-| **3 — Extension** | fork types (`custom/slide-types/`), org types from the builder UI, third-party types later | The declarant's. We promise nothing about them, and we do not ignore them. |
+| Tier                 | What                                                                                       | The promise                                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| **1 — Core profile** | the nine types below                                                                       | **Normative.** What a conforming implementation must render. Covered by the existing stability promise. |
+| **2 — Deckyard set** | every other core type                                                                      | We ship, publish and document them, but they version with the app and may walk the removal ladder.      |
+| **3 — Extension**    | fork types (`custom/slide-types/`), org types from the builder UI, third-party types later | The declarant's. We promise nothing about them, and we do not ignore them.                              |
 
 The tier is **a property of the name, not of the definition**. A fork that
 overrides `title-slide` answers a tier-1 name and takes on the tier-1 promise —
@@ -67,8 +67,8 @@ A tier-1 type declares no fallback. It is the floor.
 ### It names a contract, not a slide swap
 
 `gallery-slide` falls back to `image-slide`. That does not mean "render nine
-photos as one photo" — it means *this content is images, render it the way you
-render images*, and a reader is free to emit more than one slide.
+photos as one photo" — it means _this content is images, render it the way you
+render images_, and a reader is free to emit more than one slide.
 
 Which contract a type points at is decided by **what holds its content without
 losing any**, not by family resemblance. The two entries that look wrong at a
@@ -93,7 +93,7 @@ The full per-type mapping is generated into
   it carries no fields. Inheritance stays rejected.
 - **Not the unknown-type render contract.** A reader meeting a type it has never
   heard of renders the structure plus the text and shows the type name. That is
-  about *unknown* types; `fallback` is about types that are known but not
+  about _unknown_ types; `fallback` is about types that are known but not
   implemented. The two ran together in conversation once and are kept apart here.
 
 ## Declaring without building
@@ -113,22 +113,22 @@ fallback loses the monospacing, not the code.
 
 **And nothing else**, written down so the question does not return every quarter.
 The temptation to declare a wishlist is precisely how a set ends up at 36 again.
-The bar for a new published name is now a question with an answer: *which tier-1
-type is the fallback, and why is that loss unacceptable?*
+The bar for a new published name is now a question with an answer: _which tier-1
+type is the fallback, and why is that loss unacceptable?_
 
 A declared name must not be in the registry. The moment something renders it, it
 is a normal type declaring its own `fallback` and its entry here goes.
 
 ## Where it lives
 
-| Fact | Where |
-|---|---|
-| the tier vocabulary, the nine names, the lookups | `shared/slide-types/tiers.js` |
-| a type's `fallback` | `fallback: 'list-slide'` on the definition, beside `structure` |
-| names declared but not built | `DECLARED_SLIDE_TYPES` in `tiers.js` |
-| `tier` + `fallback` for a browser consumer | `GET /api/slide-types` |
-| the per-type table | `docs/reference/slide-type-inventory.md` (generated) |
-| the guardrail | `tests/slide-type-tiers.test.js` |
+| Fact                                             | Where                                                          |
+| ------------------------------------------------ | -------------------------------------------------------------- |
+| the tier vocabulary, the nine names, the lookups | `shared/slide-types/tiers.js`                                  |
+| a type's `fallback`                              | `fallback: 'list-slide'` on the definition, beside `structure` |
+| names declared but not built                     | `DECLARED_SLIDE_TYPES` in `tiers.js`                           |
+| `tier` + `fallback` for a browser consumer       | `GET /api/slide-types`                                         |
+| the per-type table                               | `docs/reference/slide-type-inventory.md` (generated)           |
+| the guardrail                                    | `tests/slide-type-tiers.test.js`                               |
 
 The lookups follow the aggregator-seam rule from
 [`slide-type-directory.md`](./slide-type-directory.md): one lookup per facet in

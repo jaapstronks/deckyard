@@ -60,7 +60,12 @@ export async function getPresentation(storageScope, id) {
   // current schema version in memory here, so callers (editor, exports, the
   // semantic projection) never see a legacy shape. Reads don't write; the
   // upgraded deck is persisted on the next write.
-  const ctx = toStorageContext(storageScope, 'getPresentation', {}, ALLOW_CROSS_ORG);
+  const ctx = toStorageContext(
+    storageScope,
+    'getPresentation',
+    {},
+    ALLOW_CROSS_ORG,
+  );
   return migratePresentation(await getPresentationRow(id, ctx));
 }
 
@@ -73,7 +78,9 @@ export async function getPresentation(storageScope, id) {
 export async function createPresentation(storageScope, body) {
   // Validate the storageScope before doing any work: a caller that gave none must fail
   // here, not after preparing a deck it has nowhere to put.
-  const ctx = toStorageContext(storageScope, 'createPresentation', { actorEmail: body?.ownerEmail });
+  const ctx = toStorageContext(storageScope, 'createPresentation', {
+    actorEmail: body?.ownerEmail,
+  });
   const repoRoot = repoRootOf(storageScope);
   // Sandbox: refuse the mint (typed 4xx) once the guest is at their storage
   // quota, before preparing anything. Enforced here in the facade; no-op
@@ -113,11 +120,14 @@ export async function createPresentation(storageScope, body) {
 export async function updatePresentation(storageScope, id, body, opts) {
   // Validate up front: the pre-save reads below would otherwise be the first
   // thing to notice a caller that stated no organization.
-  toStorageContext(storageScope, 'updatePresentation', { actorEmail: opts?.actorEmail });
+  toStorageContext(storageScope, 'updatePresentation', {
+    actorEmail: opts?.actorEmail,
+  });
   // Server-as-collaborator seam: capture the pre-save state first. It is
   // the base the caller's write was computed against, and live-apply's
   // three-way diff needs it to leave concurrent client edits alone.
-  const collabEligible = opts?.reason !== 'collab' && isCollabLiveEditsEnabled();
+  const collabEligible =
+    opts?.reason !== 'collab' && isCollabLiveEditsEnabled();
   let collabBase = null;
   if (collabEligible) {
     collabBase = await getPresentation(storageScope, id).catch(() => null);
@@ -128,7 +138,10 @@ export async function updatePresentation(storageScope, id, body, opts) {
   // state first (reason 'pre_merge'), so a bad merge is a one-click restore
   // in the version history. Best-effort: never blocks the save.
   const expectedRevision = Number(opts?.expectedRevision);
-  if (Number.isFinite(expectedRevision) && Array.isArray(opts?.modifiedSlideIds)) {
+  if (
+    Number.isFinite(expectedRevision) &&
+    Array.isArray(opts?.modifiedSlideIds)
+  ) {
     try {
       const current = collabBase || (await getPresentation(storageScope, id));
       if (current && Number(current.revision) - expectedRevision > 1) {
@@ -174,15 +187,18 @@ export async function updatePresentation(storageScope, id, body, opts) {
     let appliedToLiveDoc = false;
     if (collabEligible) {
       try {
-        const { applyServerWriteToActiveDoc } = await import('../../collab/live-apply.js');
-        appliedToLiveDoc = await applyServerWriteToActiveDoc(id, result, { base: collabBase });
+        const { applyServerWriteToActiveDoc } =
+          await import('../../collab/live-apply.js');
+        appliedToLiveDoc = await applyServerWriteToActiveDoc(id, result, {
+          base: collabBase,
+        });
       } catch (err) {
         // The JSON save already succeeded; the live doc just didn't get it
         // (same gap as before step 4, for this one write). Say so loudly.
         log.error(
           `[collab] applying server write to active doc of ${id} failed; ` +
             'open editors will overwrite this save on their next store:',
-          err?.message || err
+          err?.message || err,
         );
       }
     }
@@ -232,7 +248,7 @@ async function updatePresentationUncached(storageScope, id, body, opts) {
     }
 
     const result = migratePresentation(
-      await updatePresentationRow(id, normalized, ctx, opts)
+      await updatePresentationRow(id, normalized, ctx, opts),
     );
 
     // Attach warnings to the result if any
@@ -247,7 +263,9 @@ async function updatePresentationUncached(storageScope, id, body, opts) {
   // exactly like getPresentation stamps its reads. Without this, consumers
   // comparing a write result against a read (the collab live-apply guard)
   // see a permanent schemaVersion difference and never converge.
-  return migratePresentation(await updatePresentationRow(id, normalized, ctx, opts));
+  return migratePresentation(
+    await updatePresentationRow(id, normalized, ctx, opts),
+  );
 }
 
 /**
@@ -257,7 +275,9 @@ async function updatePresentationUncached(storageScope, id, body, opts) {
  * @param {Object} [opts]
  */
 export async function deletePresentation(storageScope, id, opts) {
-  const ctx = toStorageContext(storageScope, 'deletePresentation', { actorEmail: opts?.actorEmail });
+  const ctx = toStorageContext(storageScope, 'deletePresentation', {
+    actorEmail: opts?.actorEmail,
+  });
   try {
     return await deletePresentationRow(id, ctx);
   } finally {
@@ -346,11 +366,16 @@ export async function getFirstSlidesForIds(storageScope, ids) {
       try {
         const pres = await getPresentationRow(id, ctx);
         const first = pres?.slides?.[0];
-        return [id, first ? { id: first.id, type: first.type, content: first.content || {} } : null];
+        return [
+          id,
+          first
+            ? { id: first.id, type: first.type, content: first.content || {} }
+            : null,
+        ];
       } catch {
         return [id, null];
       }
-    })
+    }),
   );
   return new Map(results);
 }
@@ -386,7 +411,11 @@ export async function listPresentationVersions(storageScope, presentationId) {
  * @param {string} versionId
  * @returns {Promise<Object|null>}
  */
-export async function getPresentationVersion(storageScope, presentationId, versionId) {
+export async function getPresentationVersion(
+  storageScope,
+  presentationId,
+  versionId,
+) {
   const ctx = toStorageContext(storageScope, 'getPresentationVersion');
   return getPresentationVersionRow(presentationId, versionId, ctx);
 }
@@ -402,7 +431,12 @@ export async function getPresentationVersion(storageScope, presentationId, versi
  * @param {string} [opts.label]
  * @returns {Promise<Object|null>}
  */
-export async function createPresentationVersion(storageScope, presentationId, pres, opts = {}) {
+export async function createPresentationVersion(
+  storageScope,
+  presentationId,
+  pres,
+  opts = {},
+) {
   const ctx = toStorageContext(storageScope, 'createPresentationVersion', {
     actorEmail: opts?.actorEmail,
   });
@@ -411,10 +445,15 @@ export async function createPresentationVersion(storageScope, presentationId, pr
   // historical row. Who *took* the snapshot is still recorded, in the
   // `created_by` column the store fills from `ctx.actorEmail`. See
   // snapshot-identity.js for why restore does not need it back.
-  return createPresentationVersionRow(presentationId, stripIdentityForSnapshot(pres), ctx, {
-    reason: opts?.reason,
-    label: opts?.label,
-  });
+  return createPresentationVersionRow(
+    presentationId,
+    stripIdentityForSnapshot(pres),
+    ctx,
+    {
+      reason: opts?.reason,
+      label: opts?.label,
+    },
+  );
 }
 
 /**
@@ -425,7 +464,11 @@ export async function createPresentationVersion(storageScope, presentationId, pr
  * @param {number} [opts.keep]
  * @returns {Promise<*>}
  */
-export async function prunePresentationVersions(storageScope, presentationId, opts = {}) {
+export async function prunePresentationVersions(
+  storageScope,
+  presentationId,
+  opts = {},
+) {
   const ctx = toStorageContext(storageScope, 'prunePresentationVersions');
   return prunePresentationVersionRows(presentationId, ctx, {
     keep: opts?.keep,
@@ -603,7 +646,8 @@ async function listPresentationRows(ctx) {
             dominant,
             hasNl: !!i18n.versions?.nl,
             hasEnGb: !!i18n.versions?.['en-GB'],
-            otherLang: dominant === 'nl' ? 'en-GB' : dominant === 'en-GB' ? 'nl' : null,
+            otherLang:
+              dominant === 'nl' ? 'en-GB' : dominant === 'en-GB' ? 'nl' : null,
           }
         : null,
       hasSlides: !!firstSlide,
@@ -710,9 +754,12 @@ async function updatePresentationRow(id, data, ctx, opts = {}) {
   if (opts?.expectedRevision != null) {
     if (existing.revision !== opts.expectedRevision) {
       // Attempt slide-level merge when client provides modifiedSlideIds
-      const modifiedSlideIds = Array.isArray(opts?.modifiedSlideIds) ? opts.modifiedSlideIds : null;
+      const modifiedSlideIds = Array.isArray(opts?.modifiedSlideIds)
+        ? opts.modifiedSlideIds
+        : null;
       if (modifiedSlideIds && modifiedSlideIds.length >= 0) {
-        const revisionGap = Number(existing.revision) - Number(opts.expectedRevision);
+        const revisionGap =
+          Number(existing.revision) - Number(opts.expectedRevision);
         const clientReordered = opts?.clientReordered ?? null;
         const mergeResult = mergeSlidesAtSlideLevel({
           serverSlides: existing.slides,
@@ -760,16 +807,20 @@ async function updatePresentationRow(id, data, ctx, opts = {}) {
               modified: existing.modified,
               updatedBy: existing.updatedBy || null,
               conflictingSlides: mergeResult.conflicts,
-            }
+            },
           );
         } else {
           throw new ConflictError('Presentation was updated by someone else', {
-            id: existing.id, revision: existing.revision, modified: existing.modified,
+            id: existing.id,
+            revision: existing.revision,
+            modified: existing.modified,
           });
         }
       } else {
         throw new ConflictError('Presentation was updated by someone else', {
-          id: existing.id, revision: existing.revision, modified: existing.modified,
+          id: existing.id,
+          revision: existing.revision,
+          modified: existing.modified,
         });
       }
     }
@@ -837,7 +888,8 @@ async function updatePresentationRow(id, data, ctx, opts = {}) {
   if (data.settings !== undefined) updateData.settings = jsonb(data.settings);
   if (data.i18n !== undefined) updateData.i18n = jsonb(data.i18n);
   if (data.slides !== undefined) updateData.slides = jsonb(data.slides);
-  if (data.published !== undefined) updateData.published = jsonb(data.published);
+  if (data.published !== undefined)
+    updateData.published = jsonb(data.published);
 
   if (opts?.allowVisibilityChange && data.visibility) {
     updateData.visibility = data.visibility;
@@ -986,7 +1038,8 @@ async function listTrashedPresentationRows(ctx) {
             dominant,
             hasNl: !!i18n.versions?.nl,
             hasEnGb: !!i18n.versions?.['en-GB'],
-            otherLang: dominant === 'nl' ? 'en-GB' : dominant === 'en-GB' ? 'nl' : null,
+            otherLang:
+              dominant === 'nl' ? 'en-GB' : dominant === 'en-GB' ? 'nl' : null,
           }
         : null,
       hasSlides: !!firstSlide,
@@ -1084,7 +1137,7 @@ async function duplicatePresentationRow(id, ctx) {
       i18n: newI18n,
       slides: newSlides,
     },
-    ctx
+    ctx,
   );
   return { ok: true, presentation: created };
 }
@@ -1100,7 +1153,17 @@ async function listPresentationVersionRows(presentationId, ctx) {
 
   const rows = await db
     .selectFrom('presentation_versions')
-    .select(['id', 'presentation_id', 'created_at', 'created_by', 'created_by_user_id', 'reason', 'label', 'revision', 'title'])
+    .select([
+      'id',
+      'presentation_id',
+      'created_at',
+      'created_by',
+      'created_by_user_id',
+      'reason',
+      'label',
+      'revision',
+      'title',
+    ])
     .where('presentation_id', '=', presentationId)
     .where('organization_id', '=', orgId)
     .orderBy('created_at', 'desc')
@@ -1142,7 +1205,12 @@ async function getPresentationVersionRow(presentationId, versionId, ctx) {
  * @param {object} ctx - Storage context
  * @param {object} [opts]
  */
-async function createPresentationVersionRow(presentationId, snapshot, ctx, opts = {}) {
+async function createPresentationVersionRow(
+  presentationId,
+  snapshot,
+  ctx,
+  opts = {},
+) {
   const db = getDb();
   const orgId = getOrgId(ctx);
 

@@ -35,7 +35,10 @@ import {
   fontFamilyToSlug,
 } from '../shared/theme-fonts.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const lockPath = path.join(repoRoot, 'scripts', 'google-fonts.lock.json');
 const lock = JSON.parse(await fs.readFile(lockPath, 'utf8'));
 
@@ -59,7 +62,7 @@ test('the lockfile covers exactly the curated font list', () => {
     locked,
     curated,
     'adding or removing a font in CURATED_FONTS must be followed by ' +
-      '`node scripts/download-google-fonts.js --update-lock`'
+      '`node scripts/download-google-fonts.js --update-lock`',
   );
 });
 
@@ -85,7 +88,11 @@ test('no pinned file falls outside the declared subsets', () => {
       }
     }
   }
-  assert.deepEqual(stray, [], `pinned files outside latin/latin-ext: ${stray.join(', ')}`);
+  assert.deepEqual(
+    stray,
+    [],
+    `pinned files outside latin/latin-ext: ${stray.join(', ')}`,
+  );
 });
 
 test('every pin carries a real URL and SHA-256', () => {
@@ -96,7 +103,9 @@ test('every pin carries a real URL and SHA-256', () => {
         bad.push(`${family} ${file.file}: sha256 is not 64 hex chars`);
       }
       if (!/^https:\/\/fonts\.gstatic\.com\//.test(String(file.url || ''))) {
-        bad.push(`${family} ${file.file}: url is not an https fonts.gstatic.com URL`);
+        bad.push(
+          `${family} ${file.file}: url is not an https fonts.gstatic.com URL`,
+        );
       }
       if (!Number.isInteger(file.bytes) || file.bytes <= 0) {
         bad.push(`${family} ${file.file}: bytes is not a positive integer`);
@@ -113,10 +122,17 @@ test('lockfile filenames match the path helper every consumer uses', () => {
   const mismatched = [];
   for (const [family, entry] of Object.entries(lock.fonts)) {
     const slug = fontFamilyToSlug(family);
-    assert.equal(entry.slug, slug, `${family}: lockfile slug should be ${slug}`);
+    assert.equal(
+      entry.slug,
+      slug,
+      `${family}: lockfile slug should be ${slug}`,
+    );
     for (const file of entry.files) {
-      const expected = path.basename(curatedFontPath(slug, file.weight, file.subset));
-      if (file.file !== expected) mismatched.push(`${family}: ${file.file} ≠ ${expected}`);
+      const expected = path.basename(
+        curatedFontPath(slug, file.weight, file.subset),
+      );
+      if (file.file !== expected)
+        mismatched.push(`${family}: ${file.file} ≠ ${expected}`);
     }
   }
   assert.deepEqual(mismatched, [], mismatched.join('\n'));
@@ -128,7 +144,7 @@ test('no two pins write to the same file', () => {
     assert.equal(
       new Set(names).size,
       names.length,
-      `${family} pins the same output filename twice — one download would overwrite the other`
+      `${family} pins the same output filename twice — one download would overwrite the other`,
     );
   }
 });
@@ -140,7 +156,7 @@ test('the lock records the unicode ranges the CSS generators emit', () => {
   assert.deepEqual(
     lock.subsets,
     FONT_SUBSETS.map(({ name, unicodeRange }) => ({ name, unicodeRange })),
-    'lockfile subsets drifted from FONT_SUBSETS — re-run --update-lock'
+    'lockfile subsets drifted from FONT_SUBSETS — re-run --update-lock',
   );
 });
 
@@ -150,7 +166,11 @@ test('curatedFontFaces() describes the same set of files as the lock', () => {
       .map((f) => path.basename(f.path))
       .sort();
     const pinned = lock.fonts[font.family].files.map((f) => f.file).sort();
-    assert.deepEqual(faces, pinned, `${font.family}: face list and pin list disagree`);
+    assert.deepEqual(
+      faces,
+      pinned,
+      `${font.family}: face list and pin list disagree`,
+    );
   }
 });
 
@@ -167,7 +187,10 @@ test('downloaded font files match their pinned checksums', async () => {
   const mismatches = [];
   for (const [family, entry] of Object.entries(lock.fonts)) {
     for (const file of entry.files) {
-      const abs = path.join(repoRoot, curatedFontPath(entry.slug, file.weight, file.subset));
+      const abs = path.join(
+        repoRoot,
+        curatedFontPath(entry.slug, file.weight, file.subset),
+      );
       let buf;
       try {
         buf = await fs.readFile(abs);
@@ -176,7 +199,8 @@ test('downloaded font files match their pinned checksums', async () => {
         continue;
       }
       const actual = crypto.createHash('sha256').update(buf).digest('hex');
-      if (actual !== file.sha256) mismatches.push(`${family} ${file.file}: checksum mismatch`);
+      if (actual !== file.sha256)
+        mismatches.push(`${family} ${file.file}: checksum mismatch`);
     }
   }
   assert.deepEqual(mismatches, [], mismatches.join('\n'));

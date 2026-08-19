@@ -289,9 +289,7 @@ export default {
 
     let metrics = Array.isArray(content?.metrics) ? content.metrics : [];
     if (!Array.isArray(metrics)) metrics = [];
-    metrics = metrics
-      .filter((m) => m && typeof m === 'object')
-      .slice(0, 4);
+    metrics = metrics.filter((m) => m && typeof m === 'object').slice(0, 4);
     const count = clampInt(metrics.length, 1, 4, 1);
 
     const cards = [];

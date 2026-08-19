@@ -13,14 +13,25 @@ import { HEADER_GHOSTS, HEADER_TEXT } from '../../inline-edit-common.js';
 
 /** @type {Object} InlineDescriptor for kpi-metrics-slide. */
 export const inlineEdit = {
-    ghosts: HEADER_GHOSTS,
-    itemGhosts: [
-      { list: 'metrics', field: 'unit', item: '.kpi-metric', within: '.kpi-value', pos: 'append', chip: 'top-start' },
-    ],
-    cards: { field: 'metrics', container: '.kpi-grid', itemSelector: '.kpi-metric' },
-    // metrics stays in the form: delta/note subfields have no inline path.
-    formText: HEADER_TEXT,
-  };
+  ghosts: HEADER_GHOSTS,
+  itemGhosts: [
+    {
+      list: 'metrics',
+      field: 'unit',
+      item: '.kpi-metric',
+      within: '.kpi-value',
+      pos: 'append',
+      chip: 'top-start',
+    },
+  ],
+  cards: {
+    field: 'metrics',
+    container: '.kpi-grid',
+    itemSelector: '.kpi-metric',
+  },
+  // metrics stays in the form: delta/note subfields have no inline path.
+  formText: HEADER_TEXT,
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the

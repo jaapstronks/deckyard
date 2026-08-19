@@ -9,7 +9,7 @@ defines them: what the levels are, which grants exist, in what order they are
 consulted, who can hand them out, and how the answer is cached. The
 **organization** axis — which organization a request acts in, and why a deck in
 another organization is absent rather than forbidden — is
-[`tenant-isolation.md`](tenant-isolation.md), and it sits *underneath*
+[`tenant-isolation.md`](tenant-isolation.md), and it sits _underneath_
 everything here: a deck that the storage scope does not return never reaches a
 permission check at all.
 
@@ -84,17 +84,17 @@ operation is allowed — are `client/lib/comments/comment-authz.js`,
 
 Four levels, ordered, defined once in `shared/constants/permissions.js`:
 
-| Level | Read | Comment | Edit | Manage collaborators |
-|---|---|---|---|---|
-| `view` | ✅ | — | — | — |
-| `comment` | ✅ | ✅ | — | — |
-| `edit` | ✅ | ✅ | ✅ | — |
-| `admin` | ✅ | ✅ | ✅ | ✅ |
+| Level     | Read | Comment | Edit | Manage collaborators |
+| --------- | ---- | ------- | ---- | -------------------- |
+| `view`    | ✅   | —       | —    | —                    |
+| `comment` | ✅   | ✅      | —    | —                    |
+| `edit`    | ✅   | ✅      | ✅   | —                    |
+| `admin`   | ✅   | ✅      | ✅   | ✅                   |
 
-`admin` is a *deck-level* level: it lets someone delegate access without owning
+`admin` is a _deck-level_ level: it lets someone delegate access without owning
 the deck (migration 022, which widened the `check_collaborator_permission`
 constraint). It is unrelated to the instance-wide `isAdmin` flag and to an
-organization role — see *Authz & tenancy* below.
+organization role — see _Authz & tenancy_ below.
 
 Above the ladder sit two positions that are not levels because they are not
 handed out per deck:
@@ -119,14 +119,14 @@ share link — a link cannot delegate.
 **`presentation_collaborators`** (migration 010) — one row per person invited
 to one deck:
 
-| Column | Notes |
-|---|---|
-| `presentation_id` | FK, `ON DELETE CASCADE` |
-| `user_email` | The leading key. `(presentation_id, user_email)` is unique (`unique_collaborator`). |
-| `user_id` | FK to `users.id`, nullable, `ON DELETE SET NULL` (migration 062). Written on every invite, **not yet read** — see *Implementation status*. |
-| `organization_id` | A denormalized copy of the *deck's* organization, stamped from the presentation row. Read by exactly one query — the "shared with me" listing. |
-| `permission` | `view` / `comment` / `edit` / `admin` (migrations 010, 022). |
-| `invited_by`, `invited_at`, `accepted_at` | Provenance. |
+| Column                                           | Notes                                                                                                                                                                               |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `presentation_id`                                | FK, `ON DELETE CASCADE`                                                                                                                                                             |
+| `user_email`                                     | The leading key. `(presentation_id, user_email)` is unique (`unique_collaborator`).                                                                                                 |
+| `user_id`                                        | FK to `users.id`, nullable, `ON DELETE SET NULL` (migration 062). Written on every invite, **not yet read** — see _Implementation status_.                                          |
+| `organization_id`                                | A denormalized copy of the _deck's_ organization, stamped from the presentation row. Read by exactly one query — the "shared with me" listing.                                      |
+| `permission`                                     | `view` / `comment` / `edit` / `admin` (migrations 010, 022).                                                                                                                        |
+| `invited_by`, `invited_at`, `accepted_at`        | Provenance.                                                                                                                                                                         |
 | `revoked_at`, `revoked_by`, `revocation_message` | Revocation is a soft delete; every read filters `revoked_at IS NULL`. Re-inviting a revoked collaborator reactivates the same row. `revocation_message` arrives from migration 027. |
 
 Two partial indexes, both `WHERE revoked_at IS NULL`: by `presentation_id`
@@ -139,7 +139,7 @@ display and the fallback identifier.
 
 **`presentation_share_links`** (migration 004) — token, `permission`,
 `expires_at`, `revoked_at`, `revocation_message`. The token is globally unique
-and *is* the authorization, which is why link reads take no organization
+and _is_ the authorization, which is why link reads take no organization
 (see `tenant-isolation.md`, edge decision 6).
 
 ## Flows
@@ -151,7 +151,7 @@ the caller passes the request's central storage scope; the helper builds
 nothing itself:
 
 1. `getPresentation(storageScope, id)` — organization-scoped.
-   Nothing back → **404**. A deck in another organization is *absent*, not
+   Nothing back → **404**. A deck in another organization is _absent_, not
    forbidden, so authorization never sees it.
 2. For `read` and `write`, look up the caller's collaborator permission
    (cached).
@@ -171,7 +171,7 @@ Every deck-level decider consults the same grants in the same order. Taking
 
 1. **Unrestricted operator** → grant.
 2. **No identity at all** (neither `users.id` nor an email) → refuse.
-3. **Organization visibility** — the deck is `visibility: 'organization'` *and*
+3. **Organization visibility** — the deck is `visibility: 'organization'` _and_
    `isSameOrganization(user, pres)` → grant. This is the only grant that rests
    on "we are in the same organization"; it is what makes an organization deck
    readable by colleagues who were never invited.
@@ -182,7 +182,7 @@ Every deck-level decider consults the same grants in the same order. Taking
 
 Where the deciders differ from that shape, they differ deliberately:
 
-- **`canWritePresentation`** puts ownership *before* the organization grant,
+- **`canWritePresentation`** puts ownership _before_ the organization grant,
   because two gates sit in between: in sandbox mode an organization deck is
   read-only for guests (curated seed content), and `isViewOnly` makes a deck
   read-only for everyone who is not its owner.
@@ -190,7 +190,7 @@ Where the deciders differ from that shape, they differ deliberately:
   **`canTransferOwnership`** and **`isPresentationAuthor`** consult ownership
   only. No collaborator level reaches them, `admin` included.
 - **`canManageCollaborators`** grants to owner/creator or an `admin`
-  collaborator. Note what is *absent*: the organization grant. Being in the deck's
+  collaborator. Note what is _absent_: the organization grant. Being in the deck's
   organization lets you edit it; it does not let you hand out access to it.
 - **`canChangePresentationVisibility`** is a transition check, not a level check:
   same-visibility is a no-op and always allowed; the instance `isAdmin` may make any
@@ -210,7 +210,7 @@ Where the deciders differ from that shape, they differ deliberately:
 1. **Both sides carry a `users.id`** → the ids decide, no email is read.
 2. **Either side lacks one** → the emails decide.
 
-Case 2 is the *defined absence* of the key, not a second key: external or
+Case 2 is the _defined absence_ of the key, not a second key: external or
 legacy rows whose email never matched a `users` row keep a NULL id, and the
 auth-off operator and dev bypass are not database users at all. The two keys
 cannot disagree on data this codebase writes — every write path resolves the id
@@ -264,15 +264,15 @@ every authorized request, so it is cached:
 
 ## Config & flags
 
-| Variable | Effect |
-|---|---|
-| `PERMISSION_CACHE_TTL_SECONDS` | Cache TTL, default `300`. |
-| `PERMISSION_CACHE_MAX_SIZE` | Max entries in the in-memory fallback, default `10000`. |
-| `REDIS_URL` | When set and reachable, permissions cache in Redis and invalidation is instance-wide. Absent → memory only (the same optional-Redis rule as [`jobs-and-queues.md`](jobs-and-queues.md)). |
-| `AUTH_ENABLED=false` | Produces the single `unrestricted` operator; every ownership-scoped check grants. |
-| `AUTH_DEV_BYPASS` | Auto-login in development. The bypass user is not a database user, so it decides on the email fallback. |
-| `MULTI_ORG_ENABLED` | Turns `isSameOrganization` into a real comparison. Unset, it answers `true` from the flag without reading anything. |
-| `SANDBOX_MODE` | Organization decks become read-only for guests and every visibility transition is refused. See [`sandbox-mode.md`](sandbox-mode.md). |
+| Variable                       | Effect                                                                                                                                                                                   |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PERMISSION_CACHE_TTL_SECONDS` | Cache TTL, default `300`.                                                                                                                                                                |
+| `PERMISSION_CACHE_MAX_SIZE`    | Max entries in the in-memory fallback, default `10000`.                                                                                                                                  |
+| `REDIS_URL`                    | When set and reachable, permissions cache in Redis and invalidation is instance-wide. Absent → memory only (the same optional-Redis rule as [`jobs-and-queues.md`](jobs-and-queues.md)). |
+| `AUTH_ENABLED=false`           | Produces the single `unrestricted` operator; every ownership-scoped check grants.                                                                                                        |
+| `AUTH_DEV_BYPASS`              | Auto-login in development. The bypass user is not a database user, so it decides on the email fallback.                                                                                  |
+| `MULTI_ORG_ENABLED`            | Turns `isSameOrganization` into a real comparison. Unset, it answers `true` from the flag without reading anything.                                                                      |
+| `SANDBOX_MODE`                 | Organization decks become read-only for guests and every visibility transition is refused. See [`sandbox-mode.md`](sandbox-mode.md).                                                     |
 
 ## Authz & tenancy
 
@@ -286,11 +286,11 @@ the usual mistake:
    which gates the organization grant as defense in depth.
 2. **The per-deck ladder** — this document.
 3. **Instance and organization roles** — `isAdmin` (instance) and the
-   organization role. These govern admin *screens* and organization
+   organization role. These govern admin _screens_ and organization
    membership, and they deliberately do **not** grant deck read or write:
    an instance admin can change a deck's visibility and moderate its comments, but
    `canReadPresentation` never consults `isAdmin`. Organization roles are in
-   `tenant-isolation.md` § *The organization UI*.
+   `tenant-isolation.md` § _The organization UI_.
 
 Two consequences worth stating explicitly:
 
@@ -299,7 +299,7 @@ Two consequences worth stating explicitly:
   whether the session may see the deck by loading it on an organization-scoped
   storage scope. A cross-organization collaborator therefore reaches the deck
   through every presentation-scoped endpoint — but does not appear in their own
-  "shared with me" list, which is the one collaborator query that *is*
+  "shared with me" list, which is the one collaborator query that _is_
   organization-scoped. Whether that listing should be organization-scoped is an
   open product question (`tenant-isolation.md`, edge decision 5).
 - A share link and a follow code authorize on the token alone, with no
@@ -323,10 +323,10 @@ Normative target: **one ladder, one decider per question, keyed on
   but no read consults it: `getCollaboratorPermission`, the cache key, the
   unique constraint and both indexes are all on `user_email`. Moving the ACL
   reads onto the id is the remaining step of the identity epic; it changes the
-  *keying*, not the ladder, so nothing in this document depends on it.
+  _keying_, not the ladder, so nothing in this document depends on it.
 - **Comment authorship also still keys on the email**, for a different reason:
   `presentation_comments` has no author-id column (migration 003), so there is
-  no key to compare yet. Comment *moderation* (resolve, reopen, delete on your
+  no key to compare yet. Comment _moderation_ (resolve, reopen, delete on your
   own deck) goes through the id-keyed ownership decider.
 - **`presentation_collaborators.organization_id` is a denormalized copy** and a
   known R2 hazard. It drifted once — the write path stamped the inviter's

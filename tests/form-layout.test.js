@@ -39,8 +39,14 @@ describe('the hint vocabulary is closed and degrades', () => {
     assert.equal(fieldFormLayout({ key: 'a', formLayout: 'two-thirds' }), '');
     assert.equal(fieldFormLayout({ key: 'a', formLayout: 42 }), '');
     assert.deepEqual(
-      fieldFormRows([{ key: 'a', formLayout: 'two-thirds' }, { key: 'b', formLayout: 'two-thirds' }]),
-      [{ pair: false, keys: ['a'] }, { pair: false, keys: ['b'] }]
+      fieldFormRows([
+        { key: 'a', formLayout: 'two-thirds' },
+        { key: 'b', formLayout: 'two-thirds' },
+      ]),
+      [
+        { pair: false, keys: ['a'] },
+        { pair: false, keys: ['b'] },
+      ],
     );
   });
 
@@ -59,7 +65,7 @@ describe('fields group into rows without losing or reordering any', () => {
         { pair: false, keys: ['a'] },
         { pair: false, keys: ['b'] },
         { pair: false, keys: ['c'] },
-      ]
+      ],
     );
   });
 
@@ -102,13 +108,20 @@ describe('fields group into rows without losing or reordering any', () => {
   it('junk input is total, not throwing', () => {
     assert.deepEqual(fieldFormRows(null), []);
     assert.deepEqual(fieldFormRows(undefined), []);
-    assert.deepEqual(fieldFormRows([null, { label: 'no key' }, { key: '' }]), []);
+    assert.deepEqual(
+      fieldFormRows([null, { label: 'no key' }, { key: '' }]),
+      [],
+    );
   });
 
   it('flattening any real type reproduces its field order exactly', () => {
     for (const [type, def] of Object.entries(SLIDE_TYPES)) {
       const keys = (def.fields || []).map((f) => f.key);
-      assert.deepEqual(flat(fieldFormRows(def.fields)), keys, `${type} field order`);
+      assert.deepEqual(
+        flat(fieldFormRows(def.fields)),
+        keys,
+        `${type} field order`,
+      );
     }
   });
 });
@@ -141,12 +154,26 @@ describe('the four retired forms are declarations now', () => {
   it('none of the four is in the router table any more', async () => {
     const { readFileSync } = await import('node:fs');
     const src = readFileSync(
-      new URL('../client/views/editor/editor-form/slide-form-router.js', import.meta.url),
-      'utf8'
+      new URL(
+        '../client/views/editor/editor-form/slide-form-router.js',
+        import.meta.url,
+      ),
+      'utf8',
     );
-    const table = src.slice(src.indexOf('const SLIDE_FORMS'), src.indexOf(']);'));
-    for (const type of ['title-slide', 'content-slide', 'list-slide', 'kpi-metrics-slide']) {
-      assert.ok(!table.includes(`'${type}'`), `${type} should render generically`);
+    const table = src.slice(
+      src.indexOf('const SLIDE_FORMS'),
+      src.indexOf(']);'),
+    );
+    for (const type of [
+      'title-slide',
+      'content-slide',
+      'list-slide',
+      'kpi-metrics-slide',
+    ]) {
+      assert.ok(
+        !table.includes(`'${type}'`),
+        `${type} should render generically`,
+      );
     }
   });
 });
@@ -160,9 +187,14 @@ describe('no type declares a pair with nobody to pair with', () => {
     const lonely = [];
     for (const [type, def] of Object.entries(SLIDE_TYPES)) {
       for (const row of fieldFormRows(def.fields)) {
-        if (row.pair && row.keys.length < 2) lonely.push(`${type}: ${row.keys[0]}`);
+        if (row.pair && row.keys.length < 2)
+          lonely.push(`${type}: ${row.keys[0]}`);
       }
     }
-    assert.deepEqual(lonely, [], `these fields pair with nothing:\n${lonely.join('\n')}`);
+    assert.deepEqual(
+      lonely,
+      [],
+      `these fields pair with nothing:\n${lonely.join('\n')}`,
+    );
   });
 });

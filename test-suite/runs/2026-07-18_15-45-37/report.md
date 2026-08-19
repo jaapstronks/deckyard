@@ -13,31 +13,31 @@ No prompt files changed since then — differences are run-to-run variance.
 
 ## Scores by dimension
 
-| Dimension | Score | vs. previous |
-| --- | ---: | ---: |
-| Coverage | 4.73 | · +0.09 |
-| Structure | 4.64 | · 0.00 |
-| Slide economy | 4.00 | · +0.09 |
-| Faithfulness | 4.82 | · +0.09 |
-| Presentability | 4.09 | ▲ +0.18 |
-| Closeness to human deck | 2.80 | · 0.00 |
-| **Overall** | **4.46** | · +0.09 |
+| Dimension               |    Score | vs. previous |
+| ----------------------- | -------: | -----------: |
+| Coverage                |     4.73 |      · +0.09 |
+| Structure               |     4.64 |       · 0.00 |
+| Slide economy           |     4.00 |      · +0.09 |
+| Faithfulness            |     4.82 |      · +0.09 |
+| Presentability          |     4.09 |      ▲ +0.18 |
+| Closeness to human deck |     2.80 |       · 0.00 |
+| **Overall**             | **4.46** |      · +0.09 |
 
 ## Per-case results
 
-| Case | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| asml-q4-2024 | A | 11 | 23.55 | 0 | 88% | 4/5 | 4.33 |
-| cbs-persbericht-criminaliteit | B | 13 | 25.92 | 0 | 95% | 5/5 | 4.60 |
-| cbs-veiligheidsmonitor-2025 | B | 33 | 32.76 | 0 | 98% | 5/5 | 4.60 |
-| cloudflare-nov-2025-outage | B | 18 | 39.28 | 0 | 100% | 5/5 | 4.60 |
-| deckyard-readme | B | 14 | 36 | 0 | 100% | 4/5 | 4.40 |
-| iea-weo-2024 | A | 23 | 52.96 | 4 | 70% | 5/5 | 4.17 |
-| naacl-good-conversation | A | 26 | 34.08 | 0 | 89% | 5/5 | 4.00 |
-| nl-kamerbrief-duurzame-digitalisering | B | 13 | 28.46 | 0 | 100% | 5/5 | 4.60 |
-| pbl-kev-2024 | A | 24 | 31.21 | 0 | 98% | 4/5 | 3.83 |
-| philips-q4-2024 | A | 22 | 28.95 | 0 | 100% | 5/5 | 4.00 |
-| wikipedia-zero-knowledge-proof | B | 25 | 42.16 | 0 | 100% | 5/5 | 4.60 |
+| Case                                  | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
+| ------------------------------------- | --- | -----: | ----------: | ----: | -------------: | -------: | ---: |
+| asml-q4-2024                          | A   |     11 |       23.55 |     0 |            88% |      4/5 | 4.33 |
+| cbs-persbericht-criminaliteit         | B   |     13 |       25.92 |     0 |            95% |      5/5 | 4.60 |
+| cbs-veiligheidsmonitor-2025           | B   |     33 |       32.76 |     0 |            98% |      5/5 | 4.60 |
+| cloudflare-nov-2025-outage            | B   |     18 |       39.28 |     0 |           100% |      5/5 | 4.60 |
+| deckyard-readme                       | B   |     14 |          36 |     0 |           100% |      4/5 | 4.40 |
+| iea-weo-2024                          | A   |     23 |       52.96 |     4 |            70% |      5/5 | 4.17 |
+| naacl-good-conversation               | A   |     26 |       34.08 |     0 |            89% |      5/5 | 4.00 |
+| nl-kamerbrief-duurzame-digitalisering | B   |     13 |       28.46 |     0 |           100% |      5/5 | 4.60 |
+| pbl-kev-2024                          | A   |     24 |       31.21 |     0 |            98% |      4/5 | 3.83 |
+| philips-q4-2024                       | A   |     22 |       28.95 |     0 |           100% |      5/5 | 4.00 |
+| wikipedia-zero-knowledge-proof        | B   |     25 |       42.16 |     0 |           100% |      5/5 | 4.60 |
 
 ## Weakest dimensions — judge rationales
 
@@ -95,7 +95,7 @@ These rationales are the input for the next prompt change.
 
 ## Cost breakdown
 
-| Category | Calls | Input | Output | Cache write | Cache read | USD |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| judge | 9 | 969437 | 18368 | 0 | 0 | $5.3064 |
-| **Total** | 9 | 969437 | 18368 | 0 | 0 | **$5.3064** |
+| Category  | Calls |  Input | Output | Cache write | Cache read |         USD |
+| --------- | ----: | -----: | -----: | ----------: | ---------: | ----------: |
+| judge     |     9 | 969437 |  18368 |           0 |          0 |     $5.3064 |
+| **Total** |     9 | 969437 |  18368 |           0 |          0 | **$5.3064** |

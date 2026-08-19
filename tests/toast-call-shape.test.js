@@ -136,13 +136,15 @@ test('no raw toast(msg, …) with a type intent in client/ — use the sugar hel
         site.kind === 'string'
           ? "string second argument (read as opts → silently 'info')"
           : 'object with a type: key';
-      violations.push(`${rel}:${lineOf(src, site.index)}  ${how} — use toast.error/.success/.warning/.info`);
+      violations.push(
+        `${rel}:${lineOf(src, site.index)}  ${how} — use toast.error/.success/.warning/.info`,
+      );
     }
   }
   assert.equal(
     violations.length,
     0,
-    `Route semantic toasts through the sugar helpers (client/lib/dom/toast.js):\n  ${violations.join('\n  ')}`
+    `Route semantic toasts through the sugar helpers (client/lib/dom/toast.js):\n  ${violations.join('\n  ')}`,
   );
 });
 
@@ -151,7 +153,10 @@ test('the detector catches both forbidden forms and passes the allowed ones', ()
   assert.equal(badToastSites("toast(msg, 'error')").length, 1);
   assert.equal(badToastSites("toast(t('k', 'default'), 'error')").length, 1);
   assert.equal(badToastSites("toast(msg, { type: 'error' })").length, 1);
-  assert.equal(badToastSites("toast(msg, { type: 'error', id: 'x' })").length, 1);
+  assert.equal(
+    badToastSites("toast(msg, { type: 'error', id: 'x' })").length,
+    1,
+  );
   // Allowed.
   assert.equal(badToastSites('toast.error(msg)').length, 0);
   assert.equal(badToastSites("toast.error(msg, { id: 'x' })").length, 0);

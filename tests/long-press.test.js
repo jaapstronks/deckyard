@@ -17,9 +17,8 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>');
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 
-const { attachLongPress, SYNTHETIC_CLICK_WINDOW_MS } = await import(
-  '../client/lib/dom/long-press.js'
-);
+const { attachLongPress, SYNTHETIC_CLICK_WINDOW_MS } =
+  await import('../client/lib/dom/long-press.js');
 
 /** Dispatch one touch event with the given touch-list shape. */
 function fireTouch(el, type, { touches, target } = {}) {
@@ -33,7 +32,7 @@ function fireTouch(el, type, { touches, target } = {}) {
 /** A document-level click, as the browser would deliver on tap. */
 function fireDocumentClick() {
   return document.dispatchEvent(
-    new dom.window.Event('click', { bubbles: true, cancelable: true })
+    new dom.window.Event('click', { bubbles: true, cancelable: true }),
   );
 }
 
@@ -93,6 +92,6 @@ test('the window is short enough to clear before a human can act', () => {
   // regression that shipped at 900ms; keep it well under that.
   assert.ok(
     SYNTHETIC_CLICK_WINDOW_MS <= 500,
-    `expected a short guard window, got ${SYNTHETIC_CLICK_WINDOW_MS}ms`
+    `expected a short guard window, got ${SYNTHETIC_CLICK_WINDOW_MS}ms`,
   );
 });

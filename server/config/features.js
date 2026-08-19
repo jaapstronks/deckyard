@@ -154,7 +154,7 @@ export function deprecatedFlagWarnings() {
       : '';
     warnings.push(
       `${legacyName} is deprecated and will be removed in the first release ` +
-        `after ${LEGACY_DISABLE_REMOVAL_DATE}; set ${replacement} instead${overridden}.`
+        `after ${LEGACY_DISABLE_REMOVAL_DATE}; set ${replacement} instead${overridden}.`,
     );
   }
   return warnings;

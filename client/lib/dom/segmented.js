@@ -65,7 +65,7 @@ export function createSegmented({
   ariaLabel,
   buttonClass,
 } = {}) {
-  let current = value === undefined ? segments[0]?.value ?? null : value;
+  let current = value === undefined ? (segments[0]?.value ?? null) : value;
 
   const buttons = new Map();
 
@@ -79,7 +79,9 @@ export function createSegmented({
 
   for (const seg of segments) {
     const btn = h('button', {
-      class: ['sb-segmented-btn', buttonClass, seg.className].filter(Boolean).join(' '),
+      class: ['sb-segmented-btn', buttonClass, seg.className]
+        .filter(Boolean)
+        .join(' '),
       type: 'button',
       ...(seg.label != null && seg.content == null ? { text: seg.label } : {}),
       ...(seg.title ? { title: seg.title } : {}),

@@ -19,10 +19,9 @@ export function createSessionStatePoster({
       presentationId: sessionPresId,
       slideId:
         typeof partial?.slideId === 'string' ? partial.slideId : current.id,
-      slideIndex:
-        Number.isFinite(Number(partial?.slideIndex))
-          ? Number(partial.slideIndex)
-          : Number(getCurrentIndex?.() ?? 0) || 0,
+      slideIndex: Number.isFinite(Number(partial?.slideIndex))
+        ? Number(partial.slideIndex)
+        : Number(getCurrentIndex?.() ?? 0) || 0,
       slideType:
         typeof partial?.slideType === 'string'
           ? partial.slideType

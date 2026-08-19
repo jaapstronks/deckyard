@@ -71,17 +71,18 @@ function resolveThemeSwatchLabel(raw) {
 function renderColorControl({ h, slide, fieldKey, theme, current, commit }) {
   const themeVars =
     theme?.cssVars && typeof theme.cssVars === 'object' ? theme.cssVars : {};
-  const themeSwatches = (Array.isArray(theme?.textSwatches) ? theme.textSwatches : [])
-    .filter((s) => TEXT_COLOR_SWATCH_SLOTS.includes(s?.id));
+  const themeSwatches = (
+    Array.isArray(theme?.textSwatches) ? theme.textSwatches : []
+  ).filter((s) => TEXT_COLOR_SWATCH_SLOTS.includes(s?.id));
 
   const currentColor = current.color || COLOR_DEFAULT;
-  const options = [
-    ...COLOR_BASE_IDS.map((id) => ({ id })),
-    ...themeSwatches,
-  ];
+  const options = [...COLOR_BASE_IDS.map((id) => ({ id })), ...themeSwatches];
   // Defensive: a stored brand the current theme no longer offers stays visible
   // (and therefore removable) instead of being a stuck invisible override.
-  if (currentColor !== COLOR_DEFAULT && !options.some((o) => o.id === currentColor)) {
+  if (
+    currentColor !== COLOR_DEFAULT &&
+    !options.some((o) => o.id === currentColor)
+  ) {
     options.push({ id: currentColor });
   }
 
@@ -89,7 +90,8 @@ function renderColorControl({ h, slide, fieldKey, theme, current, commit }) {
   // are hints; the real muted is band-aware (currentColor-derived) at render.
   const swatchColor = (id) => {
     if (id === 'default') return null;
-    if (id === 'muted') return themeVars['--t-color-text-muted'] || 'rgba(0,0,0,0.45)';
+    if (id === 'muted')
+      return themeVars['--t-color-text-muted'] || 'rgba(0,0,0,0.45)';
     if (id === 'accent') return themeVars['--t-color-accent'] || '';
     return themeVars[`--t-color-${id}`] || '';
   };
@@ -123,8 +125,15 @@ function renderColorControl({ h, slide, fieldKey, theme, current, commit }) {
     if (opt.id === currentColor) btn.classList.add('is-active');
     const sw =
       col == null
-        ? h('span', { class: 'sb-swatch sb-swatch-transparent', 'aria-hidden': 'true' })
-        : h('span', { class: 'sb-swatch', style: `--sb-swatch:${col}`, 'aria-hidden': 'true' });
+        ? h('span', {
+            class: 'sb-swatch sb-swatch-transparent',
+            'aria-hidden': 'true',
+          })
+        : h('span', {
+            class: 'sb-swatch',
+            style: `--sb-swatch:${col}`,
+            'aria-hidden': 'true',
+          });
     btn.append(sw, h('span', { class: 'sb-swatch-label', text: label }));
     btn.addEventListener('click', () => {
       setActive(opt.id);
@@ -134,7 +143,10 @@ function renderColorControl({ h, slide, fieldKey, theme, current, commit }) {
     group.append(btn);
   }
   return h('div', { class: 'stack is-field is-field-full' }, [
-    h('div', { class: 'field-label', text: t('editor.textStyle.color', 'Text colour') }),
+    h('div', {
+      class: 'field-label',
+      text: t('editor.textStyle.color', 'Text colour'),
+    }),
     group,
   ]);
 }
@@ -171,7 +183,11 @@ function renderGroupAlignHint({ h, fieldRenderers, group, slide }) {
       label: t(`editor.textStyle.align.${v}`, v[0].toUpperCase() + v.slice(1)),
     })),
   };
-  const el = fieldRenderers.fieldEnum(field, resolveGroupAlign(group, slide?.content), () => {});
+  const el = fieldRenderers.fieldEnum(
+    field,
+    resolveGroupAlign(group, slide?.content),
+    () => {},
+  );
   el.classList.add('is-disabled');
   for (const btn of el.querySelectorAll('button, input, select')) {
     btn.disabled = true;
@@ -182,9 +198,9 @@ function renderGroupAlignHint({ h, fieldRenderers, group, slide }) {
       class: 'help',
       text: t(
         'editor.textStyle.align.groupOwned',
-        'This text moves with the whole block. Set its alignment under Layout in the toolbar.'
+        'This text moves with the whole block. Set its alignment under Layout in the toolbar.',
       ),
-    })
+    }),
   );
   return el;
 }
@@ -193,11 +209,19 @@ function renderGroupAlignHint({ h, fieldRenderers, group, slide }) {
  * Write one style property for a field, pruning defaults so the stored map
  * never carries no-op overrides. Mutates `slide.content.textStyles`.
  */
-function setTextStyle(slide, fieldKey, prop, value, defaultValue, typeDef = null) {
+function setTextStyle(
+  slide,
+  fieldKey,
+  prop,
+  value,
+  defaultValue,
+  typeDef = null,
+) {
   const content = slide.content || (slide.content = {});
   const map = { ...(content.textStyles || {}) };
   const style = { ...(map[fieldKey] || {}) };
-  if (value === defaultValue || value == null || value === '') delete style[prop];
+  if (value === defaultValue || value == null || value === '')
+    delete style[prop];
   else style[prop] = value;
   if (Object.keys(style).length) map[fieldKey] = style;
   else delete map[fieldKey];
@@ -235,7 +259,8 @@ export function renderTextElementCard({
   if (!fieldEnum || !fieldKey) return false;
   const slideTypeDef = getSlideType(slide?.type) || null;
   const current =
-    normalizeTextStyles(slide?.content?.textStyles, slideTypeDef)[fieldKey] || {};
+    normalizeTextStyles(slide?.content?.textStyles, slideTypeDef)[fieldKey] ||
+    {};
 
   const commit = () => {
     markDirty?.();
@@ -300,7 +325,14 @@ export function renderTextElementCard({
         })
       : null;
 
-  const colorEl = renderColorControl({ h, slide, fieldKey, theme, current, commit });
+  const colorEl = renderColorControl({
+    h,
+    slide,
+    fieldKey,
+    theme,
+    current,
+    commit,
+  });
 
   const sizeField = {
     key: 'textSize',
@@ -325,7 +357,7 @@ export function renderTextElementCard({
       groupHintEl,
       colorEl,
       sizeEl,
-    ].filter(Boolean)
+    ].filter(Boolean),
   );
   return true;
 }

@@ -45,7 +45,12 @@ export function createLockRequestUI({
     title: t('editor.pendingRequests', 'Pending access requests'),
     style: 'display: none;',
   });
-  const lockRequestsIcon = h('img', { class: 'topbar-btn-icon', src: iconUrl('inbox'), alt: '', 'aria-hidden': 'true' });
+  const lockRequestsIcon = h('img', {
+    class: 'topbar-btn-icon',
+    src: iconUrl('inbox'),
+    alt: '',
+    'aria-hidden': 'true',
+  });
   const lockRequestsCount = h('span', { text: ' 0' });
   lockRequestsIndicator.append(lockRequestsIcon, lockRequestsCount);
 
@@ -55,7 +60,8 @@ export function createLockRequestUI({
   if (typeof setLockStateCallback === 'function') {
     try {
       setLockStateCallback((state, actions) => {
-        const { isHolder, lockInfo, myRequest, pendingRequestsCount } = state || {};
+        const { isHolder, lockInfo, myRequest, pendingRequestsCount } =
+          state || {};
 
         // If we were waiting for access and now we're the holder, show success
         if (wasWaitingForAccess && isHolder) {
@@ -83,11 +89,17 @@ export function createLockRequestUI({
         }
 
         // Toast notification when new requests come in
-        if (isHolder && pendingRequestsCount > prevPendingCount && prevPendingCount >= 0) {
+        if (
+          isHolder &&
+          pendingRequestsCount > prevPendingCount &&
+          prevPendingCount >= 0
+        ) {
           const newCount = pendingRequestsCount - prevPendingCount;
           toast.info(
-            t('editor.newAccessRequest', '{n} new access request(s)', { n: newCount }),
-            { id: 'lock-request-toast', durationMs: 8000 }
+            t('editor.newAccessRequest', '{n} new access request(s)', {
+              n: newCount,
+            }),
+            { id: 'lock-request-toast', durationMs: 8000 },
           );
         }
         prevPendingCount = pendingRequestsCount || 0;
@@ -116,7 +128,10 @@ export function createLockRequestUI({
           lockRequestBtn.style.display = '';
           lockRequestBtn.onclick = async () => {
             lockRequestBtn.disabled = true;
-            lockRequestBtn.textContent = t('editor.requesting', 'Requesting...');
+            lockRequestBtn.textContent = t(
+              'editor.requesting',
+              'Requesting...',
+            );
             const result = await actions?.requestAccess?.();
             if (result?.ok) {
               wasWaitingForAccess = true;
@@ -124,19 +139,27 @@ export function createLockRequestUI({
               toast.success(t('editor.requestSent', 'Access request sent'));
             } else {
               lockRequestBtn.disabled = false;
-              lockRequestBtn.textContent = t('editor.requestAccess', 'Request Access');
+              lockRequestBtn.textContent = t(
+                'editor.requestAccess',
+                'Request Access',
+              );
               toast.error(t('editor.requestFailed', 'Request failed'));
             }
           };
         } else if (myRequest?.status === 'pending') {
           lockRequestBtn.style.display = '';
           lockRequestBtn.disabled = true;
-          lockRequestBtn.textContent = t('editor.waitingForAccess', 'Waiting for access...');
+          lockRequestBtn.textContent = t(
+            'editor.waitingForAccess',
+            'Waiting for access...',
+          );
         } else if (myRequest?.status === 'accepted' && !acquireInProgress) {
           // Access granted - try to acquire lock
           acquireInProgress = true;
           lockRequestBtn.style.display = 'none';
-          toast.success(t('editor.accessGranted', 'Access granted! Acquiring lock...'));
+          toast.success(
+            t('editor.accessGranted', 'Access granted! Acquiring lock...'),
+          );
           actions?.acquire?.();
         } else {
           lockRequestBtn.style.display = 'none';

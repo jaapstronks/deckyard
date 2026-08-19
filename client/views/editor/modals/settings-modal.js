@@ -1,6 +1,11 @@
 import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { buildQaSection, buildBuildsSection, buildAuthorPreviewSection, buildRssFeedSection } from './settings-modal/toggles.js';
+import {
+  buildQaSection,
+  buildBuildsSection,
+  buildAuthorPreviewSection,
+  buildRssFeedSection,
+} from './settings-modal/toggles.js';
 import { buildRevealStyleSection } from './settings-modal/reveal-style.js';
 import { buildThemeSection } from './settings-modal/theme.js';
 import { buildTransitionsSection } from './settings-modal/transitions.js';

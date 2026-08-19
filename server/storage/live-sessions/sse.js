@@ -2,7 +2,10 @@ import { sseWrite } from '../../utils/sse.js';
 import { toStorageContext } from '../scope.js';
 import { schedulePersist } from './db.js';
 import { sessions } from './state.js';
-import { touchLiveSession, findMostRecentSessionForPresentation } from './sessions.js';
+import {
+  touchLiveSession,
+  findMostRecentSessionForPresentation,
+} from './sessions.js';
 
 /**
  * Attach one SSE client to a session's stream. Capability-based: the session
@@ -18,7 +21,12 @@ import { touchLiveSession, findMostRecentSessionForPresentation } from './sessio
  *   signalling).
  */
 export async function attachSessionSseClient(scope, sessionId, res) {
-  toStorageContext(scope, 'attachSessionSseClient', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'attachSessionSseClient',
+    {},
+    { allowCrossOrganization: true },
+  );
   const touched = await touchLiveSession(scope, sessionId);
   if (!touched.ok) return null;
   const s = touched.session;
@@ -76,12 +84,23 @@ export async function broadcast(scope, sessionId, event, data) {
   return true;
 }
 
-export async function notifyLiveSessionInteractionState(scope, sessionId, interactionState) {
-  toStorageContext(scope, 'notifyLiveSessionInteractionState', {}, { allowCrossOrganization: true });
+export async function notifyLiveSessionInteractionState(
+  scope,
+  sessionId,
+  interactionState,
+) {
+  toStorageContext(
+    scope,
+    'notifyLiveSessionInteractionState',
+    {},
+    { allowCrossOrganization: true },
+  );
   const sid = String(sessionId || '').trim();
   if (!sid) return false;
   return broadcast(scope, sid, 'interactionState', {
-    ...(interactionState && typeof interactionState === 'object' ? interactionState : {}),
+    ...(interactionState && typeof interactionState === 'object'
+      ? interactionState
+      : {}),
     updatedAt: Date.now(),
   });
 }
@@ -89,9 +108,14 @@ export async function notifyLiveSessionInteractionState(scope, sessionId, intera
 export function notifyLiveSessionDeckUpdated(
   scope,
   sessionId,
-  { presentationId = '', slideId = '', reason = 'deck_updated' } = {}
+  { presentationId = '', slideId = '', reason = 'deck_updated' } = {},
 ) {
-  toStorageContext(scope, 'notifyLiveSessionDeckUpdated', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'notifyLiveSessionDeckUpdated',
+    {},
+    { allowCrossOrganization: true },
+  );
   const sid = String(sessionId || '').trim();
   if (!sid) return { ok: false, reason: 'missing_sessionId' };
   const payload = {
@@ -112,13 +136,19 @@ export function notifyLiveSessionDeckUpdated(
 export async function notifyDeckUpdatedForPresentation(
   scope,
   presentationId,
-  { slideId = '', reason = 'deck_updated' } = {}
+  { slideId = '', reason = 'deck_updated' } = {},
 ) {
-  toStorageContext(scope, 'notifyDeckUpdatedForPresentation', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'notifyDeckUpdatedForPresentation',
+    {},
+    { allowCrossOrganization: true },
+  );
   const pid = String(presentationId || '').trim();
   if (!pid) return { ok: false, reason: 'missing_presentationId' };
   const s = await findMostRecentSessionForPresentation(scope, pid);
-  if (!s?.sessionId || !s.clients?.size) return { ok: false, reason: 'no_live_session' };
+  if (!s?.sessionId || !s.clients?.size)
+    return { ok: false, reason: 'no_live_session' };
   return notifyLiveSessionDeckUpdated(scope, s.sessionId, {
     presentationId: pid,
     slideId,
@@ -129,7 +159,7 @@ export async function notifyDeckUpdatedForPresentation(
 export function broadcastBranch(
   scope,
   sessionId,
-  { slideId = '', onClose = 'stay', onCloseTarget = '' } = {}
+  { slideId = '', onClose = 'stay', onCloseTarget = '' } = {},
 ) {
   // Presenter action (fired on interaction close): the scope states its organization.
   toStorageContext(scope, 'broadcastBranch');
@@ -159,9 +189,11 @@ export async function updateLiveSessionState(scope, sessionId, nextState) {
   const touched = await touchLiveSession(scope, sessionId);
   if (!touched.ok) return { ok: false, reason: 'not_found' };
   const s = touched.session;
-  const slideId = typeof nextState?.slideId === 'string' ? nextState.slideId : '';
+  const slideId =
+    typeof nextState?.slideId === 'string' ? nextState.slideId : '';
   const slideIndex = Number(nextState?.slideIndex || 0) || 0;
-  const slideType = typeof nextState?.slideType === 'string' ? nextState.slideType : '';
+  const slideType =
+    typeof nextState?.slideType === 'string' ? nextState.slideType : '';
   const stepIdx = Math.max(0, Number(nextState?.stepIdx || 0) || 0);
   const stepParagraphs =
     typeof nextState?.stepParagraphs === 'boolean'

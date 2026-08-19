@@ -14,7 +14,8 @@ function prefLabel(p) {
 
 export function createUiModeSwitcher({ h, className = '' } = {}) {
   const wrap = h('div', {
-    class: `sb-segmented is-toggle is-compact ui-mode-switcher ${className}`.trim(),
+    class:
+      `sb-segmented is-toggle is-compact ui-mode-switcher ${className}`.trim(),
     title: t('appearance.label', 'Appearance'),
     role: 'radiogroup',
     'aria-label': t('appearance.label', 'Appearance'),
@@ -40,7 +41,11 @@ export function createUiModeSwitcher({ h, className = '' } = {}) {
     return btn;
   };
 
-  const btnSystem = mkBtn('system', 'desktop', t('appearance.system', 'System'));
+  const btnSystem = mkBtn(
+    'system',
+    'desktop',
+    t('appearance.system', 'System'),
+  );
   const btnLight = mkBtn('light', 'sun', t('appearance.light', 'Light'));
   const btnDark = mkBtn('dark', 'moon', t('appearance.dark', 'Dark'));
   wrap.append(btnSystem, btnLight, btnDark);
@@ -56,7 +61,9 @@ export function createUiModeSwitcher({ h, className = '' } = {}) {
     btnSystem.setAttribute('aria-checked', s ? 'true' : 'false');
     btnLight.setAttribute('aria-checked', l ? 'true' : 'false');
     btnDark.setAttribute('aria-checked', d ? 'true' : 'false');
-    wrap.title = t('appearance.title', 'Appearance: {mode}', { mode: prefLabel(p) });
+    wrap.title = t('appearance.title', 'Appearance: {mode}', {
+      mode: prefLabel(p),
+    });
   };
 
   const detach = subscribeUiMode(sync);

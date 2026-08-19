@@ -33,12 +33,14 @@ globalThis.requestAnimationFrame = () => 0;
 
 const { h } = await import('../client/lib/dom.js');
 const data = await import('../client/views/editor/slide-type-picker/data.js');
-const companions = await import('../shared/slide-types/authoring-companions.js');
-const prefs = await import('../client/views/editor/slide-type-picker/preferences.js');
-const thumbs = await import('../client/views/editor/slide-type-picker/thumbnails.js');
-const { createSlideTypePicker } = await import(
-  '../client/views/editor/slide-type-picker/index.js'
-);
+const companions =
+  await import('../shared/slide-types/authoring-companions.js');
+const prefs =
+  await import('../client/views/editor/slide-type-picker/preferences.js');
+const thumbs =
+  await import('../client/views/editor/slide-type-picker/thumbnails.js');
+const { createSlideTypePicker } =
+  await import('../client/views/editor/slide-type-picker/index.js');
 
 // --- data.js ------------------------------------------------------------
 test('data: view modes are exactly schematic + preview', () => {
@@ -51,10 +53,16 @@ test('data: every described / preset type has a search alias', () => {
   // description or preset without an alias means it can never be found by an
   // unofficial name.
   for (const type of Object.keys(companions.SLIDE_TYPE_DESCRIPTION)) {
-    assert.ok(type in companions.SLIDE_TYPE_ALIASES, `no alias for described type ${type}`);
+    assert.ok(
+      type in companions.SLIDE_TYPE_ALIASES,
+      `no alias for described type ${type}`,
+    );
   }
   for (const type of Object.keys(data.SLIDE_TYPE_PRESETS)) {
-    assert.ok(type in companions.SLIDE_TYPE_ALIASES, `no alias for preset type ${type}`);
+    assert.ok(
+      type in companions.SLIDE_TYPE_ALIASES,
+      `no alias for preset type ${type}`,
+    );
   }
 });
 
@@ -135,7 +143,10 @@ test('thumbnails: embed mock builds browser chrome', () => {
 });
 
 test('thumbnails: schematic fill clears pending and appends a diagram', () => {
-  const wrap = h('div', { class: 'is-pending', 'data-thumb-type': 'title-slide' });
+  const wrap = h('div', {
+    class: 'is-pending',
+    'data-thumb-type': 'title-slide',
+  });
   thumbs.fillSchematic(wrap, h, { 'title-slide': { label: 'Title' } });
   assert.equal(wrap.classList.contains('is-pending'), false);
   assert.ok(wrap.firstChild, 'a schematic node was appended');
@@ -144,10 +155,16 @@ test('thumbnails: schematic fill clears pending and appends a diagram', () => {
 // --- index.js (end-to-end render seam) ----------------------------------
 const SLIDE_TYPES = {
   'title-slide': { label: 'Title', labelKey: 'slideType.title-slide.label' },
-  'content-slide': { label: 'Content', labelKey: 'slideType.content-slide.label' },
+  'content-slide': {
+    label: 'Content',
+    labelKey: 'slideType.content-slide.label',
+  },
   'quote-slide': { label: 'Quote', labelKey: 'slideType.quote-slide.label' },
   'chart-slide': { label: 'Chart', labelKey: 'slideType.chart-slide.label' },
-  'kpi-metrics-slide': { label: 'KPI', labelKey: 'slideType.kpi-metrics-slide.label' },
+  'kpi-metrics-slide': {
+    label: 'KPI',
+    labelKey: 'slideType.kpi-metrics-slide.label',
+  },
 };
 
 function makePicker(overrides = {}) {
@@ -168,9 +185,15 @@ test('index: renders a grid of type cards in default schematic mode', () => {
   const { renderSlideTypePicker } = makePicker();
   renderSlideTypePicker(mount, {});
 
-  assert.ok(mount.querySelector('.ps-slide-types.is-schematic-mode'), 'schematic grid mounted');
+  assert.ok(
+    mount.querySelector('.ps-slide-types.is-schematic-mode'),
+    'schematic grid mounted',
+  );
   const cards = mount.querySelectorAll('.ps-type-card-wrap');
-  assert.ok(cards.length >= 3, `expected several type tiles, got ${cards.length}`);
+  assert.ok(
+    cards.length >= 3,
+    `expected several type tiles, got ${cards.length}`,
+  );
   mount.remove();
 });
 
@@ -185,7 +208,7 @@ test('index: clicking a card inserts that slide type and bumps usage', () => {
   renderSlideTypePicker(mount, { afterSlideId: 'slide-1' });
 
   const card = mount.querySelector(
-    '.ps-type-card-wrap[data-thumb-type-key="quote-slide"] .ps-type-card'
+    '.ps-type-card-wrap[data-thumb-type-key="quote-slide"] .ps-type-card',
   );
   assert.ok(card, 'quote-slide card present');
   card.click();
@@ -207,8 +230,12 @@ test('index: search filters tiles in place', () => {
   search.value = 'kpi';
   search.dispatchEvent(new dom.window.Event('input'));
 
-  const kpi = mount.querySelector('.ps-type-card-wrap[data-thumb-type-key="kpi-metrics-slide"]');
-  const quote = mount.querySelector('.ps-type-card-wrap[data-thumb-type-key="quote-slide"]');
+  const kpi = mount.querySelector(
+    '.ps-type-card-wrap[data-thumb-type-key="kpi-metrics-slide"]',
+  );
+  const quote = mount.querySelector(
+    '.ps-type-card-wrap[data-thumb-type-key="quote-slide"]',
+  );
   assert.equal(kpi.hidden, false, 'kpi tile stays visible for its alias');
   assert.equal(quote.hidden, true, 'unrelated tile is hidden');
   mount.remove();
@@ -222,13 +249,19 @@ test('index: pin button pins the type and persists it', () => {
   renderSlideTypePicker(mount, {});
 
   const pinBtn = mount.querySelector(
-    '.ps-type-card-wrap[data-thumb-type-key="chart-slide"] .ps-type-pin'
+    '.ps-type-card-wrap[data-thumb-type-key="chart-slide"] .ps-type-pin',
   );
   assert.ok(pinBtn, 'pin button present');
   pinBtn.click();
-  assert.ok(prefs.getPins().includes('chart-slide'), 'pin persisted to storage');
+  assert.ok(
+    prefs.getPins().includes('chart-slide'),
+    'pin persisted to storage',
+  );
   // A pinned strip appears at the top of the grid.
-  assert.ok(mount.querySelector('.ps-type-group[data-group-key="pinned"]'), 'pinned strip rendered');
+  assert.ok(
+    mount.querySelector('.ps-type-group[data-group-key="pinned"]'),
+    'pinned strip rendered',
+  );
   mount.remove();
 });
 
@@ -249,23 +282,31 @@ const SLIDE_TYPES_WITH_FORK = {
 };
 
 const shelfOf = (mount, type) => {
-  const wrap = mount.querySelector(`.ps-type-card-wrap[data-thumb-type-key="${type}"]`);
-  return wrap?.closest('.ps-type-group')?.getAttribute('data-group-key') ?? null;
+  const wrap = mount.querySelector(
+    `.ps-type-card-wrap[data-thumb-type-key="${type}"]`,
+  );
+  return (
+    wrap?.closest('.ps-type-group')?.getAttribute('data-group-key') ?? null
+  );
 };
 
 test('index: a custom type that declares a group is offered on that shelf', () => {
   localStorage.clear();
   const mount = h('div', {});
   document.body.append(mount);
-  const { renderSlideTypePicker } = makePicker({ SLIDE_TYPES: SLIDE_TYPES_WITH_FORK });
+  const { renderSlideTypePicker } = makePicker({
+    SLIDE_TYPES: SLIDE_TYPES_WITH_FORK,
+  });
   renderSlideTypePicker(mount, {});
 
   assert.equal(shelfOf(mount, 'acme-hero'), 'data', 'declared shelf ignored');
   assert.equal(shelfOf(mount, 'chart-slide'), 'data', 'core neighbour moved');
   assert.equal(
-    mount.querySelectorAll('.ps-type-card-wrap[data-thumb-type-key="acme-hero"]').length,
+    mount.querySelectorAll(
+      '.ps-type-card-wrap[data-thumb-type-key="acme-hero"]',
+    ).length,
     1,
-    'the type is offered twice — the Custom shelf kept a copy'
+    'the type is offered twice — the Custom shelf kept a copy',
   );
   mount.remove();
 });
@@ -274,7 +315,9 @@ test('index: a custom type that declares nothing stays on the Custom shelf', () 
   localStorage.clear();
   const mount = h('div', {});
   document.body.append(mount);
-  const { renderSlideTypePicker } = makePicker({ SLIDE_TYPES: SLIDE_TYPES_WITH_FORK });
+  const { renderSlideTypePicker } = makePicker({
+    SLIDE_TYPES: SLIDE_TYPES_WITH_FORK,
+  });
   renderSlideTypePicker(mount, {});
 
   // A one-tile group folds into "Other", so the shelf is whichever of the two

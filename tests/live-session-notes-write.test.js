@@ -26,25 +26,25 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { createPresentation, getPresentation, updatePresentation } = await import(
-  '../server/storage/presentations/index.js'
-);
-const { createLiveSession, getLiveSession } = await import(
-  '../server/storage/live-sessions/sessions.js'
-);
-const { handleLiveSessionsPublic } = await import(
-  '../server/routes/api/live-session-audience.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { createPresentation, getPresentation, updatePresentation } =
+  await import('../server/storage/presentations/index.js');
+const { createLiveSession, getLiveSession } =
+  await import('../server/storage/live-sessions/sessions.js');
+const { handleLiveSessionsPublic } =
+  await import('../server/routes/api/live-session-audience.js');
 const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
 
 const OWNER = 'owner@example.com';
 const REPO_ROOT = '/tmp/deckyard-companion-notes-test';
 
 test.before(async () => {
-  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    }),
+  );
   await initializeStorage();
 });
 
@@ -134,8 +134,15 @@ async function seedSessionDeck({ slides } = {}) {
       { type: 'content-slide', content: { title: 'B' }, notes: '' },
     ],
   });
-  const session = await createLiveSession({ repoRoot: REPO_ROOT, organizationId: ORG, actorEmail: null }, { presentationId: pres.id });
-  return { pres, sessionId: session.sessionId, slideIds: pres.slides.map((s) => s.id) };
+  const session = await createLiveSession(
+    { repoRoot: REPO_ROOT, organizationId: ORG, actorEmail: null },
+    { presentationId: pres.id },
+  );
+  return {
+    pres,
+    sessionId: session.sessionId,
+    slideIds: pres.slides.map((s) => s.id),
+  };
 }
 
 test('GET /deck answers the session deck without any login', async () => {
@@ -164,7 +171,7 @@ test('GET /deck for an unknown session is a 404', async () => {
   assert.equal(res.statusCode, 404);
 });
 
-test('PUT /notes/:slideId writes exactly that slide\'s notes', async () => {
+test("PUT /notes/:slideId writes exactly that slide's notes", async () => {
   const { pres, sessionId, slideIds } = await seedSessionDeck();
   const { res } = await call({
     method: 'PUT',
@@ -178,7 +185,11 @@ test('PUT /notes/:slideId writes exactly that slide\'s notes', async () => {
   assert.equal(s2.notes, 'Remember the demo.');
   assert.equal(s1.notes, 'first', 'the other slide is untouched');
   assert.deepEqual(s2.content, { title: 'B' }, 'only notes changed');
-  assert.equal(after.title, 'Companion deck', 'the rest of the deck is untouched');
+  assert.equal(
+    after.title,
+    'Companion deck',
+    'the rest of the deck is untouched',
+  );
 });
 
 test('PUT /notes for an unknown session is a 404 and writes nothing', async () => {
@@ -215,7 +226,9 @@ test('PUT /notes rejects a non-string body', async () => {
 
 test('PUT /notes refuses an author-locked slide (423)', async () => {
   const { pres, sessionId, slideIds } = await seedSessionDeck({
-    slides: [{ type: 'content-slide', content: { title: 'A' }, notes: 'locked notes' }],
+    slides: [
+      { type: 'content-slide', content: { title: 'A' }, notes: 'locked notes' },
+    ],
   });
   // `createPresentation` does not carry `lockedByAuthor` through, so the author
   // sets the lock the way the editor does: a write of their own.
@@ -223,7 +236,7 @@ test('PUT /notes refuses an author-locked slide (423)', async () => {
     testScope(null, { actorEmail: OWNER }),
     pres.id,
     { slides: pres.slides.map((s) => ({ ...s, lockedByAuthor: true })) },
-    { actorEmail: OWNER, user: { email: OWNER } }
+    { actorEmail: OWNER, user: { email: OWNER } },
   );
 
   const { res } = await call({
@@ -238,7 +251,10 @@ test('PUT /notes refuses an author-locked slide (423)', async () => {
 
 test('a successful write broadcasts deckUpdated to the session', async () => {
   const { sessionId, slideIds } = await seedSessionDeck();
-  const session = await getLiveSession({ repoRoot: REPO_ROOT, organizationId: ORG, actorEmail: null }, sessionId);
+  const session = await getLiveSession(
+    { repoRoot: REPO_ROOT, organizationId: ORG, actorEmail: null },
+    sessionId,
+  );
   const client = fakeSseClient();
   session.clients.add(client);
 

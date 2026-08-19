@@ -54,7 +54,12 @@ export const requestClaudeMessagesContent = createLlmProvider({
     'anthropic-version': '2023-06-01',
     'content-type': 'application/json',
   }),
-  transformRequest: ({ model, temperature = 0.2, maxTokens = 4096, messages = [] }) => {
+  transformRequest: ({
+    model,
+    temperature = 0.2,
+    maxTokens = 4096,
+    messages = [],
+  }) => {
     const mapped = openAiMessagesToClaude({ messages });
     // Sampling params were removed on claude-sonnet-5 / opus-4.7+ / fable-5:
     // sending temperature to those models returns a 400. Older models
@@ -63,7 +68,7 @@ export const requestClaudeMessagesContent = createLlmProvider({
     // models degrade to default sampling instead of hard-failing the call.
     const samplingRemoved =
       /^claude-(opus-4-[789]|(sonnet|opus|haiku|fable|mythos)-([5-9]\b|[1-9]\d))/.test(
-        String(model || '')
+        String(model || ''),
       );
     return {
       model,

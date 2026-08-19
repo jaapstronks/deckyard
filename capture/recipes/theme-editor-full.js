@@ -15,7 +15,11 @@
  * recipe in a `--all` run left behind is what this one would have started with.
  */
 
-import { CAPTURE_ACCOUNT_NAME, setDisplayName, setUiLocale } from '../lib/api.js';
+import {
+  CAPTURE_ACCOUNT_NAME,
+  setDisplayName,
+  setUiLocale,
+} from '../lib/api.js';
 
 /** @type {import('../lib/recipe.js').Recipe} */
 export default {
@@ -43,18 +47,21 @@ export default {
     await page.waitForFunction(
       () =>
         [...document.querySelectorAll('button')].some((b) =>
-          /create theme/i.test(b.textContent || '')
+          /create theme/i.test(b.textContent || ''),
         ),
-      { timeout: 15_000 }
+      { timeout: 15_000 },
     );
     await page.evaluate(() => {
       const btn = [...document.querySelectorAll('button')].find((b) =>
-        /create theme/i.test(b.textContent || '')
+        /create theme/i.test(b.textContent || ''),
       );
       if (!btn) throw new Error('Create Theme button not found');
       btn.click();
     });
     // Editor is open once .theme-editor mounts.
-    await page.waitForSelector('.theme-editor', { visible: true, timeout: 15_000 });
+    await page.waitForSelector('.theme-editor', {
+      visible: true,
+      timeout: 15_000,
+    });
   },
 };

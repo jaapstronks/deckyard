@@ -40,10 +40,10 @@ const SEED_ORG = '00000000-0000-0000-0000-000000000001';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { handleOrganizations } = await import('../server/routes/api/organizations.js');
-const { isDefaultOrganization, deleteOrganization } = await import(
-  '../server/storage/user-organizations/index.js'
-);
+const { handleOrganizations } =
+  await import('../server/routes/api/organizations.js');
+const { isDefaultOrganization, deleteOrganization } =
+  await import('../server/storage/user-organizations/index.js');
 
 /** The cast, all in ORG unless a test says otherwise. */
 const PEOPLE = [
@@ -58,7 +58,14 @@ const PEOPLE = [
  */
 function seed() {
   const organizations = [
-    { id: ORG, name: 'Beta', slug: 'beta', display_name: null, description: null, settings: {} },
+    {
+      id: ORG,
+      name: 'Beta',
+      slug: 'beta',
+      display_name: null,
+      description: null,
+      settings: {},
+    },
     {
       id: DEFAULT_ORG,
       name: 'House',
@@ -67,7 +74,14 @@ function seed() {
       description: null,
       settings: {},
     },
-    { id: SEED_ORG, name: 'Seed', slug: 'seed', display_name: null, description: null, settings: {} },
+    {
+      id: SEED_ORG,
+      name: 'Seed',
+      slug: 'seed',
+      display_name: null,
+      description: null,
+      settings: {},
+    },
   ];
 
   const users = [];
@@ -96,7 +110,11 @@ function seed() {
     }
   }
 
-  const db = createFakeDb({ organizations, users, user_organizations: memberships });
+  const db = createFakeDb({
+    organizations,
+    users,
+    user_organizations: memberships,
+  });
   __setTestDb(db);
   return db;
 }
@@ -141,7 +159,11 @@ function fakeExchange(method, body) {
  * @param {Object} [options.body] - Request body.
  * @returns {Promise<{status: number, body: Object|null}>}
  */
-async function callOrganizations(method, actorKey, { organizationId = ORG, email, body } = {}) {
+async function callOrganizations(
+  method,
+  actorKey,
+  { organizationId = ORG, email, body } = {},
+) {
   const actor = PEOPLE.find((p) => p.key === actorKey);
   const path = `/api/organizations/${organizationId}`;
   const { req, res } = fakeExchange(method, body);
@@ -169,7 +191,7 @@ test('the undeletable organization is the configured one, not the seed UUID', ()
   assert.equal(
     isDefaultOrganization(SEED_ORG),
     false,
-    'the seed UUID is not special once DEFAULT_ORGANIZATION_ID names another'
+    'the seed UUID is not special once DEFAULT_ORGANIZATION_ID names another',
   );
   assert.equal(isDefaultOrganization(ORG), false);
   assert.equal(isDefaultOrganization(undefined), false);
@@ -189,7 +211,7 @@ test('the seed organization is deletable when it is not the default', async () =
   assert.deepEqual(deleted, { ok: true });
   assert.equal(
     db.__tables.organizations.some((o) => o.id === SEED_ORG),
-    false
+    false,
   );
 });
 
@@ -217,13 +239,15 @@ test('the response says whether this organization may be deleted at all', async 
   assert.equal(
     fallback.body.organization.isDefault,
     true,
-    'without this the owner of the default organization gets a button that only 403s'
+    'without this the owner of the default organization gets a button that only 403s',
   );
 });
 
 test('someone outside the organization reads nothing', async () => {
   seed();
-  const res = await callOrganizations('GET', 'owner', { email: 'stranger@example.com' });
+  const res = await callOrganizations('GET', 'owner', {
+    email: 'stranger@example.com',
+  });
   assert.equal(res.status, 401, 'no account on this instance');
 
   const outsider = await callOrganizations('GET', 'owner', {
@@ -245,22 +269,34 @@ test('an admin may rewrite the profile; a plain member may not', async () => {
   });
   assert.equal(byAdmin.status, 200);
   assert.equal(byAdmin.body.organization.name, 'Beta Works');
-  assert.equal(db.__tables.organizations.find((o) => o.id === ORG).name, 'Beta Works');
+  assert.equal(
+    db.__tables.organizations.find((o) => o.id === ORG).name,
+    'Beta Works',
+  );
 
-  const byMember = await callOrganizations('PATCH', 'member', { body: { name: 'Mine now' } });
+  const byMember = await callOrganizations('PATCH', 'member', {
+    body: { name: 'Mine now' },
+  });
   assert.equal(byMember.status, 403);
-  assert.equal(db.__tables.organizations.find((o) => o.id === ORG).name, 'Beta Works');
+  assert.equal(
+    db.__tables.organizations.find((o) => o.id === ORG).name,
+    'Beta Works',
+  );
 });
 
 test('a one-character name is refused, so the form checks the same thing', async () => {
   seed();
-  const res = await callOrganizations('PATCH', 'owner', { body: { name: 'B' } });
+  const res = await callOrganizations('PATCH', 'owner', {
+    body: { name: 'B' },
+  });
   assert.equal(res.status, 400);
 });
 
 test('only the fields that are sent are touched', async () => {
   const db = seed();
-  await callOrganizations('PATCH', 'owner', { body: { description: 'A organization' } });
+  await callOrganizations('PATCH', 'owner', {
+    body: { description: 'A organization' },
+  });
   const row = db.__tables.organizations.find((o) => o.id === ORG);
   assert.equal(row.description, 'A organization');
   assert.equal(row.name, 'Beta', 'the untouched field kept its value');
@@ -276,7 +312,7 @@ test('an admin cannot delete the organization', async () => {
   assert.equal(res.status, 403);
   assert.equal(
     db.__tables.organizations.some((o) => o.id === ORG),
-    true
+    true,
   );
 });
 
@@ -286,7 +322,7 @@ test('the owner can, and everything hanging off it goes with it', async () => {
   assert.equal(res.status, 200);
   assert.equal(
     db.__tables.organizations.some((o) => o.id === ORG),
-    false
+    false,
   );
 });
 

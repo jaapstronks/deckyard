@@ -8,13 +8,15 @@ code, duplicate keys).
 
 ## Commands
 
-| Command | What it does |
-|---|---|
-| `npm run lint` | The **gate**. Must stay green; CI runs it before the tests. |
-| `npm run lint:fix` | Auto-fix what ESLint can fix safely. |
-| `npm run lint:deadcode` | **Advisory** dead-exports + import-cycle discovery (runs `lint:deadexports` then the cycle config). Never gates. |
-| `npm run lint:deadexports` | **Advisory** unused-export discovery on its own (the Node scanner). Never gates. |
-| `npm run lint:deadcss` | **Advisory** unreferenced CSS-selector discovery. Never gates. |
+| Command                    | What it does                                                                                                     |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `npm run lint`             | The **gate**. Must stay green; CI runs it before the tests.                                                      |
+| `npm run lint:fix`         | Auto-fix what ESLint can fix safely.                                                                             |
+| `npm run lint:deadcode`    | **Advisory** dead-exports + import-cycle discovery (runs `lint:deadexports` then the cycle config). Never gates. |
+| `npm run lint:deadexports` | **Advisory** unused-export discovery on its own (the Node scanner). Never gates.                                 |
+| `npm run lint:deadcss`     | **Advisory** unreferenced CSS-selector discovery. Never gates.                                                   |
+| `npm run format`           | Prettier, writes. Formatting is not a lint concern — see [Formatting](#formatting-prettier).                     |
+| `npm run format:check`     | Prettier, checks. A **gate**; CI runs it next to `npm run lint`.                                                 |
 
 ## The gate (`npm run lint`)
 
@@ -47,7 +49,7 @@ They ride this gate rather than being their own test because
 it), so the rules cost no extra CI minutes and add no new mechanism.
 
 **Why both rules and not just `no-unresolved`.** The resolver ESLint uses is
-Node's *CommonJS* one: it tries extensions and directory `index.js` files. So
+Node's _CommonJS_ one: it tries extensions and directory `index.js` files. So
 `import './foo'` (for `foo.js`) and `import './bar'` (for `bar/index.js`) both
 resolve to the linter and both throw `ERR_MODULE_NOT_FOUND` in the app. That is
 a green gate certifying a broken import, so `import-x/extensions` is set to
@@ -62,7 +64,7 @@ checked against what is on disk in `node_modules`, so a skipped optional
 dependency or a partial `npm install` turns the gate red on imports that are
 perfectly correct. Run `npm ci` before believing a resolution failure.
 
-What is *not* covered — the honest boundaries:
+What is _not_ covered — the honest boundaries:
 
 - **`custom/` cannot be covered here** — it is in `ignores`, being a fork's
   gitignored drop-in tree. `tests/custom-imports-resolvable.test.js` covers it
@@ -85,10 +87,10 @@ Two suppressions exist, both with their reason inline:
 - **`server/utils/openai/translate.js`** — `ciiic-translation-rules` is fork-only
   and deliberately undeclared in `package.json` (see `AGENTS.md` § Optional
   dependencies), loaded through a gated `await import()` whose `catch` is the
-  contract. It is the one import in the tree that is *supposed* not to resolve
+  contract. It is the one import in the tree that is _supposed_ not to resolve
   upstream.
 - **`tests/fixtures/fork-slide-types/payoff-slide.js`** — a fork fixture whose
-  specifier is written for its *runtime* home (`custom/slide-types/`, one level
+  specifier is written for its _runtime_ home (`custom/slide-types/`, one level
   shallower than where it is tracked). The `test-fork` CI job copies it into
   place, and `tests/custom-imports-resolvable.test.js` resolves it for real
   there.
@@ -110,7 +112,7 @@ the gate fails with a message pointing at
 [`server/utils/request-validators.js`](../../server/utils/request-validators.js).
 
 The dependency earns its place parsing what a model hands back — genuinely
-untyped input, genuinely worth a schema library. On *request bodies* it would be
+untyped input, genuinely worth a schema library. On _request bodies_ it would be
 a second validation vocabulary next to `request-validators.js`, with
 [`docs/openapi.yaml`](../openapi.yaml) as a third place the same contract is
 written down. Deckyard has no build step to collect zod's real payoff (type
@@ -152,7 +154,7 @@ cat eslint-suppressions.json
 npx eslint . --prune-suppressions
 ```
 
-Never *add* to the suppressions file to make a red build green — fix the code.
+Never _add_ to the suppressions file to make a red build green — fix the code.
 The file only shrinks.
 
 ## The advisory pass (`npm run lint:deadcode`)
@@ -162,7 +164,7 @@ Two halves, run back to back:
 - **Dead exports** — [`scripts/lint-dead-exports.js`](../../scripts/lint-dead-exports.js),
   a plain Node scan (`npm run lint:deadexports`). It builds a static import graph
   over `git ls-files` and reports every export in `client/ server/ shared/
-  scripts/` that no tracked module imports.
+scripts/` that no tracked module imports.
 - **Import cycles** — [`eslint.deadcode.config.js`](../../eslint.deadcode.config.js)'s
   `import-x/no-cycle`.
 
@@ -179,11 +181,11 @@ so it stayed in the ESLint config.
 app loads a lot of code by directory scan and string-keyed registry (route
 dispatchers, DB migrations, slide-type registries, MCP tools) — those exports
 have no static importer but are reached at runtime. Treat every hit as a
-*candidate* and confirm it by hand against the reachability method in the
+_candidate_ and confirm it by hand against the reachability method in the
 dead-code audit brief before deleting anything. The import-cycle hits, by
 contrast, are precise.
 
-The scanner is deliberately generous about what counts as *used* (the safe
+The scanner is deliberately generous about what counts as _used_ (the safe
 direction is "alive"): a named/default/namespace import, a re-export, and a
 dynamic `import('…')` or JSDoc `{import('…')}` type ref all keep an export
 alive, and importers anywhere in the tracked tree count — including tests and
@@ -192,7 +194,7 @@ count is a fresh baseline and not comparable to the old `no-unused-modules`
 numbers.
 
 **Hand-verification does not stop at this repo's edge.** Some exports have their
-only consumer in a *sibling* repo: `deckyard-website`'s docs generator imports
+only consumer in a _sibling_ repo: `deckyard-website`'s docs generator imports
 several `shared/slide-types/` modules directly, so a sweep that greps only this
 repo sees a module-local const where a live contract sits. That is not
 hypothetical — sweep #536 demoted `SLIDE_STRUCTURES` and the website generator
@@ -208,17 +210,17 @@ list the same way.
 ## The advisory pass (`npm run lint:deadcss`)
 
 Script: [`scripts/lint-dead-css.js`](../../scripts/lint-dead-css.js). Where
-`lint:deadcode` counts unused JS *exports*, this counts CSS class selectors that
+`lint:deadcode` counts unused JS _exports_, this counts CSS class selectors that
 no source file references — the blind spot that let `.editor-form-header-left`
 survive a header-row removal (#393) unnoticed.
 
 **Also a triage tool, not a gate — and deliberately more conservative.** Class
-names here are *composed* (`slide-bg-${id}`, `is-${state}`, `tf-align-${x}`,
+names here are _composed_ (`slide-bg-${id}`, `is-${state}`, `tf-align-${x}`,
 `renderHtml` template builds), so a naive scanner flags every composed class as
 dead and is worse than nothing. The scanner therefore errs towards **alive**: it
 harvests every class-shaped token from `client/**` + `shared/**` as "used" and
 treats any static chunk preceding a `${` as a live prefix. It reports a
-selector only when it appears *nowhere* — not as a literal, not as a composition
+selector only when it appears _nowhere_ — not as a literal, not as a composition
 prefix. Under-reporting is the intended failure mode; over-reporting is the one
 that makes the tool untrustworthy.
 
@@ -237,8 +239,30 @@ Two properties worth knowing:
   is not "green in CI" (the #413 lesson).
 - **It stays advisory (exit 0) until the report is clean.** Today it lists ~83
   candidates; promote it to a gate only once those are triaged away. Each hit is
-  a *candidate* — verify by hand (a fully dynamic `class` built from a variable
+  a _candidate_ — verify by hand (a fully dynamic `class` built from a variable
   the scanner can't see is a false positive) before deleting.
+
+## Formatting (Prettier)
+
+Formatting is deliberately _not_ ESLint's job: the gate config carries no style
+rules. The repo is formatted with [Prettier](https://prettier.io) on its
+defaults plus `singleQuote: true` (`.prettierrc`); `.prettierignore` mirrors the
+ESLint ignore list and adds the tool-written files (`CHANGELOG.md`,
+`package-lock.json`, the generated baselines under `tests/fixtures/export-metrics/`)
+and the gitignored planning symlink (see `CLAUDE.md`).
+
+- `npm run format` writes, `npm run format:check` gates in CI. There are no
+  editor hooks and no lint-staged: CI is the gate.
+- Generators that emit committed source (`scripts/generate-slide-*.js`) pass
+  their output through `scripts/lib/format-generated.js`, so their byte-for-byte
+  tests and the formatter agree on one spelling.
+- The one-time repo-wide reformat is a single commit listed in
+  `.git-blame-ignore-revs`. Run
+  `git config blame.ignoreRevsFile .git-blame-ignore-revs` once per clone so
+  `git blame` looks through it (GitHub's blame view honours the file by itself).
+- `// prettier-ignore` is allowed where Prettier's output genuinely hurts
+  readability (a hand-aligned table of constants), always with a reason on the
+  line above. Every ignore is an exception, not a second style.
 
 ## Cadence — what runs when
 

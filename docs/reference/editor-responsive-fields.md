@@ -28,12 +28,12 @@ Two pieces, both at a single chokepoint:
 2. **Each field carries a size intent** - its natural minimum width - as an
    `is-field-*` class on its wrapper. `--field-basis` is the wrap threshold:
 
-   | Class            | `--field-basis` | Used for |
-   |------------------|-----------------|----------|
-   | *(default)*      | `10rem`         | text inputs, selects, 2-option toggles |
-   | `is-field-narrow`| `7rem`          | number inputs |
-   | `is-field-wide`  | `17rem`         | 3-4 option segmented controls |
-   | `is-field-full`  | `100%`          | textareas, markdown, code, 5+ option controls |
+   | Class             | `--field-basis` | Used for                                      |
+   | ----------------- | --------------- | --------------------------------------------- |
+   | _(default)_       | `10rem`         | text inputs, selects, 2-option toggles        |
+   | `is-field-narrow` | `7rem`          | number inputs                                 |
+   | `is-field-wide`   | `17rem`         | 3-4 option segmented controls                 |
+   | `is-field-full`   | `100%`          | textareas, markdown, code, 5+ option controls |
 
    The class is **inert outside a `.field-grid`** (the flex rules are scoped to
    direct children), so renderers can stamp it unconditionally.

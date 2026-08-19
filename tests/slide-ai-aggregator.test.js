@@ -43,12 +43,12 @@ import {
 } from '../server/utils/ai/slide-catalog/definitions.js';
 import { CORE_SLIDE_TYPE_NAMES } from '../shared/slide-types/registry.js';
 
-test('the committed aggregator is byte-identical to the generated output', () => {
+test('the committed aggregator is byte-identical to the generated output', async () => {
   const actual = fs.readFileSync(path.join(REPO_ROOT, AGGREGATOR_PATH), 'utf8');
   assert.equal(
     actual,
-    buildAggregator(),
-    `${AGGREGATOR_PATH} is out of date — run \`npm run gen:slide-ai\``
+    await buildAggregator(),
+    `${AGGREGATOR_PATH} is out of date — run \`npm run gen:slide-ai\``,
   );
 });
 
@@ -64,11 +64,11 @@ test('every aggregator entry names a real core type', () => {
     assert.ok(
       core.has(name),
       `the aggregator has "${name}" but it is not a registered core type — ` +
-        'a leftover directory after a type was retired'
+        'a leftover directory after a type was retired',
     );
     assert.ok(
       fs.existsSync(path.join(TYPES_DIR, name, 'ai.js')),
-      `the aggregator imports types/${name}/ai.js, which does not exist`
+      `the aggregator imports types/${name}/ai.js, which does not exist`,
     );
   }
 });
@@ -78,7 +78,11 @@ test('a directory name maps to exactly one import identifier', () => {
     ...typesWithAi().map(identifierFor),
     ...typesWithAiExamples().map(examplesIdentifierFor),
   ];
-  assert.equal(new Set(ids).size, ids.length, `duplicate import identifiers: ${ids}`);
+  assert.equal(
+    new Set(ids).size,
+    ids.length,
+    `duplicate import identifiers: ${ids}`,
+  );
 });
 
 test('every ai.js that exports aiExamples is in the examples map, and only those', () => {
@@ -86,7 +90,10 @@ test('every ai.js that exports aiExamples is in the examples map, and only those
   // examples but never reaches the aggregator shows the model a bare schema,
   // silently. The map staying sparse is equally deliberate — absence means the
   // type has no examples, not that one should be invented.
-  assert.deepEqual(Object.keys(SLIDE_TYPE_AI_EXAMPLES).sort(), typesWithAiExamples());
+  assert.deepEqual(
+    Object.keys(SLIDE_TYPE_AI_EXAMPLES).sort(),
+    typesWithAiExamples(),
+  );
 });
 
 test('the aiExamples detector agrees with the real module namespace', async () => {
@@ -97,11 +104,13 @@ test('the aiExamples detector agrees with the real module namespace', async () =
   // module actually exports, in both directions.
   const detected = new Set(typesWithAiExamples());
   for (const name of typesWithAi()) {
-    const mod = await import(pathToFileURL(path.join(TYPES_DIR, name, 'ai.js')));
+    const mod = await import(
+      pathToFileURL(path.join(TYPES_DIR, name, 'ai.js'))
+    );
     assert.equal(
       'aiExamples' in mod,
       detected.has(name),
-      `types/${name}/ai.js: the aiExamples export and the source-text detector disagree`
+      `types/${name}/ai.js: the aiExamples export and the source-text detector disagree`,
     );
   }
 });
@@ -114,13 +123,13 @@ test('the examples surface is the aggregator', () => {
   // absent in the test environment.)
   assert.deepEqual(
     Object.keys(SLIDE_TYPE_EXAMPLES).sort(),
-    Object.keys(SLIDE_TYPE_AI_EXAMPLES).sort()
+    Object.keys(SLIDE_TYPE_AI_EXAMPLES).sort(),
   );
   for (const name of Object.keys(SLIDE_TYPE_AI_EXAMPLES)) {
     assert.equal(
       SLIDE_TYPE_EXAMPLES[name],
       SLIDE_TYPE_AI_EXAMPLES[name],
-      `${name} is not the aggregator's entry`
+      `${name} is not the aggregator's entry`,
     );
   }
 });
@@ -130,9 +139,16 @@ test('the catalog is the aggregator, laid out in CATALOG_ORDER', () => {
   // gives it. If that wiring is dropped the companion matrix would go quietly
   // empty, and three prompt surfaces would lose their sections.
   const catalog = getCoreSlideCatalog();
-  assert.deepEqual(Object.keys(catalog).sort(), Object.keys(SLIDE_TYPE_AI).sort());
+  assert.deepEqual(
+    Object.keys(catalog).sort(),
+    Object.keys(SLIDE_TYPE_AI).sort(),
+  );
   for (const name of Object.keys(SLIDE_TYPE_AI)) {
-    assert.equal(catalog[name], SLIDE_TYPE_AI[name], `${name} is not the aggregator's entry`);
+    assert.equal(
+      catalog[name],
+      SLIDE_TYPE_AI[name],
+      `${name} is not the aggregator's entry`,
+    );
   }
 });
 
@@ -142,14 +158,20 @@ test('the order hint places every catalogued type, and names no ghost', () => {
   // curation decision that has quietly reverted to alphabetical. Both
   // directions are cheap to state, so state them.
   const catalogued = new Set(Object.keys(SLIDE_TYPE_AI));
-  const unplaced = [...catalogued].filter((t) => !CATALOG_ORDER.includes(t)).sort();
+  const unplaced = [...catalogued]
+    .filter((t) => !CATALOG_ORDER.includes(t))
+    .sort();
   assert.deepEqual(
     unplaced,
     [],
-    'these types are catalogued but unplaced, so they sort last in every prompt'
+    'these types are catalogued but unplaced, so they sort last in every prompt',
   );
   const ghosts = CATALOG_ORDER.filter((t) => !catalogued.has(t)).sort();
-  assert.deepEqual(ghosts, [], 'CATALOG_ORDER names types the catalog no longer has');
+  assert.deepEqual(
+    ghosts,
+    [],
+    'CATALOG_ORDER names types the catalog no longer has',
+  );
   assert.equal(Object.keys(getCoreSlideCatalog())[0], CATALOG_ORDER[0]);
 });
 
@@ -160,7 +182,7 @@ test('the editorial copy stays out of the browser payload', () => {
   // one that catches a well-meaning `shared/slide-types/ai.js` aggregator.
   assert.ok(
     AGGREGATOR_PATH.startsWith(`server${path.sep}`),
-    'the aggregator must live under server/ — it is ~168 KB of prose the browser never runs'
+    'the aggregator must live under server/ — it is ~168 KB of prose the browser never runs',
   );
   const offenders = [];
   for (const dir of ['client', 'shared']) {
@@ -174,7 +196,11 @@ test('the editorial copy stays out of the browser payload', () => {
       }
     });
   }
-  assert.deepEqual(offenders, [], 'a browser-side module imports a type\'s ai.js');
+  assert.deepEqual(
+    offenders,
+    [],
+    "a browser-side module imports a type's ai.js",
+  );
 });
 
 /** Depth-first walk over a directory tree. */

@@ -203,12 +203,19 @@ export default {
       typeof content?.title === 'string' && content.title.trim()
         ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
-    const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
+    const subheadingHtml = renderSubheadingHtml(
+      content,
+      'subheading',
+      'subtitle',
+    );
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);
     const hasHeader = !!(title || subheadingHtml);
 
-    const centerLabel = typeof content?.centerLabel === 'string' ? content.centerLabel.trim() : '';
+    const centerLabel =
+      typeof content?.centerLabel === 'string'
+        ? content.centerLabel.trim()
+        : '';
     const centerHtml = centerLabel
       ? `<div class="cycle-center on-surface-mist"><span class="center-label" data-inline-field="centerLabel" dir="auto">${escapeHtml(centerLabel)}</span></div>`
       : '<div class="cycle-center on-surface-mist"></div>';
@@ -224,7 +231,9 @@ export default {
       .join('');
 
     // Generate arrows between stages
-    const arrowsHtml = Array.from({ length: count }, (_, idx) => arrowHtml(idx, count)).join('');
+    const arrowsHtml = Array.from({ length: count }, (_, idx) =>
+      arrowHtml(idx, count),
+    ).join('');
 
     return `
       <div class="slide slide-cycle ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}">

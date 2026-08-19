@@ -17,24 +17,24 @@ Five rungs, chosen so they absorb the historic clusters and coincide with real
 device widths. `max-width` is the "at most this wide" side; the `min-width`
 counterpart is one pixel up, so the two never overlap.
 
-| Name | `max-width` | `min-width` | Intended for |
-|---|---|---|---|
-| `xs` | 480px | 481px | small phone, portrait |
-| `sm` | 640px | 641px | phone, portrait |
-| `md` | 768px | 769px | iPad portrait / topbar collapses |
-| `lg` | 1024px | 1025px | iPad landscape / editor goes two-column |
-| `xl` | 1280px | 1281px | roomy desktop |
+| Name | `max-width` | `min-width` | Intended for                            |
+| ---- | ----------- | ----------- | --------------------------------------- |
+| `xs` | 480px       | 481px       | small phone, portrait                   |
+| `sm` | 640px       | 641px       | phone, portrait                         |
+| `md` | 768px       | 769px       | iPad portrait / topbar collapses        |
+| `lg` | 1024px      | 1025px      | iPad landscape / editor goes two-column |
+| `xl` | 1280px      | 1281px      | roomy desktop                           |
 
 ### Ultra-wide
 
 A separate, deliberate scale for progressive enhancement on very large
 displays. `min-width` only — these never appear as a `max-width`.
 
-| `min-width` | Intended for |
-|---|---|
-| 1400px | wide desktop |
-| 1600px | very wide desktop |
-| 1800px | ultra-wide |
+| `min-width` | Intended for      |
+| ----------- | ----------------- |
+| 1400px      | wide desktop      |
+| 1600px      | very wide desktop |
+| 1800px      | ultra-wide        |
 
 ## Rules
 

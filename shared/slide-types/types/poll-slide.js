@@ -126,9 +126,10 @@ export default {
     const copy = getSlideCopy(ctx?.lang);
     const followCodes =
       ctx && typeof ctx === 'object' ? ctx.followCodes || null : null;
-    const joinHelp = followCodes?.nl || followCodes?.en
-      ? copy.pollJoinHelpWithCodes
-      : copy.pollJoinHelpWithoutCodes;
+    const joinHelp =
+      followCodes?.nl || followCodes?.en
+        ? copy.pollJoinHelpWithCodes
+        : copy.pollJoinHelpWithoutCodes;
 
     const optsHtml = options
       .map(
@@ -139,7 +140,7 @@ export default {
               <span class="poll-text" data-inline-field="${t.key}" dir="auto">${escapeHtml(t.text)}</span>
             </div>
           </li>
-        `
+        `,
       )
       .join('');
 
@@ -156,7 +157,7 @@ export default {
               <span class="poll-bar-count-pct" data-poll-pct="${i}">0%</span>
             </div>
           </div>
-        `
+        `,
       )
       .join('');
 

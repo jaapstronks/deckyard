@@ -20,7 +20,13 @@ import { storage } from '../../../lib/storage.js';
  * @param {Function} [opts.onCreate] - Open the creation view (for the empty state)
  * @returns {object} - { el, list, tagFilter, refresh, addPresentation }
  */
-export function createPresentationsView({ h, api, renderCard, allByDate, onCreate }) {
+export function createPresentationsView({
+  h,
+  api,
+  renderCard,
+  allByDate,
+  onCreate,
+}) {
   const OWNERSHIP_KEY = 'ps:presentations-ownership';
   const SORT_KEY = 'ps:presentations-sort';
   const OWNERSHIPS = ['all', 'mine', 'organization', 'shared'];
@@ -28,11 +34,21 @@ export function createPresentationsView({ h, api, renderCard, allByDate, onCreat
 
   let all = [...allByDate];
   let selectedTags = [];
-  let ownership = OWNERSHIPS.includes(storage.get(OWNERSHIP_KEY, '')) ? storage.get(OWNERSHIP_KEY, '') : 'all';
-  let sort = SORTS.includes(storage.get(SORT_KEY, '')) ? storage.get(SORT_KEY, '') : 'recent';
+  let ownership = OWNERSHIPS.includes(storage.get(OWNERSHIP_KEY, ''))
+    ? storage.get(OWNERSHIP_KEY, '')
+    : 'all';
+  let sort = SORTS.includes(storage.get(SORT_KEY, ''))
+    ? storage.get(SORT_KEY, '')
+    : 'recent';
 
-  const view = h('div', { class: 'sidebar-view', 'data-view': 'presentations' });
-  const title = h('h2', { class: 'presentation-grid-title', text: t('list.presentations.title', 'Presentations') });
+  const view = h('div', {
+    class: 'sidebar-view',
+    'data-view': 'presentations',
+  });
+  const title = h('h2', {
+    class: 'presentation-grid-title',
+    text: t('list.presentations.title', 'Presentations'),
+  });
   const list = h('div', { class: 'list presentation-grid' });
 
   // Ownership chips — the primary source filter (and the replacement for the
@@ -40,7 +56,10 @@ export function createPresentationsView({ h, api, renderCard, allByDate, onCreat
   const ownershipFilter = h('div', {
     class: 'ownership-filter',
     role: 'tablist',
-    'aria-label': t('list.presentations.ownershipLabel', 'Filter presentations by source'),
+    'aria-label': t(
+      'list.presentations.ownershipLabel',
+      'Filter presentations by source',
+    ),
   });
   const ownershipButtons = new Map();
   for (const key of OWNERSHIPS) {
@@ -57,18 +76,28 @@ export function createPresentationsView({ h, api, renderCard, allByDate, onCreat
   }
 
   // Sort control.
-  const sortSelect = h('select', {
-    class: 'form-input sort-select',
-    'aria-label': t('list.presentations.sortLabel', 'Sort presentations'),
-    onchange: (e) => {
-      sort = SORTS.includes(e.target.value) ? e.target.value : 'recent';
-      storage.set(SORT_KEY, sort);
-      renderList();
+  const sortSelect = h(
+    'select',
+    {
+      class: 'form-input sort-select',
+      'aria-label': t('list.presentations.sortLabel', 'Sort presentations'),
+      onchange: (e) => {
+        sort = SORTS.includes(e.target.value) ? e.target.value : 'recent';
+        storage.set(SORT_KEY, sort);
+        renderList();
+      },
     },
-  }, [
-    h('option', { value: 'recent', text: t('list.presentations.sort.recent', 'Last updated') }),
-    h('option', { value: 'title', text: t('list.presentations.sort.title', 'Title A–Z') }),
-  ]);
+    [
+      h('option', {
+        value: 'recent',
+        text: t('list.presentations.sort.recent', 'Last updated'),
+      }),
+      h('option', {
+        value: 'title',
+        text: t('list.presentations.sort.title', 'Title A–Z'),
+      }),
+    ],
+  );
   sortSelect.value = sort;
 
   const tagFilter = createTagFilter({
@@ -79,17 +108,26 @@ export function createPresentationsView({ h, api, renderCard, allByDate, onCreat
     },
   });
 
-  const header = h('div', { class: 'view-header-with-filter is-presentations' }, [
-    title,
-    h('div', { class: 'view-filters' }, [ownershipFilter, sortSelect, tagFilter.el]),
-  ]);
+  const header = h(
+    'div',
+    { class: 'view-header-with-filter is-presentations' },
+    [
+      title,
+      h('div', { class: 'view-filters' }, [
+        ownershipFilter,
+        sortSelect,
+        tagFilter.el,
+      ]),
+    ],
+  );
 
-  const ownershipLabel = (key) => ({
-    all: t('list.presentations.ownership.all', 'All'),
-    mine: t('list.presentations.ownership.mine', 'Mine'),
-    organization: t('list.presentations.ownership.organization', 'Workspace'),
-    shared: t('list.presentations.ownership.shared', 'Shared'),
-  }[key] || key);
+  const ownershipLabel = (key) =>
+    ({
+      all: t('list.presentations.ownership.all', 'All'),
+      mine: t('list.presentations.ownership.mine', 'Mine'),
+      organization: t('list.presentations.ownership.organization', 'Workspace'),
+      shared: t('list.presentations.ownership.shared', 'Shared'),
+    })[key] || key;
 
   const inOwnership = (p, key) => {
     switch (key) {
@@ -114,7 +152,9 @@ export function createPresentationsView({ h, api, renderCard, allByDate, onCreat
   const sortList = (arr) => {
     if (sort === 'title') {
       return [...arr].sort((a, b) =>
-        String(a.title || '').localeCompare(String(b.title || ''), undefined, { sensitivity: 'base' })
+        String(a.title || '').localeCompare(String(b.title || ''), undefined, {
+          sensitivity: 'base',
+        }),
       );
     }
     return arr; // `all` is already newest-first
@@ -136,25 +176,41 @@ export function createPresentationsView({ h, api, renderCard, allByDate, onCreat
       const btn = ownershipButtons.get(key);
       btn.innerHTML = '';
       btn.append(
-        h('span', { class: 'ownership-filter-label', text: ownershipLabel(key) }),
-        h('span', { class: 'ownership-filter-count', text: String(count) })
+        h('span', {
+          class: 'ownership-filter-label',
+          text: ownershipLabel(key),
+        }),
+        h('span', { class: 'ownership-filter-count', text: String(count) }),
       );
       btn.classList.toggle('is-active', key === ownership);
       btn.setAttribute('aria-selected', String(key === ownership));
     }
 
-    const filtered = sortList(tagFiltered.filter((p) => inOwnership(p, ownership)));
+    const filtered = sortList(
+      tagFiltered.filter((p) => inOwnership(p, ownership)),
+    );
 
     list.innerHTML = '';
     if (filtered.length === 0) {
       if (selectedTags.length > 0 || ownership !== 'all') {
         list.append(
-          h('div', { class: 'help', text: t('list.presentations.noMatch', 'No presentations match the selected filters.') })
+          h('div', {
+            class: 'help',
+            text: t(
+              'list.presentations.noMatch',
+              'No presentations match the selected filters.',
+            ),
+          }),
         );
       } else if (typeof onCreate === 'function') {
         list.append(createNoPresentationsEmptyState({ h, onCreate }));
       } else {
-        list.append(h('div', { class: 'help', text: t('list.presentations.empty', 'No presentations yet.') }));
+        list.append(
+          h('div', {
+            class: 'help',
+            text: t('list.presentations.empty', 'No presentations yet.'),
+          }),
+        );
       }
       return;
     }

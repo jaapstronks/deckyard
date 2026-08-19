@@ -67,7 +67,11 @@ function renderRoleControl(member, handlers) {
   });
   for (const role of ['member', 'admin']) {
     select.append(
-      h('option', { value: role, text: roleLabel(role), selected: member.role === role })
+      h('option', {
+        value: role,
+        text: roleLabel(role),
+        selected: member.role === role,
+      }),
     );
   }
 
@@ -115,7 +119,7 @@ function renderMemberActions(member, currentUser, handlers) {
         message: t(
           'organization.members.transferOwnershipConfirm',
           'Hand this organization over to {name}? They become the owner and you become an admin. Only they can hand it back.',
-          { name: memberName(member) }
+          { name: memberName(member) },
         ),
         confirmLabel: t('organization.members.transferOwnership', 'Make owner'),
         danger: true,
@@ -146,12 +150,12 @@ function renderMemberActions(member, currentUser, handlers) {
         message: self
           ? t(
               'organization.members.leaveConfirm',
-              'Leave this organization? You lose access to everything in it until someone invites you back.'
+              'Leave this organization? You lose access to everything in it until someone invites you back.',
             )
           : t(
               'organization.members.removeConfirm',
               'Remove {name} from this organization? They lose access to everything in it. Their account and their other organizations are untouched.',
-              { name: memberName(member) }
+              { name: memberName(member) },
             ),
         confirmLabel: self
           ? t('organization.members.leave', 'Leave')
@@ -175,9 +179,9 @@ function renderMemberActions(member, currentUser, handlers) {
         class: 'help admin-user-action-note',
         text: t(
           'organization.members.ownerCannotLeave',
-          'Hand the organization over to someone else before you can leave it.'
+          'Hand the organization over to someone else before you can leave it.',
         ),
-      })
+      }),
     );
     any = true;
   }
@@ -199,7 +203,9 @@ function renderMemberCard(member, currentUser, handlers) {
   const info = h('div', { class: 'admin-user-info' });
 
   const emailRow = h('div', { class: 'admin-user-email-row' });
-  emailRow.append(h('span', { class: 'admin-user-email', text: person.email || '' }));
+  emailRow.append(
+    h('span', { class: 'admin-user-email', text: person.email || '' }),
+  );
 
   // Owner and admin share the elevated badge treatment; the label is what
   // separates them.
@@ -207,7 +213,7 @@ function renderMemberCard(member, currentUser, handlers) {
     h('span', {
       class: `admin-user-role-badge ${member.role === 'member' ? '' : 'is-admin'}`,
       text: roleLabel(member.role),
-    })
+    }),
   );
 
   // The explicit `is_designer` flag only. Owners, and admins on an organization
@@ -218,7 +224,7 @@ function renderMemberCard(member, currentUser, handlers) {
       h('span', {
         class: 'admin-user-role-badge is-designer',
         text: t('organization.members.roleDesigner', 'Designer'),
-      })
+      }),
     );
   }
 
@@ -227,7 +233,7 @@ function renderMemberCard(member, currentUser, handlers) {
       h('span', {
         class: 'admin-user-role-badge',
         text: t('organization.members.you', 'You'),
-      })
+      }),
     );
   }
 
@@ -244,13 +250,18 @@ function renderMemberCard(member, currentUser, handlers) {
         ? t('organization.members.memberSince', 'Member since {date}', {
             date: new Date(member.joinedAt).toLocaleDateString(),
           })
-        : t('organization.members.memberSinceUnknown', 'Membership date unknown'),
-    })
+        : t(
+            'organization.members.memberSinceUnknown',
+            'Membership date unknown',
+          ),
+    }),
   );
 
   mainRow.append(info);
 
-  const actions = handlers ? renderMemberActions(member, currentUser, handlers) : null;
+  const actions = handlers
+    ? renderMemberActions(member, currentUser, handlers)
+    : null;
   if (actions) mainRow.append(actions);
 
   card.append(mainRow);
@@ -266,7 +277,12 @@ function renderMemberCard(member, currentUser, handlers) {
  * @param {Object} [options]
  * @param {Object} [options.handlers] - Action handlers; omit for a read-only list
  */
-export function renderMembersList(container, members, currentUser, options = {}) {
+export function renderMembersList(
+  container,
+  members,
+  currentUser,
+  options = {},
+) {
   container.innerHTML = '';
 
   if (!members.length) {
@@ -274,14 +290,16 @@ export function renderMembersList(container, members, currentUser, options = {})
       h('div', {
         class: 'help',
         text: t('organization.members.empty', 'No members found.'),
-      })
+      }),
     );
     return;
   }
 
   const list = h('div', { class: 'admin-users-grid' });
   for (const member of members) {
-    list.append(renderMemberCard(member, currentUser, options.handlers || null));
+    list.append(
+      renderMemberCard(member, currentUser, options.handlers || null),
+    );
   }
   container.append(list);
 }

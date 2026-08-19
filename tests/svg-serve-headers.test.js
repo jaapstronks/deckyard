@@ -36,7 +36,7 @@ async function tmpFile(name, content) {
 test('user-uploaded SVG is served inert', async () => {
   const p = await tmpFile(
     'evil.svg',
-    '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
+    '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
   );
   const res = mockRes();
   await serveFile(res, p, { userUpload: true });

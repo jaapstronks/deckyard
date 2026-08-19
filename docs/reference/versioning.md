@@ -10,11 +10,11 @@ Deckyard follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`
 (e.g. `1.4.2`). The three parts are independent counters, not decimals — `1.9.0`
 is followed by `1.10.0`, not `2.0`.
 
-| Part      | Bumped when …                                         | Signal to someone running Deckyard              |
-| --------- | ----------------------------------------------------- | ----------------------------------------------- |
-| **MAJOR** | a backward-incompatible change ships                  | Read the notes before upgrading; you may need to adjust config or an API call. |
-| **MINOR** | a backward-compatible feature ships (resets PATCH)    | Safe to upgrade; nothing you had breaks, and there's something new. |
-| **PATCH** | a backward-compatible fix ships                       | Blindly safe; often you want it (bug/security). |
+| Part      | Bumped when …                                      | Signal to someone running Deckyard                                             |
+| --------- | -------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **MAJOR** | a backward-incompatible change ships               | Read the notes before upgrading; you may need to adjust config or an API call. |
+| **MINOR** | a backward-compatible feature ships (resets PATCH) | Safe to upgrade; nothing you had breaks, and there's something new.            |
+| **PATCH** | a backward-compatible fix ships                    | Blindly safe; often you want it (bug/security).                                |
 
 `1.0.0` was the commitment to honor the MAJOR rule from there on. A rewrite that
 breaks nothing stays `1.x`; MAJOR moves to `2` only on a genuine break.
@@ -28,7 +28,7 @@ bump communicates the wrong thing — `2.0.0` reads as "a second era of the
 product", not as "we removed a slide type nobody used while tidying up".
 
 So until the beta badge comes off, **the version stays in `1.x`**. Breaking
-changes are still *documented* (the `⚠ BREAKING CHANGES` section in the changelog
+changes are still _documented_ (the `⚠ BREAKING CHANGES` section in the changelog
 is the point), but they ship as a MINOR bump, not a MAJOR one. `2.0.0` is reserved
 for a deliberate moment: leaving beta.
 
@@ -43,7 +43,7 @@ while the badge is up, not a mistake.
 
 ### The beta stance: purity over compatibility
 
-The no-MAJOR rule above is about the *number*; this is about the policy the
+The no-MAJOR rule above is about the _number_; this is about the policy the
 number serves. Deckyard went public weeks ago, with essentially no marketing:
 the installed base is deliberately near zero (one fork, run by the maintainer,
 upgrading in lockstep). While the beta badge is up, the priority order is
@@ -53,14 +53,14 @@ and docs alike:
 1. **A clean, consistent spec and API beat backward compatibility.** Every
    month of public life raises the price of tightening; right now that price is
    as low as it will ever be. Structural corrections — one canonical spelling,
-   one write path, one meaning per name — ship *now*, as documented breaking
+   one write path, one meaning per name — ship _now_, as documented breaking
    changes, rather than surviving as permanent caveats. Being open source with
    a published spec must not breed fear of refactoring; that fear is how a
    codebase clouds over.
 2. **A breaking change is announced, not feared.** It ships as MINOR with a
    `⚠ BREAKING CHANGES` note (the beta rule above) and a migration for stored
    data where one applies. Forks sync on tags and should expect breaking
-   releases while the badge is up — the beta badge *is* that warning.
+   releases while the badge is up — the beta badge _is_ that warning.
 3. **Tolerance is not compatibility.** Accepting several shapes or spellings
    for one meaning, without normalizing to a single canonical form, is drift
    wearing a friendly face. The rule at every boundary: accept what you must,
@@ -103,7 +103,7 @@ Everything else — internal modules, UI microcopy, most refactors — is MINOR 
 PATCH. When in doubt, if a fork or self-hoster has to change something on upgrade,
 it's MAJOR (during beta: MINOR with a breaking note — see above).
 
-Two things this list deliberately does *not* make breaking:
+Two things this list deliberately does _not_ make breaking:
 
 - **Retiring a slide type nobody stored.** A deck that carries the removed type
   still loads; the slide falls back to the archived-slide placeholder, which
@@ -120,7 +120,7 @@ Two things this list deliberately does *not* make breaking:
 ### Renamed slide-type classes go in the release notes
 
 The class names a slide type renders are a **public contract**, on the same
-footing as the four surfaces above for the purpose of *announcing* a change —
+footing as the four surfaces above for the purpose of _announcing_ a change —
 though not for the version number, since during beta nothing bumps MAJOR.
 
 Renaming one is the quietest breakage Deckyard has shipped. v1.8.0 replaced the
@@ -146,13 +146,13 @@ line matters. Details: `docs/reference/slide-type-css-contract.md`.
 Releases are computed from [Conventional Commits](https://www.conventionalcommits.org/).
 Prefix each commit (or the squash-merge PR title, since we squash-merge):
 
-| Prefix                    | Bump  | Changelog section |
-| ------------------------- | ----- | ----------------- |
-| `feat:`                   | MINOR | Added             |
-| `fix:`                    | PATCH | Fixed             |
-| `security:`               | PATCH | Security          |
-| `perf:` / `revert:`       | PATCH | Changed           |
-| `docs:` `chore:` `refactor:` `style:` `test:` `ci:` `build:` | none | hidden |
+| Prefix                                                                        | Bump  | Changelog section       |
+| ----------------------------------------------------------------------------- | ----- | ----------------------- |
+| `feat:`                                                                       | MINOR | Added                   |
+| `fix:`                                                                        | PATCH | Fixed                   |
+| `security:`                                                                   | PATCH | Security                |
+| `perf:` / `revert:`                                                           | PATCH | Changed                 |
+| `docs:` `chore:` `refactor:` `style:` `test:` `ci:` `build:`                  | none  | hidden                  |
 | any of the above with **`!`** (e.g. `feat!:`) or a `BREAKING CHANGE:` trailer | MAJOR | Added, flagged breaking |
 
 Only `feat`/`fix`/`security`/`perf`/`revert` and breaking changes surface in the
@@ -193,7 +193,7 @@ Release-As: 1.4.0
 ```
 
 On the next push, release-please rewrites the open Release PR to that version —
-title, `package.json`, tag, changelog heading. The generated changelog *body*
+title, `package.json`, tag, changelog heading. The generated changelog _body_
 still reflects the commits (a `⚠ BREAKING CHANGES` section stays), which is
 correct: the note was accurate, only the digit was wrong.
 

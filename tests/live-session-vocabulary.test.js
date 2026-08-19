@@ -28,15 +28,31 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
-const TARGET_DIRS = ['client', 'server', 'shared', 'scripts', 'capture', 'tests'];
+const TARGET_DIRS = [
+  'client',
+  'server',
+  'shared',
+  'scripts',
+  'capture',
+  'tests',
+];
 const EXCLUDED_DIRS = new Set([path.join('server', 'db', 'migrations')]);
 const SELF = 'live-session-vocabulary.test.js';
 
 // Needles built from fragments so this guard file does not match its own text.
 const FORBIDDEN = [
-  { label: 'present' + '-session (use live-session)', re: new RegExp('present' + '-session') },
-  { label: 'Present' + 'Session identifier (use LiveSession)', re: new RegExp('Present' + 'Session') },
-  { label: 'presentation-locks' + '-db (drop the -db suffix)', re: new RegExp('presentation-locks' + '-db') },
+  {
+    label: 'present' + '-session (use live-session)',
+    re: new RegExp('present' + '-session'),
+  },
+  {
+    label: 'Present' + 'Session identifier (use LiveSession)',
+    re: new RegExp('Present' + 'Session'),
+  },
+  {
+    label: 'presentation-locks' + '-db (drop the -db suffix)',
+    re: new RegExp('presentation-locks' + '-db'),
+  },
 ];
 
 function walk(dir, out = []) {
@@ -46,7 +62,11 @@ function walk(dir, out = []) {
     if (entry.isDirectory()) {
       if (EXCLUDED_DIRS.has(rel)) continue;
       walk(full, out);
-    } else if (entry.isFile() && entry.name.endsWith('.js') && entry.name !== SELF) {
+    } else if (
+      entry.isFile() &&
+      entry.name.endsWith('.js') &&
+      entry.name !== SELF
+    ) {
       out.push(full);
     }
   }
@@ -63,7 +83,8 @@ test('live-session vocabulary: no present-session spellings survive in code', ()
       const lines = fs.readFileSync(file, 'utf8').split('\n');
       lines.forEach((line, i) => {
         for (const { label, re } of FORBIDDEN) {
-          if (re.test(line)) violations.push(`${rel}:${i + 1}  [${label}]  ${line.trim()}`);
+          if (re.test(line))
+            violations.push(`${rel}:${i + 1}  [${label}]  ${line.trim()}`);
         }
       });
     }
@@ -71,6 +92,6 @@ test('live-session vocabulary: no present-session spellings survive in code', ()
   assert.equal(
     violations.length,
     0,
-    `Use the live-session spelling (physical table present_sessions excepted):\n  ${violations.join('\n  ')}`
+    `Use the live-session spelling (physical table present_sessions excepted):\n  ${violations.join('\n  ')}`,
   );
 });

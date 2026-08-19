@@ -55,7 +55,7 @@ Concretely, on a dedicated instance:
 - All decks live under one org. `canReadPresentation` granting every
   authenticated user read access to `visibility: 'organization'` decks
   (`server/utils/presentation-authz/presentations.js`) is intended organization
-  sharing, not a leak — the organization *is* the single tenant.
+  sharing, not a leak — the organization _is_ the single tenant.
 - Private decks stay owner-scoped (email-keyed ownership check in the same
   file), so users on the instance still can't read each other's private decks.
 
@@ -67,7 +67,7 @@ storage backend — does: every presentation query is scoped by `organization_id
 (`server/storage/presentations/index.js`), and in multi-organization
 mode the org is resolved per request from the session, verified against
 membership (`server/utils/context.js`, see below). A cross-org read returns
-nothing. The session is the *only* resolution path: the hostname says nothing
+nothing. The session is the _only_ resolution path: the hostname says nothing
 about which organization a request acts in (see "Why not the hostname" below).
 
 This used to be a real footgun. The old disk-JSON store (`STORAGE_MODE=file`) had
@@ -136,10 +136,10 @@ Four edge decisions taken with the rules:
    deck's organization, and no authorization read filters on it.** A
    collaborator row is addressed by `(presentation_id, user_email)` — unique
    since migration 010 — and a presentation id is a globally unique uuid, so
-   the deck already *is* the scope; an organization in the filter cannot
+   the deck already _is_ the scope; an organization in the filter cannot
    narrow the answer, only make it wrong when the two disagree. That is the R2
    "second copy could only drift" hazard, and it drifted: the write path
-   stamped the *inviter's session* organization, so an invite sent from
+   stamped the _inviter's session_ organization, so an invite sent from
    another organization produced an inert grant. The column is kept rather than
    dropped because the per-user listing (`listPresentationsSharedWithUser`,
    "shared with me") is scoped by person and has no deck to derive an
@@ -147,7 +147,7 @@ Four edge decisions taken with the rules:
    more: `addCollaborator` reads the stamp off the presentation, migration 064
    re-stamped the history, and `tests/collaborator-cross-org-endpoints.test.js`
    fails any call site that passes a scope back in. **Open:** whether "shared
-   with me" *should* be organization-scoped is a product question about what that
+   with me" _should_ be organization-scoped is a product question about what that
    list means across organizations, and is the only thing keeping this column
    from being removable outright.
 6. **The share-link access log is addressed by the link, and takes no
@@ -219,13 +219,13 @@ read-only curated seed set.
 
 ## In development: shape 4 (multiple organizations on one instance)
 
-*(This section replaced an "out of scope, parked" note on 2026-07-25. That note
+_(This section replaced an "out of scope, parked" note on 2026-07-25. That note
 said the identity and org-filtering work belonged to a future SaaS track. That is
-no longer true: the work is active, and it is not for a SaaS.)*
+no longer true: the work is active, and it is not for a SaaS.)_
 
 Two pieces had to be built before one managed instance could serve several
 organizations, and a UI on top of them. All three are in place; what is still
-missing is listed under *What is not done yet* below.
+missing is listed under _What is not done yet_ below.
 
 - **Organisation-independent identity — done.** Authentication resolves a person
   by their globally unique `users.email`, with no organization filter, through
@@ -235,13 +235,14 @@ missing is listed under *What is not done yet* below.
   (no database access), and membership-verified against `user_organizations` in
   multi-organization mode. A session whose organization membership was revoked
   falls back to the person's oldest remaining membership; someone with no
-  membership at all is refused. `users.organization_id` survives as the *home*
+  membership at all is refused. `users.organization_id` survives as the _home_
   organization — where a person lands without a session organization, and where
   newly created rows go — not as the authority on where they may work.
 
   Lookups that ask "who is this?" are organization-independent; lookups that ask
   "who is in this organization?" (`server/storage/users.js`, the member lists,
   `created_by` resolution) keep their organization filter.
+
 - **The request-to-organization binding — done.** `createStorageScope()`
   (`server/utils/context.js`) puts the session's resolved organization on the
   context, and every storage query that is given that context scopes on it via
@@ -272,7 +273,7 @@ missing is listed under *What is not done yet* below.
 
   Single-organization installations are unaffected in behaviour and in cost:
   there `resolveActiveOrganization()` answers from configuration without
-  touching the database, so the session's organization *is* the default one.
+  touching the database, so the session's organization _is_ the default one.
   Pinned by `tests/request-organization-binding.test.js` (single-organization,
   including query-log assertions that no extra lookup is issued) and
   `tests/request-organization-binding-multi-org.test.js` (two organizations on
@@ -298,7 +299,7 @@ missing is listed under *What is not done yet* below.
   (edge decision 5 above): it answers "what does this email hold on this deck",
   while whether the session may see the deck is settled one layer up by
   `getPresentation` on an organization-carrying storage scope. A deck in
-  another organization is therefore *absent* on every session path — 404, not 403
+  another organization is therefore _absent_ on every session path — 404, not 403
   — before a collaborator row is ever read, and no collaborator row can become
   a way around the organization filter.
 
@@ -319,7 +320,7 @@ missing is listed under *What is not done yet* below.
 
   **The authorization check follows the same organization as the storage scope.**
   It did not, for a while: `checkActorAccess` built its actor with the
-  organization read off *the presentation being checked*, which made the
+  organization read off _the presentation being checked_, which made the
   organization grant unconditional for machine clients — whatever organization a deck
   was in, the key appeared to be in it. Every entry point in
   `server/utils/presentation-authz/actor-access.js` now takes an **actor**
@@ -386,7 +387,7 @@ missing is listed under *What is not done yet* below.
   un-migrated caller fails on the validation, not somewhere inside a query.
 
   Single-organization installations are unaffected in behaviour: there the
-  session's organization *is* the default one, so every scoped call resolves to
+  session's organization _is_ the default one, so every scoped call resolves to
   the value it did before. Pinned by `tests/storage-scope-contract.test.js` (the
   rule itself, for every facade function) and
   `tests/storage-scope-multi-org.test.js` (two organizations through the real
@@ -428,7 +429,7 @@ one draws the rule its route enforces rather than a wider or narrower one:
   full, because a cache that survives the switch is a cross-organization leak in
   the UI rather than a performance win. The section hides itself entirely below
   two organizations, and in single-organization mode it issues no request at all.
-- **Who may see an admin screen** follows the role held in the *active*
+- **Who may see an admin screen** follows the role held in the _active_
   organization (`organizationRole` on `GET /api/auth/me`), not the instance-wide
   `isAdmin`. An admin in one organization who switches into another where they
   are a plain member loses the admin surfaces with the switch. The designer
@@ -438,13 +439,13 @@ one draws the rule its route enforces rather than a wider or narrower one:
 - **Members** — the Users tab lists the members of the active organization with
   role, designer flag and join date, paged, and carries the mutations: change a
   role, remove someone, leave, hand the organization over. It is open to every
-  member, read-only below admin — a plain member's own *Leave* button lives
+  member, read-only below admin — a plain member's own _Leave_ button lives
   there, and gating the tab on admin put it out of reach of exactly the people
   who need it.
 - **Inviting** — a modal above that list. The role choice exists only for the
   owner, because the route caps an admin at `member`; the report distinguishes
-  *added* (the account existed) from *invited* (a setup link went out) from
-  *created* (the account was made but no mail could be sent).
+  _added_ (the account existed) from _invited_ (a setup link went out) from
+  _created_ (the account was made but no mail could be sent).
 - **The organization profile** — name, display name, description and logo, with
   deletion for the owner. Readable by every member, writable by admin and owner,
   and deletion asks the owner to type the organization's name: `organizations`
@@ -464,7 +465,7 @@ admin had switched into, is gone. Pinned by
   `server/utils/presentation-authz/` compares `pres.ownerEmail` / `pres.createdBy`
   against the session's email, and the collaborator, comment and lock tables do
   the same. That is a decoupling epic of its own, not organization work, and it
-  is what stands between the current state and pointing two *unrelated*
+  is what stands between the current state and pointing two _unrelated_
   customers at one instance. The narrow leaks it started from were closed
   separately (PR #214).
 - **`AUTH_DEV_BYPASS` and multi-organization do not mix.** The bypass pins
@@ -474,7 +475,7 @@ admin had switched into, is gone. Pinned by
   verify locally; a bypass session in multi-organization mode sees the designer tabs
   disappear.
 
-Shape 4 stays *in development* on those grounds, not on missing UI: the
+Shape 4 stays _in development_ on those grounds, not on missing UI: the
 isolation it offers is code-enforced, and the identity epic above is the
 remaining structural gap. Shapes 1-3 are unaffected — their tenant boundary is
 the deploy itself.

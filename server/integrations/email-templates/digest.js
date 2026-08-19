@@ -42,7 +42,9 @@ export function buildWeeklyDigestEmail({
     topPresentationsHtml = `
       <p><strong>${escapeHtml(topPresentationsIntro || 'Top performing presentations:')}</strong></p>
       <table style="width: 100%; border-collapse: collapse; margin: 12px 0;">
-        ${topPresentations.map((p, i) => `
+        ${topPresentations
+          .map(
+            (p, i) => `
           <tr>
             <td style="padding: 8px 0; border-bottom: 1px solid #eee;">
               <strong>${i + 1}.</strong> ${escapeHtml(p.title)}
@@ -51,12 +53,17 @@ export function buildWeeklyDigestEmail({
               ${escapeHtml(String(p.views))} views${p.avgDuration ? `, ${escapeHtml(p.avgDuration)} avg` : ''}
             </td>
           </tr>
-        `).join('')}
+        `,
+          )
+          .join('')}
       </table>
     `;
-    topPresentationsText = `\n${topPresentationsIntro || 'Top performing presentations:'}\n${topPresentations.map((p, i) =>
-      `${i + 1}. ${p.title} - ${p.views} views${p.avgDuration ? `, ${p.avgDuration} avg` : ''}`
-    ).join('\n')}\n`;
+    topPresentationsText = `\n${topPresentationsIntro || 'Top performing presentations:'}\n${topPresentations
+      .map(
+        (p, i) =>
+          `${i + 1}. ${p.title} - ${p.views} views${p.avgDuration ? `, ${p.avgDuration} avg` : ''}`,
+      )
+      .join('\n')}\n`;
   }
 
   // Build insights list
@@ -78,8 +85,10 @@ export function buildWeeklyDigestEmail({
   if (weekOverWeek) {
     const stats = [];
     if (weekOverWeek.views) stats.push(`Views: ${weekOverWeek.views}`);
-    if (weekOverWeek.uniqueViewers) stats.push(`Unique viewers: ${weekOverWeek.uniqueViewers}`);
-    if (weekOverWeek.avgDuration) stats.push(`Avg duration: ${weekOverWeek.avgDuration}`);
+    if (weekOverWeek.uniqueViewers)
+      stats.push(`Unique viewers: ${weekOverWeek.uniqueViewers}`);
+    if (weekOverWeek.avgDuration)
+      stats.push(`Avg duration: ${weekOverWeek.avgDuration}`);
 
     if (stats.length > 0) {
       weekOverWeekHtml = `
@@ -156,11 +165,7 @@ Manage preferences: ${preferencesUrl}
  * @param {string} options.preferencesUrl - URL to manage email preferences
  * @returns {{ htmlContent: string, textContent: string }}
  */
-export function buildTeamDigestEmail({
-  digest,
-  dashboardUrl,
-  preferencesUrl,
-}) {
+export function buildTeamDigestEmail({ digest, dashboardUrl, preferencesUrl }) {
   const {
     greeting,
     highlights,
@@ -184,7 +189,9 @@ export function buildTeamDigestEmail({
     topPresentationsHtml = `
       <p><strong>${escapeHtml(topPresentationsIntro || 'Top performing presentations:')}</strong></p>
       <table style="width: 100%; border-collapse: collapse; margin: 12px 0;">
-        ${topPresentations.map((p, i) => `
+        ${topPresentations
+          .map(
+            (p, i) => `
           <tr>
             <td style="padding: 8px 0; border-bottom: 1px solid #eee;">
               <strong>${i + 1}.</strong> ${escapeHtml(p.title)}
@@ -193,12 +200,14 @@ export function buildTeamDigestEmail({
               ${escapeHtml(String(p.views))} views
             </td>
           </tr>
-        `).join('')}
+        `,
+          )
+          .join('')}
       </table>
     `;
-    topPresentationsText = `\n${topPresentationsIntro || 'Top performing presentations:'}\n${topPresentations.map((p, i) =>
-      `${i + 1}. ${p.title} - ${p.views} views`
-    ).join('\n')}\n`;
+    topPresentationsText = `\n${topPresentationsIntro || 'Top performing presentations:'}\n${topPresentations
+      .map((p, i) => `${i + 1}. ${p.title} - ${p.views} views`)
+      .join('\n')}\n`;
   }
 
   // Build top presenters list
@@ -208,7 +217,9 @@ export function buildTeamDigestEmail({
     topPresentersHtml = `
       <p><strong>${escapeHtml(topPresentersIntro || 'Most active presenters:')}</strong></p>
       <table style="width: 100%; border-collapse: collapse; margin: 12px 0;">
-        ${topPresenters.map((p, i) => `
+        ${topPresenters
+          .map(
+            (p, i) => `
           <tr>
             <td style="padding: 8px 0; border-bottom: 1px solid #eee;">
               <strong>${i + 1}.</strong> ${escapeHtml(p.name)}
@@ -217,12 +228,17 @@ export function buildTeamDigestEmail({
               ${escapeHtml(String(p.totalViews))} views, ${escapeHtml(String(p.presentationCount))} presentations
             </td>
           </tr>
-        `).join('')}
+        `,
+          )
+          .join('')}
       </table>
     `;
-    topPresentersText = `\n${topPresentersIntro || 'Most active presenters:'}\n${topPresenters.map((p, i) =>
-      `${i + 1}. ${p.name} - ${p.totalViews} views, ${p.presentationCount} presentations`
-    ).join('\n')}\n`;
+    topPresentersText = `\n${topPresentersIntro || 'Most active presenters:'}\n${topPresenters
+      .map(
+        (p, i) =>
+          `${i + 1}. ${p.name} - ${p.totalViews} views, ${p.presentationCount} presentations`,
+      )
+      .join('\n')}\n`;
   }
 
   // Build insights list
@@ -245,7 +261,8 @@ export function buildTeamDigestEmail({
     const stats = [];
     if (weekOverWeek?.views) stats.push(`Views: ${weekOverWeek.views}`);
     if (activePresenters) stats.push(`Active presenters: ${activePresenters}`);
-    if (presentationCount) stats.push(`Total presentations: ${presentationCount}`);
+    if (presentationCount)
+      stats.push(`Total presentations: ${presentationCount}`);
 
     if (stats.length > 0) {
       summaryHtml = `

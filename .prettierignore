@@ -1,0 +1,24 @@
+# Mirrors the ESLint ignore list (eslint.config.js): vendored bundles, data
+# dirs, generated assets, fork drop-ins — none of it is hand-authored source.
+node_modules
+server/data
+server/data-sandbox
+server/uploads
+server/uploads-sandbox
+client/vendor
+vendor
+assets
+custom
+.claude
+coverage
+*.min.js
+
+# Written by tools, not by hand.
+CHANGELOG.md
+package-lock.json
+
+# Symlink to the private deckyard-planning sibling repo (gitignored).
+docs/plans
+
+# Generated baselines: a reformat here would make the next regeneration a diff.
+tests/fixtures/export-metrics

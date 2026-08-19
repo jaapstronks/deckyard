@@ -17,9 +17,13 @@
 import { sql } from 'kysely';
 
 export const up = async (db) => {
-  await sql`ALTER TABLE api_keys RENAME COLUMN scopes TO permissions`.execute(db);
+  await sql`ALTER TABLE api_keys RENAME COLUMN scopes TO permissions`.execute(
+    db,
+  );
 };
 
 export const down = async (db) => {
-  await sql`ALTER TABLE api_keys RENAME COLUMN permissions TO scopes`.execute(db);
+  await sql`ALTER TABLE api_keys RENAME COLUMN permissions TO scopes`.execute(
+    db,
+  );
 };

@@ -34,7 +34,7 @@ const BILINGUAL_TYPES = Object.entries(SLIDE_TYPES)
       def?.defaultsByLang &&
       typeof def.defaultsByLang === 'object' &&
       def.defaultsByLang.nl &&
-      def.defaultsByLang['en-GB']
+      def.defaultsByLang['en-GB'],
   )
   .map(([name]) => name);
 
@@ -43,7 +43,7 @@ test('the registry actually carries per-language defaults', () => {
   // green while proving nothing.
   assert.ok(
     BILINGUAL_TYPES.length > 10,
-    `expected many types with defaultsByLang, got ${BILINGUAL_TYPES.length}`
+    `expected many types with defaultsByLang, got ${BILINGUAL_TYPES.length}`,
   );
 });
 
@@ -66,12 +66,12 @@ test('a new slide is seeded from the deck-language defaults', () => {
     assert.deepEqual(
       withoutRuntimeIds(nl.content),
       withoutRuntimeIds(def.defaultsByLang.nl),
-      `${type}: a slide inserted into a Dutch deck must seed defaultsByLang.nl`
+      `${type}: a slide inserted into a Dutch deck must seed defaultsByLang.nl`,
     );
     assert.deepEqual(
       withoutRuntimeIds(en.content),
       withoutRuntimeIds(def.defaultsByLang['en-GB']),
-      `${type}: a slide inserted into an English deck must seed defaultsByLang['en-GB']`
+      `${type}: a slide inserted into an English deck must seed defaultsByLang['en-GB']`,
     );
   }
 });
@@ -86,7 +86,10 @@ test('at least one type genuinely differs between the two languages', () => {
       JSON.stringify(def.defaultsByLang['en-GB'])
     );
   });
-  assert.ok(differs, 'expected the Dutch and English defaults to differ for some type');
+  assert.ok(
+    differs,
+    'expected the Dutch and English defaults to differ for some type',
+  );
 });
 
 test('an unknown or missing deck language falls back to the English defaults', () => {
@@ -96,6 +99,12 @@ test('an unknown or missing deck language falls back to the English defaults', (
   const def = SLIDE_TYPES[type];
   const unknown = makeNewSlide(type, SLIDE_TYPES, { lang: 'de' });
   const none = makeNewSlide(type, SLIDE_TYPES, {});
-  assert.deepEqual(withoutRuntimeIds(unknown.content), withoutRuntimeIds(def.defaults));
-  assert.deepEqual(withoutRuntimeIds(none.content), withoutRuntimeIds(def.defaults));
+  assert.deepEqual(
+    withoutRuntimeIds(unknown.content),
+    withoutRuntimeIds(def.defaults),
+  );
+  assert.deepEqual(
+    withoutRuntimeIds(none.content),
+    withoutRuntimeIds(def.defaults),
+  );
 });

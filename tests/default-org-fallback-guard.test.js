@@ -46,7 +46,8 @@ const ALLOWLIST = [
   { file: 'server/config/database.js', reason: 'the definition itself' },
   {
     file: 'server/storage/scope.js',
-    reason: 'singleOrganizationScope() — the doctrine form, throws under multi-organization',
+    reason:
+      'singleOrganizationScope() — the doctrine form, throws under multi-organization',
   },
   {
     file: 'server/storage/user-organizations/organizations.js',
@@ -66,15 +67,18 @@ const ALLOWLIST = [
   },
   {
     file: 'server/utils/context.js',
-    reason: 'createStorageScope pre-auth default (reset / magic-link / SSO have no resolved org)',
+    reason:
+      'createStorageScope pre-auth default (reset / magic-link / SSO have no resolved org)',
   },
   {
     file: 'server/routes/feed.js',
-    reason: 'per-org feed with no session; 404s under multi-organization (see handleFeed)',
+    reason:
+      'per-org feed with no session; 404s under multi-organization (see handleFeed)',
   },
   {
     file: 'server/routes/static/app-shell.js',
-    reason: 'feed autodiscovery links; omitted under multi-organization (see injectFeedDiscovery)',
+    reason:
+      'feed autodiscovery links; omitted under multi-organization (see injectFeedDiscovery)',
   },
 ];
 
@@ -122,15 +126,17 @@ test('getDefaultOrganizationId() is only called from the sanctioned allowlist', 
     0,
     'These files call getDefaultOrganizationId() but are not on the allowlist — ' +
       'pass the organization to the call site instead of falling back to the default:\n  ' +
-      violations.join('\n  ')
+      violations.join('\n  '),
   );
 
   // The allowlist must stay exact: an entry that no longer calls the function is
   // dead and should be removed, so it can't drift into a rubber stamp.
-  const stale = ALLOWLIST.filter((a) => !callers.has(a.file)).map((a) => a.file);
+  const stale = ALLOWLIST.filter((a) => !callers.has(a.file)).map(
+    (a) => a.file,
+  );
   assert.equal(
     stale.length,
     0,
-    `These allowlist entries no longer call getDefaultOrganizationId() — remove them:\n  ${stale.join('\n  ')}`
+    `These allowlist entries no longer call getDefaultOrganizationId() — remove them:\n  ${stale.join('\n  ')}`,
   );
 });

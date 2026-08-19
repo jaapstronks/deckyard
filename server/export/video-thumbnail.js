@@ -21,7 +21,10 @@
  * providers end up as inlined bytes.
  */
 
-import { assertPublicHttpUrl, safeFetchRemoteImage } from '../utils/ssrf-guard.js';
+import {
+  assertPublicHttpUrl,
+  safeFetchRemoteImage,
+} from '../utils/ssrf-guard.js';
 import { debugLog } from '../utils/debug-log.js';
 import {
   parseVideoSource,
@@ -90,7 +93,8 @@ export function bunnyPullZoneFromPlayPage(html, videoId) {
   if (url.protocol !== 'https:') return null;
   const host = url.hostname.toLowerCase();
   if (!host.endsWith('.b-cdn.net')) return null;
-  if (!url.pathname.toLowerCase().includes(String(videoId || '').toLowerCase())) return null;
+  if (!url.pathname.toLowerCase().includes(String(videoId || '').toLowerCase()))
+    return null;
   return host;
 }
 
@@ -154,10 +158,14 @@ async function resolveBunnyPullZone(libraryId, videoId) {
     }
     const host = bunnyPullZoneFromPlayPage(html, id);
     if (!host) {
-      debugLog(`[video-thumbnail] no usable og:image on the play page for library ${lib}`);
+      debugLog(
+        `[video-thumbnail] no usable og:image on the play page for library ${lib}`,
+      );
       return null;
     }
-    debugLog(`[video-thumbnail] discovered Bunny pull zone ${host} for library ${lib}`);
+    debugLog(
+      `[video-thumbnail] discovered Bunny pull zone ${host} for library ${lib}`,
+    );
     return host;
   })();
 
@@ -222,7 +230,10 @@ export async function resolveVideoThumbnailRequest(source, bunnyLibraryId) {
  *   shared with the other export embed passes so one still is fetched once.
  * @returns {Promise<string|null>} A `data:` URL, or null.
  */
-export async function resolveVideoThumbnailDataUrl(content, { transform = null, cache = null } = {}) {
+export async function resolveVideoThumbnailDataUrl(
+  content,
+  { transform = null, cache = null } = {},
+) {
   const source = String(content?.source || '').trim();
   if (!source) return null;
   const bunnyLibraryId = String(content?.bunnyLibraryId || '366590').trim();
@@ -243,7 +254,9 @@ export async function resolveVideoThumbnailDataUrl(content, { transform = null, 
       headers: request.referer ? { Referer: request.referer } : undefined,
     });
     if (!fetched) {
-      debugLog(`[video-thumbnail] could not fetch ${request.provider} still ${request.url}`);
+      debugLog(
+        `[video-thumbnail] could not fetch ${request.provider} still ${request.url}`,
+      );
       return '';
     }
     let buf = fetched.buffer;

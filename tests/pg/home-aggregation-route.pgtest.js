@@ -50,9 +50,13 @@ function makeRes() {
 function callHome({ user = { email: USER }, search = '' } = {}) {
   const res = makeRes();
   const url = new URL(`http://localhost/api/home${search}`);
-  return handleHome({ storageScope, req: { method: 'GET' }, res, url, authedUser: user }).then(
-    (handled) => ({ handled, res })
-  );
+  return handleHome({
+    storageScope,
+    req: { method: 'GET' },
+    res,
+    url,
+    authedUser: user,
+  }).then((handled) => ({ handled, res }));
 }
 
 pgDescribe('handleHome round-trip (real PostgreSQL, via facade)', () => {
@@ -68,10 +72,16 @@ pgDescribe('handleHome round-trip (real PostgreSQL, via facade)', () => {
     await createOrganizationLibraryItem(
       storageScope,
       { name: 'Shared title slide', slideType: 'title', content: {} },
-      { actorEmail: USER }
+      { actorEmail: USER },
     );
-    await createOrganizationCollection(storageScope, { name: 'Onboarding kit', slideIds: [] }, { actorEmail: USER });
-    await recordSlideLibraryUsage(storageScope, USER, [{ type: 'slide', id: 'used-1' }]);
+    await createOrganizationCollection(
+      storageScope,
+      { name: 'Onboarding kit', slideIds: [] },
+      { actorEmail: USER },
+    );
+    await recordSlideLibraryUsage(storageScope, USER, [
+      { type: 'slide', id: 'used-1' },
+    ]);
   });
 
   after(async () => {
@@ -94,7 +104,10 @@ pgDescribe('handleHome round-trip (real PostgreSQL, via facade)', () => {
 
     // Sections always present with the shape the client loaders consume.
     assert.ok(Array.isArray(body.popular), 'popular is an array');
-    assert.ok(Array.isArray(body.activity.events), 'activity.events is an array');
+    assert.ok(
+      Array.isArray(body.activity.events),
+      'activity.events is an array',
+    );
     assert.ok(body.buildingBlocks.collections, 'has collections');
     assert.ok(Array.isArray(body.buildingBlocks.collections.personal));
     assert.ok(Array.isArray(body.buildingBlocks.collections.organization));
@@ -102,9 +115,12 @@ pgDescribe('handleHome round-trip (real PostgreSQL, via facade)', () => {
     assert.ok(Array.isArray(body.usage.items));
 
     // The seeded organization building blocks + usage round-trip.
-    const organizationCollectionNames = body.buildingBlocks.collections.organization.map((c) => c.name);
+    const organizationCollectionNames =
+      body.buildingBlocks.collections.organization.map((c) => c.name);
     assert.ok(organizationCollectionNames.includes('Onboarding kit'));
-    const organizationSlideNames = body.buildingBlocks.organizationSlides.map((s) => s.name);
+    const organizationSlideNames = body.buildingBlocks.organizationSlides.map(
+      (s) => s.name,
+    );
     assert.ok(organizationSlideNames.includes('Shared title slide'));
     const usedKeys = body.usage.items.map((u) => `${u.itemType}:${u.itemId}`);
     assert.ok(usedKeys.includes('slide:used-1'));

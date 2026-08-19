@@ -9,7 +9,7 @@ across PRs #181–#196 (see the planning archive for that history).
 ## The problem it solves
 
 Without a rule, the same setting drifts into two places. An image's fit choice,
-for example, could sit both as a floating pill over the slide *and* in the
+for example, could sit both as a floating pill over the slide _and_ in the
 inspector. That is not just duplicated code: it stops the user building a mental
 model of where things live. The principle removes the duplication by giving
 every setting exactly one home.
@@ -29,32 +29,32 @@ see what is settable for an element, and the entry point to that edit.
 
 ## The underlying axis
 
-The split is not *content vs. settings*. It is **what does the edit need?**
+The split is not _content vs. settings_. It is **what does the edit need?**
 
-| Need | Surface |
-| --- | --- |
-| See what you type in the real typography and width | In-place on canvas |
-| Spatial, continuous, dragging (crop-focus, resize, position) | Canvas |
-| Pick a value from a set | Inspector |
-| Metadata you cannot point at (alt text, caption, source) | Inspector |
-| Space and structure (many rows, columns, fields) | Own wide editor |
+| Need                                                         | Surface            |
+| ------------------------------------------------------------ | ------------------ |
+| See what you type in the real typography and width           | In-place on canvas |
+| Spatial, continuous, dragging (crop-focus, resize, position) | Canvas             |
+| Pick a value from a set                                      | Inspector          |
+| Metadata you cannot point at (alt text, caption, source)     | Inspector          |
+| Space and structure (many rows, columns, fields)             | Own wide editor    |
 
-Rule of thumb: if the user must see the result *while* dragging or typing, it
+Rule of thumb: if the user must see the result _while_ dragging or typing, it
 belongs on the slide. If it is a discrete choice, it belongs in the inspector.
 
 ## Per surface, in short
 
 **Canvas** carries direct manipulation only: selection, dragging a crop-focus,
 `contenteditable` text in the slide itself, and a floating selection toolbar for
-what applies to the *selection* (bold, italic, link, list). Nothing on the
+what applies to the _selection_ (bold, italic, link, list). Nothing on the
 canvas covers the content the user is judging — replacement is a double-click on
 the element, not a button sitting over it.
 
 **Inspector** carries discrete choices and unpointable metadata: fit mode,
 alignment, text-size scale, colour override, alt text, caption, source, delete.
-Where a canvas drag and an inspector control set the *same* value (crop-focus
+Where a canvas drag and an inspector control set the _same_ value (crop-focus
 drag ↔ 3×3 focus grid), that is one value with two representations, which is
-fine; two places to *choose* is not.
+fine; two places to _choose_ is not.
 
 **Own surface** is for input that fits neither — chart data is data, not layout,
 and a table does not fit a narrow column. Preferred form: a non-blocking bottom
@@ -75,7 +75,7 @@ normal tab split still stays — no special casing:
 Corollary: element inputs that have no canvas surface (video source/ID, player
 settings, embed URL) are **inspector material** — they must never end up with
 the bulk "All text" modal as their only home. (The bulk modal is a convenience,
-never the only surface for any field — the *parity invariant*.)
+never the only surface for any field — the _parity invariant_.)
 
 ## Why the inspector is the carrier
 

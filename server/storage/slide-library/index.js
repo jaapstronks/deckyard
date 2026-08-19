@@ -129,7 +129,9 @@ async function createSlideLibraryRow(data, ctx) {
   // created_by and updated_by e-mail (the same actor at create), so the
   // organization-library authz guard can match on the stable id.
   const actorEmail = ctx?.actorEmail || null;
-  const actorResolution = actorEmail ? await resolveIdentityByEmail(actorEmail) : null;
+  const actorResolution = actorEmail
+    ? await resolveIdentityByEmail(actorEmail)
+    : null;
   const actorUserId = actorResolution?.userId ?? null;
 
   const row = await db
@@ -177,7 +179,8 @@ async function updateSlideLibraryRow(id, data, ctx) {
   if (data.description !== undefined) updateData.description = data.description;
   if (data.content !== undefined) updateData.content = jsonb(data.content);
   if (data.i18n !== undefined) updateData.i18n = jsonb(data.i18n);
-  if (data.favorites !== undefined) updateData.favorites = sql`${data.favorites}::text[]`;
+  if (data.favorites !== undefined)
+    updateData.favorites = sql`${data.favorites}::text[]`;
   if (data.trashedAt !== undefined) updateData.trashed_at = data.trashedAt;
   if (data.trashedBy !== undefined) updateData.trashed_by = data.trashedBy;
 
@@ -208,33 +211,64 @@ async function deleteSlideLibraryRow(id, ctx) {
 
 // Personal library functions
 
-export async function listPersonalLibrary(storageScope, userEmail, { themeId = '' } = {}) {
-  const ctx = toStorageContext(storageScope, 'listPersonalLibrary', { userEmail });
-  const items = await listSlideLibraryRows(ctx, { shelf: 'personal', ownerEmail: userEmail, themeId });
+export async function listPersonalLibrary(
+  storageScope,
+  userEmail,
+  { themeId = '' } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'listPersonalLibrary', {
+    userEmail,
+  });
+  const items = await listSlideLibraryRows(ctx, {
+    shelf: 'personal',
+    ownerEmail: userEmail,
+    themeId,
+  });
   return { items };
 }
 
-export async function createPersonalLibraryItem(storageScope, userEmail, input, { actorEmail } = {}) {
-  const ctx = toStorageContext(storageScope, 'createPersonalLibraryItem', { userEmail, actorEmail });
+export async function createPersonalLibraryItem(
+  storageScope,
+  userEmail,
+  input,
+  { actorEmail } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'createPersonalLibraryItem', {
+    userEmail,
+    actorEmail,
+  });
   const name = typeof input?.name === 'string' ? input.name.trim() : '';
-  const slideType = typeof input?.slideType === 'string' ? input.slideType.trim() : '';
+  const slideType =
+    typeof input?.slideType === 'string' ? input.slideType.trim() : '';
   if (!name) return { ok: false, reason: 'name_required' };
   if (!slideType) return { ok: false, reason: 'slideType_required' };
-  const result = await createSlideLibraryRow({
-    ...input,
-    shelf: 'personal',
-    ownerEmail: userEmail,
-  }, ctx);
+  const result = await createSlideLibraryRow(
+    {
+      ...input,
+      shelf: 'personal',
+      ownerEmail: userEmail,
+    },
+    ctx,
+  );
   if (!result) return { ok: false, reason: 'create_failed' };
   return { ok: true, item: result };
 }
 
-export async function updatePersonalLibraryItem(storageScope, userEmail, id, patch, { actorEmail } = {}) {
-  const ctx = toStorageContext(storageScope, 'updatePersonalLibraryItem', { userEmail, actorEmail });
+export async function updatePersonalLibraryItem(
+  storageScope,
+  userEmail,
+  id,
+  patch,
+  { actorEmail } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'updatePersonalLibraryItem', {
+    userEmail,
+    actorEmail,
+  });
   const normalizedPatch = { ...patch };
   if ('trashed' in patch) {
     normalizedPatch.trashedAt = patch.trashed ? nowIso() : null;
-    normalizedPatch.trashedBy = patch.trashed ? (actorEmail || userEmail) : null;
+    normalizedPatch.trashedBy = patch.trashed ? actorEmail || userEmail : null;
     delete normalizedPatch.trashed;
   }
   const result = await updateSlideLibraryRow(id, normalizedPatch, ctx);
@@ -243,7 +277,9 @@ export async function updatePersonalLibraryItem(storageScope, userEmail, id, pat
 }
 
 export async function deletePersonalLibraryItem(storageScope, userEmail, id) {
-  const ctx = toStorageContext(storageScope, 'deletePersonalLibraryItem', { userEmail });
+  const ctx = toStorageContext(storageScope, 'deletePersonalLibraryItem', {
+    userEmail,
+  });
   const deleted = await deleteSlideLibraryRow(id, ctx);
   if (!deleted) return { ok: false, reason: 'not_found' };
   return { ok: true };
@@ -251,69 +287,120 @@ export async function deletePersonalLibraryItem(storageScope, userEmail, id) {
 
 // Organization-shelf library functions
 
-export async function listOrganizationLibrary(storageScope, { themeId = '', userEmail = '' } = {}) {
-  const ctx = toStorageContext(storageScope, 'listOrganizationLibrary', { userEmail });
-  const items = await listSlideLibraryRows(ctx, { shelf: 'organization', themeId });
+export async function listOrganizationLibrary(
+  storageScope,
+  { themeId = '', userEmail = '' } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'listOrganizationLibrary', {
+    userEmail,
+  });
+  const items = await listSlideLibraryRows(ctx, {
+    shelf: 'organization',
+    themeId,
+  });
   return { items };
 }
 
-export async function getOrganizationLibraryItem(storageScope, id, { userEmail = '' } = {}) {
-  const ctx = toStorageContext(storageScope, 'getOrganizationLibraryItem', { userEmail });
+export async function getOrganizationLibraryItem(
+  storageScope,
+  id,
+  { userEmail = '' } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'getOrganizationLibraryItem', {
+    userEmail,
+  });
   const item = await getSlideLibraryRow(id, ctx);
   if (!item || item.shelf !== 'organization') return null;
   return item;
 }
 
-export async function createOrganizationLibraryItem(storageScope, input, { actorEmail } = {}) {
-  const ctx = toStorageContext(storageScope, 'createOrganizationLibraryItem', { actorEmail });
+export async function createOrganizationLibraryItem(
+  storageScope,
+  input,
+  { actorEmail } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'createOrganizationLibraryItem', {
+    actorEmail,
+  });
   const name = typeof input?.name === 'string' ? input.name.trim() : '';
-  const slideType = typeof input?.slideType === 'string' ? input.slideType.trim() : '';
+  const slideType =
+    typeof input?.slideType === 'string' ? input.slideType.trim() : '';
   if (!name) return { ok: false, reason: 'name_required' };
   if (!slideType) return { ok: false, reason: 'slideType_required' };
-  const result = await createSlideLibraryRow({
-    ...input,
-    shelf: 'organization',
-  }, ctx);
+  const result = await createSlideLibraryRow(
+    {
+      ...input,
+      shelf: 'organization',
+    },
+    ctx,
+  );
   if (!result) return { ok: false, reason: 'create_failed' };
   return { ok: true, item: result };
 }
 
-export async function updateOrganizationLibraryItem(storageScope, id, patch, { actorEmail } = {}) {
-  const ctx = toStorageContext(storageScope, 'updateOrganizationLibraryItem', { actorEmail });
+export async function updateOrganizationLibraryItem(
+  storageScope,
+  id,
+  patch,
+  { actorEmail } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'updateOrganizationLibraryItem', {
+    actorEmail,
+  });
   const result = await updateSlideLibraryRow(id, patch, ctx);
   if (!result) return { ok: false, reason: 'not_found' };
   return { ok: true, item: result };
 }
 
-export async function setOrganizationLibraryItemTrashed(storageScope, id, { trashed, actorEmail, allowTrash } = {}) {
-  const ctx = toStorageContext(storageScope, 'setOrganizationLibraryItemTrashed', { actorEmail });
+export async function setOrganizationLibraryItemTrashed(
+  storageScope,
+  id,
+  { trashed, actorEmail, allowTrash } = {},
+) {
+  const ctx = toStorageContext(
+    storageScope,
+    'setOrganizationLibraryItemTrashed',
+    { actorEmail },
+  );
   if (typeof allowTrash === 'function') {
     // Resolve the guard's target directly by id, never through the org list:
     // that list was capped at 100 rows (B85), so an item past the newest page
     // would have failed the authz guard with a false not_found. A non-org-shelf
     // id is not an organization-shelf item, so it stays not_found here.
     const item = await getSlideLibraryRow(id, ctx);
-    if (!item || item.shelf !== 'organization') return { ok: false, reason: 'not_found' };
+    if (!item || item.shelf !== 'organization')
+      return { ok: false, reason: 'not_found' };
     const ok = await allowTrash(item, { actorEmail });
     if (!ok) return { ok: false, reason: 'forbidden' };
   }
-  const result = await updateSlideLibraryRow(id, {
-    trashedAt: trashed ? nowIso() : null,
-    trashedBy: trashed ? actorEmail : null,
-  }, ctx);
+  const result = await updateSlideLibraryRow(
+    id,
+    {
+      trashedAt: trashed ? nowIso() : null,
+      trashedBy: trashed ? actorEmail : null,
+    },
+    ctx,
+  );
   if (!result) return { ok: false, reason: 'not_found' };
   return { ok: true, item: result };
 }
 
-export async function deleteOrganizationLibraryItem(storageScope, id, { actorEmail, allowDelete } = {}) {
-  const ctx = toStorageContext(storageScope, 'deleteOrganizationLibraryItem', { actorEmail });
+export async function deleteOrganizationLibraryItem(
+  storageScope,
+  id,
+  { actorEmail, allowDelete } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'deleteOrganizationLibraryItem', {
+    actorEmail,
+  });
   if (typeof allowDelete === 'function') {
     // Resolve the guard's target directly by id, never through the org list:
     // that list was capped at 100 rows (B85), so an item past the newest page
     // would have failed the authz guard with a false not_found. A non-org-shelf
     // id is not an organization-shelf item, so it stays not_found here.
     const item = await getSlideLibraryRow(id, ctx);
-    if (!item || item.shelf !== 'organization') return { ok: false, reason: 'not_found' };
+    if (!item || item.shelf !== 'organization')
+      return { ok: false, reason: 'not_found' };
     const ok = await allowDelete(item, { actorEmail });
     if (!ok) return { ok: false, reason: 'forbidden' };
   }
@@ -326,8 +413,14 @@ export async function deleteOrganizationLibraryItem(storageScope, id, { actorEma
 // These reuse the organization's existing tags (server/storage/tags), joined
 // through slide_library_tags. Thin queries, inlined here 1:1.
 
-export async function getTagsForSlideLibraryItem(storageScope, id, { userEmail } = {}) {
-  const ctx = toStorageContext(storageScope, 'getTagsForSlideLibraryItem', { userEmail });
+export async function getTagsForSlideLibraryItem(
+  storageScope,
+  id,
+  { userEmail } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'getTagsForSlideLibraryItem', {
+    userEmail,
+  });
   const db = getDb();
   const orgId = getOrgId(ctx);
 
@@ -346,8 +439,14 @@ export async function getTagsForSlideLibraryItem(storageScope, id, { userEmail }
   }));
 }
 
-export async function getTagsForSlideLibraryItems(storageScope, ids, { userEmail } = {}) {
-  const ctx = toStorageContext(storageScope, 'getTagsForSlideLibraryItems', { userEmail });
+export async function getTagsForSlideLibraryItems(
+  storageScope,
+  ids,
+  { userEmail } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'getTagsForSlideLibraryItems', {
+    userEmail,
+  });
   if (!ids || ids.length === 0) {
     return new Map();
   }
@@ -382,8 +481,15 @@ export async function getTagsForSlideLibraryItems(storageScope, ids, { userEmail
   return result;
 }
 
-export async function setTagsForSlideLibraryItem(storageScope, id, tagNames, { userEmail } = {}) {
-  const ctx = toStorageContext(storageScope, 'setTagsForSlideLibraryItem', { userEmail });
+export async function setTagsForSlideLibraryItem(
+  storageScope,
+  id,
+  tagNames,
+  { userEmail } = {},
+) {
+  const ctx = toStorageContext(storageScope, 'setTagsForSlideLibraryItem', {
+    userEmail,
+  });
   const db = getDb();
   const orgId = getOrgId(ctx);
 
@@ -449,7 +555,7 @@ export async function setTagsForSlideLibraryItem(storageScope, id, tagNames, { u
           slide_library_id: id,
           tag_id: tag.id,
           created_at: nowIso(),
-        }))
+        })),
       )
       .execute();
   }

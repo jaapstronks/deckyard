@@ -11,8 +11,18 @@
 /**
  * Build the system prompt for Phase 1
  */
-export function buildPhase1SystemPrompt({ detectedLang, requestedLang, targetSlides, estimatedInputLines }) {
-  const langLabel = requestedLang === 'nl' ? 'DUTCH' : requestedLang === 'en-GB' ? 'ENGLISH' : detectedLang.label;
+export function buildPhase1SystemPrompt({
+  detectedLang,
+  requestedLang,
+  targetSlides,
+  estimatedInputLines,
+}) {
+  const langLabel =
+    requestedLang === 'nl'
+      ? 'DUTCH'
+      : requestedLang === 'en-GB'
+        ? 'ENGLISH'
+        : detectedLang.label;
 
   return `You are a presentation outline generator. Analyze raw content and create a structured outline.
 
@@ -209,17 +219,24 @@ All output text (title, subtitle, summary, statusMessages, roughContent, present
 /**
  * Build the user prompt for Phase 1
  */
-export function buildPhase1UserPrompt({ rawContent, userName, rawFirstSlideTitle }) {
-  const lines = [
-    'Analyze this content and create a presentation outline.',
-    '',
-  ];
+export function buildPhase1UserPrompt({
+  rawContent,
+  userName,
+  rawFirstSlideTitle,
+}) {
+  const lines = ['Analyze this content and create a presentation outline.', ''];
 
   if (rawFirstSlideTitle) {
     lines.push(`ORIGINAL TITLE FROM SOURCE FILE: "${rawFirstSlideTitle}"`);
-    lines.push('Note: This may be an event name, date, or contextual title rather than the actual topic.');
-    lines.push('Determine the real presentation topic from the content and use that as the title.');
-    lines.push('You may use the original title info in the subtitle if appropriate.');
+    lines.push(
+      'Note: This may be an event name, date, or contextual title rather than the actual topic.',
+    );
+    lines.push(
+      'Determine the real presentation topic from the content and use that as the title.',
+    );
+    lines.push(
+      'You may use the original title info in the subtitle if appropriate.',
+    );
     lines.push('');
   }
 

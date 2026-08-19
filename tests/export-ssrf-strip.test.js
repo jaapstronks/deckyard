@@ -7,7 +7,7 @@ import { embedImgSrcDataUrls } from '../server/utils/html-utils.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  '..'
+  '..',
 );
 
 /**
@@ -34,7 +34,7 @@ test('metadata-IP image src is stripped from PDF export HTML', async () => {
   const html = await buildSlidesPdfHtml(repoRoot, pres, {});
   assert.ok(
     !html.includes('169.254.169.254'),
-    'export HTML must not reference the metadata IP'
+    'export HTML must not reference the metadata IP',
   );
 });
 
@@ -65,12 +65,16 @@ test('embedImgSrcDataUrls safety net blanks a remote CSS background-image url()'
     includeClient: true,
     embedRemote: true,
   });
-  assert.ok(!out.includes('169.254.169.254'), 'metadata background url must be stripped');
+  assert.ok(
+    !out.includes('169.254.169.254'),
+    'metadata background url must be stripped',
+  );
   assert.ok(out.includes("url('')"), 'blocked url() is blanked, not fetched');
 });
 
 test('embedImgSrcDataUrls without embedRemote leaves a remote background url() untouched', async () => {
-  const html = "<div style=\"background-image:url('https://cdn.example.com/bg.png')\"></div>";
+  const html =
+    '<div style="background-image:url(\'https://cdn.example.com/bg.png\')"></div>';
   const out = await embedImgSrcDataUrls('/repo', html, { includeClient: true });
   assert.equal(out, html);
 });

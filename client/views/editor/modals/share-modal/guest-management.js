@@ -16,7 +16,13 @@ import { confirmModal } from '../../../../lib/dom/modal.js';
  * @param {Object} options.toast - Toast notification service
  * @returns {HTMLElement} Guest management section element
  */
-export function createGuestManagementSection({ h, api, presentationId, link, toast }) {
+export function createGuestManagementSection({
+  h,
+  api,
+  presentationId,
+  link,
+  toast,
+}) {
   const section = h('div', { class: 'share-guest-section' });
   let isExpanded = false;
   let guests = [];
@@ -54,12 +60,19 @@ export function createGuestManagementSection({ h, api, presentationId, link, toa
 
   async function loadGuests() {
     try {
-      const resp = await api(`/api/presentations/${presentationId}/share-links/${link.id}/guests`);
+      const resp = await api(
+        `/api/presentations/${presentationId}/share-links/${link.id}/guests`,
+      );
       guests = resp?.guests || [];
       renderGuests();
     } catch (e) {
       guestList.innerHTML = '';
-      guestList.append(h('div', { class: 'share-guest-error', text: t('share.guests.loadError', 'Failed to load guests') }));
+      guestList.append(
+        h('div', {
+          class: 'share-guest-error',
+          text: t('share.guests.loadError', 'Failed to load guests'),
+        }),
+      );
     }
   }
 
@@ -67,7 +80,12 @@ export function createGuestManagementSection({ h, api, presentationId, link, toa
     guestList.innerHTML = '';
 
     if (guests.length === 0) {
-      guestList.append(h('div', { class: 'share-guest-empty', text: t('share.guests.empty', 'No guests invited yet') }));
+      guestList.append(
+        h('div', {
+          class: 'share-guest-empty',
+          text: t('share.guests.empty', 'No guests invited yet'),
+        }),
+      );
       return;
     }
 
@@ -75,14 +93,21 @@ export function createGuestManagementSection({ h, api, presentationId, link, toa
       const row = h('div', { class: 'share-guest-row' });
 
       const guestInfo = h('div', { class: 'share-guest-info' });
-      const guestEmail = h('span', { class: 'share-guest-email-display', text: guest.email });
-      const guestName = guest.name ? h('span', { class: 'share-guest-name-display', text: guest.name }) : null;
+      const guestEmail = h('span', {
+        class: 'share-guest-email-display',
+        text: guest.email,
+      });
+      const guestName = guest.name
+        ? h('span', { class: 'share-guest-name-display', text: guest.name })
+        : null;
       guestInfo.append(guestEmail);
       if (guestName) guestInfo.append(guestName);
 
       const statusBadge = h('span', {
         class: `share-guest-status share-guest-status--${guest.verifiedAt ? 'verified' : 'pending'}`,
-        text: guest.verifiedAt ? t('share.guests.verified', 'Verified') : t('share.guests.pending', 'Pending'),
+        text: guest.verifiedAt
+          ? t('share.guests.verified', 'Verified')
+          : t('share.guests.pending', 'Pending'),
       });
 
       const guestActions = h('div', { class: 'share-guest-actions' });
@@ -94,10 +119,15 @@ export function createGuestManagementSection({ h, api, presentationId, link, toa
           onclick: async () => {
             try {
               resendBtn.disabled = true;
-              await api(`/api/presentations/${presentationId}/share-links/${link.id}/guests/${guest.id}/resend`, {
-                method: 'POST',
+              await api(
+                `/api/presentations/${presentationId}/share-links/${link.id}/guests/${guest.id}/resend`,
+                {
+                  method: 'POST',
+                },
+              );
+              toast?.success(t('share.guests.resent', 'Invitation resent'), {
+                durationMs: 2000,
               });
-              toast?.success(t('share.guests.resent', 'Invitation resent'), { durationMs: 2000 });
             } catch (e) {
               toast?.error(String(e?.message || e), { durationMs: 3000 });
             } finally {
@@ -120,11 +150,16 @@ export function createGuestManagementSection({ h, api, presentationId, link, toa
           });
           if (!ok) return;
           try {
-            await api(`/api/presentations/${presentationId}/share-links/${link.id}/guests/${guest.id}`, {
-              method: 'DELETE',
-            });
+            await api(
+              `/api/presentations/${presentationId}/share-links/${link.id}/guests/${guest.id}`,
+              {
+                method: 'DELETE',
+              },
+            );
             await loadGuests();
-            toast?.success(t('share.guests.removed', 'Guest removed'), { durationMs: 2000 });
+            toast?.success(t('share.guests.removed', 'Guest removed'), {
+              durationMs: 2000,
+            });
           } catch (e) {
             toast?.error(String(e?.message || e), { durationMs: 3000 });
           }
@@ -152,20 +187,27 @@ export function createGuestManagementSection({ h, api, presentationId, link, toa
     const email = emailInput.value.trim();
     const name = nameInput.value.trim();
     if (!email) {
-      toast?.error(t('share.guests.emailRequired', 'Email is required'), { durationMs: 2000 });
+      toast?.error(t('share.guests.emailRequired', 'Email is required'), {
+        durationMs: 2000,
+      });
       return;
     }
 
     try {
       addBtn.disabled = true;
-      await api(`/api/presentations/${presentationId}/share-links/${link.id}/guests`, {
-        method: 'POST',
-        body: JSON.stringify({ email, name: name || null }),
-      });
+      await api(
+        `/api/presentations/${presentationId}/share-links/${link.id}/guests`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ email, name: name || null }),
+        },
+      );
       emailInput.value = '';
       nameInput.value = '';
       await loadGuests();
-      toast?.success(t('share.guests.invited', 'Guest invited'), { durationMs: 2000 });
+      toast?.success(t('share.guests.invited', 'Guest invited'), {
+        durationMs: 2000,
+      });
     } catch (e) {
       toast?.error(String(e?.message || e), { durationMs: 3000 });
     } finally {

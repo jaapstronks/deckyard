@@ -34,8 +34,14 @@ const SCHEMA = {
         type: 'object',
         properties: {
           topic: { type: 'string' },
-          importance: { type: 'string', enum: ['essential', 'important', 'supporting'] },
-          evidence: { type: 'string', description: 'Short quote or figure from the source' },
+          importance: {
+            type: 'string',
+            enum: ['essential', 'important', 'supporting'],
+          },
+          evidence: {
+            type: 'string',
+            description: 'Short quote or figure from the source',
+          },
         },
         required: ['topic', 'importance', 'evidence'],
         additionalProperties: false,
@@ -58,7 +64,12 @@ const EXTRACTION_VERSION = 'topics-v1';
  * @param {boolean} [options.refresh] - Bypass the cache
  * @returns {Promise<{topics: {topic: string, importance: string, evidence: string}[], cached: boolean}>}
  */
-export async function extractKeyTopics({ caseId, sourceText, onUsage = null, refresh = false }) {
+export async function extractKeyTopics({
+  caseId,
+  sourceText,
+  onUsage = null,
+  refresh = false,
+}) {
   const key = cacheKey(EXTRACTION_VERSION, MODEL, SYSTEM, sourceText);
 
   const { value, cached } = await withCache(
@@ -73,7 +84,7 @@ export async function extractKeyTopics({ caseId, sourceText, onUsage = null, ref
         maxTokens: 4000,
         onUsage,
       }),
-    { skip: refresh }
+    { skip: refresh },
   );
 
   return { topics: value.topics || [], cached };

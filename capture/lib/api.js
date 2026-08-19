@@ -65,18 +65,18 @@ export async function assertServerUp(base) {
     throw new Error(
       `Dev server not reachable at ${base}. Start it first:\n` +
         `  AUTH_DEV_BYPASS=true npm run start\n` +
-        `(original error: ${e.message})`
+        `(original error: ${e.message})`,
     );
   }
   if (list.status === 401 || list.status === 403) {
     throw new Error(
       `Dev server at ${base} is up but not auto-logging-in. Run it with ` +
-        `AUTH_DEV_BYPASS=true (dev only) so capture recipes can seed state.`
+        `AUTH_DEV_BYPASS=true (dev only) so capture recipes can seed state.`,
     );
   }
   if (!list.ok) {
     throw new Error(
-      `Dev server at ${base} answered ${list.status} for /api/presentations.`
+      `Dev server at ${base} answered ${list.status} for /api/presentations.`,
     );
   }
 }
@@ -150,9 +150,7 @@ export async function deleteDecksByPrefix(api, prefix) {
   const items = Array.isArray(list)
     ? list
     : list?.items || list?.presentations || [];
-  const doomed = items.filter((p) =>
-    String(p?.title || '').startsWith(prefix)
-  );
+  const doomed = items.filter((p) => String(p?.title || '').startsWith(prefix));
   let removed = 0;
   for (const p of doomed) {
     try {
@@ -186,7 +184,7 @@ export async function deleteDecksByPrefix(api, prefix) {
 export async function createShareLink(
   api,
   deckId,
-  { permission = 'view', label, password, expiresAt, registrationMode } = {}
+  { permission = 'view', label, password, expiresAt, registrationMode } = {},
 ) {
   const created = await api.post(`/api/presentations/${deckId}/share-links`, {
     permission,
@@ -209,7 +207,10 @@ export async function createShareLink(
  * @param {{title: string, theme?: string, slides?: unknown[]}} spec
  * @returns {Promise<string>} deck id
  */
-export async function seedDeck(api, { title, theme = DEFAULT_THEME_ID, slides = [] }) {
+export async function seedDeck(
+  api,
+  { title, theme = DEFAULT_THEME_ID, slides = [] },
+) {
   const created = await api.post('/api/presentations', { title, theme });
   const id = created?.id || created?.presentation?.id;
   if (!id) throw new Error(`No id returned creating deck "${title}"`);

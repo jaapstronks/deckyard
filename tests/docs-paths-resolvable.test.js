@@ -23,10 +23,22 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 /** The real top-level directories a cited path can start with. */
-const TOP_LEVEL_DIRS = ['assets', 'client', 'docs', 'scripts', 'server', 'shared', 'tests', 'themes'];
+const TOP_LEVEL_DIRS = [
+  'assets',
+  'client',
+  'docs',
+  'scripts',
+  'server',
+  'shared',
+  'tests',
+  'themes',
+];
 
 /**
  * Gitignored roots that only exist once the app has been installed or run:
@@ -76,7 +88,8 @@ const EXCLUDED_DOC_TREES = ['docs/plans/'];
  * @param {string} rel repo-relative path
  * @returns {boolean} whether it sits in a tree this gate ignores
  */
-const isExcludedDocPath = (rel) => EXCLUDED_DOC_TREES.some((d) => rel.startsWith(d));
+const isExcludedDocPath = (rel) =>
+  EXCLUDED_DOC_TREES.some((d) => rel.startsWith(d));
 
 /**
  * Docs the gate reads. Prose that ships with the repo, minus the private trees in
@@ -146,7 +159,9 @@ function collectTracked() {
   const walk = (relDir) => {
     let entries;
     try {
-      entries = fs.readdirSync(path.join(REPO_ROOT, relDir || '.'), { withFileTypes: true });
+      entries = fs.readdirSync(path.join(REPO_ROOT, relDir || '.'), {
+        withFileTypes: true,
+      });
     } catch {
       return;
     }
@@ -219,7 +234,8 @@ function citedPaths() {
       if (/[*?<>{}|]/.test(tok) || tok.includes('…')) continue; // a pattern, not a path
       if (isExcludedDocPath(tok)) continue; // a tree this gate does not own
       if (tok.startsWith('client/i18n/')) continue; // generated payloads
-      if (GITIGNORED_RUNTIME_ROOTS.some((d) => tok === d || tok.startsWith(d))) continue;
+      if (GITIGNORED_RUNTIME_ROOTS.some((d) => tok === d || tok.startsWith(d)))
+        continue;
       out.push({ p: tok, doc });
     }
   }
@@ -230,9 +246,18 @@ const CITATIONS = citedPaths();
 
 test('the scan actually sees the docs', () => {
   // A silent zero-file scan would make every assertion below vacuously pass.
-  assert.ok(DOC_FILES.length > 20, `expected a populated doc scan, got ${DOC_FILES.length} files`);
-  assert.ok(CITATIONS.length > 50, `expected the docs to cite many paths, got ${CITATIONS.length}`);
-  assert.ok(pathResolves('client/lib/dom.js'), 'sanity: a known-live path resolves');
+  assert.ok(
+    DOC_FILES.length > 20,
+    `expected a populated doc scan, got ${DOC_FILES.length} files`,
+  );
+  assert.ok(
+    CITATIONS.length > 50,
+    `expected the docs to cite many paths, got ${CITATIONS.length}`,
+  );
+  assert.ok(
+    pathResolves('client/lib/dom.js'),
+    'sanity: a known-live path resolves',
+  );
 });
 
 test('every backtick file path in the docs resolves, or is allowlisted', () => {
@@ -249,7 +274,7 @@ test('every backtick file path in the docs resolves, or is allowlisted', () => {
       leftovers.map(({ p, doc }) => `  - ${p}  (in ${doc})`).join('\n') +
       `\n\nEither fix the path, or — if it is deliberate — add it to ` +
       `TUTORIAL_PLACEHOLDERS (a fictional path) or FROZEN_SNAPSHOT_DOCS (a dated ` +
-      `snapshot doc) in tests/docs-paths-resolvable.test.js, with a reason.`
+      `snapshot doc) in tests/docs-paths-resolvable.test.js, with a reason.`,
   );
 });
 
@@ -258,11 +283,11 @@ test('no tutorial placeholder has quietly become real or uncited (the allowlist 
   for (const [p, why] of Object.entries(TUTORIAL_PLACEHOLDERS)) {
     assert.ok(
       cited.has(p),
-      `TUTORIAL_PLACEHOLDERS lists "${p}" (${why}) but no doc cites it any more — drop the entry.`
+      `TUTORIAL_PLACEHOLDERS lists "${p}" (${why}) but no doc cites it any more — drop the entry.`,
     );
     assert.ok(
       !pathResolves(p),
-      `TUTORIAL_PLACEHOLDERS lists "${p}" but that path now exists — it is no longer fiction, drop the entry.`
+      `TUTORIAL_PLACEHOLDERS lists "${p}" but that path now exists — it is no longer fiction, drop the entry.`,
     );
   }
 });
@@ -272,14 +297,17 @@ test('every frozen-snapshot doc still exists and still shelters a dead path', ()
   for (const [doc, why] of Object.entries(FROZEN_SNAPSHOT_DOCS)) {
     assert.ok(
       docSet.has(doc),
-      `FROZEN_SNAPSHOT_DOCS lists "${doc}" (${why}) but it is not a scanned doc — drop the entry.`
+      `FROZEN_SNAPSHOT_DOCS lists "${doc}" (${why}) but it is not a scanned doc — drop the entry.`,
     );
     const shelters = CITATIONS.some(
-      ({ p, doc: d }) => d === doc && !pathResolves(p) && !Object.hasOwn(TUTORIAL_PLACEHOLDERS, p)
+      ({ p, doc: d }) =>
+        d === doc &&
+        !pathResolves(p) &&
+        !Object.hasOwn(TUTORIAL_PLACEHOLDERS, p),
     );
     assert.ok(
       shelters,
-      `FROZEN_SNAPSHOT_DOCS lists "${doc}" but every path it cites now resolves — the exemption is moot, drop the entry.`
+      `FROZEN_SNAPSHOT_DOCS lists "${doc}" but every path it cites now resolves — the exemption is moot, drop the entry.`,
     );
   }
 });
@@ -291,7 +319,7 @@ test('every allowlist entry carries a real reason', () => {
   ]) {
     assert.ok(
       typeof why === 'string' && why.trim().length > 10,
-      `allowlist entry "${key}" needs a real reason, not "${why}"`
+      `allowlist entry "${key}" needs a real reason, not "${why}"`,
     );
   }
 });
@@ -330,7 +358,7 @@ test('every doc under docs/ is linked from somewhere', () => {
       r.startsWith('docs/') &&
       !isExcludedDocPath(r) &&
       r.endsWith('.md') &&
-      path.basename(r) !== 'README.md'
+      path.basename(r) !== 'README.md',
   );
   const linked = linkedTargets();
   const orphans = targets.filter((t) => !linked.has(t));
@@ -339,6 +367,6 @@ test('every doc under docs/ is linked from somewhere', () => {
     [],
     `these docs are not linked from any other doc — add them to the index in ` +
       `docs/README.md (or another doc):\n` +
-      orphans.map((t) => `  - ${t}`).join('\n')
+      orphans.map((t) => `  - ${t}`).join('\n'),
   );
 });

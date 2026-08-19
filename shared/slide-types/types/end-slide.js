@@ -141,17 +141,36 @@ export default {
     const social2Url = String(content?.social2Url || '').trim();
 
     const hasContact = name || email || phone || url;
-    const hasSocial = (social1Label && social1Url) || (social2Label && social2Url);
+    const hasSocial =
+      (social1Label && social1Url) || (social2Label && social2Url);
 
     const contactLines = [];
-    if (name) contactLines.push(`<div class="end-contact-name" data-inline-field="contactName" dir="auto">${escapeHtml(name)}</div>`);
-    if (email) contactLines.push(`<div class="end-contact-item" data-inline-field="contactEmail"><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></div>`);
-    if (phone) contactLines.push(`<div class="end-contact-item" data-inline-field="contactPhone"><a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a></div>`);
-    if (url) contactLines.push(`<div class="end-contact-item"><a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(url.replace(/^https?:\/\//, ''))}</a></div>`);
+    if (name)
+      contactLines.push(
+        `<div class="end-contact-name" data-inline-field="contactName" dir="auto">${escapeHtml(name)}</div>`,
+      );
+    if (email)
+      contactLines.push(
+        `<div class="end-contact-item" data-inline-field="contactEmail"><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></div>`,
+      );
+    if (phone)
+      contactLines.push(
+        `<div class="end-contact-item" data-inline-field="contactPhone"><a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a></div>`,
+      );
+    if (url)
+      contactLines.push(
+        `<div class="end-contact-item"><a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(url.replace(/^https?:\/\//, ''))}</a></div>`,
+      );
 
     const socialLinks = [];
-    if (social1Label && social1Url) socialLinks.push(`<a class="end-social-link" href="${escapeHtml(social1Url)}" target="_blank" rel="noopener">${escapeHtml(social1Label)}</a>`);
-    if (social2Label && social2Url) socialLinks.push(`<a class="end-social-link" href="${escapeHtml(social2Url)}" target="_blank" rel="noopener">${escapeHtml(social2Label)}</a>`);
+    if (social1Label && social1Url)
+      socialLinks.push(
+        `<a class="end-social-link" href="${escapeHtml(social1Url)}" target="_blank" rel="noopener">${escapeHtml(social1Label)}</a>`,
+      );
+    if (social2Label && social2Url)
+      socialLinks.push(
+        `<a class="end-social-link" href="${escapeHtml(social2Url)}" target="_blank" rel="noopener">${escapeHtml(social2Label)}</a>`,
+      );
 
     return `
       <div class="slide slide-end ${bg}">

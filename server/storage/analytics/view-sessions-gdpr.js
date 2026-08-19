@@ -140,8 +140,11 @@ export async function deleteUserAnalyticsData({ email }) {
         .select('id')
         .where('viewer_email', '=', normalizedEmail)
         .execute();
-      return eraseSessionRows(trx, sessions.map((s) => s.id));
-    })
+      return eraseSessionRows(
+        trx,
+        sessions.map((s) => s.id),
+      );
+    }),
   );
 }
 
@@ -175,8 +178,11 @@ export async function eraseAnalyticsDataForDevice({ deviceId } = {}) {
         .select('id')
         .where('device_id', '=', id)
         .execute();
-      return eraseSessionRows(trx, sessions.map((s) => s.id));
-    })
+      return eraseSessionRows(
+        trx,
+        sessions.map((s) => s.id),
+      );
+    }),
   );
 }
 
@@ -197,7 +203,7 @@ export async function eraseAnalyticsDataForSession({ sessionId } = {}) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) =>
-    db.transaction().execute(async (trx) => eraseSessionRows(trx, [id]))
+    db.transaction().execute(async (trx) => eraseSessionRows(trx, [id])),
   );
 }
 

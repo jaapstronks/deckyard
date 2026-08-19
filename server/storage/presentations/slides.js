@@ -9,7 +9,8 @@ import { ValidationError } from '../../utils/errors.js';
 
 // An example canonical id for the error message, read from the registry so it
 // can never drift from the spelling the format actually publishes.
-const EXAMPLE_CANONICAL_ID = getSlideTypeId('title-slide') || 'eu.deckyard.slide.title';
+const EXAMPLE_CANONICAL_ID =
+  getSlideTypeId('title-slide') || 'eu.deckyard.slide.title';
 
 /**
  * The one write-seam every stored slide passes through: it validates the slide
@@ -36,7 +37,7 @@ export function normalizeSlides(slides) {
       throw new ValidationError(
         `Unknown slide type ${JSON.stringify(s?.type ?? null)} at slide ${index}: ` +
           `use a canonical type id such as ${EXAMPLE_CANONICAL_ID}`,
-        { slideIndex: index, type: s?.type ?? null }
+        { slideIndex: index, type: s?.type ?? null },
       );
     }
     const normalized = {
@@ -48,7 +49,8 @@ export function normalizeSlides(slides) {
           ? {
               ...(s?.content && typeof s.content === 'object' ? s.content : {}),
               pollId:
-                typeof s?.content?.pollId === 'string' && s.content.pollId.trim()
+                typeof s?.content?.pollId === 'string' &&
+                s.content.pollId.trim()
                   ? s.content.pollId.trim()
                   : crypto.randomUUID(),
             }
@@ -64,12 +66,20 @@ export function normalizeSlides(slides) {
       normalized.lockedByAuthor = s.lockedByAuthor;
     }
     // Preserve per-slide duration override if valid (1-300 seconds)
-    if (typeof s?.duration === 'number' && s.duration >= 1 && s.duration <= 300) {
+    if (
+      typeof s?.duration === 'number' &&
+      s.duration >= 1 &&
+      s.duration <= 300
+    ) {
       normalized.duration = Math.round(s.duration);
     }
     // Preserve data source binding config if present, folding legacy refresh
     // modes ('on-view' → 'manual') so nothing non-canonical is persisted.
-    if (s?.dataSource && typeof s.dataSource === 'object' && s.dataSource.provider) {
+    if (
+      s?.dataSource &&
+      typeof s.dataSource === 'object' &&
+      s.dataSource.provider
+    ) {
       normalized.dataSource = normalizeDataSource(s.dataSource);
     }
     return normalized;

@@ -21,7 +21,8 @@ globalThis.document = dom.window.document;
 globalThis.location = dom.window.location;
 globalThis.history = dom.window.history;
 
-const { syncSlideIdInUrl } = await import('../client/views/editor/slide-url.js');
+const { syncSlideIdInUrl } =
+  await import('../client/views/editor/slide-url.js');
 
 test('writes slideId, preserves lang, replaces the legacy s alias', () => {
   const before = history.length;

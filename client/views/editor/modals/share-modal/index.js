@@ -120,7 +120,7 @@ export function openShareModal({
       class: 'btn btn-secondary',
       text: t('common.close', 'Close'),
       onclick: () => close(),
-    })
+    }),
   );
 
   // Owner check drives the transfer-ownership affordance in collaborators. It
@@ -161,10 +161,11 @@ export function openShareModal({
     openOverlayClosers,
   });
 
-  const organizationPanel = h('div', { class: 'share-tab-panel', 'data-tab': 'organization' }, [
-    visibility.element,
-    collaborators.element,
-  ]);
+  const organizationPanel = h(
+    'div',
+    { class: 'share-tab-panel', 'data-tab': 'organization' },
+    [visibility.element, collaborators.element],
+  );
 
   // --- Link tab ---
   const shareLinks = createShareLinksSection({
@@ -204,7 +205,9 @@ export function openShareModal({
       })
     : null;
   const publishPanel = publish
-    ? h('div', { class: 'share-tab-panel', 'data-tab': 'publish' }, [publish.element])
+    ? h('div', { class: 'share-tab-panel', 'data-tab': 'publish' }, [
+        publish.element,
+      ])
     : null;
 
   const panels = {
@@ -226,7 +229,10 @@ export function openShareModal({
     ariaLabel: t('share.modal.title', 'Share'),
     value: panels[initialTab] ? initialTab : 'organization',
     segments: [
-      { value: 'organization', label: t('share.tab.organization', 'Workspace') },
+      {
+        value: 'organization',
+        label: t('share.tab.organization', 'Workspace'),
+      },
       { value: 'link', label: t('share.tab.link', 'Link') },
       ...(publishPanel
         ? [{ value: 'publish', label: t('share.tab.publish', 'Publish') }]

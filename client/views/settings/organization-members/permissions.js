@@ -17,7 +17,10 @@
  * id and email is globally unique on an instance.
  */
 
-import { hasOrganizationRole, getOrganizationRole } from '../../../lib/user/organization-role.js';
+import {
+  hasOrganizationRole,
+  getOrganizationRole,
+} from '../../../lib/user/organization-role.js';
 
 /**
  * Whether a member row is the signed-in person.
@@ -57,7 +60,9 @@ export function canInvite(currentUser) {
  */
 export function invitableRoles(currentUser) {
   if (!canInvite(currentUser)) return [];
-  return getOrganizationRole(currentUser) === 'owner' ? ['member', 'admin'] : ['member'];
+  return getOrganizationRole(currentUser) === 'owner'
+    ? ['member', 'admin']
+    : ['member'];
 }
 
 /**

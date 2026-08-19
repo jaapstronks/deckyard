@@ -11,17 +11,19 @@ export const up = async (db) => {
     .createTable('api_keys')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('owner_email', 'varchar(320)', (col) => col.notNull())
     .addColumn('name', 'varchar(255)', (col) => col.notNull())
     .addColumn('key_prefix', 'varchar(12)', (col) => col.notNull())
     .addColumn('key_hash', 'varchar(64)', (col) => col.notNull())
     .addColumn('tier', 'varchar(20)', (col) => col.defaultTo('free'))
-    .addColumn('scopes', 'jsonb', (col) => col.defaultTo(sql`'["read", "write"]'::jsonb`))
+    .addColumn('scopes', 'jsonb', (col) =>
+      col.defaultTo(sql`'["read", "write"]'::jsonb`),
+    )
     .addColumn('last_used_at', 'timestamptz')
     .addColumn('revoked_at', 'timestamptz')
     .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
@@ -61,7 +63,7 @@ export const up = async (db) => {
     .createTable('api_usage_daily')
     .ifNotExists()
     .addColumn('api_key_id', 'uuid', (col) =>
-      col.references('api_keys.id').onDelete('cascade').notNull()
+      col.references('api_keys.id').onDelete('cascade').notNull(),
     )
     .addColumn('date', 'date', (col) => col.notNull())
     .addColumn('request_count', 'integer', (col) => col.defaultTo(0))

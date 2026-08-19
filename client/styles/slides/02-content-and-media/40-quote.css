@@ -24,8 +24,7 @@
   background-size: 300% 300%;
   background-position: 45% 35%;
   will-change: background-position;
-  animation: sb-gradient-pan 80s ease-in-out infinite
-    alternate;
+  animation: sb-gradient-pan 80s ease-in-out infinite alternate;
 }
 .slide-quote .slide-inner {
   position: relative;

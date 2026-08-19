@@ -32,12 +32,12 @@ export function handleThings(ctx) {
 ```
 
 - **`method`** (optional): the HTTP method this route requires. Omit it to match
-  any method (see *405* below).
+  any method (see _405_ below).
 - **`pattern`**: either an exact pathname string (exact match, no prefix match)
   or a `RegExp`. A `RegExp`'s capture groups are passed to the handler as
   trailing positional arguments: `handler(ctx, ...match.slice(1))`.
 - **`handler`**: `(ctx, ...params) => unknown`. Its return value is the
-  dispatcher's return value; a truthy value means *handled*.
+  dispatcher's return value; a truthy value means _handled_.
 
 `dispatchRoutes` returns the matched handler's result, or `false` when nothing
 matches — so the caller in `routes/api/index.js` can fall through to the next
@@ -61,7 +61,7 @@ When a route carries a `method` and the request's method differs,
 matches the matcher that grew inside `presentations.js`, and it is what makes
 overlapping tables composable.
 
-Many hand-written if-chains, though, *did* send a `405` for a matched path with
+Many hand-written if-chains, though, _did_ send a `405` for a matched path with
 the wrong method (`if (pathname === X) { …; return methodNotAllowed(res, […]) }`).
 That behaviour is part of the module's contract and **must be preserved** across
 the migration. There are two faithful forms; pick per path based on what the
@@ -92,16 +92,27 @@ they serve and any other method reaches the catch-all:
 
 ```js
 const ROUTES = [
-  { method: 'GET', pattern: '/api/settings/app', handler: handleAppSettingsGet },
-  { method: 'PUT', pattern: '/api/settings/app', handler: handleAppSettingsPut },
-  { pattern: '/api/settings/app', handler: (ctx) => methodNotAllowed(ctx.res, ['GET', 'PUT']) },
+  {
+    method: 'GET',
+    pattern: '/api/settings/app',
+    handler: handleAppSettingsGet,
+  },
+  {
+    method: 'PUT',
+    pattern: '/api/settings/app',
+    handler: handleAppSettingsPut,
+  },
+  {
+    pattern: '/api/settings/app',
+    handler: (ctx) => methodNotAllowed(ctx.res, ['GET', 'PUT']),
+  },
 ];
 ```
 
 The catch-all makes the `405` a **visible, greppable row** rather than an
 implicit branch — and keeps the method column meaningful.
 
-### When a guard runs *before* the method check
+### When a guard runs _before_ the method check
 
 Some paths run an authorization/feature guard before deciding the method
 (`if (!authedUser?.email) return unauthorized(res); if (req.method !== 'GET') …`).

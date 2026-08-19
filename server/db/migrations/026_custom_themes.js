@@ -15,22 +15,32 @@ export const up = async (db) => {
     .createTable('themes')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade').notNull()
+      col.references('organizations.id').onDelete('cascade').notNull(),
     )
     .addColumn('slug', 'varchar(80)', (col) => col.notNull())
     .addColumn('label', 'varchar(255)', (col) => col.notNull())
     .addColumn('logo_url', 'text')
     // Color configuration: { primary, background, textLight, textDark }
-    .addColumn('colors', 'jsonb', (col) => col.notNull().defaultTo(sql`'{}'::jsonb`))
+    .addColumn('colors', 'jsonb', (col) =>
+      col.notNull().defaultTo(sql`'{}'::jsonb`),
+    )
     // Font configuration: { heading, body }
-    .addColumn('fonts', 'jsonb', (col) => col.notNull().defaultTo(sql`'{}'::jsonb`))
+    .addColumn('fonts', 'jsonb', (col) =>
+      col.notNull().defaultTo(sql`'{}'::jsonb`),
+    )
     .addColumn('is_default', 'boolean', (col) => col.notNull().defaultTo(false))
-    .addColumn('created_at', 'timestamptz', (col) => col.notNull().defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (col) => col.notNull().defaultTo(sql`now()`))
-    .addColumn('created_by', 'uuid', (col) => col.references('users.id').onDelete('set null'))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn('updated_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn('created_by', 'uuid', (col) =>
+      col.references('users.id').onDelete('set null'),
+    )
     .execute();
 
   // Unique constraint on organization_id + slug

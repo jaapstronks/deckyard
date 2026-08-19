@@ -18,9 +18,7 @@ export {
   createSessionLogger,
 } from './generate-deck-v2.js';
 
-export {
-  separateSlidesForProcessing,
-} from './generate-outline.js';
+export { separateSlidesForProcessing } from './generate-outline.js';
 
 export {
   SLIDE_TYPE_CATALOG,
@@ -29,10 +27,7 @@ export {
   getPhase2SlideTypes,
 } from './slide-type-catalog.js';
 
-export {
-  logLlmConversation,
-  logDeckGenerationSession,
-} from './logging.js';
+export { logLlmConversation, logDeckGenerationSession } from './logging.js';
 
 export {
   validateAndFixRefinedSlides,
@@ -42,10 +37,7 @@ export {
   getUnknownFields,
 } from './validate-slides.js';
 
-export {
-  analyzeForCompression,
-  applyCompression,
-} from './compress-deck.js';
+export { analyzeForCompression, applyCompression } from './compress-deck.js';
 
 export {
   logValidationEvent,

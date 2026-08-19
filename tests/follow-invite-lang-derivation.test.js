@@ -62,7 +62,7 @@ test('the slide type declares no language defaults', () => {
   assert.deepEqual(
     Object.keys(followInviteSlide.defaults).sort(),
     ['presentationId'],
-    'a language default would reintroduce the stored copy the render derives'
+    'a language default would reintroduce the stored copy the render derives',
   );
 });
 
@@ -72,7 +72,11 @@ test('a save strips stored language keys from existing decks', () => {
   // first time it is stored.
   const pres = deckWithInvites({
     nl: { presentationId: 'deck-1', sourceLang: 'nl', targetLang: 'en-GB' },
-    'en-GB': { presentationId: 'deck-1', sourceLang: 'en-GB', targetLang: 'nl' },
+    'en-GB': {
+      presentationId: 'deck-1',
+      sourceLang: 'en-GB',
+      targetLang: 'nl',
+    },
   });
 
   normalizeI18n(pres);
@@ -80,11 +84,11 @@ test('a save strips stored language keys from existing decks', () => {
   for (const slide of allInvites(pres)) {
     assert.ok(
       !('sourceLang' in slide.content),
-      `sourceLang survived a save on ${slide.id}`
+      `sourceLang survived a save on ${slide.id}`,
     );
     assert.ok(
       !('targetLang' in slide.content),
-      `targetLang survived a save on ${slide.id}`
+      `targetLang survived a save on ${slide.id}`,
     );
   }
 });
@@ -94,15 +98,25 @@ test('divergent stored values cannot survive a save either', () => {
   // save there is nothing left to diverge.
   const pres = deckWithInvites({
     nl: { presentationId: 'deck-1', sourceLang: 'en-GB', targetLang: 'en-GB' },
-    'en-GB': { presentationId: 'deck-1', sourceLang: 'en-GB', targetLang: 'nl' },
+    'en-GB': {
+      presentationId: 'deck-1',
+      sourceLang: 'en-GB',
+      targetLang: 'nl',
+    },
   });
 
   normalizeI18n(pres);
 
   const langKeys = allInvites(pres).flatMap((s) =>
-    Object.keys(s.content).filter((k) => k === 'sourceLang' || k === 'targetLang')
+    Object.keys(s.content).filter(
+      (k) => k === 'sourceLang' || k === 'targetLang',
+    ),
   );
-  assert.deepEqual(langKeys, [], 'no language key may remain on a stored invite');
+  assert.deepEqual(
+    langKeys,
+    [],
+    'no language key may remain on a stored invite',
+  );
 });
 
 test('a save still sets presentationId, which is genuinely slide data', () => {
@@ -115,15 +129,40 @@ test('a save still sets presentationId, which is genuinely slide data', () => {
 });
 
 test('render follows ctx.lang, not the slide', () => {
-  const slide = { type: 'follow-invite-slide', content: { presentationId: 'deck-1' } };
+  const slide = {
+    type: 'follow-invite-slide',
+    content: { presentationId: 'deck-1' },
+  };
 
-  const nl = renderSlideHtml(slide, { lang: 'nl', followCodes: { nl: '1111', en: '2222' } });
-  const en = renderSlideHtml(slide, { lang: 'en-GB', followCodes: { nl: '1111', en: '2222' } });
+  const nl = renderSlideHtml(slide, {
+    lang: 'nl',
+    followCodes: { nl: '1111', en: '2222' },
+  });
+  const en = renderSlideHtml(slide, {
+    lang: 'en-GB',
+    followCodes: { nl: '1111', en: '2222' },
+  });
 
-  assert.match(nl, /Volg mee op je telefoon/, 'the nl version should render Dutch copy');
-  assert.match(en, /Follow along on your phone/, 'the en-GB version should render English copy');
-  assert.match(nl, /lang=nl/, 'the QR target should carry the version language');
-  assert.match(en, /lang=en-GB/, 'the QR target should carry the version language');
+  assert.match(
+    nl,
+    /Volg mee op je telefoon/,
+    'the nl version should render Dutch copy',
+  );
+  assert.match(
+    en,
+    /Follow along on your phone/,
+    'the en-GB version should render English copy',
+  );
+  assert.match(
+    nl,
+    /lang=nl/,
+    'the QR target should carry the version language',
+  );
+  assert.match(
+    en,
+    /lang=en-GB/,
+    'the QR target should carry the version language',
+  );
   assert.match(nl, /1111/, 'the nl version should show the nl join code');
   assert.match(en, /2222/, 'the en-GB version should show the en join code');
 });
@@ -134,19 +173,30 @@ test('a stale stored language on an unsaved deck is ignored at render', () => {
   // showing until something happened to save the deck.
   const stale = {
     type: 'follow-invite-slide',
-    content: { presentationId: 'deck-1', sourceLang: 'en-GB', targetLang: 'nl' },
+    content: {
+      presentationId: 'deck-1',
+      sourceLang: 'en-GB',
+      targetLang: 'nl',
+    },
   };
 
-  const html = renderSlideHtml(stale, { lang: 'nl', followCodes: { nl: '1111', en: '2222' } });
+  const html = renderSlideHtml(stale, {
+    lang: 'nl',
+    followCodes: { nl: '1111', en: '2222' },
+  });
 
-  assert.match(html, /Volg mee op je telefoon/, 'the stored en-GB must not win over ctx.lang');
+  assert.match(
+    html,
+    /Volg mee op je telefoon/,
+    'the stored en-GB must not win over ctx.lang',
+  );
   assert.doesNotMatch(html, /Follow along on your phone/);
 });
 
 test('rendering without a language falls back to nl, as before', () => {
   const html = renderSlideHtml(
     { type: 'follow-invite-slide', content: { presentationId: 'deck-1' } },
-    {}
+    {},
   );
   assert.match(html, /Volg mee op je telefoon/);
 });

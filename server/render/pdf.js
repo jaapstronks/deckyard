@@ -1,6 +1,9 @@
 /* global document */ // page.evaluate() callbacks below run in the browser context.
 import { buildSlidesPdfHtml } from '../export/pdf-slides.js';
-import { getPuppeteerBrowser, toNodeBuffer } from '../utils/puppeteer-browser.js';
+import {
+  getPuppeteerBrowser,
+  toNodeBuffer,
+} from '../utils/puppeteer-browser.js';
 import { envInt } from '../config/utils.js';
 
 /** Puppeteer raises a TimeoutError (name === 'TimeoutError') on timeout. */
@@ -23,7 +26,7 @@ function pdfExportTimeoutMs() {
 export async function renderSlidesToPdfBuffer(
   repoRoot,
   pres,
-  { theme = null, slideTypes = null } = {}
+  { theme = null, slideTypes = null } = {},
 ) {
   const browser = await getPuppeteerBrowser({ featureName: 'PDF export' });
   const page = await browser.newPage();
@@ -32,7 +35,10 @@ export async function renderSlidesToPdfBuffer(
   // the default). One call is cleaner than threading `timeout` per option.
   page.setDefaultTimeout(timeout);
   try {
-    const html = await buildSlidesPdfHtml(repoRoot, pres, { theme, slideTypes });
+    const html = await buildSlidesPdfHtml(repoRoot, pres, {
+      theme,
+      slideTypes,
+    });
     try {
       await page.setContent(html, { waitUntil: 'load', timeout });
     } catch (err) {
@@ -40,7 +46,7 @@ export async function renderSlidesToPdfBuffer(
         throw new Error(
           'PDF export timed out while rendering the deck. The deck may be too ' +
             'large; raise PDF_EXPORT_TIMEOUT_MS, or use the browser-print PDF ' +
-            'option instead.'
+            'option instead.',
         );
       }
       throw err;

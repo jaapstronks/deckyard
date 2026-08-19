@@ -20,7 +20,11 @@
  * that wants the backfill to be provably complete rather than merely harmless.
  */
 
-import { initializeDatabase, closeDatabase, isDatabaseAvailable } from '../server/db/client.js';
+import {
+  initializeDatabase,
+  closeDatabase,
+  isDatabaseAvailable,
+} from '../server/db/client.js';
 import {
   verifyIdentityConsistency,
   formatIdentityReport,
@@ -31,7 +35,9 @@ async function main() {
 
   await initializeDatabase();
   if (!isDatabaseAvailable()) {
-    console.error('No database configured — set DATABASE_URL or the DATABASE_* variables.');
+    console.error(
+      'No database configured — set DATABASE_URL or the DATABASE_* variables.',
+    );
     process.exitCode = 1;
     return;
   }
@@ -45,7 +51,7 @@ async function main() {
   }
   if (strict && report.unlinked > 0) {
     console.error(
-      `--strict: ${report.unlinked} row(s) could be linked but are not. Re-run the migrations.`
+      `--strict: ${report.unlinked} row(s) could be linked but are not. Re-run the migrations.`,
     );
     process.exitCode = 1;
   }

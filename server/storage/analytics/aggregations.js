@@ -19,7 +19,10 @@ import { applyDateFilters } from '../../analytics/helpers.js';
  * @param {string} [opts.until] - End date
  * @returns {Promise<Object>}
  */
-export async function getPresentationAnalyticsOverview(presentationId, opts = {}) {
+export async function getPresentationAnalyticsOverview(
+  presentationId,
+  opts = {},
+) {
   const presId = norm(presentationId);
   if (!presId) {
     return {
@@ -32,71 +35,73 @@ export async function getPresentationAnalyticsOverview(presentationId, opts = {}
     };
   }
 
-  return withDbGuard({
-    totalViews: 0,
-    uniqueViewers: 0,
-    avgDurationSeconds: 0,
-    completionRate: 0,
-    viewsByDay: [],
-    topSourceTypes: [],
-  }, async (db) => {
-    // Main metrics query
-    let metricsQuery = db
-      .selectFrom('view_sessions')
-      .select([
-        (eb) => eb.fn.count('id').as('total_views'),
-        // Use raw SQL for COALESCE since device_id is varchar and id is uuid
-        sql`COUNT(DISTINCT COALESCE(device_id, id::text))`.as('unique_viewers'),
-        (eb) => eb.fn.avg('duration_seconds').as('avg_duration'),
-      ])
-      .where('presentation_id', '=', presId);
+  return withDbGuard(
+    {
+      totalViews: 0,
+      uniqueViewers: 0,
+      avgDurationSeconds: 0,
+      completionRate: 0,
+      viewsByDay: [],
+      topSourceTypes: [],
+    },
+    async (db) => {
+      // Main metrics query
+      let metricsQuery = db
+        .selectFrom('view_sessions')
+        .select([
+          (eb) => eb.fn.count('id').as('total_views'),
+          // Use raw SQL for COALESCE since device_id is varchar and id is uuid
+          sql`COUNT(DISTINCT COALESCE(device_id, id::text))`.as(
+            'unique_viewers',
+          ),
+          (eb) => eb.fn.avg('duration_seconds').as('avg_duration'),
+        ])
+        .where('presentation_id', '=', presId);
 
-    metricsQuery = applyDateFilters(metricsQuery, opts);
-    const metrics = await metricsQuery.executeTakeFirst();
+      metricsQuery = applyDateFilters(metricsQuery, opts);
+      const metrics = await metricsQuery.executeTakeFirst();
 
-    // Views by day
-    let viewsByDayQuery = db
-      .selectFrom('view_sessions')
-      .select([
-        sql`date_trunc('day', started_at)::date`.as('date'),
-        (eb) => eb.fn.count('id').as('views'),
-      ])
-      .where('presentation_id', '=', presId)
-      .groupBy(sql`date_trunc('day', started_at)`)
-      .orderBy(sql`date_trunc('day', started_at)`, 'asc');
+      // Views by day
+      let viewsByDayQuery = db
+        .selectFrom('view_sessions')
+        .select([
+          sql`date_trunc('day', started_at)::date`.as('date'),
+          (eb) => eb.fn.count('id').as('views'),
+        ])
+        .where('presentation_id', '=', presId)
+        .groupBy(sql`date_trunc('day', started_at)`)
+        .orderBy(sql`date_trunc('day', started_at)`, 'asc');
 
-    viewsByDayQuery = applyDateFilters(viewsByDayQuery, opts);
-    const viewsByDayRows = await viewsByDayQuery.execute();
+      viewsByDayQuery = applyDateFilters(viewsByDayQuery, opts);
+      const viewsByDayRows = await viewsByDayQuery.execute();
 
-    // Source types breakdown
-    let sourceTypesQuery = db
-      .selectFrom('view_sessions')
-      .select([
-        'source_type',
-        (eb) => eb.fn.count('id').as('count'),
-      ])
-      .where('presentation_id', '=', presId)
-      .groupBy('source_type')
-      .orderBy((eb) => eb.fn.count('id'), 'desc');
+      // Source types breakdown
+      let sourceTypesQuery = db
+        .selectFrom('view_sessions')
+        .select(['source_type', (eb) => eb.fn.count('id').as('count')])
+        .where('presentation_id', '=', presId)
+        .groupBy('source_type')
+        .orderBy((eb) => eb.fn.count('id'), 'desc');
 
-    sourceTypesQuery = applyDateFilters(sourceTypesQuery, opts);
-    const sourceTypesRows = await sourceTypesQuery.execute();
+      sourceTypesQuery = applyDateFilters(sourceTypesQuery, opts);
+      const sourceTypesRows = await sourceTypesQuery.execute();
 
-    return {
-      totalViews: Number(metrics?.total_views) || 0,
-      uniqueViewers: Number(metrics?.unique_viewers) || 0,
-      avgDurationSeconds: Math.round(Number(metrics?.avg_duration) || 0),
-      completionRate: 0, // Calculate separately based on slide progression
-      viewsByDay: viewsByDayRows.map((row) => ({
-        date: row.date?.toISOString?.()?.split('T')[0] || String(row.date),
-        views: Number(row.views) || 0,
-      })),
-      topSourceTypes: sourceTypesRows.map((row) => ({
-        type: row.source_type,
-        count: Number(row.count) || 0,
-      })),
-    };
-  });
+      return {
+        totalViews: Number(metrics?.total_views) || 0,
+        uniqueViewers: Number(metrics?.unique_viewers) || 0,
+        avgDurationSeconds: Math.round(Number(metrics?.avg_duration) || 0),
+        completionRate: 0, // Calculate separately based on slide progression
+        viewsByDay: viewsByDayRows.map((row) => ({
+          date: row.date?.toISOString?.()?.split('T')[0] || String(row.date),
+          views: Number(row.views) || 0,
+        })),
+        topSourceTypes: sourceTypesRows.map((row) => ({
+          type: row.source_type,
+          count: Number(row.count) || 0,
+        })),
+      };
+    },
+  );
 }
 
 // ============================================================
@@ -125,7 +130,10 @@ export async function getDetailedSlideEngagement(presentationId, opts = {}) {
         (eb) => eb.fn.sum('duration_seconds').as('total_time'),
         (eb) => eb.fn.max('duration_seconds').as('max_time'),
         (eb) => eb.fn.min('duration_seconds').as('min_time'),
-        (eb) => eb.fn.count(sql`CASE WHEN visit_number > 1 THEN 1 END`).as('revisits'),
+        (eb) =>
+          eb.fn
+            .count(sql`CASE WHEN visit_number > 1 THEN 1 END`)
+            .as('revisits'),
       ])
       .where('presentation_id', '=', presId)
       .groupBy(['slide_id', 'slide_index'])
@@ -137,17 +145,16 @@ export async function getDetailedSlideEngagement(presentationId, opts = {}) {
     // Get dropoff stats per slide
     let dropoffQuery = db
       .selectFrom('view_sessions')
-      .select([
-        'exit_slide_id',
-        (eb) => eb.fn.count('id').as('dropoffs'),
-      ])
+      .select(['exit_slide_id', (eb) => eb.fn.count('id').as('dropoffs')])
       .where('presentation_id', '=', presId)
       .where('exit_slide_id', 'is not', null)
       .groupBy('exit_slide_id');
 
     dropoffQuery = applyDateFilters(dropoffQuery, opts);
     const dropoffRows = await dropoffQuery.execute();
-    const dropoffBySlide = new Map(dropoffRows.map((r) => [r.exit_slide_id, Number(r.dropoffs) || 0]));
+    const dropoffBySlide = new Map(
+      dropoffRows.map((r) => [r.exit_slide_id, Number(r.dropoffs) || 0]),
+    );
 
     // Get total sessions for rate calculation
     let totalQuery = db
@@ -225,7 +232,7 @@ export async function getInteractionHeatmapData(presentationId, opts = {}) {
       // 60% time weight, 40% views weight
       const viewsScore = maxViews > 0 ? views / maxViews : 0;
       const timeScore = maxAvgTime > 0 ? avgTime / maxAvgTime : 0;
-      const engagementScore = (timeScore * 0.6) + (viewsScore * 0.4);
+      const engagementScore = timeScore * 0.6 + viewsScore * 0.4;
 
       return {
         slideId: row.slide_id,
@@ -258,79 +265,89 @@ export async function getViewerJourneyData(presentationId, opts = {}) {
     };
   }
 
-  return withDbGuard({
-    slideProgression: [],
-    avgCompletionIndex: 0,
-    completionRate: 0,
-  }, async (db) => {
-    // Get max slide index reached per session
-    let sessionQuery = db
-      .selectFrom('slide_views')
-      .select([
-        'view_session_id',
-        (eb) => eb.fn.max('slide_index').as('max_index'),
-      ])
-      .where('presentation_id', '=', presId)
-      .groupBy('view_session_id');
+  return withDbGuard(
+    {
+      slideProgression: [],
+      avgCompletionIndex: 0,
+      completionRate: 0,
+    },
+    async (db) => {
+      // Get max slide index reached per session
+      let sessionQuery = db
+        .selectFrom('slide_views')
+        .select([
+          'view_session_id',
+          (eb) => eb.fn.max('slide_index').as('max_index'),
+        ])
+        .where('presentation_id', '=', presId)
+        .groupBy('view_session_id');
 
-    sessionQuery = applyDateFilters(sessionQuery, opts, 'entered_at');
+      sessionQuery = applyDateFilters(sessionQuery, opts, 'entered_at');
 
-    const sessionRows = await sessionQuery.execute();
+      const sessionRows = await sessionQuery.execute();
 
-    if (sessionRows.length === 0) {
+      if (sessionRows.length === 0) {
+        return {
+          slideProgression: [],
+          avgCompletionIndex: 0,
+          completionRate: 0,
+        };
+      }
+
+      // Calculate progression histogram
+      const progressionCounts = new Map();
+      let totalMaxIndex = 0;
+
+      for (const row of sessionRows) {
+        const maxIndex = Number(row.max_index) || 0;
+        totalMaxIndex += maxIndex;
+        progressionCounts.set(
+          maxIndex,
+          (progressionCounts.get(maxIndex) || 0) + 1,
+        );
+      }
+
+      const avgCompletionIndex = totalMaxIndex / sessionRows.length;
+
+      // Get total slides in presentation for completion rate
+      let slidesQuery = db
+        .selectFrom('slide_views')
+        .select((eb) => eb.fn.max('slide_index').as('max_slide'))
+        .where('presentation_id', '=', presId);
+
+      const slidesResult = await slidesQuery.executeTakeFirst();
+      const totalSlides = (Number(slidesResult?.max_slide) || 0) + 1;
+
+      // Count sessions that reached the last slide
+      const lastSlideIndex = totalSlides - 1;
+      const completedSessions = sessionRows.filter(
+        (r) => Number(r.max_index) >= lastSlideIndex,
+      ).length;
+      const completionRate =
+        sessionRows.length > 0 ? completedSessions / sessionRows.length : 0;
+
+      // Build progression array
+      const slideProgression = [];
+      for (let i = 0; i < totalSlides; i++) {
+        const reached = sessionRows.filter(
+          (r) => Number(r.max_index) >= i,
+        ).length;
+        slideProgression.push({
+          slideIndex: i,
+          viewersReached: reached,
+          reachRate: sessionRows.length > 0 ? reached / sessionRows.length : 0,
+        });
+      }
+
       return {
-        slideProgression: [],
-        avgCompletionIndex: 0,
-        completionRate: 0,
+        slideProgression,
+        avgCompletionIndex: Math.round(avgCompletionIndex * 10) / 10,
+        completionRate: Math.round(completionRate * 100) / 100,
       };
-    }
-
-    // Calculate progression histogram
-    const progressionCounts = new Map();
-    let totalMaxIndex = 0;
-
-    for (const row of sessionRows) {
-      const maxIndex = Number(row.max_index) || 0;
-      totalMaxIndex += maxIndex;
-      progressionCounts.set(maxIndex, (progressionCounts.get(maxIndex) || 0) + 1);
-    }
-
-    const avgCompletionIndex = totalMaxIndex / sessionRows.length;
-
-    // Get total slides in presentation for completion rate
-    let slidesQuery = db
-      .selectFrom('slide_views')
-      .select((eb) => eb.fn.max('slide_index').as('max_slide'))
-      .where('presentation_id', '=', presId);
-
-    const slidesResult = await slidesQuery.executeTakeFirst();
-    const totalSlides = (Number(slidesResult?.max_slide) || 0) + 1;
-
-    // Count sessions that reached the last slide
-    const lastSlideIndex = totalSlides - 1;
-    const completedSessions = sessionRows.filter((r) => Number(r.max_index) >= lastSlideIndex).length;
-    const completionRate = sessionRows.length > 0 ? completedSessions / sessionRows.length : 0;
-
-    // Build progression array
-    const slideProgression = [];
-    for (let i = 0; i < totalSlides; i++) {
-      const reached = sessionRows.filter((r) => Number(r.max_index) >= i).length;
-      slideProgression.push({
-        slideIndex: i,
-        viewersReached: reached,
-        reachRate: sessionRows.length > 0 ? reached / sessionRows.length : 0,
-      });
-    }
-
-    return {
-      slideProgression,
-      avgCompletionIndex: Math.round(avgCompletionIndex * 10) / 10,
-      completionRate: Math.round(completionRate * 100) / 100,
-    };
-  });
+    },
+  );
 }
 
 // ============================================================
 // TIME-BASED ANALYSIS
 // ============================================================
-

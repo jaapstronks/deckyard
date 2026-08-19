@@ -43,7 +43,7 @@ test('bypass refused when flag set but NODE_ENV is not development', () => {
       assert.equal(
         devAuthBypassEnabled(),
         false,
-        `NODE_ENV=${JSON.stringify(env)} must refuse bypass`
+        `NODE_ENV=${JSON.stringify(env)} must refuse bypass`,
       );
     });
   }

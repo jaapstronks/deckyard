@@ -30,9 +30,8 @@ globalThis.EventSource = class {
 };
 
 const { h } = await import('../client/lib/dom.js');
-const { createCommentsPanel } = await import(
-  '../client/views/editor/comments-panel.js'
-);
+const { createCommentsPanel } =
+  await import('../client/views/editor/comments-panel.js');
 
 const COMMENTS = [
   {
@@ -77,7 +76,11 @@ function makePanel({ onRequestClose } = {}) {
 
 test('the header x asks the host to close instead of hiding itself', () => {
   let closeRequests = 0;
-  const panel = makePanel({ onRequestClose: () => { closeRequests += 1; } });
+  const panel = makePanel({
+    onRequestClose: () => {
+      closeRequests += 1;
+    },
+  });
   panel.show();
   const closeBtn = panel.panelEl.querySelector('.comments-close-btn');
   closeBtn.click();
@@ -92,7 +95,7 @@ test('threads carry data-comment-id and highlightComment flags the thread', asyn
   await panel.loadComments();
   assert.ok(
     panel.panelEl.querySelector('[data-comment-id="c2"]'),
-    'thread rendered with data-comment-id'
+    'thread rendered with data-comment-id',
   );
   await panel.highlightComment('c2');
   // highlightComment reloads the list, so re-query the (fresh) thread node.

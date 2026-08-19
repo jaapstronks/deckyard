@@ -50,9 +50,7 @@ export async function readRequestBody(req) {
   for await (const chunk of req) {
     total += chunk.length;
     if (total > limit) {
-      const err = new Error(
-        `Request body too large (limit ${limit} bytes)`
-      );
+      const err = new Error(`Request body too large (limit ${limit} bytes)`);
       err.statusCode = 413;
       throw err;
     }
@@ -133,7 +131,10 @@ export async function requireJsonBody(req, res, { allowEmpty = false } = {}) {
 }
 
 export function ok(res, body, contentType = 'text/plain; charset=utf-8') {
-  res.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': 'no-store' });
+  res.writeHead(200, {
+    'Content-Type': contentType,
+    'Cache-Control': 'no-store',
+  });
   res.end(body);
 }
 
@@ -165,7 +166,13 @@ export function serveJson(res, status, obj, extraHeaders = {}) {
  * @param {Object} [opts.headers] - Extra response headers (e.g. Retry-After).
  * @returns {true}
  */
-export function jsonError(res, status, code, message, { details, headers } = {}) {
+export function jsonError(
+  res,
+  status,
+  code,
+  message,
+  { details, headers } = {},
+) {
   const body = { ok: false, error: code };
   if (message != null && message !== '') body.message = message;
   if (details != null) body.details = details;
@@ -189,7 +196,11 @@ export function forbidden(res, message = 'Forbidden') {
   return jsonError(res, 403, 'forbidden', message);
 }
 
-export function rateLimited(res, retryAfter = 5, message = 'Rate limit exceeded') {
+export function rateLimited(
+  res,
+  retryAfter = 5,
+  message = 'Rate limit exceeded',
+) {
   return jsonError(res, 429, 'rate_limited', message, {
     headers: { 'Retry-After': String(retryAfter) },
   });
@@ -283,7 +294,9 @@ const ERROR_STATUS_MAP = {
 export function getErrorStatus(reason, defaultStatus = 400) {
   // `hasOwn`, not truthiness: a bare property read would answer `Object`'s
   // inherited members (`constructor`, `toString`) with a function.
-  return Object.hasOwn(ERROR_STATUS_MAP, reason) ? ERROR_STATUS_MAP[reason] : defaultStatus;
+  return Object.hasOwn(ERROR_STATUS_MAP, reason)
+    ? ERROR_STATUS_MAP[reason]
+    : defaultStatus;
 }
 
 export function methodNotAllowed(res, allowed) {
@@ -303,7 +316,11 @@ export function methodNotAllowed(res, allowed) {
  *   app origin on navigation. See docs/reference/security-posture.md
  *   § User-uploaded content is served inert.
  */
-export async function serveFile(res, absolutePath, { userUpload = false } = {}) {
+export async function serveFile(
+  res,
+  absolutePath,
+  { userUpload = false } = {},
+) {
   try {
     const stat = await fs.stat(absolutePath);
     if (!stat.isFile()) return notFound(res);
@@ -359,8 +376,14 @@ export function withErrorHandler(moduleName, handler) {
 
       // Log with consistent format, with the request context the old
       // per-route catches carried (method + path).
-      const reqCtx = [ctx?.req?.method, ctx?.url?.pathname].filter(Boolean).join(' ');
-      logError(moduleName, reqCtx ? `Error handling ${reqCtx}:` : 'Error:', err);
+      const reqCtx = [ctx?.req?.method, ctx?.url?.pathname]
+        .filter(Boolean)
+        .join(' ');
+      logError(
+        moduleName,
+        reqCtx ? `Error handling ${reqCtx}:` : 'Error:',
+        err,
+      );
 
       // Handle already-sent headers (e.g., SSE streams)
       if (res.headersSent || res.writableEnded) {
@@ -392,4 +415,3 @@ export function withErrorHandler(moduleName, handler) {
     }
   };
 }
-

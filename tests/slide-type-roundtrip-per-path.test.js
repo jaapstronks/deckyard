@@ -33,7 +33,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { testScope } from './helpers/storage-scope.js';
-import { presentationToDeck, deckToPresentationParts } from '../shared/slide-types/deck.js';
+import {
+  presentationToDeck,
+  deckToPresentationParts,
+} from '../shared/slide-types/deck.js';
 import { getSlideTypeId } from '../shared/slide-types/registry.js';
 import { validateRefinedSlidesStrict } from '../server/utils/ai/validate-slides/strict.js';
 import { validateAndFixRefinedSlides } from '../server/utils/ai/validate-slides/fix.js';
@@ -43,12 +46,10 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { createPresentation, updatePresentation, getPresentation } = await import(
-  '../server/storage/presentations/index.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { createPresentation, updatePresentation, getPresentation } =
+  await import('../server/storage/presentations/index.js');
 
 /** The canonical reverse-DNS id a title slide is written as. */
 const CANONICAL = getSlideTypeId('title-slide'); // 'eu.deckyard.slide.title'
@@ -56,7 +57,11 @@ const KEY = 'title-slide';
 const OWNER = 'roundtrip@example.com';
 
 test.before(async () => {
-  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    }),
+  );
   await initializeStorage();
 });
 
@@ -78,25 +83,39 @@ async function freshDeck() {
     lang: 'nl',
     ownerEmail: OWNER,
   });
-  assert.ok(created?.id, `createPresentation failed: ${JSON.stringify(created)}`);
+  assert.ok(
+    created?.id,
+    `createPresentation failed: ${JSON.stringify(created)}`,
+  );
   return created;
 }
 
 /** Write `slides` onto a fresh deck (full-body update) and return the stored deck. */
 async function storeSlides(slides) {
   const created = await freshDeck();
-  await updatePresentation(scope(), created.id, { ...created, slides }, { actorEmail: OWNER });
+  await updatePresentation(
+    scope(),
+    created.id,
+    { ...created, slides },
+    { actorEmail: OWNER },
+  );
   return getPresentation(scope(), created.id);
 }
 
 // ── Path 1: internal REST / storage facade ─────────────────────────────────
 test('facade update: canonical id in → registry key stored → canonical exported', async () => {
-  const stored = await storeSlides([{ type: CANONICAL, content: { title: 'Hoi' } }]);
-  assert.equal(stored.slides[0].type, KEY, 'storage folds the canonical id to the bare key');
+  const stored = await storeSlides([
+    { type: CANONICAL, content: { title: 'Hoi' } },
+  ]);
+  assert.equal(
+    stored.slides[0].type,
+    KEY,
+    'storage folds the canonical id to the bare key',
+  );
   assert.equal(
     presentationToDeck(stored).slides[0].type,
     CANONICAL,
-    'export projects the key back to the canonical id'
+    'export projects the key back to the canonical id',
   );
 });
 
@@ -113,21 +132,31 @@ test('MCP strict: validate accepts the canonical id, facade stores the key, expo
 
 // ── Path 5: MCP fix-mode / add_slide / update_slide ────────────────────────
 test('MCP fix: validate-and-fix keeps the canonical id, facade stores the key, export is canonical', async () => {
-  const fixed = validateAndFixRefinedSlides([{ type: CANONICAL, content: { title: 'Hoi' } }]);
+  const fixed = validateAndFixRefinedSlides([
+    { type: CANONICAL, content: { title: 'Hoi' } },
+  ]);
   assert.equal(fixed.length, 1, 'the slide survives the fix pass');
 
-  const stored = await storeSlides(fixed.map((s) => ({ type: s.type, content: s.content })));
+  const stored = await storeSlides(
+    fixed.map((s) => ({ type: s.type, content: s.content })),
+  );
   assert.equal(stored.slides[0].type, KEY);
   assert.equal(presentationToDeck(stored).slides[0].type, CANONICAL);
 });
 
 // ── Path 6: import + export (pure) ─────────────────────────────────────────
 test('import: canonical id in → registry key parts → canonical exported', () => {
-  const parts = deckToPresentationParts({ slides: [{ type: CANONICAL, content: { title: 'Hoi' } }] });
-  assert.equal(parts.slides[0].type, KEY, 'import folds any spelling to the registry key');
+  const parts = deckToPresentationParts({
+    slides: [{ type: CANONICAL, content: { title: 'Hoi' } }],
+  });
+  assert.equal(
+    parts.slides[0].type,
+    KEY,
+    'import folds any spelling to the registry key',
+  );
   assert.equal(
     presentationToDeck(parts).slides[0].type,
     CANONICAL,
-    'export projects it back to canonical'
+    'export projects it back to canonical',
   );
 });

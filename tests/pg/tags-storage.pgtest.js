@@ -72,19 +72,30 @@ pgDescribe('tags storage (real PostgreSQL, via facade)', () => {
 
   it('reads back empty on a fresh store instead of throwing', async () => {
     assert.deepStrictEqual(await listTags(storageScope), []);
-    assert.deepStrictEqual(await getTagsForPresentation(storageScope, missing), []);
+    assert.deepStrictEqual(
+      await getTagsForPresentation(storageScope, missing),
+      [],
+    );
     const map = await getTagsForPresentations(storageScope, [p1, p2]);
     assert.ok(map instanceof Map);
     assert.strictEqual(map.size, 0);
   });
 
   it('sets and gets tags for a presentation (sorted, deduped)', async () => {
-    const set = await setTagsForPresentation(storageScope, p1, ['Sales', 'sales', 'Q3', '']);
+    const set = await setTagsForPresentation(storageScope, p1, [
+      'Sales',
+      'sales',
+      'Q3',
+      '',
+    ]);
     // 'sales' is a case-insensitive dup of 'Sales'; blank is dropped.
     assert.deepStrictEqual(set.map((t) => t.name).sort(), ['Q3', 'Sales']);
 
     const got = await getTagsForPresentation(storageScope, p1);
-    assert.deepStrictEqual(got.map((t) => t.name), ['Q3', 'Sales']); // name-sorted
+    assert.deepStrictEqual(
+      got.map((t) => t.name),
+      ['Q3', 'Sales'],
+    ); // name-sorted
     assert.ok(got.every((t) => typeof t.id === 'string' && t.id.length > 0));
   });
 
@@ -99,8 +110,14 @@ pgDescribe('tags storage (real PostgreSQL, via facade)', () => {
 
   it('bulk-fetches tags for a list of presentations', async () => {
     const map = await getTagsForPresentations(storageScope, [p1, p2, missing]);
-    assert.deepStrictEqual(map.get(p1).map((t) => t.name), ['Q3', 'Sales']);
-    assert.deepStrictEqual(map.get(p2).map((t) => t.name), ['Marketing', 'Sales']);
+    assert.deepStrictEqual(
+      map.get(p1).map((t) => t.name),
+      ['Q3', 'Sales'],
+    );
+    assert.deepStrictEqual(
+      map.get(p2).map((t) => t.name),
+      ['Marketing', 'Sales'],
+    );
     assert.strictEqual(map.has(missing), false);
   });
 
@@ -115,7 +132,10 @@ pgDescribe('tags storage (real PostgreSQL, via facade)', () => {
   it('replaces (not merges) tags on a subsequent set', async () => {
     await setTagsForPresentation(storageScope, p1, ['Q3']);
     const got = await getTagsForPresentation(storageScope, p1);
-    assert.deepStrictEqual(got.map((t) => t.name), ['Q3']);
+    assert.deepStrictEqual(
+      got.map((t) => t.name),
+      ['Q3'],
+    );
     // Sales count drops to 1 (only p2 now).
     const all = await listTags(storageScope);
     assert.strictEqual(all.find((t) => t.name === 'Sales').count, 1);
@@ -137,18 +157,24 @@ pgDescribe('tags storage (real PostgreSQL, via facade)', () => {
 
   it('deletes a tag and strips it from every presentation link', async () => {
     await setTagsForPresentation(storageScope, p3, ['Marketing', 'Sales']);
-    const salesId = (await getTagsForPresentation(storageScope, p3)).find((t) => t.name === 'Sales').id;
+    const salesId = (await getTagsForPresentation(storageScope, p3)).find(
+      (t) => t.name === 'Sales',
+    ).id;
     assert.strictEqual(await deleteTag(storageScope, salesId), true);
 
     assert.deepStrictEqual(
       (await getTagsForPresentation(storageScope, p2)).map((t) => t.name),
-      ['Marketing']
+      ['Marketing'],
     );
     assert.deepStrictEqual(
       (await getTagsForPresentation(storageScope, p3)).map((t) => t.name),
-      ['Marketing']
+      ['Marketing'],
     );
     assert.ok(!(await listTags(storageScope)).some((t) => t.name === 'Sales'));
-    assert.strictEqual(await deleteTag(storageScope, salesId), false, 'second delete is a no-op');
+    assert.strictEqual(
+      await deleteTag(storageScope, salesId),
+      false,
+      'second delete is a no-op',
+    );
   });
 });

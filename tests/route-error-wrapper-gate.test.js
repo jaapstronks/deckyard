@@ -24,7 +24,10 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const API_DIR = path.join(repoRoot, 'server/routes/api');
 const INDEX = path.join(API_DIR, 'index.js');
 
@@ -62,9 +65,7 @@ function mountImports() {
  */
 function isWrapped(file, name, depth = 0) {
   const src = readFileSync(file, 'utf8');
-  const wrapped = new RegExp(
-    `export const ${name} = withErrorHandler\\(`
-  );
+  const wrapped = new RegExp(`export const ${name} = withErrorHandler\\(`);
   if (wrapped.test(src)) return true;
 
   // Follow a re-export (`export { handleX, … } from './sub.js';`).
@@ -73,7 +74,11 @@ function isWrapped(file, name, depth = 0) {
     for (const m of src.matchAll(re)) {
       const names = m[1].split(',').map((s) => s.trim().split(/\s+as\s+/)[0]);
       if (names.includes(name)) {
-        return isWrapped(path.resolve(path.dirname(file), m[2]), name, depth + 1);
+        return isWrapped(
+          path.resolve(path.dirname(file), m[2]),
+          name,
+          depth + 1,
+        );
       }
     }
   }
@@ -92,11 +97,14 @@ test('every handler mounted in api/index.js is withErrorHandler-wrapped or allow
       }
     }
   }
-  assert.ok(seen.size > 30, `sanity: expected the index mount surface, saw ${seen.size} handlers`);
+  assert.ok(
+    seen.size > 30,
+    `sanity: expected the index mount surface, saw ${seen.size} handlers`,
+  );
   assert.deepEqual(
     failures,
     [],
-    `Mounted route handlers must be withErrorHandler-wrapped (or allowlisted with a reason):\n  ${failures.join('\n  ')}`
+    `Mounted route handlers must be withErrorHandler-wrapped (or allowlisted with a reason):\n  ${failures.join('\n  ')}`,
   );
 });
 
@@ -105,7 +113,7 @@ test('the allowlist is not stale', () => {
   for (const name of Object.keys(ALLOWLIST)) {
     assert.ok(
       imported.has(name),
-      `Allowlist entry '${name}' no longer matches an import in api/index.js — remove it`
+      `Allowlist entry '${name}' no longer matches an import in api/index.js — remove it`,
     );
   }
 });

@@ -44,10 +44,24 @@ export function createTimelineChart({ h, data }) {
     if (!chartData || chartData.length === 0) {
       chartContainer.append(
         h('div', { class: 'analytics-empty-state' }, [
-          h('img', { class: 'analytics-empty-state-icon', src: '/client/vendor/lucide-icons/chart-column.svg', alt: '', 'aria-hidden': 'true' }),
-          h('p', { class: 'analytics-empty-state-title', text: t('analytics.noViewsYet', 'No views yet') }),
-          h('p', { class: 'analytics-empty-state-description', text: t('analytics.shareToGetViews', 'Share your presentation to start seeing view analytics here.') }),
-        ])
+          h('img', {
+            class: 'analytics-empty-state-icon',
+            src: '/client/vendor/lucide-icons/chart-column.svg',
+            alt: '',
+            'aria-hidden': 'true',
+          }),
+          h('p', {
+            class: 'analytics-empty-state-title',
+            text: t('analytics.noViewsYet', 'No views yet'),
+          }),
+          h('p', {
+            class: 'analytics-empty-state-description',
+            text: t(
+              'analytics.shareToGetViews',
+              'Share your presentation to start seeing view analytics here.',
+            ),
+          }),
+        ]),
       );
       return;
     }
@@ -62,23 +76,36 @@ export function createTimelineChart({ h, data }) {
     // Create SVG with accessibility attributes (h() routes SVG tag names
     // through createElementNS; the `text` key sets textContent).
     const totalViews = chartData.reduce((sum, d) => sum + d.views, 0);
-    const svg = h('svg', {
-      viewBox: `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`,
-      class: 'analytics-chart-svg',
-      role: 'img',
-      'aria-label': t('analytics.chartAriaLabel', 'Bar chart showing views over time'),
-    }, [
-      // Description for screen readers
-      h('desc', {
-        text: t('analytics.chartDescription', 'Chart showing {{count}} data points with {{total}} total views', {
-          count: chartData.length,
-          total: totalViews,
+    const svg = h(
+      'svg',
+      {
+        viewBox: `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`,
+        class: 'analytics-chart-svg',
+        role: 'img',
+        'aria-label': t(
+          'analytics.chartAriaLabel',
+          'Bar chart showing views over time',
+        ),
+      },
+      [
+        // Description for screen readers
+        h('desc', {
+          text: t(
+            'analytics.chartDescription',
+            'Chart showing {{count}} data points with {{total}} total views',
+            {
+              count: chartData.length,
+              total: totalViews,
+            },
+          ),
         }),
-      }),
-    ]);
+      ],
+    );
 
     // Create group for chart content
-    const g = h('g', { transform: `translate(${PADDING.left}, ${PADDING.top})` });
+    const g = h('g', {
+      transform: `translate(${PADDING.left}, ${PADDING.top})`,
+    });
 
     // Draw Y-axis gridlines
     const yTicks = 5;
@@ -87,26 +114,34 @@ export function createTimelineChart({ h, data }) {
       const value = Math.round((i / yTicks) * maxViews);
 
       // Gridline
-      g.append(h('line', {
-        x1: '0',
-        y1: String(y),
-        x2: String(innerWidth),
-        y2: String(y),
-        class: 'analytics-chart-grid',
-      }));
+      g.append(
+        h('line', {
+          x1: '0',
+          y1: String(y),
+          x2: String(innerWidth),
+          y2: String(y),
+          class: 'analytics-chart-grid',
+        }),
+      );
 
       // Y-axis label
-      g.append(h('text', {
-        x: '-8',
-        y: String(y + 4),
-        class: 'analytics-chart-label analytics-chart-label-y',
-        text: String(value),
-      }));
+      g.append(
+        h('text', {
+          x: '-8',
+          y: String(y + 4),
+          class: 'analytics-chart-label analytics-chart-label-y',
+          text: String(value),
+        }),
+      );
     }
 
     // Calculate bar width
-    const barWidth = Math.max(1, Math.min(20, (innerWidth / chartData.length) - 2));
-    const barGap = (innerWidth - (barWidth * chartData.length)) / (chartData.length + 1);
+    const barWidth = Math.max(
+      1,
+      Math.min(20, innerWidth / chartData.length - 2),
+    );
+    const barGap =
+      (innerWidth - barWidth * chartData.length) / (chartData.length + 1);
 
     // Draw bars
     chartData.forEach((d, i) => {
@@ -136,14 +171,17 @@ export function createTimelineChart({ h, data }) {
       g.append(rect);
 
       // X-axis label (show every nth label to avoid overlap)
-      const showLabel = chartData.length <= 15 || i % Math.ceil(chartData.length / 10) === 0;
+      const showLabel =
+        chartData.length <= 15 || i % Math.ceil(chartData.length / 10) === 0;
       if (showLabel) {
-        g.append(h('text', {
-          x: String(x + barWidth / 2),
-          y: String(innerHeight + 20),
-          class: 'analytics-chart-label analytics-chart-label-x',
-          text: formatDateShort(d.date),
-        }));
+        g.append(
+          h('text', {
+            x: String(x + barWidth / 2),
+            y: String(innerHeight + 20),
+            class: 'analytics-chart-label analytics-chart-label-x',
+            text: formatDateShort(d.date),
+          }),
+        );
       }
     });
 
@@ -151,16 +189,23 @@ export function createTimelineChart({ h, data }) {
     chartContainer.append(svg);
 
     // Add tooltip element
-    const tooltip = h('div', { class: 'analytics-chart-tooltip', style: 'display: none;' });
+    const tooltip = h('div', {
+      class: 'analytics-chart-tooltip',
+      style: 'display: none;',
+    });
     chartContainer.append(tooltip);
 
     function showTooltip(e, d) {
       const rect = e.target.getBoundingClientRect();
       const containerRect = chartContainer.getBoundingClientRect();
-      tooltip.textContent = t('analytics.timeline.tooltip', '{date}: {views} views', {
-        date: formatDateShort(d.date),
-        views: d.views,
-      });
+      tooltip.textContent = t(
+        'analytics.timeline.tooltip',
+        '{date}: {views} views',
+        {
+          date: formatDateShort(d.date),
+          views: d.views,
+        },
+      );
       tooltip.style.display = 'block';
       tooltip.style.left = `${rect.left - containerRect.left + rect.width / 2}px`;
       tooltip.style.top = `${rect.top - containerRect.top - 30}px`;

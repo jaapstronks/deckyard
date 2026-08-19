@@ -19,7 +19,7 @@ pipeline produces, wrapped in Open Graph, Twitter and JSON-LD metadata and an
 analytics tracking script. Unpublishing deletes the token, and the URL 404s
 immediately.
 
-The publish id *is* the authorization. Everything downstream — the canvas page,
+The publish id _is_ the authorization. Everything downstream — the canvas page,
 the reader view, the embed player, the feed — resolves the id first and then
 fetches the deck by the id that lookup yielded, on a deliberately
 organization-unscoped storage scope. There is no session on any of those
@@ -74,14 +74,14 @@ Client surfaces:
 
 **`published_presentations`** (migration 001) — one row per published deck:
 
-| Column | Notes |
-|---|---|
-| `id` | The publish id: the first segment of a UUID, 8 hex characters. Primary key, and the public token. |
-| `presentation_id` | FK, `ON DELETE CASCADE` — deleting a deck unpublishes it. |
-| `organization_id` | FK. Used by the listing and the feed; *not* by `getPublishedById`, which is deliberately unscoped. |
-| `title`, `slug` | The slug comes from `safeSlug(title)` at publish time and can be renamed afterwards. It is cosmetic: the id alone resolves the deck. |
-| `og_image_url` | The generated preview, or the fallback asset. |
-| `created_at`, `modified_at` | |
+| Column                      | Notes                                                                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`                        | The publish id: the first segment of a UUID, 8 hex characters. Primary key, and the public token.                                    |
+| `presentation_id`           | FK, `ON DELETE CASCADE` — deleting a deck unpublishes it.                                                                            |
+| `organization_id`           | FK. Used by the listing and the feed; _not_ by `getPublishedById`, which is deliberately unscoped.                                   |
+| `title`, `slug`             | The slug comes from `safeSlug(title)` at publish time and can be renamed afterwards. It is cosmetic: the id alone resolves the deck. |
+| `og_image_url`              | The generated preview, or the fallback asset.                                                                                        |
+| `created_at`, `modified_at` |                                                                                                                                      |
 
 The same facts are mirrored onto **`presentations.published`** (a JSONB column,
 migration 001) as `{ id, slug, ogImageUrl, created, modified }`, so exports and
@@ -171,8 +171,7 @@ and gated four times before it serves anything:
    answer once an instance holds several organizations (org-scoping decision 4 in
    `tenant-isolation.md`).
 3. The organization must resolve. Missing → 404.
-4. `organizations.settings.rss.enabled` — the real user-facing toggle. Off →
-   404.
+4. `organizations.settings.rss.enabled` — the real user-facing toggle. Off → 404.
 
 Then: `listPublishedForFeed` sorts published entries by modified date, enriches
 up to `maxItems` (clamped 1–100, default 50) with deck metadata, and **skips any
@@ -198,19 +197,19 @@ the full publish state.
 
 ## Config & flags
 
-| Variable / setting | Effect |
-|---|---|
-| `RSS_FEED_ENABLED` | Instance kill switch for the feed. **Defaults to on**; set it false to remove the feature. |
-| `MULTI_ORG_ENABLED` | Disables the feed and its autodiscovery links entirely (404 / omitted). |
-| `SANDBOX_MODE` | Publishing is refused with 403; published pages that do exist emit `noindex,nofollow`. |
-| `organizations.settings.rss.*` | Per-organization: `enabled` (the real toggle), `title`, `description`, `language`, `copyright`, `authorName`, `customFeedUrl`, `maxItems`. |
-| `presentations.settings.excludeFromFeed` | Per-deck: published, but not listed. |
-| `presentations.settings.ogPreview.showAuthor` | Per-deck: overlay the owner's name and avatar on the generated preview image. |
-| Media provider | Preview generation needs an initialized media provider ([`media-library.md`](media-library.md)); without one, publishing still succeeds with a picked or default image. |
+| Variable / setting                            | Effect                                                                                                                                                                  |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RSS_FEED_ENABLED`                            | Instance kill switch for the feed. **Defaults to on**; set it false to remove the feature.                                                                              |
+| `MULTI_ORG_ENABLED`                           | Disables the feed and its autodiscovery links entirely (404 / omitted).                                                                                                 |
+| `SANDBOX_MODE`                                | Publishing is refused with 403; published pages that do exist emit `noindex,nofollow`.                                                                                  |
+| `organizations.settings.rss.*`                | Per-organization: `enabled` (the real toggle), `title`, `description`, `language`, `copyright`, `authorName`, `customFeedUrl`, `maxItems`.                              |
+| `presentations.settings.excludeFromFeed`      | Per-deck: published, but not listed.                                                                                                                                    |
+| `presentations.settings.ogPreview.showAuthor` | Per-deck: overlay the owner's name and avatar on the generated preview image.                                                                                           |
+| Media provider                                | Preview generation needs an initialized media provider ([`media-library.md`](media-library.md)); without one, publishing still succeeds with a picked or default image. |
 
 ## Authz & tenancy
 
-- **Publishing and unpublishing require deck *write* access** — owner, creator,
+- **Publishing and unpublishing require deck _write_ access** — owner, creator,
   a collaborator with `edit`/`admin`, or an organization member on an organization deck.
   See [`permission-model.md`](permission-model.md). Publishing is not a separate
   capability, and there is no reviewer or approval step.
@@ -221,7 +220,7 @@ the full publish state.
   `crossOrganizationScope(repoRoot, '<reason>')`. Filtering them by organization
   would 404 every public link the moment an instance holds a second organization.
   Reads only — such a scope cannot reach a write or a listing.
-- **The feed is the exception that proves it**: it is a *listing*, so it must
+- **The feed is the exception that proves it**: it is a _listing_, so it must
   state an organization, and having nothing but the default one to state is
   exactly why multi-organization turns it off.
 - **What a published page exposes**: title, description, every slide the

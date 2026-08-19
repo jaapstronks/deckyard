@@ -7,7 +7,10 @@ import {
   buildExportStyleContent,
 } from '../server/export/css-bundle.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 /**
  * The export CSS boundary (see client/styles/export.css).

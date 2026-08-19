@@ -11,7 +11,8 @@ function escapeXml(s) {
 }
 
 function slideTitleCandidate(slide) {
-  const c = slide?.content && typeof slide.content === 'object' ? slide.content : {};
+  const c =
+    slide?.content && typeof slide.content === 'object' ? slide.content : {};
   const candidates = [
     c.title,
     c.heading,
@@ -67,7 +68,9 @@ export function buildNotesMarkdown(pres, { includeEmpty = true } = {}) {
 }
 
 function docxXmlFromPlainText(text) {
-  const lines = String(text || '').replace(/\r\n/g, '\n').split('\n');
+  const lines = String(text || '')
+    .replace(/\r\n/g, '\n')
+    .split('\n');
   const paras = lines
     .map((line) => {
       const t = escapeXml(line);
@@ -113,7 +116,7 @@ export async function buildNotesDocxBuffer(markdownText) {
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
   <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
-</Types>`
+</Types>`,
   );
 
   zip.folder('_rels').file(
@@ -121,13 +124,12 @@ export async function buildNotesDocxBuffer(markdownText) {
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-</Relationships>`
+</Relationships>`,
   );
 
-  zip.folder('word').file(
-    'document.xml',
-    docxXmlFromPlainText(String(markdownText || ''))
-  );
+  zip
+    .folder('word')
+    .file('document.xml', docxXmlFromPlainText(String(markdownText || '')));
 
   const out = await zip.generateAsync({
     type: 'nodebuffer',

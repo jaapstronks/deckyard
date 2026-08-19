@@ -26,7 +26,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 
-process.env.AUTH_SECRET = ['amethyst', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['amethyst', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 process.env.STORAGE_MODE = 'postgres';
 
@@ -39,7 +41,8 @@ const KEY_ID = 'key-1';
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
-const { handleExports } = await import('../server/routes/public-api/v1/exports.js');
+const { handleExports } =
+  await import('../server/routes/public-api/v1/exports.js');
 
 /**
  * Install a freshly seeded double and point the storage facade at Postgres.
@@ -55,14 +58,16 @@ async function installDb({ exportsUsedToday = 0 } = {}) {
       deckRow({ id: FOREIGN_DECK_ID, owner: 'someone-else@example.com' }),
     ],
     api_usage_daily: exportsUsedToday
-      ? [{
-          id: 'usage-1',
-          api_key_id: KEY_ID,
-          date: new Date().toISOString().split('T')[0],
-          request_count: exportsUsedToday,
-          ai_request_count: 0,
-          export_count: exportsUsedToday,
-        }]
+      ? [
+          {
+            id: 'usage-1',
+            api_key_id: KEY_ID,
+            date: new Date().toISOString().split('T')[0],
+            request_count: exportsUsedToday,
+            ai_request_count: 0,
+            export_count: exportsUsedToday,
+          },
+        ]
       : [],
   });
   __setTestDb(db);
@@ -91,19 +96,34 @@ function deckRow({ id, owner }) {
         nl: {
           title: 'Export Me',
           slides: [
-            { id: 'slide-1', type: 'title-slide', content: { title: 'Hallo' }, parentId: null },
+            {
+              id: 'slide-1',
+              type: 'title-slide',
+              content: { title: 'Hallo' },
+              parentId: null,
+            },
           ],
         },
         'en-GB': {
           title: 'Export Me (EN)',
           slides: [
-            { id: 'slide-1', type: 'title-slide', content: { title: 'Hello' }, parentId: null },
+            {
+              id: 'slide-1',
+              type: 'title-slide',
+              content: { title: 'Hello' },
+              parentId: null,
+            },
           ],
         },
       },
     },
     slides: [
-      { id: 'slide-1', type: 'title-slide', content: { title: 'Hallo' }, parentId: null },
+      {
+        id: 'slide-1',
+        type: 'title-slide',
+        content: { title: 'Hallo' },
+        parentId: null,
+      },
     ],
     published: null,
     created_at: '2026-07-01T00:00:00.000Z',
@@ -131,12 +151,16 @@ function makeCtx(method, pathname, { permissions = ['read', 'export'] } = {}) {
     statusCode: null,
     body: null,
     headers: {},
-    setHeader(name, value) { this.headers[name] = value; },
+    setHeader(name, value) {
+      this.headers[name] = value;
+    },
     writeHead(status, headers) {
       this.statusCode = status;
       Object.assign(this.headers, headers);
     },
-    end(payload) { this.body = payload ?? null; },
+    end(payload) {
+      this.body = payload ?? null;
+    },
   };
 
   return {
@@ -144,9 +168,24 @@ function makeCtx(method, pathname, { permissions = ['read', 'export'] } = {}) {
     res,
     url: new URL(`http://localhost${pathname}`),
     repoRoot: process.cwd(),
-    storageScope: { repoRoot: process.cwd(), organizationId: ORG, actorEmail: KEY_OWNER },
-    apiKey: { id: KEY_ID, tier: 'free', ownerEmail: KEY_OWNER, permissions, organizationId: ORG },
-    authedUser: { id: null, email: KEY_OWNER, role: 'user', organizationId: ORG },
+    storageScope: {
+      repoRoot: process.cwd(),
+      organizationId: ORG,
+      actorEmail: KEY_OWNER,
+    },
+    apiKey: {
+      id: KEY_ID,
+      tier: 'free',
+      ownerEmail: KEY_OWNER,
+      permissions,
+      organizationId: ORG,
+    },
+    authedUser: {
+      id: null,
+      email: KEY_OWNER,
+      role: 'user',
+      organizationId: ORG,
+    },
   };
 }
 
@@ -165,8 +204,14 @@ test('GET /export/json answers the portable deck as an attachment', async () => 
 
   assert.equal(ctx.res.statusCode, 200);
   assert.match(ctx.res.headers['Content-Type'], /application\/json/);
-  assert.equal(ctx.res.headers['Content-Disposition'], 'attachment; filename="Export-Me.json"');
-  assert.ok(ctx.res.headers['X-RateLimit-Limit'], 'export rate-limit headers ride along');
+  assert.equal(
+    ctx.res.headers['Content-Disposition'],
+    'attachment; filename="Export-Me.json"',
+  );
+  assert.ok(
+    ctx.res.headers['X-RateLimit-Limit'],
+    'export rate-limit headers ride along',
+  );
 
   const deck = parseJsonBody(ctx.res);
   assert.equal(deck.format, 'deckyard.deck');
@@ -176,13 +221,16 @@ test('GET /export/json answers the portable deck as an attachment', async () => 
   assert.equal(
     deck.slides[0].type,
     'eu.deckyard.slide.title',
-    'the export emits the canonical reverse-DNS id, not the registry key'
+    'the export emits the canonical reverse-DNS id, not the registry key',
   );
 });
 
 test('GET /export/json?lang=en-GB projects that language and suffixes the filename', async () => {
   await installDb();
-  const ctx = makeCtx('GET', `/api/v1/presentations/${DECK_ID}/export/json?lang=en-GB`);
+  const ctx = makeCtx(
+    'GET',
+    `/api/v1/presentations/${DECK_ID}/export/json?lang=en-GB`,
+  );
   await handleExports(ctx);
 
   assert.equal(ctx.res.statusCode, 200);
@@ -198,8 +246,14 @@ test('GET /export/json tracks the export in the daily usage', async () => {
   await handleExports(ctx);
   assert.equal(ctx.res.statusCode, 200);
 
-  const usage = db.__tables.api_usage_daily.find((row) => row.api_key_id === KEY_ID);
-  assert.equal(usage?.export_count, 1, 'the export counted against the daily budget');
+  const usage = db.__tables.api_usage_daily.find(
+    (row) => row.api_key_id === KEY_ID,
+  );
+  assert.equal(
+    usage?.export_count,
+    1,
+    'the export counted against the daily budget',
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -213,7 +267,10 @@ test('GET /export/html answers a standalone HTML document', async () => {
 
   assert.equal(ctx.res.statusCode, 200);
   assert.match(ctx.res.headers['Content-Type'], /text\/html/);
-  assert.equal(ctx.res.headers['Content-Disposition'], 'attachment; filename="Export-Me.html"');
+  assert.equal(
+    ctx.res.headers['Content-Disposition'],
+    'attachment; filename="Export-Me.html"',
+  );
   const html = String(ctx.res.body);
   assert.match(html, /<!doctype html>/i);
   assert.ok(html.includes('Hallo'), 'the slide content is embedded');
@@ -226,7 +283,10 @@ test('GET /export/pdf answers print-ready HTML with the -print filename', async 
 
   assert.equal(ctx.res.statusCode, 200);
   assert.match(ctx.res.headers['Content-Type'], /text\/html/);
-  assert.equal(ctx.res.headers['Content-Disposition'], 'attachment; filename="Export-Me-print.html"');
+  assert.equal(
+    ctx.res.headers['Content-Disposition'],
+    'attachment; filename="Export-Me-print.html"',
+  );
   assert.match(String(ctx.res.body), /<!doctype html>/i);
 });
 
@@ -237,11 +297,19 @@ test('GET /export/pdf answers print-ready HTML with the -print filename', async 
 test('every export variant is refused with 403 without the export permission', async () => {
   await installDb();
   for (const variant of ['json', 'html', 'pdf', 'pptx']) {
-    const ctx = makeCtx('GET', `/api/v1/presentations/${DECK_ID}/export/${variant}`, {
-      permissions: ['read', 'write'],
-    });
+    const ctx = makeCtx(
+      'GET',
+      `/api/v1/presentations/${DECK_ID}/export/${variant}`,
+      {
+        permissions: ['read', 'write'],
+      },
+    );
     await handleExports(ctx);
-    assert.equal(ctx.res.statusCode, 403, `${variant} must require the export permission`);
+    assert.equal(
+      ctx.res.statusCode,
+      403,
+      `${variant} must require the export permission`,
+    );
   }
 });
 
@@ -262,7 +330,10 @@ test('exports answer 429 with limit details when the daily export budget is spen
 
 test("exporting someone else's private deck is refused with 403", async () => {
   await installDb();
-  const ctx = makeCtx('GET', `/api/v1/presentations/${FOREIGN_DECK_ID}/export/json`);
+  const ctx = makeCtx(
+    'GET',
+    `/api/v1/presentations/${FOREIGN_DECK_ID}/export/json`,
+  );
   await handleExports(ctx);
   assert.equal(ctx.res.statusCode, 403);
 });

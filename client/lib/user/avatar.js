@@ -11,11 +11,11 @@ import { initialsForName, displayNameFromEmail } from './user-format.js';
  * Size presets for avatars
  */
 const AVATAR_SIZES = {
-  xs: 20,  // Extra small (16px)
-  sm: 24,  // Small (24px)
-  md: 32,  // Medium (32px)
-  lg: 40,  // Large (40px)
-  xl: 64,  // Extra large (64px)
+  xs: 20, // Extra small (16px)
+  sm: 24, // Small (24px)
+  md: 32, // Medium (32px)
+  lg: 40, // Large (40px)
+  xl: 64, // Extra large (64px)
 };
 
 /**
@@ -46,7 +46,13 @@ function getInitialsColor(str) {
  * @param {string} [options.className] - Additional CSS classes
  * @returns {HTMLElement} Avatar element
  */
-export function createAvatar({ imageUrl, email, name, size = 'sm', className = '' } = {}) {
+export function createAvatar({
+  imageUrl,
+  email,
+  name,
+  size = 'sm',
+  className = '',
+} = {}) {
   const sizeClass = `avatar--${size}`;
   const displayName = name || displayNameFromEmail(email);
   const initials = initialsForName(displayName);

@@ -49,21 +49,55 @@ const foldKey = (table, column, from, to, oldVal, newVal) => sql`
 
 export const up = async (db) => {
   // 1. presentations column + values + index name
-  await sql`ALTER TABLE presentations RENAME COLUMN scope TO visibility`.execute(db);
-  await sql`UPDATE presentations SET visibility = 'organization' WHERE visibility = 'workspace'`.execute(db);
-  await sql`ALTER INDEX IF EXISTS idx_presentations_scope RENAME TO idx_presentations_visibility`.execute(db);
+  await sql`ALTER TABLE presentations RENAME COLUMN scope TO visibility`.execute(
+    db,
+  );
+  await sql`UPDATE presentations SET visibility = 'organization' WHERE visibility = 'workspace'`.execute(
+    db,
+  );
+  await sql`ALTER INDEX IF EXISTS idx_presentations_scope RENAME TO idx_presentations_visibility`.execute(
+    db,
+  );
 
   // 2. version snapshots: embedded top-level scope key
-  await foldKey('presentation_versions', 'presentation_data', 'scope', 'visibility', 'workspace', 'organization').execute(db);
+  await foldKey(
+    'presentation_versions',
+    'presentation_data',
+    'scope',
+    'visibility',
+    'workspace',
+    'organization',
+  ).execute(db);
 
   // 3. activity events: event type + data keys
   await sql`
     UPDATE activity_events SET event_type = 'presentation.moved_to_organization'
     WHERE event_type = 'presentation.moved_to_workspace'
   `.execute(db);
-  await foldKey('activity_events', 'data', 'scope', 'visibility', 'workspace', 'organization').execute(db);
-  await foldKey('activity_events', 'data', 'previousScope', 'previousVisibility', 'workspace', 'organization').execute(db);
-  await foldKey('activity_events', 'data', 'newScope', 'newVisibility', 'workspace', 'organization').execute(db);
+  await foldKey(
+    'activity_events',
+    'data',
+    'scope',
+    'visibility',
+    'workspace',
+    'organization',
+  ).execute(db);
+  await foldKey(
+    'activity_events',
+    'data',
+    'previousScope',
+    'previousVisibility',
+    'workspace',
+    'organization',
+  ).execute(db);
+  await foldKey(
+    'activity_events',
+    'data',
+    'newScope',
+    'newVisibility',
+    'workspace',
+    'organization',
+  ).execute(db);
 
   // 4. app settings: webhook URL key follows the event rename
   await sql`
@@ -88,17 +122,51 @@ export const down = async (db) => {
     WHERE settings->'webhooks' ? 'presentationMovedToOrganizationUrl'
   `.execute(db);
 
-  await foldKey('activity_events', 'data', 'newVisibility', 'newScope', 'organization', 'workspace').execute(db);
-  await foldKey('activity_events', 'data', 'previousVisibility', 'previousScope', 'organization', 'workspace').execute(db);
-  await foldKey('activity_events', 'data', 'visibility', 'scope', 'organization', 'workspace').execute(db);
+  await foldKey(
+    'activity_events',
+    'data',
+    'newVisibility',
+    'newScope',
+    'organization',
+    'workspace',
+  ).execute(db);
+  await foldKey(
+    'activity_events',
+    'data',
+    'previousVisibility',
+    'previousScope',
+    'organization',
+    'workspace',
+  ).execute(db);
+  await foldKey(
+    'activity_events',
+    'data',
+    'visibility',
+    'scope',
+    'organization',
+    'workspace',
+  ).execute(db);
   await sql`
     UPDATE activity_events SET event_type = 'presentation.moved_to_workspace'
     WHERE event_type = 'presentation.moved_to_organization'
   `.execute(db);
 
-  await foldKey('presentation_versions', 'presentation_data', 'visibility', 'scope', 'organization', 'workspace').execute(db);
+  await foldKey(
+    'presentation_versions',
+    'presentation_data',
+    'visibility',
+    'scope',
+    'organization',
+    'workspace',
+  ).execute(db);
 
-  await sql`ALTER INDEX IF EXISTS idx_presentations_visibility RENAME TO idx_presentations_scope`.execute(db);
-  await sql`UPDATE presentations SET visibility = 'workspace' WHERE visibility = 'organization'`.execute(db);
-  await sql`ALTER TABLE presentations RENAME COLUMN visibility TO scope`.execute(db);
+  await sql`ALTER INDEX IF EXISTS idx_presentations_visibility RENAME TO idx_presentations_scope`.execute(
+    db,
+  );
+  await sql`UPDATE presentations SET visibility = 'workspace' WHERE visibility = 'organization'`.execute(
+    db,
+  );
+  await sql`ALTER TABLE presentations RENAME COLUMN visibility TO scope`.execute(
+    db,
+  );
 };

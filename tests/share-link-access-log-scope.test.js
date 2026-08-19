@@ -44,9 +44,8 @@ import { callArguments, walkJsFiles } from './helpers/call-sites.js';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { logShareLinkAccess, getShareLinkAccessLog, getShareLinkById } = await import(
-  '../server/storage/share-links/index.js'
-);
+const { logShareLinkAccess, getShareLinkAccessLog, getShareLinkById } =
+  await import('../server/storage/share-links/index.js');
 
 const ORG_A = '00000000-0000-0000-0000-0000000000aa';
 const ORG_B = '00000000-0000-0000-0000-0000000000bb';
@@ -81,7 +80,12 @@ function linkRow({ id, org, deck }) {
 }
 
 /** An access-log row for one link. */
-function logRow({ id, linkId, ip = '203.0.113.7', at = '2026-03-02T00:00:00.000Z' }) {
+function logRow({
+  id,
+  linkId,
+  ip = '203.0.113.7',
+  at = '2026-03-02T00:00:00.000Z',
+}) {
   return {
     id,
     share_link_id: linkId,
@@ -110,8 +114,18 @@ function seed(accessLog = []) {
 
 test('the log answers for exactly the link it is asked about', async () => {
   seed([
-    logRow({ id: 'a1', linkId: LINK_IN_A, ip: '203.0.113.1', at: '2026-03-02T10:00:00.000Z' }),
-    logRow({ id: 'a2', linkId: LINK_IN_A, ip: '203.0.113.2', at: '2026-03-02T11:00:00.000Z' }),
+    logRow({
+      id: 'a1',
+      linkId: LINK_IN_A,
+      ip: '203.0.113.1',
+      at: '2026-03-02T10:00:00.000Z',
+    }),
+    logRow({
+      id: 'a2',
+      linkId: LINK_IN_A,
+      ip: '203.0.113.2',
+      at: '2026-03-02T11:00:00.000Z',
+    }),
     logRow({ id: 'b1', linkId: LINK_IN_B, ip: '198.51.100.9' }),
   ]);
 
@@ -120,11 +134,11 @@ test('the log answers for exactly the link it is asked about', async () => {
   assert.deepEqual(
     entries.map((e) => e.id).sort(),
     ['a1', 'a2'],
-    'the other organization’s link contributes nothing — different link, different rows'
+    'the other organization’s link contributes nothing — different link, different rows',
   );
   assert.deepEqual(
     [...new Set(entries.map((e) => e.shareLinkId))],
-    [LINK_IN_A]
+    [LINK_IN_A],
   );
   assert.equal(entries[0].ipAddress, '203.0.113.2', 'newest access first');
 });
@@ -138,14 +152,17 @@ test('an unknown or empty link id yields nothing', async () => {
   assert.deepEqual(
     db.__queryLog,
     [{ op: 'select', table: 'share_link_access_log' }],
-    'only the one real lookup reaches the database; a blank id short-circuits'
+    'only the one real lookup reaches the database; a blank id short-circuits',
   );
 });
 
 test('writing a row needs the link and the access info, nothing else', async () => {
   const db = seed();
 
-  await logShareLinkAccess(LINK_IN_A, { ipAddress: '203.0.113.5', userAgent: 'UA/2.0' });
+  await logShareLinkAccess(LINK_IN_A, {
+    ipAddress: '203.0.113.5',
+    userAgent: 'UA/2.0',
+  });
   await logShareLinkAccess('', { ipAddress: '203.0.113.6' });
 
   const rows = db.__tables.share_link_access_log || [];
@@ -165,10 +182,17 @@ test('a link id from another organization does not resolve, so the log is unreac
   // This is what `loadLinkForPresentation` calls before the route reads the
   // log. Acting in organization A, the organization-B link is simply absent — the
   // route turns that into a 404 (MH2) and never asks for the log.
-  assert.equal(await getShareLinkById({ organizationId: ORG_A }, LINK_IN_B), null);
+  assert.equal(
+    await getShareLinkById({ organizationId: ORG_A }, LINK_IN_B),
+    null,
+  );
 
   const own = await getShareLinkById({ organizationId: ORG_A }, LINK_IN_A);
-  assert.equal(own?.id, LINK_IN_A, 'its own organization’s link resolves normally');
+  assert.equal(
+    own?.id,
+    LINK_IN_A,
+    'its own organization’s link resolves normally',
+  );
 });
 
 test('resolving a link with no organization to act in refuses rather than guessing', async () => {
@@ -177,7 +201,7 @@ test('resolving a link with no organization to act in refuses rather than guessi
   await assert.rejects(
     () => getShareLinkById({}, LINK_IN_A),
     /no organization/i,
-    'getOrgId throws instead of falling back to the default organization'
+    'getOrgId throws instead of falling back to the default organization',
   );
 });
 
@@ -190,8 +214,16 @@ const repoRoot = path.join(here, '..');
 
 /** Both access-log functions, and how many arguments each may be handed. */
 const CONTRACTS = [
-  { fn: 'logShareLinkAccess', maxArgs: 2, takes: 'a link id and the access info' },
-  { fn: 'getShareLinkAccessLog', maxArgs: 2, takes: 'a link id and pagination options' },
+  {
+    fn: 'logShareLinkAccess',
+    maxArgs: 2,
+    takes: 'a link id and the access info',
+  },
+  {
+    fn: 'getShareLinkAccessLog',
+    maxArgs: 2,
+    takes: 'a link id and pagination options',
+  },
 ];
 
 test('no access-log call site passes a scope', () => {
@@ -202,7 +234,8 @@ test('no access-log call site passes a scope', () => {
     const source = fs.readFileSync(file, 'utf8');
     for (const { fn, maxArgs } of CONTRACTS) {
       for (const args of callArguments(source, fn)) {
-        if (args.length > maxArgs) offenders.push(`${rel}  ${fn}(${args.length} arguments)`);
+        if (args.length > maxArgs)
+          offenders.push(`${rel}  ${fn}(${args.length} arguments)`);
       }
     }
   }
@@ -213,17 +246,20 @@ test('no access-log call site passes a scope', () => {
     'the share link is the scope: ' +
       CONTRACTS.map((c) => `${c.fn} takes ${c.takes}`).join(', ') +
       '. A further argument is the context that used to be ignored, creeping back:\n  ' +
-      offenders.join('\n  ')
+      offenders.join('\n  '),
   );
 });
 
 test('the guard would catch a re-introduced scope argument', () => {
-  const planted = 'await getShareLinkAccessLog(linkId, { limit, offset }, ctx);';
+  const planted =
+    'await getShareLinkAccessLog(linkId, { limit, offset }, ctx);';
   assert.equal(callArguments(planted, 'getShareLinkAccessLog')[0].length, 3);
   assert.equal(
-    callArguments('await getShareLinkAccessLog(linkId, { limit, offset });', 'getShareLinkAccessLog')[0]
-      .length,
+    callArguments(
+      'await getShareLinkAccessLog(linkId, { limit, offset });',
+      'getShareLinkAccessLog',
+    )[0].length,
     2,
-    'and exactly two on the canonical form'
+    'and exactly two on the canonical form',
   );
 });

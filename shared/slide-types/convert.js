@@ -87,7 +87,10 @@ const CONSUMED_SOURCE_KEYS = {
   },
 };
 
-export function getConvertibleSlideTypes(slide, { slideTypes = SLIDE_TYPES } = {}) {
+export function getConvertibleSlideTypes(
+  slide,
+  { slideTypes = SLIDE_TYPES } = {},
+) {
   const type = String(slide?.type || '');
   if (!type || !slideTypes?.[type]) return [];
   if (type === 'content-slide') {
@@ -103,7 +106,11 @@ export function getConvertibleSlideTypes(slide, { slideTypes = SLIDE_TYPES } = {
   return [];
 }
 
-export function getConversionLossyKeys(slide, toType, { slideTypes = SLIDE_TYPES } = {}) {
+export function getConversionLossyKeys(
+  slide,
+  toType,
+  { slideTypes = SLIDE_TYPES } = {},
+) {
   const fromType = String(slide?.type || '');
   const targetType = String(toType || '');
   const allowed = new Set(getConvertibleSlideTypes(slide, { slideTypes }));
@@ -114,16 +121,17 @@ export function getConversionLossyKeys(slide, toType, { slideTypes = SLIDE_TYPES
   if (!fromDef || !toDef) return [];
 
   const fromKeys = new Set(
-    (fromDef.fields || []).map((f) => String(f?.key || '')).filter(Boolean)
+    (fromDef.fields || []).map((f) => String(f?.key || '')).filter(Boolean),
   );
   const toKeys = new Set(
-    (toDef.fields || []).map((f) => String(f?.key || '')).filter(Boolean)
+    (toDef.fields || []).map((f) => String(f?.key || '')).filter(Boolean),
   );
   const ignore = new Set(GLOBAL_SLIDE_FIELD_KEYS);
   const consumed = new Set(
-    CONSUMED_SOURCE_KEYS?.[fromType]?.[targetType] || []
+    CONSUMED_SOURCE_KEYS?.[fromType]?.[targetType] || [],
   );
-  const content = slide?.content && typeof slide.content === 'object' ? slide.content : {};
+  const content =
+    slide?.content && typeof slide.content === 'object' ? slide.content : {};
 
   const extras = [];
   for (const k of fromKeys) {
@@ -138,17 +146,22 @@ export function getConversionLossyKeys(slide, toType, { slideTypes = SLIDE_TYPES
 export function convertSlideToType(
   slide,
   toType,
-  { slideTypes = SLIDE_TYPES, lang = null, theme = null } = {}
+  { slideTypes = SLIDE_TYPES, lang = null, theme = null } = {},
 ) {
   const fromType = String(slide?.type || '');
   const targetType = String(toType || '');
-  if (!slide || typeof slide !== 'object') throw new Error('convertSlideToType: slide must be an object');
-  if (!slideTypes?.[fromType]) throw new Error(`convertSlideToType: unknown fromType: ${fromType}`);
-  if (!slideTypes?.[targetType]) throw new Error(`convertSlideToType: unknown toType: ${targetType}`);
+  if (!slide || typeof slide !== 'object')
+    throw new Error('convertSlideToType: slide must be an object');
+  if (!slideTypes?.[fromType])
+    throw new Error(`convertSlideToType: unknown fromType: ${fromType}`);
+  if (!slideTypes?.[targetType])
+    throw new Error(`convertSlideToType: unknown toType: ${targetType}`);
 
   const allowed = new Set(getConvertibleSlideTypes(slide, { slideTypes }));
   if (!allowed.has(targetType)) {
-    throw new Error(`convertSlideToType: unsupported conversion ${fromType} -> ${targetType}`);
+    throw new Error(
+      `convertSlideToType: unsupported conversion ${fromType} -> ${targetType}`,
+    );
   }
 
   const next = {
@@ -157,15 +170,18 @@ export function convertSlideToType(
     content: defaultsForType(targetType, { slideTypes, lang }),
   };
 
-  const from = slide?.content && typeof slide.content === 'object' ? slide.content : {};
+  const from =
+    slide?.content && typeof slide.content === 'object' ? slide.content : {};
   const to = next.content;
 
   // Keep global cross-type fields (a11y, background image, logo) if present.
   preserveGlobalFields({ fromContent: from, toContent: to });
 
   // Shared common keys where they overlap across these slide families.
-  if (nonEmptyString(from.title) && typeof to.title === 'string') to.title = from.title;
-  if (nonEmptyString(from.background) && typeof to.background === 'string') to.background = from.background;
+  if (nonEmptyString(from.title) && typeof to.title === 'string')
+    to.title = from.title;
+  if (nonEmptyString(from.background) && typeof to.background === 'string')
+    to.background = from.background;
 
   // content <-> image-text
   if (fromType === 'content-slide' && targetType === 'image-text-slide') {
@@ -186,14 +202,23 @@ export function convertSlideToType(
     // render yet - nothing is guessed away, so a reverse conversion stays
     // possible.
     const img = { src: '', alt: '' };
-    if (typeof from.image === 'string' && from.image.trim()) img.src = from.image.trim();
-    if (typeof from.alt === 'string' && from.alt.trim()) img.alt = from.alt.trim();
+    if (typeof from.image === 'string' && from.image.trim())
+      img.src = from.image.trim();
+    if (typeof from.alt === 'string' && from.alt.trim())
+      img.alt = from.alt.trim();
     if (from.focusX != null && from.focusX !== '') img.focusX = from.focusX;
     if (from.focusY != null && from.focusY !== '') img.focusY = from.focusY;
     const r = resolveImageSlideImage(from);
     if (r.fit !== IMAGE_TEXT_IMAGE_DEFAULTS.fit) img.fit = r.fit;
     if (r.bleed) img.bleed = true;
-    if (img.src || img.alt || 'focusX' in img || 'focusY' in img || 'fit' in img || 'bleed' in img) {
+    if (
+      img.src ||
+      img.alt ||
+      'focusX' in img ||
+      'focusY' in img ||
+      'fit' in img ||
+      'bleed' in img
+    ) {
       to.images = [img];
     }
     if (typeof from.caption === 'string') to.caption = from.caption;
@@ -203,7 +228,9 @@ export function convertSlideToType(
     // - image-text requires title + body.
     // - image-slide title/subtitle are optional; move subtitle into body.
     const srcTitle = nonEmptyString(from?.title) ? from.title.trim() : '';
-    const srcSubtitle = nonEmptyString(from?.subtitle) ? from.subtitle.trim() : '';
+    const srcSubtitle = nonEmptyString(from?.subtitle)
+      ? from.subtitle.trim()
+      : '';
     const srcCaption = nonEmptyString(from?.caption) ? from.caption.trim() : '';
     if (srcTitle) to.title = srcTitle;
     else if (srcCaption) to.title = srcCaption.slice(0, 120);
@@ -227,8 +254,7 @@ export function convertSlideToType(
     if (subtitle) lines.push(subtitle);
     for (let i = 0; i < Math.min(8, items.length); i += 1) {
       const it = items[i];
-      const title =
-        typeof it?.title === 'string' ? it.title.trim() : '';
+      const title = typeof it?.title === 'string' ? it.title.trim() : '';
       const text =
         typeof it?.text === 'string'
           ? it.text.replace(/\s*\n+\s*/g, ' ').trim()
@@ -255,7 +281,8 @@ export function convertSlideToType(
     // Give the target a background from the theme's own presets when it has
     // none. Canonical key is slideBgImage. No theme (or no presets) leaves it
     // flat.
-    const bg = typeof to.slideBgImage === 'string' ? to.slideBgImage.trim() : '';
+    const bg =
+      typeof to.slideBgImage === 'string' ? to.slideBgImage.trim() : '';
     if (!bg) {
       const preset = pickBackgroundPreset(theme);
       if (preset) to.slideBgImage = preset;

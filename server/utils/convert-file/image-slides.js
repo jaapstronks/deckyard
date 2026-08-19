@@ -3,7 +3,10 @@
  * Handles extraction and upload of image-only slides.
  */
 
-import { uploadImageKitBuffer, getImageKitConfigFromEnv } from '../../media/imagekit.js';
+import {
+  uploadImageKitBuffer,
+  getImageKitConfigFromEnv,
+} from '../../media/imagekit.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('convert-file');
@@ -35,7 +38,11 @@ export async function processImageOnlySlides(slides, options = {}) {
   if (!canUploadImages) {
     log.info('ImageKit not configured, skipping image extraction');
     // Return all slides as regular if we can't upload images
-    return { imageOnlySlides: [], regularSlides: slides, titleSlideCandidate: null };
+    return {
+      imageOnlySlides: [],
+      regularSlides: slides,
+      titleSlideCandidate: null,
+    };
   }
 
   for (let i = 0; i < slides.length; i++) {
@@ -47,7 +54,9 @@ export async function processImageOnlySlides(slides, options = {}) {
         const image = slide.images[0]; // Use the first/main image
 
         if (typeof onStatusMessage === 'function') {
-          onStatusMessage(`Afbeelding uploaden van slide ${slide.slideNumber}...`);
+          onStatusMessage(
+            `Afbeelding uploaden van slide ${slide.slideNumber}...`,
+          );
         }
 
         // Upload to ImageKit
@@ -59,7 +68,9 @@ export async function processImageOnlySlides(slides, options = {}) {
           tags: ['pptx-import', 'auto-converted'],
         });
 
-        log.info(`Uploaded image for slide ${slide.slideNumber}: ${uploadResult.url}`);
+        log.info(
+          `Uploaded image for slide ${slide.slideNumber}: ${uploadResult.url}`,
+        );
 
         const titleText = slide.textContent?.trim() || '';
 
@@ -67,7 +78,9 @@ export async function processImageOnlySlides(slides, options = {}) {
         // The image is illustrative (for title slide background), not content.
         // This is true regardless of text length - the LLM will determine the proper title.
         if (i === 0) {
-          log.info(`First slide with image detected - using as title slide background (illustrative)`);
+          log.info(
+            `First slide with image detected - using as title slide background (illustrative)`,
+          );
           titleSlideCandidate = {
             title: titleText, // May be empty, contextual, or actual title - LLM will determine
             imageUrl: uploadResult.url,
@@ -98,11 +111,15 @@ export async function processImageOnlySlides(slides, options = {}) {
               zoomSteps: '', // Empty string = disabled (user can enable for infographics)
               zoomLevel: 2,
             },
-            _aiReasoning: 'Image-only slide extracted directly from source file',
+            _aiReasoning:
+              'Image-only slide extracted directly from source file',
           },
         });
       } catch (err) {
-        log.warn(`Failed to upload image for slide ${slide.slideNumber}:`, err.message);
+        log.warn(
+          `Failed to upload image for slide ${slide.slideNumber}:`,
+          err.message,
+        );
         // Fall back to regular processing if upload fails
         regularSlides.push(slide);
       }

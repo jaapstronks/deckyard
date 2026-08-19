@@ -97,7 +97,10 @@ export function openCreationView({
       'aria-selected': String(key === method),
       disabled: !!disabled,
     });
-    const titleRow = h('span', { class: 'creation-rail-item-title', text: label });
+    const titleRow = h('span', {
+      class: 'creation-rail-item-title',
+      text: label,
+    });
     if (badge) {
       titleRow.append(h('span', { class: 'creation-rail-badge', text: badge }));
     }
@@ -112,34 +115,51 @@ export function openCreationView({
     return btn;
   };
 
-  const blankItem = makeRailItem('blank', t('list.creationView.method.blank', 'Blank'));
+  const blankItem = makeRailItem(
+    'blank',
+    t('list.creationView.method.blank', 'Blank'),
+  );
   rail.append(blankItem);
   if (!libraryDisabled) {
-    const libraryItem = makeRailItem('library', t('list.creationView.method.library', 'From the library'), {
-      desc: t('list.creationView.method.libraryDesc', 'Reusable slides'),
-    });
+    const libraryItem = makeRailItem(
+      'library',
+      t('list.creationView.method.library', 'From the library'),
+      {
+        desc: t('list.creationView.method.libraryDesc', 'Reusable slides'),
+      },
+    );
     rail.append(libraryItem);
   }
   if (!aiDisabled) {
     rail.append(
-      makeRailItem('content', t('list.creationView.method.content', 'From content'), {
-        badge: 'AI',
-        desc: t('list.creationView.method.contentDesc', 'Paste, upload, or Notion'),
-      })
+      makeRailItem(
+        'content',
+        t('list.creationView.method.content', 'From content'),
+        {
+          badge: 'AI',
+          desc: t(
+            'list.creationView.method.contentDesc',
+            'Paste, upload, or Notion',
+          ),
+        },
+      ),
     );
   }
   rail.append(h('div', { class: 'creation-rail-divider' }));
   rail.append(
     makeRailItem('import', t('list.creationView.method.import', 'Import'), {
       desc: t('list.creationView.method.importDesc', '.json or .md'),
-    })
+    }),
   );
 
   // ===== Right pane =====
   const pane = h('div', { class: 'creation-pane' });
 
   // --- Blank panel ---
-  const blankPanel = h('div', { class: 'creation-panel', 'data-method': 'blank' });
+  const blankPanel = h('div', {
+    class: 'creation-panel',
+    'data-method': 'blank',
+  });
   const blankTitleField = h('div', { class: 'stack is-field' });
   const emptyTitleInput = h('input', {
     class: 'form-input',
@@ -147,8 +167,11 @@ export function openCreationView({
     'aria-label': t('list.creationView.nameLabel', 'Give it a name'),
   });
   blankTitleField.append(
-    h('label', { class: 'field-label', text: t('list.creationView.nameLabel', 'Give it a name') }),
-    emptyTitleInput
+    h('label', {
+      class: 'field-label',
+      text: t('list.creationView.nameLabel', 'Give it a name'),
+    }),
+    emptyTitleInput,
   );
   blankPanel.append(blankTitleField);
 
@@ -198,7 +221,10 @@ export function openCreationView({
   // than through the injected readLangMode/writeLangMode pair) keeps the
   // "no preference stored" case distinguishable, which readLangMode() hides.
   const langSelect = createLangSelector({
-    h, readLangMode, writeLangMode, getSupportedLangs,
+    h,
+    readLangMode,
+    writeLangMode,
+    getSupportedLangs,
     initialLang: resolveInitialDeckLang({
       storedLang: readStoredLangMode(),
       uiLocale: getUiLocale(),
@@ -206,8 +232,12 @@ export function openCreationView({
     className: '',
   });
   const themeSelect = createVisualThemePicker({
-    h, api, initialTheme: themeId,
-    onChange: (id) => { themeId = id; },
+    h,
+    api,
+    initialTheme: themeId,
+    onChange: (id) => {
+      themeId = id;
+    },
   });
   // Theme lives in a disclosure so it can read as optional where re-theming is
   // rare: composing from the library, you almost always keep the slides' look,
@@ -226,7 +256,10 @@ export function openCreationView({
   // that is exactly when "what theme do I get if I skip this?" needs answering.
   const themeHint = h('div', {
     class: 'help creation-theme-hint is-hidden',
-    text: t('list.creationView.themeOptionalHint', 'Keeps the workspace theme unless you pick another.'),
+    text: t(
+      'list.creationView.themeOptionalHint',
+      'Keeps the workspace theme unless you pick another.',
+    ),
   });
   setupWrap.append(langSelect.wrap, themeDisclosure, themeHint);
 
@@ -238,15 +271,18 @@ export function openCreationView({
         class: 'help creation-theme-prod-hint',
         text: t(
           'list.creationView.themeSandboxHint',
-          'In your own Deckyard you can build a branded theme with custom colours, fonts, and logo.'
+          'In your own Deckyard you can build a branded theme with custom colours, fonts, and logo.',
         ),
-      })
+      }),
     );
   }
 
   // The hint only makes sense in the optional (library) mode while collapsed.
   const syncThemeHint = () => {
-    themeHint.classList.toggle('is-hidden', !(method === 'library' && !themeDisclosure.open));
+    themeHint.classList.toggle(
+      'is-hidden',
+      !(method === 'library' && !themeDisclosure.open),
+    );
   };
   themeDisclosure.addEventListener('toggle', syncThemeHint);
 
@@ -282,21 +318,25 @@ export function openCreationView({
   backdrop.append(modal);
 
   // ===== Behavior =====
-  const setStatus = (text) => { status.textContent = text || ''; };
+  const setStatus = (text) => {
+    status.textContent = text || '';
+  };
 
   const setBusy = (v) => {
     busy = v;
-    for (const el of modal.querySelectorAll('input, textarea, select, button')) {
+    for (const el of modal.querySelectorAll(
+      'input, textarea, select, button',
+    )) {
       el.disabled = v;
     }
   };
 
   const getButtonLabel = (mode) => {
     const labels = {
-      'empty': t('common.create', 'Create'),
+      empty: t('common.create', 'Create'),
       'paste-text': t('list.aiWizard.generate', 'Generate'),
       'convert-file': t('list.fileConverter.convert', 'Convert'),
-      'notion': t('list.newPresentation.notion.import', 'Import'),
+      notion: t('list.newPresentation.notion.import', 'Import'),
       'import-json': t('list.importJson', 'Import'),
       'import-markdown': t('list.importJson', 'Import'),
       'paste-markdown': t('list.importJson', 'Import'),
@@ -305,7 +345,8 @@ export function openCreationView({
   };
 
   // Theme applies to every method except JSON import (which carries its own).
-  const themeApplies = () => !(method === 'import' && importMethod.carriesOwnTheme());
+  const themeApplies = () =>
+    !(method === 'import' && importMethod.carriesOwnTheme());
 
   const syncUI = () => {
     for (const [key, btn] of railItems) {
@@ -346,7 +387,9 @@ export function openCreationView({
     if (mode === 'library') {
       const count = library.getSelectedCount();
       btnAction.textContent = count
-        ? t('list.creationView.library.create', 'Create · {count} slides', { count: String(count) })
+        ? t('list.creationView.library.create', 'Create · {count} slides', {
+            count: String(count),
+          })
         : t('common.create', 'Create');
       btnAction.disabled = busy || count === 0;
     } else if (mode) {
@@ -366,8 +409,12 @@ export function openCreationView({
 
   // ===== Close handling =====
   const close = () => {
-    try { if (onKey) window.removeEventListener('keydown', onKey); } catch {}
-    try { detachFocusTrap?.(); } catch {}
+    try {
+      if (onKey) window.removeEventListener('keydown', onKey);
+    } catch {}
+    try {
+      detachFocusTrap?.();
+    } catch {}
     backdrop.remove();
   };
 
@@ -382,12 +429,18 @@ export function openCreationView({
 
   const requestClose = async () => {
     if (busy) return;
-    if (isDirty() && !(await confirmModal(h, root, {
-      title: t('list.newPresentation.discard', 'Discard'),
-      message: t('list.newPresentation.confirmDiscard', 'Discard your input?'),
-      confirmLabel: t('list.newPresentation.discard', 'Discard'),
-      danger: true,
-    }))) {
+    if (
+      isDirty() &&
+      !(await confirmModal(h, root, {
+        title: t('list.newPresentation.discard', 'Discard'),
+        message: t(
+          'list.newPresentation.confirmDiscard',
+          'Discard your input?',
+        ),
+        confirmLabel: t('list.newPresentation.discard', 'Discard'),
+        danger: true,
+      }))
+    ) {
       return;
     }
     close();
@@ -410,8 +463,12 @@ export function openCreationView({
       nav,
       setBusy,
       setStatus,
-      hideBackdrop: () => { backdrop.style.display = 'none'; },
-      showBackdrop: () => { backdrop.style.display = ''; },
+      hideBackdrop: () => {
+        backdrop.style.display = 'none';
+      },
+      showBackdrop: () => {
+        backdrop.style.display = '';
+      },
     };
 
     switch (mode) {
@@ -458,7 +515,8 @@ export function openCreationView({
   // ===== Mount =====
   onKey = (e) => {
     if (e.key === 'Escape' && !busy) requestClose();
-    if (e.key === 'Enter' && !busy && getEffectiveMode() === 'empty') btnAction.click();
+    if (e.key === 'Enter' && !busy && getEffectiveMode() === 'empty')
+      btnAction.click();
   };
   window.addEventListener('keydown', onKey);
 
@@ -468,7 +526,8 @@ export function openCreationView({
 
   // External preselection wins over the default blank focus: open straight into
   // the library compose flow with the building block seeded.
-  const hasPreselectItems = Array.isArray(preselect?.items) && preselect.items.some(Boolean);
+  const hasPreselectItems =
+    Array.isArray(preselect?.items) && preselect.items.some(Boolean);
   if (!libraryDisabled && (preselect?.collection || hasPreselectItems)) {
     method = 'library';
     // Seed via the collections source, whose tray is the source of truth (so a
@@ -478,7 +537,9 @@ export function openCreationView({
     syncUI();
     if (preselect.collection) {
       // Render the chooser first so seedCollection can flag the active card.
-      library.ensureCollectionsChooser().then(() => library.seedCollection(preselect.collection));
+      library
+        .ensureCollectionsChooser()
+        .then(() => library.seedCollection(preselect.collection));
     } else {
       library.ensureCollectionsChooser();
       library.seedItems(preselect.items.filter(Boolean));

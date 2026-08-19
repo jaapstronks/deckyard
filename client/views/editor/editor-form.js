@@ -22,7 +22,10 @@ import {
   unresolvedNotes,
 } from '../../../shared/slide-types/unresolved.js';
 import { ensureTitleSlideBackground } from '../../../shared/slide-types/types/title-slide/background.js';
-import { elementAppliesToSlide, elementTabLabel } from './editor-form/element-tab.js';
+import {
+  elementAppliesToSlide,
+  elementTabLabel,
+} from './editor-form/element-tab.js';
 import {
   buildBackgroundControls,
   isBackgroundFieldKey,
@@ -137,134 +140,154 @@ export function createRerenderEditor({
     // slide (type chip, "All text", lock, actions menu) renders into the slide
     // toolbar above the canvas instead.
     if (!contentOnly) {
-    // Collapse control. The "INSPECTOR" title it used to sit next to was
-    // redundant beside the already-active Inspector pane tab, so the whole
-    // 57px header row went (declutter 2026-07-26) — but the close button
-    // stays: it belongs inside the surface it dismisses, and hiding it behind
-    // hover would strand touch users. It floats in a zero-height slot over the
-    // first field's label band, which is empty on every type. Built here,
-    // appended at the very end — it has to land *under* the element tab bar,
-    // whose right-hand "Slide" tab it would otherwise cover.
-    if (setInspectorCollapsed) {
-      closeSlot = h('div', { class: 'editor-form-close-slot' });
-      const closeBtn = h('button', {
-        class: 'ghost-icon-btn editor-form-close-btn',
-        type: 'button',
-        title: t('editor.inspector.hide', 'Hide inspector'),
-        'aria-label': t('editor.inspector.hide', 'Hide inspector'),
-        onclick: () => setInspectorCollapsed(true),
-      });
-      closeBtn.append(closeIcon({ size: 16 }));
-      closeSlot.append(closeBtn);
-    }
-
-    // Slide toolbar above the canvas: type chip + badges + "All text" on the
-    // left; lock + slide-actions menu on the right. Rebuilt per slide.
-    const tbLeft = slideToolbar?.leftEl || null;
-    const tbActions = slideToolbar?.actionsEl || null;
-    if (tbLeft) {
-      tbLeft.innerHTML = '';
-      tbLeft.append(
-        h('div', {
-          class: 'pill',
-          text: t(
-            SLIDE_TYPES[slide.type]?.labelKey || `slideType.${slide.type}.label`,
-            SLIDE_TYPES[slide.type]?.label || slide.type
-          ),
-        })
-      );
-
-      // Show retired badge if slide type is org-disabled
-      if (isOrgDisabledSlideType(slide.type, disabledSlideTypes)) {
-        tbLeft.append(
-          h('span', {
-            class: 'slide-type-retired-badge',
-            text: t('editor.slide.retiredType', 'Retired type'),
-            title: t('editor.slide.retiredType.title', 'This slide type is no longer available for new slides.'),
-          })
-        );
+      // Collapse control. The "INSPECTOR" title it used to sit next to was
+      // redundant beside the already-active Inspector pane tab, so the whole
+      // 57px header row went (declutter 2026-07-26) — but the close button
+      // stays: it belongs inside the surface it dismisses, and hiding it behind
+      // hover would strand touch users. It floats in a zero-height slot over the
+      // first field's label band, which is empty on every type. Built here,
+      // appended at the very end — it has to land *under* the element tab bar,
+      // whose right-hand "Slide" tab it would otherwise cover.
+      if (setInspectorCollapsed) {
+        closeSlot = h('div', { class: 'editor-form-close-slot' });
+        const closeBtn = h('button', {
+          class: 'ghost-icon-btn editor-form-close-btn',
+          type: 'button',
+          title: t('editor.inspector.hide', 'Hide inspector'),
+          'aria-label': t('editor.inspector.hide', 'Hide inspector'),
+          onclick: () => setInspectorCollapsed(true),
+        });
+        closeBtn.append(closeIcon({ size: 16 }));
+        closeSlot.append(closeBtn);
       }
 
-      // Show custom type badge
-      const slideDef = SLIDE_TYPES[slide.type];
-      if (slideDef?.isCustom || slide.type.startsWith('custom-')) {
-        const badgeText = t('editor.slide.customType', 'Custom type');
-        const badgeTitle = slideDef?.baseType
-          ? t('editor.slide.customType.basedOn', 'Based on: {base}', { base: slideDef.baseType })
-          : '';
+      // Slide toolbar above the canvas: type chip + badges + "All text" on the
+      // left; lock + slide-actions menu on the right. Rebuilt per slide.
+      const tbLeft = slideToolbar?.leftEl || null;
+      const tbActions = slideToolbar?.actionsEl || null;
+      if (tbLeft) {
+        tbLeft.innerHTML = '';
         tbLeft.append(
-          h('span', {
-            class: 'slide-type-custom-badge',
-            text: badgeText,
-            title: badgeTitle || badgeText,
-          })
+          h('div', {
+            class: 'pill',
+            text: t(
+              SLIDE_TYPES[slide.type]?.labelKey ||
+                `slideType.${slide.type}.label`,
+              SLIDE_TYPES[slide.type]?.label || slide.type,
+            ),
+          }),
         );
+
+        // Show retired badge if slide type is org-disabled
+        if (isOrgDisabledSlideType(slide.type, disabledSlideTypes)) {
+          tbLeft.append(
+            h('span', {
+              class: 'slide-type-retired-badge',
+              text: t('editor.slide.retiredType', 'Retired type'),
+              title: t(
+                'editor.slide.retiredType.title',
+                'This slide type is no longer available for new slides.',
+              ),
+            }),
+          );
+        }
+
+        // Show custom type badge
+        const slideDef = SLIDE_TYPES[slide.type];
+        if (slideDef?.isCustom || slide.type.startsWith('custom-')) {
+          const badgeText = t('editor.slide.customType', 'Custom type');
+          const badgeTitle = slideDef?.baseType
+            ? t('editor.slide.customType.basedOn', 'Based on: {base}', {
+                base: slideDef.baseType,
+              })
+            : '';
+          tbLeft.append(
+            h('span', {
+              class: 'slide-type-custom-badge',
+              text: badgeText,
+              title: badgeTitle || badgeText,
+            }),
+          );
+        }
+
+        // Layout switcher chip: only for types that declare layoutVariants
+        // (type-agnostic; forks that override a type control their own set).
+        const layoutChip = createLayoutSwitcherChip({
+          h,
+          slide,
+          pres,
+          SLIDE_TYPES,
+          editorState,
+          openOverlayClosers,
+        });
+        if (layoutChip) tbLeft.append(layoutChip);
+
+        // "Edit all text": opens the roomy bulk-edit modal (all content fields
+        // + live preview).
+        if (typeof onOpenBulkEdit === 'function') {
+          tbLeft.append(
+            h('button', {
+              type: 'button',
+              class: 'btn editor-bulk-edit-btn',
+              text: t('editor.bulkEdit.open', 'All text'),
+              title: t(
+                'editor.bulkEdit.openTitle',
+                'Edit all text fields of this slide in one view',
+              ),
+              onclick: () => onOpenBulkEdit(),
+            }),
+          );
+        }
       }
 
-      // Layout switcher chip: only for types that declare layoutVariants
-      // (type-agnostic; forks that override a type control their own set).
-      const layoutChip = createLayoutSwitcherChip({
+      const headerActionsResult = buildHeaderActions({
         h,
         slide,
         pres,
+        api,
+        toast,
         SLIDE_TYPES,
+        openSlideLibraryModal,
+        setSelectedSlideId,
         editorState,
+        rerenderEditor,
+        onTranslateSlide,
+        user,
         openOverlayClosers,
+        markDirty,
+        rerenderPreview,
+        rerenderSlideList,
+        isAuthor,
       });
-      if (layoutChip) tbLeft.append(layoutChip);
-
-      // "Edit all text": opens the roomy bulk-edit modal (all content fields
-      // + live preview).
-      if (typeof onOpenBulkEdit === 'function') {
-        tbLeft.append(
-          h('button', {
-            type: 'button',
-            class: 'btn editor-bulk-edit-btn',
-            text: t('editor.bulkEdit.open', 'All text'),
-            title: t('editor.bulkEdit.openTitle', 'Edit all text fields of this slide in one view'),
-            onclick: () => onOpenBulkEdit(),
-          })
-        );
+      headerActionsDetach = headerActionsResult.detach;
+      if (tbActions) {
+        tbActions.innerHTML = '';
+        tbActions.append(headerActionsResult.el);
       }
-    }
-
-    const headerActionsResult = buildHeaderActions({
-      h,
-      slide,
-      pres,
-      api,
-      toast,
-      SLIDE_TYPES,
-      openSlideLibraryModal,
-      setSelectedSlideId,
-      editorState,
-      rerenderEditor,
-      onTranslateSlide,
-      user,
-      openOverlayClosers,
-      markDirty,
-      rerenderPreview,
-      rerenderSlideList,
-      isAuthor,
-    });
-    headerActionsDetach = headerActionsResult.detach;
-    if (tbActions) {
-      tbActions.innerHTML = '';
-      tbActions.append(headerActionsResult.el);
-    }
     } // end !contentOnly header
 
     // Data source indicator (shown for bindable slide types when live data is enabled)
     if (!contentOnly) {
       const dsBar = buildDataSourceIndicator({
-        h, slide, api, markDirty, editorState, features, openOverlayClosers,
+        h,
+        slide,
+        api,
+        markDirty,
+        editorState,
+        features,
+        openOverlayClosers,
       });
       if (dsBar) editorMount.append(dsBar);
     }
 
     // Per-slide duration input (shown only when auto-advance is enabled)
     const durationWrap = buildSlideDurationControl({
-      h, pres, slide, contentOnly, markDirty, requestSave,
+      h,
+      pres,
+      slide,
+      contentOnly,
+      markDirty,
+      requestSave,
     });
     if (durationWrap) editorMount.append(durationWrap);
 
@@ -294,7 +317,7 @@ export function createRerenderEditor({
             info.state === 'removed'
               ? t('editor.slide.archivedType', 'Archived slide type')
               : t('editor.slide.unavailableType', 'Unavailable slide type'),
-        })
+        }),
       );
       for (const line of unresolvedNotes(info)) {
         notice.append(h('p', { class: 'help', text: line }));
@@ -316,7 +339,9 @@ export function createRerenderEditor({
       activeElementTab = true;
       lastElementKey = elemKey;
     }
-    const elementForm = h('div', { class: 'stack editor-form editor-element-form' });
+    const elementForm = h('div', {
+      class: 'stack editor-form editor-element-form',
+    });
 
     // AI reasoning panel (shown for AI-generated slides)
     if (!contentOnly) {
@@ -336,7 +361,14 @@ export function createRerenderEditor({
     const aiIteratePanel = contentOnly
       ? null
       : buildAiIteratePanel({
-          h, api, pres, slide, getSelectedSlideId, setSelectedSlideId, editorState, toast,
+          h,
+          api,
+          pres,
+          slide,
+          getSelectedSlideId,
+          setSelectedSlideId,
+          editorState,
+          toast,
         });
 
     // Accessibility fields (global) are tucked behind a toggle. a11yTitle/
@@ -359,26 +391,44 @@ export function createRerenderEditor({
     // earns its keep, so only those get the nudge.
     const HEADING_FIELDS = ['title', 'question', 'leftTitle', 'rightTitle'];
     const hasHeading = HEADING_FIELDS.some((f) =>
-      Boolean(String(slide?.content?.[f] || '').trim())
+      Boolean(String(slide?.content?.[f] || '').trim()),
     );
-    const a11yState = hasA11yValue ? 'custom' : hasHeading ? 'auto' : 'no-heading';
-    const a11yDetails = h('details', { class: 'editor-advanced editor-a11y-section' });
+    const a11yState = hasA11yValue
+      ? 'custom'
+      : hasHeading
+        ? 'auto'
+        : 'no-heading';
+    const a11yDetails = h('details', {
+      class: 'editor-advanced editor-a11y-section',
+    });
     if (hasA11yValue) a11yDetails.open = true;
     const a11yStatusText = {
-      custom: t('editor.slide.accessibility.status.custom', 'custom description'),
-      auto: t('editor.slide.accessibility.status.auto', 'auto (from the heading)'),
-      'no-heading': t('editor.slide.accessibility.status.noHeading', 'no heading — add a title'),
+      custom: t(
+        'editor.slide.accessibility.status.custom',
+        'custom description',
+      ),
+      auto: t(
+        'editor.slide.accessibility.status.auto',
+        'auto (from the heading)',
+      ),
+      'no-heading': t(
+        'editor.slide.accessibility.status.noHeading',
+        'no heading — add a title',
+      ),
     }[a11yState];
     const a11ySummary = h('summary', {
       class: 'editor-advanced-summary',
-      title: t('editor.slide.accessibility.title', 'Optional fields to improve screen-reader output and exports.'),
+      title: t(
+        'editor.slide.accessibility.title',
+        'Optional fields to improve screen-reader output and exports.',
+      ),
     });
     a11ySummary.append(
       h('span', { text: t('editor.slide.accessibility', 'Accessibility') }),
       h('span', {
         class: `editor-a11y-status is-${a11yState}`,
         text: a11yStatusText,
-      })
+      }),
     );
     const a11yBody = h('div', { class: 'editor-advanced-body' });
     a11yDetails.append(a11ySummary, a11yBody);
@@ -387,7 +437,9 @@ export function createRerenderEditor({
     // fields (the audit's "Inspector keeps"), plus Background and
     // Accessibility. Content lives on the slide (wysiwyg) and - all of it,
     // by construction - in the "Edit all text" bulk modal.
-    const inspectorKeeps = contentOnly ? null : getInspectorKeepKeys(slide.type, def);
+    const inspectorKeeps = contentOnly
+      ? null
+      : getInspectorKeepKeys(slide.type, def);
 
     // Legacy alias collections (items/steps/stages): the schema carries both
     // keys but the renderer reads exactly one (getCollectionKey). Skip the
@@ -396,7 +448,11 @@ export function createRerenderEditor({
     const cardsCfg = getInlineDescriptor(slide.type, def)?.cards;
     const inactiveCollectionKeys = new Set();
     if (cardsCfg?.fieldAliases?.length) {
-      const activeKey = getCollectionKey(slide.content, cardsCfg.field, cardsCfg.fieldAliases);
+      const activeKey = getCollectionKey(
+        slide.content,
+        cardsCfg.field,
+        cardsCfg.fieldAliases,
+      );
       for (const k of [cardsCfg.field, ...cardsCfg.fieldAliases]) {
         if (k !== activeKey) inactiveCollectionKeys.add(k);
       }
@@ -447,7 +503,8 @@ export function createRerenderEditor({
       onEditData: contentOnly ? null : onEditChartData,
     });
 
-    const isA11yFieldKey = (key) => key === 'a11yTitle' || key === 'a11ySummary';
+    const isA11yFieldKey = (key) =>
+      key === 'a11yTitle' || key === 'a11ySummary';
 
     /**
      * Render one schema field into the form.
@@ -655,7 +712,7 @@ export function createRerenderEditor({
       };
       tabBar.append(
         mkTab(elementTabLabel(selectedElement), true),
-        mkTab(t('editor.inspector.tab.slide', 'Slide'), false)
+        mkTab(t('editor.inspector.tab.slide', 'Slide'), false),
       );
       editorMount.append(tabBar);
       elementForm.hidden = !activeElementTab;

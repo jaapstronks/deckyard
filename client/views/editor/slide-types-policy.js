@@ -4,7 +4,10 @@ export function getThemeSlideTypeConfig(theme) {
   // Themes reaching here are normalized (client/lib/theme/theme.js runs every
   // load through normalizeTheme), so `slideTypes.exclude` is the whole story —
   // the legacy `hiddenSlideTypes` alias is folded away there.
-  const st = theme?.slideTypes && typeof theme.slideTypes === 'object' ? theme.slideTypes : {};
+  const st =
+    theme?.slideTypes && typeof theme.slideTypes === 'object'
+      ? theme.slideTypes
+      : {};
   const exclude = uniqStrings(st.exclude);
   const include = uniqStrings(st.include);
   return {
@@ -24,7 +27,13 @@ export function getThemeSlideTypeConfig(theme) {
  * @param {boolean} [options.canEditCustomHtml] - Whether the user may author raw HTML/CSS
  * @returns {boolean}
  */
-export function isInsertableSlideType({ type, def, theme, disabledSlideTypes, canEditCustomHtml = false } = {}) {
+export function isInsertableSlideType({
+  type,
+  def,
+  theme,
+  disabledSlideTypes,
+  canEditCustomHtml = false,
+} = {}) {
   const t = cleanStr(type);
   if (!t) return false;
   if (!def || typeof def !== 'object') return false;
@@ -66,5 +75,7 @@ export function isInsertableSlideType({ type, def, theme, disabledSlideTypes, ca
  */
 export function isOrgDisabledSlideType(type, disabledSlideTypes) {
   const t = cleanStr(type);
-  return Boolean(t && Array.isArray(disabledSlideTypes) && disabledSlideTypes.includes(t));
+  return Boolean(
+    t && Array.isArray(disabledSlideTypes) && disabledSlideTypes.includes(t),
+  );
 }

@@ -30,7 +30,8 @@ export default {
    * Extra search terms (incl. Dutch) folded into the picker's search haystack.
    * Never displayed.
    */
-  aliases: 'bullets numbered list styled items opsomming lijstje lijst genummerd',
+  aliases:
+    'bullets numbered list styled items opsomming lijstje lijst genummerd',
 
   /**
    * Abstract glyph for the picker's schematic view mode. JSON-safe spec read by

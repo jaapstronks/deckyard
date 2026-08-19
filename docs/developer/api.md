@@ -24,13 +24,13 @@ server/routes/public-api/
 
 ### Related Files
 
-| File | Purpose |
-|------|---------|
-| `server/storage/api-keys.js` | API key CRUD and validation |
-| `server/storage/api-usage.js` | Usage tracking and rate limit checks |
-| `server/routes/api/api-keys.js` | Internal API for key management |
-| `server/db/migrations/029_api_keys.js` | Database schema |
-| `docs/openapi.yaml` | OpenAPI 3.0.3 specification |
+| File                                   | Purpose                              |
+| -------------------------------------- | ------------------------------------ |
+| `server/storage/api-keys.js`           | API key CRUD and validation          |
+| `server/storage/api-usage.js`          | Usage tracking and rate limit checks |
+| `server/routes/api/api-keys.js`        | Internal API for key management      |
+| `server/db/migrations/029_api_keys.js` | Database schema                      |
+| `docs/openapi.yaml`                    | OpenAPI 3.0.3 specification          |
 
 ## Authentication Flow
 
@@ -68,6 +68,7 @@ allowRequest(`api:${apiKey.id}`, {
 ### Daily Limits (Database)
 
 Tracked in `api_usage_daily` table:
+
 - `request_count` - Total requests
 - `ai_request_count` - AI endpoint calls
 - `export_count` - Export operations
@@ -90,13 +91,13 @@ Value of `-1` means unlimited.
 
 API keys can have granular permissions:
 
-| Permission | Access |
-|-------|--------|
-| `read` | List/get presentations, themes, slide types |
-| `write` | Create, update, delete presentations |
-| `export` | Export presentations |
-| `ai` | Use AI generation endpoints |
-| `comments:read` | Read comments on accessible presentations |
+| Permission       | Access                                            |
+| ---------------- | ------------------------------------------------- |
+| `read`           | List/get presentations, themes, slide types       |
+| `write`          | Create, update, delete presentations              |
+| `export`         | Export presentations                              |
+| `ai`             | Use AI generation endpoints                       |
+| `comments:read`  | Read comments on accessible presentations         |
 | `comments:write` | Create comments/replies and change comment status |
 
 Check permissions with:

@@ -43,7 +43,7 @@ export async function openTranslateFieldModal({
       sourceLang === 'nl'
         ? 'Bronversie (NL) ontbreekt voor deze slide. Gebruik “Vertalen” om die te maken.'
         : 'Source version (EN) is missing for this slide. Use “Vertalen” to create it.',
-      { id: 'field-translate', durationMs: 2600 }
+      { id: 'field-translate', durationMs: 2600 },
     );
     return;
   }
@@ -58,8 +58,7 @@ export async function openTranslateFieldModal({
     srcSlide?.content && typeof srcSlide.content === 'object'
       ? srcSlide.content
       : {};
-  const srcText =
-    typeof srcContent?.[k] === 'string' ? srcContent[k] : '';
+  const srcText = typeof srcContent?.[k] === 'string' ? srcContent[k] : '';
   if (!String(srcText || '').trim()) {
     toast?.info('Brontaal veld is leeg; niets om te vertalen.', {
       id: 'field-translate',
@@ -71,22 +70,17 @@ export async function openTranslateFieldModal({
   let translated = '';
   try {
     const vendor = readPreferredLlmVendor?.() || null;
-    const resp = await api?.(
-      `/api/presentations/${id}/translate/fields`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          from: sourceLang,
-          to: targetLang,
-          fields: { [k]: srcText },
-          ...(vendor ? { vendor } : {}),
-        }),
-      }
-    );
+    const resp = await api?.(`/api/presentations/${id}/translate/fields`, {
+      method: 'POST',
+      body: JSON.stringify({
+        from: sourceLang,
+        to: targetLang,
+        fields: { [k]: srcText },
+        ...(vendor ? { vendor } : {}),
+      }),
+    });
     translated =
-      typeof resp?.translations?.[k] === 'string'
-        ? resp.translations[k]
-        : '';
+      typeof resp?.translations?.[k] === 'string' ? resp.translations[k] : '';
   } catch (e) {
     toast?.error(String(e?.message || e), {
       id: 'field-translate',
@@ -128,7 +122,7 @@ export async function openTranslateFieldModal({
       class: 'btn btn-secondary',
       text: t('common.close', 'Close'),
       onclick: () => close(),
-    })
+    }),
   );
 
   const hint = h('div', {
@@ -165,7 +159,7 @@ export async function openTranslateFieldModal({
         class: 'is-pre-wrap',
         text: translated || '—',
       }),
-    ]
+    ],
   );
 
   const btnRow = h('div', {

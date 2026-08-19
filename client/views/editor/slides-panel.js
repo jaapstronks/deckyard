@@ -23,7 +23,10 @@ function isInteractiveSlideType(type) {
 }
 
 function hasFollowInviteSlide(slides) {
-  return Array.isArray(slides) && slides.some((s) => s?.type === 'follow-invite-slide');
+  return (
+    Array.isArray(slides) &&
+    slides.some((s) => s?.type === 'follow-invite-slide')
+  );
 }
 
 export function createSlidesPanel({
@@ -106,11 +109,7 @@ export function createSlidesPanel({
     const q = String(stats?.query ?? searchQuery ?? '').trim();
     const total = Number(stats?.total ?? (pres?.slides || []).length) || 0;
     const shown =
-      typeof stats?.shown === 'number'
-        ? stats.shown
-        : q
-        ? 0
-        : total;
+      typeof stats?.shown === 'number' ? stats.shown : q ? 0 : total;
     if (!q) searchStatsEl.textContent = '';
     else searchStatsEl.textContent = `${shown}/${total}`;
   };
@@ -216,7 +215,7 @@ export function createSlidesPanel({
       class: 'btn btn-secondary',
       text: t('common.close', 'Close'),
       onclick: () => closeDrawer(),
-    })
+    }),
   );
   drawerEl.append(drawerHeader, drawerBody);
 
@@ -257,7 +256,9 @@ export function createSlidesPanel({
 
   // Helper to insert a follow-invite slide at a specific position
   const insertFollowInviteSlide = (afterSlideId) => {
-    const s = makeNewSlide('follow-invite-slide', SLIDE_TYPES, { lang: pres?.i18n?.active });
+    const s = makeNewSlide('follow-invite-slide', SLIDE_TYPES, {
+      lang: pres?.i18n?.active,
+    });
     // No language on the content: the invite renders in the language of the
     // version it sits in, derived from the render context.
     if (pres?.id) s.content.presentationId = pres.id;
@@ -272,7 +273,10 @@ export function createSlidesPanel({
 
   const canEditCustomHtml = Boolean(user?.canEditCustomHtml);
 
-  const insertSlide = (type, { afterSlideId, parentId = null, contentOverrides = null } = {}) => {
+  const insertSlide = (
+    type,
+    { afterSlideId, parentId = null, contentOverrides = null } = {},
+  ) => {
     if (
       !isInsertableSlideType({
         type,
@@ -312,7 +316,10 @@ export function createSlidesPanel({
           // First insert the follow-invite slide as the second slide
           insertFollowInviteSlide(getFirstSlideId());
           // Then insert the interactive slide at its intended position
-          insertSlideObject(pendingSlide, { afterSlideId: pendingAfterSlideId, parentId: pendingParentId });
+          insertSlideObject(pendingSlide, {
+            afterSlideId: pendingAfterSlideId,
+            parentId: pendingParentId,
+          });
         },
         onAddBeforeCurrent: () => {
           // First insert the follow-invite slide just before where the interactive slide will go
@@ -320,12 +327,20 @@ export function createSlidesPanel({
           // The follow-invite is now at pendingAfterSlideId + 1, so the interactive slide
           // should go after the follow-invite. We need to find the new follow-invite slide ID.
           const slides = pres?.slides || [];
-          const followInviteSlide = slides.find((sl) => sl?.type === 'follow-invite-slide');
-          insertSlideObject(pendingSlide, { afterSlideId: followInviteSlide?.id, parentId: pendingParentId });
+          const followInviteSlide = slides.find(
+            (sl) => sl?.type === 'follow-invite-slide',
+          );
+          insertSlideObject(pendingSlide, {
+            afterSlideId: followInviteSlide?.id,
+            parentId: pendingParentId,
+          });
         },
         onSkip: () => {
           // Just insert the interactive slide without the follow-invite
-          insertSlideObject(pendingSlide, { afterSlideId: pendingAfterSlideId, parentId: pendingParentId });
+          insertSlideObject(pendingSlide, {
+            afterSlideId: pendingAfterSlideId,
+            parentId: pendingParentId,
+          });
         },
       });
       return;
@@ -455,16 +470,24 @@ export function createSlidesPanel({
         openOverlayClosers,
         onAddAsSecond: () => {
           insertFollowInviteSlide(getFirstSlideId());
-          insertSlideObject(pendingSlide, { afterSlideId: pendingAfterSlideId });
+          insertSlideObject(pendingSlide, {
+            afterSlideId: pendingAfterSlideId,
+          });
         },
         onAddBeforeCurrent: () => {
           insertFollowInviteSlide(pendingAfterSlideId);
           const slides = pres?.slides || [];
-          const followInviteSlide = slides.find((sl) => sl?.type === 'follow-invite-slide');
-          insertSlideObject(pendingSlide, { afterSlideId: followInviteSlide?.id });
+          const followInviteSlide = slides.find(
+            (sl) => sl?.type === 'follow-invite-slide',
+          );
+          insertSlideObject(pendingSlide, {
+            afterSlideId: followInviteSlide?.id,
+          });
         },
         onSkip: () => {
-          insertSlideObject(pendingSlide, { afterSlideId: pendingAfterSlideId });
+          insertSlideObject(pendingSlide, {
+            afterSlideId: pendingAfterSlideId,
+          });
         },
       });
       return;
@@ -484,7 +507,9 @@ export function createSlidesPanel({
   const openSlideDrawer = ({ afterSlideId } = {}) => {
     slideDrawerOpen = true;
     slideDrawerAfterId =
-      typeof afterSlideId === 'undefined' ? getSelectedSlideId?.() : afterSlideId;
+      typeof afterSlideId === 'undefined'
+        ? getSelectedSlideId?.()
+        : afterSlideId;
     drawerEl.hidden = false;
     drawerEl.classList.add('is-open');
     renderSlideTypePicker(drawerBody, {
@@ -513,8 +538,10 @@ export function createSlidesPanel({
         if (result?.presentation) {
           const updated = result.presentation;
           if (Array.isArray(updated.slides)) pres.slides = updated.slides;
-          if (typeof updated.revision === 'number') pres.revision = updated.revision;
-          if (typeof updated.modified === 'string') pres.modified = updated.modified;
+          if (typeof updated.revision === 'number')
+            pres.revision = updated.revision;
+          if (typeof updated.modified === 'string')
+            pres.modified = updated.modified;
         }
         // Refresh the editor state after slides are imported
         editorState.refreshAll();
@@ -539,7 +566,9 @@ export function createSlidesPanel({
       pres,
       SLIDE_TYPES,
       afterSlideId:
-        typeof afterSlideId === 'undefined' ? getSelectedSlideId?.() : afterSlideId,
+        typeof afterSlideId === 'undefined'
+          ? getSelectedSlideId?.()
+          : afterSlideId,
       insertFromLibraryItem,
       openOverlayClosers,
       initialShelf,
@@ -606,14 +635,19 @@ export function createSlidesPanel({
       },
       [
         collapseBtn,
-        h('button', {
-          class: 'btn btn-primary slides-add-btn is-compact',
-          type: 'button',
-          'aria-label': t('editor.slides.add', 'Add slide'),
-          onclick: () => openSlideTypeModal({ afterSlideId: getSelectedSlideId?.() }),
-        }, [h('span', { text: t('editor.slides.addPlus', '+ Slide') })]),
-      ]
-    )
+        h(
+          'button',
+          {
+            class: 'btn btn-primary slides-add-btn is-compact',
+            type: 'button',
+            'aria-label': t('editor.slides.add', 'Add slide'),
+            onclick: () =>
+              openSlideTypeModal({ afterSlideId: getSelectedSlideId?.() }),
+          },
+          [h('span', { text: t('editor.slides.addPlus', '+ Slide') })],
+        ),
+      ],
+    ),
   );
 
   left.append(leftHeader);

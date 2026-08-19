@@ -128,7 +128,10 @@ test('slideBackgrounds close the documented DB/file parity gap', () => {
     },
   });
 
-  assert.deepEqual(built.slideBackgrounds.map((b) => b.id), ['calm']);
+  assert.deepEqual(
+    built.slideBackgrounds.map((b) => b.id),
+    ['calm'],
+  );
 });
 
 test('backgroundPresets, gradient and defaultTitleSlide come from config', () => {
@@ -151,7 +154,9 @@ test('backgroundPresets, gradient and defaultTitleSlide come from config', () =>
 test('logo variants land alongside the existing large/small pair', () => {
   const built = buildThemeConfig({
     ...baseRow(),
-    config: { logos: { dark: '/uploads/dark.svg', light: '/uploads/light.svg' } },
+    config: {
+      logos: { dark: '/uploads/dark.svg', light: '/uploads/light.svg' },
+    },
   });
 
   assert.equal(built.assets.dark, '/uploads/dark.svg');
@@ -173,8 +178,16 @@ test('cssVarOverrides win over everything else in the merge', () => {
     },
   });
 
-  assert.equal(built.cssVars['--t-radius'], '4px', 'override must beat the radius scale');
-  assert.equal(built.cssVars['--t-color-accent'], '#00ff00', 'override must beat the derived colour');
+  assert.equal(
+    built.cssVars['--t-radius'],
+    '4px',
+    'override must beat the radius scale',
+  );
+  assert.equal(
+    built.cssVars['--t-color-accent'],
+    '#00ff00',
+    'override must beat the derived colour',
+  );
 });
 
 test('a --t-ui-* override never reaches the theme', () => {

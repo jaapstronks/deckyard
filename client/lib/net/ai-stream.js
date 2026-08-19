@@ -78,12 +78,16 @@ export async function generatePresentationStreaming({
       },
       onError: (data) => {
         onError(data);
-        throw new Error(data.message || t('ai.generationFailed', 'Generation failed'));
+        throw new Error(
+          data.message || t('ai.generationFailed', 'Generation failed'),
+        );
       },
     });
 
     if (!result) {
-      throw new Error(t('ai.streamIncomplete', 'Stream ended without completion'));
+      throw new Error(
+        t('ai.streamIncomplete', 'Stream ended without completion'),
+      );
     }
 
     return result.presentation;

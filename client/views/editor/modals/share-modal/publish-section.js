@@ -80,19 +80,15 @@ export function createPublishSection({
   }
 
   async function unpublish() {
-    const ok = await confirmModal(
-      h,
-      modalRoot || document.body,
-      {
-        title: t('editor.publish.unpublish', 'Unpublish'),
-        message: t(
-          'editor.publish.unpublish.confirm',
-          'Unpublish?\n\nThis will invalidate the public link and embed links.'
-        ),
-        confirmLabel: t('editor.publish.unpublish', 'Unpublish'),
-        danger: true,
-      }
-    );
+    const ok = await confirmModal(h, modalRoot || document.body, {
+      title: t('editor.publish.unpublish', 'Unpublish'),
+      message: t(
+        'editor.publish.unpublish.confirm',
+        'Unpublish?\n\nThis will invalidate the public link and embed links.',
+      ),
+      confirmLabel: t('editor.publish.unpublish', 'Unpublish'),
+      danger: true,
+    });
     if (!ok) return;
     try {
       await api(`/api/presentations/${id}/publish`, { method: 'DELETE' });
@@ -116,7 +112,12 @@ export function createPublishSection({
       },
     });
     return h('div', { class: 'share-xref-hint' }, [
-      h('span', { text: t('share.publish.exportHint', 'Prefer an offline file to hand over? ') }),
+      h('span', {
+        text: t(
+          'share.publish.exportHint',
+          'Prefer an offline file to hand over? ',
+        ),
+      }),
       link,
     ]);
   }
@@ -131,7 +132,7 @@ export function createPublishSection({
       class: 'help share-publish-help',
       text: t(
         'share.publish.help',
-        'A public, findable page with a social preview. It stays current and you can unpublish it anytime.'
+        'A public, findable page with a social preview. It stays current and you can unpublish it anytime.',
       ),
     });
     section.append(title, help);
@@ -143,7 +144,10 @@ export function createPublishSection({
         text: t('editor.publish.publish', 'Publish'),
         onclick: () => publishNow(publishBtn),
       });
-      section.append(h('div', { class: 'share-publish-actions' }, [publishBtn]), exportHint());
+      section.append(
+        h('div', { class: 'share-publish-actions' }, [publishBtn]),
+        exportHint(),
+      );
       return;
     }
 
@@ -162,11 +166,14 @@ export function createPublishSection({
       text: t('common.copy', 'Copy'),
       onclick: async () => {
         const ok = await copyToClipboard(data.url);
-        if (ok) toast?.success?.(t('common.copied', 'Copied!'), { durationMs: 1500 });
+        if (ok)
+          toast?.success?.(t('common.copied', 'Copied!'), { durationMs: 1500 });
         urlInput.focus();
       },
     });
-    section.append(h('div', { class: 'share-publish-url-row' }, [urlInput, copyBtn]));
+    section.append(
+      h('div', { class: 'share-publish-url-row' }, [urlInput, copyBtn]),
+    );
 
     const actions = h('div', { class: 'share-publish-actions' });
     actions.append(
@@ -174,18 +181,25 @@ export function createPublishSection({
         class: 'btn btn-secondary',
         type: 'button',
         text: t('editor.publish.manage', 'Manage published…'),
-        title: t('share.publish.manageTitle', 'Social preview, slug, embed code'),
+        title: t(
+          'share.publish.manageTitle',
+          'Social preview, slug, embed code',
+        ),
         onclick: openManage,
-      })
+      }),
     );
-    if (notionAvailable?.() && typeof pres?.notionSourcePageId === 'string' && pres.notionSourcePageId) {
+    if (
+      notionAvailable?.() &&
+      typeof pres?.notionSourcePageId === 'string' &&
+      pres.notionSourcePageId
+    ) {
       actions.append(
         h('button', {
           class: 'btn btn-secondary',
           type: 'button',
           text: t('editor.publish.notion', 'Add to Notion page'),
           onclick: () => handleNotionPublish?.(),
-        })
+        }),
       );
     }
     actions.append(
@@ -194,7 +208,7 @@ export function createPublishSection({
         type: 'button',
         text: t('editor.publish.unpublish', 'Unpublish'),
         onclick: unpublish,
-      })
+      }),
     );
     section.append(actions, exportHint());
   }

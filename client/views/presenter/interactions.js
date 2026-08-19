@@ -22,15 +22,22 @@ export function applyPollInteractionStateToStage(stageEl, interactionState) {
             .replace(/"/g, '\\"')
             .replace(/\n/g, '\\n')) || ((s) => String(s));
   const section = stageEl.querySelector?.(
-    `.deck-slide[data-slide-id="${esc(slideId)}"]`
+    `.deck-slide[data-slide-id="${esc(slideId)}"]`,
   );
   if (!section) return;
-  const pollEl = section.querySelector?.('.slide-poll[data-interaction="poll"]');
+  const pollEl = section.querySelector?.(
+    '.slide-poll[data-interaction="poll"]',
+  );
   if (!pollEl) return;
 
-  const totals = Array.isArray(interactionState?.totals) ? interactionState.totals : [];
+  const totals = Array.isArray(interactionState?.totals)
+    ? interactionState.totals
+    : [];
   const total = clamp0(interactionState?.total);
-  const open = interactionState?.open != null ? !!interactionState.open : String(interactionState?.status || '') !== 'closed';
+  const open =
+    interactionState?.open != null
+      ? !!interactionState.open
+      : String(interactionState?.status || '') !== 'closed';
 
   for (let i = 0; i < totals.length; i += 1) {
     const count = clamp0(totals[i]);
@@ -43,7 +50,10 @@ export function applyPollInteractionStateToStage(stageEl, interactionState) {
   }
 
   const totalEl = pollEl.querySelector?.('[data-poll-total="1"]');
-  if (totalEl) totalEl.textContent = t('presenter.interactions.total', 'Total: {n}', { n: total });
+  if (totalEl)
+    totalEl.textContent = t('presenter.interactions.total', 'Total: {n}', {
+      n: total,
+    });
 
   const statusEl = pollEl.querySelector?.('[data-poll-status="1"]');
   if (statusEl) statusEl.textContent = open ? 'Open' : 'Gesloten';
@@ -61,14 +71,17 @@ export function applyLikertInteractionStateToStage(stageEl, interactionState) {
             .replace(/"/g, '\\"')
             .replace(/\n/g, '\\n')) || ((s) => String(s));
   const section = stageEl.querySelector?.(
-    `.deck-slide[data-slide-id="${esc(slideId)}"]`
+    `.deck-slide[data-slide-id="${esc(slideId)}"]`,
   );
   if (!section) return;
-  const likertEl = section.querySelector?.('.slide-likert[data-interaction="likert"]') ||
+  const likertEl =
+    section.querySelector?.('.slide-likert[data-interaction="likert"]') ||
     section.querySelector?.('.slide-likert');
   if (!likertEl) return;
 
-  const totals = Array.isArray(interactionState?.totals) ? interactionState.totals : [];
+  const totals = Array.isArray(interactionState?.totals)
+    ? interactionState.totals
+    : [];
   const total = clamp0(interactionState?.total);
   const open =
     interactionState?.open != null
@@ -81,7 +94,8 @@ export function applyLikertInteractionStateToStage(stageEl, interactionState) {
     if (!hillHost.__sbLikertHill) {
       try {
         hillHost.__sbLikertHill = mountLikertHill(hillHost, {
-          optionCount: totals.length || Number(interactionState?.optionCount || 0) || 5,
+          optionCount:
+            totals.length || Number(interactionState?.optionCount || 0) || 5,
         });
       } catch {
         // ignore
@@ -95,7 +109,10 @@ export function applyLikertInteractionStateToStage(stageEl, interactionState) {
   }
 
   const totalEl = likertEl.querySelector?.('[data-poll-total="1"]');
-  if (totalEl) totalEl.textContent = t('presenter.interactions.total', 'Total: {n}', { n: total });
+  if (totalEl)
+    totalEl.textContent = t('presenter.interactions.total', 'Total: {n}', {
+      n: total,
+    });
 
   const statusEl = likertEl.querySelector?.('[data-poll-status="1"]');
   if (statusEl) statusEl.textContent = open ? 'Open' : 'Gesloten';

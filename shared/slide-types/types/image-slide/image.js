@@ -52,8 +52,7 @@ export const IMAGE_SLIDE_IMAGE_DEFAULTS = Object.freeze({
  */
 export function resolveImageSlideImage(content) {
   const legacy = String(content?.layout || '').trim();
-  const fitExplicit =
-    content?.fit === 'cover' || content?.fit === 'contain';
+  const fitExplicit = content?.fit === 'cover' || content?.fit === 'contain';
   const bleedExplicit = typeof content?.bleed === 'boolean';
   const fit = fitExplicit
     ? content.fit

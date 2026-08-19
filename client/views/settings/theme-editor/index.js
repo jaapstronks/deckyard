@@ -34,7 +34,9 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
   const container = h('div', { class: 'theme-editor' });
 
   // Header
-  const header = h('div', { class: 'theme-editor-header row is-between is-center' });
+  const header = h('div', {
+    class: 'theme-editor-header row is-between is-center',
+  });
   const backBtn = h('button', {
     class: 'btn btn-secondary btn-icon',
     type: 'button',
@@ -65,7 +67,10 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
   });
   headerActions.append(cancelBtn, saveBtn);
 
-  header.append(h('div', { class: 'row is-center gap-3' }, [backBtn, headerTitle]), headerActions);
+  header.append(
+    h('div', { class: 'row is-center gap-3' }, [backBtn, headerTitle]),
+    headerActions,
+  );
 
   // Main content - two columns
   const main = h('div', { class: 'theme-editor-main' });
@@ -109,7 +114,10 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
   // ============================================================
   const nameCard = h('div', { class: 'editor-card stack' });
   nameCard.append(
-    h('div', { class: 'field-label', text: t('settings.themes.themeName', 'Theme Name') })
+    h('div', {
+      class: 'field-label',
+      text: t('settings.themes.themeName', 'Theme Name'),
+    }),
   );
 
   const nameInput = h('input', {
@@ -125,7 +133,10 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
 
   const nameHint = h('div', {
     class: 'help',
-    text: t('settings.themes.themeNameHint', 'Give your theme a descriptive name.'),
+    text: t(
+      'settings.themes.themeNameHint',
+      'Give your theme a descriptive name.',
+    ),
   });
 
   nameCard.append(nameInput, nameHint);
@@ -135,7 +146,7 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
   // ============================================================
   const logoCard = h('div', { class: 'editor-card stack' });
   logoCard.append(
-    h('div', { class: 'field-label', text: t('settings.themes.logo', 'Logo') })
+    h('div', { class: 'field-label', text: t('settings.themes.logo', 'Logo') }),
   );
 
   const logoUploader = createLogoUploader({
@@ -148,7 +159,10 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
 
   const logoHint = h('div', {
     class: 'help',
-    text: t('settings.themes.logoHint', 'Main logo used on payoff slide. SVG format recommended.'),
+    text: t(
+      'settings.themes.logoHint',
+      'Main logo used on payoff slide. SVG format recommended.',
+    ),
   });
 
   // Small logo for title slide (optional)
@@ -167,22 +181,37 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
 
   const logoSmallHint = h('div', {
     class: 'help',
-    text: t('settings.themes.logoSmallHint', 'Smaller logo for title slides. Uses main logo if not set.'),
+    text: t(
+      'settings.themes.logoSmallHint',
+      'Smaller logo for title slides. Uses main logo if not set.',
+    ),
   });
 
-  logoCard.append(logoUploader.el, logoHint, logoSmallLabel, logoSmallUploader.el, logoSmallHint);
+  logoCard.append(
+    logoUploader.el,
+    logoHint,
+    logoSmallLabel,
+    logoSmallUploader.el,
+    logoSmallHint,
+  );
 
   // ============================================================
   // Colors Section
   // ============================================================
   const colorsCard = h('div', { class: 'editor-card stack' });
   colorsCard.append(
-    h('div', { class: 'field-label', text: t('settings.themes.colors', 'Colors') })
+    h('div', {
+      class: 'field-label',
+      text: t('settings.themes.colors', 'Colors'),
+    }),
   );
 
   const colorsHint = h('div', {
     class: 'help',
-    text: t('settings.themes.colorsHint', 'Define your brand colors. Accent colors are derived from the primary color.'),
+    text: t(
+      'settings.themes.colorsHint',
+      'Define your brand colors. Accent colors are derived from the primary color.',
+    ),
   });
 
   const colorsGrid = h('div', { class: 'theme-colors-grid' });
@@ -232,7 +261,12 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
     },
   });
 
-  colorsGrid.append(primaryPicker.el, bgPicker.el, textLightPicker.el, textDarkPicker.el);
+  colorsGrid.append(
+    primaryPicker.el,
+    bgPicker.el,
+    textLightPicker.el,
+    textDarkPicker.el,
+  );
 
   // Derived colors preview
   const derivedColorsPreview = h('div', { class: 'theme-derived-colors' });
@@ -273,11 +307,17 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
 
   const bgDarkBadge = createContrastBadge({
     size: 'body',
-    label: t('settings.themes.contrast.darkOnBackground', 'Text dark on background'),
+    label: t(
+      'settings.themes.contrast.darkOnBackground',
+      'Text dark on background',
+    ),
   });
   const bgLightBadge = createContrastBadge({
     size: 'body',
-    label: t('settings.themes.contrast.lightOnBackground', 'Text light on background'),
+    label: t(
+      'settings.themes.contrast.lightOnBackground',
+      'Text light on background',
+    ),
   });
   // Accent-contrast lands on buttons, table headers and badges — large text.
   const accentBadge = createContrastBadge({
@@ -291,7 +331,7 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
     bgLightBadge.update(textLight, background);
     accentBadge.update(
       getContrastColor(primary, { light: textLight, dark: textDark }),
-      primary
+      primary,
     );
 
     // Only one pole actually renders on the background. Mark the other as
@@ -310,19 +350,30 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
   contrastBlock.append(contrastLabel, contrastRows);
   updateContrastReadout();
 
-  colorsCard.append(colorsHint, colorsGrid, derivedColorsPreview, contrastBlock);
+  colorsCard.append(
+    colorsHint,
+    colorsGrid,
+    derivedColorsPreview,
+    contrastBlock,
+  );
 
   // ============================================================
   // Fonts Section
   // ============================================================
   const fontsCard = h('div', { class: 'editor-card stack' });
   fontsCard.append(
-    h('div', { class: 'field-label', text: t('settings.themes.fonts', 'Fonts') })
+    h('div', {
+      class: 'field-label',
+      text: t('settings.themes.fonts', 'Fonts'),
+    }),
   );
 
   const fontsHint = h('div', {
     class: 'help',
-    text: t('settings.themes.fontsHint', 'Choose fonts for headings and body text.'),
+    text: t(
+      'settings.themes.fontsHint',
+      'Choose fonts for headings and body text.',
+    ),
   });
 
   const fontsGrid = h('div', { class: 'theme-fonts-grid' });
@@ -397,18 +448,27 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
   saveBtn.addEventListener('click', async () => {
     // Validate
     if (!state.label.trim()) {
-      toast.error(t('settings.themes.errorNameRequired', 'Theme name is required.'));
+      toast.error(
+        t('settings.themes.errorNameRequired', 'Theme name is required.'),
+      );
       nameInput.focus();
       return;
     }
 
     if (!isValidHexColor(state.colors.primary)) {
-      toast.error(t('settings.themes.errorInvalidPrimary', 'Invalid primary color.'));
+      toast.error(
+        t('settings.themes.errorInvalidPrimary', 'Invalid primary color.'),
+      );
       return;
     }
 
     if (!isValidHexColor(state.colors.background)) {
-      toast.error(t('settings.themes.errorInvalidBackground', 'Invalid background color.'));
+      toast.error(
+        t(
+          'settings.themes.errorInvalidBackground',
+          'Invalid background color.',
+        ),
+      );
       return;
     }
 

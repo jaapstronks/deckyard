@@ -14,8 +14,7 @@ const ESCAPE_PLACEHOLDER = '\x00ES\x00';
 
 // CommonMark backslash escapes: a backslash before any ASCII punctuation
 // (backslash itself included) yields that literal punctuation character.
-const BACKSLASH_ESCAPE_RE =
-  /\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g;
+const BACKSLASH_ESCAPE_RE = /\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g;
 
 /**
  * Pull CommonMark backslash escapes out of `text` into placeholders so an
@@ -47,7 +46,7 @@ function extractCodeBlocks(text) {
     (_match, lang, code) => {
       blocks.push({ lang: lang || '', code: code.replace(/\n$/, '') });
       return `${CODE_BLOCK_PLACEHOLDER}${blocks.length - 1}${CODE_BLOCK_PLACEHOLDER}`;
-    }
+    },
   );
   return { text: result, blocks };
 }
@@ -58,13 +57,10 @@ function extractCodeBlocks(text) {
  */
 function extractInlineCode(text) {
   const codes = [];
-  const result = text.replace(
-    /`([^`\n]+)`/g,
-    (_match, code) => {
-      codes.push(code);
-      return `${INLINE_CODE_PLACEHOLDER}${codes.length - 1}${INLINE_CODE_PLACEHOLDER}`;
-    }
-  );
+  const result = text.replace(/`([^`\n]+)`/g, (_match, code) => {
+    codes.push(code);
+    return `${INLINE_CODE_PLACEHOLDER}${codes.length - 1}${INLINE_CODE_PLACEHOLDER}`;
+  });
   return { text: result, codes };
 }
 
@@ -74,13 +70,10 @@ function extractInlineCode(text) {
  */
 function extractMathBlocks(text) {
   const blocks = [];
-  const result = text.replace(
-    /\$\$([\s\S]*?)\$\$/g,
-    (_match, math) => {
-      blocks.push(math.trim());
-      return `${MATH_BLOCK_PLACEHOLDER}${blocks.length - 1}${MATH_BLOCK_PLACEHOLDER}`;
-    }
-  );
+  const result = text.replace(/\$\$([\s\S]*?)\$\$/g, (_match, math) => {
+    blocks.push(math.trim());
+    return `${MATH_BLOCK_PLACEHOLDER}${blocks.length - 1}${MATH_BLOCK_PLACEHOLDER}`;
+  });
   return { text: result, blocks };
 }
 
@@ -101,7 +94,7 @@ function extractInlineMath(text) {
       if (/^[\d.,]+$/.test(math)) return _match;
       maths.push(math);
       return `${INLINE_MATH_PLACEHOLDER}${maths.length - 1}${INLINE_MATH_PLACEHOLDER}`;
-    }
+    },
   );
   return { text: result, maths };
 }
@@ -122,7 +115,7 @@ function restorePlaceholders(html, placeholder, items, renderFn) {
       const item = items[parseInt(idx, 10)];
       if (item === undefined || item === null) return '';
       return renderFn(item, parseInt(idx, 10));
-    }
+    },
   );
 }
 
@@ -144,7 +137,10 @@ function restoreInlineMath(html, maths) {
   });
 }
 
-function inlineFormat(s, { inlineCodes = [], inlineMaths = [], escapes = [] } = {}) {
+function inlineFormat(
+  s,
+  { inlineCodes = [], inlineMaths = [], escapes = [] } = {},
+) {
   // `s` already carries escape placeholders (extracted after code/math so an
   // escaped marker like \* never triggers emphasis); they are restored as
   // literal characters at the very end.
@@ -161,10 +157,10 @@ function inlineFormat(s, { inlineCodes = [], inlineMaths = [], escapes = [] } = 
       const safeText = escapeHtml(text);
       const safeHref = escapeHtml(href);
       links.push(
-        `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">${safeText}</a>`
+        `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">${safeText}</a>`,
       );
       return `${LINK_PLACEHOLDER}${links.length - 1}${LINK_PLACEHOLDER}`;
-    }
+    },
   );
 
   // Bold + italic with `*`. Keep simple, non-nested.
@@ -173,7 +169,10 @@ function inlineFormat(s, { inlineCodes = [], inlineMaths = [], escapes = [] } = 
 
   // Bold + italic with `_`. CommonMark intraword rule: an underscore flanked
   // by word characters stays literal, so snake_case and file_names survive.
-  out = out.replace(/(?<![A-Za-z0-9])__([^_]+)__(?![A-Za-z0-9])/g, '<strong>$1</strong>');
+  out = out.replace(
+    /(?<![A-Za-z0-9])__([^_]+)__(?![A-Za-z0-9])/g,
+    '<strong>$1</strong>',
+  );
   out = out.replace(/(?<![A-Za-z0-9])_([^_]+)_(?![A-Za-z0-9])/g, '<em>$1</em>');
 
   // Restore links first (they may carry inline-code/math placeholders in their
@@ -182,7 +181,9 @@ function inlineFormat(s, { inlineCodes = [], inlineMaths = [], escapes = [] } = 
   out = restoreInlineCode(out, inlineCodes);
   out = restoreInlineMath(out, inlineMaths);
   // Literal escaped characters last (after every marker pass has run).
-  out = restorePlaceholders(out, ESCAPE_PLACEHOLDER, escapes, (ch) => escapeHtml(ch));
+  out = restorePlaceholders(out, ESCAPE_PLACEHOLDER, escapes, (ch) =>
+    escapeHtml(ch),
+  );
 
   return out;
 }
@@ -215,10 +216,7 @@ function isTableHeaderLine(line) {
   if (!s) return false;
   if (!s.includes('|')) return false;
   const cells = splitTableRow(s);
-  return (
-    cells.length >= 2 &&
-    cells.some((c) => c.trim().length > 0)
-  );
+  return cells.length >= 2 && cells.some((c) => c.trim().length > 0);
 }
 
 function isTableSeparatorLine(line) {
@@ -228,9 +226,7 @@ function isTableSeparatorLine(line) {
   if (!s.includes('|')) return false;
   const parts = splitTableRow(s);
   if (parts.length < 2) return false;
-  return parts.every((p) =>
-    /^:?-{3,}:?$/.test(p.replace(/\s+/g, ''))
-  );
+  return parts.every((p) => /^:?-{3,}:?$/.test(p.replace(/\s+/g, '')));
 }
 
 // A list item: leading indentation, a marker (-, *, + unordered, or "N."
@@ -312,10 +308,10 @@ export function markdownToSafeHtml(markdown) {
 
   // Helper regex patterns for placeholders
   const codeBlockPlaceholderRegex = new RegExp(
-    `^\\s*${CODE_BLOCK_PLACEHOLDER.replace(/\x00/g, '\\x00')}(\\d+)${CODE_BLOCK_PLACEHOLDER.replace(/\x00/g, '\\x00')}\\s*$`
+    `^\\s*${CODE_BLOCK_PLACEHOLDER.replace(/\x00/g, '\\x00')}(\\d+)${CODE_BLOCK_PLACEHOLDER.replace(/\x00/g, '\\x00')}\\s*$`,
   );
   const mathBlockPlaceholderRegex = new RegExp(
-    `^\\s*${MATH_BLOCK_PLACEHOLDER.replace(/\x00/g, '\\x00')}(\\d+)${MATH_BLOCK_PLACEHOLDER.replace(/\x00/g, '\\x00')}\\s*$`
+    `^\\s*${MATH_BLOCK_PLACEHOLDER.replace(/\x00/g, '\\x00')}(\\d+)${MATH_BLOCK_PLACEHOLDER.replace(/\x00/g, '\\x00')}\\s*$`,
   );
 
   while (i < lines.length) {
@@ -331,10 +327,16 @@ export function markdownToSafeHtml(markdown) {
       const idx = parseInt(codeMatch[1], 10);
       const block = codeBlocks[idx];
       if (block) {
-        const langClass = block.lang ? `language-${escapeHtml(block.lang)}` : '';
-        const langAttr = block.lang ? ` data-lang="${escapeHtml(block.lang)}"` : '';
+        const langClass = block.lang
+          ? `language-${escapeHtml(block.lang)}`
+          : '';
+        const langAttr = block.lang
+          ? ` data-lang="${escapeHtml(block.lang)}"`
+          : '';
         const escapedCode = escapeHtml(block.code);
-        blocks.push(`<pre class="md-code-block"${langAttr} dir="ltr"><code class="${langClass}">${escapedCode}</code></pre>`);
+        blocks.push(
+          `<pre class="md-code-block"${langAttr} dir="ltr"><code class="${langClass}">${escapedCode}</code></pre>`,
+        );
       }
       i += 1;
       continue;
@@ -346,7 +348,9 @@ export function markdownToSafeHtml(markdown) {
       const idx = parseInt(mathMatch[1], 10);
       const math = mathBlocks[idx];
       if (math !== undefined) {
-        blocks.push(`<div class="md-math-block" data-math="${escapeHtml(math)}">${escapeHtml(math)}</div>`);
+        blocks.push(
+          `<div class="md-math-block" data-math="${escapeHtml(math)}">${escapeHtml(math)}</div>`,
+        );
       }
       i += 1;
       continue;
@@ -373,10 +377,8 @@ export function markdownToSafeHtml(markdown) {
       ) {
         const cells = splitTableRow(lines[i]);
         // Normalize to header column count
-        const normalized = Array.from(
-          { length: colCount },
-          (_v, idx) =>
-            cells[idx] == null ? '' : String(cells[idx])
+        const normalized = Array.from({ length: colCount }, (_v, idx) =>
+          cells[idx] == null ? '' : String(cells[idx]),
         );
         rows.push(normalized);
         i += 1;
@@ -391,11 +393,11 @@ export function markdownToSafeHtml(markdown) {
           (r) =>
             `<tr>${r
               .map((c) => `<td dir="auto">${inlineFormat(c, inlineOpts)}</td>`)
-              .join('')}</tr>`
+              .join('')}</tr>`,
         )
         .join('')}</tbody>`;
       blocks.push(
-        `<div class="md-table-wrap"><table class="md-table">${thead}${tbody}</table></div>`
+        `<div class="md-table-wrap"><table class="md-table">${thead}${tbody}</table></div>`,
       );
       continue;
     }
@@ -406,7 +408,7 @@ export function markdownToSafeHtml(markdown) {
     if (/^\s*##\s+/.test(lines[i])) {
       const raw = lines[i].replace(/^\s*##\s+/, '');
       blocks.push(
-        `<h3 class="md-subheading" dir="auto">${inlineFormat(raw, inlineOpts)}</h3>`
+        `<h3 class="md-subheading" dir="auto">${inlineFormat(raw, inlineOpts)}</h3>`,
       );
       i += 1;
       continue;
@@ -426,9 +428,7 @@ export function markdownToSafeHtml(markdown) {
       const flushQuotePara = () => {
         const txt = qpara.join(' ').replace(/\s+/g, ' ').trim();
         if (txt) {
-          inner.push(
-            `<p dir="auto">${inlineFormat(txt, inlineOpts)}</p>`
-          );
+          inner.push(`<p dir="auto">${inlineFormat(txt, inlineOpts)}</p>`);
         }
         qpara = [];
       };
@@ -467,10 +467,7 @@ export function markdownToSafeHtml(markdown) {
       !BLOCKQUOTE_LINE_RE.test(lines[i]) &&
       !codeBlockPlaceholderRegex.test(lines[i]) &&
       !mathBlockPlaceholderRegex.test(lines[i]) &&
-      !(
-        isTableHeaderLine(lines[i]) &&
-        isTableSeparatorLine(lines[i + 1] || '')
-      )
+      !(isTableHeaderLine(lines[i]) && isTableSeparatorLine(lines[i + 1] || ''))
     ) {
       para.push(lines[i]);
       i += 1;
@@ -517,9 +514,8 @@ export function parseMarkdownTable(markdown) {
         String(lines[i] || '').includes('|')
       ) {
         const cells = splitTableRow(lines[i]);
-        const normalized = Array.from(
-          { length: colCount },
-          (_v, idx) => (cells[idx] == null ? '' : String(cells[idx]))
+        const normalized = Array.from({ length: colCount }, (_v, idx) =>
+          cells[idx] == null ? '' : String(cells[idx]),
         );
         rows.push(normalized);
         i += 1;

@@ -198,7 +198,7 @@ function initCountUpForMetric(metricEl, valueNumEl) {
           (entries) => {
             if (entries.some((e) => e.isIntersecting)) startIfVisible();
           },
-          { threshold: 0.15 }
+          { threshold: 0.15 },
         )
       : null;
   try {
@@ -249,8 +249,8 @@ export function initKpiMetricsSlides(rootEl) {
   for (const slideEl of slides) {
     const metrics = Array.from(
       slideEl.querySelectorAll(
-        '.kpi-metric:not(.is-empty) .kpi-value-num[data-kpi-countup="1"]'
-      )
+        '.kpi-metric:not(.is-empty) .kpi-value-num[data-kpi-countup="1"]',
+      ),
     );
     for (const valueNumEl of metrics) {
       const metricEl = valueNumEl.closest('.kpi-metric');

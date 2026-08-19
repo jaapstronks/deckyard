@@ -41,11 +41,26 @@
         "variant": "bullets",
         "layout": "two-column",
         "items": [
-          { "title": "Decks as data", "text": "A portable JSON format you can diff and version" },
-          { "title": "A typed slide system", "text": "Each slide type declares its own fields" },
-          { "title": "Inline editing", "text": "Click any text on the canvas to change it" },
-          { "title": "Themes", "text": "Swap the whole look without touching content" },
-          { "title": "No framework, no bundler", "text": "Vanilla JS modules on client and server" },
+          {
+            "title": "Decks as data",
+            "text": "A portable JSON format you can diff and version"
+          },
+          {
+            "title": "A typed slide system",
+            "text": "Each slide type declares its own fields"
+          },
+          {
+            "title": "Inline editing",
+            "text": "Click any text on the canvas to change it"
+          },
+          {
+            "title": "Themes",
+            "text": "Swap the whole look without touching content"
+          },
+          {
+            "title": "No framework, no bundler",
+            "text": "Vanilla JS modules on client and server"
+          },
           { "title": "Agent-friendly", "text": "The format is the API surface" }
         ],
         "background": "mist"

@@ -16,17 +16,25 @@ import {
  */
 
 const SSO_KEYS = [
-  'SSO_ENABLED', 'SSO_PROVIDER', 'SSO_ENFORCE',
-  'OIDC_ISSUER_URL', 'OIDC_CLIENT_ID', 'OIDC_CLIENT_SECRET',
-  'OIDC_REDIRECT_URI', 'OIDC_ALLOWED_DOMAINS', 'OIDC_AUTO_PROVISION',
-  'OIDC_DEFAULT_ROLE', 'OIDC_ADMIN_GROUPS',
+  'SSO_ENABLED',
+  'SSO_PROVIDER',
+  'SSO_ENFORCE',
+  'OIDC_ISSUER_URL',
+  'OIDC_CLIENT_ID',
+  'OIDC_CLIENT_SECRET',
+  'OIDC_REDIRECT_URI',
+  'OIDC_ALLOWED_DOMAINS',
+  'OIDC_AUTO_PROVISION',
+  'OIDC_DEFAULT_ROLE',
+  'OIDC_ADMIN_GROUPS',
 ];
 
 function withEnv(env, fn) {
   const saved = {};
   for (const k of SSO_KEYS) saved[k] = process.env[k];
   for (const k of SSO_KEYS) delete process.env[k];
-  for (const [k, v] of Object.entries(env)) if (v !== undefined) process.env[k] = v;
+  for (const [k, v] of Object.entries(env))
+    if (v !== undefined) process.env[k] = v;
   try {
     return fn();
   } finally {
@@ -94,7 +102,9 @@ test('fully configured → no error, enabled', () => {
 
 test('enforce requires enabled', () => {
   withEnv({ SSO_ENFORCE: 'true' }, () => assert.equal(isSsoEnforced(), false));
-  withEnv({ ...FULL, SSO_ENFORCE: 'true' }, () => assert.equal(isSsoEnforced(), true));
+  withEnv({ ...FULL, SSO_ENFORCE: 'true' }, () =>
+    assert.equal(isSsoEnforced(), true),
+  );
 });
 
 test('getOidcConfig parses lists, role, and auto-provision default', () => {
@@ -111,7 +121,7 @@ test('getOidcConfig parses lists, role, and auto-provision default', () => {
       assert.deepEqual(c.adminGroups, ['deckyard-admins', 'ops']);
       assert.equal(c.defaultRole, 'admin');
       assert.equal(c.autoProvision, true); // default when unset
-    }
+    },
   );
   withEnv({ ...FULL, OIDC_AUTO_PROVISION: 'false' }, () => {
     assert.equal(getOidcConfig().autoProvision, false);

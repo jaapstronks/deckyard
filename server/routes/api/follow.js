@@ -40,7 +40,9 @@ import {
  */
 const requireUuidId = (handler) => {
   const wrapped = (ctx, presentationId, ...rest) =>
-    isUuid(presentationId) ? handler(ctx, presentationId, ...rest) : notFound(ctx.res);
+    isUuid(presentationId)
+      ? handler(ctx, presentationId, ...rest)
+      : notFound(ctx.res);
   // Keep the sub-handler's name visible on the row (the dispatch tests pin it).
   Object.defineProperty(wrapped, 'name', { value: handler.name });
   return wrapped;
@@ -48,17 +50,50 @@ const requireUuidId = (handler) => {
 
 /** @type {import('../../utils/router.js').Route[]} */
 export const ROUTES = [
-  { pattern: /^\/api\/follow\/([^/]+)\/state$/, handler: requireUuidId(handleFollowState) },
-  { pattern: /^\/api\/follow\/([^/]+)\/interactions\/current$/, handler: requireUuidId(handleFollowInteractionsCurrent) },
-  { pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/state$/, handler: requireUuidId(handleFollowInteractionState) },
-  { pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/vote$/, handler: requireUuidId(handleFollowInteractionVote) },
-  { pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/feedback$/, handler: requireUuidId(handleFollowInteractionFeedback) },
-  { pattern: /^\/api\/follow\/([^/]+)\/questions$/, handler: requireUuidId(handleFollowQuestions) },
-  { pattern: /^\/api\/follow\/([^/]+)\/questions\/events$/, handler: requireUuidId(handleFollowQuestionsEvents) },
-  { pattern: /^\/api\/follow\/([^/]+)\/questions\/([^/]+)\/upvote$/, handler: requireUuidId(handleFollowUpvote) },
-  { pattern: /^\/api\/follow\/([^/]+)\/questions\/([^/]+)\/cancel$/, handler: requireUuidId(handleFollowCancel) },
-  { pattern: /^\/api\/follow\/([^/]+)\/presentation$/, handler: requireUuidId(handleFollowPresentation) },
-  { pattern: /^\/api\/follow\/([^/]+)\/events$/, handler: requireUuidId(handleFollowEvents) },
+  {
+    pattern: /^\/api\/follow\/([^/]+)\/state$/,
+    handler: requireUuidId(handleFollowState),
+  },
+  {
+    pattern: /^\/api\/follow\/([^/]+)\/interactions\/current$/,
+    handler: requireUuidId(handleFollowInteractionsCurrent),
+  },
+  {
+    pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/state$/,
+    handler: requireUuidId(handleFollowInteractionState),
+  },
+  {
+    pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/vote$/,
+    handler: requireUuidId(handleFollowInteractionVote),
+  },
+  {
+    pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/feedback$/,
+    handler: requireUuidId(handleFollowInteractionFeedback),
+  },
+  {
+    pattern: /^\/api\/follow\/([^/]+)\/questions$/,
+    handler: requireUuidId(handleFollowQuestions),
+  },
+  {
+    pattern: /^\/api\/follow\/([^/]+)\/questions\/events$/,
+    handler: requireUuidId(handleFollowQuestionsEvents),
+  },
+  {
+    pattern: /^\/api\/follow\/([^/]+)\/questions\/([^/]+)\/upvote$/,
+    handler: requireUuidId(handleFollowUpvote),
+  },
+  {
+    pattern: /^\/api\/follow\/([^/]+)\/questions\/([^/]+)\/cancel$/,
+    handler: requireUuidId(handleFollowCancel),
+  },
+  {
+    pattern: /^\/api\/follow\/([^/]+)\/presentation$/,
+    handler: requireUuidId(handleFollowPresentation),
+  },
+  {
+    pattern: /^\/api\/follow\/([^/]+)\/events$/,
+    handler: requireUuidId(handleFollowEvents),
+  },
 ];
 
 /**
@@ -66,5 +101,5 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').PublicContext} ctx
  */
 export const handleFollowPublic = withErrorHandler('follow', (ctx) =>
-  dispatchRoutes(ROUTES, ctx)
+  dispatchRoutes(ROUTES, ctx),
 );

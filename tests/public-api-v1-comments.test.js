@@ -26,7 +26,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 process.env.STORAGE_MODE = 'postgres';
 process.env.APP_URL = 'https://deck.example';
@@ -40,8 +42,10 @@ const FOREIGN_DECK_ID = 'deck-private-of-someone-else';
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
-const { handleComments } = await import('../server/routes/public-api/v1/comments.js');
-const { MAX_COMMENT_LENGTH } = await import('../server/routes/api/presentations/comments-shared.js');
+const { handleComments } =
+  await import('../server/routes/public-api/v1/comments.js');
+const { MAX_COMMENT_LENGTH } =
+  await import('../server/routes/api/presentations/comments-shared.js');
 
 /**
  * Install a freshly seeded double and point the storage facade at Postgres.
@@ -52,8 +56,16 @@ async function installDb() {
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
     presentations: [
       deckRow({ id: DECK_ID, owner: KEY_OWNER, visibility: 'private' }),
-      deckRow({ id: ORG_DECK_ID, owner: 'boss@example.com', visibility: 'organization' }),
-      deckRow({ id: FOREIGN_DECK_ID, owner: 'someone-else@example.com', visibility: 'private' }),
+      deckRow({
+        id: ORG_DECK_ID,
+        owner: 'boss@example.com',
+        visibility: 'organization',
+      }),
+      deckRow({
+        id: FOREIGN_DECK_ID,
+        owner: 'someone-else@example.com',
+        visibility: 'private',
+      }),
     ],
     presentation_comments: [
       commentRow({
@@ -62,7 +74,11 @@ async function installDb() {
         slide_id: 'slide-1',
         body: 'Please rephrase this title',
         created_at: '2026-08-02T10:00:00.000Z',
-        slide_snapshot: { id: 'slide-1', type: 'title-slide', content: { title: 'Hoi' } },
+        slide_snapshot: {
+          id: 'slide-1',
+          type: 'title-slide',
+          content: { title: 'Hoi' },
+        },
       }),
       commentRow({
         id: 'c-reply',
@@ -109,8 +125,18 @@ function deckRow({ id, owner, visibility }) {
     settings: {},
     i18n: null,
     slides: [
-      { id: 'slide-1', type: 'title-slide', content: { title: 'Hoi' }, parentId: null },
-      { id: 'slide-2', type: 'content-slide', content: { title: 'Twee' }, parentId: null },
+      {
+        id: 'slide-1',
+        type: 'title-slide',
+        content: { title: 'Hoi' },
+        parentId: null,
+      },
+      {
+        id: 'slide-2',
+        type: 'content-slide',
+        content: { title: 'Twee' },
+        parentId: null,
+      },
     ],
     published: null,
     created_at: '2026-07-01T00:00:00.000Z',
@@ -165,8 +191,14 @@ function commentRow({
  * @param {string[]} [options.permissions] - API key permissions
  * @returns {Object} ctx, with `res.statusCode` / `res.body` recorded
  */
-function makeCtx(method, pathname, { body = null, permissions = ['comments:read', 'comments:write'] } = {}) {
-  const req = Readable.from(body === null ? [] : [Buffer.from(JSON.stringify(body))]);
+function makeCtx(
+  method,
+  pathname,
+  { body = null, permissions = ['comments:read', 'comments:write'] } = {},
+) {
+  const req = Readable.from(
+    body === null ? [] : [Buffer.from(JSON.stringify(body))],
+  );
   req.method = method;
   req.headers = { 'content-type': 'application/json' };
 
@@ -174,12 +206,16 @@ function makeCtx(method, pathname, { body = null, permissions = ['comments:read'
     statusCode: null,
     body: null,
     headers: {},
-    setHeader(name, value) { this.headers[name] = value; },
+    setHeader(name, value) {
+      this.headers[name] = value;
+    },
     writeHead(status, headers) {
       this.statusCode = status;
       Object.assign(this.headers, headers);
     },
-    end(payload) { this.body = payload ? JSON.parse(payload) : null; },
+    end(payload) {
+      this.body = payload ? JSON.parse(payload) : null;
+    },
   };
 
   return {
@@ -187,9 +223,24 @@ function makeCtx(method, pathname, { body = null, permissions = ['comments:read'
     res,
     url: new URL(`http://localhost${pathname}`),
     repoRoot: process.cwd(),
-    storageScope: { repoRoot: process.cwd(), organizationId: ORG, actorEmail: KEY_OWNER },
-    apiKey: { id: 'key-1', tier: 'free', ownerEmail: KEY_OWNER, permissions, organizationId: ORG },
-    authedUser: { id: null, email: KEY_OWNER, role: 'user', organizationId: ORG },
+    storageScope: {
+      repoRoot: process.cwd(),
+      organizationId: ORG,
+      actorEmail: KEY_OWNER,
+    },
+    apiKey: {
+      id: 'key-1',
+      tier: 'free',
+      ownerEmail: KEY_OWNER,
+      permissions,
+      organizationId: ORG,
+    },
+    authedUser: {
+      id: null,
+      email: KEY_OWNER,
+      role: 'user',
+      organizationId: ORG,
+    },
   };
 }
 
@@ -211,30 +262,56 @@ test('GET /comments lists top-level comments with replies, context and editUrl',
 
   const open = body.comments.find((c) => c.id === 'c-open');
   assert.ok(open, 'the open comment is listed');
-  assert.deepEqual(open.replies.map((r) => r.id), ['c-reply']);
-  assert.deepEqual(open.slide, {
-    deleted: false,
-    index: 0,
-    number: 1,
-    type: 'title-slide',
-    title: 'Hoi',
-  }, 'current slide context rides along');
-  assert.deepEqual(open.slideSnapshot, {
-    id: 'slide-1',
-    type: 'title-slide',
-    content: { title: 'Hoi' },
-  }, 'the create-time snapshot is returned as an object');
-  assert.equal(open.editUrl, `https://deck.example/app/${DECK_ID}?slideId=slide-1`);
-  assert.equal(open.replies[0].editUrl, `https://deck.example/app/${DECK_ID}?slideId=slide-1`);
+  assert.deepEqual(
+    open.replies.map((r) => r.id),
+    ['c-reply'],
+  );
+  assert.deepEqual(
+    open.slide,
+    {
+      deleted: false,
+      index: 0,
+      number: 1,
+      type: 'title-slide',
+      title: 'Hoi',
+    },
+    'current slide context rides along',
+  );
+  assert.deepEqual(
+    open.slideSnapshot,
+    {
+      id: 'slide-1',
+      type: 'title-slide',
+      content: { title: 'Hoi' },
+    },
+    'the create-time snapshot is returned as an object',
+  );
+  assert.equal(
+    open.editUrl,
+    `https://deck.example/app/${DECK_ID}?slideId=slide-1`,
+  );
+  assert.equal(
+    open.replies[0].editUrl,
+    `https://deck.example/app/${DECK_ID}?slideId=slide-1`,
+  );
 });
 
 test('GET /comments?status= filters and validates the status', async () => {
   await installDb();
-  const resolved = makeCtx('GET', `/api/v1/presentations/${DECK_ID}/comments?status=resolved`);
+  const resolved = makeCtx(
+    'GET',
+    `/api/v1/presentations/${DECK_ID}/comments?status=resolved`,
+  );
   await handleComments(resolved);
-  assert.deepEqual(resolved.res.body.comments.map((c) => c.id), ['c-resolved']);
+  assert.deepEqual(
+    resolved.res.body.comments.map((c) => c.id),
+    ['c-resolved'],
+  );
 
-  const invalid = makeCtx('GET', `/api/v1/presentations/${DECK_ID}/comments?status=nonsense`);
+  const invalid = makeCtx(
+    'GET',
+    `/api/v1/presentations/${DECK_ID}/comments?status=nonsense`,
+  );
   await handleComments(invalid);
   assert.equal(invalid.res.statusCode, 400);
 });
@@ -243,23 +320,35 @@ test('GET /comments?since= filters on creation time and validates the date', asy
   await installDb();
   const since = makeCtx(
     'GET',
-    `/api/v1/presentations/${DECK_ID}/comments?since=2026-08-02T00:00:00Z`
+    `/api/v1/presentations/${DECK_ID}/comments?since=2026-08-02T00:00:00Z`,
   );
   await handleComments(since);
   assert.equal(since.res.statusCode, 200);
-  assert.deepEqual(since.res.body.comments.map((c) => c.id), ['c-open']);
+  assert.deepEqual(
+    since.res.body.comments.map((c) => c.id),
+    ['c-open'],
+  );
   assert.equal(since.res.body.since, '2026-08-02T00:00:00.000Z');
 
-  const invalid = makeCtx('GET', `/api/v1/presentations/${DECK_ID}/comments?since=not-a-date`);
+  const invalid = makeCtx(
+    'GET',
+    `/api/v1/presentations/${DECK_ID}/comments?since=not-a-date`,
+  );
   await handleComments(invalid);
   assert.equal(invalid.res.statusCode, 400);
 });
 
 test('GET /comments?slideId= keeps only comments on that slide', async () => {
   await installDb();
-  const ctx = makeCtx('GET', `/api/v1/presentations/${DECK_ID}/comments?slideId=slide-1`);
+  const ctx = makeCtx(
+    'GET',
+    `/api/v1/presentations/${DECK_ID}/comments?slideId=slide-1`,
+  );
   await handleComments(ctx);
-  assert.deepEqual(ctx.res.body.comments.map((c) => c.id), ['c-open']);
+  assert.deepEqual(
+    ctx.res.body.comments.map((c) => c.id),
+    ['c-open'],
+  );
 });
 
 test('GET /comments without the comments:read permission is refused with 403', async () => {
@@ -273,7 +362,10 @@ test('GET /comments without the comments:read permission is refused with 403', a
 
 test("GET /comments on someone else's private deck is refused with 403", async () => {
   await installDb();
-  const ctx = makeCtx('GET', `/api/v1/presentations/${FOREIGN_DECK_ID}/comments`);
+  const ctx = makeCtx(
+    'GET',
+    `/api/v1/presentations/${FOREIGN_DECK_ID}/comments`,
+  );
   await handleComments(ctx);
   assert.equal(ctx.res.statusCode, 403);
 });
@@ -309,14 +401,19 @@ test('POST /comments creates a comment as the key owner and answers 201', async 
     type: 'content-slide',
     title: 'Twee',
   });
-  assert.equal(comment.editUrl, `https://deck.example/app/${DECK_ID}?slideId=slide-2`);
+  assert.equal(
+    comment.editUrl,
+    `https://deck.example/app/${DECK_ID}?slideId=slide-2`,
+  );
   assert.deepEqual(
     comment.slideSnapshot,
     { id: 'slide-2', type: 'content-slide', content: { title: 'Twee' } },
-    'a snapshot of the commented slide is captured at create time'
+    'a snapshot of the commented slide is captured at create time',
   );
 
-  const stored = db.__tables.presentation_comments.find((row) => row.id === comment.id);
+  const stored = db.__tables.presentation_comments.find(
+    (row) => row.id === comment.id,
+  );
   assert.ok(stored, 'the comment row was written');
   assert.equal(stored.organization_id, ORG);
 });
@@ -331,9 +428,13 @@ test('POST /comments with a parentId creates a reply, 404 for an unknown parent'
   assert.equal(reply.res.body.comment.parentId, 'c-open');
 
   // A parent on a *different* presentation is not a valid anchor either.
-  const wrongDeck = makeCtx('POST', `/api/v1/presentations/${DECK_ID}/comments`, {
-    body: { body: 'A reply', parentId: 'c-on-org-deck' },
-  });
+  const wrongDeck = makeCtx(
+    'POST',
+    `/api/v1/presentations/${DECK_ID}/comments`,
+    {
+      body: { body: 'A reply', parentId: 'c-on-org-deck' },
+    },
+  );
   await handleComments(wrongDeck);
   assert.equal(wrongDeck.res.statusCode, 404);
 });
@@ -341,9 +442,15 @@ test('POST /comments with a parentId creates a reply, 404 for an unknown parent'
 test('POST /comments validates the body text', async () => {
   await installDb();
   for (const body of [null, {}, { body: '' }, { body: '   ' }]) {
-    const ctx = makeCtx('POST', `/api/v1/presentations/${DECK_ID}/comments`, { body });
+    const ctx = makeCtx('POST', `/api/v1/presentations/${DECK_ID}/comments`, {
+      body,
+    });
     await handleComments(ctx);
-    assert.equal(ctx.res.statusCode, 400, `${JSON.stringify(body)} must be refused`);
+    assert.equal(
+      ctx.res.statusCode,
+      400,
+      `${JSON.stringify(body)} must be refused`,
+    );
   }
 
   const tooLong = makeCtx('POST', `/api/v1/presentations/${DECK_ID}/comments`, {
@@ -417,7 +524,11 @@ test('POST /status validates the status value', async () => {
   for (const body of [null, {}, { status: 'archived' }]) {
     const ctx = makeCtx('POST', '/api/v1/comments/c-open/status', { body });
     await handleComments(ctx);
-    assert.equal(ctx.res.statusCode, 400, `${JSON.stringify(body)} must be refused`);
+    assert.equal(
+      ctx.res.statusCode,
+      400,
+      `${JSON.stringify(body)} must be refused`,
+    );
   }
 });
 

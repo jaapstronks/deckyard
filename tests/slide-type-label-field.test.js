@@ -21,12 +21,12 @@ test('every declared labelField names a field on its own type', () => {
     assert.equal(
       typeof def.labelField,
       'string',
-      `${name}: labelField must be a string`
+      `${name}: labelField must be a string`,
     );
     const keys = (def.fields || []).map((f) => f.key);
     assert.ok(
       keys.includes(def.labelField),
-      `${name}: labelField '${def.labelField}' is not one of its fields (${keys.join(', ')})`
+      `${name}: labelField '${def.labelField}' is not one of its fields (${keys.join(', ')})`,
     );
   }
 });

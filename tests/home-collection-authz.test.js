@@ -26,12 +26,23 @@ describe('belongsInCollection', () => {
   it('shows private decks to their owner and creator', () => {
     const owned = { id: 'p1', ownerEmail: OWNER, visibility: 'private' };
     const created = { id: 'p2', createdBy: OWNER, visibility: 'private' };
-    assert.equal(belongsInCollection({ user: { email: OWNER }, pres: owned }), true);
-    assert.equal(belongsInCollection({ user: { email: OWNER }, pres: created }), true);
+    assert.equal(
+      belongsInCollection({ user: { email: OWNER }, pres: owned }),
+      true,
+    );
+    assert.equal(
+      belongsInCollection({ user: { email: OWNER }, pres: created }),
+      true,
+    );
   });
 
   it('hides private decks from other users', () => {
-    const pres = { id: 'p1', ownerEmail: OWNER, createdBy: OWNER, visibility: 'private' };
+    const pres = {
+      id: 'p1',
+      ownerEmail: OWNER,
+      createdBy: OWNER,
+      visibility: 'private',
+    };
     assert.equal(belongsInCollection({ user: { email: OTHER }, pres }), false);
   });
 
@@ -42,12 +53,25 @@ describe('belongsInCollection', () => {
   });
 
   it('matches owner email case-insensitively', () => {
-    const pres = { id: 'p1', ownerEmail: 'Owner@Example.com', visibility: 'private' };
+    const pres = {
+      id: 'p1',
+      ownerEmail: 'Owner@Example.com',
+      visibility: 'private',
+    };
     assert.equal(belongsInCollection({ user: { email: OWNER }, pres }), true);
   });
 
   it('rejects missing user or presentation', () => {
-    assert.equal(belongsInCollection({ user: null, pres: { id: 'x', visibility: 'private' } }), false);
-    assert.equal(belongsInCollection({ user: { email: OWNER }, pres: null }), false);
+    assert.equal(
+      belongsInCollection({
+        user: null,
+        pres: { id: 'x', visibility: 'private' },
+      }),
+      false,
+    );
+    assert.equal(
+      belongsInCollection({ user: { email: OWNER }, pres: null }),
+      false,
+    );
   });
 });

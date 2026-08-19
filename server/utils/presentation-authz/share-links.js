@@ -2,7 +2,12 @@
  * Share link authorization functions.
  */
 
-import { canRead, canComment, canWrite, isValidPermission } from '../../../shared/constants/permissions.js';
+import {
+  canRead,
+  canComment,
+  canWrite,
+  isValidPermission,
+} from '../../../shared/constants/permissions.js';
 
 /**
  * Check if a share link grants read access.

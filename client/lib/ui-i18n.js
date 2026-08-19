@@ -48,7 +48,16 @@ export function clearSessionLocaleOverride() {
 }
 
 // Component files that make up the full translation dictionary
-const I18N_COMPONENTS = ['auth', 'common', 'editor', 'list', 'presenter', 'settings', 'share', 'slide-types'];
+const I18N_COMPONENTS = [
+  'auth',
+  'common',
+  'editor',
+  'list',
+  'presenter',
+  'settings',
+  'share',
+  'slide-types',
+];
 
 export function normalizeUiLocale(v) {
   const s = String(v || '').trim();
@@ -128,7 +137,10 @@ export async function resolveInitialUiLocale(search) {
     const manifest = await fetchUiLocaleManifest();
     const locales = Array.isArray(manifest?.locales) ? manifest.locales : [];
     const match = locales.find(
-      (l) => String(l?.id || '').trim().toLowerCase() === param.toLowerCase()
+      (l) =>
+        String(l?.id || '')
+          .trim()
+          .toLowerCase() === param.toLowerCase(),
     );
     if (match) {
       const id = String(match.id).trim();
@@ -152,11 +164,7 @@ export function t(key, fallback, vars) {
   const k = String(key || '').trim();
   if (!k) return '';
   const has = dict && typeof dict === 'object' && typeof dict[k] === 'string';
-  const raw = has
-    ? dict[k]
-    : typeof fallback === 'string'
-      ? fallback
-      : k;
+  const raw = has ? dict[k] : typeof fallback === 'string' ? fallback : k;
   return interpolate(raw, vars);
 }
 
@@ -199,11 +207,15 @@ export async function setUiLocale(locale, { persist = true } = {}) {
 
   try {
     const results = await Promise.allSettled(
-      I18N_COMPONENTS.map((comp) => fetchJson(`${basePath}/${comp}.json`))
+      I18N_COMPONENTS.map((comp) => fetchJson(`${basePath}/${comp}.json`)),
     );
 
     for (const result of results) {
-      if (result.status === 'fulfilled' && result.value && typeof result.value === 'object') {
+      if (
+        result.status === 'fulfilled' &&
+        result.value &&
+        typeof result.value === 'object'
+      ) {
         Object.assign(merged, result.value);
       }
     }
@@ -218,7 +230,7 @@ export async function setUiLocale(locale, { persist = true } = {}) {
     // Only notify when the locale changes; otherwise we risk render loops.
     if (prev !== next) {
       window.dispatchEvent(
-        new CustomEvent('ui-locale-changed', { detail: { locale: next } })
+        new CustomEvent('ui-locale-changed', { detail: { locale: next } }),
       );
     }
   } catch {

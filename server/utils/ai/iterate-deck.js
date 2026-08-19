@@ -21,27 +21,65 @@ import { prompts } from './prompts/index.js';
  */
 const COMMAND_PATTERNS = {
   punchier: {
-    keywords: ['punchier', 'shorter', 'concise', 'tighter', 'brevity', 'trim', 'shorten'],
+    keywords: [
+      'punchier',
+      'shorter',
+      'concise',
+      'tighter',
+      'brevity',
+      'trim',
+      'shorten',
+    ],
     strategy: 'compress',
     description: 'Make content more concise and impactful',
   },
   split: {
-    keywords: ['split', 'break up', 'divide', 'too long', 'too dense', 'too much'],
+    keywords: [
+      'split',
+      'break up',
+      'divide',
+      'too long',
+      'too dense',
+      'too much',
+    ],
     strategy: 'split',
     description: 'Split an overloaded slide into multiple slides',
   },
   variety: {
-    keywords: ['variety', 'visual', 'diverse', 'mix up', 'different types', 'boring', 'repetitive'],
+    keywords: [
+      'variety',
+      'visual',
+      'diverse',
+      'mix up',
+      'different types',
+      'boring',
+      'repetitive',
+    ],
     strategy: 'diversify',
     description: 'Suggest type conversions for visual diversity',
   },
   expand: {
-    keywords: ['expand', 'more detail', 'elaborate', 'add more', 'flesh out', 'deeper'],
+    keywords: [
+      'expand',
+      'more detail',
+      'elaborate',
+      'add more',
+      'flesh out',
+      'deeper',
+    ],
     strategy: 'expand',
     description: 'Add more detail or content to a slide',
   },
   retype: {
-    keywords: ['convert', 'change type', 'retype', 'different layout', 'as a list', 'as cards', 'as blocks'],
+    keywords: [
+      'convert',
+      'change type',
+      'retype',
+      'different layout',
+      'as a list',
+      'as cards',
+      'as blocks',
+    ],
     strategy: 'retype',
     description: 'Convert a slide to a different type',
   },
@@ -56,7 +94,7 @@ function detectCommandPattern(command) {
   let bestScore = 0;
 
   for (const [name, pattern] of Object.entries(COMMAND_PATTERNS)) {
-    const score = pattern.keywords.filter(kw => lower.includes(kw)).length;
+    const score = pattern.keywords.filter((kw) => lower.includes(kw)).length;
     if (score > bestScore) {
       bestScore = score;
       bestMatch = name;
@@ -73,8 +111,9 @@ function detectTargetSlide(command, slides) {
   const lower = command.toLowerCase();
 
   // Match "slide 3", "slide #3", "the 3rd slide"
-  const indexMatch = lower.match(/slide\s*#?\s*(\d+)/i)
-    || lower.match(/(\d+)(?:st|nd|rd|th)\s+slide/i);
+  const indexMatch =
+    lower.match(/slide\s*#?\s*(\d+)/i) ||
+    lower.match(/(\d+)(?:st|nd|rd|th)\s+slide/i);
   if (indexMatch) {
     const idx = parseInt(indexMatch[1], 10) - 1; // 1-indexed to 0-indexed
     if (idx >= 0 && idx < slides.length) return idx;
@@ -84,9 +123,10 @@ function detectTargetSlide(command, slides) {
   const typeMatch = lower.match(/the\s+([\w-]+)\s+slide/i);
   if (typeMatch) {
     const typeName = typeMatch[1].toLowerCase();
-    const idx = slides.findIndex(s =>
-      s.type?.toLowerCase().includes(typeName) ||
-      s.content?.title?.toLowerCase().includes(typeName)
+    const idx = slides.findIndex(
+      (s) =>
+        s.type?.toLowerCase().includes(typeName) ||
+        s.content?.title?.toLowerCase().includes(typeName),
     );
     if (idx >= 0) return idx;
   }
@@ -100,7 +140,11 @@ function detectTargetSlide(command, slides) {
 function summarizeSlide(slide, index) {
   const content = slide.content || {};
   const title = content.title || content.tagline || '(no title)';
-  const itemCount = content.items?.length || content.rows?.length || content.metrics?.length || '';
+  const itemCount =
+    content.items?.length ||
+    content.rows?.length ||
+    content.metrics?.length ||
+    '';
   const extra = itemCount ? ` [${itemCount} items]` : '';
   return `[${index + 1}] ${slide.type}: "${title}"${extra}`;
 }
@@ -118,16 +162,23 @@ function summarizeSlide(slide, index) {
  * @param {Array} options.deckContext - Brief summary of surrounding slides for context
  * @returns {Promise<Object|Array>} Modified slide(s)
  */
-export async function iterateSlide(slide, command, {
-  lang = 'en',
-  vendor = null,
-  disabledSlideTypes = [],
-  customSlideTypes = [],
-  deckContext = [],
-} = {}) {
+export async function iterateSlide(
+  slide,
+  command,
+  {
+    lang = 'en',
+    vendor = null,
+    disabledSlideTypes = [],
+    customSlideTypes = [],
+    deckContext = [],
+  } = {},
+) {
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
   const strategy = detectCommandPattern(command);
-  const catalogPrompt = buildPhase2CatalogPrompt({ disabledSlideTypes, customSlideTypes });
+  const catalogPrompt = buildPhase2CatalogPrompt({
+    disabledSlideTypes,
+    customSlideTypes,
+  });
 
   const systemPrompt = prompts.buildSlideIterationPrompt({
     command,
@@ -171,7 +222,7 @@ ${JSON.stringify({ type: slide.type, content: slide.content }, null, 2)}`;
       result = obj?.slides || (obj ? [obj] : []);
     }
     // Validate each split slide
-    return result.map(s => validateAndFixSlide(s));
+    return result.map((s) => validateAndFixSlide(s));
   } else {
     result = extractJsonObject(rawResponse);
     return validateAndFixSlide(result);
@@ -186,15 +237,22 @@ ${JSON.stringify({ type: slide.type, content: slide.content }, null, 2)}`;
  * @param {Object} options
  * @returns {Promise<Object>} Modification plan with changes and summary
  */
-export async function iterateDeck(deck, command, {
-  lang = 'en',
-  vendor = null,
-  disabledSlideTypes = [],
-  customSlideTypes = [],
-} = {}) {
+export async function iterateDeck(
+  deck,
+  command,
+  {
+    lang = 'en',
+    vendor = null,
+    disabledSlideTypes = [],
+    customSlideTypes = [],
+  } = {},
+) {
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
   const strategy = detectCommandPattern(command);
-  const catalogPrompt = buildPhase2CatalogPrompt({ disabledSlideTypes, customSlideTypes });
+  const catalogPrompt = buildPhase2CatalogPrompt({
+    disabledSlideTypes,
+    customSlideTypes,
+  });
 
   const systemPrompt = prompts.buildDeckIterationPrompt({
     command,
@@ -212,11 +270,15 @@ SLIDE OVERVIEW:
 ${slideSummaries.join('\n')}
 
 FULL SLIDE DATA:
-${JSON.stringify(slides.map((s, i) => ({
-  index: i,
-  type: s.type,
-  content: s.content,
-})), null, 2)}`;
+${JSON.stringify(
+  slides.map((s, i) => ({
+    index: i,
+    type: s.type,
+    content: s.content,
+  })),
+  null,
+  2,
+)}`;
 
   const messages = [
     { role: 'system', content: systemPrompt },
@@ -243,7 +305,7 @@ ${JSON.stringify(slides.map((s, i) => ({
       mod.slide = validateAndFixSlide(mod.slide);
     }
     if (mod.action === 'split' && mod.slides) {
-      mod.slides = mod.slides.map(s => validateAndFixSlide(s));
+      mod.slides = mod.slides.map((s) => validateAndFixSlide(s));
     }
   }
 
@@ -261,7 +323,9 @@ export function applyIterationPlan(deck, plan) {
   if (!plan?.modifications?.length) return deck;
 
   const newDeck = { ...deck, slides: [...deck.slides] };
-  const mods = [...plan.modifications].sort((a, b) => (b.slideIndex || 0) - (a.slideIndex || 0));
+  const mods = [...plan.modifications].sort(
+    (a, b) => (b.slideIndex || 0) - (a.slideIndex || 0),
+  );
 
   for (const mod of mods) {
     const idx = mod.slideIndex;
@@ -350,22 +414,26 @@ export async function iteratePresentation(deck, command, options = {}) {
     if (Array.isArray(result)) {
       // Split
       plan = {
-        modifications: [{
-          slideIndex: targetIndex,
-          action: 'split',
-          slides: result,
-          reasoning: result[0]?.reasoning || command,
-        }],
+        modifications: [
+          {
+            slideIndex: targetIndex,
+            action: 'split',
+            slides: result,
+            reasoning: result[0]?.reasoning || command,
+          },
+        ],
         summary: `Split slide ${targetIndex + 1} into ${result.length} slides.`,
       };
     } else {
       plan = {
-        modifications: [{
-          slideIndex: targetIndex,
-          action: 'replace',
-          slide: result,
-          reasoning: result?.reasoning || command,
-        }],
+        modifications: [
+          {
+            slideIndex: targetIndex,
+            action: 'replace',
+            slide: result,
+            reasoning: result?.reasoning || command,
+          },
+        ],
         summary: `Modified slide ${targetIndex + 1}.`,
       };
     }

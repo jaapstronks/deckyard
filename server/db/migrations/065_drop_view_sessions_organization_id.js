@@ -32,7 +32,9 @@
 import { sql } from 'kysely';
 
 export const up = async (db) => {
-  await sql`ALTER TABLE view_sessions DROP COLUMN IF EXISTS organization_id`.execute(db);
+  await sql`ALTER TABLE view_sessions DROP COLUMN IF EXISTS organization_id`.execute(
+    db,
+  );
 };
 
 export const down = async (db) => {

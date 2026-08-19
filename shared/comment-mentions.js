@@ -46,7 +46,9 @@ export function safeLinkUrl(url) {
  * @returns {string}
  */
 export function linkMarkup({ label, url }) {
-  const safeLabel = String(label || '').replace(/[[\]\n]/g, ' ').trim();
+  const safeLabel = String(label || '')
+    .replace(/[[\]\n]/g, ' ')
+    .trim();
   return `[${safeLabel}](${String(url || '').trim()})`;
 }
 
@@ -86,7 +88,11 @@ export function splitMentionSegments(body) {
     if (match.index > lastIndex) {
       segments.push({ type: 'text', text: text.slice(lastIndex, match.index) });
     }
-    segments.push({ type: 'mention', name: match[1], email: match[2].toLowerCase() });
+    segments.push({
+      type: 'mention',
+      name: match[1],
+      email: match[2].toLowerCase(),
+    });
     lastIndex = match.index + match[0].length;
   }
   if (lastIndex < text.length) {
@@ -154,6 +160,8 @@ export function stripMentionMarkup(body) {
  * @returns {string}
  */
 export function mentionMarkup({ name, email }) {
-  const safeName = String(name || email || '').replace(/[[\]\n]/g, ' ').trim();
+  const safeName = String(name || email || '')
+    .replace(/[[\]\n]/g, ' ')
+    .trim();
   return `@[${safeName}](user:${String(email || '').trim()})`;
 }

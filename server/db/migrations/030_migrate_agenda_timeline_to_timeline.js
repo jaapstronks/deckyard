@@ -134,7 +134,9 @@ export const down = async (db) => {
   // after the migration, so we only convert slides that look like they were agenda-timeline
 
   // Create reverse transform function
-  await sql.raw(`
+  await sql
+    .raw(
+      `
     CREATE OR REPLACE FUNCTION pg_temp.reverse_transform_items(items jsonb)
     RETURNS jsonb AS $$
     SELECT COALESCE(
@@ -149,7 +151,9 @@ export const down = async (db) => {
     )
     FROM jsonb_array_elements(COALESCE(items, '[]'::jsonb)) AS item
     $$ LANGUAGE sql IMMUTABLE;
-  `).execute(db);
+  `,
+    )
+    .execute(db);
 
   // 1. Update presentations.slides
   await sql`

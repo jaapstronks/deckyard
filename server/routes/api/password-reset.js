@@ -14,7 +14,13 @@ import {
   getUserFromRequestAsync,
   setSessionCookie,
 } from '../../auth/auth.js';
-import { serveJson, badRequest, unauthorized, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import {
+  serveJson,
+  badRequest,
+  unauthorized,
+  requireJsonBody,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { getString, getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
 import { getClientIp, createStorageScope } from '../../utils/context.js';
@@ -45,7 +51,8 @@ import { getUserByEmailGlobal } from '../../storage/identity.js';
  */
 function buildResetUrl(req, token) {
   const host = req.headers?.host || 'localhost:3000';
-  const protocol = req.headers?.['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  const protocol =
+    req.headers?.['x-forwarded-proto'] === 'https' ? 'https' : 'http';
   return `${protocol}://${host}/reset-password?token=${encodeURIComponent(token)}`;
 }
 
@@ -73,7 +80,10 @@ function resetCtx(repoRoot) {
 // ============================================================
 async function handleForgotPassword({ repoRoot, req, res }) {
   if (!authEnabled()) {
-    return badRequest(res, t('api.error.authNotEnabled', 'Authentication is not enabled'));
+    return badRequest(
+      res,
+      t('api.error.authNotEnabled', 'Authentication is not enabled'),
+    );
   }
 
   const parsed = await requireJsonBody(req, res);
@@ -82,7 +92,10 @@ async function handleForgotPassword({ repoRoot, req, res }) {
   const email = normalizeEmail(body?.email);
 
   if (!email || !email.includes('@')) {
-    return badRequest(res, t('api.error.validEmailRequired', 'Valid email is required'));
+    return badRequest(
+      res,
+      t('api.error.validEmailRequired', 'Valid email is required'),
+    );
   }
 
   const ipAddress = getClientIp(req);
@@ -106,7 +119,10 @@ async function handleForgotPassword({ repoRoot, req, res }) {
     // Still return success to prevent enumeration
     serveJson(res, 200, {
       ok: true,
-      message: t('api.success.resetLinkSent', 'If an account exists with this email, a reset link has been sent.'),
+      message: t(
+        'api.success.resetLinkSent',
+        'If an account exists with this email, a reset link has been sent.',
+      ),
     });
     return true;
   }
@@ -146,7 +162,10 @@ async function handleForgotPassword({ repoRoot, req, res }) {
   // Always return success to prevent email enumeration
   serveJson(res, 200, {
     ok: true,
-    message: t('api.success.resetLinkSent', 'If an account exists with this email, a reset link has been sent.'),
+    message: t(
+      'api.success.resetLinkSent',
+      'If an account exists with this email, a reset link has been sent.',
+    ),
   });
   return true;
 }
@@ -157,7 +176,10 @@ async function handleForgotPassword({ repoRoot, req, res }) {
 // ============================================================
 async function handleResetPasswordValidate({ res, url }) {
   if (!authEnabled()) {
-    return badRequest(res, t('api.error.authNotEnabled', 'Authentication is not enabled'));
+    return badRequest(
+      res,
+      t('api.error.authNotEnabled', 'Authentication is not enabled'),
+    );
   }
 
   const token = url.searchParams.get('token');
@@ -191,7 +213,10 @@ async function handleResetPassword({ repoRoot, req, res }) {
   const ctx = resetCtx(repoRoot);
 
   if (!authEnabled()) {
-    return badRequest(res, t('api.error.authNotEnabled', 'Authentication is not enabled'));
+    return badRequest(
+      res,
+      t('api.error.authNotEnabled', 'Authentication is not enabled'),
+    );
   }
 
   const parsed = await requireJsonBody(req, res);
@@ -207,9 +232,15 @@ async function handleResetPassword({ repoRoot, req, res }) {
   // Validate password
   const pwValidation = validatePassword(password);
   if (!pwValidation.ok) {
-    return badRequest(res, pwValidation.reason === 'too_short'
-      ? t('api.error.passwordTooShort', 'Password is too short (minimum 8 characters)')
-      : t('api.error.passwordInvalid', 'Password is invalid'));
+    return badRequest(
+      res,
+      pwValidation.reason === 'too_short'
+        ? t(
+            'api.error.passwordTooShort',
+            'Password is too short (minimum 8 characters)',
+          )
+        : t('api.error.passwordInvalid', 'Password is invalid'),
+    );
   }
 
   const ipAddress = getClientIp(req);
@@ -228,9 +259,15 @@ async function handleResetPassword({ repoRoot, req, res }) {
       metadata: { reason: consumeResult.reason },
     });
 
-    return badRequest(res, consumeResult.reason === 'invalid_or_expired'
-      ? t('api.error.resetLinkExpired', 'This reset link is invalid or has expired. Please request a new one.')
-      : t('api.error.invalidResetToken', 'Invalid reset token'));
+    return badRequest(
+      res,
+      consumeResult.reason === 'invalid_or_expired'
+        ? t(
+            'api.error.resetLinkExpired',
+            'This reset link is invalid or has expired. Please request a new one.',
+          )
+        : t('api.error.invalidResetToken', 'Invalid reset token'),
+    );
   }
 
   const email = consumeResult.email;
@@ -248,7 +285,10 @@ async function handleResetPassword({ repoRoot, req, res }) {
       metadata: { reason: setResult.reason },
     });
 
-    return badRequest(res, t('api.error.failedToSetPassword', 'Failed to set password'));
+    return badRequest(
+      res,
+      t('api.error.failedToSetPassword', 'Failed to set password'),
+    );
   }
 
   // Log successful password reset
@@ -262,7 +302,10 @@ async function handleResetPassword({ repoRoot, req, res }) {
 
   serveJson(res, 200, {
     ok: true,
-    message: t('api.success.passwordReset', 'Password has been reset successfully. You can now log in with your new password.'),
+    message: t(
+      'api.success.passwordReset',
+      'Password has been reset successfully. You can now log in with your new password.',
+    ),
   });
   return true;
 }
@@ -275,13 +318,22 @@ async function handleChangePassword({ repoRoot, req, res }) {
   const ctx = resetCtx(repoRoot);
 
   if (!authEnabled()) {
-    return badRequest(res, t('api.error.authNotEnabled', 'Authentication is not enabled'));
+    return badRequest(
+      res,
+      t('api.error.authNotEnabled', 'Authentication is not enabled'),
+    );
   }
 
   // Get authenticated user
   const user = await getUserFromRequestAsync(req, ctx);
   if (!user) {
-    return unauthorized(res, t('api.error.mustBeLoggedIn', 'You must be logged in to change your password'));
+    return unauthorized(
+      res,
+      t(
+        'api.error.mustBeLoggedIn',
+        'You must be logged in to change your password',
+      ),
+    );
   }
 
   const parsed = await requireJsonBody(req, res);
@@ -293,9 +345,15 @@ async function handleChangePassword({ repoRoot, req, res }) {
   // Validate new password
   const pwValidation = validatePassword(newPassword);
   if (!pwValidation.ok) {
-    return badRequest(res, pwValidation.reason === 'too_short'
-      ? t('api.error.passwordTooShort', 'Password is too short (minimum 8 characters)')
-      : t('api.error.passwordInvalid', 'Password is invalid'));
+    return badRequest(
+      res,
+      pwValidation.reason === 'too_short'
+        ? t(
+            'api.error.passwordTooShort',
+            'Password is too short (minimum 8 characters)',
+          )
+        : t('api.error.passwordInvalid', 'Password is invalid'),
+    );
   }
 
   const ipAddress = getClientIp(req);
@@ -305,7 +363,13 @@ async function handleChangePassword({ repoRoot, req, res }) {
   // Verify current password
   const hasDbCreds = await hasDatabaseCredentials(email);
   if (!hasDbCreds) {
-    return badRequest(res, t('api.error.noDbCredentials', 'Cannot change password - no database credentials found'));
+    return badRequest(
+      res,
+      t(
+        'api.error.noDbCredentials',
+        'Cannot change password - no database credentials found',
+      ),
+    );
   }
 
   const isCurrentValid = await verifyUserPassword(email, currentPassword);
@@ -319,7 +383,10 @@ async function handleChangePassword({ repoRoot, req, res }) {
       metadata: { reason: 'invalid_current_password' },
     });
 
-    return badRequest(res, t('api.error.currentPasswordIncorrect', 'Current password is incorrect'));
+    return badRequest(
+      res,
+      t('api.error.currentPasswordIncorrect', 'Current password is incorrect'),
+    );
   }
 
   // Set the new password
@@ -335,7 +402,10 @@ async function handleChangePassword({ repoRoot, req, res }) {
       metadata: { reason: setResult.reason },
     });
 
-    return badRequest(res, t('api.error.failedToSetNewPassword', 'Failed to set new password'));
+    return badRequest(
+      res,
+      t('api.error.failedToSetNewPassword', 'Failed to set new password'),
+    );
   }
 
   // Log successful password change
@@ -358,23 +428,45 @@ async function handleChangePassword({ repoRoot, req, res }) {
 
   serveJson(res, 200, {
     ok: true,
-    message: t('api.success.passwordChanged', 'Password has been changed successfully.'),
+    message: t(
+      'api.success.passwordChanged',
+      'Password has been changed successfully.',
+    ),
   });
   return true;
 }
 
 /** @type {import('../../utils/router.js').Route[]} */
 export const ROUTES = [
-  { method: 'POST', pattern: '/api/auth/forgot-password', handler: handleForgotPassword },
-  { method: 'GET', pattern: '/api/auth/reset-password/validate', handler: handleResetPasswordValidate },
-  { method: 'POST', pattern: '/api/auth/reset-password', handler: handleResetPassword },
-  { method: 'POST', pattern: '/api/auth/change-password', handler: handleChangePassword },
+  {
+    method: 'POST',
+    pattern: '/api/auth/forgot-password',
+    handler: handleForgotPassword,
+  },
+  {
+    method: 'GET',
+    pattern: '/api/auth/reset-password/validate',
+    handler: handleResetPasswordValidate,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/auth/reset-password',
+    handler: handleResetPassword,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/auth/change-password',
+    handler: handleChangePassword,
+  },
 ];
 
 /**
  * Handle the password-reset endpoints.
  * @param {import('../../utils/context.js').PublicContext} ctx
  */
-export const handlePasswordReset = withErrorHandler('password-reset', async (ctx) => {
-  return dispatchRoutes(ROUTES, ctx);
-});
+export const handlePasswordReset = withErrorHandler(
+  'password-reset',
+  async (ctx) => {
+    return dispatchRoutes(ROUTES, ctx);
+  },
+);

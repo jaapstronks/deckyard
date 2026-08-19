@@ -56,13 +56,22 @@ function inviteErrorMessage(err) {
   if (/already a member/i.test(message)) {
     return t(
       'organization.members.invite.alreadyMember',
-      'That person is already a member of this organization.'
+      'That person is already a member of this organization.',
     );
   }
   if (err?.statusCode === 403) {
-    return message || t('organization.members.notAllowedGeneric', 'you do not have permission for this.');
+    return (
+      message ||
+      t(
+        'organization.members.notAllowedGeneric',
+        'you do not have permission for this.',
+      )
+    );
   }
-  return message || t('organization.members.invite.failed', 'Could not send the invitation.');
+  return (
+    message ||
+    t('organization.members.invite.failed', 'Could not send the invitation.')
+  );
 }
 
 /**
@@ -88,7 +97,7 @@ export function showInviteModal({
     title: t('organization.members.invite.title', 'Invite someone'),
     hint: t(
       'organization.members.invite.hint',
-      'They join this organization right away. If they have no account here yet, they get an email with a link to set a password.'
+      'They join this organization right away. If they have no account here yet, they get an email with a link to set a password.',
     ),
     modalClass: 'organization-invite-modal',
   });
@@ -100,14 +109,17 @@ export function showInviteModal({
     class: 'form-input',
     type: 'email',
     autocomplete: 'off',
-    placeholder: t('organization.members.invite.emailPlaceholder', 'name@example.com'),
+    placeholder: t(
+      'organization.members.invite.emailPlaceholder',
+      'name@example.com',
+    ),
   });
   emailField.append(
     h('span', {
       class: 'field-label',
       text: t('organization.members.invite.emailLabel', 'Email address'),
     }),
-    emailInput
+    emailInput,
   );
 
   const nameField = h('label', { class: 'stack', style: 'gap: 4px;' });
@@ -126,10 +138,10 @@ export function showInviteModal({
       class: 'help',
       text: t(
         'organization.members.invite.nameHelp',
-        'Used to address them in the invitation email. Ignored if they already have an account.'
+        'Used to address them in the invitation email. Ignored if they already have an account.',
       ),
     }),
-    nameInput
+    nameInput,
   );
 
   // An admin's only legal choice is "member", so they get the fact instead of
@@ -140,7 +152,7 @@ export function showInviteModal({
     h('span', {
       class: 'field-label',
       text: t('organization.members.invite.roleLabel', 'Role'),
-    })
+    }),
   );
   if (roles.length > 1) {
     roleSelect = h('select', {
@@ -157,9 +169,9 @@ export function showInviteModal({
         class: 'help',
         text: t(
           'organization.members.invite.roleFixed',
-          'They join as a member. Only the owner can invite admins.'
+          'They join as a member. Only the owner can invite admins.',
         ),
-      })
+      }),
     );
   }
 
@@ -197,7 +209,7 @@ export function showInviteModal({
     if (!email || !email.includes('@')) {
       status.textContent = t(
         'organization.members.invite.invalidEmail',
-        'Enter a valid email address.'
+        'Enter a valid email address.',
       );
       emailInput.focus();
       return;
@@ -244,18 +256,22 @@ export function showInviteModal({
       return t(
         'organization.members.invite.added',
         '{email} already had an account here and is now a member. They were not emailed, so tell them yourself.',
-        { email: result.email }
+        { email: result.email },
       );
     }
     if (result.outcome === 'created') {
       return t(
         'organization.members.invite.createdWithoutEmail',
         '{email} was added, but no invitation email went out. Send them a password-reset link.',
-        { email: result.email }
+        { email: result.email },
       );
     }
-    return t('organization.members.invite.sent', 'Invitation sent to {email}.', {
-      email: result.email,
-    });
+    return t(
+      'organization.members.invite.sent',
+      'Invitation sent to {email}.',
+      {
+        email: result.email,
+      },
+    );
   }
 }

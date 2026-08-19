@@ -51,7 +51,11 @@ import { extractCustomHtml, guardCustomHtml } from './custom-html-guard.js';
  * @returns {{onLoadDocument: Function, onStoreDocument: Function,
  *   onChange: Function, afterUnloadDocument: Function}}
  */
-export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) {
+export function createCollabPersistence({
+  repoRoot,
+  documentScope,
+  deps = {},
+}) {
   /** Organization per open document, learned on the first (bootstrap) read. */
   const documentOrganizations = new Map();
 
@@ -104,26 +108,38 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
     // The connection was authorized in onConnect, which is where a deck the user
     // may not read is rejected; this read is addressed by that authorization.
     const pres = await getPresentation(
-      { ...storageScopeFor(documentName), crossOrganization: 'collab document load: the connection was authorized in onConnect' },
-      id
+      {
+        ...storageScopeFor(documentName),
+        crossOrganization:
+          'collab document load: the connection was authorized in onConnect',
+      },
+      id,
     );
     if (!pres) return document; // authz already rejected unknown decks
-    if (pres.organizationId) documentOrganizations.set(documentName, pres.organizationId);
+    if (pres.organizationId)
+      documentOrganizations.set(documentName, pres.organizationId);
 
     const { warnings } = codec.bootstrapPresentationToDoc(pres, document);
     if (warnings.length) {
       log.warn(
         `[collab] bootstrap of ${id} normalized diverged language versions (${warnings.length} warning(s)):\n` +
-          warnings.map((w) => `  - ${w}`).join('\n')
+          warnings.map((w) => `  - ${w}`).join('\n'),
       );
     }
 
     // Persist the bootstrap immediately so later opens load the doc binary
     // instead of re-bootstrapping (and re-normalizing) from JSON.
     try {
-      await setYDocState(storageScopeFor(documentName), id, Y.encodeStateAsUpdate(document));
+      await setYDocState(
+        storageScopeFor(documentName),
+        id,
+        Y.encodeStateAsUpdate(document),
+      );
     } catch (err) {
-      log.error(`[collab] failed to store bootstrap state for ${id}:`, err?.message || err);
+      log.error(
+        `[collab] failed to store bootstrap state for ${id}:`,
+        err?.message || err,
+      );
     }
     customHtmlSnapshots.set(documentName, extractCustomHtml(document, Y));
     return document;
@@ -142,12 +158,15 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
     const user = context?.user;
     const allowed = !user || canEditCustomHtmlFn(user);
     const prev = customHtmlSnapshots.get(documentName);
-    const { snapshot, reverted } = guardCustomHtml(document, prev, { allowed, Y });
+    const { snapshot, reverted } = guardCustomHtml(document, prev, {
+      allowed,
+      Y,
+    });
     customHtmlSnapshots.set(documentName, snapshot);
     if (reverted) {
       log.warn(
         `[collab] reverted a raw HTML/CSS edit on ${id} by a user without the ` +
-          `canEditCustomHtml capability (${user?.email || 'unknown'})`
+          `canEditCustomHtml capability (${user?.email || 'unknown'})`,
       );
     }
   }
@@ -170,7 +189,11 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
     }
 
     try {
-      await setYDocState(storageScopeFor(documentName), id, Y.encodeStateAsUpdate(document));
+      await setYDocState(
+        storageScopeFor(documentName),
+        id,
+        Y.encodeStateAsUpdate(document),
+      );
     } catch (err) {
       // Do NOT fall through to the JSON write. If the binary store failed but
       // the JSON write then succeeded, the stored binary would be OLDER than
@@ -182,7 +205,7 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
       log.error(
         `[collab] failed to store doc binary for ${id}; skipping the JSON write ` +
           'this cycle to keep binary/JSON consistent (retries next store):',
-        err?.message || err
+        err?.message || err,
       );
       return;
     }
@@ -207,13 +230,13 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
       if (!result || result.ok === false) {
         log.error(
           `[collab] serializing ${id} to JSON was rejected (${result?.reason || 'unknown'}); ` +
-            'doc binary kept, JSON left as-is (at most one debounce window stale)'
+            'doc binary kept, JSON left as-is (at most one debounce window stale)',
         );
       }
     } catch (err) {
       log.error(
         `[collab] serializing ${id} to JSON failed; doc binary kept, JSON left as-is:`,
-        err?.message || err
+        err?.message || err,
       );
     }
   }

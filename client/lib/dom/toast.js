@@ -65,7 +65,10 @@ function renderToastContent(el, message, action) {
 }
 
 function makeToastEl(message, { type, action }) {
-  const el = h('div', { class: `toast toast-${classifyType(type)}`, role: 'status' });
+  const el = h('div', {
+    class: `toast toast-${classifyType(type)}`,
+    role: 'status',
+  });
   el.tabIndex = 0;
   renderToastContent(el, message, action);
   el.addEventListener('click', () => dismissEl(el));
@@ -130,11 +133,14 @@ export function toast(message, opts = {}) {
   return { dismiss: () => dismissEl(el) };
 }
 
-toast.info = (message, opts = {}) =>
-  toast(message, { ...opts, type: 'info' });
+toast.info = (message, opts = {}) => toast(message, { ...opts, type: 'info' });
 toast.success = (message, opts = {}) =>
   toast(message, { ...opts, type: 'success' });
 toast.error = (message, opts = {}) =>
-  toast(message, { ...opts, type: 'error', durationMs: opts?.durationMs ?? 5600 });
+  toast(message, {
+    ...opts,
+    type: 'error',
+    durationMs: opts?.durationMs ?? 5600,
+  });
 toast.warning = (message, opts = {}) =>
   toast(message, { ...opts, type: 'warning' });

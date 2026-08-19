@@ -46,7 +46,7 @@ values costs 777 renders across the registry and reaches 59 class names the
 defaults alone never produce, four of them entries in the `UNSTYLED` list below.
 
 Sweeping past the top-level enums is what makes that coverage stable rather than
-accidental. `is-bleed` was reached only through image-slide's *legacy* hidden
+accidental. `is-bleed` was reached only through image-slide's _legacy_ hidden
 `layout` enum, so retiring that compatibility field would have quietly dropped
 the class from the sweep; the canonical `bleed` toggle now covers it. `is-black`
 (text-blocks `rows[].color`) was emitted but never swept at all, and
@@ -80,14 +80,14 @@ removed at source in exactly such a release (`team-cards-group-left`, `kpi-note`
 
 The six that remain are correct as they stand:
 
-| Class | Why it is emitted without a rule |
-| --- | --- |
-| `chart-slice` | the pie renderer emits it beside the styled `chart-slice-<n>`; the base name is the category, the indexed one carries the colour |
-| `is-left` | image-text marks the default side explicitly; only the opposite, `.split.is-right`, needs rules |
-| `slide-bg-custom` | the `custom` background takes its colour from an inline style, so there is nothing to declare |
-| `aspect-square` | the default `imageAspect` of team-cards; only the non-default `.aspect-original` carries a rule, the base slide styles this value |
-| `shape-rounded` | the default `imageShape` of team-cards; only `.shape-square`/`.shape-circle` carry rules |
-| `is-layout-center` | the default `layout` of chapter-title; only `.is-layout-top`/`.is-layout-bottom` carry rules |
+| Class              | Why it is emitted without a rule                                                                                                  |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `chart-slice`      | the pie renderer emits it beside the styled `chart-slice-<n>`; the base name is the category, the indexed one carries the colour  |
+| `is-left`          | image-text marks the default side explicitly; only the opposite, `.split.is-right`, needs rules                                   |
+| `slide-bg-custom`  | the `custom` background takes its colour from an inline style, so there is nothing to declare                                     |
+| `aspect-square`    | the default `imageAspect` of team-cards; only the non-default `.aspect-original` carries a rule, the base slide styles this value |
+| `shape-rounded`    | the default `imageShape` of team-cards; only `.shape-square`/`.shape-circle` carry rules                                          |
+| `is-layout-center` | the default `layout` of chapter-title; only `.is-layout-top`/`.is-layout-bottom` carry rules                                      |
 
 The list cannot rot in either direction: one test fails if an entry names a class
 no type renders any more, another fails if an entry quietly gained a stylesheet,
@@ -98,10 +98,10 @@ and a third requires every entry to carry a reason. Same two-way honesty as
 
 **A fork's own slide types.** They live in `custom/slide-types/`, which upstream
 does not have. The test protects upstream from renaming a class out from under
-*itself*; nothing in this repo can tell a fork that its `ciiic-title-slide`
+_itself_; nothing in this repo can tell a fork that its `ciiic-title-slide`
 depends on a name that moved. That is what the release-notes rule is for —
-`docs/reference/versioning.md` § *Renamed slide-type classes go in the release
-notes*.
+`docs/reference/versioning.md` § _Renamed slide-type classes go in the release
+notes_.
 
 **Whether the rule is any good.** A class with an empty or wrong rule passes. The
 assertion is "this name is known to the stylesheets", not "this slide looks

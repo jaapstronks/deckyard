@@ -51,7 +51,9 @@ export function openChartDataModal({
 
   // --- Live preview (right / top) -----------------------------------------
   const previewThumb = h('div', { class: 'thumb chart-data-preview-thumb' });
-  const previewStage = h('div', { class: 'chart-data-preview-stage' }, [previewThumb]);
+  const previewStage = h('div', { class: 'chart-data-preview-stage' }, [
+    previewThumb,
+  ]);
   const previewWrap = h('div', { class: 'chart-data-preview' }, [
     h('div', {
       class: 'field-label chart-data-preview-label',
@@ -85,7 +87,10 @@ export function openChartDataModal({
   });
   const gridWrap = h('div', { class: 'chart-data-grid' }, [gridEl]);
 
-  const body = h('div', { class: 'chart-data-modal-body' }, [gridWrap, previewWrap]);
+  const body = h('div', { class: 'chart-data-modal-body' }, [
+    gridWrap,
+    previewWrap,
+  ]);
 
   let detachScale = null;
   const modal = createModal(h, {
@@ -94,7 +99,7 @@ export function openChartDataModal({
     isDirty: () => latest !== raw,
     confirmMessage: t(
       'editor.chart.discardConfirm',
-      'Discard your changes to the chart data?'
+      'Discard your changes to the chart data?',
     ),
     onClose: () => {
       detachScale?.();

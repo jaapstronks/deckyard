@@ -44,9 +44,14 @@ function mockRes() {
   return {
     statusCode: null,
     headers: {},
-    writeHead(c, headers) { this.statusCode = c; Object.assign(this.headers, headers); },
+    writeHead(c, headers) {
+      this.statusCode = c;
+      Object.assign(this.headers, headers);
+    },
     end() {},
-    setHeader(k, v) { this.headers[k] = v; },
+    setHeader(k, v) {
+      this.headers[k] = v;
+    },
   };
 }
 
@@ -68,7 +73,11 @@ function ctx(method, pathname) {
 function named(routes, method, path, handlerName) {
   const route = select(routes, method, path);
   assert.ok(route, `${method} ${path} matches a route`);
-  assert.equal(route.handler.name, handlerName, `${method} ${path} → ${handlerName}`);
+  assert.equal(
+    route.handler.name,
+    handlerName,
+    `${method} ${path} → ${handlerName}`,
+  );
 }
 
 /** Assert what a route's pattern captures for a concrete path. */
@@ -76,42 +85,132 @@ function captures(routes, method, path, expected) {
   const route = select(routes, method, path);
   assert.ok(route, `${method} ${path} matches a route`);
   const match = route.pattern.exec(path);
-  assert.deepEqual(match.slice(1), expected, `${method} ${path} captures ${expected.join(', ')}`);
+  assert.deepEqual(
+    match.slice(1),
+    expected,
+    `${method} ${path} captures ${expected.join(', ')}`,
+  );
 }
 
 test('share-links: management routes resolve to their named handlers in order', () => {
-  named(AUTHED_ROUTES, 'POST', '/api/presentations/p1/share-links', 'handleShareLinkCreate');
-  named(AUTHED_ROUTES, 'GET', '/api/presentations/p1/share-links', 'handleShareLinkList');
-  named(AUTHED_ROUTES, 'DELETE', '/api/presentations/p1/share-links', 'handleShareLinksRevokeAll');
-  named(AUTHED_ROUTES, 'DELETE', '/api/presentations/p1/share-links/l1', 'handleShareLinkRevoke');
-  named(AUTHED_ROUTES, 'PATCH', '/api/presentations/p1/share-links/l1', 'handleShareLinkUpdate');
-  named(AUTHED_ROUTES, 'GET', '/api/presentations/p1/share-links/l1/access-log', 'handleShareLinkAccessLog');
+  named(
+    AUTHED_ROUTES,
+    'POST',
+    '/api/presentations/p1/share-links',
+    'handleShareLinkCreate',
+  );
+  named(
+    AUTHED_ROUTES,
+    'GET',
+    '/api/presentations/p1/share-links',
+    'handleShareLinkList',
+  );
+  named(
+    AUTHED_ROUTES,
+    'DELETE',
+    '/api/presentations/p1/share-links',
+    'handleShareLinksRevokeAll',
+  );
+  named(
+    AUTHED_ROUTES,
+    'DELETE',
+    '/api/presentations/p1/share-links/l1',
+    'handleShareLinkRevoke',
+  );
+  named(
+    AUTHED_ROUTES,
+    'PATCH',
+    '/api/presentations/p1/share-links/l1',
+    'handleShareLinkUpdate',
+  );
+  named(
+    AUTHED_ROUTES,
+    'GET',
+    '/api/presentations/p1/share-links/l1/access-log',
+    'handleShareLinkAccessLog',
+  );
 });
 
 test('share-links: guest management routes resolve to their named handlers in order', () => {
-  named(AUTHED_ROUTES, 'POST', '/api/presentations/p1/share-links/l1/guests', 'handleGuestPreRegister');
-  named(AUTHED_ROUTES, 'GET', '/api/presentations/p1/share-links/l1/guests', 'handleGuestList');
-  named(AUTHED_ROUTES, 'DELETE', '/api/presentations/p1/share-links/l1/guests/g1', 'handleGuestRemove');
-  named(AUTHED_ROUTES, 'POST', '/api/presentations/p1/share-links/l1/guests/g1/resend', 'handleGuestResend');
+  named(
+    AUTHED_ROUTES,
+    'POST',
+    '/api/presentations/p1/share-links/l1/guests',
+    'handleGuestPreRegister',
+  );
+  named(
+    AUTHED_ROUTES,
+    'GET',
+    '/api/presentations/p1/share-links/l1/guests',
+    'handleGuestList',
+  );
+  named(
+    AUTHED_ROUTES,
+    'DELETE',
+    '/api/presentations/p1/share-links/l1/guests/g1',
+    'handleGuestRemove',
+  );
+  named(
+    AUTHED_ROUTES,
+    'POST',
+    '/api/presentations/p1/share-links/l1/guests/g1/resend',
+    'handleGuestResend',
+  );
 });
 
 test('share-links: public routes resolve to their named handlers in order', () => {
   named(PUBLIC_ROUTES, 'GET', '/api/share/tok', 'handleShareValidate');
   named(PUBLIC_ROUTES, 'POST', '/api/share/tok/verify', 'handleShareVerify');
-  named(PUBLIC_ROUTES, 'POST', '/api/share/tok/guest/request', 'handleShareGuestRequest');
-  named(PUBLIC_ROUTES, 'GET', '/api/share/tok/guest/verify/vtok', 'handleShareGuestVerify');
+  named(
+    PUBLIC_ROUTES,
+    'POST',
+    '/api/share/tok/guest/request',
+    'handleShareGuestRequest',
+  );
+  named(
+    PUBLIC_ROUTES,
+    'GET',
+    '/api/share/tok/guest/verify/vtok',
+    'handleShareGuestVerify',
+  );
   named(PUBLIC_ROUTES, 'GET', '/api/share/tok/guest/me', 'handleShareGuestMe');
 });
 
 test('share-links: patterns capture ids in handler-argument order', () => {
   captures(AUTHED_ROUTES, 'POST', '/api/presentations/p1/share-links', ['p1']);
-  captures(AUTHED_ROUTES, 'PATCH', '/api/presentations/p1/share-links/l1', ['p1', 'l1']);
-  captures(AUTHED_ROUTES, 'GET', '/api/presentations/p1/share-links/l1/access-log', ['p1', 'l1']);
-  captures(AUTHED_ROUTES, 'POST', '/api/presentations/p1/share-links/l1/guests', ['p1', 'l1']);
-  captures(AUTHED_ROUTES, 'DELETE', '/api/presentations/p1/share-links/l1/guests/g1', ['p1', 'l1', 'g1']);
-  captures(AUTHED_ROUTES, 'POST', '/api/presentations/p1/share-links/l1/guests/g1/resend', ['p1', 'l1', 'g1']);
+  captures(AUTHED_ROUTES, 'PATCH', '/api/presentations/p1/share-links/l1', [
+    'p1',
+    'l1',
+  ]);
+  captures(
+    AUTHED_ROUTES,
+    'GET',
+    '/api/presentations/p1/share-links/l1/access-log',
+    ['p1', 'l1'],
+  );
+  captures(
+    AUTHED_ROUTES,
+    'POST',
+    '/api/presentations/p1/share-links/l1/guests',
+    ['p1', 'l1'],
+  );
+  captures(
+    AUTHED_ROUTES,
+    'DELETE',
+    '/api/presentations/p1/share-links/l1/guests/g1',
+    ['p1', 'l1', 'g1'],
+  );
+  captures(
+    AUTHED_ROUTES,
+    'POST',
+    '/api/presentations/p1/share-links/l1/guests/g1/resend',
+    ['p1', 'l1', 'g1'],
+  );
   captures(PUBLIC_ROUTES, 'GET', '/api/share/tok', ['tok']);
-  captures(PUBLIC_ROUTES, 'GET', '/api/share/tok/guest/verify/vtok', ['tok', 'vtok']);
+  captures(PUBLIC_ROUTES, 'GET', '/api/share/tok/guest/verify/vtok', [
+    'tok',
+    'vtok',
+  ]);
 });
 
 test('share-links: sibling patterns stay distinct — no pattern swallows a deeper path', () => {
@@ -119,12 +218,16 @@ test('share-links: sibling patterns stay distinct — no pattern swallows a deep
   // and the base /api/share/:token must not claim the /verify and /guest/*
   // sub-paths.
   assert.equal(
-    select(AUTHED_ROUTES, 'DELETE', '/api/presentations/p1/share-links/l1/guests/g1').handler.name,
-    'handleGuestRemove'
+    select(
+      AUTHED_ROUTES,
+      'DELETE',
+      '/api/presentations/p1/share-links/l1/guests/g1',
+    ).handler.name,
+    'handleGuestRemove',
   );
   assert.equal(
     select(PUBLIC_ROUTES, 'GET', '/api/share/tok/guest/me').handler.name,
-    'handleShareGuestMe'
+    'handleShareGuestMe',
   );
 });
 
@@ -153,13 +256,20 @@ test('share-links: a wrong method on a public path falls through (no 405, storag
   ];
   for (const [method, path] of cases) {
     const { ctx: c, res } = ctx(method, path);
-    assert.equal(await handleSharePublic(c), false, `${method} ${path} → false`);
+    assert.equal(
+      await handleSharePublic(c),
+      false,
+      `${method} ${path} → false`,
+    );
     assert.equal(res.statusCode, null, `${method} ${path} sent no response`);
   }
 });
 
 test('share-links: an unknown sub-path falls through', async () => {
-  const unknownAuthed = ctx('GET', '/api/presentations/p1/share-links/l1/unknown');
+  const unknownAuthed = ctx(
+    'GET',
+    '/api/presentations/p1/share-links/l1/unknown',
+  );
   assert.equal(await handleShareLinks(unknownAuthed.ctx), false);
 
   const unknownPublic = ctx('GET', '/api/share/tok/unknown');

@@ -20,7 +20,9 @@ const SLIDE_CANVAS_HEIGHT = 900;
 /** Best-effort human label for a slide tile: its own title, else the type label. */
 function slideTileLabel(slide, SLIDE_TYPES) {
   const c = slide?.content || {};
-  const own = String(c.title || c.question || c.statement || c.quote || '').trim();
+  const own = String(
+    c.title || c.question || c.statement || c.quote || '',
+  ).trim();
   if (own) return own;
   const def = SLIDE_TYPES?.[slide?.type];
   return t(`slideType.${slide?.type}.label`, def?.label || slide?.type || '');
@@ -164,11 +166,15 @@ export function createDeckGridView({
           onclick: () => show(peekIndex + 1),
         })
       : null;
-    if (prevBtn) prevBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>`;
-    if (nextBtn) nextBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>`;
+    if (prevBtn)
+      prevBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>`;
+    if (nextBtn)
+      nextBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>`;
 
     const titleEl = h('h3', { class: 'deck-grid-peek-title' });
-    const counterEl = canNav ? h('span', { class: 'deck-grid-peek-count' }) : null;
+    const counterEl = canNav
+      ? h('span', { class: 'deck-grid-peek-count' })
+      : null;
     const noteEl = h('div', { class: 'deck-grid-peek-why', hidden: true });
     const info = h('div', { class: 'deck-grid-peek-info' }, [
       titleEl,
@@ -207,7 +213,7 @@ export function createDeckGridView({
       h('div', { class: 'deck-grid-peek-body' }, [
         stageWrap,
         h('div', { class: 'deck-grid-peek-foot' }, [info, actions]),
-      ])
+      ]),
     );
     backdrop.append(card);
     document.body.append(backdrop);
@@ -217,7 +223,7 @@ export function createDeckGridView({
       const scale = Math.min(
         r.width / SLIDE_CANVAS_WIDTH,
         r.height / SLIDE_CANVAS_HEIGHT,
-        1
+        1,
       );
       if (!(scale > 0)) return;
       bigThumb.style.setProperty('--thumb-scale', String(scale));
@@ -243,10 +249,17 @@ export function createDeckGridView({
       bigThumb.innerHTML = '';
       try {
         bigThumb.append(
-          renderSlideElement(slide, { mode: 'thumb', theme, presentationId, lang })
+          renderSlideElement(slide, {
+            mode: 'thumb',
+            theme,
+            presentationId,
+            lang,
+          }),
         );
       } catch {
-        bigThumb.append(h('div', { class: 'deck-grid-thumb-error', text: '?' }));
+        bigThumb.append(
+          h('div', { class: 'deck-grid-thumb-error', text: '?' }),
+        );
       }
 
       noteEl.innerHTML = '';
@@ -354,7 +367,7 @@ export function createDeckGridView({
     const typeDef = SLIDE_TYPES?.[slide?.type];
     const typeLabel = t(
       `slideType.${slide?.type}.label`,
-      typeDef?.label || slide?.type || ''
+      typeDef?.label || slide?.type || '',
     );
 
     const labelWrap = h('div', { class: 'deck-grid-labelwrap' }, [
@@ -378,7 +391,7 @@ export function createDeckGridView({
         title: pickTitle,
         ...(selectable && !previewOnClick ? { 'aria-pressed': 'false' } : {}),
       },
-      [thumbWrap, labelWrap]
+      [thumbWrap, labelWrap],
     );
 
     const num = h('span', { class: 'deck-grid-num', text: String(index + 1) });
@@ -432,7 +445,7 @@ export function createDeckGridView({
           (selectable && previewOnClick ? ' has-checkbox' : ''),
         'data-slide-id': slide?.id || '',
       },
-      tileChildren
+      tileChildren,
     );
 
     tileBtn.addEventListener('click', () => {
@@ -503,7 +516,7 @@ export function createDeckGridView({
                 hydrateThumb(e.target, resizeObserver);
               }
             },
-            { rootMargin: '300px 0px' }
+            { rootMargin: '300px 0px' },
           )
         : null;
     if (intersectionObserver) observers.push(intersectionObserver);

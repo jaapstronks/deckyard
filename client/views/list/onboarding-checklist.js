@@ -76,7 +76,10 @@ export function createOnboardingChecklist({
     {
       key: 'create',
       title: t('list.onboarding.createTitle', 'Create your first deck'),
-      hint: t('list.onboarding.createHint', 'Start blank, from your notes, or from a template.'),
+      hint: t(
+        'list.onboarding.createHint',
+        'Start blank, from your notes, or from a template.',
+      ),
       onAction: () => onCreate?.(),
     },
     // Agent-native is a headline Deckyard feature, but a sandbox guest can't
@@ -90,13 +93,16 @@ export function createOnboardingChecklist({
           title: t('list.onboarding.mcpTitle', 'Connect an AI agent'),
           hint: t(
             'list.onboarding.mcpSandboxHint',
-            'Off in the sandbox. In your own Deckyard, drive decks from Claude and other agents via API or MCP.'
+            'Off in the sandbox. In your own Deckyard, drive decks from Claude and other agents via API or MCP.',
           ),
         }
       : {
           key: 'mcp',
           title: t('list.onboarding.mcpTitle', 'Connect an AI agent'),
-          hint: t('list.onboarding.mcpHint', 'Drive Deckyard from Claude and other agents via API or MCP.'),
+          hint: t(
+            'list.onboarding.mcpHint',
+            'Drive Deckyard from Claude and other agents via API or MCP.',
+          ),
           onAction: () => {
             markStepDone('mcp');
             nav?.('/settings#api-keys');
@@ -129,7 +135,10 @@ export function createOnboardingChecklist({
 
   const header = h('div', { class: 'onboarding-checklist-header' }, [
     h('div', { class: 'onboarding-checklist-heading' }, [
-      h('span', { class: 'onboarding-checklist-title', text: t('list.onboarding.title', 'Get started') }),
+      h('span', {
+        class: 'onboarding-checklist-title',
+        text: t('list.onboarding.title', 'Get started'),
+      }),
       progressLabel,
     ]),
     dismissBtn,
@@ -140,7 +149,10 @@ export function createOnboardingChecklist({
   for (const step of steps) {
     const stepText = h('span', { class: 'onboarding-checklist-step-text' }, [
       h('span', { class: 'onboarding-checklist-step-title', text: step.title }),
-      h('span', { class: 'onboarding-checklist-step-hint help', text: step.hint }),
+      h('span', {
+        class: 'onboarding-checklist-step-hint help',
+        text: step.hint,
+      }),
     ]);
 
     let row;
@@ -152,30 +164,41 @@ export function createOnboardingChecklist({
         text: '🔒',
       });
       row = h('li', { class: 'onboarding-checklist-step is-info' }, [
-        h('div', { class: 'onboarding-checklist-step-btn' }, [status, stepText]),
-      ]);
-    } else {
-      const status = h('span', { class: 'onboarding-checklist-status', 'aria-hidden': 'true' });
-      row = h('li', { class: 'onboarding-checklist-step' }, [
-        h('button', {
-          class: 'onboarding-checklist-step-btn',
-          type: 'button',
-          onclick: () => step.onAction(),
-        }, [
+        h('div', { class: 'onboarding-checklist-step-btn' }, [
           status,
           stepText,
         ]),
+      ]);
+    } else {
+      const status = h('span', {
+        class: 'onboarding-checklist-status',
+        'aria-hidden': 'true',
+      });
+      row = h('li', { class: 'onboarding-checklist-step' }, [
+        h(
+          'button',
+          {
+            class: 'onboarding-checklist-step-btn',
+            type: 'button',
+            onclick: () => step.onAction(),
+          },
+          [status, stepText],
+        ),
       ]);
     }
     rows.set(step.key, row);
     list.append(row);
   }
 
-  const card = h('section', {
-    class: 'onboarding-checklist',
-    'data-onboarding': 'checklist',
-    'aria-label': t('list.onboarding.title', 'Get started'),
-  }, [header, list]);
+  const card = h(
+    'section',
+    {
+      class: 'onboarding-checklist',
+      'data-onboarding': 'checklist',
+      'aria-label': t('list.onboarding.title', 'Get started'),
+    },
+    [header, list],
+  );
 
   function refreshStep(key) {
     const row = rows.get(key);
@@ -184,7 +207,10 @@ export function createOnboardingChecklist({
 
   function refreshProgress() {
     const done = actionableSteps.filter((s) => stepDone[s.key]()).length;
-    progressLabel.textContent = t('list.onboarding.progress', '{done} of {total} done')
+    progressLabel.textContent = t(
+      'list.onboarding.progress',
+      '{done} of {total} done',
+    )
       .replace('{done}', String(done))
       .replace('{total}', String(actionableSteps.length));
   }

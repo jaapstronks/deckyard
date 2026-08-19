@@ -17,7 +17,12 @@ import { spinner } from './spinner.js';
  * @param {string} options.title - Modal title (optional)
  * @returns {Object} Controller with update(), setProgress(), close() methods
  */
-export function showLoadingModal({ h, root, initialMessage = '', title = '' } = {}) {
+export function showLoadingModal({
+  h,
+  root,
+  initialMessage = '',
+  title = '',
+} = {}) {
   // Create backdrop with blur
   const backdrop = h('div', { class: 'loading-modal-backdrop' });
 

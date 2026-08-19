@@ -70,7 +70,8 @@ function flushBuffer() {
     const filepath = path.join(LOG_DIR, filename);
 
     // Append entries as JSON lines
-    const lines = currentBuffer.map((entry) => JSON.stringify(entry)).join('\n') + '\n';
+    const lines =
+      currentBuffer.map((entry) => JSON.stringify(entry)).join('\n') + '\n';
     fs.appendFileSync(filepath, lines, 'utf8');
 
     currentBuffer = [];
@@ -222,14 +223,19 @@ export function getValidationSummary(options = {}) {
 
     // Count by slide type
     if (entry.slideType) {
-      summary.bySlideType[entry.slideType] = (summary.bySlideType[entry.slideType] || 0) + 1;
+      summary.bySlideType[entry.slideType] =
+        (summary.bySlideType[entry.slideType] || 0) + 1;
     }
 
     // Track unknown fields frequency
-    if (entry.event === 'unknown-fields' && Array.isArray(entry.unknownFields)) {
+    if (
+      entry.event === 'unknown-fields' &&
+      Array.isArray(entry.unknownFields)
+    ) {
       for (const field of entry.unknownFields) {
         const key = `${entry.slideType || 'unknown'}.${field}`;
-        summary.unknownFieldsFrequency[key] = (summary.unknownFieldsFrequency[key] || 0) + 1;
+        summary.unknownFieldsFrequency[key] =
+          (summary.unknownFieldsFrequency[key] || 0) + 1;
       }
     }
   }
@@ -251,7 +257,8 @@ export function getValidationSummary(options = {}) {
 export function listLogFiles() {
   ensureLogDir();
 
-  const files = fs.readdirSync(LOG_DIR)
+  const files = fs
+    .readdirSync(LOG_DIR)
     .filter((f) => f.startsWith('validation_') && f.endsWith('.jsonl'))
     .sort()
     .reverse(); // Most recent first
@@ -290,7 +297,8 @@ export function cleanupOldLogs() {
   cutoffDate.setDate(cutoffDate.getDate() - LOG_RETENTION_DAYS);
   const cutoffStr = cutoffDate.toISOString().slice(0, 10);
 
-  const files = fs.readdirSync(LOG_DIR)
+  const files = fs
+    .readdirSync(LOG_DIR)
     .filter((f) => f.startsWith('validation_') && f.endsWith('.jsonl'));
 
   let deleted = 0;

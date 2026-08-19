@@ -17,7 +17,10 @@ import { notFound, serveFile } from '../../utils/http.js';
  * @returns {boolean} true if handled.
  */
 export function handleGo({ req, res, url, clientDir }) {
-  if ((url.pathname === '/go' || url.pathname === '/go/') && req.method === 'GET') {
+  if (
+    (url.pathname === '/go' || url.pathname === '/go/') &&
+    req.method === 'GET'
+  ) {
     const fsPath = path.join(clientDir, 'go.html');
     serveFile(res, fsPath);
     return true;
@@ -34,7 +37,10 @@ export function handleGo({ req, res, url, clientDir }) {
  * @returns {boolean} true if handled.
  */
 export function handleMyData({ req, res, url, clientDir }) {
-  if ((url.pathname === '/my-data' || url.pathname === '/my-data/') && req.method === 'GET') {
+  if (
+    (url.pathname === '/my-data' || url.pathname === '/my-data/') &&
+    req.method === 'GET'
+  ) {
     const fsPath = path.join(clientDir, 'my-data.html');
     serveFile(res, fsPath);
     return true;

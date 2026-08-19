@@ -15,15 +15,24 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 const readJson = async (rel) =>
   JSON.parse(await fs.readFile(path.join(repoRoot, rel), 'utf8'));
 
 test('index.html loads DOMPurify from this server, not from a CDN', async () => {
-  const html = await fs.readFile(path.join(repoRoot, 'client/index.html'), 'utf8');
+  const html = await fs.readFile(
+    path.join(repoRoot, 'client/index.html'),
+    'utf8',
+  );
 
-  assert.match(html, /<script src="\/client\/vendor\/dompurify\/purify\.min\.js"><\/script>/);
+  assert.match(
+    html,
+    /<script src="\/client\/vendor\/dompurify\/purify\.min\.js"><\/script>/,
+  );
   // No CDN copy left behind — neither as the loaded script nor as a fallback.
   assert.doesNotMatch(html, /cdn\.jsdelivr\.net\/npm\/dompurify/);
 });
@@ -36,15 +45,18 @@ test('the vendored bundle is the version package-lock.json pins', async () => {
   assert.equal(
     manifest.version,
     locked.version,
-    'run `npm run vendor:dompurify` after bumping the dompurify dependency'
+    'run `npm run vendor:dompurify` after bumping the dompurify dependency',
   );
-  assert.ok(locked.integrity, 'the lockfile entry carries the integrity hash that pins it');
+  assert.ok(
+    locked.integrity,
+    'the lockfile entry carries the integrity hash that pins it',
+  );
 });
 
 test('the vendored bundle is served and non-empty', async () => {
   const bundle = await fs.readFile(
     path.join(repoRoot, 'client/vendor/dompurify/purify.min.js'),
-    'utf8'
+    'utf8',
   );
   assert.ok(bundle.length > 10_000, 'looks like the real minified build');
   assert.match(bundle, /DOMPurify/);
@@ -58,5 +70,8 @@ test('the vendored bundle is served and non-empty', async () => {
 test('postinstall vendors DOMPurify so a fresh clone boots offline', async () => {
   const pkg = await readJson('package.json');
   assert.match(pkg.scripts.postinstall, /vendor-dompurify\.js/);
-  assert.equal(pkg.scripts['vendor:dompurify'], 'node scripts/vendor-dompurify.js');
+  assert.equal(
+    pkg.scripts['vendor:dompurify'],
+    'node scripts/vendor-dompurify.js',
+  );
 });

@@ -9,31 +9,31 @@
 
 ## Scores by dimension
 
-| Dimension | Score | vs. previous |
-| --- | ---: | ---: |
-| Coverage | 4.64 | — |
-| Structure | 4.64 | — |
-| Slide economy | 3.91 | — |
-| Faithfulness | 4.73 | — |
-| Presentability | 3.91 | — |
-| Closeness to human deck | 2.80 | — |
-| **Overall** | **4.37** | — |
+| Dimension               |    Score | vs. previous |
+| ----------------------- | -------: | -----------: |
+| Coverage                |     4.64 |            — |
+| Structure               |     4.64 |            — |
+| Slide economy           |     3.91 |            — |
+| Faithfulness            |     4.73 |            — |
+| Presentability          |     3.91 |            — |
+| Closeness to human deck |     2.80 |            — |
+| **Overall**             | **4.37** |            — |
 
 ## Per-case results
 
-| Case | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| asml-q4-2024 | A | 11 | 23.55 | 0 | 88% | 4/5 | 4.33 |
-| cbs-persbericht-criminaliteit | B | 13 | 26.08 | 0 | 95% | 5/5 | 4.60 |
-| cbs-veiligheidsmonitor-2025 | B | 33 | 32.82 | 0 | 98% | 5/5 | 4.40 |
-| cloudflare-nov-2025-outage | B | 18 | 40.33 | 0 | 100% | 5/5 | 4.60 |
-| deckyard-readme | B | 14 | 36.43 | 0 | 100% | 4/5 | 4.40 |
-| iea-weo-2024 | A | 23 | 53.22 | 5 | 70% | 5/5 | 4.17 |
-| naacl-good-conversation | A | 26 | 34.08 | 0 | 89% | 5/5 | 4.00 |
-| nl-kamerbrief-duurzame-digitalisering | B | 13 | 29.23 | 0 | 100% | 5/5 | 4.00 |
-| pbl-kev-2024 | A | 24 | 31.5 | 0 | 98% | 4/5 | 3.83 |
-| philips-q4-2024 | A | 22 | 29.23 | 0 | 100% | 5/5 | 4.17 |
-| wikipedia-zero-knowledge-proof | B | 25 | 42.28 | 0 | 100% | 4/5 | 4.20 |
+| Case                                  | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
+| ------------------------------------- | --- | -----: | ----------: | ----: | -------------: | -------: | ---: |
+| asml-q4-2024                          | A   |     11 |       23.55 |     0 |            88% |      4/5 | 4.33 |
+| cbs-persbericht-criminaliteit         | B   |     13 |       26.08 |     0 |            95% |      5/5 | 4.60 |
+| cbs-veiligheidsmonitor-2025           | B   |     33 |       32.82 |     0 |            98% |      5/5 | 4.40 |
+| cloudflare-nov-2025-outage            | B   |     18 |       40.33 |     0 |           100% |      5/5 | 4.60 |
+| deckyard-readme                       | B   |     14 |       36.43 |     0 |           100% |      4/5 | 4.40 |
+| iea-weo-2024                          | A   |     23 |       53.22 |     5 |            70% |      5/5 | 4.17 |
+| naacl-good-conversation               | A   |     26 |       34.08 |     0 |            89% |      5/5 | 4.00 |
+| nl-kamerbrief-duurzame-digitalisering | B   |     13 |       29.23 |     0 |           100% |      5/5 | 4.00 |
+| pbl-kev-2024                          | A   |     24 |        31.5 |     0 |            98% |      4/5 | 3.83 |
+| philips-q4-2024                       | A   |     22 |       29.23 |     0 |           100% |      5/5 | 4.17 |
+| wikipedia-zero-knowledge-proof        | B   |     25 |       42.28 |     0 |           100% |      4/5 | 4.20 |
 
 ## Weakest dimensions — judge rationales
 
@@ -91,9 +91,9 @@ These rationales are the input for the next prompt change.
 
 ## Cost breakdown
 
-| Category | Calls | Input | Output | Cache write | Cache read | USD |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| topics | 11 | 165 | 9242 | 939146 | 0 | $6.1015 |
-| generation | 66 | 2135030 | 114879 | 0 | 0 | $13.5471 |
-| judge | 11 | 80733 | 27167 | 951945 | 0 | $7.0325 |
-| **Total** | 88 | 2215928 | 151288 | 1891091 | 0 | **$26.6812** |
+| Category   | Calls |   Input | Output | Cache write | Cache read |          USD |
+| ---------- | ----: | ------: | -----: | ----------: | ---------: | -----------: |
+| topics     |    11 |     165 |   9242 |      939146 |          0 |      $6.1015 |
+| generation |    66 | 2135030 | 114879 |           0 |          0 |     $13.5471 |
+| judge      |    11 |   80733 |  27167 |      951945 |          0 |      $7.0325 |
+| **Total**  |    88 | 2215928 | 151288 |     1891091 |          0 | **$26.6812** |

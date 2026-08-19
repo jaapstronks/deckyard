@@ -24,7 +24,9 @@ const STATUS_CODE_NAME = {
 
 /** @param {number} status @returns {string} */
 export function codeForStatus(status) {
-  return STATUS_CODE_NAME[status] || (status >= 500 ? 'internal_error' : 'error');
+  return (
+    STATUS_CODE_NAME[status] || (status >= 500 ? 'internal_error' : 'error')
+  );
 }
 
 /**

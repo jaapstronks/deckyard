@@ -36,7 +36,10 @@ import {
 } from '../server/media/bundled-gradients.js';
 import { embedImgSrcDataUrls } from '../server/utils/html-utils.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const gradientDir = path.join(repoRoot, GRADIENT_DIR_REL);
 
 const THEME = {
@@ -90,7 +93,7 @@ test('the library is every theme crossed with every composition, sorted', () => 
   assert.equal(items.length, GRADIENT_COMPOSITIONS.length);
   assert.deepEqual(
     items.map((i) => i.id),
-    GRADIENT_COMPOSITIONS.map((c) => `demo-${c.id}`).sort()
+    GRADIENT_COMPOSITIONS.map((c) => `demo-${c.id}`).sort(),
   );
   const first = items[0];
   assert.equal(first.url, `${GRADIENT_URL_PREFIX}${first.id}.svg`);
@@ -147,19 +150,26 @@ test('every committed SVG is exactly what the generator produces', async () => {
   for (const item of items) {
     const file = path.join(gradientDir, `${item.id}.svg`);
     const onDisk = await fs.readFile(file, 'utf8').catch(() => null);
-    assert.ok(onDisk !== null, `missing ${item.id}.svg — run: npm run gen:gradients`);
+    assert.ok(
+      onDisk !== null,
+      `missing ${item.id}.svg — run: npm run gen:gradients`,
+    );
     assert.equal(
       onDisk,
       renderGradientSvg(item.spec),
-      `${item.id}.svg is stale — run: npm run gen:gradients`
+      `${item.id}.svg is stale — run: npm run gen:gradients`,
     );
   }
 });
 
 test('no orphan gradient assets are left behind', async () => {
   const themes = await loadBundledGradientThemes(repoRoot);
-  const expected = new Set(buildGradientItems(themes).map((i) => `${i.id}.svg`));
-  const onDisk = (await fs.readdir(gradientDir)).filter((n) => n.endsWith('.svg'));
+  const expected = new Set(
+    buildGradientItems(themes).map((i) => `${i.id}.svg`),
+  );
+  const onDisk = (await fs.readdir(gradientDir)).filter((n) =>
+    n.endsWith('.svg'),
+  );
   const orphans = onDisk.filter((n) => !expected.has(n));
   assert.deepEqual(orphans, [], `run: npm run gen:gradients`);
 });

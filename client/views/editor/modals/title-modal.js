@@ -17,7 +17,10 @@ export function openTitleModal({
         : t('editor.titleModal.editTitle', 'Edit title'),
     hint:
       mode === 'new'
-        ? t('editor.titleModal.newHint', 'This helps you find the presentation later.')
+        ? t(
+            'editor.titleModal.newHint',
+            'This helps you find the presentation later.',
+          )
         : t('editor.titleModal.editHint', 'The title is saved automatically.'),
     onClose: () => {
       if (newTitleKey) {
@@ -46,7 +49,10 @@ export function openTitleModal({
   const sync = () => {
     const v = String(input.value || '').trim();
     if (!v) {
-      status.textContent = t('editor.titleModal.required', 'Please enter a title.');
+      status.textContent = t(
+        'editor.titleModal.required',
+        'Please enter a title.',
+      );
       return;
     }
     status.textContent = '';

@@ -11,13 +11,13 @@
 
 /** @type {Object} InlineDescriptor for poll-slide. */
 export const inlineEdit = {
-    ghosts: [1, 2, 3, 4].map((n) => ({
-      field: `option${n}`,
-      group: 'options',
-      anchors: [{ sel: '.poll-options', pos: 'append', chip: 'bottom-start' }],
-    })),
-    formText: ['question', 'option1', 'option2', 'option3', 'option4'],
-  };
+  ghosts: [1, 2, 3, 4].map((n) => ({
+    field: `option${n}`,
+    group: 'options',
+    anchors: [{ sel: '.poll-options', pos: 'append', chip: 'bottom-start' }],
+  })),
+  formText: ['question', 'option1', 'option2', 'option3', 'option4'],
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the

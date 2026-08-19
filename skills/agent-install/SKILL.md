@@ -2,8 +2,8 @@
 
 Set up a local or self-hosted [Deckyard](https://deckyard.eu) instance for the
 user and wire yourself in over MCP so you can build presentations. This is an
-*install* skill for shell-capable coding agents (Claude Code, Cursor, …) — not
-the OpenClaw *usage* skill in `skills/openclaw-skill/`.
+_install_ skill for shell-capable coding agents (Claude Code, Cursor, …) — not
+the OpenClaw _usage_ skill in `skills/openclaw-skill/`.
 
 The canonical, always-current procedure lives at
 [`docs/ops/agent-install.md`](../../docs/ops/agent-install.md); fetch it if you

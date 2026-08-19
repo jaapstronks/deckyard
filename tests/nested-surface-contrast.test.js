@@ -33,11 +33,16 @@ const SHIPPED = readdirSync(THEMES_DIR)
   .filter((f) => f.endsWith('.json'))
   .map((f) => ({
     id: f.replace(/\.json$/, ''),
-    theme: normalizeTheme(JSON.parse(readFileSync(join(THEMES_DIR, f), 'utf8'))),
+    theme: normalizeTheme(
+      JSON.parse(readFileSync(join(THEMES_DIR, f), 'utf8')),
+    ),
   }));
 
 test('there are shipped themes to check', () => {
-  assert.ok(SHIPPED.length >= 5, `expected the shipped themes, got ${SHIPPED.length}`);
+  assert.ok(
+    SHIPPED.length >= 5,
+    `expected the shipped themes, got ${SHIPPED.length}`,
+  );
 });
 
 // --- The derivation actually passes -----------------------------------------
@@ -56,11 +61,17 @@ test('every theme derives readable text for its lime and mist surfaces', () => {
       assert.ok(fg, `${id}: --t-slide-bg-${surface}-text was not derived`);
       const ratio = getContrastRatio(fg, bg);
       if (ratio < want) {
-        failures.push(`${id}/${surface}: ${fg} on ${bg} = ${ratio.toFixed(2)}:1`);
+        failures.push(
+          `${id}/${surface}: ${fg} on ${bg} = ${ratio.toFixed(2)}:1`,
+        );
       }
     }
   }
-  assert.deepEqual(failures, [], `nested surfaces below ${want}:1:\n${failures.join('\n')}`);
+  assert.deepEqual(
+    failures,
+    [],
+    `nested surfaces below ${want}:1:\n${failures.join('\n')}`,
+  );
 });
 
 test('a dark lime is not assumed away', () => {
@@ -73,7 +84,7 @@ test('a dark lime is not assumed away', () => {
   const fg = midnight.theme.cssVars['--t-slide-bg-lime-text'];
   assert.ok(
     getContrastRatio(fg, bg) >= WCAG_THRESHOLDS.body.aa,
-    `midnight lime ${fg} on ${bg} = ${getContrastRatio(fg, bg).toFixed(2)}:1`
+    `midnight lime ${fg} on ${bg} = ${getContrastRatio(fg, bg).toFixed(2)}:1`,
   );
 });
 
@@ -113,7 +124,7 @@ test('an author-declared variant text colour is left alone', () => {
 
 const BASE_CSS = readFileSync(
   join(repoRoot, 'client/styles/slides/01-layout-and-title/00-base.css'),
-  'utf8'
+  'utf8',
 );
 
 const SURFACES = ['light', 'dark', 'accent', 'lime', 'mist'];
@@ -121,10 +132,15 @@ const SURFACES = ['light', 'dark', 'accent', 'lime', 'mist'];
 test('every surface class is defined, in one place', () => {
   for (const s of SURFACES) {
     const re = new RegExp(`\\.slide \\.on-surface-${s} \\{`);
-    assert.match(BASE_CSS, re, `.on-surface-${s} should be defined in 00-base.css`);
+    assert.match(
+      BASE_CSS,
+      re,
+      `.on-surface-${s} should be defined in 00-base.css`,
+    );
     // One definition, not two: the whole point is a single owner.
-    const count = (BASE_CSS.match(new RegExp(`\\.slide \\.on-surface-${s} \\{`, 'g')) || [])
-      .length;
+    const count = (
+      BASE_CSS.match(new RegExp(`\\.slide \\.on-surface-${s} \\{`, 'g')) || []
+    ).length;
     assert.equal(count, 1, `.on-surface-${s} defined ${count} times`);
   }
 });
@@ -132,29 +148,39 @@ test('every surface class is defined, in one place', () => {
 test('the redirect covers every surface class', () => {
   // A pole class that is not in the redirect group sets --surface-text and
   // nothing reads it — a silent no-op, which is worse than no class at all.
-  const group = BASE_CSS.match(/\.slide :is\(([^)]*)\)\s*\{\s*--slide-on-surface: var\(--surface-text\)/);
+  const group = BASE_CSS.match(
+    /\.slide\s+:is\(([^)]*)\)\s*\{\s*--slide-on-surface: var\(--surface-text\)/,
+  );
   assert.ok(group, 'expected the shared redirect block');
   for (const s of SURFACES) {
     assert.ok(
       group[1].includes(`.on-surface-${s}`),
-      `.on-surface-${s} is missing from the redirect group`
+      `.on-surface-${s} is missing from the redirect group`,
     );
   }
 });
 
 test('a graphic marker has its own token, and variants flip it', () => {
   assert.match(BASE_CSS, /--slide-marker-color: var\(--slide-accent\)/);
-  assert.match(BASE_CSS, /has-slide-bg-light-text[\s\S]{0,120}--slide-marker-color: color-mix/);
+  assert.match(
+    BASE_CSS,
+    /has-slide-bg-light-text[\s\S]{0,120}--slide-marker-color: color-mix/,
+  );
 
   // …and a theme-declared variant that flips its text colour flips it too.
   const css = slideBackgroundsCssText([
     { id: 'calm', label: 'Calm', value: '#140a26', textColor: '#ffffff' },
   ]);
-  assert.match(css, /--slide-marker-color: color-mix\(in srgb, var\(--slide-accent\) 35%, var\(--slide-bg-text\)\)/);
+  assert.match(
+    css,
+    /--slide-marker-color: color-mix\(in srgb, var\(--slide-accent\) 35%, var\(--slide-bg-text\)\)/,
+  );
 
   // A variant with no text colour has not moved the ground, so it must not
   // move the marker either.
-  const plain = slideBackgroundsCssText([{ id: 'sand', label: 'Sand', value: '#eee' }]);
+  const plain = slideBackgroundsCssText([
+    { id: 'sand', label: 'Sand', value: '#eee' },
+  ]);
   assert.ok(!plain.includes('--slide-marker-color'));
 });
 
@@ -163,11 +189,14 @@ test('every element that paints a known surface declares which one', () => {
   // the theme's surface tokens has to be paired with a surface declaration —
   // either an `on-surface-*` class in the markup, or a `--surface-text`
   // override on the rule that swaps the background.
-  const PAINTS = /background(-color)?:\s*var\(--(interaction-surface|slide-bg-lime|slide-bg-mist)\b/;
+  const PAINTS =
+    /background(-color)?:\s*var\(--(interaction-surface|slide-bg-lime|slide-bg-mist)\b/;
   const stylesDir = join(repoRoot, 'client/styles/slides');
   const typeSrc = readdirSync(join(repoRoot, 'shared/slide-types/types'))
     .filter((f) => f.endsWith('.js'))
-    .map((f) => readFileSync(join(repoRoot, 'shared/slide-types/types', f), 'utf8'))
+    .map((f) =>
+      readFileSync(join(repoRoot, 'shared/slide-types/types', f), 'utf8'),
+    )
     .join('\n');
 
   const walk = (dir) =>
@@ -176,7 +205,7 @@ test('every element that paints a known surface declares which one', () => {
         ? walk(join(dir, e.name))
         : e.name.endsWith('.css')
           ? [join(dir, e.name)]
-          : []
+          : [],
     );
 
   const unpaired = [];
@@ -190,13 +219,19 @@ test('every element that paints a known surface declares which one', () => {
       // which the slide-level contrast logic already answers for.
       if (/(^|[\s,>])\.slide(-[\w-]+)?(\.[\w-]+)*$/.test(selector)) continue;
       // Paired in the rule itself (a CSS-side surface swap)?
-      if (/--surface-text\s*:/.test(body) || /--slide-on-surface\s*:/.test(body)) continue;
+      if (
+        /--surface-text\s*:/.test(body) ||
+        /--slide-on-surface\s*:/.test(body)
+      )
+        continue;
       // Paired in the markup? Take the rule's last class and look for it next
       // to an on-surface-* class in the type sources.
       const leaf = [...selector.matchAll(/\.([a-z][\w-]*)/g)].pop()?.[1];
       const declared =
         leaf &&
-        new RegExp(`class="[^"]*\\b${leaf}\\b[^"]*\\bon-surface-`).test(typeSrc);
+        new RegExp(`class="[^"]*\\b${leaf}\\b[^"]*\\bon-surface-`).test(
+          typeSrc,
+        );
       if (!declared) {
         unpaired.push(`${file.replace(`${repoRoot}/`, '')}: ${selector}`);
       }
@@ -210,6 +245,6 @@ test('every element that paints a known surface declares which one', () => {
   assert.deepEqual(
     real,
     [],
-    `these paint a theme surface but never say which:\n${real.join('\n')}`
+    `these paint a theme surface but never say which:\n${real.join('\n')}`,
   );
 });

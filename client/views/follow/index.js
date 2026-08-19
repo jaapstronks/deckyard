@@ -9,11 +9,12 @@
 import { api } from '../../lib/api.js';
 import { h } from '../../lib/dom.js';
 import { attachThumbScaleContain } from '../../lib/slide-runtime/thumb-scale.js';
-import {
-  cleanupSlideRuntimes,
-} from '../../lib/slide-runtime/slide-render.js';
+import { cleanupSlideRuntimes } from '../../lib/slide-runtime/slide-render.js';
 import { normalizeLang } from '../../lib/format/i18n.js';
-import { createAnalyticsTracker, isAnalyticsEnabled } from '../../lib/format/analytics-tracker.js';
+import {
+  createAnalyticsTracker,
+  isAnalyticsEnabled,
+} from '../../lib/format/analytics-tracker.js';
 import { createEraseMyDataButton } from '../../lib/format/analytics-erase-button.js';
 import { me } from '../../lib/user/auth.js';
 import {
@@ -42,9 +43,7 @@ export async function renderFollow(root, presentationId) {
   window.__PRESENTATION_ID__ = presentationId;
 
   const startUrl = new URL(location.href);
-  let lang =
-    normalizeLang(startUrl.searchParams.get('lang')) ||
-    'nl';
+  let lang = normalizeLang(startUrl.searchParams.get('lang')) || 'nl';
   let meta = { dominantLang: null, availableLangs: [] };
   let copy = await createFollowCopy(lang);
 
@@ -153,7 +152,9 @@ export async function renderFollow(root, presentationId) {
   };
 
   const renderLangButtons = () => {
-    const avail = Array.isArray(meta?.availableLangs) ? meta.availableLangs : [];
+    const avail = Array.isArray(meta?.availableLangs)
+      ? meta.availableLangs
+      : [];
     renderFollowLangButtons({
       h,
       langWrap,
@@ -223,11 +224,9 @@ export async function renderFollow(root, presentationId) {
 
   const refreshPresentationIfLive = async () => {
     const base = `/api/follow/${encodeURIComponent(
-      presentationId
+      presentationId,
     )}/presentation`;
-    const resp = await api(
-      `${base}?lang=${encodeURIComponent(lang)}`
-    );
+    const resp = await api(`${base}?lang=${encodeURIComponent(lang)}`);
     if (resp?.status !== 'live') {
       pres = null;
       if (resp?.status === 'not_started') {
@@ -241,9 +240,10 @@ export async function renderFollow(root, presentationId) {
           missing: resp?.missing,
           jobStatus: resp?.job?.status,
         };
-        const msg = typeof copy.translatingWithProgress === 'function'
-          ? copy.translatingWithProgress(translatingInfo)
-          : copy.translating;
+        const msg =
+          typeof copy.translatingWithProgress === 'function'
+            ? copy.translatingWithProgress(translatingInfo)
+            : copy.translating;
         showMessage(msg);
         ensureTranslatingPoll();
       } else {
@@ -268,29 +268,25 @@ export async function renderFollow(root, presentationId) {
     if (!analyticsTracker && !analyticsChecked && isAnalyticsEnabled(pres)) {
       analyticsChecked = true;
       // Check if user is logged in - if so, skip tracking
-      me().then((user) => {
-        if (user) {
-          // User is logged in - don't track coworkers
-          return;
-        }
-        // Anonymous viewer - initialize tracking
-        startAnonymousTracking();
-      }).catch(() => {
-        // On auth check failure, assume anonymous and track
-        startAnonymousTracking();
-      });
+      me()
+        .then((user) => {
+          if (user) {
+            // User is logged in - don't track coworkers
+            return;
+          }
+          // Anonymous viewer - initialize tracking
+          startAnonymousTracking();
+        })
+        .catch(() => {
+          // On auth check failure, assume anonymous and track
+          startAnonymousTracking();
+        });
     }
     // Also sync current slide/step state (helps initial render before SSE connects).
-    lastSlideId = String(
-      resp?.slideId || lastSlideId || ''
-    );
+    lastSlideId = String(resp?.slideId || lastSlideId || '');
     lastSlideType = String(resp?.slideType || lastSlideType || '');
-    lastSlideIndex =
-      Number(resp?.slideIndex ?? lastSlideIndex) || 0;
-    lastStepIdx = Math.max(
-      0,
-      Number(resp?.stepIdx || 0) || 0
-    );
+    lastSlideIndex = Number(resp?.slideIndex ?? lastSlideIndex) || 0;
+    lastStepIdx = Math.max(0, Number(resp?.stepIdx || 0) || 0);
     lastStepParagraphs = !!resp?.stepParagraphs;
     interactions?.setSlideContext?.({
       slideId: lastSlideId,
@@ -309,9 +305,7 @@ export async function renderFollow(root, presentationId) {
   const refreshStateIfLive = async () => {
     try {
       const resp = await api(
-        `/api/follow/${encodeURIComponent(
-          presentationId
-        )}/state`
+        `/api/follow/${encodeURIComponent(presentationId)}/state`,
       );
       if (resp?.status !== 'live') {
         pres = null;
@@ -321,9 +315,11 @@ export async function renderFollow(root, presentationId) {
           stopTranslatingPoll();
           showMessage(copy.notStarted);
         } else if (resp?.status === 'translating') {
-          const msg = translatingInfo && typeof copy.translatingWithProgress === 'function'
-            ? copy.translatingWithProgress(translatingInfo)
-            : copy.translating;
+          const msg =
+            translatingInfo &&
+            typeof copy.translatingWithProgress === 'function'
+              ? copy.translatingWithProgress(translatingInfo)
+              : copy.translating;
           showMessage(msg);
           ensureTranslatingPoll();
         } else {
@@ -368,8 +364,7 @@ export async function renderFollow(root, presentationId) {
     }
   };
 
-  const refreshQuestionsIfLive = async () =>
-    qa?.refreshQuestionsIfLive?.();
+  const refreshQuestionsIfLive = async () => qa?.refreshQuestionsIfLive?.();
 
   // Initial load
   try {
@@ -427,9 +422,7 @@ export async function renderFollow(root, presentationId) {
         pres = null;
         status.textContent = '';
         showMessage(
-          data?.status === 'not_started'
-            ? copy.notStarted
-            : copy.ended
+          data?.status === 'not_started' ? copy.notStarted : copy.ended,
         );
       }
     },
@@ -442,7 +435,11 @@ export async function renderFollow(root, presentationId) {
       lastStepParagraphs = !!data?.stepParagraphs;
 
       // Track slide change
-      if (lastSlideId && lastSlideId !== previousSlideId && analyticsTracker?.isTracking()) {
+      if (
+        lastSlideId &&
+        lastSlideId !== previousSlideId &&
+        analyticsTracker?.isTracking()
+      ) {
         analyticsTracker.trackSlide(lastSlideId, lastSlideIndex);
       }
 

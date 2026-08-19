@@ -70,16 +70,22 @@ export function mountLibraryStrip(ctx) {
   const buildLibraryTile = (item) => {
     const type = String(item?.slideType || '').trim();
     const name = String(item?.name || '').trim() || labelFor(type);
-    const thumbWrap = h('div', { class: 'ps-type-thumb thumb', 'data-thumb-type': type });
+    const thumbWrap = h('div', {
+      class: 'ps-type-thumb thumb',
+      'data-thumb-type': type,
+    });
     try {
       const el = renderSlideElement(
         {
           id: `lib-${item?.id || type}`,
           type,
-          content: item?.content && typeof item.content === 'object' ? item.content : {},
+          content:
+            item?.content && typeof item.content === 'object'
+              ? item.content
+              : {},
           notes: '',
         },
-        { mode: 'thumb', theme }
+        { mode: 'thumb', theme },
       );
       thumbWrap.append(el);
       applyThumbScale(thumbWrap);
@@ -102,12 +108,15 @@ export function mountLibraryStrip(ctx) {
           onPicked?.();
         },
       },
-      [thumbWrap, labelWrap]
+      [thumbWrap, labelWrap],
     );
     return h(
       'div',
-      { class: 'ps-type-card-wrap', 'data-search': `${name} ${type}`.toLowerCase() },
-      [card]
+      {
+        class: 'ps-type-card-wrap',
+        'data-search': `${name} ${type}`.toLowerCase(),
+      },
+      [card],
     );
   };
 
@@ -119,12 +128,17 @@ export function mountLibraryStrip(ctx) {
       data = {};
     }
     const personal = Array.isArray(data.personal) ? data.personal : [];
-    const organization = Array.isArray(data.organization) ? data.organization : [];
+    const organization = Array.isArray(data.organization)
+      ? data.organization
+      : [];
     if (!personal.length && !organization.length) return;
     // A newer render replaced this pass while we were loading.
     if (!typesWrap.isConnected) return;
 
-    const { pShow, oShow } = splitLibraryBudget(personal.length, organization.length);
+    const { pShow, oShow } = splitLibraryBudget(
+      personal.length,
+      organization.length,
+    );
     const groups = [];
     if (pShow) {
       groups.push({

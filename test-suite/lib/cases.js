@@ -35,7 +35,9 @@ export async function loadCases(ids = null) {
   try {
     entries = await fs.readdir(CASES_DIR, { withFileTypes: true });
   } catch {
-    throw new Error(`No cases directory at ${CASES_DIR}. Run the fetch script first.`);
+    throw new Error(
+      `No cases directory at ${CASES_DIR}. Run the fetch script first.`,
+    );
   }
 
   const cases = [];
@@ -62,7 +64,7 @@ export async function loadCases(ids = null) {
   const unknown = ids.filter((id) => !known.has(id));
   if (unknown.length) {
     throw new Error(
-      `Unknown case id(s): ${unknown.join(', ')}. Available: ${[...known].join(', ')}`
+      `Unknown case id(s): ${unknown.join(', ')}. Available: ${[...known].join(', ')}`,
     );
   }
   return cases.filter((c) => ids.includes(c.id));
@@ -101,7 +103,7 @@ export async function readSourceText(testCase) {
     } catch {
       throw new Error(
         `Missing source text for case "${testCase.id}": ${filePath}\n` +
-          `Run: node test-suite/scripts/fetch-cases.js --cases ${testCase.id}`
+          `Run: node test-suite/scripts/fetch-cases.js --cases ${testCase.id}`,
       );
     }
   }

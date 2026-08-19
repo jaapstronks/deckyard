@@ -127,12 +127,19 @@ describe('formatCanonicalId', () => {
   it('gives a core type the core authority, suffix dropped', () => {
     assert.equal(
       formatCanonicalId({ namespace: CORE_NAMESPACE, name: 'title-slide' }),
-      'eu.deckyard.slide.title'
+      'eu.deckyard.slide.title',
     );
-    assert.equal(formatCanonicalId({ name: 'end-slide' }), 'eu.deckyard.slide.end');
     assert.equal(
-      formatCanonicalId({ namespace: CORE_NAMESPACE, name: 'title-slide', version: '2' }),
-      'eu.deckyard.slide.title@2'
+      formatCanonicalId({ name: 'end-slide' }),
+      'eu.deckyard.slide.end',
+    );
+    assert.equal(
+      formatCanonicalId({
+        namespace: CORE_NAMESPACE,
+        name: 'title-slide',
+        version: '2',
+      }),
+      'eu.deckyard.slide.title@2',
     );
   });
   it('keeps a declared authority and leaves its names alone', () => {
@@ -140,12 +147,18 @@ describe('formatCanonicalId', () => {
     // impose on anyone else's naming.
     assert.equal(
       formatCanonicalId({ namespace: 'nl.ciiic.slide', name: 'hero-slide' }),
-      'nl.ciiic.slide.hero-slide'
+      'nl.ciiic.slide.hero-slide',
     );
   });
   it('falls back to the slash form without an authority to build on', () => {
-    assert.equal(formatCanonicalId({ namespace: 'acme', name: 'hero' }), 'acme/hero');
-    assert.equal(formatCanonicalId({ namespace: 'custom', name: 'x', version: '3' }), 'custom/x@3');
+    assert.equal(
+      formatCanonicalId({ namespace: 'acme', name: 'hero' }),
+      'acme/hero',
+    );
+    assert.equal(
+      formatCanonicalId({ namespace: 'custom', name: 'x', version: '3' }),
+      'custom/x@3',
+    );
   });
   it('round-trips through parseTypeId', () => {
     for (const ref of [
@@ -175,8 +188,14 @@ describe('tryParseTypeId', () => {
 
 describe('formatTypeId', () => {
   it('is always explicit about the namespace', () => {
-    assert.equal(formatTypeId({ namespace: 'core', name: 'title-slide', version: null }), 'core/title-slide');
-    assert.equal(formatTypeId({ namespace: 'acme', name: 'hero', version: '2' }), 'acme/hero@2');
+    assert.equal(
+      formatTypeId({ namespace: 'core', name: 'title-slide', version: null }),
+      'core/title-slide',
+    );
+    assert.equal(
+      formatTypeId({ namespace: 'acme', name: 'hero', version: '2' }),
+      'acme/hero@2',
+    );
   });
   it('round-trips through parseTypeId', () => {
     for (const ref of ['core/title-slide', 'acme/hero', 'acme/hero@2.1']) {

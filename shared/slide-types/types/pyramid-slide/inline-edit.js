@@ -13,13 +13,23 @@ import { HEADER_GHOSTS, HEADER_TEXT } from '../../inline-edit-common.js';
 
 /** @type {Object} InlineDescriptor for pyramid-slide. */
 export const inlineEdit = {
-    ghosts: HEADER_GHOSTS,
-    itemGhosts: [
-      { list: 'levels', field: 'text', item: '.pyramid-level', within: '.level-content', pos: 'append' },
-    ],
-    cards: { field: 'levels', container: '.pyramid-container', itemSelector: '.pyramid-level' },
-    formText: [...HEADER_TEXT, 'levels'],
-  };
+  ghosts: HEADER_GHOSTS,
+  itemGhosts: [
+    {
+      list: 'levels',
+      field: 'text',
+      item: '.pyramid-level',
+      within: '.level-content',
+      pos: 'append',
+    },
+  ],
+  cards: {
+    field: 'levels',
+    container: '.pyramid-container',
+    itemSelector: '.pyramid-level',
+  },
+  formText: [...HEADER_TEXT, 'levels'],
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the

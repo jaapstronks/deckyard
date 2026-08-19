@@ -39,9 +39,7 @@ export function toRuntimeSlideType(ct) {
     const render = compileTemplate(ct.template);
     def.renderHtml = (content, slide, ctx) => {
       // Inject custom CSS as a scoped <style> block
-      const cssBlock = ct.css
-        ? `<style>${filterCssText(ct.css)}</style>`
-        : '';
+      const cssBlock = ct.css ? `<style>${filterCssText(ct.css)}</style>` : '';
       // Sanitize the compiled template output before it reaches innerHTML and
       // the headless-export renderer. Template authoring is canManage-gated, but
       // the *content* the template interpolates ({{raw}} / {{markdown}}) is

@@ -15,7 +15,11 @@ import {
   getBackgroundPresets,
   pickBackgroundPreset,
 } from '../shared/theme-background-presets.js';
-import { newSlide, deckToPresentationParts, convertSlideToType } from '../shared/slide-types.js';
+import {
+  newSlide,
+  deckToPresentationParts,
+  convertSlideToType,
+} from '../shared/slide-types.js';
 import * as SlideTypes from '../shared/slide-types.js';
 
 const PRESETS = ['/custom/a.jpg', '/custom/b.jpg'];
@@ -29,8 +33,10 @@ test('getBackgroundPresets reads the theme and drops junk entries', () => {
   assert.deepEqual(getBackgroundPresets({}), []);
   assert.deepEqual(getBackgroundPresets({ backgroundPresets: 'nope' }), []);
   assert.deepEqual(
-    getBackgroundPresets({ backgroundPresets: ['/a.jpg', '', '   ', 42, null] }),
-    ['/a.jpg']
+    getBackgroundPresets({
+      backgroundPresets: ['/a.jpg', '', '   ', 42, null],
+    }),
+    ['/a.jpg'],
   );
 });
 
@@ -83,8 +89,14 @@ test('newSlide works for every registered type without a theme, and none seed a 
     assert.doesNotThrow(() => {
       slide = newSlide({ type });
     }, `${type}: newSlide throws without a theme`);
-    assert.ok(!slide.content.slideBgImage, `${type}: no slideBgImage seeded without a theme`);
-    assert.ok(!slide.content.bgImage, `${type}: no bgImage seeded without a theme`);
+    assert.ok(
+      !slide.content.slideBgImage,
+      `${type}: no slideBgImage seeded without a theme`,
+    );
+    assert.ok(
+      !slide.content.bgImage,
+      `${type}: no bgImage seeded without a theme`,
+    );
   }
 });
 
@@ -115,7 +127,7 @@ test('an imported title slide keeps a legacy background it already declares', ()
         { type: 'title-slide', content: { title: 'X', bgImage: '/mine.jpg' } },
       ],
     },
-    { theme: themeWithPresets }
+    { theme: themeWithPresets },
   );
   assert.equal(parts.slides[0].content.bgImage, '/mine.jpg');
   assert.ok(!parts.slides[0].content.slideBgImage);
@@ -155,7 +167,7 @@ test('title-slide render maps the theme titleLayout token to a tsu-layout class'
     SLIDE_TYPES['title-slide'].renderHtml(
       { title: 'Hi' },
       { id: 's1' },
-      { theme: titleLayout === undefined ? {} : { titleLayout } }
+      { theme: titleLayout === undefined ? {} : { titleLayout } },
     );
   assert.match(render('center'), /tsu-layout-center/);
   assert.match(render('top'), /tsu-layout-top/);
@@ -179,8 +191,12 @@ test('title ↔ chapter conversion carries title + subheading both ways', () => 
   assert.ok(!('meta' in toChapter.content) || !toChapter.content.meta);
 
   const back = convertSlideToType(
-    { id: 'c', type: 'chapter-title-slide', content: { title: 'Section', subheading: 'Sub' } },
-    'title-slide'
+    {
+      id: 'c',
+      type: 'chapter-title-slide',
+      content: { title: 'Section', subheading: 'Sub' },
+    },
+    'title-slide',
   );
   assert.equal(back.type, 'title-slide');
   assert.equal(back.content.title, 'Section');
@@ -196,6 +212,6 @@ test('the title-slide import path never reaches for a demo photo', () => {
 
   assert.doesNotMatch(
     JSON.stringify(parts.slides[0].content),
-    /demo-(aurora|dusk|paper|moss)/
+    /demo-(aurora|dusk|paper|moss)/,
   );
 });

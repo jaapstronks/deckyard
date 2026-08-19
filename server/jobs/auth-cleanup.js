@@ -98,7 +98,9 @@ if (process.argv[1]?.endsWith('auth-cleanup.js')) {
     .then((result) => {
       console.log(`\nSummary:`);
       console.log(`  Magic link tokens deleted: ${result.magicLinkTokens}`);
-      console.log(`  Password reset tokens deleted: ${result.passwordResetTokens}`);
+      console.log(
+        `  Password reset tokens deleted: ${result.passwordResetTokens}`,
+      );
       console.log(`  Audit log entries deleted: ${result.auditLogs}`);
       process.exit(0);
     })

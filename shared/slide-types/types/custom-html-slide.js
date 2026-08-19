@@ -178,13 +178,14 @@ export default {
     const scope = `.custom-html-root[data-chr="${safeId}"]`;
 
     const safeHtml = sanitizeSlideHtmlSync(
-      String(content?.html || '').slice(0, HTML_MAX)
+      String(content?.html || '').slice(0, HTML_MAX),
     );
     const rawCss = String(content?.css || '').slice(0, CSS_MAX);
     const scopedCss = rawCss ? scopeCss(filterCssText(rawCss), scope) : '';
     const styleBlock = scopedCss ? `<style>${scopedCss}</style>` : '';
 
-    const inner = safeHtml || '<div class="custom-html-empty">Custom HTML</div>';
+    const inner =
+      safeHtml || '<div class="custom-html-empty">Custom HTML</div>';
 
     return `<div class="slide slide-custom-html ${bg}">${styleBlock}<div class="custom-html-root" data-chr="${escapeHtml(safeId)}">${inner}</div></div>`;
   },

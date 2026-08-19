@@ -29,7 +29,8 @@ export function canGuestComment({ guest, shareLink, presentationId } = {}) {
   if (shareLink.revokedAt) return false;
 
   // Share link must not be expired
-  if (shareLink.expiresAt && new Date(shareLink.expiresAt) < new Date()) return false;
+  if (shareLink.expiresAt && new Date(shareLink.expiresAt) < new Date())
+    return false;
 
   return true;
 }

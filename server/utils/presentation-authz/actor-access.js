@@ -122,7 +122,13 @@ export async function canActorAccessPresentation(pres, actor, access = 'read') {
     actor?.email ? getCollaboratorPermission(pres.id, actor.email) : null,
     resolveActorUserId(actor),
   ]);
-  return checkActorAccess({ pres, actor, actorUserId, access, collaboratorPermission });
+  return checkActorAccess({
+    pres,
+    actor,
+    actorUserId,
+    access,
+    collaboratorPermission,
+  });
 }
 
 /**
@@ -199,5 +205,10 @@ export async function canActorCommentOnPresentation(pres, actor) {
     actor?.email ? getCollaboratorPermission(pres.id, actor.email) : null,
     resolveActorUserId(actor),
   ]);
-  return checkActorCommentAccess({ pres, actor, actorUserId, collaboratorPermission });
+  return checkActorCommentAccess({
+    pres,
+    actor,
+    actorUserId,
+    collaboratorPermission,
+  });
 }

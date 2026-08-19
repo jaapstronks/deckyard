@@ -15,29 +15,30 @@ No prompt files changed since then — differences are run-to-run variance.
 
 ## Scores by dimension
 
-| Dimension | Score | vs. previous |
-| --- | ---: | ---: |
-| Coverage | 4.75 | · 0.00 |
-| Structure | 4.50 | ▼ -0.50 |
-| Slide economy | 4.00 | ▼ -0.25 |
-| Faithfulness | 4.00 | ▼ -1.00 |
-| Presentability | 4.25 | ▲ +0.25 |
-| Closeness to human deck | 3.00 | · 0.00 |
-| **Overall** | **4.30** | ▼ -0.30 |
+| Dimension               |    Score | vs. previous |
+| ----------------------- | -------: | -----------: |
+| Coverage                |     4.75 |       · 0.00 |
+| Structure               |     4.50 |      ▼ -0.50 |
+| Slide economy           |     4.00 |      ▼ -0.25 |
+| Faithfulness            |     4.00 |      ▼ -1.00 |
+| Presentability          |     4.25 |      ▲ +0.25 |
+| Closeness to human deck |     3.00 |       · 0.00 |
+| **Overall**             | **4.30** |      ▼ -0.30 |
 
 > **Regression warning.** These dimensions moved down:
+>
 > - Structure (-0.50)
 > - Slide economy (-0.25)
 > - Faithfulness (-1.00)
 
 ## Per-case results
 
-| Case | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| asml-q4-2024 | A | 14 | 25 | 0 | 80% | 4/5 | 3.50 |
-| cbs-persbericht-criminaliteit | B | 13 | 24.62 | 0 | 95% | 5/5 | 4.60 |
-| cloudflare-nov-2025-outage | B | 16 | 40.44 | 0 | 100% | 5/5 | 4.80 |
-| wikipedia-zero-knowledge-proof | B | 25 | 46.28 | 2 | 100% | 5/5 | 4.20 |
+| Case                           | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
+| ------------------------------ | --- | -----: | ----------: | ----: | -------------: | -------: | ---: |
+| asml-q4-2024                   | A   |     14 |          25 |     0 |            80% |      4/5 | 3.50 |
+| cbs-persbericht-criminaliteit  | B   |     13 |       24.62 |     0 |            95% |      5/5 | 4.60 |
+| cloudflare-nov-2025-outage     | B   |     16 |       40.44 |     0 |           100% |      5/5 | 4.80 |
+| wikipedia-zero-knowledge-proof | B   |     25 |       46.28 |     2 |           100% |      5/5 | 4.20 |
 
 ## Weakest dimensions — judge rationales
 
@@ -70,8 +71,8 @@ These rationales are the input for the next prompt change.
 
 ## Cost breakdown
 
-| Category | Calls | Input | Output | Cache write | Cache read | USD |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| generation | 20 | 878566 | 34167 | 0 | 0 | $5.2470 |
-| judge | 4 | 557564 | 7644 | 0 | 0 | $2.9789 |
-| **Total** | 24 | 1436130 | 41811 | 0 | 0 | **$8.2259** |
+| Category   | Calls |   Input | Output | Cache write | Cache read |         USD |
+| ---------- | ----: | ------: | -----: | ----------: | ---------: | ----------: |
+| generation |    20 |  878566 |  34167 |           0 |          0 |     $5.2470 |
+| judge      |     4 |  557564 |   7644 |           0 |          0 |     $2.9789 |
+| **Total**  |    24 | 1436130 |  41811 |           0 |          0 | **$8.2259** |

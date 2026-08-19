@@ -13,16 +13,16 @@
 
 ## Where Changes Should Go
 
-| Change Type | Location |
-|-------------|----------|
-| New slide types | `shared/slide-types/types/<type>.js` + registry entry |
-| Custom slide types | `custom/slide-types/<type>.js` (gitignored) |
-| Client behavior | `client/lib/*` or `client/views/**` |
-| Server endpoints | `server/routes/api/**` |
-| Data persistence | `server/storage/**` |
-| Exports/rendering | `server/export/**` using shared slide rendering |
-| Themes | `themes/*.json` or `custom/themes/*.json` |
-| Translations | `client/i18n/<locale>/*.json` |
+| Change Type        | Location                                              |
+| ------------------ | ----------------------------------------------------- |
+| New slide types    | `shared/slide-types/types/<type>.js` + registry entry |
+| Custom slide types | `custom/slide-types/<type>.js` (gitignored)           |
+| Client behavior    | `client/lib/*` or `client/views/**`                   |
+| Server endpoints   | `server/routes/api/**`                                |
+| Data persistence   | `server/storage/**`                                   |
+| Exports/rendering  | `server/export/**` using shared slide rendering       |
+| Themes             | `themes/*.json` or `custom/themes/*.json`             |
+| Translations       | `client/i18n/<locale>/*.json`                         |
 
 ---
 
@@ -71,9 +71,8 @@ import { markdownToSafeHtml } from '../shared/markdown.js';
 
 // For plain text
 `<h1>${esc(content?.title)}</h1>`
-
 // For markdown content
-`<div class="body">${markdownToSafeHtml(content?.body)}</div>`
+`<div class="body">${markdownToSafeHtml(content?.body)}</div>`;
 ```
 
 **Never** use raw HTML insertion for user content:
@@ -107,13 +106,13 @@ renderHtml: (content, slide, ctx) => `
   <div class="slide slide-content">
     <h1>${esc(content?.title)}</h1>
   </div>
-`
+`;
 
 // BAD - has side effects
 renderHtml: (content, slide, ctx) => {
-  document.title = content.title;  // Side effect!
+  document.title = content.title; // Side effect!
   return `<div>...</div>`;
-}
+};
 ```
 
 ### RTL Support
@@ -121,8 +120,7 @@ renderHtml: (content, slide, ctx) => {
 All text elements should include `dir="auto"`:
 
 ```javascript
-`<h1 dir="auto">${esc(content?.title)}</h1>`
-`<p dir="auto">${esc(content?.body)}</p>`
+`<h1 dir="auto">${esc(content?.title)}</h1>``<p dir="auto">${esc(content?.body)}</p>`;
 ```
 
 ### Slide Structure
@@ -136,7 +134,7 @@ renderHtml: (content) => `
       <!-- Slide content here -->
     </div>
   </div>
-`
+`;
 ```
 
 ---
@@ -150,8 +148,12 @@ If your code creates timers, event listeners, or connections:
 ```javascript
 // client/lib/my-feature.js
 export function attachFeature(element) {
-  const timer = setInterval(() => { /* ... */ }, 1000);
-  const handler = (e) => { /* ... */ };
+  const timer = setInterval(() => {
+    /* ... */
+  }, 1000);
+  const handler = (e) => {
+    /* ... */
+  };
 
   element.addEventListener('click', handler);
 
@@ -189,20 +191,25 @@ export async function handleMyFeature(ctx) {
 
   // Check if this handler should handle the request
   if (url.pathname !== '/api/my-feature') {
-    return false;  // Not handled, try next handler
+    return false; // Not handled, try next handler
   }
 
   // Handle the request
   const data = await getMyData();
   serveJson(res, data);
-  return true;  // Handled
+  return true; // Handled
 }
 ```
 
 ### Use HTTP Utilities
 
 ```javascript
-import { serveJson, badRequest, unauthorized, notFound } from '../../utils/http.js';
+import {
+  serveJson,
+  badRequest,
+  unauthorized,
+  notFound,
+} from '../../utils/http.js';
 
 // Success responses
 serveJson(res, { data: 'value' });
@@ -234,7 +241,7 @@ if (!title) return badRequest(res, 'title is required');
 
 Where an absent payload is a legitimate request (a toggle, a DELETE with
 optional options), pass `{ allowEmpty: true }` and an empty body arrives as
-`{}`. A *malformed* body is still a 400 — absent and broken are different
+`{}`. A _malformed_ body is still a 400 — absent and broken are different
 requests.
 
 ### Validation
@@ -327,6 +334,7 @@ chore: update dependencies
 ```
 
 Prefix with:
+
 - `feat:` - New feature
 - `fix:` - Bug fix
 - `refactor:` - Code restructuring

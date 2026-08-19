@@ -44,7 +44,10 @@
 export function visibilityDriverKeys(fields) {
   const out = new Set();
   for (const f of Array.isArray(fields) ? fields : []) {
-    const key = typeof f?.visibleWhen?.field === 'string' ? f.visibleWhen.field.trim() : '';
+    const key =
+      typeof f?.visibleWhen?.field === 'string'
+        ? f.visibleWhen.field.trim()
+        : '';
     if (key) out.add(key);
   }
   return out;
@@ -67,8 +70,6 @@ export function isFieldVisible(field, content, defaults) {
   if (!key || !list) return true;
   const raw = content?.[key];
   const value =
-    raw == null || raw === ''
-      ? String(defaults?.[key] ?? '')
-      : String(raw);
+    raw == null || raw === '' ? String(defaults?.[key] ?? '') : String(raw);
   return list.some((v) => String(v) === value);
 }

@@ -39,7 +39,9 @@ import assert from 'node:assert/strict';
 
 // Assembled rather than written as one literal so secret scanners do not flag
 // it; authConfigError() only requires MIN_AUTH_SECRET_LENGTH characters.
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
 process.env.MULTI_ORG_ENABLED = 'true';
@@ -55,15 +57,17 @@ const { hashPassword } = await import('../server/utils/password-hash.js');
 const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const auth = await import('../server/auth/auth.js');
 const { createStorageScope } = await import('../server/utils/context.js');
-const { __store } = await import(
-  '../server/storage/presentations/index.js'
-);
+const { __store } = await import('../server/storage/presentations/index.js');
 
 let passwordHash;
 
 test.before(async () => {
   passwordHash = await hashPassword('correct horse battery');
-  assert.equal(isMultiOrgEnabled(), true, 'multi-organization flag is on for this file');
+  assert.equal(
+    isMultiOrgEnabled(),
+    true,
+    'multi-organization flag is on for this file',
+  );
 });
 
 test.afterEach(() => {
@@ -162,20 +166,29 @@ function requestWithSession(user, organizationId) {
     },
   };
   auth.setSessionCookie(req, res, user, { organizationId });
-  return { headers: { cookie: String(res.headers['Set-Cookie']).split(';')[0] } };
+  return {
+    headers: { cookie: String(res.headers['Set-Cookie']).split(';')[0] },
+  };
 }
 
 /** Log in, then resolve a request in `organizationId` down to a route context. */
 async function contextFor(organizationId) {
-  const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', {
-    organizationId: ORG_A,
-    actorEmail: 'alice@example.com',
-  });
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    {
+      organizationId: ORG_A,
+      actorEmail: 'alice@example.com',
+    },
+  );
   const authedUser = await auth.getUserFromRequestAsync(
     requestWithSession(login, organizationId),
-    {}
+    {},
   );
-  return { authedUser, ctx: authedUser ? createStorageScope(authedUser) : null };
+  return {
+    authedUser,
+    ctx: authedUser ? createStorageScope(authedUser) : null,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -187,7 +200,11 @@ test('the context carries the organization the session is in', async () => {
 
   for (const org of [ORG_A, ORG_B]) {
     const { ctx } = await contextFor(org);
-    assert.equal(ctx.organizationId, org, `session in ${org} produced a context in ${org}`);
+    assert.equal(
+      ctx.organizationId,
+      org,
+      `session in ${org} produced a context in ${org}`,
+    );
     assert.equal(ctx.actorEmail, 'alice@example.com');
   }
 });
@@ -197,7 +214,11 @@ test('an explicit override still wins over the session', async () => {
   const { authedUser } = await contextFor(ORG_B);
 
   const ctx = createStorageScope(authedUser, { organizationId: ORG_A });
-  assert.equal(ctx.organizationId, ORG_A, 'options.organizationId is the top precedence');
+  assert.equal(
+    ctx.organizationId,
+    ORG_A,
+    'options.organizationId is the top precedence',
+  );
 });
 
 test('a context with nobody authenticated falls back to the default', () => {
@@ -218,7 +239,7 @@ test('an authenticated user with no resolved organization gets none (L10)', () =
   // organization at all and getOrgId() refuses the query instead of guessing.
   assert.equal(
     createStorageScope({ email: 'apikey-owner@example.com' }).organizationId,
-    null
+    null,
   );
 });
 
@@ -249,18 +270,24 @@ test('a deck from another organization is invisible', async () => {
   const { ctx: inAlpha } = await contextFor(ORG_A);
   const { ctx: inBeta } = await contextFor(ORG_B);
 
-  assert.ok(await __store.getPresentationRow('deck-alpha', inAlpha), 'own deck is readable');
+  assert.ok(
+    await __store.getPresentationRow('deck-alpha', inAlpha),
+    'own deck is readable',
+  );
   assert.equal(
     await __store.getPresentationRow('deck-beta', inAlpha),
     null,
-    "Alpha cannot read Beta's deck"
+    "Alpha cannot read Beta's deck",
   );
 
-  assert.ok(await __store.getPresentationRow('deck-beta', inBeta), 'own deck is readable');
+  assert.ok(
+    await __store.getPresentationRow('deck-beta', inBeta),
+    'own deck is readable',
+  );
   assert.equal(
     await __store.getPresentationRow('deck-alpha', inBeta),
     null,
-    "Beta cannot read Alpha's deck"
+    "Beta cannot read Alpha's deck",
   );
 });
 
@@ -273,7 +300,7 @@ test("listing decks only returns the active organization's", async () => {
   assert.deepEqual(
     listed.map((p) => p.id),
     ['deck-beta'],
-    'the other organization does not appear in the list'
+    'the other organization does not appear in the list',
   );
 });
 
@@ -281,10 +308,17 @@ test('a new deck is created in the active organization', async () => {
   const db = seedTwoOrgs();
 
   const { ctx: inBeta } = await contextFor(ORG_B);
-  const created = await __store.createPresentationRow({ title: 'Written in Beta' }, inBeta);
+  const created = await __store.createPresentationRow(
+    { title: 'Written in Beta' },
+    inBeta,
+  );
 
   const row = db.__tables.presentations.find((p) => p.id === created.id);
-  assert.equal(row.organization_id, ORG_B, 'writes land in the organization being used');
+  assert.equal(
+    row.organization_id,
+    ORG_B,
+    'writes land in the organization being used',
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -309,12 +343,19 @@ test('a revoked membership moves the request to the fallback organization', asyn
   });
 
   const { ctx } = await contextFor(ORG_A);
-  assert.equal(ctx.organizationId, ORG_B, 'oldest remaining membership, per the phase 0 rule');
-  assert.ok(await __store.getPresentationRow('deck-beta', ctx), 'her remaining organization works');
+  assert.equal(
+    ctx.organizationId,
+    ORG_B,
+    'oldest remaining membership, per the phase 0 rule',
+  );
+  assert.ok(
+    await __store.getPresentationRow('deck-beta', ctx),
+    'her remaining organization works',
+  );
   assert.equal(
     await __store.getPresentationRow('deck-alpha', ctx),
     null,
-    'the organization she was removed from is no longer readable'
+    'the organization she was removed from is no longer readable',
   );
 });
 
@@ -322,7 +363,11 @@ test('no membership at all means no context is built', async () => {
   seedTwoOrgs({ memberships: [] });
 
   const { authedUser, ctx } = await contextFor(ORG_A);
-  assert.equal(authedUser, null, 'the request is refused (401) before a context exists');
+  assert.equal(
+    authedUser,
+    null,
+    'the request is refused (401) before a context exists',
+  );
   assert.equal(ctx, null);
 });
 
@@ -333,10 +378,14 @@ test('no membership at all means no context is built', async () => {
 test('switching organizations moves the request with it', async () => {
   seedTwoOrgs();
 
-  const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', {
-    organizationId: ORG_A,
-    actorEmail: 'alice@example.com',
-  });
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    {
+      organizationId: ORG_A,
+      actorEmail: 'alice@example.com',
+    },
+  );
 
   // The state the switch endpoint leaves behind: same session, new orgId.
   const req = requestWithSession(login, ORG_A);
@@ -357,7 +406,11 @@ test('switching organizations moves the request with it', async () => {
   const authedUser = await auth.getUserFromRequestAsync(switched, {});
   const ctx = createStorageScope(authedUser);
 
-  assert.equal(ctx.organizationId, ORG_B, 'the switch reaches the storage layer');
+  assert.equal(
+    ctx.organizationId,
+    ORG_B,
+    'the switch reaches the storage layer',
+  );
   assert.ok(await __store.getPresentationRow('deck-beta', ctx));
   assert.equal(await __store.getPresentationRow('deck-alpha', ctx), null);
 });

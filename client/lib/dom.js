@@ -1,7 +1,5 @@
-export const $ = (sel, el = document) =>
-  el.querySelector(sel);
-export const $$ = (sel, el = document) =>
-  Array.from(el.querySelectorAll(sel));
+export const $ = (sel, el = document) => el.querySelector(sel);
+export const $$ = (sel, el = document) => Array.from(el.querySelectorAll(sel));
 
 export function h(tag, attrs = {}, children = []) {
   const t = String(tag || '');
@@ -40,8 +38,7 @@ export function h(tag, attrs = {}, children = []) {
       if (typeof SVGElement !== 'undefined' && el instanceof SVGElement)
         el.setAttribute('class', String(v));
       else el.className = v;
-    }
-    else if (k === 'text') el.textContent = v;
+    } else if (k === 'text') el.textContent = v;
     else if (k.startsWith('on') && typeof v === 'function')
       el.addEventListener(k.slice(2).toLowerCase(), v);
     else if (v === false || v == null) {
@@ -84,8 +81,9 @@ export function createFocusTrap(container) {
   ].join(', ');
 
   function getFocusableElements() {
-    return Array.from(container.querySelectorAll(FOCUSABLE_SELECTORS))
-      .filter((el) => el.offsetParent !== null); // visible elements only
+    return Array.from(container.querySelectorAll(FOCUSABLE_SELECTORS)).filter(
+      (el) => el.offsetParent !== null,
+    ); // visible elements only
   }
 
   function handleKeyDown(e) {

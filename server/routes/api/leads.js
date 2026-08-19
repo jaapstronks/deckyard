@@ -3,13 +3,24 @@
  * Handles lead submission (public) and lead management (authenticated).
  */
 
-import { badRequest, notFound, serveJson, unauthorized, jsonError, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import {
+  badRequest,
+  notFound,
+  serveJson,
+  unauthorized,
+  jsonError,
+  requireJsonBody,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
-import { canWritePresentation, canReadPresentation } from '../../utils/presentation-authz.js';
+import {
+  canWritePresentation,
+  canReadPresentation,
+} from '../../utils/presentation-authz.js';
 import { getAppSettings } from '../../storage/settings.js';
 import {
   createLead,
@@ -22,10 +33,17 @@ import {
   anonymizeLeadsByEmail,
 } from '../../storage/leads.js';
 import { maybeFireLeadWebhook } from '../../utils/webhooks.js';
-import { maybeSendLeadNotification, sendDataRequestVerificationEmail } from '../../integrations/email/senders-leads.js';
+import {
+  maybeSendLeadNotification,
+  sendDataRequestVerificationEmail,
+} from '../../integrations/email/senders-leads.js';
 import crypto from 'node:crypto';
 import { crossOrganizationScope } from '../../storage/scope.js';
-import { LEAD_RATE_LIMITS, GDPR_RATE_LIMITS, AUTH_RATE_LIMITS } from '../../config/rate-limits.js';
+import {
+  LEAD_RATE_LIMITS,
+  GDPR_RATE_LIMITS,
+  AUTH_RATE_LIMITS,
+} from '../../config/rate-limits.js';
 import {
   storeGdprToken,
   verifyGdprToken,
@@ -57,7 +75,7 @@ async function handleLeadSubmit({ repoRoot, req, res }) {
   if (!parsed.ok) return true;
   const body = parsed.body;
   if (!body) {
-    return badRequest(res, 'Invalid request body'), true;
+    return (badRequest(res, 'Invalid request body'), true);
   }
 
   const presentationId = getTrimmedString(body, 'presentationId') || '';
@@ -69,28 +87,31 @@ async function handleLeadSubmit({ repoRoot, req, res }) {
   const privacyUrl = getTrimmedString(body, 'privacyUrl') || '';
 
   if (!presentationId || !slideId) {
-    return badRequest(res, 'Missing presentationId or slideId'), true;
+    return (badRequest(res, 'Missing presentationId or slideId'), true);
   }
   if (!name || !email) {
-    return badRequest(res, 'Name and email are required'), true;
+    return (badRequest(res, 'Name and email are required'), true);
   }
   if (!consentGiven || !consentText) {
-    return badRequest(res, 'Consent is required'), true;
+    return (badRequest(res, 'Consent is required'), true);
   }
 
   // Verify presentation exists. Lead capture happens on a published deck, so
   // the viewer has no session and the deck must not be organization-filtered.
   const pres = await getPresentation(
     crossOrganizationScope(repoRoot, 'lead capture from a published deck'),
-    presentationId
+    presentationId,
   );
   if (!pres) {
-    return notFound(res), true;
+    return (notFound(res), true);
   }
 
   // Get app settings for retention period
   const settings = await getAppSettings(
-    crossOrganizationScope(repoRoot, 'public lead submission: retention period is instance-level')
+    crossOrganizationScope(
+      repoRoot,
+      'public lead submission: retention period is instance-level',
+    ),
   );
   const retentionDays = settings?.leads?.retentionDays || 365;
 
@@ -110,9 +131,9 @@ async function handleLeadSubmit({ repoRoot, req, res }) {
 
   if (!result.ok) {
     if (result.reason === 'invalid_email') {
-      return badRequest(res, 'Invalid email address'), true;
+      return (badRequest(res, 'Invalid email address'), true);
     }
-    return badRequest(res, result.reason || 'Failed to save lead'), true;
+    return (badRequest(res, result.reason || 'Failed to save lead'), true);
   }
 
   // Fire webhook (async, don't wait)
@@ -146,9 +167,17 @@ async function handleLeadSubmit({ repoRoot, req, res }) {
  */
 export const PUBLIC_ROUTES = [
   { method: 'POST', pattern: '/api/leads', handler: handleLeadSubmit },
-  { method: 'POST', pattern: '/api/leads/my-data/request', handler: handleRequestMyData },
+  {
+    method: 'POST',
+    pattern: '/api/leads/my-data/request',
+    handler: handleRequestMyData,
+  },
   { method: 'GET', pattern: '/api/leads/my-data', handler: handleGetMyData },
-  { method: 'DELETE', pattern: '/api/leads/my-data', handler: handleDeleteMyData },
+  {
+    method: 'DELETE',
+    pattern: '/api/leads/my-data',
+    handler: handleDeleteMyData,
+  },
 ];
 
 /**
@@ -169,10 +198,26 @@ export const handleLeadsPublic = withErrorHandler('leads', async (ctx) => {
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/leads$/, handler: handleGetLeads },
-  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/leads\/count$/, handler: handleGetLeadCount },
-  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/leads\/export$/, handler: handleExportLeads },
-  { method: 'DELETE', pattern: /^\/api\/leads\/([^/]+)$/, handler: handleDeleteLead },
+  {
+    method: 'GET',
+    pattern: /^\/api\/presentations\/([^/]+)\/leads$/,
+    handler: handleGetLeads,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/presentations\/([^/]+)\/leads\/count$/,
+    handler: handleGetLeadCount,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/presentations\/([^/]+)\/leads\/export$/,
+    handler: handleExportLeads,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/leads\/([^/]+)$/,
+    handler: handleDeleteLead,
+  },
 ];
 
 /**
@@ -196,20 +241,28 @@ async function handleGetLeads(ctx, presentationId) {
 
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) {
-    return notFound(res), true;
+    return (notFound(res), true);
   }
 
   // Check read permission
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      pres.id,
+      authedUser.email,
+    );
   }
 
-  if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
-    return unauthorized(res), true;
+  if (
+    !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
+  ) {
+    return (unauthorized(res), true);
   }
 
-  const limit = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 100);
+  const limit = Math.min(
+    parseInt(url.searchParams.get('limit') || '50', 10),
+    100,
+  );
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
   const slideId = url.searchParams.get('slideId') || null;
 
@@ -234,17 +287,22 @@ async function handleGetLeadCount(ctx, presentationId) {
 
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) {
-    return notFound(res), true;
+    return (notFound(res), true);
   }
 
   // Check read permission
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      pres.id,
+      authedUser.email,
+    );
   }
 
-  if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
-    return unauthorized(res), true;
+  if (
+    !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
+  ) {
+    return (unauthorized(res), true);
   }
 
   const count = await getLeadCountForPresentation(presentationId);
@@ -258,17 +316,22 @@ async function handleExportLeads(ctx, presentationId) {
 
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) {
-    return notFound(res), true;
+    return (notFound(res), true);
   }
 
   // Check write permission for export (more sensitive than read)
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      pres.id,
+      authedUser.email,
+    );
   }
 
-  if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {
-    return unauthorized(res), true;
+  if (
+    !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
+  ) {
+    return (unauthorized(res), true);
   }
 
   const slideId = url.searchParams.get('slideId') || null;
@@ -288,28 +351,33 @@ async function handleDeleteLead(ctx, leadId) {
   // Get the lead first to check permissions
   const lead = await getLeadById(leadId);
   if (!lead) {
-    return notFound(res), true;
+    return (notFound(res), true);
   }
 
   // Get the presentation to check permissions
   const pres = await getPresentation(storageScope, lead.presentationId);
   if (!pres) {
-    return notFound(res), true;
+    return (notFound(res), true);
   }
 
   // Check write permission
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      pres.id,
+      authedUser.email,
+    );
   }
 
-  if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {
-    return unauthorized(res), true;
+  if (
+    !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
+  ) {
+    return (unauthorized(res), true);
   }
 
   const result = await anonymizeLead(leadId);
   if (!result.ok) {
-    return badRequest(res, result.reason || 'Failed to delete lead'), true;
+    return (badRequest(res, result.reason || 'Failed to delete lead'), true);
   }
 
   serveJson(res, 200, { ok: true });
@@ -328,10 +396,10 @@ async function handleRequestMyData(ctx) {
   // on file any more than the 200 path does.
   const ip = getClientIp(req);
   if (!(await allowRequest(`leads:mydata:ip:${ip}`, GDPR_RATE_LIMITS.perIp))) {
-    return jsonError(res, 429, 'rate_limited'), true;
+    return (jsonError(res, 429, 'rate_limited'), true);
   }
   if (!(await allowRequest('leads:mydata:global', GDPR_RATE_LIMITS.global))) {
-    return jsonError(res, 429, 'rate_limited'), true;
+    return (jsonError(res, 429, 'rate_limited'), true);
   }
 
   const parsed = await requireJsonBody(req, res);
@@ -340,13 +408,18 @@ async function handleRequestMyData(ctx) {
   const email = (getTrimmedString(body, 'email') || '').toLowerCase();
 
   if (!email || !email.includes('@')) {
-    return badRequest(res, 'Valid email required'), true;
+    return (badRequest(res, 'Valid email required'), true);
   }
 
   // Per-target-email throttle: keyed on the supplied address only (not on
   // whether leads exist for it), so it stays non-enumerable.
-  if (!(await allowRequest(`leads:mydata:email:${email}`, GDPR_RATE_LIMITS.perEmail))) {
-    return jsonError(res, 429, 'rate_limited'), true;
+  if (
+    !(await allowRequest(
+      `leads:mydata:email:${email}`,
+      GDPR_RATE_LIMITS.perEmail,
+    ))
+  ) {
+    return (jsonError(res, 429, 'rate_limited'), true);
   }
 
   // Generate a verification token
@@ -365,7 +438,8 @@ async function handleRequestMyData(ctx) {
   // emailed link is absolute even on installs that never set it (same
   // derivation as the magic-link route).
   const host = req.headers?.host || 'localhost:3000';
-  const protocol = req.headers?.['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  const protocol =
+    req.headers?.['x-forwarded-proto'] === 'https' ? 'https' : 'http';
   const result = await sendDataRequestVerificationEmail({
     email,
     token,
@@ -376,7 +450,8 @@ async function handleRequestMyData(ctx) {
   if (result.ok) {
     serveJson(res, 200, {
       ok: true,
-      message: 'If that email exists in our system, you will receive a verification link.',
+      message:
+        'If that email exists in our system, you will receive a verification link.',
     });
     return true;
   }
@@ -389,7 +464,8 @@ async function handleRequestMyData(ctx) {
     if (process.env.NODE_ENV === 'development') {
       serveJson(res, 200, {
         ok: true,
-        message: 'Verification token generated (development: email is not configured)',
+        message:
+          'Verification token generated (development: email is not configured)',
         devToken: token,
       });
       return true;
@@ -399,7 +475,7 @@ async function handleRequestMyData(ctx) {
         res,
         501,
         'email_not_configured',
-        'Outgoing email is not configured on this install (BREVO_API_KEY)'
+        'Outgoing email is not configured on this install (BREVO_API_KEY)',
       ),
       true
     );
@@ -407,7 +483,15 @@ async function handleRequestMyData(ctx) {
 
   // The request was valid; the upstream provider failed. That is a 502, the
   // same mapping the email test-send route uses for provider failures.
-  return jsonError(res, 502, 'internal_error', `Failed to send verification email: ${result.error}`), true;
+  return (
+    jsonError(
+      res,
+      502,
+      'internal_error',
+      `Failed to send verification email: ${result.error}`,
+    ),
+    true
+  );
 }
 
 async function handleGetMyData(ctx) {
@@ -416,20 +500,22 @@ async function handleGetMyData(ctx) {
   // Destructive-adjacent and public: gate token-guessing with the strict
   // expensive-op tier keyed by IP (no principal here), like the track-erase.
   const ip = getClientIp(req);
-  if (!(await allowRequest(`leads:mydata:view:${ip}`, AUTH_RATE_LIMITS.expensive))) {
-    return jsonError(res, 429, 'rate_limited'), true;
+  if (
+    !(await allowRequest(`leads:mydata:view:${ip}`, AUTH_RATE_LIMITS.expensive))
+  ) {
+    return (jsonError(res, 429, 'rate_limited'), true);
   }
 
   const email = url.searchParams.get('email')?.toLowerCase().trim();
   const token = url.searchParams.get('token');
 
   if (!email || !token) {
-    return badRequest(res, 'Email and token required'), true;
+    return (badRequest(res, 'Email and token required'), true);
   }
 
   // Verify token (constant-time compare inside the store)
   if (!(await verifyGdprToken({ email, token }))) {
-    return unauthorized(res, 'Invalid or expired token'), true;
+    return (unauthorized(res, 'Invalid or expired token'), true);
   }
 
   const leads = await getLeadsByEmail(email);
@@ -455,20 +541,25 @@ async function handleDeleteMyData(ctx) {
   // Same strict IP-keyed expensive-op tier as the read (and the track-erase):
   // the token is the real gate, this only caps brute-forcing it.
   const ip = getClientIp(req);
-  if (!(await allowRequest(`leads:mydata:erase:${ip}`, AUTH_RATE_LIMITS.expensive))) {
-    return jsonError(res, 429, 'rate_limited'), true;
+  if (
+    !(await allowRequest(
+      `leads:mydata:erase:${ip}`,
+      AUTH_RATE_LIMITS.expensive,
+    ))
+  ) {
+    return (jsonError(res, 429, 'rate_limited'), true);
   }
 
   const email = url.searchParams.get('email')?.toLowerCase().trim();
   const token = url.searchParams.get('token');
 
   if (!email || !token) {
-    return badRequest(res, 'Email and token required'), true;
+    return (badRequest(res, 'Email and token required'), true);
   }
 
   // Verify token (constant-time compare inside the store)
   if (!(await verifyGdprToken({ email, token }))) {
-    return unauthorized(res, 'Invalid or expired token'), true;
+    return (unauthorized(res, 'Invalid or expired token'), true);
   }
 
   const result = await anonymizeLeadsByEmail(email);

@@ -33,6 +33,9 @@ export function testScope(repoRoot = null, extra = {}) {
  * @param {string} [organizationId] - The other organization's id.
  * @returns {import('../../server/storage/scope.js').StorageScope}
  */
-export function otherOrganizationScope(repoRoot = null, organizationId = 'org-other') {
+export function otherOrganizationScope(
+  repoRoot = null,
+  organizationId = 'org-other',
+) {
   return { repoRoot, organizationId };
 }

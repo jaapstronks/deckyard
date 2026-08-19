@@ -36,13 +36,15 @@ function skeleton(html) {
 describe('markdown nested lists', () => {
   it('nests indented bullets inside the parent <li>', async () => {
     const md = ['- Parent', '  - Child A', '  - Child B', '- Sibling'].join(
-      '\n'
+      '\n',
     );
     const html = skeleton(await markdownToSafeHtml(md));
     // Child list opens inside the parent <li>, before it closes.
     assert.ok(
-      html.includes('<ul><li>Parent<ul><li>Child A</li><li>Child B</li></ul></li><li>Sibling</li></ul>'),
-      `unexpected structure: ${html}`
+      html.includes(
+        '<ul><li>Parent<ul><li>Child A</li><li>Child B</li></ul></li><li>Sibling</li></ul>',
+      ),
+      `unexpected structure: ${html}`,
     );
   });
 
@@ -50,8 +52,10 @@ describe('markdown nested lists', () => {
     const md = ['- L1', '  - L2', '    - L3'].join('\n');
     const html = skeleton(await markdownToSafeHtml(md));
     assert.ok(
-      html.includes('<ul><li>L1<ul><li>L2<ul><li>L3</li></ul></li></ul></li></ul>'),
-      `unexpected structure: ${html}`
+      html.includes(
+        '<ul><li>L1<ul><li>L2<ul><li>L3</li></ul></li></ul></li></ul>',
+      ),
+      `unexpected structure: ${html}`,
     );
   });
 
@@ -60,7 +64,7 @@ describe('markdown nested lists', () => {
     const html = skeleton(await markdownToSafeHtml(md));
     assert.ok(
       html.includes('<ul><li>A<ul><li>A1</li></ul></li><li>B</li></ul>'),
-      `unexpected structure: ${html}`
+      `unexpected structure: ${html}`,
     );
   });
 
@@ -68,7 +72,7 @@ describe('markdown nested lists', () => {
     const html = skeleton(await markdownToSafeHtml('- one\n- two\n- three'));
     assert.ok(
       html.includes('<ul><li>one</li><li>two</li><li>three</li></ul>'),
-      `unexpected structure: ${html}`
+      `unexpected structure: ${html}`,
     );
   });
 
@@ -76,8 +80,10 @@ describe('markdown nested lists', () => {
     const md = ['1. First', '  - detail', '2. Second'].join('\n');
     const html = skeleton(await markdownToSafeHtml(md));
     assert.ok(
-      html.includes('<ol><li>First<ul><li>detail</li></ul></li><li>Second</li></ol>'),
-      `unexpected structure: ${html}`
+      html.includes(
+        '<ol><li>First<ul><li>detail</li></ul></li><li>Second</li></ol>',
+      ),
+      `unexpected structure: ${html}`,
     );
   });
 });
@@ -91,7 +97,7 @@ describe('unsupported heading levels (#, ###)', () => {
     const html = skeleton(markdownToSafeHtml('# not a heading'));
     assert.ok(
       html.includes('<p># not a heading</p>'),
-      `unexpected structure: ${html}`
+      `unexpected structure: ${html}`,
     );
   });
 
@@ -99,7 +105,7 @@ describe('unsupported heading levels (#, ###)', () => {
     const html = skeleton(markdownToSafeHtml('### also not a heading'));
     assert.ok(
       html.includes('<p>### also not a heading</p>'),
-      `unexpected structure: ${html}`
+      `unexpected structure: ${html}`,
     );
   });
 

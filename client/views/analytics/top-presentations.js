@@ -15,12 +15,18 @@ import { formatDuration } from '../../lib/format/analytics-format.js';
  */
 export function createTopPresentations({ presentations, nav }) {
   const card = h('div', { class: 'dashboard-card dashboard-top-card' }, [
-    h('h3', { class: 'dashboard-card-title', text: t('dashboard.top.title', 'Top Performing Presentations') }),
+    h('h3', {
+      class: 'dashboard-card-title',
+      text: t('dashboard.top.title', 'Top Performing Presentations'),
+    }),
   ]);
 
   if (!presentations || !presentations.length) {
     card.append(
-      h('div', { class: 'dashboard-empty', text: t('dashboard.top.empty', 'No presentations with views yet') })
+      h('div', {
+        class: 'dashboard-empty',
+        text: t('dashboard.top.empty', 'No presentations with views yet'),
+      }),
     );
     return card;
   }
@@ -28,10 +34,25 @@ export function createTopPresentations({ presentations, nav }) {
   const table = h('table', { class: 'dashboard-top-table', role: 'table' }, [
     h('thead', {}, [
       h('tr', {}, [
-        h('th', { scope: 'col', text: t('dashboard.top.presentation', 'Presentation') }),
-        h('th', { scope: 'col', class: 'dashboard-top-num', text: t('dashboard.top.views', 'Views') }),
-        h('th', { scope: 'col', class: 'dashboard-top-num', text: t('dashboard.top.avgDuration', 'Avg Duration') }),
-        h('th', { scope: 'col', class: 'dashboard-top-num', text: t('dashboard.top.completion', 'Completion') }),
+        h('th', {
+          scope: 'col',
+          text: t('dashboard.top.presentation', 'Presentation'),
+        }),
+        h('th', {
+          scope: 'col',
+          class: 'dashboard-top-num',
+          text: t('dashboard.top.views', 'Views'),
+        }),
+        h('th', {
+          scope: 'col',
+          class: 'dashboard-top-num',
+          text: t('dashboard.top.avgDuration', 'Avg Duration'),
+        }),
+        h('th', {
+          scope: 'col',
+          class: 'dashboard-top-num',
+          text: t('dashboard.top.completion', 'Completion'),
+        }),
       ]),
     ]),
   ]);
@@ -50,8 +71,20 @@ export function createTopPresentations({ presentations, nav }) {
         }),
       ]),
       h('td', { class: 'dashboard-top-num', text: String(pres.views || 0) }),
-      h('td', { class: 'dashboard-top-num', text: formatDuration(pres.avgDurationSeconds, { short: true, dashIfZero: true }) }),
-      h('td', { class: 'dashboard-top-num', text: pres.completionRate > 0 ? `${Math.round(pres.completionRate * 100)}%` : '—' }),
+      h('td', {
+        class: 'dashboard-top-num',
+        text: formatDuration(pres.avgDurationSeconds, {
+          short: true,
+          dashIfZero: true,
+        }),
+      }),
+      h('td', {
+        class: 'dashboard-top-num',
+        text:
+          pres.completionRate > 0
+            ? `${Math.round(pres.completionRate * 100)}%`
+            : '—',
+      }),
     ]);
     tbody.append(row);
   }

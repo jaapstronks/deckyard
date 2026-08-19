@@ -79,25 +79,25 @@ test('config: default enabled with safe values, disable switches', () => {
   // (default-on flag: a typo must not silently change export behaviour).
   for (const v of ['off', '0', 'false', 'no']) {
     withEnv({ PDF_EXPORT_IMAGE_COMPRESSION: v }, () =>
-      assert.equal(pdfImageCompressionConfig(), null, `toggle ${v}`)
+      assert.equal(pdfImageCompressionConfig(), null, `toggle ${v}`),
     );
   }
   withEnv({ PDF_EXPORT_IMAGE_COMPRESSION: 'banana' }, () =>
-    assert.ok(pdfImageCompressionConfig(), 'unrecognized toggle stays enabled')
+    assert.ok(pdfImageCompressionConfig(), 'unrecognized toggle stays enabled'),
   );
   withEnv({ PDF_EXPORT_IMAGE_MAX_PX: '0' }, () =>
-    assert.equal(pdfImageCompressionConfig(), null)
+    assert.equal(pdfImageCompressionConfig(), null),
   );
 
   const custom = withEnv(
     { PDF_EXPORT_IMAGE_MAX_PX: '1800', PDF_EXPORT_IMAGE_QUALITY: '65' },
-    () => pdfImageCompressionConfig()
+    () => pdfImageCompressionConfig(),
   );
   assert.deepEqual(custom, { maxPx: 1800, quality: 65 });
 
   // Out-of-range falls back to the default (envInt contract).
   withEnv({ PDF_EXPORT_IMAGE_QUALITY: '999' }, () =>
-    assert.equal(pdfImageCompressionConfig().quality, def.quality)
+    assert.equal(pdfImageCompressionConfig().quality, def.quality),
   );
 });
 
@@ -111,7 +111,11 @@ test('opaque image is downsampled and re-encoded as JPEG, much smaller', async (
 
   const meta = await sharp(out.buf).metadata();
   assert.equal(meta.format, 'jpeg');
-  assert.equal(Math.max(meta.width, meta.height), 2000, 'longest edge capped at maxPx');
+  assert.equal(
+    Math.max(meta.width, meta.height),
+    2000,
+    'longest edge capped at maxPx',
+  );
 });
 
 test('transparent image stays PNG (alpha preserved), still downsampled', async () => {
@@ -127,7 +131,9 @@ test('transparent image stays PNG (alpha preserved), still downsampled', async (
 });
 
 test('SVG and already-small assets are returned untouched', async () => {
-  const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>');
+  const svg = Buffer.from(
+    '<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>',
+  );
   const svgOut = await compressImageForEmbed(svg, 'svg', 'image/svg+xml', {
     maxPx: 100,
     quality: 80,
@@ -137,7 +143,12 @@ test('SVG and already-small assets are returned untouched', async () => {
 
   // A tiny opaque PNG: re-encoding would grow it, so we keep the original.
   const tiny = await sharp({
-    create: { width: 8, height: 8, channels: 3, background: { r: 1, g: 2, b: 3 } },
+    create: {
+      width: 8,
+      height: 8,
+      channels: 3,
+      background: { r: 1, g: 2, b: 3 },
+    },
   })
     .png()
     .toBuffer();
@@ -164,13 +175,22 @@ test('toDataUrlIfLocal applies the transform end-to-end', async () => {
     await fs.writeFile(path.join(uploads, 'photo.png'), buf);
 
     const transform = withEnv({}, () => pdfImageEmbedTransform()); // defaults, enabled
-    const dataUrl = await toDataUrlIfLocal(dir, '/uploads/photo.png', { transform });
-    assert.match(dataUrl, /^data:image\/jpeg;base64,/, 'opaque upload embedded as JPEG');
+    const dataUrl = await toDataUrlIfLocal(dir, '/uploads/photo.png', {
+      transform,
+    });
+    assert.match(
+      dataUrl,
+      /^data:image\/jpeg;base64,/,
+      'opaque upload embedded as JPEG',
+    );
 
     // The base64 payload must be far smaller than the raw PNG's base64.
     const payload = dataUrl.split(',')[1];
     const rawBase64Len = buf.toString('base64').length;
-    assert.ok(payload.length < rawBase64Len * 0.5, 'embedded payload substantially smaller');
+    assert.ok(
+      payload.length < rawBase64Len * 0.5,
+      'embedded payload substantially smaller',
+    );
 
     // Without a transform, the original bytes are embedded (PNG).
     const plain = await toDataUrlIfLocal(dir, '/uploads/photo.png', {});

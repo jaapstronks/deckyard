@@ -78,8 +78,7 @@ export function imageTextImageItems(content) {
   if (arr.length) {
     return arr.slice(0, IMAGE_TEXT_MAX_IMAGES).map(sanitizeItem);
   }
-  const legacy =
-    typeof content?.image === 'string' ? content.image.trim() : '';
+  const legacy = typeof content?.image === 'string' ? content.image.trim() : '';
   if (!legacy) return [];
   return [sanitizeItem({ src: legacy })];
 }
@@ -136,10 +135,18 @@ function slideBaseFit(content) {
  */
 export function resolveImageTextCell(content, idx) {
   const items = imageTextImageItems(content);
-  const item = items[idx] || { src: '', alt: '', fit: '', focusX: '', focusY: '' };
+  const item = items[idx] || {
+    src: '',
+    alt: '',
+    fit: '',
+    focusX: '',
+    focusY: '',
+  };
   // Fit: item own fit -> legacy slide-level fit (un-migrated) -> type default.
-  const fitOverride = item.fit === 'contain' || item.fit === 'cover' ? item.fit : '';
-  const fit = fitOverride || slideBaseFit(content) || IMAGE_TEXT_IMAGE_DEFAULTS.fit;
+  const fitOverride =
+    item.fit === 'contain' || item.fit === 'cover' ? item.fit : '';
+  const fit =
+    fitOverride || slideBaseFit(content) || IMAGE_TEXT_IMAGE_DEFAULTS.fit;
   // A cell has its own crop point once either axis is set; cell 0 without one
   // reads the legacy slide-level focus, later cells read their own (empty ->
   // renderer default, which equals IMAGE_TEXT_IMAGE_DEFAULTS.focus 50/50).
@@ -147,7 +154,8 @@ export function resolveImageTextCell(content, idx) {
   const hasOwnFocus = item.focusX !== '' || item.focusY !== '';
   const focusSource = hasOwnFocus || idx > 0 ? item : content || {};
   const trimmed = (v) => (typeof v === 'string' ? v.trim() : '');
-  const slideAlt = trimmed(content?.alt) || trimmed(content?.altNl) || trimmed(content?.altEn);
+  const slideAlt =
+    trimmed(content?.alt) || trimmed(content?.altNl) || trimmed(content?.altEn);
   const ownAlt = trimmed(item.alt);
   const altExplicit = ownAlt || (idx === 0 ? slideAlt : '');
   return { item, fit, fitOverride, hasOwnFocus, focusSource, altExplicit };
@@ -180,10 +188,9 @@ export function resolveImageTextCell(content, idx) {
 export function ensureImageTextImages(content) {
   if (!content || typeof content !== 'object') return content;
   if (!Array.isArray(content.images)) content.images = [];
-  const legacy =
-    typeof content.image === 'string' ? content.image.trim() : '';
+  const legacy = typeof content.image === 'string' ? content.image.trim() : '';
   const hasFilledItem = content.images.some(
-    (it) => typeof it?.src === 'string' && it.src.trim()
+    (it) => typeof it?.src === 'string' && it.src.trim(),
   );
   if (legacy && !hasFilledItem) {
     if (content.images.length) {
@@ -211,11 +218,14 @@ export function ensureImageTextImages(content) {
         if (slideAlt.trim()) first.alt = slideAlt;
       }
       // Focus: fold into item 0 when it has no own crop point.
-      const itemHasFocus = first.focusX !== '' && first.focusX != null
-        || first.focusY !== '' && first.focusY != null;
+      const itemHasFocus =
+        (first.focusX !== '' && first.focusX != null) ||
+        (first.focusY !== '' && first.focusY != null);
       if (!itemHasFocus) {
-        if (content.focusX !== '' && content.focusX != null) first.focusX = content.focusX;
-        if (content.focusY !== '' && content.focusY != null) first.focusY = content.focusY;
+        if (content.focusX !== '' && content.focusX != null)
+          first.focusX = content.focusX;
+        if (content.focusY !== '' && content.focusY != null)
+          first.focusY = content.focusY;
       }
     }
   }
@@ -231,12 +241,18 @@ export function ensureImageTextImages(content) {
   const baseFit = slideBaseFit(content);
   if (baseFit && baseFit !== IMAGE_TEXT_IMAGE_DEFAULTS.fit) {
     for (const it of content.images) {
-      if (it && typeof it === 'object' && it.fit !== 'cover' && it.fit !== 'contain') {
+      if (
+        it &&
+        typeof it === 'object' &&
+        it.fit !== 'cover' &&
+        it.fit !== 'contain'
+      ) {
         it.fit = baseFit;
       }
     }
   }
-  if (content.imageFit !== '' && content.imageFit != null) content.imageFit = '';
+  if (content.imageFit !== '' && content.imageFit != null)
+    content.imageFit = '';
 
   return content;
 }

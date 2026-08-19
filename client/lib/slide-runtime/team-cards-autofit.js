@@ -24,8 +24,7 @@ const SELECTOR = '.slide-team-cards';
 // clean, slightly-clipped layout beats microscopic text.
 const MIN_SCALE = 0.5;
 
-const isMeasurable = (el) =>
-  !!el && el.clientHeight > 0 && el.clientWidth > 0;
+const isMeasurable = (el) => !!el && el.clientHeight > 0 && el.clientWidth > 0;
 
 // ---------------------------------------------------------------------------
 // Justified rows for `imageAspect: original` (uncropped, non-split).
@@ -68,7 +67,8 @@ const justifyOriginal = (slide) => {
   const styles = getComputedStyle(grid);
   const gap = parseFloat(styles.columnGap) || 0;
   // Max height = the CSS shared height (a small boost over --team-card-photo).
-  const maxH = parseFloat(styles.getPropertyValue('--team-orig-photo-h')) || 300;
+  const maxH =
+    parseFloat(styles.getPropertyValue('--team-orig-photo-h')) || 300;
   // Subtract 1px so rounding never pushes a justified row one image too wide,
   // which would make flexbox wrap it and desync from our packing.
   const avail = grid.clientWidth - 1;

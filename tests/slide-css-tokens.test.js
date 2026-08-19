@@ -44,13 +44,16 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const slidesDir = path.join(repoRoot, 'client', 'styles', 'slides');
 const tokensFile = path.join(slidesDir, '00-tokens.css');
 const suppressionsFile = path.join(repoRoot, 'slide-css-suppressions.json');
 
 const updating = /^(1|true|yes)$/i.test(
-  String(process.env.UPDATE_SLIDE_CSS_SUPPRESSIONS || '').trim()
+  String(process.env.UPDATE_SLIDE_CSS_SUPPRESSIONS || '').trim(),
 );
 
 /**
@@ -133,7 +136,9 @@ async function cssFiles(dir) {
  * @returns {string}
  */
 function stripComments(source) {
-  return source.replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ' '));
+  return source.replace(/\/\*[\s\S]*?\*\//g, (block) =>
+    block.replace(/[^\n]/g, ' '),
+  );
 }
 
 /** The root element sets no `font-size`, so `1rem` is exactly 16px. */
@@ -174,14 +179,14 @@ function readScales(source) {
   const space = new Map();
   const leading = new Map();
   for (const m of stripComments(source).matchAll(
-    /(--slide-(text|space)-[\w-]+)\s*:\s*([\d.]+)px\s*;/g
+    /(--slide-(text|space)-[\w-]+)\s*:\s*([\d.]+)px\s*;/g,
   )) {
     const map = m[2] === 'text' ? text : space;
     const key = numKey(Number(m[3]));
     if (!map.has(key)) map.set(key, m[1]);
   }
   for (const m of stripComments(source).matchAll(
-    /(--slide-leading-[\w-]+)\s*:\s*([\d.]+)\s*;/g
+    /(--slide-leading-[\w-]+)\s*:\s*([\d.]+)\s*;/g,
   )) {
     leading.set(numKey(Number(m[2])), m[1]);
   }
@@ -200,7 +205,7 @@ function readScales(source) {
  */
 function stripVarExpressions(value) {
   let out = '';
-  for (let i = 0; i < value.length; ) {
+  for (let i = 0; i < value.length;) {
     if (value.startsWith('var(', i)) {
       let depth = 0;
       let j = i + 3; // at the '('
@@ -268,7 +273,10 @@ function findViolations(source, label, scales) {
   const out = [];
 
   for (const [category, props] of Object.entries(CATEGORIES)) {
-    const declRe = new RegExp(`(^|[;{])\\s*(${props.join('|')})\\s*:([^;{}]*)`, 'gi');
+    const declRe = new RegExp(
+      `(^|[;{])\\s*(${props.join('|')})\\s*:([^;{}]*)`,
+      'gi',
+    );
 
     for (const decl of clean.matchAll(declRe)) {
       const prop = decl[2].toLowerCase();
@@ -289,7 +297,14 @@ function findViolations(source, label, scales) {
         if (!NUMBER_RE.test(trimmed)) continue; // px/em leading: sweep material
         const token = scales.leading.get(numKey(Number(trimmed)));
         if (!token) continue;
-        out.push({ file: label, line, category, prop, value: value.trim(), token });
+        out.push({
+          file: label,
+          line,
+          category,
+          prop,
+          value: value.trim(),
+          token,
+        });
         continue;
       }
 
@@ -301,7 +316,14 @@ function findViolations(source, label, scales) {
         if (px === 0) continue; // 0 stays literal
         const token = scale.get(px);
         if (!token) continue; // off-scale for this category: a design signal, not a conversion
-        out.push({ file: label, line, category, prop, value: value.trim(), token });
+        out.push({
+          file: label,
+          line,
+          category,
+          prop,
+          value: value.trim(),
+          token,
+        });
       }
     }
   }
@@ -312,15 +334,21 @@ function findViolations(source, label, scales) {
 const tokensSource = await fs.readFile(tokensFile, 'utf8');
 const scales = readScales(tokensSource);
 
-const allSheets = (await cssFiles(slidesDir)).map((f) => path.relative(repoRoot, f));
+const allSheets = (await cssFiles(slidesDir)).map((f) =>
+  path.relative(repoRoot, f),
+);
 
 const files = allSheets.filter((rel) => !EXCLUDED.some((re) => re.test(rel)));
 
 const violations = (
   await Promise.all(
     files.map(async (rel) =>
-      findViolations(await fs.readFile(path.join(repoRoot, rel), 'utf8'), rel, scales)
-    )
+      findViolations(
+        await fs.readFile(path.join(repoRoot, rel), 'utf8'),
+        rel,
+        scales,
+      ),
+    ),
   )
 ).flat();
 
@@ -341,15 +369,16 @@ if (updating) {
         Object.fromEntries(
           [...perFile.entries()]
             .sort(([a], [b]) => a.localeCompare(b))
-            .map(([category, count]) => [category, { count }])
+            .map(([category, count]) => [category, { count }]),
         ),
-      ])
+      ]),
   );
   await fs.writeFile(suppressionsFile, `${JSON.stringify(next, null, 2)}\n`);
 }
 
 const suppressions = JSON.parse(await fs.readFile(suppressionsFile, 'utf8'));
-const budgetFor = (file, category) => suppressions[file]?.[category]?.count ?? 0;
+const budgetFor = (file, category) =>
+  suppressions[file]?.[category]?.count ?? 0;
 
 describe('slide css tokens', () => {
   it('reads the scales out of 00-tokens.css', () => {
@@ -357,11 +386,11 @@ describe('slide css tokens', () => {
     // the one failure mode a guard must not have.
     assert.ok(
       scales.text.size >= 10,
-      `expected the text scale, parsed ${scales.text.size} text tokens`
+      `expected the text scale, parsed ${scales.text.size} text tokens`,
     );
     assert.ok(
       scales.space.size >= 10,
-      `expected the space scale, parsed ${scales.space.size} space tokens`
+      `expected the space scale, parsed ${scales.space.size} space tokens`,
     );
     for (const px of [14, 20, 44, 80]) {
       assert.ok(scales.text.has(px), `the text scale should carry ${px}px`);
@@ -392,9 +421,12 @@ describe('slide css tokens', () => {
         const examples = violations
           .filter((v) => v.file === file && v.category === category)
           .slice(0, 4)
-          .map((v) => `      ${v.file}:${v.line}  ${v.prop}: ${v.value}  → ${v.token}`);
+          .map(
+            (v) =>
+              `      ${v.file}:${v.line}  ${v.prop}: ${v.value}  → ${v.token}`,
+          );
         over.push(
-          `${file} [${category}]: ${count} tokenisable value(s), budget ${budget}\n${examples.join('\n')}`
+          `${file} [${category}]: ${count} tokenisable value(s), budget ${budget}\n${examples.join('\n')}`,
         );
       }
     }
@@ -409,7 +441,7 @@ describe('slide css tokens', () => {
         'fine and are not counted — they are input for the role-vocabulary\n' +
         'sweep, not violations.\n\n' +
         'Do NOT raise a budget in slide-css-suppressions.json to make this\n' +
-        'pass. The list may only shrink.'
+        'pass. The list may only shrink.',
     );
   });
 
@@ -420,7 +452,9 @@ describe('slide css tokens', () => {
         const budget = meta?.count ?? 0;
         const actual = counts.get(file)?.get(category) || 0;
         if (actual < budget) {
-          stale.push(`${file} [${category}]: budget ${budget}, actual ${actual}`);
+          stale.push(
+            `${file} [${category}]: budget ${budget}, actual ${actual}`,
+          );
         }
       }
     }
@@ -429,7 +463,7 @@ describe('slide css tokens', () => {
       [],
       `${stale.length} burndown budget(s) are now too generous.\n` +
         'Lower them (or delete the entry) — the conversion is that much done:\n' +
-        '  UPDATE_SLIDE_CSS_SUPPRESSIONS=1 node --test tests/slide-css-tokens.test.js'
+        '  UPDATE_SLIDE_CSS_SUPPRESSIONS=1 node --test tests/slide-css-tokens.test.js',
     );
   });
 
@@ -449,7 +483,9 @@ describe('slide css tokens', () => {
     const reads = [];
     for (const rel of allSheets) {
       if (/\/00-tokens\.css$/.test(rel)) continue;
-      const clean = stripComments(await fs.readFile(path.join(repoRoot, rel), 'utf8'));
+      const clean = stripComments(
+        await fs.readFile(path.join(repoRoot, rel), 'utf8'),
+      );
       for (const m of clean.matchAll(/var\(\s*(--t-[\w-]*)/g)) {
         const line = clean.slice(0, m.index).split('\n').length;
         reads.push(`${rel}:${line}  ${m[1]}`);
@@ -461,7 +497,7 @@ describe('slide css tokens', () => {
       `${reads.length} direct theme-token read(s) in the slide bundle.\n` +
         'Theme influence reaches slide CSS through the --slide-* roles; only\n' +
         '00-tokens.css binds those to the theme contract. Add a role there if\n' +
-        'the existing ones do not cover the case — do not read --t-* directly.'
+        'the existing ones do not cover the case — do not read --t-* directly.',
     );
   });
 
@@ -486,7 +522,12 @@ describe('slide css tokens', () => {
       const clean = stripComments(await fs.readFile(file, 'utf8'));
       for (const m of clean.matchAll(/var\(\s*(--t-[\w-]*)/g)) found.add(m[1]);
     }
-    const snapshotFile = path.join(repoRoot, 'tests', 'fixtures', 'theme-contract.json');
+    const snapshotFile = path.join(
+      repoRoot,
+      'tests',
+      'fixtures',
+      'theme-contract.json',
+    );
     const actual = [...found].sort();
     if (updating) {
       await fs.writeFile(snapshotFile, JSON.stringify(actual, null, 2) + '\n');
@@ -499,18 +540,20 @@ describe('slide css tokens', () => {
       'The set of --t-* tokens the contract files read changed. If the new\n' +
         'contract is intended, regenerate the snapshot:\n' +
         '  UPDATE_SLIDE_CSS_SUPPRESSIONS=1 node --test tests/slide-css-tokens.test.js\n' +
-        'and account for it in docs/reference/slide-roles.md § The theme seam.'
+        'and account for it in docs/reference/slide-roles.md § The theme seam.',
     );
   });
 
   it('lists no file that is out of scope', () => {
     // A suppressions entry for an excluded or deleted sheet would be dead
     // weight the gate never re-checks.
-    const outOfScope = Object.keys(suppressions).filter((file) => !files.includes(file));
+    const outOfScope = Object.keys(suppressions).filter(
+      (file) => !files.includes(file),
+    );
     assert.deepStrictEqual(
       outOfScope.sort(),
       [],
-      'burndown entries for files the gate does not scan; delete them'
+      'burndown entries for files the gate does not scan; delete them',
     );
   });
 });

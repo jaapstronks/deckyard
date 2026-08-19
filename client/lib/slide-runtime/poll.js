@@ -70,13 +70,20 @@ export function mountPollBars(barsEl, { options = [] } = {}) {
 
   const rows = opts.map((label, idx) => {
     const row = h('div', { class: 'poll-bar-row' });
-    const name = h('div', { class: 'poll-bar-name', text: label || `Optie ${idx + 1}` });
+    const name = h('div', {
+      class: 'poll-bar-name',
+      text: label || `Optie ${idx + 1}`,
+    });
     const track = h('div', { class: 'poll-bar-track' });
     const fill = h('div', { class: 'poll-bar-fill' });
     const count = h('div', { class: 'poll-bar-count' });
     const countNum = h('span', { class: 'poll-bar-count-num', text: '0' });
     const countPct = h('span', { class: 'poll-bar-count-pct', text: '0%' });
-    count.append(countNum, h('span', { class: 'poll-bar-count-sep', text: ' · ' }), countPct);
+    count.append(
+      countNum,
+      h('span', { class: 'poll-bar-count-sep', text: ' · ' }),
+      countPct,
+    );
     track.append(fill);
     row.append(name, track, count);
     barsEl.append(row);

@@ -1,4 +1,9 @@
-import { bgClass, cryptoUuid, escapeHtml, BACKGROUND_FIELD } from '../helpers.js';
+import {
+  bgClass,
+  cryptoUuid,
+  escapeHtml,
+  BACKGROUND_FIELD,
+} from '../helpers.js';
 
 function normalizeEmbedUrl(raw) {
   const s = String(raw || '').trim();

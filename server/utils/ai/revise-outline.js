@@ -91,18 +91,28 @@ export function applyRevisionOperations(outline, operations) {
       target.roughContent = operation.roughContent;
       target.presenterNotes =
         operation.presenterNotes ||
-        [target.presenterNotes, source.presenterNotes].filter(Boolean).join(' ');
-      target.hints = [...new Set([...(target.hints || []), ...(source.hints || [])])];
+        [target.presenterNotes, source.presenterNotes]
+          .filter(Boolean)
+          .join(' ');
+      target.hints = [
+        ...new Set([...(target.hints || []), ...(source.hints || [])]),
+      ];
 
       removed.add(second);
       positions.forEach((p) => touched.add(p));
-      applied.push({ ...operation, resolved: `merged ${second} into ${first}` });
+      applied.push({
+        ...operation,
+        resolved: `merged ${second} into ${first}`,
+      });
       continue;
     }
 
     if (operation.type === 'drop') {
       if (drops >= maxDrops) {
-        reject(operation, `drop cap reached (${maxDrops} of ${contentCount} content slides)`);
+        reject(
+          operation,
+          `drop cap reached (${maxDrops} of ${contentCount} content slides)`,
+        );
         continue;
       }
       removed.add(positions[0]);
@@ -118,7 +128,10 @@ export function applyRevisionOperations(outline, operations) {
         continue;
       }
       touched.add(positions[0]);
-      applied.push({ ...operation, resolved: `moved ${positions[0]} after ${operation.after}` });
+      applied.push({
+        ...operation,
+        resolved: `moved ${positions[0]} after ${operation.after}`,
+      });
       continue;
     }
 
@@ -160,7 +173,11 @@ export function applyRevisionOperations(outline, operations) {
  * @param {Function|null} [options.onLog]
  * @returns {Promise<{outline: object, revision: object|null}>}
  */
-export async function reviseOutline(outline, rawContent, { vendor = null, lang = 'en', onLog = null } = {}) {
+export async function reviseOutline(
+  outline,
+  rawContent,
+  { vendor = null, lang = 'en', onLog = null } = {},
+) {
   const langLabel = lang === 'nl' ? 'DUTCH' : 'ENGLISH';
   const config = getLlmConfig({ vendor, role: 'plan' });
 
@@ -182,20 +199,24 @@ export async function reviseOutline(outline, rawContent, { vendor = null, lang =
     });
     parsed = extractJsonObject(content);
   } catch (err) {
-    const message = err instanceof LlmError ? err.message : String(err?.message || err);
+    const message =
+      err instanceof LlmError ? err.message : String(err?.message || err);
     log.warn(`Outline revision failed, keeping the draft: ${message}`);
     return { outline, revision: null };
   }
 
   if (!parsed || !Array.isArray(parsed.operations)) {
-    log.warn('Outline revision returned no usable operations, keeping the draft');
+    log.warn(
+      'Outline revision returned no usable operations, keeping the draft',
+    );
     return { outline, revision: null };
   }
 
-  const { outline: revisedOutline, applied, rejected } = applyRevisionOperations(
-    outline,
-    parsed.operations
-  );
+  const {
+    outline: revisedOutline,
+    applied,
+    rejected,
+  } = applyRevisionOperations(outline, parsed.operations);
 
   const revision = {
     assessment: parsed.assessment || '',
@@ -209,7 +230,7 @@ export async function reviseOutline(outline, rawContent, { vendor = null, lang =
   log.info(
     `${applied.length}/${parsed.operations.length} operations applied ` +
       `(${outline.slides.length} -> ${revisedOutline.slides.length} slides)` +
-      (rejected.length ? `, ${rejected.length} rejected` : '')
+      (rejected.length ? `, ${rejected.length} rejected` : ''),
   );
 
   if (onLog) onLog({ system, user, revision });

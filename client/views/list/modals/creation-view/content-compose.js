@@ -38,7 +38,10 @@ export function createContentCompose({ h, api, onChange, aiDisabled }) {
   let selectedConvertFile = null;
 
   // ===== Panel DOM =====
-  const panel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'content' });
+  const panel = h('div', {
+    class: 'creation-panel is-hidden',
+    'data-method': 'content',
+  });
   const contentSubtabs = h('div', { class: 'sb-segmented' });
   const btnSubPaste = h('button', {
     type: 'button',
@@ -61,19 +64,26 @@ export function createContentCompose({ h, api, onChange, aiDisabled }) {
   panelPaste.append(
     h('div', {
       class: 'help modal-hint',
-      text: t('list.aiWizard.help', 'Paste your notes or any text. The wizard will turn it into a presentation automatically — you can edit everything afterwards.'),
+      text: t(
+        'list.aiWizard.help',
+        'Paste your notes or any text. The wizard will turn it into a presentation automatically — you can edit everything afterwards.',
+      ),
     }),
     h('textarea', {
       class: 'form-input form-textarea-lg',
-      placeholder: t('list.newPresentation.pasteText.placeholder', 'Paste your notes here...'),
-    })
+      placeholder: t(
+        'list.newPresentation.pasteText.placeholder',
+        'Paste your notes here...',
+      ),
+    }),
   );
   const pasteTextarea = panelPaste.querySelector('textarea');
 
   const panelUpload = h('div', { class: 'creation-subpanel is-hidden' });
   const convertFileInput = h('input', {
     type: 'file',
-    accept: '.pptx,.pdf,.docx,.rtf,.odt,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/rtf,text/rtf,application/vnd.oasis.opendocument.text',
+    accept:
+      '.pptx,.pdf,.docx,.rtf,.odt,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/rtf,text/rtf,application/vnd.oasis.opendocument.text',
     class: 'form-input',
   });
   const convertFileInfo = h('div', { class: 'help', text: '' });
@@ -91,38 +101,61 @@ export function createContentCompose({ h, api, onChange, aiDisabled }) {
   panelUpload.append(
     h('div', {
       class: 'help modal-hint',
-      text: t('list.fileConverter.help', 'Upload a .pptx, .pdf, .docx, .rtf, or .odt file to convert it into a presentation. The converter will extract content and use AI to create appropriate slides.'),
+      text: t(
+        'list.fileConverter.help',
+        'Upload a .pptx, .pdf, .docx, .rtf, or .odt file to convert it into a presentation. The converter will extract content and use AI to create appropriate slides.',
+      ),
     }),
     convertFileInput,
-    convertFileInfo
+    convertFileInfo,
   );
 
   const panelNotion = h('div', { class: 'creation-subpanel is-hidden' });
   const notionUrlInput = h('input', {
     class: 'form-input',
-    placeholder: t('list.newPresentation.notion.placeholder', 'Paste Notion page URL...'),
+    placeholder: t(
+      'list.newPresentation.notion.placeholder',
+      'Paste Notion page URL...',
+    ),
   });
   panelNotion.append(
     h('div', {
       class: 'help modal-hint',
-      text: t('list.newPresentation.notion.help', 'Import a Notion page as a presentation. Images, tables, and text structure will be converted to appropriate slides.'),
+      text: t(
+        'list.newPresentation.notion.help',
+        'Import a Notion page as a presentation. Images, tables, and text structure will be converted to appropriate slides.',
+      ),
     }),
-    notionUrlInput
+    notionUrlInput,
   );
 
-  const contentSubWrap = h('div', { class: 'creation-subpanels' }, [panelPaste, panelUpload, panelNotion]);
+  const contentSubWrap = h('div', { class: 'creation-subpanels' }, [
+    panelPaste,
+    panelUpload,
+    panelNotion,
+  ]);
   panel.append(contentSubtabs, contentSubWrap);
 
   // Reveal the Notion sub-tab only when the integration is configured.
   api('/api/notion/status')
     .then((resp) => {
-      if (resp?.enabled && !aiDisabled) btnSubNotion.classList.remove('is-hidden');
+      if (resp?.enabled && !aiDisabled)
+        btnSubNotion.classList.remove('is-hidden');
     })
     .catch(() => {});
 
-  btnSubPaste.addEventListener('click', () => { contentSubtab = 'paste'; syncUI(); });
-  btnSubUpload.addEventListener('click', () => { contentSubtab = 'upload'; syncUI(); });
-  btnSubNotion.addEventListener('click', () => { contentSubtab = 'notion'; syncUI(); });
+  btnSubPaste.addEventListener('click', () => {
+    contentSubtab = 'paste';
+    syncUI();
+  });
+  btnSubUpload.addEventListener('click', () => {
+    contentSubtab = 'upload';
+    syncUI();
+  });
+  btnSubNotion.addEventListener('click', () => {
+    contentSubtab = 'notion';
+    syncUI();
+  });
 
   // Update the panel's own sub-tabs to match the active sub-tab. Called from the
   // host's syncUI (the sub-tabs and their panels live inside this panel).
@@ -137,7 +170,9 @@ export function createContentCompose({ h, api, onChange, aiDisabled }) {
 
   // Resolve which concrete create-flow the active sub-tab runs.
   const getMode = () =>
-    ({ paste: 'paste-text', upload: 'convert-file', notion: 'notion' }[contentSubtab]);
+    ({ paste: 'paste-text', upload: 'convert-file', notion: 'notion' })[
+      contentSubtab
+    ];
 
   // Run the active sub-tab's create flow. Dispatches to the shared handlers,
   // passing the shared language + theme selected in the host footer.
@@ -189,8 +224,10 @@ export function createContentCompose({ h, api, onChange, aiDisabled }) {
      * "dirty" — both match the pre-split behaviour.
      */
     isDirty: () => {
-      if (contentSubtab === 'paste') return !!String(pasteTextarea.value || '').trim();
-      if (contentSubtab === 'notion') return !!String(notionUrlInput.value || '').trim();
+      if (contentSubtab === 'paste')
+        return !!String(pasteTextarea.value || '').trim();
+      if (contentSubtab === 'notion')
+        return !!String(notionUrlInput.value || '').trim();
       return false;
     },
     /** Run the active sub-tab's create flow. */

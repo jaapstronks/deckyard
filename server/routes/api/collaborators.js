@@ -9,7 +9,10 @@
  *   GET    /api/presentations/shared-with-me          - List presentations shared with current user
  */
 
-import { getPresentation, getFirstSlidesForIds } from '../../storage/presentations/index.js';
+import {
+  getPresentation,
+  getFirstSlidesForIds,
+} from '../../storage/presentations/index.js';
 import {
   addCollaborator,
   listCollaborators,
@@ -22,11 +25,27 @@ import { listUsers } from '../../storage/users.js';
 import { sendCollaboratorInviteEmail } from '../../integrations/brevo.js';
 import { canManageCollaborators } from '../../utils/presentation-authz.js';
 import { dispatchRoutes } from '../../utils/router.js';
-import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, jsonError, getErrorStatus, withErrorHandler } from '../../utils/http.js';
+import {
+  serveJson,
+  notFound,
+  unauthorized,
+  badRequest,
+  requireJsonBody,
+  jsonError,
+  getErrorStatus,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { validatePermission } from '../../utils/request-validators.js';
 import { createNotification } from '../../storage/notifications.js';
-import { broadcastToUser, NotificationEventTypes } from '../../services/notification-events.js';
-import { createActivityEvent, EVENT_TYPES, ENTITY_TYPES } from '../../storage/activity-events.js';
+import {
+  broadcastToUser,
+  NotificationEventTypes,
+} from '../../services/notification-events.js';
+import {
+  createActivityEvent,
+  EVENT_TYPES,
+  ENTITY_TYPES,
+} from '../../storage/activity-events.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import { createLogger } from '../../utils/logger.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
@@ -53,12 +72,14 @@ const INVITE_FAILURE_MESSAGES = {
 
 // GET /api/presentations/shared-with-me - List presentations shared with current user
 async function handleSharedWithMe({ storageScope, res, authedUser }) {
-
   if (!authedUser?.email) {
     return unauthorized(res);
   }
 
-  const presentations = await listPresentationsSharedWithUser(storageScope, authedUser.email);
+  const presentations = await listPresentationsSharedWithUser(
+    storageScope,
+    authedUser.email,
+  );
 
   // Batch-fetch first slides for all presentations (avoids N+1 queries).
   // The grid only needs the presence signal — the thumbnail is a
@@ -76,12 +97,19 @@ async function handleSharedWithMe({ storageScope, res, authedUser }) {
 }
 
 // POST /api/presentations/:id/collaborators - Add collaborator(s)
-async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedUser }, presentationId) {
-
+async function handleCollaboratorAdd(
+  { repoRoot, storageScope, req, res, authedUser },
+  presentationId,
+) {
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
-  const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email);
-  if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
+  const collaboratorPermission = await getCollaboratorPermission(
+    presentationId,
+    authedUser?.email,
+  );
+  if (
+    !canManageCollaborators({ user: authedUser, pres, collaboratorPermission })
+  ) {
     return unauthorized(res);
   }
 
@@ -154,7 +182,10 @@ async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedU
         invitedBy: authedUser?.email,
       });
     } catch (err) {
-      log.error(`[collaborators] Failed to add collaborator ${userEmail}:`, err);
+      log.error(
+        `[collaborators] Failed to add collaborator ${userEmail}:`,
+        err,
+      );
       results.push({
         email: userEmail,
         ok: false,
@@ -185,51 +216,55 @@ async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedU
 
     // Create in-app notification for the invited user (non-blocking)
     try {
-      const notifResult = await createNotification(
-        storageScope,
-        {
-          userEmail,
-          notificationType: 'share_received',
-          title: `${inviterName} shared a presentation with you`,
-          body: `You have been invited to "${presentationTitle}" with ${permission} access.`,
-          presentationId,
-          actorEmail: authedUser?.email,
-          actorName: authedUser?.name,
-          actionUrl: editUrl,
-          data: { permission, presentationTitle },
-        }
-      );
+      const notifResult = await createNotification(storageScope, {
+        userEmail,
+        notificationType: 'share_received',
+        title: `${inviterName} shared a presentation with you`,
+        body: `You have been invited to "${presentationTitle}" with ${permission} access.`,
+        presentationId,
+        actorEmail: authedUser?.email,
+        actorName: authedUser?.name,
+        actionUrl: editUrl,
+        data: { permission, presentationTitle },
+      });
 
       // Broadcast notification via SSE
       if (notifResult.ok) {
-        broadcastToUser(userEmail, NotificationEventTypes.NEW, notifResult.notification);
+        broadcastToUser(
+          userEmail,
+          NotificationEventTypes.NEW,
+          notifResult.notification,
+        );
       }
     } catch (err) {
       // Log but don't fail the invite if notification fails
-      log.error(`[collaborators] Failed to create notification for ${userEmail}:`, err);
+      log.error(
+        `[collaborators] Failed to create notification for ${userEmail}:`,
+        err,
+      );
     }
 
     // Create activity event for the activity feed (non-blocking)
     try {
-      await createActivityEvent(
-        storageScope,
-        {
-          eventType: EVENT_TYPES.COLLABORATOR_ADDED,
-          entityType: ENTITY_TYPES.COLLABORATOR,
-          entityId: result.collaborator?.id || presentationId,
-          presentationId,
-          actorEmail: authedUser?.email,
-          actorName: authedUser?.name,
-          data: {
-            collaboratorEmail: userEmail,
-            permission,
-            presentationTitle,
-          },
-        }
-      );
+      await createActivityEvent(storageScope, {
+        eventType: EVENT_TYPES.COLLABORATOR_ADDED,
+        entityType: ENTITY_TYPES.COLLABORATOR,
+        entityId: result.collaborator?.id || presentationId,
+        presentationId,
+        actorEmail: authedUser?.email,
+        actorName: authedUser?.name,
+        data: {
+          collaboratorEmail: userEmail,
+          permission,
+          presentationTitle,
+        },
+      });
     } catch (err) {
       // Log but don't fail the invite if activity event fails
-      log.error(`[collaborators] Failed to create activity event for ${userEmail}:`, err);
+      log.error(
+        `[collaborators] Failed to create activity event for ${userEmail}:`,
+        err,
+      );
     }
 
     // Send invitation email (non-blocking)
@@ -247,11 +282,11 @@ async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedU
           if (!emailResult.ok) {
             // eslint-disable-next-line no-console
             log.warn(
-              `[brevo] collaborator invite email failed to=${userEmail} error=${emailResult.error || ''}`.trim()
+              `[brevo] collaborator invite email failed to=${userEmail} error=${emailResult.error || ''}`.trim(),
             );
           }
         }),
-        `collaborator invite email to=${userEmail}`
+        `collaborator invite email to=${userEmail}`,
       );
     }
   }
@@ -272,7 +307,7 @@ async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedU
         res,
         getErrorStatus(singleResult.reason, 500),
         singleResult.reason,
-        INVITE_FAILURE_MESSAGES[singleResult.reason]
+        INVITE_FAILURE_MESSAGES[singleResult.reason],
       );
     }
     serveJson(res, 201, {
@@ -297,12 +332,19 @@ async function handleCollaboratorAdd({ repoRoot, storageScope, req, res, authedU
 }
 
 // GET /api/presentations/:id/collaborators - List collaborators
-async function handleCollaboratorList({ storageScope, res, authedUser }, presentationId) {
-
+async function handleCollaboratorList(
+  { storageScope, res, authedUser },
+  presentationId,
+) {
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
-  const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email);
-  if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
+  const collaboratorPermission = await getCollaboratorPermission(
+    presentationId,
+    authedUser?.email,
+  );
+  if (
+    !canManageCollaborators({ user: authedUser, pres, collaboratorPermission })
+  ) {
     return unauthorized(res);
   }
 
@@ -325,13 +367,22 @@ async function handleCollaboratorList({ storageScope, res, authedUser }, present
 }
 
 // DELETE /api/presentations/:id/collaborators/:email - Remove collaborator
-async function handleCollaboratorRemove({ storageScope, req, res, authedUser }, presentationId, rawEmail) {
+async function handleCollaboratorRemove(
+  { storageScope, req, res, authedUser },
+  presentationId,
+  rawEmail,
+) {
   const email = decodeURIComponent(rawEmail);
 
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
-  const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email);
-  if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
+  const collaboratorPermission = await getCollaboratorPermission(
+    presentationId,
+    authedUser?.email,
+  );
+  if (
+    !canManageCollaborators({ user: authedUser, pres, collaboratorPermission })
+  ) {
     return unauthorized(res);
   }
 
@@ -340,9 +391,14 @@ async function handleCollaboratorRemove({ storageScope, req, res, authedUser }, 
   if (!parsed.ok) return true;
   const message = parsed.body?.message || null;
 
-  const result = await removeCollaborator(presentationId, email, authedUser?.email, {
-    message,
-  });
+  const result = await removeCollaborator(
+    presentationId,
+    email,
+    authedUser?.email,
+    {
+      message,
+    },
+  );
 
   if (!result.ok) {
     if (result.reason === 'not_found') return notFound(res);
@@ -354,24 +410,24 @@ async function handleCollaboratorRemove({ storageScope, req, res, authedUser }, 
   // without it the security-relevant half of the model is nowhere in the
   // feed.
   try {
-    await createActivityEvent(
-      storageScope,
-      {
-        eventType: EVENT_TYPES.COLLABORATOR_REMOVED,
-        entityType: ENTITY_TYPES.COLLABORATOR,
-        entityId: result.collaborator?.id || presentationId,
-        presentationId,
-        actorEmail: authedUser?.email,
-        actorName: authedUser?.name,
-        data: {
-          collaboratorEmail: result.collaborator?.userEmail || email,
-          presentationTitle: pres.title || 'Untitled presentation',
-          revocationMessage: result.collaborator?.revocationMessage || null,
-        },
-      }
-    );
+    await createActivityEvent(storageScope, {
+      eventType: EVENT_TYPES.COLLABORATOR_REMOVED,
+      entityType: ENTITY_TYPES.COLLABORATOR,
+      entityId: result.collaborator?.id || presentationId,
+      presentationId,
+      actorEmail: authedUser?.email,
+      actorName: authedUser?.name,
+      data: {
+        collaboratorEmail: result.collaborator?.userEmail || email,
+        presentationTitle: pres.title || 'Untitled presentation',
+        revocationMessage: result.collaborator?.revocationMessage || null,
+      },
+    });
   } catch (err) {
-    log.error(`[collaborators] Failed to record revoke event for ${email}:`, err);
+    log.error(
+      `[collaborators] Failed to record revoke event for ${email}:`,
+      err,
+    );
   }
 
   serveJson(res, 200, { ok: true, collaborator: result.collaborator });
@@ -379,13 +435,22 @@ async function handleCollaboratorRemove({ storageScope, req, res, authedUser }, 
 }
 
 // PATCH /api/presentations/:id/collaborators/:email - Update permission
-async function handleCollaboratorUpdate({ storageScope, req, res, authedUser }, presentationId, rawEmail) {
+async function handleCollaboratorUpdate(
+  { storageScope, req, res, authedUser },
+  presentationId,
+  rawEmail,
+) {
   const email = decodeURIComponent(rawEmail);
 
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
-  const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email);
-  if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
+  const collaboratorPermission = await getCollaboratorPermission(
+    presentationId,
+    authedUser?.email,
+  );
+  if (
+    !canManageCollaborators({ user: authedUser, pres, collaboratorPermission })
+  ) {
     return unauthorized(res);
   }
 
@@ -396,7 +461,11 @@ async function handleCollaboratorUpdate({ storageScope, req, res, authedUser }, 
   const permission = body?.permission;
   if (!validatePermission(permission, res)) return true;
 
-  const result = await updateCollaboratorPermission(presentationId, email, permission);
+  const result = await updateCollaboratorPermission(
+    presentationId,
+    email,
+    permission,
+  );
 
   if (!result.ok) {
     if (result.reason === 'not_found') return notFound(res);
@@ -406,24 +475,24 @@ async function handleCollaboratorUpdate({ storageScope, req, res, authedUser }, 
   // Log the permission change symmetrically with grant and revoke
   // (non-blocking): a promotion or demotion is an access-model event too.
   try {
-    await createActivityEvent(
-      storageScope,
-      {
-        eventType: EVENT_TYPES.COLLABORATOR_PERMISSION_CHANGED,
-        entityType: ENTITY_TYPES.COLLABORATOR,
-        entityId: result.collaborator?.id || presentationId,
-        presentationId,
-        actorEmail: authedUser?.email,
-        actorName: authedUser?.name,
-        data: {
-          collaboratorEmail: result.collaborator?.userEmail || email,
-          permission,
-          presentationTitle: pres.title || 'Untitled presentation',
-        },
-      }
-    );
+    await createActivityEvent(storageScope, {
+      eventType: EVENT_TYPES.COLLABORATOR_PERMISSION_CHANGED,
+      entityType: ENTITY_TYPES.COLLABORATOR,
+      entityId: result.collaborator?.id || presentationId,
+      presentationId,
+      actorEmail: authedUser?.email,
+      actorName: authedUser?.name,
+      data: {
+        collaboratorEmail: result.collaborator?.userEmail || email,
+        permission,
+        presentationTitle: pres.title || 'Untitled presentation',
+      },
+    });
   } catch (err) {
-    log.error(`[collaborators] Failed to record permission-change event for ${email}:`, err);
+    log.error(
+      `[collaborators] Failed to record permission-change event for ${email}:`,
+      err,
+    );
   }
 
   serveJson(res, 200, { collaborator: result.collaborator });
@@ -440,11 +509,31 @@ async function handleCollaboratorUpdate({ storageScope, req, res, authedUser }, 
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'GET', pattern: '/api/presentations/shared-with-me', handler: handleSharedWithMe },
-  { method: 'POST', pattern: /^\/api\/presentations\/([^/]+)\/collaborators$/, handler: handleCollaboratorAdd },
-  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/collaborators$/, handler: handleCollaboratorList },
-  { method: 'DELETE', pattern: /^\/api\/presentations\/([^/]+)\/collaborators\/([^/]+)$/, handler: handleCollaboratorRemove },
-  { method: 'PATCH', pattern: /^\/api\/presentations\/([^/]+)\/collaborators\/([^/]+)$/, handler: handleCollaboratorUpdate },
+  {
+    method: 'GET',
+    pattern: '/api/presentations/shared-with-me',
+    handler: handleSharedWithMe,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/presentations\/([^/]+)\/collaborators$/,
+    handler: handleCollaboratorAdd,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/presentations\/([^/]+)\/collaborators$/,
+    handler: handleCollaboratorList,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/presentations\/([^/]+)\/collaborators\/([^/]+)$/,
+    handler: handleCollaboratorRemove,
+  },
+  {
+    method: 'PATCH',
+    pattern: /^\/api\/presentations\/([^/]+)\/collaborators\/([^/]+)$/,
+    handler: handleCollaboratorUpdate,
+  },
 ];
 
 /**
@@ -453,5 +542,5 @@ export const ROUTES = [
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
 export const handleCollaborators = withErrorHandler('collaborators', (ctx) =>
-  dispatchRoutes(ROUTES, ctx)
+  dispatchRoutes(ROUTES, ctx),
 );

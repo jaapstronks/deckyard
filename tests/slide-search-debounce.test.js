@@ -36,7 +36,8 @@ globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.requestAnimationFrame = (cb) => setTimeout(() => cb(0), 0);
 
 const { h } = await import('../client/lib/dom.js');
-const { createSlidesPanel } = await import('../client/views/editor/slides-panel.js');
+const { createSlidesPanel } =
+  await import('../client/views/editor/slides-panel.js');
 
 /** Mount a slides panel wired to a rebuild counter. */
 function mount() {
@@ -96,7 +97,11 @@ test('a burst of keystrokes collapses into a single rebuild', (t) => {
     t.mock.timers.tick(50); // 50 ms between keys — inside the 200 ms window
   }
 
-  assert.equal(getRebuilds(), 0, 'nothing rebuilds while the user is still typing');
+  assert.equal(
+    getRebuilds(),
+    0,
+    'nothing rebuilds while the user is still typing',
+  );
 
   t.mock.timers.tick(200); // user pauses
   assert.equal(getRebuilds(), 1, 'exactly one rebuild fires after the pause');
@@ -126,7 +131,7 @@ test('Escape renders immediately and cancels a pending keystroke render', (t) =>
 
   typeChar(input, 'wo');
   input.dispatchEvent(
-    new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+    new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
   );
 
   assert.equal(getRebuilds(), 1, 'Escape rebuilds synchronously');

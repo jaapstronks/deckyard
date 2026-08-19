@@ -34,9 +34,16 @@ function mockRes() {
     statusCode: null,
     headers: {},
     body: null,
-    writeHead(c, headers) { this.statusCode = c; Object.assign(this.headers, headers); },
-    end(chunk) { this.body = chunk; },
-    setHeader(k, v) { this.headers[k] = v; },
+    writeHead(c, headers) {
+      this.statusCode = c;
+      Object.assign(this.headers, headers);
+    },
+    end(chunk) {
+      this.body = chunk;
+    },
+    setHeader(k, v) {
+      this.headers[k] = v;
+    },
   };
 }
 
@@ -62,13 +69,21 @@ test('maintenance: GET answers 200 with the state, any other method 405 with All
 
   for (const method of ['POST', 'PUT', 'DELETE']) {
     const { ctx: c, res } = ctx(method, '/api/maintenance');
-    assert.equal(await dispatchRoutes(MAINTENANCE_ROUTES, c), true, `${method} → handled`);
+    assert.equal(
+      await dispatchRoutes(MAINTENANCE_ROUTES, c),
+      true,
+      `${method} → handled`,
+    );
     assert.equal(res.statusCode, 405, `${method} → 405`);
     assert.equal(res.headers.Allow, 'GET', `${method} pins Allow: GET`);
   }
 
   const other = ctx('GET', '/api/maintenance-window');
-  assert.equal(await dispatchRoutes(MAINTENANCE_ROUTES, other.ctx), false, 'other paths decline');
+  assert.equal(
+    await dispatchRoutes(MAINTENANCE_ROUTES, other.ctx),
+    false,
+    'other paths decline',
+  );
 });
 
 test('follow-codes: the public table exposes exactly the GET resolve, nothing else', () => {
@@ -77,13 +92,26 @@ test('follow-codes: the public table exposes exactly the GET resolve, nothing el
   assert.equal(row.method, 'GET');
   assert.equal(row.handler.name, 'handleFollowCodeResolve');
   assert.ok(row.pattern.exec('/api/follow-codes/ABCD'), 'resolve path matches');
-  assert.ok(row.pattern.exec('/api/follow-codes/abcd'), 'case-insensitive, as before');
-  assert.equal(row.pattern.exec('/api/follow-codes'), null, 'the mint path is not public');
-  assert.equal(row.pattern.exec('/api/follow-codes/TOOLONGCODE'), null, 'no overlong codes');
+  assert.ok(
+    row.pattern.exec('/api/follow-codes/abcd'),
+    'case-insensitive, as before',
+  );
+  assert.equal(
+    row.pattern.exec('/api/follow-codes'),
+    null,
+    'the mint path is not public',
+  );
+  assert.equal(
+    row.pattern.exec('/api/follow-codes/TOOLONGCODE'),
+    null,
+    'no overlong codes',
+  );
 
   // The public row is the same pattern + handler as the authed resolve row —
   // one behaviour, mounted twice around the gate.
-  const authedResolve = CODE_ROUTES.find((r) => r.handler.name === 'handleFollowCodeResolve');
+  const authedResolve = CODE_ROUTES.find(
+    (r) => r.handler.name === 'handleFollowCodeResolve',
+  );
   assert.equal(authedResolve.pattern, row.pattern, 'shared pattern object');
 });
 
@@ -96,8 +124,16 @@ test('follow-codes: the pre-gate entry declines everything that must wait for th
   ];
   for (const [method, path] of cases) {
     const { ctx: c, res } = ctx(method, path);
-    assert.equal(await handleFollowCodesPublic(c), false, `${method} ${path} → false`);
-    assert.equal(res.statusCode, null, `${method} ${path} sent no response pre-gate`);
+    assert.equal(
+      await handleFollowCodesPublic(c),
+      false,
+      `${method} ${path} → false`,
+    );
+    assert.equal(
+      res.statusCode,
+      null,
+      `${method} ${path} sent no response pre-gate`,
+    );
   }
 });
 

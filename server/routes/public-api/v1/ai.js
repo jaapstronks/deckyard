@@ -12,9 +12,18 @@ import {
   generateSlidesToAppendFromRawContent,
 } from '../../../utils/ai.js';
 import { getLlmStatus } from '../../../utils/llm/config.js';
-import { deckToPresentationParts, presentationToDeck } from '../../../../shared/slide-types.js';
-import { sandboxDefaultThemeId, sandboxEnabled } from '../../../config/sandbox.js';
-import { loadDisabledSlideTypes, loadCustomSlideTypes } from '../../../utils/org-slide-types.js';
+import {
+  deckToPresentationParts,
+  presentationToDeck,
+} from '../../../../shared/slide-types.js';
+import {
+  sandboxDefaultThemeId,
+  sandboxEnabled,
+} from '../../../config/sandbox.js';
+import {
+  loadDisabledSlideTypes,
+  loadCustomSlideTypes,
+} from '../../../utils/org-slide-types.js';
 import { getOptionalObject } from '../../../utils/request-validators.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('ai');
@@ -81,7 +90,11 @@ async function handleWizard(ctx) {
   const { raw, vendor, lang, theme } = getAiParams(body);
 
   if (!raw) {
-    await apiError(ctx, 400, 'Missing required field: raw (your content to generate from)');
+    await apiError(
+      ctx,
+      400,
+      'Missing required field: raw (your content to generate from)',
+    );
     return true;
   }
 
@@ -105,7 +118,8 @@ async function handleWizard(ctx) {
     const parts = deckToPresentationParts(deck);
 
     // Create the presentation
-    const effectiveTheme = theme || (sandboxEnabled() ? sandboxDefaultThemeId() : parts.theme);
+    const effectiveTheme =
+      theme || (sandboxEnabled() ? sandboxDefaultThemeId() : parts.theme);
 
     const created = await createPresentation(storageScope, {
       title: parts.title,
@@ -115,7 +129,8 @@ async function handleWizard(ctx) {
     });
 
     // Build i18n structure for the active language
-    const activeLang = created?.i18n?.active || created?.i18n?.dominant || lang || 'nl';
+    const activeLang =
+      created?.i18n?.active || created?.i18n?.dominant || lang || 'nl';
     const updatedI18n = {
       ...created.i18n,
       versions: {
@@ -147,7 +162,6 @@ async function handleWizard(ctx) {
       },
     });
     return true;
-
   } catch (e) {
     log.error('[Public API AI Wizard] Error:', e);
     const statusCode = e?.statusCode || 500;
@@ -171,7 +185,11 @@ async function handleAppendSlides(ctx) {
 
   const raw = String(body?.raw || '').trim();
   if (!raw) {
-    await apiError(ctx, 400, 'Missing required field: raw (your content to generate from)');
+    await apiError(
+      ctx,
+      400,
+      'Missing required field: raw (your content to generate from)',
+    );
     return true;
   }
 
@@ -195,13 +213,14 @@ async function handleAppendSlides(ctx) {
       loadDisabledSlideTypes(apiKey),
       loadCustomSlideTypes(apiKey),
     ]);
-    const { slides: generatedSlides } = await generateSlidesToAppendFromRawContent(raw, {
-      existingDeck,
-      targetLang: lang,
-      vendor,
-      disabledSlideTypes,
-      customSlideTypes,
-    });
+    const { slides: generatedSlides } =
+      await generateSlidesToAppendFromRawContent(raw, {
+        existingDeck,
+        targetLang: lang,
+        vendor,
+        disabledSlideTypes,
+        customSlideTypes,
+      });
 
     // Normalize into internal slide format
     const parts = deckToPresentationParts(generatedSlides);
@@ -231,7 +250,6 @@ async function handleAppendSlides(ctx) {
       slideCount: slides.length,
     });
     return true;
-
   } catch (e) {
     log.error('[Public API AI Append] Error:', e);
     const statusCode = e?.statusCode || 500;

@@ -35,8 +35,14 @@ test('H1: legit /assets and /uploads paths still inline as data URLs', async () 
   try {
     await fs.mkdir(path.join(root, 'assets'), { recursive: true });
     await fs.mkdir(path.join(root, 'server', 'uploads'), { recursive: true });
-    await fs.writeFile(path.join(root, 'assets', 'ok.png'), Buffer.from('PNGDATA'));
-    await fs.writeFile(path.join(root, 'server', 'uploads', 'pic.png'), Buffer.from('UPLOADDATA'));
+    await fs.writeFile(
+      path.join(root, 'assets', 'ok.png'),
+      Buffer.from('PNGDATA'),
+    );
+    await fs.writeFile(
+      path.join(root, 'server', 'uploads', 'pic.png'),
+      Buffer.from('UPLOADDATA'),
+    );
 
     const asset = await toDataUrlIfLocal(root, '/assets/ok.png');
     assert.match(asset, /^data:image\/png;base64,/);
@@ -113,8 +119,14 @@ test('H2: getOwnerEmail returns "" when no actor (fail closed, matches nothing)'
 });
 
 test('H2: getOwnerEmail normalizes the actor email for scoping', () => {
-  assert.equal(getOwnerEmail({ actorEmail: 'User@Example.COM' }), 'user@example.com');
-  assert.equal(getOwnerEmail({ actorEmail: '  jaap@ciiic.nl  ' }), 'jaap@ciiic.nl');
+  assert.equal(
+    getOwnerEmail({ actorEmail: 'User@Example.COM' }),
+    'user@example.com',
+  );
+  assert.equal(
+    getOwnerEmail({ actorEmail: '  jaap@ciiic.nl  ' }),
+    'jaap@ciiic.nl',
+  );
 });
 
 test('H2: list/get/revoke queries all scope by owner_email', async () => {
@@ -124,7 +136,8 @@ test('H2: list/get/revoke queries all scope by owner_email', async () => {
   );
   // Guard the invariant: every read/revoke query builder must carry an
   // owner_email filter so a cross-user IDOR can't regress back in.
-  const ownerFilters = src.match(/\.where\('owner_email', '=', getOwnerEmail\(scope\)\)/g) || [];
+  const ownerFilters =
+    src.match(/\.where\('owner_email', '=', getOwnerEmail\(scope\)\)/g) || [];
   assert.ok(
     ownerFilters.length >= 3,
     `expected owner_email scoping on list/get/revoke, found ${ownerFilters.length}`,
@@ -137,12 +150,29 @@ test('H2: list/get/revoke queries all scope by owner_email', async () => {
 
 test('H3: ownsStoredResult is fail-closed', () => {
   assert.equal(ownsStoredResult(null, { email: 'a@b.com' }), false);
-  assert.equal(ownsStoredResult({}, { email: 'a@b.com' }), false, 'no owner stamp → deny');
-  assert.equal(ownsStoredResult({ ownerEmail: 'a@b.com' }, null), false, 'no caller → deny');
-  assert.equal(ownsStoredResult({ ownerEmail: 'a@b.com' }, { email: 'x@y.com' }), false);
-  assert.equal(ownsStoredResult({ ownerEmail: 'a@b.com' }, { email: 'a@b.com' }), true);
+  assert.equal(
+    ownsStoredResult({}, { email: 'a@b.com' }),
+    false,
+    'no owner stamp → deny',
+  );
+  assert.equal(
+    ownsStoredResult({ ownerEmail: 'a@b.com' }, null),
+    false,
+    'no caller → deny',
+  );
+  assert.equal(
+    ownsStoredResult({ ownerEmail: 'a@b.com' }, { email: 'x@y.com' }),
+    false,
+  );
+  assert.equal(
+    ownsStoredResult({ ownerEmail: 'a@b.com' }, { email: 'a@b.com' }),
+    true,
+  );
   // Normalized comparison (case + whitespace).
-  assert.equal(ownsStoredResult({ ownerEmail: 'A@B.com' }, { email: ' a@b.com ' }), true);
+  assert.equal(
+    ownsStoredResult({ ownerEmail: 'A@B.com' }, { email: ' a@b.com ' }),
+    true,
+  );
 });
 
 /**
@@ -199,7 +229,12 @@ async function runDownload({ jobId, storedResult, authedUser }) {
   const res = new MockRes();
   const url = new URL(`http://localhost/api/jobs/${jobId}/download`);
   const done = new Promise((resolve) => res.on('finish', resolve));
-  const handled = await handleJobs({ req: { method: 'GET' }, url, res, authedUser });
+  const handled = await handleJobs({
+    req: { method: 'GET' },
+    url,
+    res,
+    authedUser,
+  });
   await done;
   return { handled, res };
 }
@@ -220,7 +255,10 @@ test('H3: foreign owner cannot download another user’s bulk export (404)', asy
       authedUser: { email: 'attacker@example.com' },
     });
     assert.equal(res.statusCode, 404);
-    assert.ok(!res.body().includes('VICTIM-BACKUP-BYTES'), 'no victim bytes leaked');
+    assert.ok(
+      !res.body().includes('VICTIM-BACKUP-BYTES'),
+      'no victim bytes leaked',
+    );
   } finally {
     await fs.rm(file, { force: true });
   }
@@ -242,7 +280,10 @@ test('H3: the owner can download their own bulk export (200 + bytes)', async () 
       authedUser: { email: 'owner@example.com' },
     });
     assert.equal(res.statusCode, 200);
-    assert.ok(res.body().includes('MY-BACKUP-BYTES'), 'owner receives the file bytes');
+    assert.ok(
+      res.body().includes('MY-BACKUP-BYTES'),
+      'owner receives the file bytes',
+    );
   } finally {
     await fs.rm(file, { force: true });
   }

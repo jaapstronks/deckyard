@@ -8,17 +8,27 @@
 
 import { searchUsers } from '../../storage/users.js';
 import { getUserSettings } from '../../storage/settings.js';
-import { serveJson, methodNotAllowed, unauthorized, withErrorHandler } from '../../utils/http.js';
+import {
+  serveJson,
+  methodNotAllowed,
+  unauthorized,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 // GET /api/users/search - Search users in organization
 async function handleUserSearch({ storageScope, res, url }) {
   const query = url.searchParams.get('q') || '';
-  const { limit } = parsePaginationParams(url.searchParams, { defaultLimit: 10 });
+  const { limit } = parsePaginationParams(url.searchParams, {
+    defaultLimit: 10,
+  });
   const excludeParam = url.searchParams.get('exclude') || '';
   const exclude = excludeParam
-    ? excludeParam.split(',').map((e) => e.trim()).filter(Boolean)
+    ? excludeParam
+        .split(',')
+        .map((e) => e.trim())
+        .filter(Boolean)
     : [];
 
   if (!query.trim()) {
@@ -72,7 +82,7 @@ async function handleUserProfiles({ storageScope, req, res, url, authedUser }) {
         // Return empty profile on error
         return [email, { name: '', imageUrl: '' }];
       }
-    })
+    }),
   );
 
   const profiles = Object.fromEntries(profileEntries);
@@ -99,5 +109,5 @@ export const ROUTES = [
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
 export const handleUsers = withErrorHandler('users', (ctx) =>
-  dispatchRoutes(ROUTES, ctx)
+  dispatchRoutes(ROUTES, ctx),
 );

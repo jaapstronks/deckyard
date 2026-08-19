@@ -58,7 +58,11 @@ export function warmOnSaveEnabled() {
  * @param {{ delayMs?: number }} [options]
  * @returns {boolean} whether a warm is now pending (false = warming is disabled).
  */
-export function scheduleThumbnailWarm(key, task, { delayMs = WARM_DEBOUNCE_MS } = {}) {
+export function scheduleThumbnailWarm(
+  key,
+  task,
+  { delayMs = WARM_DEBOUNCE_MS } = {},
+) {
   if (!key || typeof task !== 'function') return false;
   if (!warmOnSaveEnabled()) return false;
 

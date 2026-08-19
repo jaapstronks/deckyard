@@ -81,17 +81,26 @@ function serveLockResult(res, result) {
  */
 export async function handleSlideLocksList(
   { storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'read',
+  });
   if (!pres) return true;
 
   const locks = await getSlideLocks(storageScope, id);
 
   // Also include list of slides locked by others (for UI)
   const lockedByOthers = authedUser?.email
-    ? await getLockedByOthers(storageScope, id, { email: authedUser.email, userId: authedUser?.id || null })
+    ? await getLockedByOthers(storageScope, id, {
+        email: authedUser.email,
+        userId: authedUser?.id || null,
+      })
     : [];
 
   serveJson(res, 200, {
@@ -109,7 +118,7 @@ export async function handleSlideLocksList(
 export async function handleSlideLockStatus(
   { storageScope, req, res, authedUser } = {},
   presentationId,
-  slideId
+  slideId,
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
   const pres = await withPresentationAuth({
@@ -124,7 +133,11 @@ export async function handleSlideLockStatus(
   const lock = await getSlideLock(storageScope, presentationId, slideId);
 
   const isHolder =
-    !!lock && matchesIdentity(authedUser, { userId: lock.holderId, email: lock.holderEmail });
+    !!lock &&
+    matchesIdentity(authedUser, {
+      userId: lock.holderId,
+      email: lock.holderEmail,
+    });
 
   serveJson(res, 200, { ok: true, lock, isHolder });
   return true;
@@ -137,7 +150,7 @@ export async function handleSlideLockStatus(
 export async function handleSlideLockAcquire(
   { storageScope, req, res, authedUser } = {},
   presentationId,
-  slideId
+  slideId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   const pres = await withPresentationAuth({
@@ -149,7 +162,12 @@ export async function handleSlideLockAcquire(
   });
   if (!pres) return true;
 
-  const result = await acquireSlideLock(storageScope, presentationId, slideId, lockActor(authedUser));
+  const result = await acquireSlideLock(
+    storageScope,
+    presentationId,
+    slideId,
+    lockActor(authedUser),
+  );
 
   // Broadcast lock event to other clients. `result.lock` carries holderId
   // alongside holderEmail/holderName, so listeners decide "is this mine?" on
@@ -171,7 +189,7 @@ export async function handleSlideLockAcquire(
 export async function handleSlideLockRefresh(
   { storageScope, req, res, authedUser } = {},
   presentationId,
-  slideId
+  slideId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   const pres = await withPresentationAuth({
@@ -198,7 +216,7 @@ export async function handleSlideLockRefresh(
 export async function handleSlideLockRelease(
   { storageScope, req, res, authedUser } = {},
   presentationId,
-  slideId
+  slideId,
 ) {
   if (req.method !== 'DELETE' && req.method !== 'POST') {
     return methodNotAllowed(res, ['DELETE', 'POST']);
@@ -237,7 +255,7 @@ export async function handleSlideLockRelease(
  */
 export async function handleSlideLocksReleaseAll(
   { storageScope, req, res, authedUser } = {},
-  presentationId
+  presentationId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   const pres = await withPresentationAuth({
@@ -266,7 +284,11 @@ export async function handleSlideLocksReleaseAll(
   // "Nothing to release because there is no lock backend" is a no-op, not a
   // server error — otherwise editor teardown logs a 500 on file storage.
   if (!result.ok && result.reason !== 'unavailable') {
-    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error');
+    return jsonError(
+      res,
+      getErrorStatus(result.reason, 500),
+      result.reason || 'internal_error',
+    );
   }
   serveJson(res, 200, result);
   return true;

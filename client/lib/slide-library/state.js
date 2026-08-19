@@ -20,7 +20,8 @@ export function createSlideLibraryState({
   initialQuery = '',
   initialLang = 'nl',
 } = {}) {
-  let activeShelf = initialShelf === 'organization' ? 'organization' : 'personal';
+  let activeShelf =
+    initialShelf === 'organization' ? 'organization' : 'personal';
   let activeView = 'library'; // library | trash
   let activeTypeFilter = ''; // empty = all types
   let activeTagFilter = []; // selected tag names for filtering
@@ -42,8 +43,10 @@ export function createSlideLibraryState({
     getTagFilter: () => [...activeTagFilter],
     getLang: () => activeLang,
     getQuery: () => q,
-    getCache: (shelf) => cache[shelf === 'organization' ? 'organization' : 'personal'] || [],
-    isLoading: (shelf) => loading.has(shelf === 'organization' ? 'organization' : 'personal'),
+    getCache: (shelf) =>
+      cache[shelf === 'organization' ? 'organization' : 'personal'] || [],
+    isLoading: (shelf) =>
+      loading.has(shelf === 'organization' ? 'organization' : 'personal'),
     getSelectedIds: () => new Set(selectedItems),
     getSelectedCount: () => selectedItems.size,
 
@@ -104,7 +107,8 @@ export function createSlideLibraryState({
       selectedItems.clear();
     },
     getSelectedItems: () => {
-      const shelf = activeShelf === 'organization' ? 'organization' : 'personal';
+      const shelf =
+        activeShelf === 'organization' ? 'organization' : 'personal';
       const items = cache[shelf] || [];
       return items.filter((it) => selectedItems.has(it.id));
     },
@@ -112,7 +116,8 @@ export function createSlideLibraryState({
     // insertion order). Used by the compose flow so the composed deck follows
     // the user's selection order rather than the library's sort order.
     getSelectedItemsInOrder: () => {
-      const shelf = activeShelf === 'organization' ? 'organization' : 'personal';
+      const shelf =
+        activeShelf === 'organization' ? 'organization' : 'personal';
       const byId = new Map((cache[shelf] || []).map((it) => [it.id, it]));
       return [...selectedItems].map((id) => byId.get(id)).filter(Boolean);
     },

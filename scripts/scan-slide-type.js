@@ -69,7 +69,9 @@ async function main() {
 
   let files;
   try {
-    files = (await fs.readdir(dir)).filter((f) => f.toLowerCase().endsWith('.json'));
+    files = (await fs.readdir(dir)).filter((f) =>
+      f.toLowerCase().endsWith('.json'),
+    );
   } catch (err) {
     console.error(`Cannot read deck directory ${dir}: ${err.message}`);
     process.exit(2);
@@ -85,7 +87,8 @@ async function main() {
     } catch {
       continue; // not a deck / unreadable — skip
     }
-    if (!pres || typeof pres !== 'object' || !Array.isArray(pres.slides)) continue;
+    if (!pres || typeof pres !== 'object' || !Array.isArray(pres.slides))
+      continue;
     scanned += 1;
     const matches = allSlides(pres).filter((s) => s?.type === type);
     if (matches.length) {
@@ -115,7 +118,9 @@ async function main() {
     `\n⚠️  ${totalSlides} "${type}" slide(s) still in use across ${hits.length} deck(s):\n`,
   );
   for (const h of hits) {
-    console.log(`  • ${h.title}  [${h.id}]  — ${h.count} slide(s)  (${h.file})`);
+    console.log(
+      `  • ${h.title}  [${h.id}]  — ${h.count} slide(s)  (${h.file})`,
+    );
     for (const sid of h.slideIds) console.log(`      - slide ${sid}`);
   }
   console.log(

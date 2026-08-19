@@ -73,7 +73,9 @@ function customHtmlEditorEmails() {
  */
 export function emailCanEditCustomHtml(email, { isAdmin = false } = {}) {
   if (isAdmin) return true;
-  const e = String(email || '').trim().toLowerCase();
+  const e = String(email || '')
+    .trim()
+    .toLowerCase();
   if (!e) return false;
   const adminEmail = envStr('AUTH_ADMIN_EMAIL').toLowerCase();
   if (adminEmail && e === adminEmail) return true;
@@ -110,7 +112,7 @@ export function canEditCustomHtml(authedUser) {
 export function customHtmlEditViolation(prevSlides, nextSlides, allowed) {
   if (allowed) return null;
   const prevById = new Map(
-    (Array.isArray(prevSlides) ? prevSlides : []).map((s) => [s?.id, s])
+    (Array.isArray(prevSlides) ? prevSlides : []).map((s) => [s?.id, s]),
   );
   for (const slide of Array.isArray(nextSlides) ? nextSlides : []) {
     if (!slide || slide.type !== 'custom-html-slide') continue;
@@ -148,7 +150,10 @@ export async function checkPresentationReadAccess({ req, authedUser, pres }) {
   // Fetch collaborator permission if the user is authenticated
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      pres.id,
+      authedUser.email,
+    );
   }
 
   // Check authenticated user first (with collaborator permission)
@@ -175,15 +180,24 @@ export async function checkPresentationReadAccess({ req, authedUser, pres }) {
  * @param {Object} options.pres - Presentation object
  * @returns {Promise<{canComment: boolean, guestInfo: Object|null, collaboratorPermission: string|null}>}
  */
-export async function checkPresentationCommentAccess({ req, authedUser, pres }) {
+export async function checkPresentationCommentAccess({
+  req,
+  authedUser,
+  pres,
+}) {
   // Fetch collaborator permission if the user is authenticated
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      pres.id,
+      authedUser.email,
+    );
   }
 
   // Check authenticated user first (with collaborator permission)
-  if (canCommentOnPresentation({ user: authedUser, pres, collaboratorPermission })) {
+  if (
+    canCommentOnPresentation({ user: authedUser, pres, collaboratorPermission })
+  ) {
     return { canComment: true, guestInfo: null, collaboratorPermission };
   }
 
@@ -230,7 +244,13 @@ const PERMISSION_CHECKS = {
  * if (!pres) return true; // Response already sent
  * // Continue with handler logic...
  */
-export async function withPresentationAuth({ storageScope, id, authedUser, res, permission = 'read' }) {
+export async function withPresentationAuth({
+  storageScope,
+  id,
+  authedUser,
+  res,
+  permission = 'read',
+}) {
   const pres = await getPresentation(storageScope, id);
   if (!pres) {
     notFound(res);
@@ -246,7 +266,10 @@ export async function withPresentationAuth({ storageScope, id, authedUser, res, 
   // For read/write permissions, check collaborator permission as well
   let collaboratorPermission = null;
   if ((permission === 'read' || permission === 'write') && authedUser?.email) {
-    collaboratorPermission = await getCollaboratorPermission(id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      id,
+      authedUser.email,
+    );
   }
 
   if (!checkFn({ user: authedUser, pres, collaboratorPermission })) {
@@ -288,14 +311,21 @@ export async function getGuestFromRequest(req) {
  * const { pres, guestInfo } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
  * if (!pres) return true; // Response already sent
  */
-export async function withPresentationReadAuth({ storageScope, req, id, authedUser, res }) {
+export async function withPresentationReadAuth({
+  storageScope,
+  req,
+  id,
+  authedUser,
+  res,
+}) {
   const pres = await getPresentation(storageScope, id);
   if (!pres) {
     notFound(res);
     return { pres: null, guestInfo: null, collaboratorPermission: null };
   }
 
-  const { canRead, guestInfo, collaboratorPermission } = await checkPresentationReadAccess({ req, authedUser, pres });
+  const { canRead, guestInfo, collaboratorPermission } =
+    await checkPresentationReadAccess({ req, authedUser, pres });
   if (!canRead) {
     unauthorized(res);
     return { pres: null, guestInfo: null, collaboratorPermission: null };
@@ -318,14 +348,21 @@ export async function withPresentationReadAuth({ storageScope, req, id, authedUs
  * @param {Object} options.res - HTTP response object
  * @returns {Promise<{pres: Object|null, guestInfo: Object|null, collaboratorPermission: string|null}>}
  */
-export async function withPresentationCommentAuth({ storageScope, req, id, authedUser, res }) {
+export async function withPresentationCommentAuth({
+  storageScope,
+  req,
+  id,
+  authedUser,
+  res,
+}) {
   const pres = await getPresentation(storageScope, id);
   if (!pres) {
     notFound(res);
     return { pres: null, guestInfo: null, collaboratorPermission: null };
   }
 
-  const { canComment, guestInfo, collaboratorPermission } = await checkPresentationCommentAccess({ req, authedUser, pres });
+  const { canComment, guestInfo, collaboratorPermission } =
+    await checkPresentationCommentAccess({ req, authedUser, pres });
   if (!canComment) {
     unauthorized(res);
     return { pres: null, guestInfo: null, collaboratorPermission: null };

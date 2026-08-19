@@ -42,7 +42,8 @@
   height: 8px;
   border-radius: 50%;
   background: hsl(var(--app-warning));
-  box-shadow: 0 0 0 3px color-mix(in srgb, hsl(var(--app-warning)) 22%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, hsl(var(--app-warning)) 22%, transparent);
 }
 
 .maintenance-banner-text {

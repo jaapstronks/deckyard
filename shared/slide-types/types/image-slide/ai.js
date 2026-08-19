@@ -19,16 +19,16 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       A single strong visual (full-slide image) with optional caption.
       Use for impactful standalone images.
     `,
-    bestFor: [
-      'Powerful standalone visuals',
-      'Full-bleed photos or screenshots',
-      'Visual breaks in the presentation',
-    ],
-    notFor: ['Content that needs text explanation (use image-text-slide)'],
+  bestFor: [
+    'Powerful standalone visuals',
+    'Full-bleed photos or screenshots',
+    'Visual breaks in the presentation',
+  ],
+  notFor: ['Content that needs text explanation (use image-text-slide)'],
 };

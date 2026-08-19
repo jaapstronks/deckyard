@@ -47,7 +47,7 @@ export async function listUsers(scope) {
         eb.or([
           eb('event_type', '=', 'login'),
           eb('event_type', '=', 'magic_link_login'),
-        ])
+        ]),
       )
       .where('success', '=', true)
       .orderBy('created_at', 'desc')
@@ -78,7 +78,9 @@ export async function listUsers(scope) {
       }
     }
 
-    return rows.map((row) => formatUserWithStatus(row, lastLoginMap, invitationMap, now));
+    return rows.map((row) =>
+      formatUserWithStatus(row, lastLoginMap, invitationMap, now),
+    );
   });
 }
 
@@ -375,23 +377,35 @@ export async function resendInvitation(scope, userId) {
  */
 export async function searchUsers(scope, query, options = {}) {
   toStorageContext(scope, 'searchUsers');
-  const searchTerm = String(query || '').toLowerCase().trim();
+  const searchTerm = String(query || '')
+    .toLowerCase()
+    .trim();
   if (!searchTerm) return [];
 
   return withDbGuard([], async (db) => {
     const orgId = getOrgId(scope);
     const limit = Math.min(Math.max(1, options.limit || 10), 50);
-    const exclude = Array.isArray(options.exclude) ? options.exclude.map((e) => String(e).toLowerCase().trim()) : [];
+    const exclude = Array.isArray(options.exclude)
+      ? options.exclude.map((e) => String(e).toLowerCase().trim())
+      : [];
 
     let qb = db
       .selectFrom('users')
-      .select(['id', 'email', 'name', 'role', 'auth_source', 'created_at', 'updated_at'])
+      .select([
+        'id',
+        'email',
+        'name',
+        'role',
+        'auth_source',
+        'created_at',
+        'updated_at',
+      ])
       .where('organization_id', '=', orgId)
       .where((eb) =>
         eb.or([
           eb('email', 'ilike', `%${searchTerm}%`),
           eb('name', 'ilike', `%${searchTerm}%`),
-        ])
+        ]),
       );
 
     // Exclude specific emails
@@ -448,7 +462,9 @@ function formatUserWithStatus(row, lastLoginMap, invitationMap, now) {
     // an ISO string; a Date-vs-string comparison coerces the string to NaN and
     // is always false. Compare as epoch milliseconds so both shapes order.
     invitationStatus =
-      new Date(invitationExpiresAt).getTime() > new Date(now).getTime() ? 'active' : 'expired';
+      new Date(invitationExpiresAt).getTime() > new Date(now).getTime()
+        ? 'active'
+        : 'expired';
   }
 
   return {

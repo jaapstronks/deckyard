@@ -12,13 +12,27 @@
  */
 
 // Shared utilities
-export { EMAIL_STYLES, emailButton, emailWrapper, troubleClickingFooter } from './helpers.js';
+export {
+  EMAIL_STYLES,
+  emailButton,
+  emailWrapper,
+  troubleClickingFooter,
+} from './helpers.js';
 
 // Auth templates
-export { buildPasswordResetEmail, buildUserInvitationEmail, buildActivationReminderEmail, buildMagicLinkEmail } from './auth.js';
+export {
+  buildPasswordResetEmail,
+  buildUserInvitationEmail,
+  buildActivationReminderEmail,
+  buildMagicLinkEmail,
+} from './auth.js';
 
 // Notification templates
-export { buildCommentNotificationEmail, buildLeadNotificationEmail, buildDataRequestEmail } from './notifications.js';
+export {
+  buildCommentNotificationEmail,
+  buildLeadNotificationEmail,
+  buildDataRequestEmail,
+} from './notifications.js';
 
 // Export templates
 export { buildExportReadyEmail } from './export.js';
@@ -27,4 +41,8 @@ export { buildExportReadyEmail } from './export.js';
 export { buildWeeklyDigestEmail, buildTeamDigestEmail } from './digest.js';
 
 // Collaboration templates
-export { buildGuestVerificationEmail, buildCollaboratorInviteEmail, buildGuestInvitationEmail } from './collaboration.js';
+export {
+  buildGuestVerificationEmail,
+  buildCollaboratorInviteEmail,
+  buildGuestInvitationEmail,
+} from './collaboration.js';

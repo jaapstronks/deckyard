@@ -26,7 +26,12 @@ const PRES = { id: 'p-1', title: 'Deck', ownerEmail: 'owner@example.com' };
 
 describe('levelAllows', () => {
   it('mentions always deliver, at every level', () => {
-    for (const level of ['watching', 'participating', 'mentions_only', 'mute']) {
+    for (const level of [
+      'watching',
+      'participating',
+      'mentions_only',
+      'mute',
+    ]) {
       assert.strictEqual(levelAllows(level, 'mention'), true, level);
     }
   });
@@ -112,7 +117,11 @@ describe('buildCandidates', () => {
       comment: { body: 'x', parentId: 'c-1' },
       parentComment: { authorEmail: 'author@example.com' },
       actor: { email: 'someone@example.com' },
-      collaborators: ['author@example.com', 'owner@example.com', 'collab@example.com'],
+      collaborators: [
+        'author@example.com',
+        'owner@example.com',
+        'collab@example.com',
+      ],
     });
     // A collaborator only delivers when their effective level is watching;
     // stronger ties keep their more specific reason.

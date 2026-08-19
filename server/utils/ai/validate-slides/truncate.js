@@ -40,14 +40,33 @@ export function truncateContentFields(type, content) {
   const fixed = { ...content };
 
   // Common fields
-  if (fixed.title) fixed.title = truncate(fixed.title, MAX_LENGTHS.title, 'title');
-  if (fixed.subheading) fixed.subheading = truncate(fixed.subheading, MAX_LENGTHS.subheading, 'subheading');
+  if (fixed.title)
+    fixed.title = truncate(fixed.title, MAX_LENGTHS.title, 'title');
+  if (fixed.subheading)
+    fixed.subheading = truncate(
+      fixed.subheading,
+      MAX_LENGTHS.subheading,
+      'subheading',
+    );
   if (fixed.body) fixed.body = truncate(fixed.body, MAX_LENGTHS.body, 'body');
-  if (fixed.tagline) fixed.tagline = truncate(fixed.tagline, MAX_LENGTHS.tagline, 'tagline');
-  if (fixed.caption) fixed.caption = truncate(fixed.caption, MAX_LENGTHS.caption, 'caption');
-  if (fixed.quote) fixed.quote = truncate(fixed.quote, MAX_LENGTHS.quote, 'quote');
-  if (fixed.authorName) fixed.authorName = truncate(fixed.authorName, MAX_LENGTHS.authorName, 'authorName');
-  if (fixed.authorTitle) fixed.authorTitle = truncate(fixed.authorTitle, MAX_LENGTHS.authorTitle, 'authorTitle');
+  if (fixed.tagline)
+    fixed.tagline = truncate(fixed.tagline, MAX_LENGTHS.tagline, 'tagline');
+  if (fixed.caption)
+    fixed.caption = truncate(fixed.caption, MAX_LENGTHS.caption, 'caption');
+  if (fixed.quote)
+    fixed.quote = truncate(fixed.quote, MAX_LENGTHS.quote, 'quote');
+  if (fixed.authorName)
+    fixed.authorName = truncate(
+      fixed.authorName,
+      MAX_LENGTHS.authorName,
+      'authorName',
+    );
+  if (fixed.authorTitle)
+    fixed.authorTitle = truncate(
+      fixed.authorTitle,
+      MAX_LENGTHS.authorTitle,
+      'authorTitle',
+    );
 
   // Array items (list, timeline, metrics)
   if (Array.isArray(fixed.items)) {
@@ -55,9 +74,19 @@ export function truncateContentFields(type, content) {
       if (!item || typeof item !== 'object') return item;
       return {
         ...item,
-        title: item.title ? truncate(item.title, MAX_LENGTHS['items.title'], `items[${idx}].title`) : item.title,
-        text: item.text ? truncate(item.text, MAX_LENGTHS['items.text'], `items[${idx}].text`) : item.text,
-        time: item.time ? truncate(item.time, MAX_LENGTHS['items.time'], `items[${idx}].time`) : item.time,
+        title: item.title
+          ? truncate(
+              item.title,
+              MAX_LENGTHS['items.title'],
+              `items[${idx}].title`,
+            )
+          : item.title,
+        text: item.text
+          ? truncate(item.text, MAX_LENGTHS['items.text'], `items[${idx}].text`)
+          : item.text,
+        time: item.time
+          ? truncate(item.time, MAX_LENGTHS['items.time'], `items[${idx}].time`)
+          : item.time,
       };
     });
   }
@@ -67,10 +96,16 @@ export function truncateContentFields(type, content) {
       if (!m || typeof m !== 'object') return m;
       return {
         ...m,
-        label: m.label ? truncate(m.label, 60, `metrics[${idx}].label`) : m.label,
-        value: m.value ? truncate(String(m.value), 30, `metrics[${idx}].value`) : m.value,
+        label: m.label
+          ? truncate(m.label, 60, `metrics[${idx}].label`)
+          : m.label,
+        value: m.value
+          ? truncate(String(m.value), 30, `metrics[${idx}].value`)
+          : m.value,
         unit: m.unit ? truncate(m.unit, 12, `metrics[${idx}].unit`) : m.unit,
-        delta: m.delta ? truncate(m.delta, 24, `metrics[${idx}].delta`) : m.delta,
+        delta: m.delta
+          ? truncate(m.delta, 24, `metrics[${idx}].delta`)
+          : m.delta,
         note: m.note ? truncate(m.note, 80, `metrics[${idx}].note`) : m.note,
       };
     });
@@ -101,11 +136,19 @@ export function truncateContentFields(type, content) {
     const nameKey = `card${i}Name`;
     const bylineKey = `card${i}Byline`;
 
-    if (fixed[labelKey]) fixed[labelKey] = truncate(fixed[labelKey], MAX_LENGTHS.cardLabel, labelKey);
-    if (fixed[bodyKey]) fixed[bodyKey] = truncate(fixed[bodyKey], MAX_LENGTHS.cardBody, bodyKey);
-    if (fixed[titleKey]) fixed[titleKey] = truncate(fixed[titleKey], MAX_LENGTHS.title, titleKey);
+    if (fixed[labelKey])
+      fixed[labelKey] = truncate(
+        fixed[labelKey],
+        MAX_LENGTHS.cardLabel,
+        labelKey,
+      );
+    if (fixed[bodyKey])
+      fixed[bodyKey] = truncate(fixed[bodyKey], MAX_LENGTHS.cardBody, bodyKey);
+    if (fixed[titleKey])
+      fixed[titleKey] = truncate(fixed[titleKey], MAX_LENGTHS.title, titleKey);
     if (fixed[nameKey]) fixed[nameKey] = truncate(fixed[nameKey], 80, nameKey);
-    if (fixed[bylineKey]) fixed[bylineKey] = truncate(fixed[bylineKey], 120, bylineKey);
+    if (fixed[bylineKey])
+      fixed[bylineKey] = truncate(fixed[bylineKey], 120, bylineKey);
   }
 
   // Text-blocks row fields
@@ -113,11 +156,26 @@ export function truncateContentFields(type, content) {
     for (let block = 1; block <= 6; block++) {
       const titleKey = `row${row}Block${block}Title`;
       const bodyKey = `row${row}Block${block}Body`;
-      if (fixed[titleKey]) fixed[titleKey] = truncate(fixed[titleKey], MAX_LENGTHS.blockTitle, titleKey);
-      if (fixed[bodyKey]) fixed[bodyKey] = truncate(fixed[bodyKey], MAX_LENGTHS.blockBody, bodyKey);
+      if (fixed[titleKey])
+        fixed[titleKey] = truncate(
+          fixed[titleKey],
+          MAX_LENGTHS.blockTitle,
+          titleKey,
+        );
+      if (fixed[bodyKey])
+        fixed[bodyKey] = truncate(
+          fixed[bodyKey],
+          MAX_LENGTHS.blockBody,
+          bodyKey,
+        );
     }
     const rowTitleKey = `row${row}Title`;
-    if (fixed[rowTitleKey]) fixed[rowTitleKey] = truncate(fixed[rowTitleKey], MAX_LENGTHS.title, rowTitleKey);
+    if (fixed[rowTitleKey])
+      fixed[rowTitleKey] = truncate(
+        fixed[rowTitleKey],
+        MAX_LENGTHS.title,
+        rowTitleKey,
+      );
   }
 
   return fixed;

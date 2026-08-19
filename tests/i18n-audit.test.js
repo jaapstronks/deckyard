@@ -35,8 +35,15 @@ import {
   isSampleContentException,
 } from '../scripts/i18n-audit.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const allowlistPath = path.join(repoRoot, 'scripts', 'i18n-audit-allowlist.json');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
+const allowlistPath = path.join(
+  repoRoot,
+  'scripts',
+  'i18n-audit-allowlist.json',
+);
 
 const allowlist = JSON.parse(await fs.readFile(allowlistPath, 'utf8'));
 const allowed = allowlist.hardcoded || {};
@@ -50,15 +57,17 @@ const orphans = await findOrphanKeys('en');
 describe('i18n hardcoded copy', () => {
   it('no user-facing string bypasses t() without an allowlist entry', () => {
     const unexpected = hits.filter(
-      (h) => !(hardcodedId(h) in allowed) && !isSampleContentException(h)
+      (h) => !(hardcodedId(h) in allowed) && !isSampleContentException(h),
     );
     assert.deepStrictEqual(
-      unexpected.map((h) => `${h.file}:${h.line} [${h.prop}] ${JSON.stringify(h.value)}`),
+      unexpected.map(
+        (h) => `${h.file}:${h.line} [${h.prop}] ${JSON.stringify(h.value)}`,
+      ),
       [],
       `${unexpected.length} hardcoded user-facing string(s).\n` +
         'Route each through t(key, fallback) and add the key to client/i18n/{en,nl}/.\n' +
         'If it genuinely must not be translated (brand name, language name, syntax\n' +
-        `example), add it to ${path.relative(repoRoot, allowlistPath)} with a reason.`
+        `example), add it to ${path.relative(repoRoot, allowlistPath)} with a reason.`,
     );
   });
 
@@ -70,7 +79,7 @@ describe('i18n hardcoded copy', () => {
     assert.deepStrictEqual(
       stale,
       [],
-      `${stale.length} stale allowlist entr(ies) — the literal is gone, remove the exemption.`
+      `${stale.length} stale allowlist entr(ies) — the literal is gone, remove the exemption.`,
     );
   });
 
@@ -78,7 +87,11 @@ describe('i18n hardcoded copy', () => {
     const unreasoned = Object.entries({ ...allowed, ...allowedOrphans })
       .filter(([, reason]) => !String(reason || '').trim())
       .map(([id]) => id);
-    assert.deepStrictEqual(unreasoned, [], 'allowlist entries must explain themselves');
+    assert.deepStrictEqual(
+      unreasoned,
+      [],
+      'allowlist entries must explain themselves',
+    );
   });
 });
 
@@ -92,7 +105,7 @@ describe('i18n orphan keys', () => {
         'Delete each from all 12 locales — a dead key ships in every locale file and\n' +
         'makes "how translated are we?" unanswerable. If a key must survive without a\n' +
         `visible call site, add it to ${path.relative(repoRoot, allowlistPath)} under\n` +
-        '"orphans" with a reason.'
+        '"orphans" with a reason.',
     );
   });
 
@@ -104,7 +117,7 @@ describe('i18n orphan keys', () => {
     assert.deepStrictEqual(
       stale,
       [],
-      `${stale.length} stale orphan exemption(s) — the key is gone, remove the entry.`
+      `${stale.length} stale orphan exemption(s) — the key is gone, remove the entry.`,
     );
   });
 });

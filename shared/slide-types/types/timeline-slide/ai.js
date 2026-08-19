@@ -19,9 +19,9 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       Chronological timeline with 2-10 DATED events.
       Visual display with cards above and below a timeline track.
 
@@ -46,22 +46,22 @@ export const ai = {
       IMPORTANT: This is for TIME-BASED sequences, not meeting agendas.
       For meeting agendas, use list-slide instead.
     `,
-    bestFor: [
-      'Roadmaps with phases (Q1/Q2/Q3, Year 1/2/3, Phase 1/2/3)',
-      'Company history and milestones',
-      'Project retrospectives and future plans',
-      'Historical event sequences',
-      'Product evolution timelines',
-      'Future development plans',
-      'Now/Next/Later timelines',
-    ],
-    notFor: [
-      'Meeting agendas (use list-slide)',
-      'Non-sequential items (use icon-card-grid-slide or list-slide)',
-      'More than 10 items (split into multiple slides)',
-      'Processes without dates/phases (use process-slide)',
-      'Undated summary/total lines as items (put them in bottomSubheading)',
-    ],
+  bestFor: [
+    'Roadmaps with phases (Q1/Q2/Q3, Year 1/2/3, Phase 1/2/3)',
+    'Company history and milestones',
+    'Project retrospectives and future plans',
+    'Historical event sequences',
+    'Product evolution timelines',
+    'Future development plans',
+    'Now/Next/Later timelines',
+  ],
+  notFor: [
+    'Meeting agendas (use list-slide)',
+    'Non-sequential items (use icon-card-grid-slide or list-slide)',
+    'More than 10 items (split into multiple slides)',
+    'Processes without dates/phases (use process-slide)',
+    'Undated summary/total lines as items (put them in bottomSubheading)',
+  ],
 };
 
 /**
@@ -76,9 +76,17 @@ export const aiExamples = [
     items: [
       { date: '2015', title: 'Founded', text: 'Started in a small garage' },
       { date: '2017', title: 'Series A', text: 'Raised €5M funding' },
-      { date: '2019', title: 'Global Launch', text: 'Expanded to 20 countries' },
+      {
+        date: '2019',
+        title: 'Global Launch',
+        text: 'Expanded to 20 countries',
+      },
       { date: '2021', title: 'IPO', text: 'Listed on stock exchange' },
-      { date: '2023', title: 'Acquisition', text: 'Merged with industry leader' },
+      {
+        date: '2023',
+        title: 'Acquisition',
+        text: 'Merged with industry leader',
+      },
     ],
     background: 'lime',
   },
@@ -87,8 +95,16 @@ export const aiExamples = [
     title: 'Project Milestones',
     items: [
       { date: 'Jan 2024', title: 'Kickoff', text: 'Project initiated' },
-      { date: 'Mar 2024', title: 'Alpha Release', text: 'Internal testing began' },
-      { date: 'Jun 2024', title: 'Beta Launch', text: 'Public beta with 100 users' },
+      {
+        date: 'Mar 2024',
+        title: 'Alpha Release',
+        text: 'Internal testing began',
+      },
+      {
+        date: 'Jun 2024',
+        title: 'Beta Launch',
+        text: 'Public beta with 100 users',
+      },
       { date: 'Sep 2024', title: 'v1.0 Release', text: 'General availability' },
     ],
     background: 'mist',
@@ -101,12 +117,36 @@ export const aiExamples = [
     _variation: 'Programme process with a summary line',
     title: 'ADRIE activities — round 1',
     items: [
-      { date: 'Q1 2025', title: 'Final scheme drafted', text: 'Prepared for the open call.' },
-      { date: 'Apr 2025', title: 'Call opens', text: 'Submission window starts.' },
-      { date: '23 May 2025', title: 'Call closes', text: '36 proposals; 26 assessed.' },
-      { date: 'Jul–Oct 2025', title: 'Research phase', text: '5 proposals funded.' },
-      { date: 'Nov–Dec 2025', title: 'Phase 2 selected', text: 'Grant decisions issued.' },
-      { date: 'Jan 2026', title: 'Phase 2 starts', text: 'Two-year programmes begin.' },
+      {
+        date: 'Q1 2025',
+        title: 'Final scheme drafted',
+        text: 'Prepared for the open call.',
+      },
+      {
+        date: 'Apr 2025',
+        title: 'Call opens',
+        text: 'Submission window starts.',
+      },
+      {
+        date: '23 May 2025',
+        title: 'Call closes',
+        text: '36 proposals; 26 assessed.',
+      },
+      {
+        date: 'Jul–Oct 2025',
+        title: 'Research phase',
+        text: '5 proposals funded.',
+      },
+      {
+        date: 'Nov–Dec 2025',
+        title: 'Phase 2 selected',
+        text: 'Grant decisions issued.',
+      },
+      {
+        date: 'Jan 2026',
+        title: 'Phase 2 starts',
+        text: 'Two-year programmes begin.',
+      },
     ],
     bottomSubheading: '42 partners involved across the 5 consortia.',
     background: 'lime',

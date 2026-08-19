@@ -8,13 +8,13 @@ make it work.
 
 ## The three controls (per slide)
 
-| Field | Values | Meaning |
-| --- | --- | --- |
-| `slideBgImage` | URL | The image. |
-| `slideBgFit` | `cover` \| `contain` | Crop-to-fill vs letterbox. |
-| `slideBgFocusX` / `slideBgFocusY` | 0–100 | Which part stays visible when cropped. |
-| `slideBgText` | `auto` \| `light` \| `dark` | Text colour over the image. `auto` is the default. |
-| `slideBgOverlay` | `auto` \| `none` \| `light` \| `dark` \| `gradient-top` \| `gradient-bottom` | Scrim/gradient over the image. `auto` is the default. |
+| Field                             | Values                                                                       | Meaning                                               |
+| --------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `slideBgImage`                    | URL                                                                          | The image.                                            |
+| `slideBgFit`                      | `cover` \| `contain`                                                         | Crop-to-fill vs letterbox.                            |
+| `slideBgFocusX` / `slideBgFocusY` | 0–100                                                                        | Which part stays visible when cropped.                |
+| `slideBgText`                     | `auto` \| `light` \| `dark`                                                  | Text colour over the image. `auto` is the default.    |
+| `slideBgOverlay`                  | `auto` \| `none` \| `light` \| `dark` \| `gradient-top` \| `gradient-bottom` | Scrim/gradient over the image. `auto` is the default. |
 
 Two derived, code-written fields are stored on the slide (not user-editable):
 `slideBgTextAuto` (`light`/`dark`) and `slideBgNeedsScrim` (bool). They are the

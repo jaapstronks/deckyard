@@ -9,7 +9,7 @@
 services:
   app:
     ports:
-      - "4177:4177"
+      - '4177:4177'
 
   # Publish the bundled database so host-side tooling can reach it: psql, a GUI
   # client, and `npm run test:pg` / `npm run db:migrate` from the checkout.
@@ -20,7 +20,7 @@ services:
   # with POSTGRES_HOST_PORT in .env if 5433 is taken too.
   postgres:
     ports:
-      - "${POSTGRES_HOST_PORT:-5433}:5432"
+      - '${POSTGRES_HOST_PORT:-5433}:5432'
 
   # Neutralise the production reverse proxy for local runs. Caddy binds host
   # ports 80/443; on a machine already using port 80 (another proxy, a system

@@ -40,9 +40,16 @@ import {
   broadcastToPresentation,
   CommentEventTypes,
 } from '../services/comment-events.js';
-import { recordCommentCreated, recordCommentResolved, recordCommentReopened } from '../services/activity-events.js';
+import {
+  recordCommentCreated,
+  recordCommentResolved,
+  recordCommentReopened,
+} from '../services/activity-events.js';
 import { notifyCommentCreatedInApp } from '../services/comment-notifications.js';
-import { broadcastCommentCounts, MAX_COMMENT_LENGTH } from '../routes/api/presentations/comments-shared.js';
+import {
+  broadcastCommentCounts,
+  MAX_COMMENT_LENGTH,
+} from '../routes/api/presentations/comments-shared.js';
 import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
 import {
   deckToPresentationParts,
@@ -56,15 +63,28 @@ import {
   RawSlideValidationError,
 } from '../utils/ai/validate-slides.js';
 import { iteratePresentation } from '../utils/ai/iterate-deck.js';
-import { analyzeForCompression, applyCompression } from '../utils/ai/compress-deck.js';
+import {
+  analyzeForCompression,
+  applyCompression,
+} from '../utils/ai/compress-deck.js';
 import { analyzePresentation } from '../utils/ai/analyze-presentation.js';
 import { convertSlideWithAi } from '../utils/ai.js';
 import { generateSlidesToAppendFromRawContent } from '../utils/openai/append.js';
-import { listThemeIds, loadThemeAssets, resolveThemeId } from '../utils/themes.js';
+import {
+  listThemeIds,
+  loadThemeAssets,
+  resolveThemeId,
+} from '../utils/themes.js';
 import { GLOBAL_SLIDE_OPTIONS } from '../utils/ai/slide-type-catalog.js';
 import { resolveAgentSlideTypes } from '../utils/ai/slide-catalog/agent-catalog.js';
-import { loadDisabledSlideTypes, loadCustomSlideTypes } from '../utils/org-slide-types.js';
-import { buildSlidePreviewHtml, buildSingleSlidePreviewHtml } from './preview.js';
+import {
+  loadDisabledSlideTypes,
+  loadCustomSlideTypes,
+} from '../utils/org-slide-types.js';
+import {
+  buildSlidePreviewHtml,
+  buildSingleSlidePreviewHtml,
+} from './preview.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
 
 /**
@@ -98,7 +118,9 @@ function parseSince(since) {
   if (!since) return null;
   const parsed = new Date(since);
   if (Number.isNaN(parsed.getTime())) {
-    throw new Error(`Invalid since value: ${since} (use an ISO 8601 date/datetime)`);
+    throw new Error(
+      `Invalid since value: ${since} (use an ISO 8601 date/datetime)`,
+    );
   }
   return parsed.toISOString();
 }
@@ -119,9 +141,8 @@ function parseSince(since) {
  */
 export function registerTools(
   server,
-  { defaultOwnerEmail = null, registerCustom = null } = {}
+  { defaultOwnerEmail = null, registerCustom = null } = {},
 ) {
-
   /**
    * Resolve the effective owner email, preferring SSE session context
    * over the static defaultOwnerEmail (stdio).
@@ -176,7 +197,12 @@ export function registerTools(
    * @returns {Promise<Object>}
    */
   function getCheckedPresentation(presentationId, context, options) {
-    return loadPresentationChecked(storageScopeOf(context), presentationId, getOwner(context), options);
+    return loadPresentationChecked(
+      storageScopeOf(context),
+      presentationId,
+      getOwner(context),
+      options,
+    );
   }
 
   /**
@@ -206,12 +232,14 @@ export function registerTools(
       properties: {
         category: {
           type: 'string',
-          description: 'Filter by category: "structural", "content", "all" (default: "all")',
+          description:
+            'Filter by category: "structural", "content", "all" (default: "all")',
           enum: ['structural', 'content', 'all'],
         },
         lang: {
           type: 'string',
-          description: 'Language for the example content: "nl" or "en-GB" (default: "nl")',
+          description:
+            'Language for the example content: "nl" or "en-GB" (default: "nl")',
           enum: ['nl', 'en-GB'],
         },
       },
@@ -241,7 +269,7 @@ export function registerTools(
         globalOptions: GLOBAL_SLIDE_OPTIONS,
       };
     },
-    { readOnly: true }
+    { readOnly: true },
   );
 
   // ─── list_presentations ─────────────────────────────────────────────────
@@ -266,7 +294,9 @@ export function registerTools(
     },
     async ({ limit = 50, ownership = 'owned' } = {}, context) => {
       const owner = getOwner(context);
-      const validOwnership = ['owned', 'shared', 'all'].includes(ownership) ? ownership : 'owned';
+      const validOwnership = ['owned', 'shared', 'all'].includes(ownership)
+        ? ownership
+        : 'owned';
       const ctx = storageScopeOf(context);
 
       // Collect owned and/or shared decks, de-duplicated by id (a deck could
@@ -299,8 +329,11 @@ export function registerTools(
       const items = decks.slice(0, limit).map((p) => {
         // slideCount: try slides array, then slideCount property, else omit.
         // list sources may not include the full slides array (too heavy).
-        const slideCount = Array.isArray(p.slides) ? p.slides.length
-          : (typeof p.slideCount === 'number' ? p.slideCount : null);
+        const slideCount = Array.isArray(p.slides)
+          ? p.slides.length
+          : typeof p.slideCount === 'number'
+            ? p.slideCount
+            : null;
 
         const item = {
           id: p.id,
@@ -324,7 +357,7 @@ export function registerTools(
         ownership: validOwnership,
       };
     },
-    { readOnly: true }
+    { readOnly: true },
   );
 
   // ─── get_presentation ───────────────────────────────────────────────────
@@ -336,7 +369,10 @@ export function registerTools(
       type: 'object',
       properties: {
         id: { type: 'string', description: 'Presentation ID' },
-        presentationId: { type: 'string', description: 'Presentation ID (alias for id)' },
+        presentationId: {
+          type: 'string',
+          description: 'Presentation ID (alias for id)',
+        },
       },
     },
     async ({ id, presentationId }, context) => {
@@ -357,7 +393,7 @@ export function registerTools(
         slideCount: pres.slides?.length || 0,
       };
     },
-    { readOnly: true }
+    { readOnly: true },
   );
 
   // ─── create_presentation ────────────────────────────────────────────────
@@ -370,11 +406,13 @@ export function registerTools(
       properties: {
         content: {
           type: 'string',
-          description: 'Source text to generate presentation from (meeting notes, article, bullet points, etc.)',
+          description:
+            'Source text to generate presentation from (meeting notes, article, bullet points, etc.)',
         },
         title: {
           type: 'string',
-          description: 'Optional presentation title (auto-generated if not provided)',
+          description:
+            'Optional presentation title (auto-generated if not provided)',
         },
         theme: {
           type: 'string',
@@ -382,7 +420,8 @@ export function registerTools(
         },
         lang: {
           type: 'string',
-          description: 'Language: "nl" or "en-GB" (auto-detected if not provided)',
+          description:
+            'Language: "nl" or "en-GB" (auto-detected if not provided)',
           enum: ['nl', 'en-GB'],
         },
         speaker: {
@@ -391,23 +430,38 @@ export function registerTools(
         },
         ownerEmail: {
           type: 'string',
-          description: 'Email of the presentation owner (for access control). If not provided, uses the server default.',
+          description:
+            'Email of the presentation owner (for access control). If not provided, uses the server default.',
         },
         vendor: {
           type: 'string',
-          description: 'LLM vendor override (e.g. "openai", "anthropic"). Uses server default if not specified.',
+          description:
+            'LLM vendor override (e.g. "openai", "anthropic"). Uses server default if not specified.',
         },
       },
       required: ['content'],
     },
-    async ({ content, title, theme = 'default', lang, speaker = '', ownerEmail, vendor }, context) => {
+    async (
+      {
+        content,
+        title,
+        theme = 'default',
+        lang,
+        speaker = '',
+        ownerEmail,
+        vendor,
+      },
+      context,
+    ) => {
       const effectiveOwner = ownerEmail || getOwner(context);
       // Load theme for title slide type
       let titleSlideType = 'title-slide';
       try {
         const themeObj = await loadThemeAssets(repoRoot, resolveThemeId(theme));
         titleSlideType = themeObj?.defaultTitleSlide || 'title-slide';
-      } catch { /* use default */ }
+      } catch {
+        /* use default */
+      }
 
       const deck = await generateDeckV2(content, {
         userName: speaker,
@@ -429,11 +483,16 @@ export function registerTools(
         ownerEmail: effectiveOwner,
       });
 
-      const updated = await updatePresentation(storageScopeOf(context), created.id, {
-        ...created,
-        slides: parts.slides,
-        title: parts.title,
-      }, { actorEmail: effectiveOwner });
+      const updated = await updatePresentation(
+        storageScopeOf(context),
+        created.id,
+        {
+          ...created,
+          slides: parts.slides,
+          title: parts.title,
+        },
+        { actorEmail: effectiveOwner },
+      );
 
       const result = {
         id: updated.id,
@@ -451,7 +510,7 @@ export function registerTools(
       if (editUrl) result.editUrl = editUrl;
       if (presentUrl) result.presentUrl = presentUrl;
       return result;
-    }
+    },
   );
 
   // ─── create_presentation_from_slides ────────────────────────────────────
@@ -468,13 +527,24 @@ export function registerTools(
         },
         slides: {
           type: 'array',
-          description: 'Slide array. Each item: { type, content, notes? }. See get_slide_types for valid types and example content.',
+          description:
+            'Slide array. Each item: { type, content, notes? }. See get_slide_types for valid types and example content.',
           items: {
             type: 'object',
             properties: {
-              type: { type: 'string', description: 'Slide type (e.g. "title-slide", "team-cards-slide")' },
-              content: { type: 'object', description: 'Slide content matching the type schema' },
-              notes: { type: 'string', description: 'Speaker notes (optional)' },
+              type: {
+                type: 'string',
+                description:
+                  'Slide type (e.g. "title-slide", "team-cards-slide")',
+              },
+              content: {
+                type: 'object',
+                description: 'Slide content matching the type schema',
+              },
+              notes: {
+                type: 'string',
+                description: 'Speaker notes (optional)',
+              },
             },
             required: ['type', 'content'],
           },
@@ -492,29 +562,35 @@ export function registerTools(
         },
         ownerEmail: {
           type: 'string',
-          description: 'Email of the presentation owner. Defaults to the session/server owner.',
+          description:
+            'Email of the presentation owner. Defaults to the session/server owner.',
         },
         validation: {
           type: 'string',
-          description: '"strict" (default) throws on first issue with structured detail. "fix" applies auto-fixes (truncate, pad, layout switch) and returns them in `appliedFixes`.',
+          description:
+            '"strict" (default) throws on first issue with structured detail. "fix" applies auto-fixes (truncate, pad, layout switch) and returns them in `appliedFixes`.',
           enum: ['strict', 'fix'],
         },
         auto_prepend_title: {
           type: 'boolean',
-          description: 'When true and the first slide is not the theme\'s default title-slide type, prepend an empty title slide using `title`. Default: false.',
+          description:
+            "When true and the first slide is not the theme's default title-slide type, prepend an empty title slide using `title`. Default: false.",
         },
       },
       required: ['title', 'slides'],
     },
-    async ({
-      title,
-      slides,
-      theme = 'default',
-      lang = 'nl',
-      ownerEmail,
-      validation = 'strict',
-      auto_prepend_title = false,
-    }, context) => {
+    async (
+      {
+        title,
+        slides,
+        theme = 'default',
+        lang = 'nl',
+        ownerEmail,
+        validation = 'strict',
+        auto_prepend_title = false,
+      },
+      context,
+    ) => {
       if (!Array.isArray(slides) || slides.length === 0) {
         throw new Error('"slides" must be a non-empty array');
       }
@@ -532,9 +608,14 @@ export function registerTools(
       if (auto_prepend_title) {
         let titleSlideType = 'title-slide';
         try {
-          const themeObj = await loadThemeAssets(repoRoot, resolveThemeId(theme));
+          const themeObj = await loadThemeAssets(
+            repoRoot,
+            resolveThemeId(theme),
+          );
           titleSlideType = themeObj?.defaultTitleSlide || 'title-slide';
-        } catch { /* keep default */ }
+        } catch {
+          /* keep default */
+        }
 
         if (inputSlides[0]?.type !== titleSlideType) {
           inputSlides = [
@@ -549,7 +630,7 @@ export function registerTools(
       let appliedFixes = [];
       if (validation === 'fix') {
         const fixed = validateAndFixRefinedSlides(
-          inputSlides.map((s) => ({ type: s.type, content: s.content }))
+          inputSlides.map((s) => ({ type: s.type, content: s.content })),
         );
         appliedFixes = diffAppliedFixes(inputSlides, fixed);
         validatedSlides = fixed.map((s, i) => ({
@@ -560,7 +641,7 @@ export function registerTools(
       } else {
         try {
           validateRefinedSlidesStrict(
-            inputSlides.map((s) => ({ type: s.type, content: s.content }))
+            inputSlides.map((s) => ({ type: s.type, content: s.content })),
           );
         } catch (err) {
           if (err instanceof RawSlideValidationError) {
@@ -581,20 +662,29 @@ export function registerTools(
         ownerEmail: effectiveOwner,
       });
       if (created?.ok === false) {
-        throw new Error(`createPresentation failed: ${created.reason || 'unknown'}`);
+        throw new Error(
+          `createPresentation failed: ${created.reason || 'unknown'}`,
+        );
       }
 
-      const updated = await updatePresentation(storageScopeOf(context), created.id, {
-        ...created,
-        title,
-        slides: validatedSlides.map((s) => ({
-          type: s.type,
-          content: s.content,
-          notes: s.notes || '',
-        })),
-      }, { actorEmail: effectiveOwner });
+      const updated = await updatePresentation(
+        storageScopeOf(context),
+        created.id,
+        {
+          ...created,
+          title,
+          slides: validatedSlides.map((s) => ({
+            type: s.type,
+            content: s.content,
+            notes: s.notes || '',
+          })),
+        },
+        { actorEmail: effectiveOwner },
+      );
       if (updated?.ok === false) {
-        throw new Error(`updatePresentation failed: ${updated.reason || 'unknown'}`);
+        throw new Error(
+          `updatePresentation failed: ${updated.reason || 'unknown'}`,
+        );
       }
 
       const result = {
@@ -615,14 +705,14 @@ export function registerTools(
       if (presentUrl) result.presentUrl = presentUrl;
       if (validation === 'fix') result.appliedFixes = appliedFixes;
       return result;
-    }
+    },
   );
 
   // ─── update_slide ───────────────────────────────────────────────────────
 
   server.tool(
     'update_slide',
-    'Update a specific slide\'s content in a presentation. You must provide the exact content structure matching the slide type schema.',
+    "Update a specific slide's content in a presentation. You must provide the exact content structure matching the slide type schema.",
     {
       type: 'object',
       properties: {
@@ -630,7 +720,8 @@ export function registerTools(
         slideIndex: { type: 'number', description: 'Slide index (0-based)' },
         content: {
           type: 'object',
-          description: 'New content for the slide (must match slide type schema)',
+          description:
+            'New content for the slide (must match slide type schema)',
         },
         type: {
           type: 'string',
@@ -640,9 +731,13 @@ export function registerTools(
       required: ['presentationId', 'slideIndex', 'content'],
     },
     async ({ presentationId, slideIndex, content, type }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
+      const pres = await getCheckedPresentation(presentationId, context, {
+        access: 'write',
+      });
       if (slideIndex < 0 || slideIndex >= pres.slides.length) {
-        throw new Error(`Slide index ${slideIndex} out of range (0-${pres.slides.length - 1})`);
+        throw new Error(
+          `Slide index ${slideIndex} out of range (0-${pres.slides.length - 1})`,
+        );
       }
 
       const slide = pres.slides[slideIndex];
@@ -650,13 +745,20 @@ export function registerTools(
       slide.content = { ...slide.content, ...content };
 
       // Validate the updated slide
-      const [validated] = validateAndFixRefinedSlides([{
-        type: slide.type,
-        content: slide.content,
-      }]);
+      const [validated] = validateAndFixRefinedSlides([
+        {
+          type: slide.type,
+          content: slide.content,
+        },
+      ]);
       slide.content = validated.content;
 
-      await updatePresentation(storageScopeOf(context), presentationId, pres, writeOpts(context));
+      await updatePresentation(
+        storageScopeOf(context),
+        presentationId,
+        pres,
+        writeOpts(context),
+      );
 
       return {
         updated: true,
@@ -664,7 +766,7 @@ export function registerTools(
         type: slide.type,
         content: slide.content,
       };
-    }
+    },
   );
 
   // ─── add_slide ──────────────────────────────────────────────────────────
@@ -676,7 +778,10 @@ export function registerTools(
       type: 'object',
       properties: {
         presentationId: { type: 'string', description: 'Presentation ID' },
-        type: { type: 'string', description: 'Slide type (e.g. "list-slide", "content-slide")' },
+        type: {
+          type: 'string',
+          description: 'Slide type (e.g. "list-slide", "content-slide")',
+        },
         content: {
           type: 'object',
           description: 'Slide content matching the type schema',
@@ -689,7 +794,9 @@ export function registerTools(
       required: ['presentationId', 'type', 'content'],
     },
     async ({ presentationId, type, content, position }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
+      const pres = await getCheckedPresentation(presentationId, context, {
+        access: 'write',
+      });
 
       // Validate the new slide
       const [validated] = validateAndFixRefinedSlides([{ type, content }]);
@@ -701,12 +808,18 @@ export function registerTools(
         notes: '',
       };
 
-      const insertAt = position != null
-        ? Math.max(0, Math.min(pres.slides.length, position))
-        : pres.slides.length;
+      const insertAt =
+        position != null
+          ? Math.max(0, Math.min(pres.slides.length, position))
+          : pres.slides.length;
 
       pres.slides.splice(insertAt, 0, newSlide);
-      await updatePresentation(storageScopeOf(context), presentationId, pres, writeOpts(context));
+      await updatePresentation(
+        storageScopeOf(context),
+        presentationId,
+        pres,
+        writeOpts(context),
+      );
 
       return {
         added: true,
@@ -715,7 +828,7 @@ export function registerTools(
         type: newSlide.type,
         totalSlides: pres.slides.length,
       };
-    }
+    },
   );
 
   // ─── convert_slide ──────────────────────────────────────────────────────
@@ -728,7 +841,10 @@ export function registerTools(
       properties: {
         presentationId: { type: 'string', description: 'Presentation ID' },
         slideIndex: { type: 'number', description: 'Slide index (0-based)' },
-        targetType: { type: 'string', description: 'Target slide type (e.g. "list-slide")' },
+        targetType: {
+          type: 'string',
+          description: 'Target slide type (e.g. "list-slide")',
+        },
         vendor: {
           type: 'string',
           description: 'LLM vendor override (e.g. "openai", "anthropic")',
@@ -737,7 +853,9 @@ export function registerTools(
       required: ['presentationId', 'slideIndex', 'targetType'],
     },
     async ({ presentationId, slideIndex, targetType, vendor }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
+      const pres = await getCheckedPresentation(presentationId, context, {
+        access: 'write',
+      });
       if (slideIndex < 0 || slideIndex >= pres.slides.length) {
         throw new Error(`Slide index ${slideIndex} out of range`);
       }
@@ -750,12 +868,18 @@ export function registerTools(
         lang,
       });
 
-      if (!result?.content) throw new Error('Conversion failed — no content returned');
+      if (!result?.content)
+        throw new Error('Conversion failed — no content returned');
 
       const fromType = slide.type;
       slide.type = result.type || targetType;
       slide.content = result.content;
-      await updatePresentation(storageScopeOf(context), presentationId, pres, writeOpts(context));
+      await updatePresentation(
+        storageScopeOf(context),
+        presentationId,
+        pres,
+        writeOpts(context),
+      );
 
       return {
         converted: true,
@@ -764,7 +888,7 @@ export function registerTools(
         toType: slide.type,
         content: slide.content,
       };
-    }
+    },
   );
 
   // ─── iterate_presentation ───────────────────────────────────────────────
@@ -778,7 +902,8 @@ export function registerTools(
         presentationId: { type: 'string', description: 'Presentation ID' },
         command: {
           type: 'string',
-          description: 'Natural language instruction (e.g. "make this punchier", "split slide 3")',
+          description:
+            'Natural language instruction (e.g. "make this punchier", "split slide 3")',
         },
         vendor: {
           type: 'string',
@@ -788,50 +913,69 @@ export function registerTools(
       required: ['presentationId', 'command'],
     },
     async ({ presentationId, command, vendor }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
+      const pres = await getCheckedPresentation(presentationId, context, {
+        access: 'write',
+      });
 
       const lang = pres.lang || 'en-GB';
 
-      const { deck: newDeck, plan, targetSlideIndex } = await iteratePresentation(pres, command, {
+      const {
+        deck: newDeck,
+        plan,
+        targetSlideIndex,
+      } = await iteratePresentation(pres, command, {
         lang,
         vendor: vendor || null,
       });
 
       // Save the modified deck
       pres.slides = newDeck.slides;
-      await updatePresentation(storageScopeOf(context), presentationId, pres, writeOpts(context));
+      await updatePresentation(
+        storageScopeOf(context),
+        presentationId,
+        pres,
+        writeOpts(context),
+      );
 
       return {
         applied: true,
         targetSlideIndex,
         summary: plan.summary,
-        modifications: plan.modifications?.map(m => ({
-          slideIndex: m.slideIndex,
-          action: m.action,
-          reasoning: m.reasoning,
-        })) || [],
+        modifications:
+          plan.modifications?.map((m) => ({
+            slideIndex: m.slideIndex,
+            action: m.action,
+            reasoning: m.reasoning,
+          })) || [],
         totalSlides: pres.slides.length,
       };
-    }
+    },
   );
 
   // ─── validate_presentation ──────────────────────────────────────────────
 
   server.tool(
     'validate_presentation',
-    'Validate a presentation\'s slides for schema compliance, content density, and type variety issues. Returns warnings and fix suggestions.',
+    "Validate a presentation's slides for schema compliance, content density, and type variety issues. Returns warnings and fix suggestions.",
     {
       type: 'object',
       properties: {
         presentationId: { type: 'string', description: 'Presentation ID' },
-        id: { type: 'string', description: 'Presentation ID (alias for presentationId)' },
+        id: {
+          type: 'string',
+          description: 'Presentation ID (alias for presentationId)',
+        },
       },
     },
     async ({ presentationId, id }, context) => {
       const pres = await getCheckedPresentation(presentationId || id, context);
 
       const validated = validateAndFixRefinedSlides(
-        pres.slides.map(s => ({ type: s.type, content: s.content, reasoning: '' }))
+        pres.slides.map((s) => ({
+          type: s.type,
+          content: s.content,
+          reasoning: '',
+        })),
       );
 
       const warnings = [];
@@ -853,7 +997,7 @@ export function registerTools(
         isValid: warnings.length === 0,
       };
     },
-    { readOnly: true }
+    { readOnly: true },
   );
 
   // ─── list_themes ────────────────────────────────────────────────────────
@@ -876,7 +1020,7 @@ export function registerTools(
             id: theme.id,
             label: theme.label || theme.id,
             brandColors: theme.brandColors || [],
-            hasBackgroundImages: !!(theme.backgroundPresets?.length),
+            hasBackgroundImages: !!theme.backgroundPresets?.length,
           });
         } catch {
           themes.push({ id, label: id });
@@ -885,7 +1029,7 @@ export function registerTools(
 
       return { themes };
     },
-    { readOnly: true }
+    { readOnly: true },
   );
 
   // ─── delete_presentation ────────────────────────────────────────────────
@@ -899,7 +1043,8 @@ export function registerTools(
         presentationId: { type: 'string', description: 'Presentation ID' },
         confirm: {
           type: 'boolean',
-          description: 'Must be true to actually delete. Prevents accidental deletion.',
+          description:
+            'Must be true to actually delete. Prevents accidental deletion.',
         },
       },
       required: ['presentationId', 'confirm'],
@@ -913,13 +1058,18 @@ export function registerTools(
           id: presentationId,
           title: pres?.title || 'Unknown',
           slideCount: pres?.slides?.length || 0,
-          message: 'Set confirm: true to delete this presentation. This action moves it to trash.',
+          message:
+            'Set confirm: true to delete this presentation. This action moves it to trash.',
         };
       }
-      await getCheckedPresentation(presentationId, context, { access: 'delete' });
-      await deletePresentation(storageScopeOf(context), presentationId, { actorEmail: getOwner(context) });
+      await getCheckedPresentation(presentationId, context, {
+        access: 'delete',
+      });
+      await deletePresentation(storageScopeOf(context), presentationId, {
+        actorEmail: getOwner(context),
+      });
       return { deleted: true, id: presentationId };
-    }
+    },
   );
 
   // ─── remove_slide ───────────────────────────────────────────────────────
@@ -931,18 +1081,30 @@ export function registerTools(
       type: 'object',
       properties: {
         presentationId: { type: 'string', description: 'Presentation ID' },
-        slideIndex: { type: 'number', description: 'Slide index to remove (0-based)' },
+        slideIndex: {
+          type: 'number',
+          description: 'Slide index to remove (0-based)',
+        },
       },
       required: ['presentationId', 'slideIndex'],
     },
     async ({ presentationId, slideIndex }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
+      const pres = await getCheckedPresentation(presentationId, context, {
+        access: 'write',
+      });
       if (slideIndex < 0 || slideIndex >= pres.slides.length) {
-        throw new Error(`Slide index ${slideIndex} out of range (0-${pres.slides.length - 1})`);
+        throw new Error(
+          `Slide index ${slideIndex} out of range (0-${pres.slides.length - 1})`,
+        );
       }
 
       const removed = pres.slides.splice(slideIndex, 1)[0];
-      await updatePresentation(storageScopeOf(context), presentationId, pres, writeOpts(context));
+      await updatePresentation(
+        storageScopeOf(context),
+        presentationId,
+        pres,
+        writeOpts(context),
+      );
 
       return {
         removed: true,
@@ -951,7 +1113,7 @@ export function registerTools(
         removedTitle: slideTitle(removed),
         totalSlides: pres.slides.length,
       };
-    }
+    },
   );
 
   // ─── reorder_slides ─────────────────────────────────────────────────────
@@ -963,20 +1125,32 @@ export function registerTools(
       type: 'object',
       properties: {
         presentationId: { type: 'string', description: 'Presentation ID' },
-        fromIndex: { type: 'number', description: 'Current slide position (0-based)' },
+        fromIndex: {
+          type: 'number',
+          description: 'Current slide position (0-based)',
+        },
         toIndex: { type: 'number', description: 'Target position (0-based)' },
       },
       required: ['presentationId', 'fromIndex', 'toIndex'],
     },
     async ({ presentationId, fromIndex, toIndex }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
+      const pres = await getCheckedPresentation(presentationId, context, {
+        access: 'write',
+      });
       const len = pres.slides.length;
-      if (fromIndex < 0 || fromIndex >= len) throw new Error(`fromIndex ${fromIndex} out of range`);
-      if (toIndex < 0 || toIndex >= len) throw new Error(`toIndex ${toIndex} out of range`);
+      if (fromIndex < 0 || fromIndex >= len)
+        throw new Error(`fromIndex ${fromIndex} out of range`);
+      if (toIndex < 0 || toIndex >= len)
+        throw new Error(`toIndex ${toIndex} out of range`);
 
       const [slide] = pres.slides.splice(fromIndex, 1);
       pres.slides.splice(toIndex, 0, slide);
-      await updatePresentation(storageScopeOf(context), presentationId, pres, writeOpts(context));
+      await updatePresentation(
+        storageScopeOf(context),
+        presentationId,
+        pres,
+        writeOpts(context),
+      );
 
       return {
         moved: true,
@@ -984,7 +1158,7 @@ export function registerTools(
         from: fromIndex,
         to: toIndex,
       };
-    }
+    },
   );
 
   // ─── append_slides ──────────────────────────────────────────────────────
@@ -996,7 +1170,10 @@ export function registerTools(
       type: 'object',
       properties: {
         presentationId: { type: 'string', description: 'Presentation ID' },
-        content: { type: 'string', description: 'New content to generate slides from' },
+        content: {
+          type: 'string',
+          description: 'New content to generate slides from',
+        },
         vendor: {
           type: 'string',
           description: 'LLM vendor override (e.g. "openai", "anthropic")',
@@ -1005,22 +1182,32 @@ export function registerTools(
       required: ['presentationId', 'content'],
     },
     async ({ presentationId, content, vendor }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
+      const pres = await getCheckedPresentation(presentationId, context, {
+        access: 'write',
+      });
 
       const lang = pres.lang || 'en-GB';
       const existingDeck = presentationToDeck(pres);
 
-      const { slides: newSlides } = await generateSlidesToAppendFromRawContent(content, {
-        existingDeck,
-        targetLang: lang,
-        contentOnly: true,
-        vendor: vendor || null,
-      });
+      const { slides: newSlides } = await generateSlidesToAppendFromRawContent(
+        content,
+        {
+          existingDeck,
+          targetLang: lang,
+          contentOnly: true,
+          vendor: vendor || null,
+        },
+      );
 
-      if (!newSlides?.length) return { appended: 0, totalSlides: pres.slides.length };
+      if (!newSlides?.length)
+        return { appended: 0, totalSlides: pres.slides.length };
 
       // Find insert position: before structural closing slides (payoff, end, follow-invite)
-      const closingTypes = new Set(['payoff-slide', 'end-slide', 'follow-invite-slide']);
+      const closingTypes = new Set([
+        'payoff-slide',
+        'end-slide',
+        'follow-invite-slide',
+      ]);
       let insertAt = pres.slides.length;
       for (let i = pres.slides.length - 1; i >= 0; i--) {
         if (closingTypes.has(pres.slides[i].type)) {
@@ -1030,7 +1217,7 @@ export function registerTools(
         }
       }
 
-      const slidesToInsert = newSlides.map(s => ({
+      const slidesToInsert = newSlides.map((s) => ({
         id: crypto.randomUUID(),
         type: s.type,
         content: s.content,
@@ -1039,18 +1226,23 @@ export function registerTools(
 
       pres.slides.splice(insertAt, 0, ...slidesToInsert);
 
-      await updatePresentation(storageScopeOf(context), presentationId, pres, writeOpts(context));
+      await updatePresentation(
+        storageScopeOf(context),
+        presentationId,
+        pres,
+        writeOpts(context),
+      );
 
       return {
         appended: newSlides.length,
         insertedAt: insertAt,
         totalSlides: pres.slides.length,
-        newSlides: newSlides.map(s => ({
+        newSlides: newSlides.map((s) => ({
           type: s.type,
           title: slideTitle(s),
         })),
       };
-    }
+    },
   );
 
   // ─── compress_presentation ──────────────────────────────────────────────
@@ -1062,7 +1254,10 @@ export function registerTools(
       type: 'object',
       properties: {
         presentationId: { type: 'string', description: 'Presentation ID' },
-        apply: { type: 'boolean', description: 'Apply changes (default: false = preview only)' },
+        apply: {
+          type: 'boolean',
+          description: 'Apply changes (default: false = preview only)',
+        },
         intensity: {
           type: 'string',
           description: '"moderate" (default) or "aggressive"',
@@ -1075,7 +1270,10 @@ export function registerTools(
       },
       required: ['presentationId'],
     },
-    async ({ presentationId, apply = false, intensity = 'moderate', vendor }, context) => {
+    async (
+      { presentationId, apply = false, intensity = 'moderate', vendor },
+      context,
+    ) => {
       const pres = await getCheckedPresentation(presentationId, context, {
         access: apply ? 'write' : 'read',
       });
@@ -1085,10 +1283,19 @@ export function registerTools(
         vendor: vendor || null,
       });
 
-      if (apply && (recommendations.merges.length > 0 || recommendations.removals.length > 0)) {
+      if (
+        apply &&
+        (recommendations.merges.length > 0 ||
+          recommendations.removals.length > 0)
+      ) {
         const compressed = applyCompression(pres, recommendations);
         pres.slides = compressed.slides;
-        await updatePresentation(storageScopeOf(context), presentationId, pres, writeOpts(context));
+        await updatePresentation(
+          storageScopeOf(context),
+          presentationId,
+          pres,
+          writeOpts(context),
+        );
       }
 
       return {
@@ -1098,7 +1305,7 @@ export function registerTools(
         recommendations,
         slidesAfter: apply ? pres.slides.length : undefined,
       };
-    }
+    },
   );
 
   // ─── analyze_presentation ───────────────────────────────────────────────
@@ -1131,18 +1338,20 @@ export function registerTools(
       return {
         slideCount: pres.slides.length,
         suggestionCount: suggestions.length,
-        suggestions: suggestions.map(s => ({
+        suggestions: suggestions.map((s) => ({
           slideIndex: s.slideIndex,
           category: s.category,
           body: s.body,
-          proposedSlide: s.proposedSlide ? {
-            type: s.proposedSlide.type,
-            title: slideTitle(s.proposedSlide),
-          } : null,
+          proposedSlide: s.proposedSlide
+            ? {
+                type: s.proposedSlide.type,
+                title: slideTitle(s.proposedSlide),
+              }
+            : null,
         })),
       };
     },
-    { readOnly: true }
+    { readOnly: true },
   );
 
   // ─── duplicate_presentation ─────────────────────────────────────────────
@@ -1153,16 +1362,23 @@ export function registerTools(
     {
       type: 'object',
       properties: {
-        presentationId: { type: 'string', description: 'Presentation ID to duplicate' },
+        presentationId: {
+          type: 'string',
+          description: 'Presentation ID to duplicate',
+        },
       },
       required: ['presentationId'],
     },
     async ({ presentationId }, context) => {
       await getCheckedPresentation(presentationId, context);
-      const duplicated = await duplicatePresentation(storageScopeOf(context), presentationId, {
-        ownerEmail: getOwner(context),
-        actorEmail: getOwner(context),
-      });
+      const duplicated = await duplicatePresentation(
+        storageScopeOf(context),
+        presentationId,
+        {
+          ownerEmail: getOwner(context),
+          actorEmail: getOwner(context),
+        },
+      );
       if (!duplicated.ok) throw new Error('Duplication failed');
       const dup = duplicated.presentation;
 
@@ -1174,7 +1390,7 @@ export function registerTools(
       const url = presentationUrl(dup.id, 'edit');
       if (url) result.editUrl = url;
       return result;
-    }
+    },
   );
 
   // ─── get_presentation_url ───────────────────────────────────────────────
@@ -1186,7 +1402,10 @@ export function registerTools(
       type: 'object',
       properties: {
         presentationId: { type: 'string', description: 'Presentation ID' },
-        id: { type: 'string', description: 'Presentation ID (alias for presentationId)' },
+        id: {
+          type: 'string',
+          description: 'Presentation ID (alias for presentationId)',
+        },
       },
     },
     async ({ presentationId, id }, context) => {
@@ -1210,7 +1429,7 @@ export function registerTools(
         presentUrl: presentationUrl(presentationId, 'present'),
       };
     },
-    { readOnly: true }
+    { readOnly: true },
   );
 
   // ─── export_presentation ────────────────────────────────────────────────
@@ -1250,7 +1469,7 @@ export function registerTools(
       const relPath = EXPORT_PATHS[format];
       if (!relPath) {
         throw new Error(
-          `Unsupported format "${format}". Use one of: ${Object.keys(EXPORT_PATHS).join(', ')}.`
+          `Unsupported format "${format}". Use one of: ${Object.keys(EXPORT_PATHS).join(', ')}.`,
         );
       }
 
@@ -1275,7 +1494,7 @@ export function registerTools(
         note: 'Open this URL in a browser signed in to Deckyard to download the file. PDF/PPTX/PNG are rendered on demand and may take a few seconds for large decks.',
       };
     },
-    { readOnly: true }
+    { readOnly: true },
   );
 
   // ─── preview_slide ──────────────────────────────────────────────────────
@@ -1294,21 +1513,28 @@ export function registerTools(
     async ({ presentationId, slideIndex }, context) => {
       const pres = await getCheckedPresentation(presentationId, context);
       if (slideIndex < 0 || slideIndex >= pres.slides.length) {
-        throw new Error(`Slide index ${slideIndex} out of range (0-${pres.slides.length - 1})`);
+        throw new Error(
+          `Slide index ${slideIndex} out of range (0-${pres.slides.length - 1})`,
+        );
       }
 
       const slide = pres.slides[slideIndex];
       let theme = null;
       try {
         theme = await loadThemeAssets(repoRoot, resolveThemeId(pres.theme));
-      } catch { /* use default styling */ }
+      } catch {
+        /* use default styling */
+      }
 
-      const html = await buildSingleSlidePreviewHtml(slide, { theme, lang: resolveDeckLang(pres) });
+      const html = await buildSingleSlidePreviewHtml(slide, {
+        theme,
+        lang: resolveDeckLang(pres),
+      });
 
       // Return HTML directly as text — Claude Desktop will render it as an artifact
       return html;
     },
-    { readOnly: true }
+    { readOnly: true },
   );
 
   // ─── preview_presentation ───────────────────────────────────────────────
@@ -1322,7 +1548,8 @@ export function registerTools(
         presentationId: { type: 'string', description: 'Presentation ID' },
         slideRange: {
           type: 'string',
-          description: 'Optional: slide range to preview, e.g. "0-4" or "3-7". Omit for all slides.',
+          description:
+            'Optional: slide range to preview, e.g. "0-4" or "3-7". Omit for all slides.',
         },
       },
       required: ['presentationId'],
@@ -1333,7 +1560,9 @@ export function registerTools(
       let theme = null;
       try {
         theme = await loadThemeAssets(repoRoot, resolveThemeId(pres.theme));
-      } catch { /* use default styling */ }
+      } catch {
+        /* use default styling */
+      }
 
       let slides = pres.slides || [];
       let startIndex = 0;
@@ -1359,7 +1588,7 @@ export function registerTools(
       // Return HTML directly as text — Claude Desktop will render it as an artifact
       return html;
     },
-    { readOnly: true }
+    { readOnly: true },
   );
 
   // ─── list_comments ──────────────────────────────────────────────────────
@@ -1382,7 +1611,8 @@ export function registerTools(
         },
         since: {
           type: 'string',
-          description: 'Only comments created at/after this ISO 8601 date/datetime (e.g. "2026-07-15" or "2026-07-15T12:00:00Z")',
+          description:
+            'Only comments created at/after this ISO 8601 date/datetime (e.g. "2026-07-15" or "2026-07-15T12:00:00Z")',
         },
         includeReplies: {
           type: 'boolean',
@@ -1392,14 +1622,28 @@ export function registerTools(
       },
       required: ['presentationId'],
     },
-    async ({ presentationId, status = 'all', slideId, since, includeReplies = false }, context) => {
+    async (
+      {
+        presentationId,
+        status = 'all',
+        slideId,
+        since,
+        includeReplies = false,
+      },
+      context,
+    ) => {
       const ctx = storageScopeOf(context);
 
       // Access guard: only decks the acting owner can see (owned or shared).
-      const refs = await listAccessiblePresentationRefs(storageScopeOf(context), 'all');
+      const refs = await listAccessiblePresentationRefs(
+        storageScopeOf(context),
+        'all',
+      );
       const ref = refs.find((r) => r.id === presentationId);
       if (!ref) {
-        throw new Error(`Presentation not found or not accessible: ${presentationId}`);
+        throw new Error(
+          `Presentation not found or not accessible: ${presentationId}`,
+        );
       }
 
       const comments = await listComments(ctx, presentationId, {
@@ -1411,10 +1655,18 @@ export function registerTools(
 
       // Slide context reflects the deck as it is now; the stored
       // slideSnapshot on each comment shows the slide at create time.
-      const pres = await getPresentation(storageScopeOf(context), presentationId);
-      const enriched = enrichCommentsWithSlideContext(comments, pres || { slides: [] }).map((c) => ({
+      const pres = await getPresentation(
+        storageScopeOf(context),
+        presentationId,
+      );
+      const enriched = enrichCommentsWithSlideContext(
+        comments,
+        pres || { slides: [] },
+      ).map((c) => ({
         ...c,
-        editUrl: presentationUrl(presentationId, 'edit', { slideId: c.slideId }),
+        editUrl: presentationUrl(presentationId, 'edit', {
+          slideId: c.slideId,
+        }),
       }));
 
       return {
@@ -1424,7 +1676,7 @@ export function registerTools(
         total: enriched.length,
       };
     },
-    { readOnly: true }
+    { readOnly: true },
   );
 
   // ─── list_recent_comments ───────────────────────────────────────────────
@@ -1437,7 +1689,8 @@ export function registerTools(
       properties: {
         ownership: {
           type: 'string',
-          description: 'Which decks to include: owned, shared, or all (default: all)',
+          description:
+            'Which decks to include: owned, shared, or all (default: all)',
           enum: ['owned', 'shared', 'all'],
         },
         authorEmail: {
@@ -1451,7 +1704,8 @@ export function registerTools(
         },
         since: {
           type: 'string',
-          description: 'Only comments created at/after this ISO 8601 date/datetime',
+          description:
+            'Only comments created at/after this ISO 8601 date/datetime',
         },
         limit: {
           type: 'number',
@@ -1459,21 +1713,38 @@ export function registerTools(
         },
       },
     },
-    async ({ ownership = 'all', authorEmail, status = 'all', since, limit = 50 } = {}, context) => {
+    async (
+      {
+        ownership = 'all',
+        authorEmail,
+        status = 'all',
+        since,
+        limit = 50,
+      } = {},
+      context,
+    ) => {
       const owner = getOwner(context);
-      const { comments, total } = await listRecentCommentsForOwner(storageScopeOf(context), {
-        ownership,
-        authorEmail: authorEmail || null,
-        status,
-        since: parseSince(since) || null,
-        limit,
-      });
+      const { comments, total } = await listRecentCommentsForOwner(
+        storageScopeOf(context),
+        {
+          ownership,
+          authorEmail: authorEmail || null,
+          status,
+          since: parseSince(since) || null,
+          limit,
+        },
+      );
 
       // Load each referenced deck once for current slide context.
       const presCache = new Map();
       const presFor = async (id) => {
         if (!presCache.has(id)) {
-          presCache.set(id, await getPresentation(storageScopeOf(context), id).catch(() => null));
+          presCache.set(
+            id,
+            await getPresentation(storageScopeOf(context), id).catch(
+              () => null,
+            ),
+          );
         }
         return presCache.get(id);
       };
@@ -1494,7 +1765,9 @@ export function registerTools(
           status: c.status,
           createdAt: c.createdAt,
         };
-        const url = presentationUrl(c.presentationId, 'edit', { slideId: c.slideId });
+        const url = presentationUrl(c.presentationId, 'edit', {
+          slideId: c.slideId,
+        });
         if (url) item.editUrl = url;
         items.push(item);
       }
@@ -1506,7 +1779,7 @@ export function registerTools(
         ownerFilter: owner || null,
       };
     },
-    { readOnly: true }
+    { readOnly: true },
   );
 
   // ─── comment write tools (shared plumbing) ──────────────────────────────
@@ -1520,7 +1793,7 @@ export function registerTools(
     const owner = getOwner(context);
     if (!owner) {
       throw new Error(
-        'This tool needs an acting user email to attribute the comment to. Configure the MCP owner email (stdio) or use an API-key session (HTTP).'
+        'This tool needs an acting user email to attribute the comment to. Configure the MCP owner email (stdio) or use an API-key session (HTTP).',
       );
     }
     return owner;
@@ -1529,24 +1802,32 @@ export function registerTools(
   /**
    * Shared create path for add_comment and reply_to_comment.
    */
-  async function createCommentAsActor({ presentationId, body, slideId = null, parentId = null }, context) {
+  async function createCommentAsActor(
+    { presentationId, body, slideId = null, parentId = null },
+    context,
+  ) {
     const owner = requireCommentActor(context);
     const pres = await getCheckedPresentation(presentationId, context);
 
     if (!(await canActorCommentOnPresentation(pres, actorOf(context)))) {
-      throw new Error('You do not have comment permission on this presentation');
+      throw new Error(
+        'You do not have comment permission on this presentation',
+      );
     }
 
     const text = typeof body === 'string' ? body.trim() : '';
     if (!text) throw new Error('Comment body is required');
     if (text.length > MAX_COMMENT_LENGTH) {
-      throw new Error(`Comment must be ${MAX_COMMENT_LENGTH} characters or less`);
+      throw new Error(
+        `Comment must be ${MAX_COMMENT_LENGTH} characters or less`,
+      );
     }
 
     let slideSnapshot = null;
     if (slideId) {
       const slide = (pres.slides || []).find((s) => s?.id === slideId);
-      if (!slide) throw new Error(`Slide not found in this presentation: ${slideId}`);
+      if (!slide)
+        throw new Error(`Slide not found in this presentation: ${slideId}`);
       slideSnapshot = buildSlideSnapshot(slide);
     }
 
@@ -1560,7 +1841,9 @@ export function registerTools(
     });
 
     if (!result.ok) {
-      throw new Error(`Could not create comment: ${result.reason} (comments require the DB storage backend)`);
+      throw new Error(
+        `Could not create comment: ${result.reason} (comments require the DB storage backend)`,
+      );
     }
 
     // Same side effects as the app routes so the editor UI updates live.
@@ -1575,7 +1858,9 @@ export function registerTools(
         actor: { email: owner },
         scope: ctx,
       });
-    })().catch(() => { /* notification failures never fail the tool call */ });
+    })().catch(() => {
+      /* notification failures never fail the tool call */
+    });
     void recordCommentCreated({
       comment: result.comment,
       presentation: pres,
@@ -1592,7 +1877,9 @@ export function registerTools(
       comment: {
         ...result.comment,
         slide: slideContextFor(pres, result.comment.slideId),
-        editUrl: presentationUrl(presentationId, 'edit', { slideId: result.comment.slideId }),
+        editUrl: presentationUrl(presentationId, 'edit', {
+          slideId: result.comment.slideId,
+        }),
       },
     };
   }
@@ -1606,7 +1893,10 @@ export function registerTools(
       type: 'object',
       properties: {
         presentationId: { type: 'string', description: 'Presentation ID' },
-        body: { type: 'string', description: 'Comment text (max 5000 characters)' },
+        body: {
+          type: 'string',
+          description: 'Comment text (max 5000 characters)',
+        },
         slideId: {
           type: 'string',
           description: 'Optional: anchor the comment to this slide id',
@@ -1615,7 +1905,10 @@ export function registerTools(
       required: ['presentationId', 'body'],
     },
     async ({ presentationId, body, slideId }, context) =>
-      createCommentAsActor({ presentationId, body, slideId: slideId || null }, context)
+      createCommentAsActor(
+        { presentationId, body, slideId: slideId || null },
+        context,
+      ),
   );
 
   // ─── reply_to_comment ───────────────────────────────────────────────────
@@ -1626,9 +1919,18 @@ export function registerTools(
     {
       type: 'object',
       properties: {
-        presentationId: { type: 'string', description: 'Presentation ID the comment belongs to' },
-        commentId: { type: 'string', description: 'Comment (or reply) ID to respond to' },
-        body: { type: 'string', description: 'Reply text (max 5000 characters)' },
+        presentationId: {
+          type: 'string',
+          description: 'Presentation ID the comment belongs to',
+        },
+        commentId: {
+          type: 'string',
+          description: 'Comment (or reply) ID to respond to',
+        },
+        body: {
+          type: 'string',
+          description: 'Reply text (max 5000 characters)',
+        },
       },
       required: ['presentationId', 'commentId', 'body'],
     },
@@ -1645,7 +1947,7 @@ export function registerTools(
       const parentId = parent.parentId || parent.id;
 
       return createCommentAsActor({ presentationId, body, parentId }, context);
-    }
+    },
   );
 
   // ─── set_comment_status ─────────────────────────────────────────────────
@@ -1656,7 +1958,10 @@ export function registerTools(
     {
       type: 'object',
       properties: {
-        presentationId: { type: 'string', description: 'Presentation ID the comment belongs to' },
+        presentationId: {
+          type: 'string',
+          description: 'Presentation ID the comment belongs to',
+        },
         commentId: { type: 'string', description: 'Comment ID' },
         status: {
           type: 'string',
@@ -1677,7 +1982,9 @@ export function registerTools(
 
       const pres = await getCheckedPresentation(presentationId, context);
       if (!(await canActorResolveComment(pres, actorOf(context)))) {
-        throw new Error('Only the presentation owner can change comment status');
+        throw new Error(
+          'Only the presentation owner can change comment status',
+        );
       }
 
       let result;
@@ -1695,18 +2002,40 @@ export function registerTools(
 
       const actor = { email: owner };
       if (status === 'resolved') {
-        void recordCommentResolved({ comment: result.comment, presentation: pres, actor, scope: ctx });
-        void broadcastToPresentation(presentationId, CommentEventTypes.RESOLVED, { comment: result.comment });
+        void recordCommentResolved({
+          comment: result.comment,
+          presentation: pres,
+          actor,
+          scope: ctx,
+        });
+        void broadcastToPresentation(
+          presentationId,
+          CommentEventTypes.RESOLVED,
+          { comment: result.comment },
+        );
       } else if (status === 'open') {
-        void recordCommentReopened({ comment: result.comment, presentation: pres, actor, scope: ctx });
-        void broadcastToPresentation(presentationId, CommentEventTypes.REOPENED, { comment: result.comment });
+        void recordCommentReopened({
+          comment: result.comment,
+          presentation: pres,
+          actor,
+          scope: ctx,
+        });
+        void broadcastToPresentation(
+          presentationId,
+          CommentEventTypes.REOPENED,
+          { comment: result.comment },
+        );
       } else {
-        void broadcastToPresentation(presentationId, CommentEventTypes.RESOLVED, { comment: result.comment });
+        void broadcastToPresentation(
+          presentationId,
+          CommentEventTypes.RESOLVED,
+          { comment: result.comment },
+        );
       }
       void broadcastCommentCounts(presentationId, ctx);
 
       return { ok: true, comment: result.comment };
-    }
+    },
   );
 
   // ─── custom tools (fork extension seam) ─────────────────────────────────

@@ -17,11 +17,14 @@ import {
 
 export async function handleFollowPresentation(
   { repoRoot, req, res, url },
-  presentationId
+  presentationId,
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
   const lang = normalizeLang(url.searchParams.get('lang'));
-  const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
+  const state = await getFollowStateForPresentation(
+    followAudienceScope(repoRoot),
+    presentationId,
+  );
   if (state.status !== 'live') {
     serveJson(res, 200, {
       ...state,
@@ -31,11 +34,16 @@ export async function handleFollowPresentation(
     return true;
   }
   const pres = await getPresentation(
-    crossOrganizationScope(repoRoot, 'follow-along audience: the live follow code is the authorization'),
-    presentationId
+    crossOrganizationScope(
+      repoRoot,
+      'follow-along audience: the live follow code is the authorization',
+    ),
+    presentationId,
   );
   if (!pres) return notFound(res);
-  const meta = followMetaFromPresentation(pres, { includeTranslationStatus: true });
+  const meta = followMetaFromPresentation(pres, {
+    includeTranslationStatus: true,
+  });
 
   // If the requested language version is missing or incomplete, signal "translating".
   if (lang) {
@@ -64,7 +72,7 @@ export async function handleFollowPresentation(
             : null,
         capabilities: computeAudienceCapabilitiesFromState(
           { ...state, status: 'translating' },
-          pres
+          pres,
         ),
         presentation: null,
       });

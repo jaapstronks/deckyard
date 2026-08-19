@@ -32,7 +32,7 @@ describe('markdown import: lists land on list-slide', () => {
         '- **Discovery**: understand the goal',
         '- **Strategy**: pick the route',
         '- **Delivery**: ship it',
-      ].join('\n')
+      ].join('\n'),
     );
 
     assert.equal(slides.length, 1);

@@ -246,8 +246,8 @@
   /* Top corners follow the card's; the bottom pair stays a step lower so the
      bar meets the card body flat. At 6px tall the browser scales all four down
      proportionally anyway — the ratio is what survives, not the values. */
-  border-radius: var(--slide-radius-md) var(--slide-radius-md) var(--slide-radius-sm)
-    var(--slide-radius-sm);
+  border-radius: var(--slide-radius-md) var(--slide-radius-md)
+    var(--slide-radius-sm) var(--slide-radius-sm);
   background: var(--timeline-accent);
   opacity: 0.9;
 }
@@ -344,7 +344,12 @@
 }
 
 .slide-timeline.slide-bg-lime .timeline-connector {
-  background: rgba(0, 0, 0, 0.1); /* TODO: between --slide-opacity-subtle (0.08) and --slide-opacity-light (0.12) */
+  background: rgba(
+    0,
+    0,
+    0,
+    0.1
+  ); /* TODO: between --slide-opacity-subtle (0.08) and --slide-opacity-light (0.12) */
 }
 
 /* Dark backgrounds: lift the track + connector off the dark surface. */
@@ -374,7 +379,8 @@
 
   .slide-timeline .timeline-card {
     /* ladder rung: both stay under the base card (base / sm) */
-    --slide-card-padding: var(--slide-space-3) var(--slide-space-4) var(--slide-space-4);
+    --slide-card-padding: var(--slide-space-3) var(--slide-space-4)
+      var(--slide-space-4);
     --slide-font-size-card-title: var(--slide-text-sm);
     --slide-font-size-card-body: var(--slide-text-xs);
     border-radius: var(--slide-radius-sm);

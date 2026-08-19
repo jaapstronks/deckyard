@@ -45,7 +45,9 @@ export async function initializeMediaProvider(repoRoot) {
  */
 export function getMediaProvider() {
   if (!_provider) {
-    throw new Error('Media provider not initialized. Call initializeMediaProvider() first.');
+    throw new Error(
+      'Media provider not initialized. Call initializeMediaProvider() first.',
+    );
   }
   return _provider;
 }
@@ -63,11 +65,12 @@ export function isMediaProviderInitialized() {
  * Returns info about current provider without exposing credentials.
  */
 export function getMediaStatus() {
-  const provider = _provider ? _provider.getStatus() : { name: 'none', configured: false, supportsPresigned: false };
+  const provider = _provider
+    ? _provider.getStatus()
+    : { name: 'none', configured: false, supportsPresigned: false };
   return {
     mode: provider.name,
     presignedSupported: provider.supportsPresigned,
     imagekitAvailable: !!envStr('IMAGEKIT_PUBLIC_KEY'),
   };
 }
-

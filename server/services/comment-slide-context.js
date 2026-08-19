@@ -31,7 +31,7 @@ export function buildSlideSnapshot(slide) {
       id: slide.id ?? null,
       type: slide.type ?? null,
       content: slide.content ?? {},
-    })
+    }),
   );
 }
 

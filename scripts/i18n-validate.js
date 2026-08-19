@@ -28,11 +28,34 @@ const __dirname = path.dirname(__filename);
 const I18N_DIR = path.join(__dirname, '..', 'client', 'i18n');
 // Keep in sync with client/i18n/manifest.json (it/fi/pl were shipped but never
 // added here, so they went unvalidated).
-const LANGUAGES = ['en', 'nl', 'de', 'fr', 'es', 'pt', 'it', 'pl', 'fi', 'da', 'sv', 'no'];
+const LANGUAGES = [
+  'en',
+  'nl',
+  'de',
+  'fr',
+  'es',
+  'pt',
+  'it',
+  'pl',
+  'fi',
+  'da',
+  'sv',
+  'no',
+];
 // `follow` is intentionally absent from I18N_COMPONENTS in client/lib/ui-i18n.js
 // (it is loaded per deck language by client/views/follow/i18n.js), but the files
 // still exist per locale and should be validated like any other module.
-const MODULES = ['common', 'auth', 'editor', 'list', 'share', 'settings', 'presenter', 'slide-types', 'follow'];
+const MODULES = [
+  'common',
+  'auth',
+  'editor',
+  'list',
+  'share',
+  'settings',
+  'presenter',
+  'slide-types',
+  'follow',
+];
 
 let hasErrors = false;
 
@@ -85,7 +108,9 @@ function loadJson(filePath) {
       dupChecked.add(filePath);
       const rel = path.relative(path.join(__dirname, '..'), filePath);
       for (const dup of findDuplicateKeys(content)) {
-        error(`${rel}:${dup.line}: Duplicate key "${dup.key}" (first defined at line ${dup.firstLine})`);
+        error(
+          `${rel}:${dup.line}: Duplicate key "${dup.key}" (first defined at line ${dup.firstLine})`,
+        );
       }
     }
     return { data: JSON.parse(content), content };
@@ -106,7 +131,9 @@ function main() {
   const sharedPath = path.join(I18N_DIR, 'shared.json');
   const { data: shared, content: sharedContent } = loadJson(sharedPath);
   if (shared) {
-    console.log(`shared.json: ${Object.keys(shared).length} keys, ${countLines(sharedContent)} lines`);
+    console.log(
+      `shared.json: ${Object.keys(shared).length} keys, ${countLines(sharedContent)} lines`,
+    );
   }
 
   // Load English as reference
@@ -120,7 +147,9 @@ function main() {
   }
 
   const enKeys = new Set(Object.keys(enData));
-  console.log(`\nEnglish reference: ${enKeys.size} keys (across all modules)\n`);
+  console.log(
+    `\nEnglish reference: ${enKeys.size} keys (across all modules)\n`,
+  );
 
   // Validate each language
   for (const lang of LANGUAGES) {
@@ -139,7 +168,9 @@ function main() {
       if (!data) continue;
 
       const keyCount = Object.keys(data).length;
-      console.log(`  ${moduleName}.json: ${keyCount} keys, ${countLines(content)} lines`);
+      console.log(
+        `  ${moduleName}.json: ${keyCount} keys, ${countLines(content)} lines`,
+      );
 
       // Check for empty values
       for (const [key, value] of Object.entries(data)) {
@@ -156,11 +187,14 @@ function main() {
       const { data: indexData } = loadJson(indexPath);
       if (indexData) {
         const indexKeys = Object.keys(indexData).length;
-        const expectedKeys = langKeys.size + (shared ? Object.keys(shared).length : 0);
+        const expectedKeys =
+          langKeys.size + (shared ? Object.keys(shared).length : 0);
         console.log(`  index.json: ${indexKeys} keys`);
 
         if (indexKeys !== expectedKeys) {
-          warn(`${lang}/index.json key count (${indexKeys}) doesn't match modules + shared (${expectedKeys})`);
+          warn(
+            `${lang}/index.json key count (${indexKeys}) doesn't match modules + shared (${expectedKeys})`,
+          );
         }
       }
     }
@@ -171,7 +205,9 @@ function main() {
 
     // Check for missing keys (compared to English)
     if (lang !== 'en') {
-      const missingKeys = [...enKeys].filter(k => !langKeys.has(k) && (!shared || !shared[k]));
+      const missingKeys = [...enKeys].filter(
+        (k) => !langKeys.has(k) && (!shared || !shared[k]),
+      );
       if (missingKeys.length > 0) {
         warn(`${lang}: ${missingKeys.length} keys missing compared to English`);
       }

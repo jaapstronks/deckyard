@@ -22,9 +22,12 @@ function formatRelativeDate(date) {
   const diffDays = Math.floor(diffHours / 24);
 
   if (diffSecs < 60) return t('settings.apiKeys.justNow', 'Just now');
-  if (diffMins < 60) return t('settings.apiKeys.minutesAgo', '{n} min ago', { n: diffMins });
-  if (diffHours < 24) return t('settings.apiKeys.hoursAgo', '{n}h ago', { n: diffHours });
-  if (diffDays < 30) return t('settings.apiKeys.daysAgo', '{n}d ago', { n: diffDays });
+  if (diffMins < 60)
+    return t('settings.apiKeys.minutesAgo', '{n} min ago', { n: diffMins });
+  if (diffHours < 24)
+    return t('settings.apiKeys.hoursAgo', '{n}h ago', { n: diffHours });
+  if (diffDays < 30)
+    return t('settings.apiKeys.daysAgo', '{n}d ago', { n: diffDays });
 
   return d.toLocaleDateString();
 }
@@ -49,10 +52,22 @@ function createPermissionBadge(permission) {
  */
 function getPermissionDescription(permission) {
   const descriptions = {
-    read: t('settings.apiKeys.permissionDesc.read', 'Read presentations, themes, and slide types'),
-    write: t('settings.apiKeys.permissionDesc.write', 'Create, update, and delete presentations'),
-    ai: t('settings.apiKeys.permissionDesc.ai', 'Use AI generation and refinement features'),
-    export: t('settings.apiKeys.permissionDesc.export', 'Export presentations to HTML, JSON, or PDF'),
+    read: t(
+      'settings.apiKeys.permissionDesc.read',
+      'Read presentations, themes, and slide types',
+    ),
+    write: t(
+      'settings.apiKeys.permissionDesc.write',
+      'Create, update, and delete presentations',
+    ),
+    ai: t(
+      'settings.apiKeys.permissionDesc.ai',
+      'Use AI generation and refinement features',
+    ),
+    export: t(
+      'settings.apiKeys.permissionDesc.export',
+      'Export presentations to HTML, JSON, or PDF',
+    ),
   };
   return descriptions[permission] || permission;
 }
@@ -67,7 +82,7 @@ function renderEmptyState() {
       class: 'help',
       text: t(
         'settings.apiKeys.emptyState',
-        'No API keys yet. Create one to connect AI agents, automation tools, or external services.'
+        'No API keys yet. Create one to connect AI agents, automation tools, or external services.',
       ),
     }),
   ]);
@@ -95,8 +110,14 @@ function renderKeyRow(key, onRevoke, onViewUsage) {
   nameRow.append(
     h('span', { class: 'api-key-name', text: key.name }),
     isRevoked
-      ? h('span', { class: 'api-key-status-badge is-revoked', text: t('settings.apiKeys.revoked', 'Revoked') })
-      : h('span', { class: 'api-key-status-badge is-active', text: t('settings.apiKeys.active', 'Active') })
+      ? h('span', {
+          class: 'api-key-status-badge is-revoked',
+          text: t('settings.apiKeys.revoked', 'Revoked'),
+        })
+      : h('span', {
+          class: 'api-key-status-badge is-active',
+          text: t('settings.apiKeys.active', 'Active'),
+        }),
   );
 
   const prefixRow = h('div', { class: 'api-key-prefix-row' });
@@ -131,13 +152,19 @@ function renderKeyRow(key, onRevoke, onViewUsage) {
   const datesCol = h('div', { class: 'api-key-dates' });
   datesCol.append(
     h('div', { class: 'api-key-date' }, [
-      h('span', { class: 'api-key-date-label', text: t('settings.apiKeys.created', 'Created:') }),
+      h('span', {
+        class: 'api-key-date-label',
+        text: t('settings.apiKeys.created', 'Created:'),
+      }),
       h('span', { text: formatRelativeDate(key.createdAt) }),
     ]),
     h('div', { class: 'api-key-date' }, [
-      h('span', { class: 'api-key-date-label', text: t('settings.apiKeys.lastUsed', 'Last used:') }),
+      h('span', {
+        class: 'api-key-date-label',
+        text: t('settings.apiKeys.lastUsed', 'Last used:'),
+      }),
       h('span', { text: formatRelativeDate(key.lastUsedAt) }),
-    ])
+    ]),
   );
 
   // Actions column
@@ -184,10 +211,22 @@ export function renderKeyList(container, keys, { onRevoke, onViewUsage }) {
   // Header row
   const header = h('div', { class: 'api-key-row api-key-header' });
   header.append(
-    h('div', { class: 'api-key-info', text: t('settings.apiKeys.headerName', 'Name & Key') }),
-    h('div', { class: 'api-key-permissions', text: t('settings.apiKeys.headerPermissions', 'Permissions') }),
-    h('div', { class: 'api-key-dates', text: t('settings.apiKeys.headerDates', 'Dates') }),
-    h('div', { class: 'api-key-actions', text: t('settings.apiKeys.headerActions', 'Actions') })
+    h('div', {
+      class: 'api-key-info',
+      text: t('settings.apiKeys.headerName', 'Name & Key'),
+    }),
+    h('div', {
+      class: 'api-key-permissions',
+      text: t('settings.apiKeys.headerPermissions', 'Permissions'),
+    }),
+    h('div', {
+      class: 'api-key-dates',
+      text: t('settings.apiKeys.headerDates', 'Dates'),
+    }),
+    h('div', {
+      class: 'api-key-actions',
+      text: t('settings.apiKeys.headerActions', 'Actions'),
+    }),
   );
   container.append(header);
 

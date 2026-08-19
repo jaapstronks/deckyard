@@ -9,7 +9,10 @@ import { closeIcon, makeDropdownCaret } from '../../lib/dom/icons.js';
 import { createDropdown } from '../../lib/dom/dropdown.js';
 import { createSegmented } from '../../lib/dom/segmented.js';
 import { formatRelativeTime } from '../../lib/format/format-time.js';
-import { isCommentOwner, isCommentAuthor } from '../../lib/comments/comment-authz.js';
+import {
+  isCommentOwner,
+  isCommentAuthor,
+} from '../../lib/comments/comment-authz.js';
 import { storage } from '../../lib/storage.js';
 import { confirmModal } from '../../lib/dom/modal.js';
 import { attachMentionAutocomplete } from '../../lib/comments/mention-autocomplete.js';
@@ -19,7 +22,10 @@ import { parseMentions } from '../../../shared/comment-mentions.js';
 import { createCommentRenderers } from './comments-panel-renderers.js';
 import { createCommentActions } from './comments-panel-actions.js';
 import { createCommentSSE } from './comments-panel-sse.js';
-import { threadWaitsFor, collectUnreadThreadIds } from './comments-read-state.js';
+import {
+  threadWaitsFor,
+  collectUnreadThreadIds,
+} from './comments-read-state.js';
 
 /**
  * Creates a comments panel component for the editor.
@@ -69,7 +75,12 @@ export function createCommentsPanel({
   // attention is a client-side lens on the loaded threads: 'waiting' keeps
   // only open threads whose latest message is not yours ("waiting for me").
   // Heuristic, not a status — nothing is stored.
-  let filter = { slideId: null, status: 'open', commentType: null, attention: null };
+  let filter = {
+    slideId: null,
+    status: 'open',
+    commentType: null,
+    attention: null,
+  };
   let isVisible = false;
 
   // Seen state tracking (for badge color)
@@ -118,7 +129,8 @@ export function createCommentsPanel({
 
   async function loadComments() {
     try {
-      filter.slideId = scope === 'slide' ? (getSelectedSlideId?.() || null) : null;
+      filter.slideId =
+        scope === 'slide' ? getSelectedSlideId?.() || null : null;
       // "This slide" with no slide to scope to (a deck with zero slides, or
       // before the first selection lands). Leaving slideId off the request
       // would quietly widen the scope to the whole deck while the switch still
@@ -158,7 +170,8 @@ export function createCommentsPanel({
       try {
         const countsResult = await commentsApi.getCommentCounts();
         const nextCounts = countsResult.counts || {};
-        const changed = JSON.stringify(nextCounts) !== JSON.stringify(slideCommentCounts);
+        const changed =
+          JSON.stringify(nextCounts) !== JSON.stringify(slideCommentCounts);
         slideCommentCounts = nextCounts;
         if (changed) onSlideCommentCountsChange?.(slideCommentCounts);
       } catch {
@@ -219,10 +232,14 @@ export function createCommentsPanel({
   async function loadAccessEmails() {
     if (accessEmails !== null) return accessEmails;
     const emails = new Set();
-    const owner = String(pres?.ownerEmail || pres?.createdBy || '').toLowerCase();
+    const owner = String(
+      pres?.ownerEmail || pres?.createdBy || '',
+    ).toLowerCase();
     if (owner) emails.add(owner);
     try {
-      const resp = await api(`/api/presentations/${presentationId}/collaborators`);
+      const resp = await api(
+        `/api/presentations/${presentationId}/collaborators`,
+      );
       for (const c of resp?.collaborators || []) {
         const email = String(c?.userEmail || '').toLowerCase();
         if (email) emails.add(email);
@@ -253,7 +270,7 @@ export function createCommentsPanel({
       message: t(
         'mentions.noAccess.message',
         '{names} cannot see this presentation, so the mention will not help them. Share it with comment access?',
-        { names }
+        { names },
       ),
       confirmLabel: t('mentions.noAccess.share', 'Share with comment access'),
       cancelLabel: t('mentions.noAccess.postAnyway', 'Post anyway'),
@@ -270,7 +287,9 @@ export function createCommentsPanel({
       for (const m of missing) accessEmails.add(m.email);
       toast?.success?.(t('mentions.shared', 'Shared with comment access'));
     } catch {
-      toast?.error?.(t('mentions.shareFailed', 'Could not share the presentation'));
+      toast?.error?.(
+        t('mentions.shareFailed', 'Could not share the presentation'),
+      );
     }
   }
 
@@ -351,7 +370,11 @@ export function createCommentsPanel({
     if (ephemeral) {
       const detach = () => {
         ephemeralMentionDetachers.delete(detach);
-        try { ac.detach(); } catch { /* ignore */ }
+        try {
+          ac.detach();
+        } catch {
+          /* ignore */
+        }
       };
       ephemeralMentionDetachers.add(detach);
       host._detachMentions = detach;
@@ -407,9 +430,13 @@ export function createCommentsPanel({
   const sse = createCommentSSE({
     presentationId,
     getOpenCount: () => openCount,
-    setOpenCount: (count) => { openCount = count; },
+    setOpenCount: (count) => {
+      openCount = count;
+    },
     getSlideCommentCounts: () => slideCommentCounts,
-    setSlideCommentCounts: (counts) => { slideCommentCounts = counts; },
+    setSlideCommentCounts: (counts) => {
+      slideCommentCounts = counts;
+    },
     getIsVisible: () => isVisible,
     markAsSeen,
     notifyBadge,
@@ -466,7 +493,10 @@ export function createCommentsPanel({
   // (they refine the list; scope decides what the list is about).
   const STATUS_OPTIONS = [
     { value: 'open', label: () => t('comments.filter.open', 'Open') },
-    { value: 'resolved', label: () => t('comments.filter.resolved', 'Resolved') },
+    {
+      value: 'resolved',
+      label: () => t('comments.filter.resolved', 'Resolved'),
+    },
     { value: 'all', label: () => t('comments.filter.all', 'All') },
   ];
   const TYPE_OPTIONS = [
@@ -476,10 +506,16 @@ export function createCommentsPanel({
   ];
   const ATTENTION_OPTIONS = [
     { value: null, label: () => t('comments.filter.everyone', 'Everything') },
-    { value: 'waiting', label: () => t('comments.filter.waitingForMe', 'Waiting for me') },
+    {
+      value: 'waiting',
+      label: () => t('comments.filter.waitingForMe', 'Waiting for me'),
+    },
   ];
 
-  const filterMenuLabel = h('span', { class: 'comments-filter-label', text: '' });
+  const filterMenuLabel = h('span', {
+    class: 'comments-filter-label',
+    text: '',
+  });
   const {
     details: filterDetails,
     menu: filterMenu,
@@ -534,14 +570,23 @@ export function createCommentsPanel({
     return item;
   });
   filterMenu.append(
-    h('div', { class: 'dropdown-help', text: t('comments.filter.status', 'Status') }),
+    h('div', {
+      class: 'dropdown-help',
+      text: t('comments.filter.status', 'Status'),
+    }),
     ...statusItems,
     h('div', { class: 'dropdown-sep' }),
-    h('div', { class: 'dropdown-help', text: t('comments.filter.type', 'Type') }),
+    h('div', {
+      class: 'dropdown-help',
+      text: t('comments.filter.type', 'Type'),
+    }),
     ...typeItems,
     h('div', { class: 'dropdown-sep' }),
-    h('div', { class: 'dropdown-help', text: t('comments.filter.attention', 'Attention') }),
-    ...attentionItems
+    h('div', {
+      class: 'dropdown-help',
+      text: t('comments.filter.attention', 'Attention'),
+    }),
+    ...attentionItems,
   );
 
   filterEl.append(scopeEl, filterDetails);
@@ -562,10 +607,12 @@ export function createCommentsPanel({
     text: t('comments.post', 'Post'),
     onclick: () => submitComment(),
   });
-  const inputControls = h('div', { class: 'comments-input-controls is-between' });
+  const inputControls = h('div', {
+    class: 'comments-input-controls is-between',
+  });
   inputControls.append(
     createCommentLinkButton({ input: commentInput }),
-    inputSubmitBtn
+    inputSubmitBtn,
   );
   inputEl.append(commentInput.el, inputControls);
   mainMentionAc = attachMentions(commentInput, inputEl);
@@ -581,9 +628,15 @@ export function createCommentsPanel({
   function updateFilterUi() {
     scopeSegmented.setValue(scope);
 
-    const statusOpt = STATUS_OPTIONS.find((o) => o.value === filter.status) || STATUS_OPTIONS[0];
-    const typeOpt = TYPE_OPTIONS.find((o) => o.value === filter.commentType) || TYPE_OPTIONS[0];
-    const attentionOpt = ATTENTION_OPTIONS.find((o) => o.value === filter.attention) || ATTENTION_OPTIONS[0];
+    const statusOpt =
+      STATUS_OPTIONS.find((o) => o.value === filter.status) ||
+      STATUS_OPTIONS[0];
+    const typeOpt =
+      TYPE_OPTIONS.find((o) => o.value === filter.commentType) ||
+      TYPE_OPTIONS[0];
+    const attentionOpt =
+      ATTENTION_OPTIONS.find((o) => o.value === filter.attention) ||
+      ATTENTION_OPTIONS[0];
     // The trigger label names the active refinement; type and attention only
     // when they narrow ("Open", "Open · AI", "Open · Waiting for me").
     const labelParts = [statusOpt.label()];
@@ -592,13 +645,22 @@ export function createCommentsPanel({
     filterMenuLabel.textContent = labelParts.join(' · ');
 
     for (const item of statusItems) {
-      item.classList.toggle('is-selected', item.dataset.status === String(filter.status));
+      item.classList.toggle(
+        'is-selected',
+        item.dataset.status === String(filter.status),
+      );
     }
     for (const item of typeItems) {
-      item.classList.toggle('is-selected', item.dataset.type === String(filter.commentType));
+      item.classList.toggle(
+        'is-selected',
+        item.dataset.type === String(filter.commentType),
+      );
     }
     for (const item of attentionItems) {
-      item.classList.toggle('is-selected', item.dataset.attention === String(filter.attention));
+      item.classList.toggle(
+        'is-selected',
+        item.dataset.attention === String(filter.attention),
+      );
     }
   }
 
@@ -684,7 +746,9 @@ export function createCommentsPanel({
     if (!el) return;
     try {
       el.scrollIntoView({ block: 'center' });
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     el.classList.add('is-highlighted');
     setTimeout(() => el.classList.remove('is-highlighted'), 2000);
   }
@@ -711,7 +775,11 @@ export function createCommentsPanel({
       if (loadDebounceTimer) clearTimeout(loadDebounceTimer);
       if (markReadTimer) clearTimeout(markReadTimer);
       for (const d of mentionDetachers) {
-        try { d(); } catch { /* ignore */ }
+        try {
+          d();
+        } catch {
+          /* ignore */
+        }
       }
       detachEphemeralMentions();
       detachFilterMenu();

@@ -136,7 +136,8 @@ export default {
         {
           value: 'decorative',
           label: 'Decorative (no alt)',
-          title: 'This image is decorative; it will be hidden from screen readers.',
+          title:
+            'This image is decorative; it will be hidden from screen readers.',
           ariaLabel: 'Decorative image',
         },
       ],
@@ -429,10 +430,7 @@ export default {
   renderHtml: (content, slide, ctx) => {
     const copy = getSlideCopy(ctx?.lang);
     const bg = bgClass(content?.background);
-    const side =
-      content?.imageSide === 'right'
-        ? 'is-right'
-        : 'is-left';
+    const side = content?.imageSide === 'right' ? 'is-right' : 'is-left';
     const width =
       content?.imageWidth === 'narrow'
         ? 'is-image-narrow'
@@ -461,9 +459,7 @@ export default {
         ? ' is-text-cols-2'
         : '';
     const imgBg =
-      content?.imageBackground === 'match'
-        ? 'is-image-bg-match'
-        : '';
+      content?.imageBackground === 'match' ? 'is-image-bg-match' : '';
     const rawDensity = content?.density;
     const density =
       rawDensity === 'comfortable' || rawDensity === 'compact'
@@ -474,7 +470,7 @@ export default {
     const densityClass = density === 'compact' ? ' is-compact' : '';
     const caption = content?.caption
       ? `<figcaption class="caption" data-inline-field="caption" dir="auto">${escapeHtml(
-          content.caption
+          content.caption,
         )}</figcaption>`
       : '';
     const imageRole =
@@ -490,8 +486,12 @@ export default {
     // in the emitted HTML, which is what makes the step-2b data fan-out
     // render-neutral (see docs/reference/image-property-ownership.md).
     const cellHtml = (idx) => {
-      const { item, fit: cellFit, focusSource, altExplicit } =
-        resolveImageTextCell(content, idx);
+      const {
+        item,
+        fit: cellFit,
+        focusSource,
+        altExplicit,
+      } = resolveImageTextCell(content, idx);
       const alt =
         imageRole === 'decorative'
           ? ''
@@ -503,12 +503,13 @@ export default {
             });
       // For cover this controls crop focus; for contain, alignment.
       const focusStyle = objectPositionStyleAttrFromFocus(focusSource);
-      const fitClass = cellFit === 'contain' ? ' is-fit-contain' : ' is-fit-cover';
+      const fitClass =
+        cellFit === 'contain' ? ' is-fit-contain' : ' is-fit-cover';
       // data-inline-photo: clicking the image in the editor opens the
       // media popover (image + alt); inert on every other surface.
       const inner = item.src
         ? `<img src="${escapeHtml(item.src)}" alt="${escapeHtml(
-            alt
+            alt,
           )}" data-inline-photo="${idx}"${ariaDecorative}${focusStyle} />`
         : imagePlaceholderHtml({ label: copy.imagePlaceholder, index: idx });
       // The shared caption lives in the first frame (absolute, bottom-left).
@@ -517,7 +518,9 @@ export default {
                   ${idx === 0 ? caption : ''}
                 </figure>`;
     };
-    const mediaCells = Array.from({ length: cells }, (_, i) => cellHtml(i)).join('');
+    const mediaCells = Array.from({ length: cells }, (_, i) =>
+      cellHtml(i),
+    ).join('');
     const mediaMulti = cells > 1 ? ` is-multi` : '';
     const mediaCount = cells > 1 ? ` data-count="${cells}"` : '';
     const actionsHtml = renderActionsHtml(content?.actions);
@@ -530,10 +533,10 @@ export default {
               </div>
               <div class="copy">
                 <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(
-                  content?.title
+                  content?.title,
                 )}</h2>
                 <div class="body" data-morph-role="body" data-inline-field="body" data-inline-kind="markdown">${markdownToSafeHtml(
-                  content?.body || ''
+                  content?.body || '',
                 )}</div>
                 ${actionsHtml}
               </div>

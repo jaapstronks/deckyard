@@ -5,7 +5,11 @@
 
 import { createPromiseModal } from '../../../lib/dom/modal.js';
 import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
-import { computeSlideDiff, alignSlidesForComparison, getCategoryStyle } from '../../../lib/slide-authoring/slide-diff.js';
+import {
+  computeSlideDiff,
+  alignSlidesForComparison,
+  getCategoryStyle,
+} from '../../../lib/slide-authoring/slide-diff.js';
 import { formatDateTime } from '../../../lib/format/format.js';
 import { t } from '../../../lib/ui-i18n.js';
 
@@ -41,23 +45,45 @@ export function openVersionCompareModal({
     closeOnBackdrop: true,
   });
 
-  const status = h('div', { class: 'help modal-status', text: t('common.loading', 'Loading…') });
+  const status = h('div', {
+    class: 'help modal-status',
+    text: t('common.loading', 'Loading…'),
+  });
 
   // Summary section
   const summary = h('div', { class: 'version-compare-summary' });
 
   // Legend
   const legend = h('div', { class: 'version-compare-legend' }, [
-    h('span', { class: 'legend-item diff-added', text: '🟢 ' + t('editor.versions.compare.added', 'Added') }),
-    h('span', { class: 'legend-item diff-removed', text: '🔴 ' + t('editor.versions.compare.removed', 'Removed') }),
-    h('span', { class: 'legend-item diff-modified', text: '🟡 ' + t('editor.versions.compare.modified', 'Modified') }),
-    h('span', { class: 'legend-item diff-unchanged', text: '⚪ ' + t('editor.versions.compare.unchanged', 'Unchanged') }),
+    h('span', {
+      class: 'legend-item diff-added',
+      text: '🟢 ' + t('editor.versions.compare.added', 'Added'),
+    }),
+    h('span', {
+      class: 'legend-item diff-removed',
+      text: '🔴 ' + t('editor.versions.compare.removed', 'Removed'),
+    }),
+    h('span', {
+      class: 'legend-item diff-modified',
+      text: '🟡 ' + t('editor.versions.compare.modified', 'Modified'),
+    }),
+    h('span', {
+      class: 'legend-item diff-unchanged',
+      text: '⚪ ' + t('editor.versions.compare.unchanged', 'Unchanged'),
+    }),
   ]);
 
   // Headers for columns (3 columns to match grid: current | indicator | snapshot)
-  const snapshotHeaderText = versionLabel || t('editor.versions.compare.snapshot', 'Snapshot ({date})', { date: versionDate });
+  const snapshotHeaderText =
+    versionLabel ||
+    t('editor.versions.compare.snapshot', 'Snapshot ({date})', {
+      date: versionDate,
+    });
   const headers = h('div', { class: 'version-compare-headers' }, [
-    h('div', { class: 'compare-header compare-header-current', text: t('editor.versions.compare.current', 'Current') }),
+    h('div', {
+      class: 'compare-header compare-header-current',
+      text: t('editor.versions.compare.current', 'Current'),
+    }),
     h('div', { class: 'compare-header-spacer' }), // Empty middle cell for indicator column
     h('div', {
       class: 'compare-header compare-header-snapshot',
@@ -94,7 +120,7 @@ export function openVersionCompareModal({
     try {
       const result = await api(
         `/api/presentations/${presentationId}/versions/${version.id}/compare-ai`,
-        { method: 'POST' }
+        { method: 'POST' },
       );
 
       if (result?.ok && Array.isArray(result.insights)) {
@@ -116,15 +142,27 @@ export function openVersionCompareModal({
         }
 
         if (insightCount > 0) {
-          aiStatus.textContent = t('editor.versions.compare.insightsAdded', '{count} insights added', { count: insightCount });
+          aiStatus.textContent = t(
+            'editor.versions.compare.insightsAdded',
+            '{count} insights added',
+            { count: insightCount },
+          );
           aiButton.style.display = 'none';
         } else {
-          aiStatus.textContent = t('editor.versions.compare.noInsights', 'No additional insights.');
+          aiStatus.textContent = t(
+            'editor.versions.compare.noInsights',
+            'No additional insights.',
+          );
           aiButton.style.display = 'none';
         }
       } else {
-        aiStatus.textContent = result?.error || t('editor.versions.compare.aiFailed', 'AI analysis failed.');
-        aiButton.textContent = t('editor.versions.compare.analyzeAi', 'Analyze with AI');
+        aiStatus.textContent =
+          result?.error ||
+          t('editor.versions.compare.aiFailed', 'AI analysis failed.');
+        aiButton.textContent = t(
+          'editor.versions.compare.analyzeAi',
+          'Analyze with AI',
+        );
         aiButton.disabled = false;
       }
     } catch (e) {
@@ -134,7 +172,10 @@ export function openVersionCompareModal({
         aiSection.style.display = 'none';
       } else {
         aiStatus.textContent = msg;
-        aiButton.textContent = t('editor.versions.compare.analyzeAi', 'Analyze with AI');
+        aiButton.textContent = t(
+          'editor.versions.compare.analyzeAi',
+          'Analyze with AI',
+        );
         aiButton.disabled = false;
       }
     }
@@ -146,7 +187,7 @@ export function openVersionCompareModal({
   async function loadAndCompare() {
     try {
       const versionData = await api(
-        `/api/presentations/${presentationId}/versions/${version.id}`
+        `/api/presentations/${presentationId}/versions/${version.id}`,
       );
       const snapshotSlides = versionData?.presentation?.slides || [];
       const currentSlides = currentPres?.slides || [];
@@ -158,33 +199,65 @@ export function openVersionCompareModal({
       summary.innerHTML = '';
       summary.append(
         h('div', { class: 'summary-stat' }, [
-          h('span', { class: 'summary-label', text: t('editor.versions.compare.currentSlides', 'Current:') }),
-          h('span', { class: 'summary-value', text: String(diff.summary.currentTotal) }),
+          h('span', {
+            class: 'summary-label',
+            text: t('editor.versions.compare.currentSlides', 'Current:'),
+          }),
+          h('span', {
+            class: 'summary-value',
+            text: String(diff.summary.currentTotal),
+          }),
         ]),
         h('div', { class: 'summary-stat' }, [
-          h('span', { class: 'summary-label', text: t('editor.versions.compare.snapshotSlides', 'Snapshot:') }),
-          h('span', { class: 'summary-value', text: String(diff.summary.snapshotTotal) }),
+          h('span', {
+            class: 'summary-label',
+            text: t('editor.versions.compare.snapshotSlides', 'Snapshot:'),
+          }),
+          h('span', {
+            class: 'summary-value',
+            text: String(diff.summary.snapshotTotal),
+          }),
         ]),
         h('div', { class: 'summary-stat diff-added' }, [
-          h('span', { class: 'summary-value', text: `+${diff.summary.addedCount}` }),
+          h('span', {
+            class: 'summary-value',
+            text: `+${diff.summary.addedCount}`,
+          }),
         ]),
         h('div', { class: 'summary-stat diff-removed' }, [
-          h('span', { class: 'summary-value', text: `-${diff.summary.removedCount}` }),
+          h('span', {
+            class: 'summary-value',
+            text: `-${diff.summary.removedCount}`,
+          }),
         ]),
         h('div', { class: 'summary-stat diff-modified' }, [
-          h('span', { class: 'summary-value', text: `~${diff.summary.modifiedCount}` }),
-        ])
+          h('span', {
+            class: 'summary-value',
+            text: `~${diff.summary.modifiedCount}`,
+          }),
+        ]),
       );
 
       // Status
-      if (diff.summary.addedCount === 0 && diff.summary.removedCount === 0 && diff.summary.modifiedCount === 0) {
-        status.textContent = t('editor.versions.compare.identical', 'Versions are identical.');
+      if (
+        diff.summary.addedCount === 0 &&
+        diff.summary.removedCount === 0 &&
+        diff.summary.modifiedCount === 0
+      ) {
+        status.textContent = t(
+          'editor.versions.compare.identical',
+          'Versions are identical.',
+        );
       } else {
         status.textContent = '';
       }
 
       // Align slides for comparison
-      const aligned = alignSlidesForComparison(currentSlides, snapshotSlides, diff);
+      const aligned = alignSlidesForComparison(
+        currentSlides,
+        snapshotSlides,
+        diff,
+      );
 
       // Helper to show enlarged slide preview
       function showEnlargedSlide(slide, label) {
@@ -194,7 +267,10 @@ export function openVersionCompareModal({
           text: '×',
           onclick: () => overlay.remove(),
         });
-        const labelEl = h('div', { class: 'compare-lightbox-label', text: label });
+        const labelEl = h('div', {
+          class: 'compare-lightbox-label',
+          text: label,
+        });
         const content = h('div', { class: 'compare-lightbox-content' });
         try {
           const slideEl = renderSlideElement(slide, {
@@ -204,7 +280,10 @@ export function openVersionCompareModal({
           });
           content.append(slideEl);
         } catch {
-          content.textContent = t('editor.versions.compare.renderFailed', 'Could not render slide');
+          content.textContent = t(
+            'editor.versions.compare.renderFailed',
+            'Could not render slide',
+          );
         }
         overlay.append(closeBtn, labelEl, content);
         overlay.addEventListener('click', (e) => {
@@ -218,21 +297,33 @@ export function openVersionCompareModal({
         const { current, snapshot, category } = aligned[i];
         const style = getCategoryStyle(category);
 
-        const row = h('div', { class: `version-compare-row ${style.className}` });
+        const row = h('div', {
+          class: `version-compare-row ${style.className}`,
+        });
 
         // Current side
-        const currentCell = h('div', { class: 'compare-cell compare-cell-current' });
+        const currentCell = h('div', {
+          class: 'compare-cell compare-cell-current',
+        });
         if (current) {
           const thumb = h('div', {
             class: 'compare-thumb compare-thumb-clickable',
-            title: t('editor.versions.compare.clickToEnlarge', 'Click to enlarge'),
-            onclick: () => showEnlargedSlide(
-              current,
-              t('editor.versions.compare.sideSlideLabel', '{side} - Slide {n}', {
-                side: t('editor.versions.compare.current', 'Current'),
-                n: i + 1,
-              })
+            title: t(
+              'editor.versions.compare.clickToEnlarge',
+              'Click to enlarge',
             ),
+            onclick: () =>
+              showEnlargedSlide(
+                current,
+                t(
+                  'editor.versions.compare.sideSlideLabel',
+                  '{side} - Slide {n}',
+                  {
+                    side: t('editor.versions.compare.current', 'Current'),
+                    n: i + 1,
+                  },
+                ),
+              ),
           });
           try {
             const slideEl = renderSlideElement(current, {
@@ -257,18 +348,28 @@ export function openVersionCompareModal({
         });
 
         // Snapshot side
-        const snapshotCell = h('div', { class: 'compare-cell compare-cell-snapshot' });
+        const snapshotCell = h('div', {
+          class: 'compare-cell compare-cell-snapshot',
+        });
         if (snapshot) {
           const thumb = h('div', {
             class: 'compare-thumb compare-thumb-clickable',
-            title: t('editor.versions.compare.clickToEnlarge', 'Click to enlarge'),
-            onclick: () => showEnlargedSlide(
-              snapshot,
-              t('editor.versions.compare.sideSlideLabel', '{side} - Slide {n}', {
-                side: snapshotHeaderText,
-                n: i + 1,
-              })
+            title: t(
+              'editor.versions.compare.clickToEnlarge',
+              'Click to enlarge',
             ),
+            onclick: () =>
+              showEnlargedSlide(
+                snapshot,
+                t(
+                  'editor.versions.compare.sideSlideLabel',
+                  '{side} - Slide {n}',
+                  {
+                    side: snapshotHeaderText,
+                    n: i + 1,
+                  },
+                ),
+              ),
           });
           try {
             const slideEl = renderSlideElement(snapshot, {

@@ -108,9 +108,14 @@ export async function createShareLink(scope, presentationId, options) {
  * @returns {Promise<Object|null>} - The share link or null
  */
 export async function getShareLinkByToken(scope, token) {
-  const context = toStorageContext(scope, 'getShareLinkByToken', {}, {
-    allowCrossOrganization: true,
-  });
+  const context = toStorageContext(
+    scope,
+    'getShareLinkByToken',
+    {},
+    {
+      allowCrossOrganization: true,
+    },
+  );
   const t = norm(token);
   if (!t) return null;
 

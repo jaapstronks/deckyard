@@ -115,7 +115,9 @@ export function resolvePrismComponents(languages) {
   if (!Array.isArray(languages)) return PRISM_DEFAULT_LANGUAGES.slice();
   const out = [];
   for (const raw of languages) {
-    const name = String(raw || '').toLowerCase().trim();
+    const name = String(raw || '')
+      .toLowerCase()
+      .trim();
     if (!name || PRISM_CORE_LANGUAGES.has(name)) continue;
     const components = PRISM_LANGUAGE_COMPONENTS[name];
     if (!components) continue;

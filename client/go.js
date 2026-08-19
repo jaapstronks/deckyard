@@ -18,7 +18,8 @@ const errorEl = $id('goError');
 const strings = {
   loading: submit?.dataset?.loading || 'Loading...',
   codeNotFound: errorEl?.dataset?.codeNotFound || 'Code not found or expired.',
-  networkError: errorEl?.dataset?.networkError || 'Network error. Please try again.',
+  networkError:
+    errorEl?.dataset?.networkError || 'Network error. Please try again.',
   enterCode: errorEl?.dataset?.enterCode || 'Enter the session code.',
   continueText: submit?.dataset?.continue || 'Continue',
 };
@@ -58,7 +59,12 @@ form?.addEventListener('submit', async (e) => {
   try {
     const res = await fetch(`/api/follow-codes/${encodeURIComponent(code)}`);
     const data = await res.json().catch(() => ({}));
-    if (res.ok && data && typeof data.followUrl === 'string' && data.followUrl) {
+    if (
+      res.ok &&
+      data &&
+      typeof data.followUrl === 'string' &&
+      data.followUrl
+    ) {
       window.location.href = data.followUrl;
       return;
     }

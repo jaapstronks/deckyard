@@ -17,7 +17,9 @@ export async function loadDisabledSlideTypes(ctx) {
     const orgId = ctx?.organizationId;
     const org = await getOrganizationById(orgId);
     const settings = getOrgSettings(org);
-    return Array.isArray(settings.disabledSlideTypes) ? settings.disabledSlideTypes : [];
+    return Array.isArray(settings.disabledSlideTypes)
+      ? settings.disabledSlideTypes
+      : [];
   } catch {
     return [];
   }

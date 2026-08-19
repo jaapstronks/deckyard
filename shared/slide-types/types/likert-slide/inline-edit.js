@@ -11,13 +11,16 @@
 
 /** @type {Object} InlineDescriptor for likert-slide. */
 export const inlineEdit = {
-    ghosts: Array.from({ length: 10 }, (_, i) => ({
-      field: `option${i + 1}`,
-      group: 'options',
-      anchors: [{ sel: '.likert-options', pos: 'append', chip: 'bottom-start' }],
-    })),
-    formText: ['question', ...Array.from({ length: 10 }, (_, i) => `option${i + 1}`)],
-  };
+  ghosts: Array.from({ length: 10 }, (_, i) => ({
+    field: `option${i + 1}`,
+    group: 'options',
+    anchors: [{ sel: '.likert-options', pos: 'append', chip: 'bottom-start' }],
+  })),
+  formText: [
+    'question',
+    ...Array.from({ length: 10 }, (_, i) => `option${i + 1}`),
+  ],
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the

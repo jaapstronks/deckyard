@@ -18,16 +18,16 @@ export function buildLiveVideoSection({ h, pres, markDirty, requestSave }) {
       : {};
   pres.settings.liveVideo.enabled = !!pres.settings.liveVideo.enabled;
   pres.settings.liveVideo.streamUrl = String(
-    pres.settings.liveVideo.streamUrl || ''
+    pres.settings.liveVideo.streamUrl || '',
   );
   pres.settings.liveVideo.provider = String(
-    pres.settings.liveVideo.provider || ''
+    pres.settings.liveVideo.provider || '',
   );
   pres.settings.liveVideo.defaultPosition = String(
-    pres.settings.liveVideo.defaultPosition || 'pip-top-right'
+    pres.settings.liveVideo.defaultPosition || 'pip-top-right',
   );
   pres.settings.liveVideo.mobilePosition = String(
-    pres.settings.liveVideo.mobilePosition || 'bottom'
+    pres.settings.liveVideo.mobilePosition || 'bottom',
   );
 
   const wrap = h('div', { class: 'stack editor-callout' });
@@ -47,7 +47,7 @@ export function buildLiveVideoSection({ h, pres, markDirty, requestSave }) {
     enableCb,
     h('span', {
       text: t('editor.deckSettings.liveVideo.enable', 'Enable video overlay'),
-    })
+    }),
   );
   enableCb.addEventListener('change', () => {
     pres.settings.liveVideo.enabled = !!enableCb.checked;
@@ -67,7 +67,7 @@ export function buildLiveVideoSection({ h, pres, markDirty, requestSave }) {
     class: 'help',
     text: t(
       'editor.deckSettings.liveVideo.urlHelp',
-      'Paste a YouTube Live, Vimeo, Bunny, Mux, Cloudflare, or HLS stream URL.'
+      'Paste a YouTube Live, Vimeo, Bunny, Mux, Cloudflare, or HLS stream URL.',
     ),
   });
   const urlInput = h('input', {
@@ -85,13 +85,13 @@ export function buildLiveVideoSection({ h, pres, markDirty, requestSave }) {
       providerHint.textContent = t(
         'editor.deckSettings.liveVideo.detected',
         'Detected: {provider}',
-        { provider: prov }
+        { provider: prov },
       );
     } else if (url) {
       pres.settings.liveVideo.provider = '';
       providerHint.textContent = t(
         'editor.deckSettings.liveVideo.unrecognized',
-        'Unrecognized URL. Supported: YouTube, Vimeo, Bunny, Mux, Cloudflare, .m3u8'
+        'Unrecognized URL. Supported: YouTube, Vimeo, Bunny, Mux, Cloudflare, .m3u8',
       );
     } else {
       pres.settings.liveVideo.provider = '';
@@ -120,7 +120,7 @@ export function buildLiveVideoSection({ h, pres, markDirty, requestSave }) {
   posSel.value = pres.settings.liveVideo.defaultPosition;
   posSel.addEventListener('change', () => {
     pres.settings.liveVideo.defaultPosition = String(
-      posSel.value || 'pip-top-right'
+      posSel.value || 'pip-top-right',
     );
     markDirty?.();
     requestSave?.();
@@ -138,7 +138,7 @@ export function buildLiveVideoSection({ h, pres, markDirty, requestSave }) {
   mobilePosSel.value = pres.settings.liveVideo.mobilePosition;
   mobilePosSel.addEventListener('change', () => {
     pres.settings.liveVideo.mobilePosition = String(
-      mobilePosSel.value || 'bottom'
+      mobilePosSel.value || 'bottom',
     );
     markDirty?.();
     requestSave?.();
@@ -151,7 +151,7 @@ export function buildLiveVideoSection({ h, pres, markDirty, requestSave }) {
     posLabel,
     posSel,
     mobilePosLabel,
-    mobilePosSel
+    mobilePosSel,
   );
   wrap.append(label, enableRow, fields);
   return { el: wrap };

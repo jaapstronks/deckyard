@@ -44,14 +44,16 @@ export function setupShareDropdown({
 
   /** Update the published-state indicator on the button (and any open dialog). */
   function syncShareUi() {
-    const isPublished = !!(typeof pres?.published?.id === 'string' && pres.published.id);
+    const isPublished = !!(
+      typeof pres?.published?.id === 'string' && pres.published.id
+    );
     button.classList.toggle('btn-published', isPublished);
     try {
       const existingDot = button.querySelector('.live-dot');
       if (isPublished && !existingDot) {
         button.insertBefore(
           h('span', { class: 'live-dot', 'aria-hidden': 'true', text: '●' }),
-          button.firstChild
+          button.firstChild,
         );
       } else if (!isPublished && existingDot) {
         existingDot.remove();
@@ -91,7 +93,12 @@ export function setupShareDropdown({
     });
 
   const openExport = () =>
-    openExportModal({ pres, id, root: root || document.body, overlayClosers: openOverlayClosers });
+    openExportModal({
+      pres,
+      id,
+      root: root || document.body,
+      overlayClosers: openOverlayClosers,
+    });
 
   button.addEventListener('click', () => {
     dialog = openShareModal({

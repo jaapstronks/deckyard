@@ -57,7 +57,7 @@ Use the "nl" language setting. After creating, show me:
 ### Step 4: Iterate
 Apply these changes using natural language commands (one at a time, show me the result after each):
 1. "Make the financial slide more visual — use a KPI grid instead of a list"
-2. "Slide 2 is too text-heavy, make it punchier"  
+2. "Slide 2 is too text-heavy, make it punchier"
 3. "Add more variety — too many content slides in a row"
 
 ### Step 5: Convert
@@ -85,17 +85,17 @@ After each step, briefly confirm what happened before moving on.
 
 ## What This Tests
 
-| Step | Tools Exercised |
-|------|----------------|
-| 1. Explore | `get_slide_types`, `list_themes` |
-| 2. Create | `create_presentation`, `get_presentation_url` |
-| 3. Review | `get_presentation`, `validate_presentation`, `analyze_presentation` |
-| 4. Iterate | `iterate_presentation` (×3) |
-| 5. Convert | `convert_slide` |
-| 6. Compress | `compress_presentation` (preview) |
-| 7. Modify | `add_slide`, `reorder_slides` (×2) |
-| 8. Duplicate | `duplicate_presentation`, `delete_presentation` |
-| 9. Summary | — (reflection) |
+| Step         | Tools Exercised                                                     |
+| ------------ | ------------------------------------------------------------------- |
+| 1. Explore   | `get_slide_types`, `list_themes`                                    |
+| 2. Create    | `create_presentation`, `get_presentation_url`                       |
+| 3. Review    | `get_presentation`, `validate_presentation`, `analyze_presentation` |
+| 4. Iterate   | `iterate_presentation` (×3)                                         |
+| 5. Convert   | `convert_slide`                                                     |
+| 6. Compress  | `compress_presentation` (preview)                                   |
+| 7. Modify    | `add_slide`, `reorder_slides` (×2)                                  |
+| 8. Duplicate | `duplicate_presentation`, `delete_presentation`                     |
+| 9. Summary   | — (reflection)                                                      |
 
 **Tools NOT tested:** `list_presentations`, `update_slide`, `remove_slide`, `append_slides`
 
@@ -114,11 +114,13 @@ Tell me the results.
 ## Troubleshooting
 
 If Claude Desktop shows "Server disconnected":
+
 - Check that `npm run mcp` works from the command line
 - Verify `.env` has LLM vendor configured (needed for AI tools)
 - Check stderr output: `node server/mcp/index.js 2>mcp-debug.log`
 - Verify `DECKYARD_MCP_OWNER_EMAIL` is set in the config
 
 If AI tools fail but read tools work:
+
 - The LLM vendor config in `.env` is probably missing or invalid
 - Non-AI tools (get_slide_types, list_presentations, etc.) work without LLM config

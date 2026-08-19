@@ -16,7 +16,8 @@ import { t } from '../../../lib/ui-i18n.js';
  */
 function slideLabel(slide, index) {
   const pos = t('editor.remoteMerge.slideN', 'Slide {n}', { n: index + 1 });
-  const raw = slide && (slide.title || slide.heading || slide.headline || slide.text);
+  const raw =
+    slide && (slide.title || slide.heading || slide.headline || slide.text);
   const clean = typeof raw === 'string' ? raw.trim().replace(/\s+/g, ' ') : '';
   const short = clean.length > 60 ? `${clean.slice(0, 60)}…` : clean;
   return short ? `${pos} · ${short}` : pos;
@@ -40,7 +41,9 @@ export function openRemoteMergeModal({
   onJumpToSlide,
   openOverlayClosers,
 }) {
-  const changed = new Set(Array.isArray(changedSlideIds) ? changedSlideIds : []);
+  const changed = new Set(
+    Array.isArray(changedSlideIds) ? changedSlideIds : [],
+  );
   const rows = (Array.isArray(slides) ? slides : [])
     .map((s, i) => ({ s, i }))
     .filter(({ s }) => s && typeof s.id === 'string' && changed.has(s.id));
@@ -53,7 +56,7 @@ export function openRemoteMergeModal({
     class: 'help',
     text: t(
       'editor.remoteMerge.intro',
-      'Another editor changed these slides while you were working. Your own unsaved edits were kept.'
+      'Another editor changed these slides while you were working. Your own unsaved edits were kept.',
     ),
   });
 
@@ -68,7 +71,7 @@ export function openRemoteMergeModal({
           onJumpToSlide?.(s.id);
           modalApi.close();
         },
-      })
+      }),
     );
   }
 
@@ -79,7 +82,7 @@ export function openRemoteMergeModal({
       type: 'button',
       text: t('common.close', 'Close'),
       onclick: () => modalApi.close(),
-    })
+    }),
   );
 
   modalApi.content.append(intro, list, actions);

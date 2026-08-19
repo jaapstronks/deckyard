@@ -39,7 +39,10 @@ test('renders the canonical classes and selects the first segment by default', (
   const { el } = createSegmented({ segments: SEGMENTS });
   assert.equal(el.className, 'sb-segmented');
   assert.equal(el.getAttribute('role'), 'group');
-  assert.deepEqual(stateOf(el), [[true, 'true'], [false, 'false']]);
+  assert.deepEqual(stateOf(el), [
+    [true, 'true'],
+    [false, 'false'],
+  ]);
 });
 
 test('the outlined variant is a class on the same control, not a new one', () => {
@@ -63,7 +66,10 @@ test('clicking moves the selection and reports the value', () => {
   el.querySelectorAll('.sb-segmented-btn')[1].click();
   assert.deepEqual(seen, ['b']);
   assert.equal(getValue(), 'b');
-  assert.deepEqual(stateOf(el), [[false, 'false'], [true, 'true']]);
+  assert.deepEqual(stateOf(el), [
+    [false, 'false'],
+    [true, 'true'],
+  ]);
 });
 
 test('selectOnClick:false reports clicks without moving the highlight itself', () => {
@@ -74,25 +80,51 @@ test('selectOnClick:false reports clicks without moving the highlight itself', (
     selectOnClick: false,
     onSelect: (v) => seen.push(v),
   });
-  assert.deepEqual(stateOf(el), [[false, 'false'], [false, 'false']], 'nothing selected');
+  assert.deepEqual(
+    stateOf(el),
+    [
+      [false, 'false'],
+      [false, 'false'],
+    ],
+    'nothing selected',
+  );
 
   el.querySelectorAll('.sb-segmented-btn')[0].click();
   assert.deepEqual(seen, ['a']);
-  assert.deepEqual(stateOf(el), [[false, 'false'], [false, 'false']], 'owner has not said yes');
+  assert.deepEqual(
+    stateOf(el),
+    [
+      [false, 'false'],
+      [false, 'false'],
+    ],
+    'owner has not said yes',
+  );
 
   // The owner accepts, then later dismisses — the pane-tabs lifecycle.
   setValue('a');
-  assert.deepEqual(stateOf(el), [[true, 'true'], [false, 'false']]);
+  assert.deepEqual(stateOf(el), [
+    [true, 'true'],
+    [false, 'false'],
+  ]);
   setValue(null);
-  assert.deepEqual(stateOf(el), [[false, 'false'], [false, 'false']]);
+  assert.deepEqual(stateOf(el), [
+    [false, 'false'],
+    [false, 'false'],
+  ]);
 });
 
 test('custom content is appended and the value is still tracked', () => {
   const icon = document.createElement('img');
   const { el, buttons } = createSegmented({
-    segments: [{ value: 'x', content: [icon, 'Label'] }, { value: 'y', label: 'Y' }],
+    segments: [
+      { value: 'x', content: [icon, 'Label'] },
+      { value: 'y', label: 'Y' },
+    ],
   });
   assert.equal(buttons.get('x').querySelector('img'), icon);
   assert.match(buttons.get('x').textContent, /Label/);
-  assert.deepEqual(stateOf(el), [[true, 'true'], [false, 'false']]);
+  assert.deepEqual(stateOf(el), [
+    [true, 'true'],
+    [false, 'false'],
+  ]);
 });

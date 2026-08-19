@@ -22,20 +22,30 @@ import { fileURLToPath } from 'node:url';
 
 import { findDuplicateKeys } from '../scripts/i18n-validate.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const i18nDir = path.join(repoRoot, 'client', 'i18n');
 
 describe('findDuplicateKeys', () => {
   it('flags a repeated key with both line numbers', () => {
-    const content = ['{', '  "a": "1",', '  "b": "2",', '  "a": "3"', '}'].join('\n');
+    const content = ['{', '  "a": "1",', '  "b": "2",', '  "a": "3"', '}'].join(
+      '\n',
+    );
     const dups = findDuplicateKeys(content);
     assert.deepStrictEqual(dups, [{ key: 'a', line: 4, firstLine: 2 }]);
   });
 
   it('reports every repeat when a key appears three times', () => {
-    const content = ['{', '  "x": "1",', '  "x": "2",', '  "x": "3"', '}'].join('\n');
+    const content = ['{', '  "x": "1",', '  "x": "2",', '  "x": "3"', '}'].join(
+      '\n',
+    );
     const dups = findDuplicateKeys(content);
-    assert.deepStrictEqual(dups.map((d) => d.line), [3, 4]);
+    assert.deepStrictEqual(
+      dups.map((d) => d.line),
+      [3, 4],
+    );
     assert.ok(dups.every((d) => d.firstLine === 2));
   });
 
@@ -58,7 +68,7 @@ describe('live locale files', () => {
       fs
         .readdirSync(path.join(i18nDir, locale))
         .filter((name) => name.endsWith('.json'))
-        .map((name) => path.join(locale, name))
+        .map((name) => path.join(locale, name)),
     );
 
   for (const rel of files) {
@@ -66,10 +76,12 @@ describe('live locale files', () => {
       const content = fs.readFileSync(path.join(i18nDir, rel), 'utf8');
       const dups = findDuplicateKeys(content);
       assert.deepStrictEqual(
-        dups.map((d) => `line ${d.line}: "${d.key}" (first at line ${d.firstLine})`),
+        dups.map(
+          (d) => `line ${d.line}: "${d.key}" (first at line ${d.firstLine})`,
+        ),
         [],
         `${dups.length} duplicate key(s) in client/i18n/${rel} — JSON.parse keeps only ` +
-          'the last, so the extras are silently dropped. Remove them.'
+          'the last, so the extras are silently dropped. Remove them.',
       );
     });
   }

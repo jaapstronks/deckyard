@@ -7,10 +7,10 @@ there are two readings instead of one.
 
 Two modules, split along the line between measuring and judging:
 
-| Module | Answers |
-| --- | --- |
-| `shared/color-utils.js` | *How much contrast is there?* — hex parsing, WCAG relative luminance, the contrast ratio, and the readable-text pole picker. |
-| `shared/contrast.js` | *Is that enough?* — the threshold tables, the APCA implementation, and `assessContrast()`. |
+| Module                  | Answers                                                                                                                      |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `shared/color-utils.js` | _How much contrast is there?_ — hex parsing, WCAG relative luminance, the contrast ratio, and the readable-text pole picker. |
+| `shared/contrast.js`    | _Is that enough?_ — the threshold tables, the APCA implementation, and `assessContrast()`.                                   |
 
 The split exists because thresholds are a policy decision and a ratio is not.
 Before it, the ratio formula was written twice and the thresholds were
@@ -37,8 +37,8 @@ each other instead of being restated per call site.
 
 ```js
 WCAG_THRESHOLDS = {
-  large: { aa: 3,   aaa: 4.5 },
-  body:  { aa: 4.5, aaa: 7   },
+  large: { aa: 3, aaa: 4.5 },
+  body: { aa: 4.5, aaa: 7 },
 };
 APCA_THRESHOLDS = { large: 60, body: 75 };
 ```

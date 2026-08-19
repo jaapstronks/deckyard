@@ -53,7 +53,9 @@ export async function convertMarkdownText(markdown, opts = {}) {
   }
 
   if (parsed.slides.length === 0) {
-    report.errors.push('No slides found in the markdown. Use --- to separate slides.');
+    report.errors.push(
+      'No slides found in the markdown. Use --- to separate slides.',
+    );
     return { deck: null, report };
   }
 
@@ -72,7 +74,10 @@ export async function convertMarkdownText(markdown, opts = {}) {
 
   // 3. Resolve images
   try {
-    await resolveSlideImages(deck.slides, { warnings: report.warnings, imageMap: opts.imageMap });
+    await resolveSlideImages(deck.slides, {
+      warnings: report.warnings,
+      imageMap: opts.imageMap,
+    });
   } catch (err) {
     report.warnings.push(`Image resolution had errors: ${err.message}`);
   }
@@ -87,7 +92,15 @@ export async function convertMarkdownText(markdown, opts = {}) {
  * Image file extensions recognized from zip bundles.
  */
 const IMAGE_EXTENSIONS = new Set([
-  '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.avif', '.bmp', '.ico',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+  '.svg',
+  '.webp',
+  '.avif',
+  '.bmp',
+  '.ico',
 ]);
 
 /**
@@ -104,7 +117,10 @@ export async function convertMarkdownBundle(zipBuffer, opts = {}) {
   // Find the .md file (root-level, first match)
   const mdEntry = entries.find((name) => {
     const lower = name.toLowerCase();
-    return (lower.endsWith('.md') || lower.endsWith('.markdown')) && !zip.files[name].dir;
+    return (
+      (lower.endsWith('.md') || lower.endsWith('.markdown')) &&
+      !zip.files[name].dir
+    );
   });
 
   if (!mdEntry) {

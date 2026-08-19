@@ -23,5 +23,7 @@ export const up = async (db) => {
 
 export const down = async (db) => {
   await sql`DROP INDEX IF EXISTS idx_slide_library_data_source`.execute(db);
-  await sql`ALTER TABLE slide_library DROP COLUMN IF EXISTS data_source`.execute(db);
+  await sql`ALTER TABLE slide_library DROP COLUMN IF EXISTS data_source`.execute(
+    db,
+  );
 };

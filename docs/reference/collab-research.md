@@ -9,10 +9,10 @@
 > cited here have since moved into subfolders (`slide-runtime/`, `state/`,
 > …); follow the current layout, not these paths.
 
-*2026-07-15. Groundwork for [ADR 001](../adr/001-realtime-collaboration.md).
+_2026-07-15. Groundwork for [ADR 001](../adr/001-realtime-collaboration.md).
 Research question: can Deckyard support Miro/Google-Docs-style multi-user
 editing (presence + live edits), what does the codebase give us, and what has
-to change?*
+to change?_
 
 Every claim below was verified against the code; file references are
 clickable anchors for the implementation phase.
@@ -36,7 +36,7 @@ Two storage backends sit behind an adapter interface
 **Postgres with the deck in a `jsonb` column**
 (`server/db/migrations/001_initial_schema.js:56`). In both, slides are
 embedded JSON — **there is no per-slide row storage** (the
-`postgres/slides.js` module is the slide *library*, not deck slides).
+`postgres/slides.js` module is the slide _library_, not deck slides).
 
 ### Writes are whole-deck, with optimistic locking + app-level merge
 
@@ -134,8 +134,8 @@ More than expected — Deckyard already has a coarse, lock-based collab layer:
 - **No live presence**: no avatars, no cursors, no "who is looking at what".
   The topbar presence element exists but is fed nothing in slide-lock mode.
 
-So today's model is: *invalidate & refetch, slide-level last-write-wins,
-locks to keep people off each other's slide*. A CRDT layer replaces exactly
+So today's model is: _invalidate & refetch, slide-level last-write-wins,
+locks to keep people off each other's slide_. A CRDT layer replaces exactly
 this — and the seams it hangs off (the SSE events, the lock manager, the
 update handler) are where the Yjs binding will plug in.
 
@@ -195,7 +195,7 @@ subtly wrong today, and fundamentally incompatible with concurrent editing.
 ### ⚠ Pre-existing authz gaps surfaced by this research
 
 Two inconsistencies exist today, independent of collab, and should be fixed
-*before* wiring machine clients into a shared live document:
+_before_ wiring machine clients into a shared live document:
 
 1. **MCP mutating tools perform no per-deck authorization at all** —
    `update_slide`, `add_slide`, `remove_slide`, `reorder_slides`,
@@ -219,7 +219,7 @@ the research transcript) reduces to one architectural fact:
 That includes: MCP tools, public API v1 (whole-deck and per-slide), AI wizard
 deck creation, translate routes **and the background translate worker**,
 change-theme, visibility changes, version restore, publish metadata, and
-import-slides-as-images. The AI *editing* endpoints (`iterate`, `refine`,
+import-slides-as-images. The AI _editing_ endpoints (`iterate`, `refine`,
 `append-slides`, `convert-slide`, `compress`) and data-source refresh are
 **client-applied**: they return suggestions and the editor persists them
 through the normal save path — in a CRDT world they automatically go through

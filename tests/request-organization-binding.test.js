@@ -27,7 +27,9 @@ import assert from 'node:assert/strict';
 
 // Assembled rather than written as one literal so secret scanners do not flag
 // it; authConfigError() only requires MIN_AUTH_SECRET_LENGTH characters.
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
 delete process.env.MULTI_ORG_ENABLED;
@@ -42,15 +44,17 @@ const { hashPassword } = await import('../server/utils/password-hash.js');
 const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const auth = await import('../server/auth/auth.js');
 const { createStorageScope } = await import('../server/utils/context.js');
-const { __store } = await import(
-  '../server/storage/presentations/index.js'
-);
+const { __store } = await import('../server/storage/presentations/index.js');
 
 let passwordHash;
 
 test.before(async () => {
   passwordHash = await hashPassword('correct horse battery');
-  assert.equal(isMultiOrgEnabled(), false, 'multi-organization flag is off for this file');
+  assert.equal(
+    isMultiOrgEnabled(),
+    false,
+    'multi-organization flag is off for this file',
+  );
 });
 
 test.afterEach(() => {
@@ -125,18 +129,24 @@ function requestWithSession(user, options = {}) {
     },
   };
   auth.setSessionCookie(req, res, user, options);
-  return { headers: { cookie: String(res.headers['Set-Cookie']).split(';')[0] } };
+  return {
+    headers: { cookie: String(res.headers['Set-Cookie']).split(';')[0] },
+  };
 }
 
 /** Log in and resolve a request down to the route context a handler receives. */
 async function resolveContext(sessionOptions = {}) {
-  const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', {
-    organizationId: DEFAULT_ORG,
-    actorEmail: 'alice@example.com',
-  });
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    {
+      organizationId: DEFAULT_ORG,
+      actorEmail: 'alice@example.com',
+    },
+  );
   const authedUser = await auth.getUserFromRequestAsync(
     requestWithSession(login, sessionOptions),
-    {}
+    {},
   );
   return { authedUser, ctx: createStorageScope(authedUser) };
 }
@@ -170,12 +180,12 @@ test('contexts built without an authenticated user are unchanged', () => {
   assert.equal(createStorageScope(undefined).organizationId, DEFAULT_ORG);
   assert.equal(
     createStorageScope({ email: 'apikey-owner@example.com' }).organizationId,
-    DEFAULT_ORG
+    DEFAULT_ORG,
   );
   assert.equal(
     createStorageScope(null, { organizationId: OTHER_ORG }).organizationId,
     OTHER_ORG,
-    'the explicit override keeps working'
+    'the explicit override keeps working',
   );
 });
 
@@ -184,12 +194,15 @@ test('storage still scopes on the default organization', async () => {
   const { ctx } = await resolveContext();
 
   const listed = await __store.listPresentationRows(ctx);
-  assert.deepEqual(listed.map((p) => p.id), ['deck-1']);
+  assert.deepEqual(
+    listed.map((p) => p.id),
+    ['deck-1'],
+  );
 
   const created = await __store.createPresentationRow({ title: 'New' }, ctx);
   assert.equal(
     db.__tables.presentations.find((p) => p.id === created.id).organization_id,
-    DEFAULT_ORG
+    DEFAULT_ORG,
   );
 });
 
@@ -210,10 +223,14 @@ test('building a context issues no queries at all', async () => {
 
 test('resolving a session touches only the users table', async () => {
   const db = seedSingleOrg();
-  const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', {
-    organizationId: DEFAULT_ORG,
-    actorEmail: 'alice@example.com',
-  });
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    {
+      organizationId: DEFAULT_ORG,
+      actorEmail: 'alice@example.com',
+    },
+  );
   const req = requestWithSession(login);
 
   db.__queryLog.length = 0;
@@ -222,6 +239,6 @@ test('resolving a session touches only the users table', async () => {
   assert.deepEqual(
     [...new Set(touchedTables(db))],
     ['users'],
-    'no membership lookup is issued when multi-organization is off'
+    'no membership lookup is issued when multi-organization is off',
   );
 });

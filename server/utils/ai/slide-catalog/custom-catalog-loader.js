@@ -46,7 +46,12 @@ const __dirname = dirname(__filename);
 
 // Resolve the repo root (five levels up from server/utils/ai/slide-catalog/).
 const REPO_ROOT = resolve(__dirname, '..', '..', '..', '..');
-const DEFAULT_CUSTOM_CATALOG_FILE = join(REPO_ROOT, 'custom', 'ai', 'catalog.js');
+const DEFAULT_CUSTOM_CATALOG_FILE = join(
+  REPO_ROOT,
+  'custom',
+  'ai',
+  'catalog.js',
+);
 
 /**
  * The partial-override keys a fork may set on a core catalog entry.
@@ -78,7 +83,10 @@ const OVERRIDABLE_FIELDS = new Set([
  *   object-valued entry is accepted.
  * @returns {Promise<Record<string, Object>>} Map of type name → partial override.
  */
-export async function loadCustomCatalogOverrides({ file = DEFAULT_CUSTOM_CATALOG_FILE, knownTypes = null } = {}) {
+export async function loadCustomCatalogOverrides({
+  file = DEFAULT_CUSTOM_CATALOG_FILE,
+  knownTypes = null,
+} = {}) {
   if (!existsSync(file)) return {};
 
   const allow = knownTypes
@@ -108,7 +116,9 @@ export async function loadCustomCatalogOverrides({ file = DEFAULT_CUSTOM_CATALOG
       continue;
     }
     if (allow && !allow.has(type)) {
-      log.warn(`override "${type}" does not match a known slide type; ignoring`);
+      log.warn(
+        `override "${type}" does not match a known slide type; ignoring`,
+      );
       continue;
     }
     // Keep only the recognised override fields so a stray key can't smuggle
@@ -120,13 +130,21 @@ export async function loadCustomCatalogOverrides({ file = DEFAULT_CUSTOM_CATALOG
         // never carry a raw template literal's indentation or an unbounded rule.
         const usage = clampUsage(v);
         if (usage) partial.usage = usage;
-        else log.warn(`override "${type}.usage" is not a non-empty string; ignoring`);
+        else
+          log.warn(
+            `override "${type}.usage" is not a non-empty string; ignoring`,
+          );
       } else if (OVERRIDABLE_FIELDS.has(k)) partial[k] = v;
-      else log.warn(`override "${type}.${k}" is not an overridable field; ignoring`);
+      else
+        log.warn(
+          `override "${type}.${k}" is not an overridable field; ignoring`,
+        );
     }
     if (Object.keys(partial).length === 0) continue;
     clean[type] = partial;
-    log.info(`overriding core slide type copy: ${type} (${Object.keys(partial).join(', ')})`);
+    log.info(
+      `overriding core slide type copy: ${type} (${Object.keys(partial).join(', ')})`,
+    );
   }
 
   return clean;

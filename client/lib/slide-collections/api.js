@@ -14,7 +14,8 @@
 export function createCollectionsApi({ api }) {
   if (!api) throw new Error('Missing api');
 
-  const base = (shelf) => `/api/slide-collections/${shelf === 'organization' ? 'organization' : 'personal'}`;
+  const base = (shelf) =>
+    `/api/slide-collections/${shelf === 'organization' ? 'organization' : 'personal'}`;
 
   const list = async (shelf) => {
     const r = await api(base(shelf));
@@ -23,7 +24,10 @@ export function createCollectionsApi({ api }) {
 
   /** Fetch both shelves at once. @returns {Promise<{personal: object[], organization: object[]}>} */
   const listAll = async () => {
-    const [personal, organization] = await Promise.all([list('personal'), list('organization')]);
+    const [personal, organization] = await Promise.all([
+      list('personal'),
+      list('organization'),
+    ]);
     return { personal, organization };
   };
 
@@ -46,10 +50,14 @@ export function createCollectionsApi({ api }) {
    * @returns {Promise<{collection: object, added: boolean}>}
    */
   const addSlide = async (collection, slideId) => {
-    const ids = Array.isArray(collection?.slideIds) ? collection.slideIds.slice() : [];
+    const ids = Array.isArray(collection?.slideIds)
+      ? collection.slideIds.slice()
+      : [];
     if (ids.includes(slideId)) return { collection, added: false };
     ids.push(slideId);
-    const updated = await update(collection.shelf, collection.id, { slideIds: ids });
+    const updated = await update(collection.shelf, collection.id, {
+      slideIds: ids,
+    });
     return { collection: updated, added: true };
   };
 

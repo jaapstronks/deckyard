@@ -44,7 +44,7 @@ export function showDeleteOrganizationModal({
     title: t('organization.profile.delete.title', 'Delete this organization'),
     hint: t(
       'organization.profile.delete.hint',
-      'Everything in this organization goes with it: its decks, themes, fonts, custom slide types, uploaded images, share links and analytics. Every member loses access. This cannot be undone.'
+      'Everything in this organization goes with it: its decks, themes, fonts, custom slide types, uploaded images, share links and analytics. Every member loses access. This cannot be undone.',
     ),
     modalClass: 'organization-delete-modal',
   });
@@ -60,9 +60,13 @@ export function showDeleteOrganizationModal({
   field.append(
     h('span', {
       class: 'field-label',
-      text: t('organization.profile.delete.confirmLabel', 'Type {name} to confirm', { name }),
+      text: t(
+        'organization.profile.delete.confirmLabel',
+        'Type {name} to confirm',
+        { name },
+      ),
     }),
-    input
+    input,
   );
 
   const status = h('div', { class: 'help modal-status', role: 'status' });
@@ -123,7 +127,10 @@ export function showDeleteOrganizationModal({
       // deleted" — and both are rules this dialog cannot restate better.
       status.textContent =
         err?.message ||
-        t('organization.profile.delete.failed', 'Could not delete the organization.');
+        t(
+          'organization.profile.delete.failed',
+          'Could not delete the organization.',
+        );
       setDisabled(false);
     }
   }

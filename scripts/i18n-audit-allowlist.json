@@ -32,6 +32,7 @@
     "client/views/settings/slide-type-editor/index.js :: .my-slide {\\n  padding: 2em;\\n}": "CSS syntax example.",
     "client/views/settings/tabs/admin-tab.js :: English (EN-GB)": "Language names are shown in their own language, by design.",
     "client/views/settings/tabs/admin-tab.js :: Nederlands (NL)": "Language names are shown in their own language, by design.",
+    "client/views/settings/tabs/analytics-tab.js :: G-XXXXXXXXXX": "Technical placeholder showing the GA4 measurement-ID format; not copy. (Surfaced by the Prettier sweep: the audit's same-line-t() heuristic had been hiding it.)",
     "client/views/settings/tabs/analytics-tab.js :: Google Analytics 4": "Product names of the supported analytics providers (Umami, Plausible, Matomo, Google Analytics 4).",
     "client/views/settings/tabs/analytics-tab.js :: Matomo": "Product names of the supported analytics providers (Umami, Plausible, Matomo, Google Analytics 4).",
     "client/views/settings/tabs/analytics-tab.js :: Plausible": "Product names of the supported analytics providers (Umami, Plausible, Matomo, Google Analytics 4).",

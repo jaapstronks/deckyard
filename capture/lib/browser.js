@@ -9,7 +9,11 @@ import { getPuppeteerBrowser } from '../../server/utils/puppeteer-browser.js';
 /** @typedef {{ width: number, height: number, deviceScaleFactor?: number }} Viewport */
 
 /** Default capture viewport — the fixed convention for stable re-captures. */
-export const DEFAULT_VIEWPORT = { width: 1440, height: 900, deviceScaleFactor: 2 };
+export const DEFAULT_VIEWPORT = {
+  width: 1440,
+  height: 900,
+  deviceScaleFactor: 2,
+};
 
 /**
  * Open a fresh page with the given viewport. The caller closes it.
@@ -17,7 +21,9 @@ export const DEFAULT_VIEWPORT = { width: 1440, height: 900, deviceScaleFactor: 2
  * @returns {Promise<import('puppeteer-core').Page>}
  */
 export async function openPage(viewport = DEFAULT_VIEWPORT) {
-  const browser = await getPuppeteerBrowser({ featureName: 'Screenshot capture' });
+  const browser = await getPuppeteerBrowser({
+    featureName: 'Screenshot capture',
+  });
   const page = await browser.newPage();
   await page.setViewport({
     width: viewport.width,
@@ -52,7 +58,9 @@ export async function gotoStable(page, url) {
  */
 export async function closeBrowser() {
   try {
-    const browser = await getPuppeteerBrowser({ featureName: 'Screenshot capture' });
+    const browser = await getPuppeteerBrowser({
+      featureName: 'Screenshot capture',
+    });
     await browser.close();
   } catch {
     // already gone — ignore

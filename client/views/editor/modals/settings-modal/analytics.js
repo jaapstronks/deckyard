@@ -25,7 +25,7 @@ export function buildAnalyticsSection({ h, pres, markDirty, requestSave }) {
     class: 'help',
     text: t(
       'editor.deckSettings.analytics.help',
-      'Control how engagement data is collected and displayed for this presentation.'
+      'Control how engagement data is collected and displayed for this presentation.',
     ),
   });
 
@@ -43,10 +43,10 @@ export function buildAnalyticsSection({ h, pres, markDirty, requestSave }) {
       h('span', {
         text: t(
           'editor.deckSettings.analytics.trackTeam',
-          'Include team member views in analytics'
+          'Include team member views in analytics',
         ),
       }),
-    ]
+    ],
   );
   trackTeamCb.addEventListener('change', () => {
     pres.settings.analyticsOptions.trackTeamViews = !!trackTeamCb.checked;
@@ -58,25 +58,21 @@ export function buildAnalyticsSection({ h, pres, markDirty, requestSave }) {
   const detailedTeamCb = h('input', { type: 'checkbox' });
   detailedTeamCb.checked =
     pres.settings.analyticsOptions.showDetailedTeamAnalytics;
-  const detailedTeamLabel = h(
-    'label',
-    { class: 'row is-start is-gap-xs' },
-    [
-      detailedTeamCb,
-      h('span', {
-        text: t(
-          'editor.deckSettings.analytics.showDetailed',
-          'Show attributed team viewer names'
-        ),
-      }),
-    ]
-  );
+  const detailedTeamLabel = h('label', { class: 'row is-start is-gap-xs' }, [
+    detailedTeamCb,
+    h('span', {
+      text: t(
+        'editor.deckSettings.analytics.showDetailed',
+        'Show attributed team viewer names',
+      ),
+    }),
+  ]);
   const detailedTeamHelp = h('div', {
     class: 'help',
     style: 'margin-left: var(--ps-space-5);',
     text: t(
       'editor.deckSettings.analytics.showDetailedHelp',
-      'Only shows names of team members who have opted in to attribution.'
+      'Only shows names of team members who have opted in to attribution.',
     ),
   });
   detailedTeamCb.addEventListener('change', () => {
@@ -86,12 +82,6 @@ export function buildAnalyticsSection({ h, pres, markDirty, requestSave }) {
     requestSave?.();
   });
 
-  wrap.append(
-    label,
-    help,
-    trackTeamLabel,
-    detailedTeamLabel,
-    detailedTeamHelp
-  );
+  wrap.append(label, help, trackTeamLabel, detailedTeamLabel, detailedTeamHelp);
   return { el: wrap };
 }

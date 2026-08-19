@@ -96,7 +96,8 @@ function expandIpv6(addr) {
   const halves = addr.split('::');
   if (halves.length > 2) return null; // more than one '::' is invalid
   const head = halves[0] ? halves[0].split(':') : [];
-  const tail = halves.length === 2 ? (halves[1] ? halves[1].split(':') : []) : null;
+  const tail =
+    halves.length === 2 ? (halves[1] ? halves[1].split(':') : []) : null;
 
   let groups;
   if (tail === null) {
@@ -213,7 +214,7 @@ export async function assertPublicHttpUrl(rawUrl) {
   for (const { address } of addrs) {
     if (isPrivateAddress(address)) {
       const err = new Error(
-        `Blocked host ${hostname} → non-public address ${address}`
+        `Blocked host ${hostname} → non-public address ${address}`,
       );
       err.code = 'SSRF_BLOCKED_ADDRESS';
       throw err;
@@ -248,7 +249,8 @@ export function isRemoteHttpUrl(s) {
 export async function safeFetchRemoteImage(rawUrl, opts = {}) {
   const timeoutMs = opts.timeoutMs || REMOTE_FETCH_TIMEOUT_MS;
   const maxBytes = opts.maxBytes || MAX_REMOTE_IMAGE_BYTES;
-  const headers = opts.headers && typeof opts.headers === 'object' ? opts.headers : undefined;
+  const headers =
+    opts.headers && typeof opts.headers === 'object' ? opts.headers : undefined;
   try {
     await assertPublicHttpUrl(rawUrl);
   } catch {
@@ -262,9 +264,10 @@ export async function safeFetchRemoteImage(rawUrl, opts = {}) {
     });
     if (!response.ok) return null;
 
-    const contentType = String(
-      response.headers.get('content-type') || ''
-    ).split(';')[0].trim().toLowerCase();
+    const contentType = String(response.headers.get('content-type') || '')
+      .split(';')[0]
+      .trim()
+      .toLowerCase();
     // Only accept images; reject e.g. an internal JSON metadata endpoint.
     if (contentType && !contentType.startsWith('image/')) return null;
 

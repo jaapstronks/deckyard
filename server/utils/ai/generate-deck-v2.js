@@ -8,7 +8,10 @@
  * This replaces the single-prompt approach in openai/deck.js
  */
 
-import { generateOutline, separateSlidesForProcessing } from './generate-outline.js';
+import {
+  generateOutline,
+  separateSlidesForProcessing,
+} from './generate-outline.js';
 import { refineAllSlideGroups } from './refine-slides.js';
 import { reviseOutline } from './revise-outline.js';
 import { createSessionLogger, generateSessionId } from './logging.js';
@@ -28,7 +31,11 @@ const log = createLogger('generate-deck-v2');
  * @param {string} options.theme - Theme ID
  * @param {string} options.titleSlideType - Title slide type (e.g. 'title-slide')
  */
-export function assembleDeck(outline, refinedSlides, { theme = 'default', titleSlideType = 'title-slide' } = {}) {
+export function assembleDeck(
+  outline,
+  refinedSlides,
+  { theme = 'default', titleSlideType = 'title-slide' } = {},
+) {
   const deck = {
     format: DECK_FORMAT_ID,
     version: 1,
@@ -65,7 +72,10 @@ export function assembleDeck(outline, refinedSlides, { theme = 'default', titleS
     }
     if (refined.alternativeType) {
       slide._aiAlternatives = [
-        { type: refined.alternativeType, reason: refined.alternativeReason || '' },
+        {
+          type: refined.alternativeType,
+          reason: refined.alternativeReason || '',
+        },
       ];
     }
     if (refined._aiWarnings?.length) {
@@ -91,18 +101,21 @@ export function assembleDeck(outline, refinedSlides, { theme = 'default', titleS
  * @param {boolean} options.enableLogging - Enable detailed logging (default: true)
  * @returns {Promise<Object>} Generated deck in deck JSON format
  */
-export async function generateDeckV2(rawContent, {
-  userName = '',
-  targetLang = null,
-  vendor = null,
-  theme = 'default',
-  titleSlideType = 'title-slide',
-  enableLogging = true,
-  reviseOutlineBeforeRefine = true,
-  disabledSlideTypes = [],
-  customSlideTypes = [],
-  themeContext = null,
-} = {}) {
+export async function generateDeckV2(
+  rawContent,
+  {
+    userName = '',
+    targetLang = null,
+    vendor = null,
+    theme = 'default',
+    titleSlideType = 'title-slide',
+    enableLogging = true,
+    reviseOutlineBeforeRefine = true,
+    disabledSlideTypes = [],
+    customSlideTypes = [],
+    themeContext = null,
+  } = {},
+) {
   const startTime = Date.now();
   const sessionId = generateSessionId();
   const logger = enableLogging ? createSessionLogger(sessionId) : null;
@@ -122,7 +135,9 @@ export async function generateDeckV2(rawContent, {
     onLog: logger ? (data) => logger.logPhase1(data) : null,
   });
 
-  log.info(`Phase 1 complete: ${outline.slides.length} slides, title: "${outline.title}"`);
+  log.info(
+    `Phase 1 complete: ${outline.slides.length} slides, title: "${outline.title}"`,
+  );
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 1b: Revise the outline
@@ -137,7 +152,10 @@ export async function generateDeckV2(rawContent, {
     log.info('Phase 1b: Revising outline...');
     const revised = await reviseOutline(outline, rawContent, {
       vendor,
-      lang: outline.metadata?.requestedLang || outline.metadata?.detectedLang || 'en',
+      lang:
+        outline.metadata?.requestedLang ||
+        outline.metadata?.detectedLang ||
+        'en',
       onLog: logger ? (data) => logger.logPhase1(data) : null,
     });
     outline = revised.outline;
@@ -148,14 +166,19 @@ export async function generateDeckV2(rawContent, {
   // SEPARATE STRUCTURAL VS CONTENT SLIDES
   // ═══════════════════════════════════════════════════════════════════════════
 
-  const { structuralSlides, contentGroups } = separateSlidesForProcessing(outline.slides);
-  log.info(`Structural slides: ${structuralSlides.length}, Content groups: ${contentGroups.length}`);
+  const { structuralSlides, contentGroups } = separateSlidesForProcessing(
+    outline.slides,
+  );
+  log.info(
+    `Structural slides: ${structuralSlides.length}, Content groups: ${contentGroups.length}`,
+  );
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 2: Refine Content Slides Only
   // ═══════════════════════════════════════════════════════════════════════════
 
-  const lang = outline.metadata.requestedLang || outline.metadata.detectedLang || 'en';
+  const lang =
+    outline.metadata.requestedLang || outline.metadata.detectedLang || 'en';
   let refinedContentSlides = [];
 
   if (contentGroups.length > 0) {
@@ -175,7 +198,9 @@ export async function generateDeckV2(rawContent, {
       themeContext,
     });
 
-    log.info(`Phase 2 complete: ${refinedContentSlides.length} content slides refined`);
+    log.info(
+      `Phase 2 complete: ${refinedContentSlides.length} content slides refined`,
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -183,8 +208,9 @@ export async function generateDeckV2(rawContent, {
   // ═══════════════════════════════════════════════════════════════════════════
 
   // Merge structural + refined content slides, sorted by original index
-  const allSlides = [...structuralSlides, ...refinedContentSlides]
-    .sort((a, b) => a.originalIndex - b.originalIndex);
+  const allSlides = [...structuralSlides, ...refinedContentSlides].sort(
+    (a, b) => a.originalIndex - b.originalIndex,
+  );
 
   const validatedSlides = validateAndFixRefinedSlides(allSlides);
   log.info(`Validation complete: ${validatedSlides.length} slides total`);
@@ -193,7 +219,10 @@ export async function generateDeckV2(rawContent, {
   // ASSEMBLE FINAL DECK
   // ═══════════════════════════════════════════════════════════════════════════
 
-  const deck = assembleDeck(outline, validatedSlides, { theme, titleSlideType });
+  const deck = assembleDeck(outline, validatedSlides, {
+    theme,
+    titleSlideType,
+  });
 
   // Add generation metadata
   deck._generationMeta = {
@@ -232,7 +261,9 @@ export async function generateDeckV2(rawContent, {
   }
 
   log.info(`Session ${sessionId} complete in ${Date.now() - startTime}ms`);
-  log.info(`Slide types: ${JSON.stringify(deck._generationMeta.slideTypeDistribution)}`);
+  log.info(
+    `Slide types: ${JSON.stringify(deck._generationMeta.slideTypeDistribution)}`,
+  );
 
   return deck;
 }

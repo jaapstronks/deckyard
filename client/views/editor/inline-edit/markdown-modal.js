@@ -79,11 +79,18 @@ export function createMarkdownEditModal({
     const editorEl = mdField(
       label,
       raw,
-      t('editor.markdown.help', 'Supports paragraphs, lists, bold/italic, links, and markdown tables.'),
+      t(
+        'editor.markdown.help',
+        'Supports paragraphs, lists, bold/italic, links, and markdown tables.',
+      ),
       (v) => {
         latest = v;
       },
-      { maxLength: meta?.maxLength, required: !!meta?.required, showHeading: true }
+      {
+        maxLength: meta?.maxLength,
+        required: !!meta?.required,
+        showHeading: true,
+      },
     );
     // Collab presence: while this modal is open, focus inside it reports the
     // edited field's path, so collaborators see a ring on the matching canvas
@@ -113,11 +120,17 @@ export function createMarkdownEditModal({
       onclick: cancel,
     });
     const header = h('div', { class: 'ie-md-header row spread' }, [
-      h('div', { class: 'ie-md-mode', text: t('editor.inline.editingField', 'Editing: {label}', { label }) }),
+      h('div', {
+        class: 'ie-md-mode',
+        text: t('editor.inline.editingField', 'Editing: {label}', { label }),
+      }),
       closeBtn,
     ]);
     const footer = h('div', { class: 'ie-md-footer row spread' }, [
-      h('span', { class: 'help', text: t('editor.inline.markdownHint', 'Ctrl/⌘ + Enter to save') }),
+      h('span', {
+        class: 'help',
+        text: t('editor.inline.markdownHint', 'Ctrl/⌘ + Enter to save'),
+      }),
       h('div', { class: 'row' }, [
         h('button', {
           class: 'btn btn-secondary btn-sm',
@@ -134,14 +147,22 @@ export function createMarkdownEditModal({
       ]),
     ]);
 
-    const modal = h('div', { class: 'ie-md-modal' }, [header, editorEl, footer]);
+    const modal = h('div', { class: 'ie-md-modal' }, [
+      header,
+      editorEl,
+      footer,
+    ]);
     const backdrop = h('div', { class: 'ie-modal-backdrop' });
     backdrop.addEventListener('click', cancel);
 
     mdHost.classList.add('is-ie-modal-open');
     mdHost.append(backdrop, modal);
 
-    const detach = installDismissOnOutside({ rootEl: modal, isOpen: () => true, close: cancel });
+    const detach = installDismissOnOutside({
+      rootEl: modal,
+      isOpen: () => true,
+      close: cancel,
+    });
     closeMarkdownModal = () => {
       detach?.();
       backdrop.remove();

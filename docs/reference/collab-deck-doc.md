@@ -1,9 +1,9 @@
 # Collab deck document (CRDT schema + serializer + persistence)
 
-*How a deck maps onto a Yjs document for real-time collaboration (phase 2,
+_How a deck maps onto a Yjs document for real-time collaboration (phase 2,
 steps 1–2 and 4 of [ADR 001](../adr/001-realtime-collaboration.md) §4–6).
 The editor binder (step 3) is documented in
-[collab-editor-binder.md](collab-editor-binder.md).*
+[collab-editor-binder.md](collab-editor-binder.md)._
 
 ## The mapping
 
@@ -108,7 +108,7 @@ persistence hooks (`server/collab/persistence.js`):
 - **onStoreDocument** — debounced (2 s, max 10 s; flushed on last client
   disconnect): store the doc binary **and** serialize back to the deck JSON
   through the existing `updatePresentation` facade — no `expectedRevision`
-  (the doc *is* the merge), but validation, normalization, cache
+  (the doc _is_ the merge), but validation, normalization, cache
   invalidation, `deckUpdated` SSE and throttled auto-snapshots
   (`reason: 'collab'`) all apply. If serialization fails, the binary is kept
   and the JSON is left untouched (at most one debounce window stale). An
@@ -122,7 +122,7 @@ live CRDT state; the deck JSON stays the durable format. Deleting a binary
 is always safe (next open re-bootstraps from JSON).
 
 **Cold-binary invalidation**: any successful `updatePresentation` that did
-*not* originate from the collab doc (`reason !== 'collab'`) deletes the
+_not_ originate from the collab doc (`reason !== 'collab'`) deletes the
 stored binary, as does trashing a deck. Without this, a REST/MCP/AI save
 made while no collab clients are connected would be overwritten by stale
 doc state on the next collab open. The invalidation runs regardless of the

@@ -2,11 +2,12 @@
  * Presentation-specific analytics metrics endpoints.
  */
 
-import { extractValidatedDateRange, parsePaginationParams } from '../../../utils/request-validators.js';
-import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import {
-  publicDeviceLabel,
-} from '../../../analytics/helpers.js';
+  extractValidatedDateRange,
+  parsePaginationParams,
+} from '../../../utils/request-validators.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
+import { publicDeviceLabel } from '../../../analytics/helpers.js';
 import { badRequest, serveJson } from '../../../utils/http.js';
 import { getViewSessionsForPresentation } from '../../../storage/analytics/view-sessions.js';
 import {
@@ -36,8 +37,11 @@ export async function handleOverview(ctx, presentationId) {
   });
   if (!dateRange) return true;
 
-  const overview = await getPresentationAnalyticsOverview(presentationId, dateRange);
-  return serveJson(res, 200, overview), true;
+  const overview = await getPresentationAnalyticsOverview(
+    presentationId,
+    dateRange,
+  );
+  return (serveJson(res, 200, overview), true);
 }
 
 /**
@@ -61,7 +65,7 @@ export async function handleSlides(ctx, presentationId) {
   if (!dateRange) return true;
 
   const slides = await getDetailedSlideEngagement(presentationId, dateRange);
-  return serveJson(res, 200, { slides }), true;
+  return (serveJson(res, 200, { slides }), true);
 }
 
 /**
@@ -85,7 +89,7 @@ export async function handleHeatmap(ctx, presentationId) {
   if (!dateRange) return true;
 
   const heatmap = await getInteractionHeatmapData(presentationId, dateRange);
-  return serveJson(res, 200, { slides: heatmap }), true;
+  return (serveJson(res, 200, { slides: heatmap }), true);
 }
 
 /**
@@ -109,7 +113,7 @@ export async function handleJourney(ctx, presentationId) {
   if (!dateRange) return true;
 
   const journey = await getViewerJourneyData(presentationId, dateRange);
-  return serveJson(res, 200, journey), true;
+  return (serveJson(res, 200, journey), true);
 }
 
 /**
@@ -155,5 +159,5 @@ export async function handleSessions(ctx, presentationId) {
     deviceId: publicDeviceLabel(session.deviceId, presentationId),
   }));
 
-  return serveJson(res, 200, { ...result, sessions }), true;
+  return (serveJson(res, 200, { ...result, sessions }), true);
 }

@@ -63,7 +63,10 @@ function resolveImageElement(slide, def, idx) {
     member = slide.content;
     imageField = sub(media.imageField);
     altField = sub(media.altField);
-    extraFields = (media.extraFields || []).map((f) => ({ ...f, key: sub(f.key) }));
+    extraFields = (media.extraFields || []).map((f) => ({
+      ...f,
+      key: sub(f.key),
+    }));
   }
   if (!member || typeof member !== 'object') return null;
 
@@ -132,7 +135,8 @@ export function renderImageElementCard({
 } = {}) {
   const resolved = resolveImageElement(slide, def, idx);
   if (!resolved) return false;
-  const { member, imageField, altField, extraFields, focus, fit, bleed } = resolved;
+  const { member, imageField, altField, extraFields, focus, fit, bleed } =
+    resolved;
   const { fieldImage, fieldText, fieldEnum } = fieldRenderers;
 
   const hasImage = !!String(member[imageField] || '').trim();
@@ -157,8 +161,8 @@ export function renderImageElementCard({
           rerenderEditor?.();
           rerenderPreview?.();
           scheduleUiRefresh?.();
-        }
-      )
+        },
+      ),
     );
   }
 
@@ -173,8 +177,8 @@ export function renderImageElementCard({
           member[altField] = v;
           markDirty?.();
           scheduleUiRefresh?.();
-        }
-      )
+        },
+      ),
     );
   }
 
@@ -189,8 +193,8 @@ export function renderImageElementCard({
             member[f.key] = v;
             markDirty?.();
             scheduleUiRefresh?.();
-          }
-        )
+          },
+        ),
       );
     }
   }
@@ -207,7 +211,11 @@ export function renderImageElementCard({
         : 'cover'
       : '';
     const current =
-      typeof member[fit.key] === 'string' ? member[fit.key] : fit.hasDefault ? '' : 'cover';
+      typeof member[fit.key] === 'string'
+        ? member[fit.key]
+        : fit.hasDefault
+          ? ''
+          : 'cover';
     container.append(
       fieldEnum(
         {
@@ -223,8 +231,8 @@ export function renderImageElementCard({
           // disappears with the mode, and repaint the canvas frame + focal point.
           rerenderEditor?.();
           rerenderPreview?.();
-        }
-      )
+        },
+      ),
     );
   }
 
@@ -234,7 +242,9 @@ export function renderImageElementCard({
   if (hasImage && bleed && typeof fieldEnum === 'function') {
     const typeDefaultBleed = def?.imageDefaults?.bleed === true;
     const currentBleed =
-      typeof member[bleed.key] === 'boolean' ? member[bleed.key] : typeDefaultBleed;
+      typeof member[bleed.key] === 'boolean'
+        ? member[bleed.key]
+        : typeDefaultBleed;
     container.append(
       fieldEnum(
         {
@@ -252,8 +262,8 @@ export function renderImageElementCard({
           markDirty?.();
           rerenderPreview?.();
           scheduleUiRefresh?.();
-        }
-      )
+        },
+      ),
     );
   }
 
@@ -269,7 +279,7 @@ export function renderImageElementCard({
         label: t('editor.imageText.imageFocus', 'Image focus (crop)'),
         helpText: t(
           'editor.image.focusGridHelp',
-          'Drag the point on the image, or pick a position here.'
+          'Drag the point on the image, or pick a position here.',
         ),
         focusX: member[focus.xKey],
         focusY: member[focus.yKey],
@@ -280,7 +290,7 @@ export function renderImageElementCard({
           rerenderPreview?.();
           scheduleUiRefresh?.();
         },
-      })
+      }),
     );
   } else if (hasImage && focus && focus.containSelector) {
     const posEl = renderImagePositionPicker({

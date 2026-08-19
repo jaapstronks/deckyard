@@ -12,13 +12,16 @@ export const up = async (db) => {
     .createTable('share_link_guests')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade').notNull()
+      col.references('organizations.id').onDelete('cascade').notNull(),
     )
     .addColumn('share_link_id', 'uuid', (col) =>
-      col.references('presentation_share_links.id').onDelete('cascade').notNull()
+      col
+        .references('presentation_share_links.id')
+        .onDelete('cascade')
+        .notNull(),
     )
     .addColumn('email', 'varchar(320)', (col) => col.notNull())
     .addColumn('name', 'varchar(255)')
@@ -64,9 +67,18 @@ export const up = async (db) => {
 
 export const down = async (db) => {
   // Drop indexes first
-  await db.schema.dropIndex('idx_share_link_guests_email_created').ifExists().execute();
-  await db.schema.dropIndex('idx_share_link_guests_session').ifExists().execute();
-  await db.schema.dropIndex('idx_share_link_guests_verification').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_share_link_guests_email_created')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_share_link_guests_session')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_share_link_guests_verification')
+    .ifExists()
+    .execute();
 
   // Drop table
   await db.schema.dropTable('share_link_guests').ifExists().execute();

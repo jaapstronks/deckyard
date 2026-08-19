@@ -45,13 +45,18 @@ export function createTopbar({
       class: 'presentation-brand-logo',
       src: brandLogo,
       alt: brandAlt,
-    })
+    }),
   );
   brandSection.append(brand);
 
   // Search input
   const searchWrapper = h('div', { class: 'topbar-search-wrapper' });
-  const searchIcon = h('img', { class: 'topbar-search-icon', src: iconUrl('search'), alt: '', 'aria-hidden': 'true' });
+  const searchIcon = h('img', {
+    class: 'topbar-search-icon',
+    src: iconUrl('search'),
+    alt: '',
+    'aria-hidden': 'true',
+  });
   const searchInput = h('input', {
     type: 'search',
     class: 'topbar-search-input',
@@ -92,7 +97,7 @@ export function createTopbar({
     searchWrapper,
     uiMode.el,
     notificationBell.el,
-    userMenu.el
+    userMenu.el,
   );
 
   return {

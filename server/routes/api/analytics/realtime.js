@@ -32,7 +32,9 @@ export async function handleRealtime(ctx, presentationId) {
 
   // Send initial count
   const initialCount = await getActiveViewerCount(presentationId);
-  res.write(`event: viewerCount\ndata: ${JSON.stringify({ count: initialCount })}\n\n`);
+  res.write(
+    `event: viewerCount\ndata: ${JSON.stringify({ count: initialCount })}\n\n`,
+  );
 
   // Set up interval for updates (using configurable interval)
   const intervalId = setInterval(async () => {
@@ -72,4 +74,3 @@ export async function handleRealtime(ctx, presentationId) {
 
   return true;
 }
-

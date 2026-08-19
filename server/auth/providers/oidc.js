@@ -102,7 +102,11 @@ export async function buildLoginRequest(oidc = getOidcConfig()) {
  * @param {object} [oidc] - Config from {@link getOidcConfig}.
  * @returns {Promise<object>} The verified ID-token claims.
  */
-export async function completeLogin(currentUrl, checks, oidc = getOidcConfig()) {
+export async function completeLogin(
+  currentUrl,
+  checks,
+  oidc = getOidcConfig(),
+) {
   const config = await getOidcClientConfig(oidc);
   const url = typeof currentUrl === 'string' ? new URL(currentUrl) : currentUrl;
 
@@ -146,7 +150,9 @@ function extractGroups(claims) {
     if (Array.isArray(v)) out.push(...v);
     else if (typeof v === 'string' && v) out.push(...v.split(/[\s,]+/));
   }
-  return [...new Set(out.map((s) => String(s).trim().toLowerCase()).filter(Boolean))];
+  return [
+    ...new Set(out.map((s) => String(s).trim().toLowerCase()).filter(Boolean)),
+  ];
 }
 
 /**
@@ -188,14 +194,20 @@ export function mapClaimsToIdentity(claims, oidc = getOidcConfig()) {
     claims.email_verified === true ||
     String(claims.email_verified).toLowerCase() === 'true';
   if (!verified) {
-    throw new OidcError('email_unverified', `Email ${email} is not verified at the IdP`);
+    throw new OidcError(
+      'email_unverified',
+      `Email ${email} is not verified at the IdP`,
+    );
   }
 
   // Optional hosted-domain guard: restrict logins to configured domains.
   if (oidc.allowedDomains.length) {
     const domain = email.slice(email.lastIndexOf('@') + 1);
     if (!oidc.allowedDomains.includes(domain)) {
-      throw new OidcError('domain_not_allowed', `Domain ${domain} is not in OIDC_ALLOWED_DOMAINS`);
+      throw new OidcError(
+        'domain_not_allowed',
+        `Domain ${domain} is not in OIDC_ALLOWED_DOMAINS`,
+      );
     }
   }
 

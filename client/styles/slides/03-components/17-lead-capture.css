@@ -2,8 +2,8 @@
 
 .slide-lead-capture {
   --interaction-surface: rgba(255, 255, 255, 0.94);
-  --interaction-surface-2: rgba(255, 255, 255, 0.70);
-  --interaction-border: rgba(0, 0, 0, 0.10);
+  --interaction-surface-2: rgba(255, 255, 255, 0.7);
+  --interaction-border: rgba(0, 0, 0, 0.1);
   /* Read the shared elevation tokens: they carry the theme shadow-scale and the
      single @media print flattening from 00-tokens.css for free, so this slide
      needs no local print guard of its own. */
@@ -14,7 +14,11 @@
 @supports (color: color-mix(in srgb, white 50%, black)) {
   .slide-lead-capture {
     --interaction-surface: color-mix(in srgb, white 94%, var(--slide-surface));
-    --interaction-surface-2: color-mix(in srgb, white 76%, var(--slide-surface));
+    --interaction-surface-2: color-mix(
+      in srgb,
+      white 76%,
+      var(--slide-surface)
+    );
     --interaction-border: color-mix(in srgb, currentColor 16%, transparent);
   }
 }
@@ -104,7 +108,9 @@
      light surface whatever the variant did to the slide's text colour. */
   --slide-on-surface: var(--slide-on-light);
   color: var(--slide-on-surface);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
   width: 100%;
   box-sizing: border-box;
 }
@@ -176,7 +182,10 @@
   background: var(--slide-accent);
   color: var(--slide-on-accent);
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
   box-shadow: var(--interaction-shadow-sm);
 }
 

@@ -15,7 +15,8 @@ import { SLIDE_CANVAS_WIDTH } from './data.js';
 // Scale a rendered thumbnail's slide to exactly fill its (fluid) tile.
 export const applyThumbScale = (wrap) => {
   const w = wrap.clientWidth;
-  if (w > 0) wrap.style.setProperty('--thumb-scale', String(w / SLIDE_CANVAS_WIDTH));
+  if (w > 0)
+    wrap.style.setProperty('--thumb-scale', String(w / SLIDE_CANVAS_WIDTH));
 };
 
 // Static mockup for the video slide: a poster frame with a play button. The
@@ -49,7 +50,7 @@ export const fillEmbedThumb = (h, thumbWrap) => {
     h('span', { class: 'ps-type-embed-dot' }),
     h('span', { class: 'ps-type-embed-dot' }),
     h('span', { class: 'ps-type-embed-dot' }),
-    h('span', { class: 'ps-type-embed-url' })
+    h('span', { class: 'ps-type-embed-url' }),
   );
   const bodyEl = h('div', { class: 'ps-type-embed-body' });
   bodyEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.6-3.8-9s1.3-6.5 3.8-9z"/></svg>`;
@@ -63,6 +64,10 @@ export const fillEmbedThumb = (h, thumbWrap) => {
 export const fillSchematic = (thumbWrap, h, SLIDE_TYPES) => {
   const type = thumbWrap.dataset.thumbType;
   thumbWrap.classList.remove('is-pending');
-  const spec = schematicFor(type, thumbWrap.__presetId || null, SLIDE_TYPES?.[type]);
+  const spec = schematicFor(
+    type,
+    thumbWrap.__presetId || null,
+    SLIDE_TYPES?.[type],
+  );
   thumbWrap.append(renderSlideSchematic(h, spec || {}));
 };

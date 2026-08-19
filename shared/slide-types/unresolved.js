@@ -246,7 +246,8 @@ function truncate(text, max) {
  * @returns {string} slide markup
  */
 export function renderUnresolvedSlideHtml(slide) {
-  const content = slide?.content && typeof slide.content === 'object' ? slide.content : {};
+  const content =
+    slide?.content && typeof slide.content === 'object' ? slide.content : {};
   const info = describeUnresolvedType(slide?.type);
   const heading = placeholderHeading(content, info);
   const notes = unresolvedNotes(info)
@@ -254,7 +255,9 @@ export function renderUnresolvedSlideHtml(slide) {
     .join('');
 
   // The field promoted to the heading is not repeated as a row.
-  const entries = unresolvedContentEntries(content).filter((e) => e.key !== heading.key);
+  const entries = unresolvedContentEntries(content).filter(
+    (e) => e.key !== heading.key,
+  );
   const shown = entries.slice(0, CANVAS_ENTRY_LIMIT);
   const hidden = entries.length - shown.length;
   const rows = shown
@@ -262,14 +265,14 @@ export function renderUnresolvedSlideHtml(slide) {
       (entry) => `<div class="unresolved-row">
             <dt>${escapeHtml(entry.label)}</dt>
             <dd>${escapeHtml(truncate(entry.lines.join(' · '), CANVAS_VALUE_LIMIT))}</dd>
-          </div>`
+          </div>`,
     )
     .join('');
   const list = rows ? `<dl class="unresolved-content">${rows}</dl>` : '';
   const more =
     hidden > 0
       ? `<p class="unresolved-more">${escapeHtml(
-          `+${hidden} more field${hidden === 1 ? '' : 's'} — open the reader view for the full content.`
+          `+${hidden} more field${hidden === 1 ? '' : 's'} — open the reader view for the full content.`,
         )}</p>`
       : '';
 
@@ -299,8 +302,12 @@ export function renderUnresolvedSlideHtml(slide) {
  *   the section heading, so it is not repeated in the body.
  * @returns {string} inner HTML for the reader's <section>
  */
-export function renderUnresolvedSlideSemanticHtml(slide, { headingKey = null } = {}) {
-  const content = slide?.content && typeof slide.content === 'object' ? slide.content : {};
+export function renderUnresolvedSlideSemanticHtml(
+  slide,
+  { headingKey = null } = {},
+) {
+  const content =
+    slide?.content && typeof slide.content === 'object' ? slide.content : {};
   const info = describeUnresolvedType(slide?.type);
   const notes = unresolvedNotes(info)
     .map((line) => `<p class="reader-archived">${escapeHtml(line)}</p>`)
@@ -312,7 +319,7 @@ export function renderUnresolvedSlideSemanticHtml(slide, { headingKey = null } =
       (entry) => `<div class="reader-field">
           <dt>${escapeHtml(entry.label)}</dt>
           <dd>${entry.lines.map((line) => `<p>${escapeHtml(line)}</p>`).join('')}</dd>
-        </div>`
+        </div>`,
     )
     .join('\n');
 
@@ -328,7 +335,8 @@ export function renderUnresolvedSlideSemanticHtml(slide, { headingKey = null } =
  * @returns {{title: string, body: string}}
  */
 export function unresolvedSlideAsMarkdown(slide) {
-  const content = slide?.content && typeof slide.content === 'object' ? slide.content : {};
+  const content =
+    slide?.content && typeof slide.content === 'object' ? slide.content : {};
   const info = describeUnresolvedType(slide?.type);
   const lines = unresolvedNotes(info).slice();
   const entries = unresolvedContentEntries(content);

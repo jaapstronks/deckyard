@@ -79,7 +79,7 @@ export function editorFormShot(lang) {
       await page
         .waitForFunction(
           () => !document.querySelector('.editor-loading-skeleton'),
-          { timeout: 15_000 }
+          { timeout: 15_000 },
         )
         .catch(() => {});
       await page.click('.editor-bulk-edit-btn');
@@ -144,13 +144,15 @@ export function pollLiveShot(lang) {
       // early yields the zero state this shot exists to replace.
       await page.waitForFunction(
         (expected) => {
-          const el = document.querySelector('.deck-stage-inner [data-poll-total]');
+          const el = document.querySelector(
+            '.deck-stage-inner [data-poll-total]',
+          );
           if (!el) return false;
           const n = Number((el.textContent || '').replace(/\D+/g, ''));
           return n === expected;
         },
         { timeout: 20_000 },
-        MARKETING_POLL_VOTES.reduce((a, b) => a + b, 0)
+        MARKETING_POLL_VOTES.reduce((a, b) => a + b, 0),
       );
     },
   };
@@ -217,7 +219,7 @@ export function joinScreenShot(lang) {
           const drawn = qr instanceof HTMLCanvasElement && qr.width > 0;
           return drawn && !!code && (code.textContent || '').trim().length > 0;
         },
-        { timeout: 20_000 }
+        { timeout: 20_000 },
       );
       // Last, so the runtime cannot overwrite it: the slide would otherwise
       // advertise the capture box. See rewriteJoinOrigin for why this is not

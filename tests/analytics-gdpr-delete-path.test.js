@@ -56,12 +56,10 @@ const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
 // The expensive-op bucket the GDPR endpoints use; its capacity bounds the
 // rate-limit tests below without hard-coding the number twice.
 const { AUTH_RATE_LIMITS } = await import('../server/config/rate-limits.js');
-const { handleExportMyData, handleDeleteMyData } = await import(
-  '../server/routes/api/analytics/gdpr.js'
-);
-const { exportUserAnalyticsData, deleteUserAnalyticsData } = await import(
-  '../server/storage/analytics/view-sessions.js'
-);
+const { handleExportMyData, handleDeleteMyData } =
+  await import('../server/routes/api/analytics/gdpr.js');
+const { exportUserAnalyticsData, deleteUserAnalyticsData } =
+  await import('../server/storage/analytics/view-sessions.js');
 
 const ORG_A = 'org-aaaa';
 const ORG_B = 'org-bbbb';
@@ -145,7 +143,13 @@ function sessionRow({
 }
 
 /** A `slide_views` row belonging to one session. */
-function slideViewRow({ id, sessionId, deck = DECK_IN_A, slideId = 'slide-1', index = 0 }) {
+function slideViewRow({
+  id,
+  sessionId,
+  deck = DECK_IN_A,
+  slideId = 'slide-1',
+  index = 0,
+}) {
   return {
     id,
     view_session_id: sessionId,
@@ -166,8 +170,10 @@ function seed({ sessions = [], slideViews = [] } = {}) {
   return db;
 }
 
-const sessionIds = (db) => (db.__tables.view_sessions || []).map((r) => r.id).sort();
-const slideViewIds = (db) => (db.__tables.slide_views || []).map((r) => r.id).sort();
+const sessionIds = (db) =>
+  (db.__tables.view_sessions || []).map((r) => r.id).sort();
+const slideViewIds = (db) =>
+  (db.__tables.slide_views || []).map((r) => r.id).sort();
 
 test.beforeEach(() => {
   resetRateLimitBuckets();
@@ -186,7 +192,10 @@ test('export returns the caller’s own sessions and slide views', async () => {
     ],
   });
 
-  const { res, handled } = await invoke(handleExportMyData, { email: ALICE, organizationId: ORG_A });
+  const { res, handled } = await invoke(handleExportMyData, {
+    email: ALICE,
+    organizationId: ORG_A,
+  });
 
   assert.equal(handled, true);
   assert.equal(res.statusCode, 200);
@@ -199,7 +208,9 @@ test('export returns the caller’s own sessions and slide views', async () => {
 test('export refuses an unauthenticated caller and reads nothing', async () => {
   const db = seed({ sessions: [sessionRow({ id: 's1', email: ALICE })] });
 
-  const { res, handled } = await invoke(handleExportMyData, { organizationId: ORG_A });
+  const { res, handled } = await invoke(handleExportMyData, {
+    organizationId: ORG_A,
+  });
 
   assert.equal(handled, true);
   assert.equal(res.statusCode, 401);
@@ -211,7 +222,7 @@ test('export refuses an unauthenticated caller and reads nothing', async () => {
   assert.deepEqual(
     db.__queryLog,
     [],
-    'the 401 is returned before storage is touched — no query is issued'
+    'the 401 is returned before storage is touched — no query is issued',
   );
 });
 
@@ -225,18 +236,21 @@ test('export covers the caller’s rows in every organization, and no one else�
     ],
   });
 
-  const { res } = await invoke(handleExportMyData, { email: ALICE, organizationId: ORG_A });
+  const { res } = await invoke(handleExportMyData, {
+    email: ALICE,
+    organizationId: ORG_A,
+  });
 
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.totalSessions, 2, 'both of Alice’s sessions come back');
-  assert.deepEqual(
-    res.body.sessions.map((s) => s.presentationId).sort(),
-    [DECK_IN_A, DECK_IN_B]
-  );
+  assert.deepEqual(res.body.sessions.map((s) => s.presentationId).sort(), [
+    DECK_IN_A,
+    DECK_IN_B,
+  ]);
   assert.deepEqual(
     [...new Set(res.body.sessions.map((s) => s.viewerEmail))],
     [ALICE],
-    'no other person’s rows are exported'
+    'no other person’s rows are exported',
   );
 });
 
@@ -247,11 +261,17 @@ test('export ignores which organization the caller is acting in', async () => {
   ];
 
   seed({ sessions: rows });
-  const actingInA = await invoke(handleExportMyData, { email: ALICE, organizationId: ORG_A });
+  const actingInA = await invoke(handleExportMyData, {
+    email: ALICE,
+    organizationId: ORG_A,
+  });
 
   resetRateLimitBuckets();
   seed({ sessions: rows });
-  const actingInB = await invoke(handleExportMyData, { email: ALICE, organizationId: ORG_B });
+  const actingInB = await invoke(handleExportMyData, {
+    email: ALICE,
+    organizationId: ORG_B,
+  });
 
   resetRateLimitBuckets();
   seed({ sessions: rows });
@@ -259,7 +279,11 @@ test('export ignores which organization the caller is acting in', async () => {
 
   for (const { res } of [actingInA, actingInB, noOrg]) {
     assert.equal(res.statusCode, 200);
-    assert.equal(res.body.totalSessions, 2, 'the acting organization does not narrow the answer');
+    assert.equal(
+      res.body.totalSessions,
+      2,
+      'the acting organization does not narrow the answer',
+    );
   }
 });
 
@@ -281,7 +305,10 @@ test('delete erases the caller’s rows in every organization, and their slide v
     ],
   });
 
-  const { res, handled } = await invoke(handleDeleteMyData, { email: ALICE, organizationId: ORG_A });
+  const { res, handled } = await invoke(handleDeleteMyData, {
+    email: ALICE,
+    organizationId: ORG_A,
+  });
 
   assert.equal(handled, true);
   assert.equal(res.statusCode, 200);
@@ -291,12 +318,12 @@ test('delete erases the caller’s rows in every organization, and their slide v
   assert.deepEqual(
     sessionIds(db),
     ['bob'],
-    'both of Alice’s sessions are gone; the other person’s survives'
+    'both of Alice’s sessions are gone; the other person’s survives',
   );
   assert.deepEqual(
     slideViewIds(db),
     ['v-bob'],
-    'the deleted sessions’ slide views go with them, and only those'
+    'the deleted sessions’ slide views go with them, and only those',
   );
 });
 
@@ -306,7 +333,10 @@ test('delete refuses an unauthenticated caller and removes nothing', async () =>
     slideViews: [slideViewRow({ id: 'v1', sessionId: 's1' })],
   });
 
-  const { res, handled } = await invoke(handleDeleteMyData, { email: '', organizationId: ORG_A });
+  const { res, handled } = await invoke(handleDeleteMyData, {
+    email: '',
+    organizationId: ORG_A,
+  });
 
   assert.equal(handled, true);
   assert.equal(res.statusCode, 401);
@@ -316,7 +346,11 @@ test('delete refuses an unauthenticated caller and removes nothing', async () =>
     message: 'Authentication required',
   });
   assert.deepEqual(sessionIds(db), ['s1'], 'nothing was deleted');
-  assert.deepEqual(db.__queryLog, [], 'the 401 short-circuits before any query');
+  assert.deepEqual(
+    db.__queryLog,
+    [],
+    'the 401 short-circuits before any query',
+  );
 });
 
 test('delete does not sweep up sessions that carry no email', async () => {
@@ -334,22 +368,36 @@ test('delete does not sweep up sessions that carry no email', async () => {
     ],
   });
 
-  const { res } = await invoke(handleDeleteMyData, { email: ALICE, organizationId: ORG_A });
+  const { res } = await invoke(handleDeleteMyData, {
+    email: ALICE,
+    organizationId: ORG_A,
+  });
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body.deleted, { sessions: 1, slideViews: 1 });
-  assert.deepEqual(sessionIds(db), ['anon-same-device'], 'the device-only row is untouched');
+  assert.deepEqual(
+    sessionIds(db),
+    ['anon-same-device'],
+    'the device-only row is untouched',
+  );
   assert.deepEqual(slideViewIds(db), ['v-anon']);
 });
 
 test('delete reports a zeroed count when the caller has no data (no false erasure)', async () => {
   const db = seed({ sessions: [sessionRow({ id: 'bob', email: BOB })] });
 
-  const { res } = await invoke(handleDeleteMyData, { email: ALICE, organizationId: ORG_A });
+  const { res } = await invoke(handleDeleteMyData, {
+    email: ALICE,
+    organizationId: ORG_A,
+  });
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body.deleted, { sessions: 0, slideViews: 0 });
-  assert.deepEqual(sessionIds(db), ['bob'], 'an unrelated session is left in place');
+  assert.deepEqual(
+    sessionIds(db),
+    ['bob'],
+    'an unrelated session is left in place',
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -388,7 +436,11 @@ test('export is rate-limited once the expensive-op bucket is spent', async () =>
 
   for (let i = 0; i < EXPENSIVE_CAP; i++) {
     const { res } = await invoke(handleExportMyData, user);
-    assert.equal(res.statusCode, 200, `call ${i + 1} within the burst is allowed`);
+    assert.equal(
+      res.statusCode,
+      200,
+      `call ${i + 1} within the burst is allowed`,
+    );
   }
 
   const { res } = await invoke(handleExportMyData, user);
@@ -404,7 +456,11 @@ test('delete is rate-limited once the expensive-op bucket is spent', async () =>
 
   for (let i = 0; i < EXPENSIVE_CAP; i++) {
     const { res } = await invoke(handleDeleteMyData, user);
-    assert.equal(res.statusCode, 200, `call ${i + 1} within the burst is allowed`);
+    assert.equal(
+      res.statusCode,
+      200,
+      `call ${i + 1} within the burst is allowed`,
+    );
   }
 
   const { res } = await invoke(handleDeleteMyData, user);

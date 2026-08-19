@@ -60,7 +60,10 @@ export function attachPointerSortable({
     let node = el.parentElement;
     while (node && node !== document.body) {
       const s = getComputedStyle(node);
-      if (/(auto|scroll)/.test(s.overflowY) && node.scrollHeight > node.clientHeight) {
+      if (
+        /(auto|scroll)/.test(s.overflowY) &&
+        node.scrollHeight > node.clientHeight
+      ) {
         return node;
       }
       node = node.parentElement;
@@ -109,7 +112,7 @@ export function attachPointerSortable({
       // Row gap = distance between consecutive item tops minus item height.
       drag.gap = Math.max(
         0,
-        drag.slots[1].top - drag.slots[0].top - drag.slots[0].height
+        drag.slots[1].top - drag.slots[0].top - drag.slots[0].height,
       );
     }
     if (drag.scrollParent) drag.startScrollTop = drag.scrollParent.scrollTop;
@@ -179,9 +182,14 @@ export function attachPointerSortable({
     const rect = sp.getBoundingClientRect();
     let speed = 0;
     if (drag.lastY < rect.top + SCROLL_ZONE) {
-      speed = -Math.ceil(((rect.top + SCROLL_ZONE - drag.lastY) / SCROLL_ZONE) * SCROLL_SPEED);
+      speed = -Math.ceil(
+        ((rect.top + SCROLL_ZONE - drag.lastY) / SCROLL_ZONE) * SCROLL_SPEED,
+      );
     } else if (drag.lastY > rect.bottom - SCROLL_ZONE) {
-      speed = Math.ceil(((drag.lastY - (rect.bottom - SCROLL_ZONE)) / SCROLL_ZONE) * SCROLL_SPEED);
+      speed = Math.ceil(
+        ((drag.lastY - (rect.bottom - SCROLL_ZONE)) / SCROLL_ZONE) *
+          SCROLL_SPEED,
+      );
     }
     if (speed) {
       sp.scrollTop += speed;

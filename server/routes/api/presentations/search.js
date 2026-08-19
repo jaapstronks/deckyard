@@ -3,7 +3,10 @@
  * Searches across presentation metadata and slide content.
  */
 
-import { listPresentations, getPresentation } from '../../../storage/presentations/index.js';
+import {
+  listPresentations,
+  getPresentation,
+} from '../../../storage/presentations/index.js';
 import { serveJson, badRequest } from '../../../utils/http.js';
 import { belongsInCollection } from './list.js';
 
@@ -72,12 +75,12 @@ function extractSlideText(slide) {
   if (Array.isArray(content.rows)) {
     for (const row of content.rows) {
       if (Array.isArray(row)) {
-        texts.push(...row.filter(cell => typeof cell === 'string'));
+        texts.push(...row.filter((cell) => typeof cell === 'string'));
       }
     }
   }
   if (Array.isArray(content.headers)) {
-    texts.push(...content.headers.filter(h => typeof h === 'string'));
+    texts.push(...content.headers.filter((h) => typeof h === 'string'));
   }
 
   // Poll/feedback options
@@ -134,7 +137,13 @@ function extractSlideText(slide) {
 /**
  * Search presentations with full-text matching
  */
-export async function handlePresentationsSearch({ repoRoot, storageScope, res, url, authedUser } = {}) {
+export async function handlePresentationsSearch({
+  repoRoot,
+  storageScope,
+  res,
+  url,
+  authedUser,
+} = {}) {
   const query = url.searchParams.get('q')?.trim();
   const deep = url.searchParams.get('deep') === 'true'; // Search slide content too
 
@@ -189,9 +198,13 @@ export async function handlePresentationsSearch({ repoRoot, storageScope, res, u
 
             // Also check i18n versions
             const slideI18n = fullPres.i18n?.slides?.[i];
-            const slideTextI18n = slideI18n ? extractSlideText({ content: slideI18n }) : '';
+            const slideTextI18n = slideI18n
+              ? extractSlideText({ content: slideI18n })
+              : '';
 
-            const combinedText = normalizeForSearch(slideText + ' ' + slideTextI18n);
+            const combinedText = normalizeForSearch(
+              slideText + ' ' + slideTextI18n,
+            );
             if (combinedText.includes(normalizedQuery)) {
               matches = true;
               matchLocations.push(`slide ${i + 1}`);

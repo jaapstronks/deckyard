@@ -23,28 +23,84 @@ import { moreIcon } from '../../../lib/dom/icons.js';
 // AI conversion targets — which types can each slide type convert to?
 const AI_CONVERT_TARGETS = {
   'content-slide': [
-    { type: 'list-slide', labelKey: 'slideType.list-slide.label', label: 'List' },
-    { type: 'icon-card-grid-slide', labelKey: 'slideType.icon-card-grid-slide.label', label: 'Icon cards' },
-    { type: 'text-blocks-slide', labelKey: 'slideType.text-blocks-slide.label', label: 'Text blocks' },
-    { type: 'kpi-metrics-slide', labelKey: 'slideType.kpi-metrics-slide.label', label: 'KPI metrics' },
+    {
+      type: 'list-slide',
+      labelKey: 'slideType.list-slide.label',
+      label: 'List',
+    },
+    {
+      type: 'icon-card-grid-slide',
+      labelKey: 'slideType.icon-card-grid-slide.label',
+      label: 'Icon cards',
+    },
+    {
+      type: 'text-blocks-slide',
+      labelKey: 'slideType.text-blocks-slide.label',
+      label: 'Text blocks',
+    },
+    {
+      type: 'kpi-metrics-slide',
+      labelKey: 'slideType.kpi-metrics-slide.label',
+      label: 'KPI metrics',
+    },
   ],
   'list-slide': [
-    { type: 'icon-card-grid-slide', labelKey: 'slideType.icon-card-grid-slide.label', label: 'Icon cards' },
-    { type: 'content-slide', labelKey: 'slideType.content-slide.label', label: 'Content' },
-    { type: 'text-blocks-slide', labelKey: 'slideType.text-blocks-slide.label', label: 'Text blocks' },
+    {
+      type: 'icon-card-grid-slide',
+      labelKey: 'slideType.icon-card-grid-slide.label',
+      label: 'Icon cards',
+    },
+    {
+      type: 'content-slide',
+      labelKey: 'slideType.content-slide.label',
+      label: 'Content',
+    },
+    {
+      type: 'text-blocks-slide',
+      labelKey: 'slideType.text-blocks-slide.label',
+      label: 'Text blocks',
+    },
   ],
   'icon-card-grid-slide': [
-    { type: 'list-slide', labelKey: 'slideType.list-slide.label', label: 'List' },
-    { type: 'content-slide', labelKey: 'slideType.content-slide.label', label: 'Content' },
-    { type: 'text-blocks-slide', labelKey: 'slideType.text-blocks-slide.label', label: 'Text blocks' },
+    {
+      type: 'list-slide',
+      labelKey: 'slideType.list-slide.label',
+      label: 'List',
+    },
+    {
+      type: 'content-slide',
+      labelKey: 'slideType.content-slide.label',
+      label: 'Content',
+    },
+    {
+      type: 'text-blocks-slide',
+      labelKey: 'slideType.text-blocks-slide.label',
+      label: 'Text blocks',
+    },
   ],
   'text-blocks-slide': [
-    { type: 'icon-card-grid-slide', labelKey: 'slideType.icon-card-grid-slide.label', label: 'Icon cards' },
-    { type: 'list-slide', labelKey: 'slideType.list-slide.label', label: 'List' },
+    {
+      type: 'icon-card-grid-slide',
+      labelKey: 'slideType.icon-card-grid-slide.label',
+      label: 'Icon cards',
+    },
+    {
+      type: 'list-slide',
+      labelKey: 'slideType.list-slide.label',
+      label: 'List',
+    },
   ],
   'kpi-metrics-slide': [
-    { type: 'content-slide', labelKey: 'slideType.content-slide.label', label: 'Content' },
-    { type: 'list-slide', labelKey: 'slideType.list-slide.label', label: 'List' },
+    {
+      type: 'content-slide',
+      labelKey: 'slideType.content-slide.label',
+      label: 'Content',
+    },
+    {
+      type: 'list-slide',
+      labelKey: 'slideType.list-slide.label',
+      label: 'List',
+    },
   ],
 };
 
@@ -103,7 +159,9 @@ export function buildHeaderActions({
   });
 
   // Build conversion submenu
-  const convertible = getConvertibleSlideTypes(slide, { slideTypes: SLIDE_TYPES });
+  const convertible = getConvertibleSlideTypes(slide, {
+    slideTypes: SLIDE_TYPES,
+  });
   const defFor = (type) => SLIDE_TYPES?.[type] || null;
   const typeLabel = (type) => {
     const def = defFor(type);
@@ -129,9 +187,16 @@ export function buildHeaderActions({
       triggerClass: 'dropdown-item',
       triggerContent: [
         h('span', { text: t('editor.slide.convert', 'Convert…') }),
-        h('span', { class: 'dropdown-submenu-caret', text: '›', 'aria-hidden': 'true' }),
+        h('span', {
+          class: 'dropdown-submenu-caret',
+          text: '›',
+          'aria-hidden': 'true',
+        }),
       ],
-      title: t('editor.slide.convert.title', 'Convert this slide to a different type (best-effort).'),
+      title: t(
+        'editor.slide.convert.title',
+        'Convert this slide to a different type (best-effort).',
+      ),
       detailsClass: 'dropdown-submenu',
       menuClass: 'dropdown-submenu-menu',
       dismissOnOutside: false,
@@ -158,7 +223,7 @@ export function buildHeaderActions({
               SLIDE_TYPES,
             });
           },
-        })
+        }),
       );
     }
   }
@@ -172,9 +237,16 @@ export function buildHeaderActions({
       triggerClass: 'dropdown-item',
       triggerContent: [
         h('span', { text: t('editor.slide.aiConvert', 'AI Convert…') }),
-        h('span', { class: 'dropdown-submenu-caret', text: '›', 'aria-hidden': 'true' }),
+        h('span', {
+          class: 'dropdown-submenu-caret',
+          text: '›',
+          'aria-hidden': 'true',
+        }),
       ],
-      title: t('editor.slide.aiConvert.title', 'Use AI to intelligently convert this slide to a different type.'),
+      title: t(
+        'editor.slide.aiConvert.title',
+        'Use AI to intelligently convert this slide to a different type.',
+      ),
       detailsClass: 'dropdown-submenu',
       menuClass: 'dropdown-submenu-menu',
       dismissOnOutside: false,
@@ -210,7 +282,7 @@ export function buildHeaderActions({
                   label: t('editor.slide.aiConvert.cancel', 'Cancel'),
                   onClick: () => controller.abort(),
                 },
-              }
+              },
             );
 
             try {
@@ -221,7 +293,12 @@ export function buildHeaderActions({
                 method: 'POST',
                 signal: controller.signal,
                 body: JSON.stringify({
-                  slide: { id: slide.id, type: slide.type, content: slide.content, notes: slide.notes || '' },
+                  slide: {
+                    id: slide.id,
+                    type: slide.type,
+                    content: slide.content,
+                    notes: slide.notes || '',
+                  },
                   toType: target.type,
                   lang,
                   vendor,
@@ -234,23 +311,38 @@ export function buildHeaderActions({
                 if (resp.slide.notes) slide.notes = resp.slide.notes;
                 converting.dismiss();
                 editorState.dirtyRefreshWithItem();
-                toast.success(t('editor.slide.aiConvert.done', 'Converted successfully!'));
+                toast.success(
+                  t('editor.slide.aiConvert.done', 'Converted successfully!'),
+                );
               } else {
-                throw new Error(resp?.error || t('common.unknownError', 'Unknown error'));
+                throw new Error(
+                  resp?.error || t('common.unknownError', 'Unknown error'),
+                );
               }
             } catch (e) {
               converting.dismiss();
               if (e?.name === 'AbortError') {
-                toast.info(t('editor.slide.aiConvert.cancelled', 'Conversion cancelled.'));
+                toast.info(
+                  t(
+                    'editor.slide.aiConvert.cancelled',
+                    'Conversion cancelled.',
+                  ),
+                );
               } else {
                 debugLog('[editor] AI convert slide failed', e);
-                toast.error(t('editor.slide.aiConvert.failed', 'Conversion failed: {error}', { error: e?.message || String(e) }));
+                toast.error(
+                  t(
+                    'editor.slide.aiConvert.failed',
+                    'Conversion failed: {error}',
+                    { error: e?.message || String(e) },
+                  ),
+                );
               }
             } finally {
               aiConvertBusy = false;
             }
           },
-        })
+        }),
       );
     }
   }
@@ -261,7 +353,10 @@ export function buildHeaderActions({
       class: 'dropdown-item slide-fill-translation-item',
       type: 'button',
       text: t('editor.slide.fillTranslation', 'Fill slide…'),
-      title: t('editor.slide.fillTranslation.title', 'Fill this slide from the other language (with preview).'),
+      title: t(
+        'editor.slide.fillTranslation.title',
+        'Fill this slide from the other language (with preview).',
+      ),
       onclick: async () => {
         actionsDetails.open = false;
         if (convertDetails) convertDetails.open = false;
@@ -278,8 +373,14 @@ export function buildHeaderActions({
       type: 'button',
       text: t('editor.slideLibrary.save', 'Save to slide library…'),
       title: canSaveToLibrary
-        ? t('editor.slideLibrary.save.title', 'Save this slide so you can reuse it later.')
-        : t('editor.slideLibrary.save.disabled', "This slide is managed automatically and can't be saved."),
+        ? t(
+            'editor.slideLibrary.save.title',
+            'Save this slide so you can reuse it later.',
+          )
+        : t(
+            'editor.slideLibrary.save.disabled',
+            "This slide is managed automatically and can't be saved.",
+          ),
       disabled: !canSaveToLibrary,
       onclick: () => {
         actionsDetails.open = false;
@@ -301,37 +402,47 @@ export function buildHeaderActions({
         const clone = structuredClone(slide);
         clone.id = newId();
         if (clone.type === 'poll-slide') {
-          if (!clone.content || typeof clone.content !== 'object') clone.content = {};
+          if (!clone.content || typeof clone.content !== 'object')
+            clone.content = {};
           clone.content.pollId = newId();
         }
-        pres.slides.splice(pres.slides.findIndex((s) => s.id === slide.id) + 1, 0, clone);
+        pres.slides.splice(
+          pres.slides.findIndex((s) => s.id === slide.id) + 1,
+          0,
+          clone,
+        );
         setSelectedSlideId?.(clone.id);
         editorState.dirtyRefreshAll();
       },
     }),
     // Admin-only: View/edit raw JSON
-    user?.isAdmin ? h('button', {
-      class: 'dropdown-item',
-      type: 'button',
-      text: t('admin.jsonDebug.menuItem', 'View JSON (Debug)'),
-      title: t('admin.jsonDebug.menuItemTitle', 'View and edit raw slide JSON data'),
-      onclick: () => {
-        actionsDetails.open = false;
-        if (convertDetails) convertDetails.open = false;
-        if (aiConvertDetails) aiConvertDetails.open = false;
-        openJsonDebugModal({
-          h,
-          root: document.body,
-          slide,
-          SLIDE_TYPES,
-          openOverlayClosers,
-          markDirty,
-          rerenderEditor,
-          rerenderPreview,
-          rerenderSlideList,
-        });
-      },
-    }) : null,
+    user?.isAdmin
+      ? h('button', {
+          class: 'dropdown-item',
+          type: 'button',
+          text: t('admin.jsonDebug.menuItem', 'View JSON (Debug)'),
+          title: t(
+            'admin.jsonDebug.menuItemTitle',
+            'View and edit raw slide JSON data',
+          ),
+          onclick: () => {
+            actionsDetails.open = false;
+            if (convertDetails) convertDetails.open = false;
+            if (aiConvertDetails) aiConvertDetails.open = false;
+            openJsonDebugModal({
+              h,
+              root: document.body,
+              slide,
+              SLIDE_TYPES,
+              openOverlayClosers,
+              markDirty,
+              rerenderEditor,
+              rerenderPreview,
+              rerenderSlideList,
+            });
+          },
+        })
+      : null,
     // Destructive action last, visually separated. Lives in the menu (not as a
     // standing header button) so the default chrome stays calm; power users
     // also have Delete/Backspace on the slide list and the bulk-action bar.
@@ -343,12 +454,15 @@ export function buildHeaderActions({
         actionsDetails.open = false;
         if (convertDetails) convertDetails.open = false;
         if (aiConvertDetails) aiConvertDetails.open = false;
-        if (!(await confirmModal(h, document.body, {
-          title: t('editor.slide.delete', 'Delete slide'),
-          message: t('editor.slide.deleteConfirm', 'Delete this slide?'),
-          confirmLabel: t('common.delete', 'Delete'),
-          danger: true,
-        }))) return;
+        if (
+          !(await confirmModal(h, document.body, {
+            title: t('editor.slide.delete', 'Delete slide'),
+            message: t('editor.slide.deleteConfirm', 'Delete this slide?'),
+            confirmLabel: t('common.delete', 'Delete'),
+            danger: true,
+          }))
+        )
+          return;
         // Keep the viewport where it was: select the slide that slid into the
         // deleted slot (former N+1 becomes the new N), clamped to the last
         // slide. Jumping back to slide 1 was inconsistent with the slide list,
@@ -394,7 +508,14 @@ export function buildHeaderActions({
         rerenderSlideList?.();
       },
     });
-    btnLock.append(h('img', { class: 'btn-lock-icon', src: isLocked ? iconUrl('lock-open') : iconUrl('lock'), alt: '', 'aria-hidden': 'true' }));
+    btnLock.append(
+      h('img', {
+        class: 'btn-lock-icon',
+        src: isLocked ? iconUrl('lock-open') : iconUrl('lock'),
+        alt: '',
+        'aria-hidden': 'true',
+      }),
+    );
   }
 
   if (btnLock) headerActions.append(btnLock);

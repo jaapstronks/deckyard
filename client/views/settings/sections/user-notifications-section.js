@@ -9,16 +9,36 @@ import { t } from '../../../lib/ui-i18n.js';
 import { disableForSandbox } from '../sandbox-disable.js';
 
 const LEVEL_OPTIONS = [
-  { value: 'watching', label: () => t('subscription.level.watching', 'Watching') },
-  { value: 'participating', label: () => t('subscription.level.participating', 'Participating') },
-  { value: 'mentions_only', label: () => t('subscription.level.mentionsOnly', 'Mentions only') },
+  {
+    value: 'watching',
+    label: () => t('subscription.level.watching', 'Watching'),
+  },
+  {
+    value: 'participating',
+    label: () => t('subscription.level.participating', 'Participating'),
+  },
+  {
+    value: 'mentions_only',
+    label: () => t('subscription.level.mentionsOnly', 'Mentions only'),
+  },
   { value: 'mute', label: () => t('subscription.level.mute', 'Mute') },
 ];
 
 const EMAIL_TYPES = [
-  { key: 'comment_created', label: () => t('settings.notifications.emailCommentCreated', 'New comments') },
-  { key: 'comment_reply', label: () => t('settings.notifications.emailCommentReply', 'Replies to your comments') },
-  { key: 'comment_mention', label: () => t('settings.notifications.emailCommentMention', 'Mentions') },
+  {
+    key: 'comment_created',
+    label: () =>
+      t('settings.notifications.emailCommentCreated', 'New comments'),
+  },
+  {
+    key: 'comment_reply',
+    label: () =>
+      t('settings.notifications.emailCommentReply', 'Replies to your comments'),
+  },
+  {
+    key: 'comment_mention',
+    label: () => t('settings.notifications.emailCommentMention', 'Mentions'),
+  },
 ];
 
 /**
@@ -33,32 +53,43 @@ export function createUserNotificationsSection({ h }) {
     h('div', {
       class: 'field-label',
       text: t('settings.notifications.title', 'Notifications'),
-    })
+    }),
   );
 
   const hint = h('div', {
     class: 'help',
     text: t(
       'settings.notifications.hint',
-      'Choose how you want to be notified about comments on your presentations.'
+      'Choose how you want to be notified about comments on your presentations.',
     ),
   });
 
   const emailCheckboxInput = h('input', { type: 'checkbox', checked: true });
-  const emailCheckbox = h('label', { class: 'row is-wrap', style: 'gap:10px;' }, [
-    emailCheckboxInput,
-    h('span', {
-      text: t('settings.notifications.emailEnabled', 'Email notifications'),
-    }),
-  ]);
+  const emailCheckbox = h(
+    'label',
+    { class: 'row is-wrap', style: 'gap:10px;' },
+    [
+      emailCheckboxInput,
+      h('span', {
+        text: t('settings.notifications.emailEnabled', 'Email notifications'),
+      }),
+    ],
+  );
 
   const slackCheckboxInput = h('input', { type: 'checkbox', checked: true });
-  const slackCheckbox = h('label', { class: 'row is-wrap', style: 'gap:10px;' }, [
-    slackCheckboxInput,
-    h('span', {
-      text: t('settings.notifications.slackEnabled', 'Slack / Teams notifications'),
-    }),
-  ]);
+  const slackCheckbox = h(
+    'label',
+    { class: 'row is-wrap', style: 'gap:10px;' },
+    [
+      slackCheckboxInput,
+      h('span', {
+        text: t(
+          'settings.notifications.slackEnabled',
+          'Slack / Teams notifications',
+        ),
+      }),
+    ],
+  );
 
   // Default subscription level (per-deck overrides win; see the deck's
   // more-menu → Deck notifications)
@@ -77,7 +108,7 @@ export function createUserNotificationsSection({ h }) {
       class: 'help',
       text: t(
         'settings.notifications.defaultLevel.help',
-        'Applies to decks without their own setting. Direct @mentions always come through.'
+        'Applies to decks without their own setting. Direct @mentions always come through.',
       ),
     }),
   ]);
@@ -109,7 +140,7 @@ export function createUserNotificationsSection({ h }) {
     content: card,
     message: t(
       'sandbox.settings.notifications',
-      'Notifications are off in the sandbox — a guest has no account to notify. In your own Deckyard, get email or Slack/Teams alerts when someone comments.'
+      'Notifications are off in the sandbox — a guest has no account to notify. In your own Deckyard, get email or Slack/Teams alerts when someone comments.',
     ),
   });
 
@@ -126,18 +157,27 @@ export function createUserNotificationsSection({ h }) {
       slackEnabled: slackCheckboxInput.checked,
       defaultLevel: levelSelect.value,
       emailByType: Object.fromEntries(
-        [...emailTypeInputs.entries()].map(([key, input]) => [key, input.checked])
+        [...emailTypeInputs.entries()].map(([key, input]) => [
+          key,
+          input.checked,
+        ]),
       ),
     }),
     setValues: (notifications) => {
-      const notif = notifications && typeof notifications === 'object' ? notifications : {};
+      const notif =
+        notifications && typeof notifications === 'object' ? notifications : {};
       // Default to true if not explicitly set to false
       emailCheckboxInput.checked = notif.emailEnabled !== false;
       slackCheckboxInput.checked = notif.slackEnabled !== false;
-      levelSelect.value = LEVEL_OPTIONS.some((o) => o.value === notif.defaultLevel)
+      levelSelect.value = LEVEL_OPTIONS.some(
+        (o) => o.value === notif.defaultLevel,
+      )
         ? notif.defaultLevel
         : 'participating';
-      const byType = notif.emailByType && typeof notif.emailByType === 'object' ? notif.emailByType : {};
+      const byType =
+        notif.emailByType && typeof notif.emailByType === 'object'
+          ? notif.emailByType
+          : {};
       for (const [key, input] of emailTypeInputs) {
         input.checked = byType[key] !== false;
       }

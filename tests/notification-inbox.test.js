@@ -32,37 +32,37 @@ describe('scope refusal', () => {
 
 describe('archiveNotification (no-DB contract)', () => {
   it('validates params', async () => {
-    assert.deepStrictEqual(
-      await archiveNotification(ORG, '', 'a@b.c'),
-      { ok: false, reason: 'invalid_params' }
-    );
-    assert.deepStrictEqual(
-      await archiveNotification(ORG, 'n-1', ''),
-      { ok: false, reason: 'invalid_params' }
-    );
+    assert.deepStrictEqual(await archiveNotification(ORG, '', 'a@b.c'), {
+      ok: false,
+      reason: 'invalid_params',
+    });
+    assert.deepStrictEqual(await archiveNotification(ORG, 'n-1', ''), {
+      ok: false,
+      reason: 'invalid_params',
+    });
   });
 
   it('reports unavailable without a database', async () => {
-    assert.deepStrictEqual(
-      await archiveNotification(ORG, 'n-1', 'a@b.c'),
-      { ok: false, reason: 'unavailable' }
-    );
+    assert.deepStrictEqual(await archiveNotification(ORG, 'n-1', 'a@b.c'), {
+      ok: false,
+      reason: 'unavailable',
+    });
   });
 });
 
 describe('archiveAllNotifications (no-DB contract)', () => {
   it('requires an email', async () => {
-    assert.deepStrictEqual(
-      await archiveAllNotifications(ORG, ''),
-      { ok: false, reason: 'invalid_email' }
-    );
+    assert.deepStrictEqual(await archiveAllNotifications(ORG, ''), {
+      ok: false,
+      reason: 'invalid_email',
+    });
   });
 
   it('reports unavailable without a database', async () => {
-    assert.deepStrictEqual(
-      await archiveAllNotifications(ORG, 'a@b.c'),
-      { ok: false, reason: 'unavailable' }
-    );
+    assert.deepStrictEqual(await archiveAllNotifications(ORG, 'a@b.c'), {
+      ok: false,
+      reason: 'unavailable',
+    });
   });
 });
 
@@ -70,22 +70,22 @@ describe('archiveThreadNotifications (no-DB contract)', () => {
   it('validates params', async () => {
     assert.deepStrictEqual(
       await archiveThreadNotifications(ORG, '', 'p-1', 't-1'),
-      { ok: false, reason: 'invalid_params' }
+      { ok: false, reason: 'invalid_params' },
     );
     assert.deepStrictEqual(
       await archiveThreadNotifications(ORG, 'a@b.c', '', 't-1'),
-      { ok: false, reason: 'invalid_params' }
+      { ok: false, reason: 'invalid_params' },
     );
     assert.deepStrictEqual(
       await archiveThreadNotifications(ORG, 'a@b.c', 'p-1', ''),
-      { ok: false, reason: 'invalid_params' }
+      { ok: false, reason: 'invalid_params' },
     );
   });
 
   it('reports unavailable without a database', async () => {
     assert.deepStrictEqual(
       await archiveThreadNotifications(ORG, 'a@b.c', 'p-1', 't-1'),
-      { ok: false, reason: 'unavailable' }
+      { ok: false, reason: 'unavailable' },
     );
   });
 });
@@ -93,10 +93,13 @@ describe('archiveThreadNotifications (no-DB contract)', () => {
 describe('list/count guards still hold with the new options', () => {
   it('listNotifications returns [] without a user or DB, for every filter shape', async () => {
     assert.deepStrictEqual(await listNotifications(ORG, '', {}), []);
-    assert.deepStrictEqual(await listNotifications(ORG, 'a@b.c', { archived: true }), []);
+    assert.deepStrictEqual(
+      await listNotifications(ORG, 'a@b.c', { archived: true }),
+      [],
+    );
     assert.deepStrictEqual(
       await listNotifications(ORG, 'a@b.c', { types: ['comment_mention'] }),
-      []
+      [],
     );
   });
 

@@ -15,7 +15,12 @@
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { closeTestDb, openTestDb, pgDescribe, truncate } from './helpers/harness.js';
+import {
+  closeTestDb,
+  openTestDb,
+  pgDescribe,
+  truncate,
+} from './helpers/harness.js';
 import { seedDefaultOrganization, seedPresentation } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
 import {
@@ -34,7 +39,10 @@ pgDescribe('markThreadsRead (real PostgreSQL)', () => {
 
   /** Create a top-level comment on the seeded deck and return its id. */
   const seedComment = async (body = 'A note') => {
-    const res = await createComment(ctx, pid, { email: 'author@example.com', body });
+    const res = await createComment(ctx, pid, {
+      email: 'author@example.com',
+      body,
+    });
     assert.equal(res.ok, true);
     return res.comment.id;
   };
@@ -95,7 +103,7 @@ pgDescribe('markThreadsRead (real PostgreSQL)', () => {
     assert.notEqual(
       new Date(rows[0].last_read_at).toISOString(),
       '2000-01-01T00:00:00.000Z',
-      'the conflict path bumped last_read_at'
+      'the conflict path bumped last_read_at',
     );
     assert.ok(first, 'the first mark did create a row');
   });
@@ -103,7 +111,11 @@ pgDescribe('markThreadsRead (real PostgreSQL)', () => {
   it('ignores unknown ids and reply ids, marking only real top-level comments', async () => {
     const top = await seedComment('top');
     const reply = (
-      await createComment(ctx, pid, { email: ALICE, body: 'reply', parentId: top })
+      await createComment(ctx, pid, {
+        email: ALICE,
+        body: 'reply',
+        parentId: top,
+      })
     ).comment.id;
     const bogus = '00000000-0000-0000-0000-000000000000';
 
@@ -122,6 +134,10 @@ pgDescribe('markThreadsRead (real PostgreSQL)', () => {
     assert.equal((await readRowsFor(c1)).length, 1);
 
     await db.deleteFrom('presentation_comments').where('id', '=', c1).execute();
-    assert.equal((await readRowsFor(c1)).length, 0, 'the read marker is cascaded out');
+    assert.equal(
+      (await readRowsFor(c1)).length,
+      0,
+      'the read marker is cascaded out',
+    );
   });
 });

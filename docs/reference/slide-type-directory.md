@@ -12,7 +12,7 @@ across the consumers; both forms work, and the registry does not care which one
 a type uses.
 
 **Most types are mid-move, and that is the designed state.** The migration is
-cut along the *consumer*, not along the type: one PR takes one consumer and
+cut along the _consumer_, not along the type: one PR takes one consumer and
 moves that one fact for every type at once. So a type's directory appears the
 first time a companion of its is claimed, and fills up PR by PR while its
 definition is still the flat `types/<name>-slide.js` next door. A directory
@@ -45,7 +45,7 @@ internals whenever that is true.
 
 **Every companion is optional.** A type with no on-canvas editing has no
 `inline-edit.js`; a type withheld from agents has no `ai.js`. Absence is a
-legitimate answer, and which absences are *also* a gap is
+legitimate answer, and which absences are _also_ a gap is
 `tests/slide-type-companion-coverage.test.js`'s question, not this page's.
 
 ## The one rule
@@ -62,7 +62,7 @@ browser already downloads ~368 KB of type modules on a presenter page. The AI
 catalog alone is ~168 KB of prose the browser never executes — colocating it and
 importing it from `index.js` would have been a ~46% payload increase for nothing.
 
-So colocation is about *where the file lives*, not about who imports it. The
+So colocation is about _where the file lives_, not about who imports it. The
 directory groups the type's facts for a human; the import graph still runs from
 each consumer down to the one companion it needs.
 
@@ -74,26 +74,26 @@ subject of the track this form came out of.
 
 ## What goes where
 
-| Fact | Slot | Read by |
-|---|---|---|
-| label, `fields[]`, `defaults`, `defaultsByLang` | `index.js` | registry, editor form, validation, agent schema |
-| `structure` / `runtime` / `fallback` facets | `index.js` | the facet module for each (`structure.js`, `runtime.js`, [`tiers.js`](./slide-type-tiers.md)) + `/api/slide-types` |
-| `renderHtml` | `render.js` | presenter, editor preview, export |
-| picker description, search aliases | `authoring.js` | the picker, via `authoring-companions.js` + `/api/slide-types` |
-| schematic glyph, per-preset glyph overrides | `authoring.js` | `slide-type-schematics.js` (derived) |
-| picker sample content | `authoring.js` | `slide-type-sample-content.js` |
-| curated group (`group`) | `authoring.js` | picker shelves + settings curation (derived) |
-| inline-edit descriptor | `inline-edit.js` | `inline-edit/descriptors.js` |
-| inspector keep-list | `inline-edit.js` | `editor-form/inspector-form.js` |
-| agent description / bestFor / notFor | `ai.js` | `ai/slide-catalog/` (derived) |
-| agent examples (`aiExamples`, sparse) | `ai.js` | `ai/slide-catalog/examples.js` (derived) |
+| Fact                                            | Slot             | Read by                                                                                                            |
+| ----------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------ |
+| label, `fields[]`, `defaults`, `defaultsByLang` | `index.js`       | registry, editor form, validation, agent schema                                                                    |
+| `structure` / `runtime` / `fallback` facets     | `index.js`       | the facet module for each (`structure.js`, `runtime.js`, [`tiers.js`](./slide-type-tiers.md)) + `/api/slide-types` |
+| `renderHtml`                                    | `render.js`      | presenter, editor preview, export                                                                                  |
+| picker description, search aliases              | `authoring.js`   | the picker, via `authoring-companions.js` + `/api/slide-types`                                                     |
+| schematic glyph, per-preset glyph overrides     | `authoring.js`   | `slide-type-schematics.js` (derived)                                                                               |
+| picker sample content                           | `authoring.js`   | `slide-type-sample-content.js`                                                                                     |
+| curated group (`group`)                         | `authoring.js`   | picker shelves + settings curation (derived)                                                                       |
+| inline-edit descriptor                          | `inline-edit.js` | `inline-edit/descriptors.js`                                                                                       |
+| inspector keep-list                             | `inline-edit.js` | `editor-form/inspector-form.js`                                                                                    |
+| agent description / bestFor / notFor            | `ai.js`          | `ai/slide-catalog/` (derived)                                                                                      |
+| agent examples (`aiExamples`, sparse)           | `ai.js`          | `ai/slide-catalog/examples.js` (derived)                                                                           |
 
 The agent-facing **schema** is deliberately absent from `ai.js`: it is derived
 from `index.js`'s `fields[]` by `deriveAgentSchema()`. A hand-written second copy
 of a field list can only ever be right by accident, and was not
 (`docs/reference/` — see the agent contract work behind `agent-catalog.js`).
 
-Two things that are *not* in the directory today:
+Two things that are _not_ in the directory today:
 
 - **The stylesheet.** `client/styles/slides/**` stays where it is; ownership
   lives in the `TYPE_CSS` manifest in
@@ -102,14 +102,14 @@ Two things that are *not* in the directory today:
   because rules keep their cascade position and a type may have rules in more
   than one tier — and `tests/slide-css-aggregators.test.js` fails on a claim
   without a registered type or a sheet without a claim, so removing a type
-  forces its CSS out with it. Physically *moving* CSS into the type directory
+  forces its CSS out with it. Physically _moving_ CSS into the type directory
   is deliberately not done: it is entangled with the separate question of what
   a slide type is even allowed to style (the CSS role-vocabulary track), and
   it would add nothing to the guardrail.
 
   **What counts as a type's CSS is selector-rooted**: a rule belongs to a type
   when its selector roots on that type's root class (`.slide-<x> …`). A type
-  class appearing *inside* a shared machinery selector does not transfer
+  class appearing _inside_ a shared machinery selector does not transfer
   ownership — the step-reveal blocks name six types and stay in
   `70-step-reveal.css`, because they style the step machinery, not the slide.
   The mirror image also holds: output of a shared pipeline keeps its own sheet
@@ -125,16 +125,17 @@ Two things that are *not* in the directory today:
   is only safe when every pair of rules that swaps either cannot match the
   same element or differs in specificity, so the winning declaration is
   unchanged.
+
 - **The side-form renderer** (`client/views/editor/editor-form/slide-forms/`).
   It is behaviour, not data, and it depends on editor infrastructure (`h()`,
   field factories, collapsed-state); importing that from `shared/` would invert
-  the layering. Its *data* half moves, though — see `cards.js`.
+  the layering. Its _data_ half moves, though — see `cards.js`.
 
 ## Behaviour stays in its layer (decided 2026-08-01)
 
 > **The type directory carries facts; code that imports a layer stays in that
 > layer.** A companion may read from `shared/` — never from `client/` or
-> `server/`. Per-type *behaviour* lives with the machinery it drives: the side
+> `server/`. Per-type _behaviour_ lives with the machinery it drives: the side
 > form in the editor, the print branches in the exporter, the validation
 > membership sets in the AI pipeline.
 
@@ -151,7 +152,7 @@ Two consequences worth spelling out:
   `NON_CONTENT_SLIDE_TYPES` or from the side-form table takes the default
   branch, which is usually the right answer. Asserting registry-wide coverage
   on these would force a judgement those lists never made. Where such a list
-  carries *numbers* the definition already declares (item limits), the numbers
+  carries _numbers_ the definition already declares (item limits), the numbers
   are derived from `fields[]` and only the membership stays hand-written —
   see `server/utils/ai/validate-slides/constants.js`.
 - **The long-term direction is less per-type behaviour, not better-housed
@@ -167,7 +168,7 @@ Two consequences worth spelling out:
 `authoring.js` is scanned by the i18n hardcoded-copy gate
 (`tests/i18n-audit.test.js`), because it carries free-form English copy that
 would otherwise silently leave the gate's scope when a type migrates. `index.js`
-is deliberately *not* scanned: its field labels are localised through the derived
+is deliberately _not_ scanned: its field labels are localised through the derived
 `slideType.*` keys rather than `t()`.
 
 ## Reaching a companion: the authoring aggregator
@@ -182,7 +183,7 @@ import { SLIDE_TYPE_AUTHORING } from '…/shared/slide-types/authoring.js';
 export const SLIDE_TYPE_SCHEMATIC = Object.fromEntries(
   Object.entries(SLIDE_TYPE_AUTHORING)
     .filter(([, authoring]) => authoring?.schematic)
-    .map(([type, authoring]) => [type, authoring.schematic])
+    .map(([type, authoring]) => [type, authoring.schematic]),
 );
 ```
 
@@ -195,13 +196,13 @@ New facets follow the same shape.
 ## The aggregator seam rule
 
 **The aggregator is core's answer, never the population.** It is generated over
-`shared/slide-types/types/`, so a lookup that reads it *first* silently answers
+`shared/slide-types/types/`, so a lookup that reads it _first_ silently answers
 a narrower question than it looks like — and the types it leaves out are exactly
 the ones a fork owns. Five rules, and they apply to every companion derived this
 way:
 
 1. **Definition first, aggregator second.** A companion looked up at runtime is
-   looked up against the definition *as it exists at runtime*. This holds for
+   looked up against the definition _as it exists at runtime_. This holds for
    every companion, including the inline descriptor (which read core-first until
    override renderers reached the browser — see below).
 2. **One lookup per facet, in the facet module.** Not in the consumer. Every
@@ -214,7 +215,7 @@ way:
    existing default — no warning, no invented shelf.
 
 The catch that made this a rule rather than a bugfix: rules 1 and 2 were already
-*written* for `schematic` and `sampleContent`, and did not fire. The editor does
+_written_ for `schematic` and `sampleContent`, and did not fire. The editor does
 not hold the registry, it holds the `GET /api/slide-types` response, and that
 route served neither key — so the fallback branch existed on both sides of a wire
 that dropped it. **A companion the browser needs travels on that route**, which is
@@ -256,11 +257,11 @@ through server-side rendering (`needsServerRender()` in
 markup in the editor and presenter too — the markup `def.inline` describes — so
 every population agrees with rule 1:
 
-| fork type | renders in the browser as | descriptor used | right? |
-|---|---|---|---|
-| new name (`acme-hero`) | server-rendered, the fork's markup | `def.inline` | yes |
-| override of a core name | server-rendered, the fork's markup | `def.inline` | yes |
-| core type, not overridden | core's markup (core defs carry no `inline`) | the aggregator | yes |
+| fork type                 | renders in the browser as                   | descriptor used | right? |
+| ------------------------- | ------------------------------------------- | --------------- | ------ |
+| new name (`acme-hero`)    | server-rendered, the fork's markup          | `def.inline`    | yes    |
+| override of a core name   | server-rendered, the fork's markup          | `def.inline`    | yes    |
+| core type, not overridden | core's markup (core defs carry no `inline`) | the aggregator  | yes    |
 
 This also closes the old latent hole where the fallback fired for a bundled
 core name without a core descriptor (`payoff-slide`, `follow-invite-slide`,
@@ -280,7 +281,7 @@ directory with an `authoring.js` is in, one without is out. Both directions are
 gated by `tests/slide-authoring-aggregator.test.js`, byte-for-byte.
 
 > **It is a sibling of `registry.js`, never a dependency of it.** The registry is
-> what the browser loads to *render* a slide, and the presenter renders slides
+> what the browser loads to _render_ a slide, and the presenter renders slides
 > without ever offering one. An import from `registry.js` (or from any type's
 > `index.js`) would put picker copy into the presenter's payload — the softer
 > version of the `ai.js` mistake. `tests/slide-type-directory-boundary.test.js`
@@ -298,7 +299,7 @@ so it has no "plain data" gate. `descriptors.js` spreads it into
 That file carries **two** facets — the descriptor and the inspector keep-list —
 and they do not cover the same types: `custom-html-slide`, `follow-invite-slide`
 and `payoff-slide` own a keep-list without being inline-editable at all. So it
-imports module *namespaces* (`import * as titleSlide from …`) and slices each
+imports module _namespaces_ (`import * as titleSlide from …`) and slices each
 facet out of them at runtime, dropping the types that do not declare it. That
 keeps the generator a pure directory scan — it never has to know which named
 exports a given file happens to have — and a third facet costs one line in the
@@ -320,11 +321,11 @@ It replaced five hand-filed category modules (`structural-slides.js`,
 prose sat in was a filing decision nobody could derive from the type, and it
 disagreed with the `category` field inside the entries it held — a type filed
 under `card-slides.js` declaring `category: 'content'`. The field survived; the
-filing did not. What *was* load-bearing about those modules is the sequence they
+filing did not. What _was_ load-bearing about those modules is the sequence they
 produced: three prompt surfaces emit one section per type in catalog order, and
 an LLM does not read a list uniformly. That sequence is now `CATALOG_ORDER` in
-`definitions.js` — the same *fact belongs to the type, ordering belongs to the
-surface* split `group` and `PICKER_GROUP_ORDER` made.
+`definitions.js` — the same _fact belongs to the type, ordering belongs to the
+surface_ split `group` and `PICKER_GROUP_ORDER` made.
 
 The prompt **examples** made the same move: each type's `aiExamples` export in
 its `ai.js` replaced five hand-filed modules under `ai/slide-catalog/examples/`
@@ -353,7 +354,7 @@ export const SLIDE_TYPE_DESC = {
 One fact needed a variation on that, because the consumer's data structure
 encodes **order** as well as membership: which shelf a type is offered on. It is
 declared as `group` in `authoring.js`, both consumers derive their membership
-from it, and each keeps its own *order hint* — a partial list saying which types
+from it, and each keeps its own _order hint_ — a partial list saying which types
 lead, where a missing name costs a position and a stale name is ignored. See
 [`slide-type-groups.md`](./slide-type-groups.md).
 
@@ -364,14 +365,14 @@ convert the consumer later — which is how `group` itself got there.
 
 ### Consumers converted so far
 
-| Consumer | Fact | Landed |
-|---|---|---|
-| `client/views/editor/slide-type-schematics.js` | schematic glyph + per-preset overrides | A7.1 rollout PR 1 |
-| `client/views/editor/slide-type-sample-content.js` | picker sample content | A7.1 rollout PR 2 |
-| `client/views/editor/inline-edit/descriptors.js` | inline-edit descriptor (35 types) | A7.1 rollout PR 3 |
-| `slide-type-picker/data.js` + `settings/…/categories.js` | curated group, 33 types (two disagreeing tables collapsed into one declaration) | A7.1 rollout PR 4 |
-| `slide-type-picker/data.js` (`index.js`) | picker description + search aliases, 33 types (two hand-maintained tables retired) | A7.1 rollout PR 5 |
-| `server/routes/api/slide-types.js` | `group` / `schematic` / `sampleContent` on the wire — the seam rule above, which the three lookups now share | A7.1 seam fix |
-| `server/routes/api/slide-types.js` | `description` / `aliases` on the wire — the same seam half, +2.9 KB raw (+1.2 KB gzipped) on the ~558 KB response | A7.1 rollout PR 5 |
-| `client/views/editor/editor-form/inspector-form.js` | inspector keep-list, every core type (+ `inspectorKeeps` on the wire, so a fork type can narrow its own settings pane) | A7.1 rollout PR 6 |
-| `server/utils/ai/slide-catalog/` | agent editorial copy, 31 types — five category modules collapsed into one generated import list, with the prompt order kept as a hint | A7.1 rollout PR 7 |
+| Consumer                                                 | Fact                                                                                                                                  | Landed            |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| `client/views/editor/slide-type-schematics.js`           | schematic glyph + per-preset overrides                                                                                                | A7.1 rollout PR 1 |
+| `client/views/editor/slide-type-sample-content.js`       | picker sample content                                                                                                                 | A7.1 rollout PR 2 |
+| `client/views/editor/inline-edit/descriptors.js`         | inline-edit descriptor (35 types)                                                                                                     | A7.1 rollout PR 3 |
+| `slide-type-picker/data.js` + `settings/…/categories.js` | curated group, 33 types (two disagreeing tables collapsed into one declaration)                                                       | A7.1 rollout PR 4 |
+| `slide-type-picker/data.js` (`index.js`)                 | picker description + search aliases, 33 types (two hand-maintained tables retired)                                                    | A7.1 rollout PR 5 |
+| `server/routes/api/slide-types.js`                       | `group` / `schematic` / `sampleContent` on the wire — the seam rule above, which the three lookups now share                          | A7.1 seam fix     |
+| `server/routes/api/slide-types.js`                       | `description` / `aliases` on the wire — the same seam half, +2.9 KB raw (+1.2 KB gzipped) on the ~558 KB response                     | A7.1 rollout PR 5 |
+| `client/views/editor/editor-form/inspector-form.js`      | inspector keep-list, every core type (+ `inspectorKeeps` on the wire, so a fork type can narrow its own settings pane)                | A7.1 rollout PR 6 |
+| `server/utils/ai/slide-catalog/`                         | agent editorial copy, 31 types — five category modules collapsed into one generated import list, with the prompt order kept as a hint | A7.1 rollout PR 7 |

@@ -129,7 +129,11 @@ export async function listActivityEvents(scope, opts = {}) {
 
     // Exclude events by actor (for "others' activity")
     if (opts?.excludeActorEmail) {
-      query = query.where('actor_email', '!=', opts.excludeActorEmail.toLowerCase());
+      query = query.where(
+        'actor_email',
+        '!=',
+        opts.excludeActorEmail.toLowerCase(),
+      );
     }
 
     // Filter by date range
@@ -157,10 +161,7 @@ export async function listActivityEvents(scope, opts = {}) {
     const limit = Math.min(opts?.limit || 50, 100);
     const offset = opts?.offset || 0;
 
-    query = query
-      .orderBy('created_at', 'desc')
-      .limit(limit)
-      .offset(offset);
+    query = query.orderBy('created_at', 'desc').limit(limit).offset(offset);
 
     const rows = await query.execute();
 
@@ -248,7 +249,7 @@ export async function updateUserEventRead(scope, userEmail, eventId) {
         oc.columns(['organization_id', 'user_email']).doUpdateSet({
           last_read_event_id: eventId || null,
           last_read_at: now,
-        })
+        }),
       )
       .execute();
 

@@ -67,7 +67,12 @@ export async function logAccessAttempt(scope, data) {
  * @param {string} [accessorIp] - Accessor's IP (used if no email)
  * @returns {Promise<boolean>} - True if should notify
  */
-export async function shouldNotifyAuthor(scope, presentationId, accessorEmail, accessorIp) {
+export async function shouldNotifyAuthor(
+  scope,
+  presentationId,
+  accessorEmail,
+  accessorIp,
+) {
   toStorageContext(scope, 'shouldNotifyAuthor');
   const pid = norm(presentationId);
   if (!pid) return false;
@@ -76,7 +81,9 @@ export async function shouldNotifyAuthor(scope, presentationId, accessorEmail, a
 
   return withDbGuard(false, async (db) => {
     const orgId = getOrgId(scope);
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const twentyFourHoursAgo = new Date(
+      Date.now() - 24 * 60 * 60 * 1000,
+    ).toISOString();
 
     let query = db
       .selectFrom('access_attempt_log')

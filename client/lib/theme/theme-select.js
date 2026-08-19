@@ -5,7 +5,10 @@
  */
 
 import { t } from '../ui-i18n.js';
-import { DEFAULT_THEME_ID, DEFAULT_THEME_NAME } from '../../../shared/constants/themes.js';
+import {
+  DEFAULT_THEME_ID,
+  DEFAULT_THEME_NAME,
+} from '../../../shared/constants/themes.js';
 import { loadThemeById } from './theme.js';
 import { cssStringEscape } from '../../../shared/theme-fonts.js';
 
@@ -28,13 +31,16 @@ function createThemeSelect({
   let themeId = initialTheme;
 
   const wrap = h('div', { class: `stack is-field ${className}`.trim() });
-  const label = h('div', { class: 'field-label', text: t('common.theme', 'Theme') });
+  const label = h('div', {
+    class: 'field-label',
+    text: t('common.theme', 'Theme'),
+  });
   const select = h('select', { class: 'form-input is-compact' });
 
   // Default options
   select.append(
     h('option', { value: DEFAULT_THEME_ID, text: DEFAULT_THEME_NAME }),
-    h('option', { value: 'clicknl', text: 'ClickNL' })
+    h('option', { value: 'clicknl', text: 'ClickNL' }),
   );
   select.value = themeId;
 
@@ -92,10 +98,13 @@ async function populateThemes({
     }
 
     const wanted = String(currentTheme || '').trim();
-    const hasWanted = Array.from(select.options).some((o) => o.value === wanted);
+    const hasWanted = Array.from(select.options).some(
+      (o) => o.value === wanted,
+    );
     const resolvedTheme = hasWanted
       ? wanted
-      : String(select.options?.[0]?.value || DEFAULT_THEME_ID) || DEFAULT_THEME_ID;
+      : String(select.options?.[0]?.value || DEFAULT_THEME_ID) ||
+        DEFAULT_THEME_ID;
 
     select.value = resolvedTheme;
     onPopulated?.(resolvedTheme);
@@ -175,11 +184,16 @@ export function createVisualThemePicker({
   let themeId = explicitInitial;
 
   const wrap = h('div', { class: 'stack is-field theme-picker-wrap' });
-  const label = h('div', { class: 'field-label', text: t('common.theme', 'Theme') });
+  const label = h('div', {
+    class: 'field-label',
+    text: t('common.theme', 'Theme'),
+  });
   const grid = h('div', { class: 'theme-picker-grid' });
   // Themes outside the default-visible subset live here, hidden until the
   // "Show all themes" toggle is expanded.
-  const moreGrid = h('div', { class: 'theme-picker-grid theme-picker-grid-more is-hidden' });
+  const moreGrid = h('div', {
+    class: 'theme-picker-grid theme-picker-grid-more is-hidden',
+  });
   const toggleBtn = h('button', {
     type: 'button',
     class: 'theme-picker-toggle is-hidden',
@@ -260,7 +274,10 @@ export function createVisualThemePicker({
       if (!theme.embedFonts?.length) continue;
       const vars = theme.cssVars || {};
       for (const varName of ['--t-font-heading', '--t-font-body']) {
-        const family = (vars[varName] || '').split(',')[0].trim().replace(/^['"]|['"]$/g, '');
+        const family = (vars[varName] || '')
+          .split(',')[0]
+          .trim()
+          .replace(/^['"]|['"]$/g, '');
         if (!family || seen.has(family)) continue;
         const first = theme.embedFonts.find((f) => f.family === family);
         if (!first) continue;
@@ -271,7 +288,9 @@ export function createVisualThemePicker({
         // ("400 700"), so this is the whole family; for a static one it is its
         // lightest weight, which is all a preview needs.
         const matches = theme.embedFonts.filter(
-          (f) => f.family === family && String(f.weight || 400) === String(first.weight || 400)
+          (f) =>
+            f.family === family &&
+            String(f.weight || 400) === String(first.weight || 400),
         );
         let added = false;
         for (const match of matches) {
@@ -284,9 +303,11 @@ export function createVisualThemePicker({
           } else {
             continue;
           }
-          const range = match.unicodeRange ? ` unicode-range: ${match.unicodeRange};` : '';
+          const range = match.unicodeRange
+            ? ` unicode-range: ${match.unicodeRange};`
+            : '';
           rules.push(
-            `@font-face { font-family: '${cssStringEscape(match.family)}'; src: ${src}; font-weight: ${match.weight || 400}; font-style: ${match.style || 'normal'}; font-display: swap;${range} }`
+            `@font-face { font-family: '${cssStringEscape(match.family)}'; src: ${src}; font-weight: ${match.weight || 400}; font-style: ${match.style || 'normal'}; font-display: swap;${range} }`,
           );
           added = true;
         }

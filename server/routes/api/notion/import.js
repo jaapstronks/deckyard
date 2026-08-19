@@ -3,7 +3,12 @@
  * Handles importing Notion pages as presentations (standard and streaming).
  */
 
-import { badRequest, serveJson, jsonError, requireJsonBody } from '../../../utils/http.js';
+import {
+  badRequest,
+  serveJson,
+  jsonError,
+  requireJsonBody,
+} from '../../../utils/http.js';
 import {
   getTrimmedString,
   getOptionalString,
@@ -25,7 +30,12 @@ const log = createLogger('import');
  * Import from Notion: convert a Notion page to a full presentation.
  * Uses the same AI pipeline as file conversion.
  */
-export async function handleNotionImport({ req, res, authedUser, storageScope }) {
+export async function handleNotionImport({
+  req,
+  res,
+  authedUser,
+  storageScope,
+}) {
   if (!notionEnabled()) {
     jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
       details: 'Set NOTION_SECRET on the server to enable this feature.',
@@ -52,7 +62,11 @@ export async function handleNotionImport({ req, res, authedUser, storageScope })
 
   try {
     // Convert the Notion page
-    const { deck, report, pageId: normalizedPageId } = await convertNotionPage(urlOrId, {
+    const {
+      deck,
+      report,
+      pageId: normalizedPageId,
+    } = await convertNotionPage(urlOrId, {
       lang,
       vendor,
       enableLogging: true,
@@ -64,14 +78,15 @@ export async function handleNotionImport({ req, res, authedUser, storageScope })
         422,
         'conversion_failed',
         report.errors.join('; ') || 'Conversion failed',
-        { details: { report } }
+        { details: { report } },
       );
       return true;
     }
 
     // Create the presentation from the deck
     const parts = deckToPresentationParts(deck);
-    const effectiveLang = deck.lang || deck._generationMeta?.effectiveLang || 'nl';
+    const effectiveLang =
+      deck.lang || deck._generationMeta?.effectiveLang || 'nl';
 
     const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Imported from Notion',
@@ -85,14 +100,15 @@ export async function handleNotionImport({ req, res, authedUser, storageScope })
       },
     });
 
-    const updated = await updatePresentation(storageScope,
+    const updated = await updatePresentation(
+      storageScope,
       created.id,
       {
         ...created,
         title: parts.title || deck.title || 'Imported from Notion',
         slides: parts.slides,
       },
-      { actorEmail: authedUser?.email || null }
+      { actorEmail: authedUser?.email || null },
     );
 
     serveJson(res, 201, {
@@ -105,10 +121,16 @@ export async function handleNotionImport({ req, res, authedUser, storageScope })
     const msg = String(e?.message || e || 'Unknown error');
     const code = e?.statusCode || 500;
     if (msg.includes('Could not find') || code === 404) {
-      return badRequest(res, 'Notion page not found. Make sure the page is shared with your Notion integration.');
+      return badRequest(
+        res,
+        'Notion page not found. Make sure the page is shared with your Notion integration.',
+      );
     }
     if (msg.includes('unauthorized') || code === 401 || code === 403) {
-      return badRequest(res, 'Access denied. Make sure the page is shared with your Notion integration.');
+      return badRequest(
+        res,
+        'Access denied. Make sure the page is shared with your Notion integration.',
+      );
     }
     jsonError(res, code >= 400 && code < 600 ? code : 500, 'notion_error', msg);
   }
@@ -119,7 +141,12 @@ export async function handleNotionImport({ req, res, authedUser, storageScope })
  * Handle POST /api/notion/import/stream
  * Streaming import from Notion: provides real-time status updates via SSE.
  */
-export async function handleNotionImportStream({ req, res, authedUser, storageScope }) {
+export async function handleNotionImportStream({
+  req,
+  res,
+  authedUser,
+  storageScope,
+}) {
   if (!notionEnabled()) {
     jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
       details: 'Set NOTION_SECRET on the server to enable this feature.',
@@ -155,8 +182,16 @@ export async function handleNotionImportStream({ req, res, authedUser, storageSc
   // Initial messages (Dutch by default - actual content language is auto-detected)
   const isNl = true;
   const initialMessages = isNl
-    ? ['Notion-pagina ophalen...', 'Inhoud analyseren...', 'Afbeeldingen verwerken...']
-    : ['Fetching Notion page...', 'Analyzing content...', 'Processing images...'];
+    ? [
+        'Notion-pagina ophalen...',
+        'Inhoud analyseren...',
+        'Afbeeldingen verwerken...',
+      ]
+    : [
+        'Fetching Notion page...',
+        'Analyzing content...',
+        'Processing images...',
+      ];
 
   try {
     let progress = 5;
@@ -169,7 +204,9 @@ export async function handleNotionImportStream({ req, res, authedUser, storageSc
     }
 
     sendEvent('status', {
-      message: isNl ? 'Inhoud converteren naar slides...' : 'Converting content to slides...',
+      message: isNl
+        ? 'Inhoud converteren naar slides...'
+        : 'Converting content to slides...',
       phase: 'convert',
       progress: 28,
     });
@@ -178,7 +215,11 @@ export async function handleNotionImportStream({ req, res, authedUser, storageSc
     let statusMessagesSent = false;
 
     // Convert with streaming callbacks
-    const { deck, report, pageId: normalizedPageId } = await convertNotionPage(urlOrId, {
+    const {
+      deck,
+      report,
+      pageId: normalizedPageId,
+    } = await convertNotionPage(urlOrId, {
       lang,
       vendor,
       enableLogging: true,
@@ -207,7 +248,9 @@ export async function handleNotionImportStream({ req, res, authedUser, storageSc
     if (!deck || report.errors.length > 0) {
       sendEvent(
         'error',
-        sseErrorPayload(report.errors.join('; ') || 'Conversion failed', { report })
+        sseErrorPayload(report.errors.join('; ') || 'Conversion failed', {
+          report,
+        }),
       );
       res.end();
       return true;
@@ -239,7 +282,8 @@ export async function handleNotionImportStream({ req, res, authedUser, storageSc
 
     // Create the presentation
     const parts = deckToPresentationParts(deck);
-    const effectiveLang = deck.lang || deck._generationMeta?.effectiveLang || 'nl';
+    const effectiveLang =
+      deck.lang || deck._generationMeta?.effectiveLang || 'nl';
 
     const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Imported from Notion',
@@ -253,14 +297,15 @@ export async function handleNotionImportStream({ req, res, authedUser, storageSc
       },
     });
 
-    const updated = await updatePresentation(storageScope,
+    const updated = await updatePresentation(
+      storageScope,
       created.id,
       {
         ...created,
         title: parts.title || deck.title || 'Imported from Notion',
         slides: parts.slides,
       },
-      { actorEmail: authedUser?.email || null }
+      { actorEmail: authedUser?.email || null },
     );
 
     sendEvent('complete', {

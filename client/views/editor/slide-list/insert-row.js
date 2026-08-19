@@ -45,11 +45,13 @@ export function createInsertRow({
   // Bottom half => line below the "+" (before the next slide)
   const getNeighborTargets = () => {
     const prevItem = wrap.previousElementSibling?.classList?.contains?.(
-      'slide-item'
+      'slide-item',
     )
       ? wrap.previousElementSibling
       : null;
-    const nextItem = wrap.nextElementSibling?.classList?.contains?.('slide-item')
+    const nextItem = wrap.nextElementSibling?.classList?.contains?.(
+      'slide-item',
+    )
       ? wrap.nextElementSibling
       : null;
     return { prevItem, nextItem };
@@ -97,7 +99,8 @@ export function createInsertRow({
   const onDrop = (e) => {
     e.preventDefault();
     const draggingIds = getDraggingSlideIds?.() || [];
-    const fromId = e.dataTransfer?.getData?.('text/plain') || getDraggingSlideId?.();
+    const fromId =
+      e.dataTransfer?.getData?.('text/plain') || getDraggingSlideId?.();
     const { prevItem, nextItem } = getNeighborTargets();
     const r = wrap.getBoundingClientRect();
     const mid = r.top + r.height / 2;

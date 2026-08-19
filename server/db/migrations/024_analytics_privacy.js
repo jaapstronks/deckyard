@@ -37,13 +37,13 @@ export const up = async (db) => {
     .createTable('aggregate_analytics')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade').notNull()
+      col.references('presentations.id').onDelete('cascade').notNull(),
     )
     .addColumn('period_date', 'date', (col) => col.notNull())
     .addColumn('period_type', 'varchar(10)', (col) => col.notNull()) // 'day' | 'week' | 'month'
@@ -76,6 +76,10 @@ export const down = async (db) => {
 
   // Drop view_sessions privacy columns
   await sql`DROP INDEX IF EXISTS idx_view_sessions_internal`.execute(db);
-  await sql`ALTER TABLE view_sessions DROP COLUMN IF EXISTS attribution_allowed`.execute(db);
-  await sql`ALTER TABLE view_sessions DROP COLUMN IF EXISTS is_internal`.execute(db);
+  await sql`ALTER TABLE view_sessions DROP COLUMN IF EXISTS attribution_allowed`.execute(
+    db,
+  );
+  await sql`ALTER TABLE view_sessions DROP COLUMN IF EXISTS is_internal`.execute(
+    db,
+  );
 };

@@ -25,8 +25,7 @@
   background-size: 300% 300%;
   background-position: 45% 35%;
   will-change: background-position;
-  animation: sb-gradient-pan 95s ease-in-out infinite
-    alternate;
+  animation: sb-gradient-pan 95s ease-in-out infinite alternate;
 }
 .slide-icon-card-grid::after {
   /* Darken the top so the white header always has contrast */

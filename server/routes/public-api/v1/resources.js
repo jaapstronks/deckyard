@@ -7,7 +7,14 @@ import { listThemeIds, loadThemeAssets } from '../../../utils/themes.js';
 import { sandboxEnabled } from '../../../config/sandbox.js';
 import { listThemes } from '../../../storage/themes.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
-import { requirePermission, v1MethodNotAllowed, withV1ErrorHandler, parsePaginationParams, apiSuccess, apiError } from './middleware.js';
+import {
+  requirePermission,
+  v1MethodNotAllowed,
+  withV1ErrorHandler,
+  parsePaginationParams,
+  apiSuccess,
+  apiError,
+} from './middleware.js';
 
 // ============================================================
 // ROUTE HANDLERS
@@ -183,10 +190,13 @@ async function handleImageLibrary(ctx) {
   if (!requirePermission(ctx, 'read')) return true;
 
   // Dynamic import to avoid circular dependencies
-  const { listImageLibrary } = await import('../../../storage/image-library/index.js');
+  const { listImageLibrary } =
+    await import('../../../storage/image-library/index.js');
 
   const search = (url.searchParams.get('search') || '').trim().toLowerCase();
-  const category = (url.searchParams.get('category') || '').trim().toLowerCase();
+  const category = (url.searchParams.get('category') || '')
+    .trim()
+    .toLowerCase();
   const { limit, offset } = parsePaginationParams(url);
 
   const all = await listImageLibrary(storageScope);
@@ -195,12 +205,16 @@ async function handleImageLibrary(ctx) {
   // The library has no category column; tags are what images are grouped by, so
   // that is what `category` filters on and what the categories list reports.
   const categories = Array.from(
-    new Set(items.flatMap((it) => (Array.isArray(it?.tags) ? it.tags : [])).filter(Boolean))
+    new Set(
+      items
+        .flatMap((it) => (Array.isArray(it?.tags) ? it.tags : []))
+        .filter(Boolean),
+    ),
   ).sort();
 
   const matches = items.filter((it) => {
     const tags = (Array.isArray(it?.tags) ? it.tags : []).map((t) =>
-      String(t).toLowerCase()
+      String(t).toLowerCase(),
     );
     if (category && !tags.includes(category)) return false;
     if (!search) return true;
@@ -233,33 +247,38 @@ async function handleImageLibrary(ctx) {
 /**
  * Main handler for /api/v1/themes, /api/v1/slide-types, /api/v1/image-library routes.
  */
-export const handleResources = withV1ErrorHandler('public-api-v1:resources', async (ctx) => {
-  const { req, res, url } = ctx;
+export const handleResources = withV1ErrorHandler(
+  'public-api-v1:resources',
+  async (ctx) => {
+    const { req, res, url } = ctx;
 
-  // GET /api/v1/themes
-  if (url.pathname === '/api/v1/themes') {
-    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-    return handleThemes(ctx);
-  }
+    // GET /api/v1/themes
+    if (url.pathname === '/api/v1/themes') {
+      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
+      return handleThemes(ctx);
+    }
 
-  // GET /api/v1/slide-types
-  if (url.pathname === '/api/v1/slide-types') {
-    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-    return handleSlideTypes(ctx);
-  }
+    // GET /api/v1/slide-types
+    if (url.pathname === '/api/v1/slide-types') {
+      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
+      return handleSlideTypes(ctx);
+    }
 
-  // GET /api/v1/slide-types/:slideType/schema
-  const schemaMatch = url.pathname.match(/^\/api\/v1\/slide-types\/([^/]+)\/schema$/);
-  if (schemaMatch) {
-    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-    return handleSlideTypeSchema(ctx, schemaMatch[1]);
-  }
+    // GET /api/v1/slide-types/:slideType/schema
+    const schemaMatch = url.pathname.match(
+      /^\/api\/v1\/slide-types\/([^/]+)\/schema$/,
+    );
+    if (schemaMatch) {
+      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
+      return handleSlideTypeSchema(ctx, schemaMatch[1]);
+    }
 
-  // GET /api/v1/image-library
-  if (url.pathname === '/api/v1/image-library') {
-    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-    return handleImageLibrary(ctx);
-  }
+    // GET /api/v1/image-library
+    if (url.pathname === '/api/v1/image-library') {
+      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
+      return handleImageLibrary(ctx);
+    }
 
-  return false;
-});
+    return false;
+  },
+);

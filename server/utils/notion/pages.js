@@ -4,7 +4,13 @@
  */
 
 import { notionFetchJson, fetchAllBlockChildren } from './client.js';
-import { richTextToPlain, pageTitleFromProperties, blockTextLine, extractImageFromBlock, extractPageId } from './parser.js';
+import {
+  richTextToPlain,
+  pageTitleFromProperties,
+  blockTextLine,
+  extractImageFromBlock,
+  extractPageId,
+} from './parser.js';
 import { createLogger } from '../logger.js';
 import { ValidationError } from '../errors.js';
 
@@ -99,7 +105,10 @@ async function extractTableFromBlock(block) {
  * Extract rich content from a Notion page.
  * Returns structured data similar to PPTX parser output.
  */
-export async function extractRichContentFromPage(pageId, { depth = 3, limit = 600 } = {}) {
+export async function extractRichContentFromPage(
+  pageId,
+  { depth = 3, limit = 600 } = {},
+) {
   const id = String(pageId || '').trim();
   if (!id) {
     throw new ValidationError('Page ID is required');
@@ -127,7 +136,11 @@ export async function extractRichContentFromPage(pageId, { depth = 3, limit = 60
     // New section on major heading
     if (type === 'heading_1' || type === 'heading_2') {
       // Save current section if it has content
-      if (currentSection.textContent.trim() || currentSection.images.length || currentSection.tables.length) {
+      if (
+        currentSection.textContent.trim() ||
+        currentSection.images.length ||
+        currentSection.tables.length
+      ) {
         sections.push(currentSection);
       }
       const headingText = richTextToPlain(block[type]?.rich_text);
@@ -195,7 +208,11 @@ export async function extractRichContentFromPage(pageId, { depth = 3, limit = 60
   }
 
   // Don't forget the last section
-  if (currentSection.textContent.trim() || currentSection.images.length || currentSection.tables.length) {
+  if (
+    currentSection.textContent.trim() ||
+    currentSection.images.length ||
+    currentSection.tables.length
+  ) {
     sections.push(currentSection);
   }
 
@@ -252,11 +269,10 @@ export function formatNotionContentForAi(richContent) {
   return lines.join('\n').trim();
 }
 
-async function blocksToPlainTextPreview(blocks, {
-  limit = 120,
-  maxChildFetches = 4,
-  childLimit = 40,
-} = {}) {
+async function blocksToPlainTextPreview(
+  blocks,
+  { limit = 120, maxChildFetches = 4, childLimit = 40 } = {},
+) {
   const lines = [];
   const stack = Array.isArray(blocks) ? blocks.slice(0, limit) : [];
   let childFetches = 0;
@@ -281,7 +297,10 @@ async function blocksToPlainTextPreview(blocks, {
     }
   }
 
-  return lines.join('').replace(/\n{3,}/g, '\n\n').trim();
+  return lines
+    .join('')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 async function blocksToPlainText(blocks, { depth = 2, limit = 400 } = {}) {
@@ -302,7 +321,10 @@ async function blocksToPlainText(blocks, { depth = 2, limit = 400 } = {}) {
   }
 
   await walk(stack, 0, Math.max(0, depth));
-  return lines.join('').replace(/\n{3,}/g, '\n\n').trim();
+  return lines
+    .join('')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 export async function getPlainTextFromPage(pageId, opts = {}) {
@@ -315,7 +337,7 @@ export async function getPlainTextFromPage(pageId, opts = {}) {
 // Fast-ish "is there real content?" helper for subject picking.
 export async function getPlainTextPreviewFromPage(
   pageId,
-  { limit = 120 } = {}
+  { limit = 120 } = {},
 ) {
   const id = String(pageId || '').trim();
   if (!id) return '';

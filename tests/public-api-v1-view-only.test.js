@@ -14,19 +14,38 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const { sanitizePresentation } = await import('../server/routes/public-api/v1/presentations.js');
+const { sanitizePresentation } =
+  await import('../server/routes/public-api/v1/presentations.js');
 
 test('sanitizePresentation exposes isViewOnly=true for a view-only deck', () => {
-  const out = sanitizePresentation({ id: 'd1', title: 'T', visibility: 'organization', isViewOnly: true });
+  const out = sanitizePresentation({
+    id: 'd1',
+    title: 'T',
+    visibility: 'organization',
+    isViewOnly: true,
+  });
   assert.equal(out.isViewOnly, true);
 });
 
 test('sanitizePresentation exposes isViewOnly=false for an editable deck', () => {
-  const out = sanitizePresentation({ id: 'd2', title: 'T', visibility: 'organization', isViewOnly: false });
+  const out = sanitizePresentation({
+    id: 'd2',
+    title: 'T',
+    visibility: 'organization',
+    isViewOnly: false,
+  });
   assert.equal(out.isViewOnly, false);
 });
 
 test('sanitizePresentation defaults a missing isViewOnly to false (never undefined)', () => {
-  const out = sanitizePresentation({ id: 'd3', title: 'T', visibility: 'private' });
-  assert.equal(out.isViewOnly, false, 'the field is always present as a boolean');
+  const out = sanitizePresentation({
+    id: 'd3',
+    title: 'T',
+    visibility: 'private',
+  });
+  assert.equal(
+    out.isViewOnly,
+    false,
+    'the field is always present as a boolean',
+  );
 });

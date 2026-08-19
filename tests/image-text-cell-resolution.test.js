@@ -20,35 +20,62 @@ test('empty content: cell 0 defaults to cover, no override, empty alt', () => {
 });
 
 test('slide-level imageFit is the base fit for a cell with no override', () => {
-  const r = resolveImageTextCell({ imageFit: 'contain', images: [{ src: 'a.jpg' }] }, 0);
+  const r = resolveImageTextCell(
+    { imageFit: 'contain', images: [{ src: 'a.jpg' }] },
+    0,
+  );
   assert.equal(r.fit, 'contain');
   assert.equal(r.fitOverride, '');
 });
 
 test('item fit overrides the slide-level imageFit', () => {
-  const content = { imageFit: 'cover', images: [{ src: 'a.jpg', fit: 'contain' }] };
+  const content = {
+    imageFit: 'cover',
+    images: [{ src: 'a.jpg', fit: 'contain' }],
+  };
   const r = resolveImageTextCell(content, 0);
   assert.equal(r.fit, 'contain');
   assert.equal(r.fitOverride, 'contain');
 });
 
 test('cell 0 falls back to slide-level alt when the item has none', () => {
-  const r = resolveImageTextCell({ alt: 'slide alt', images: [{ src: 'a.jpg' }] }, 0);
+  const r = resolveImageTextCell(
+    { alt: 'slide alt', images: [{ src: 'a.jpg' }] },
+    0,
+  );
   assert.equal(r.altExplicit, 'slide alt');
 });
 
 test('cell 0 slide-level alt fallback order: alt, then altNl, then altEn', () => {
-  assert.equal(resolveImageTextCell({ altNl: 'nl', altEn: 'en', images: [{ src: 'a.jpg' }] }, 0).altExplicit, 'nl');
-  assert.equal(resolveImageTextCell({ altEn: 'en', images: [{ src: 'a.jpg' }] }, 0).altExplicit, 'en');
+  assert.equal(
+    resolveImageTextCell(
+      { altNl: 'nl', altEn: 'en', images: [{ src: 'a.jpg' }] },
+      0,
+    ).altExplicit,
+    'nl',
+  );
+  assert.equal(
+    resolveImageTextCell({ altEn: 'en', images: [{ src: 'a.jpg' }] }, 0)
+      .altExplicit,
+    'en',
+  );
 });
 
-test("item alt wins over the slide-level fallback", () => {
-  const r = resolveImageTextCell({ alt: 'slide', images: [{ src: 'a.jpg', alt: 'own' }] }, 0);
+test('item alt wins over the slide-level fallback', () => {
+  const r = resolveImageTextCell(
+    { alt: 'slide', images: [{ src: 'a.jpg', alt: 'own' }] },
+    0,
+  );
   assert.equal(r.altExplicit, 'own');
 });
 
 test('cell >0 does NOT inherit the slide-level alt/focus', () => {
-  const content = { alt: 'slide', focusX: 10, focusY: 20, images: [{ src: 'a.jpg' }, { src: 'b.jpg' }] };
+  const content = {
+    alt: 'slide',
+    focusX: 10,
+    focusY: 20,
+    images: [{ src: 'a.jpg' }, { src: 'b.jpg' }],
+  };
   const r = resolveImageTextCell(content, 1);
   assert.equal(r.altExplicit, '');
   assert.equal(r.hasOwnFocus, false);
@@ -65,7 +92,11 @@ test('cell 0 without own focus reads the slide-level focus point', () => {
 });
 
 test('a cell with its own focus point wins over the slide-level one', () => {
-  const content = { focusX: 25, focusY: 75, images: [{ src: 'a.jpg', focusX: 90, focusY: 10 }] };
+  const content = {
+    focusX: 25,
+    focusY: 75,
+    images: [{ src: 'a.jpg', focusX: 90, focusY: 10 }],
+  };
   const r = resolveImageTextCell(content, 0);
   assert.equal(r.hasOwnFocus, true);
   assert.equal(r.focusSource.focusX, 90);

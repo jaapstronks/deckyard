@@ -80,7 +80,9 @@ function getTagFrequency(items) {
   for (const item of items) {
     const tags = Array.isArray(item?.tags) ? item.tags : [];
     for (const tag of tags) {
-      const t0 = String(tag || '').trim().toLowerCase();
+      const t0 = String(tag || '')
+        .trim()
+        .toLowerCase();
       if (t0) {
         freq.set(t0, (freq.get(t0) || 0) + 1);
       }
@@ -147,8 +149,16 @@ export function createMediaLibrarySidebar({
         },
       });
 
-      const iconSpan = h('img', { class: 'media-lib-nav-icon', src: iconUrl(config.icon), alt: '', 'aria-hidden': 'true' });
-      const labelSpan = h('span', { class: 'media-lib-nav-label', text: t(config.labelKey, config.label) });
+      const iconSpan = h('img', {
+        class: 'media-lib-nav-icon',
+        src: iconUrl(config.icon),
+        alt: '',
+        'aria-hidden': 'true',
+      });
+      const labelSpan = h('span', {
+        class: 'media-lib-nav-label',
+        text: t(config.labelKey, config.label),
+      });
 
       btn.append(iconSpan, labelSpan);
       return btn;
@@ -158,12 +168,18 @@ export function createMediaLibrarySidebar({
     const mainNav = h('nav', { class: 'media-lib-nav-group' });
 
     // Add main sections
-    mainNav.append(createNavItem(SECTIONS.RECENT, SECTION_CONFIG[SECTIONS.RECENT]));
-    mainNav.append(createNavItem(SECTIONS.FAVORITES, SECTION_CONFIG[SECTIONS.FAVORITES]));
+    mainNav.append(
+      createNavItem(SECTIONS.RECENT, SECTION_CONFIG[SECTIONS.RECENT]),
+    );
+    mainNav.append(
+      createNavItem(SECTIONS.FAVORITES, SECTION_CONFIG[SECTIONS.FAVORITES]),
+    );
 
     // Only show "Your Media" if user is logged in
     if (userEmail) {
-      mainNav.append(createNavItem(SECTIONS.YOUR_MEDIA, SECTION_CONFIG[SECTIONS.YOUR_MEDIA]));
+      mainNav.append(
+        createNavItem(SECTIONS.YOUR_MEDIA, SECTION_CONFIG[SECTIONS.YOUR_MEDIA]),
+      );
     }
 
     mainNav.append(createNavItem(SECTIONS.ALL, SECTION_CONFIG[SECTIONS.ALL]));
@@ -174,8 +190,12 @@ export function createMediaLibrarySidebar({
     const tagDivider = h('div', { class: 'media-lib-nav-divider' });
     sidebar.append(tagDivider, tagsNav);
 
-    tagsNav.append(createNavItem(SECTIONS.LOGOS, SECTION_CONFIG[SECTIONS.LOGOS]));
-    tagsNav.append(createNavItem(SECTIONS.ICONS, SECTION_CONFIG[SECTIONS.ICONS]));
+    tagsNav.append(
+      createNavItem(SECTIONS.LOGOS, SECTION_CONFIG[SECTIONS.LOGOS]),
+    );
+    tagsNav.append(
+      createNavItem(SECTIONS.ICONS, SECTION_CONFIG[SECTIONS.ICONS]),
+    );
 
     // External sources (Unsplash, Giphy)
     if (hasUnsplash || hasGiphy) {
@@ -184,10 +204,14 @@ export function createMediaLibrarySidebar({
       sidebar.append(externalDivider, externalNav);
 
       if (hasUnsplash) {
-        externalNav.append(createNavItem(SECTIONS.UNSPLASH, SECTION_CONFIG[SECTIONS.UNSPLASH]));
+        externalNav.append(
+          createNavItem(SECTIONS.UNSPLASH, SECTION_CONFIG[SECTIONS.UNSPLASH]),
+        );
       }
       if (hasGiphy) {
-        externalNav.append(createNavItem(SECTIONS.GIPHY, SECTION_CONFIG[SECTIONS.GIPHY]));
+        externalNav.append(
+          createNavItem(SECTIONS.GIPHY, SECTION_CONFIG[SECTIONS.GIPHY]),
+        );
       }
     }
 
@@ -199,19 +223,28 @@ export function createMediaLibrarySidebar({
       const sourceDivider = h('div', { class: 'media-lib-nav-divider' });
       const tooltip = t(
         'mediaLibrary.sandboxSourceTooltip',
-        'In your own Deckyard you connect image sources here — Unsplash, Giphy, or your own digital asset manager.'
+        'In your own Deckyard you connect image sources here — Unsplash, Giphy, or your own digital asset manager.',
       );
-      const infoItem = h('div', {
-        class: 'media-lib-nav-item is-sandbox-source',
-        title: tooltip,
-        'aria-disabled': 'true',
-      }, [
-        h('img', { class: 'media-lib-nav-icon', src: iconUrl('plug'), alt: '', 'aria-hidden': 'true' }),
-        h('span', {
-          class: 'media-lib-nav-label',
-          text: t('mediaLibrary.section.yourSource', 'Your image source'),
-        }),
-      ]);
+      const infoItem = h(
+        'div',
+        {
+          class: 'media-lib-nav-item is-sandbox-source',
+          title: tooltip,
+          'aria-disabled': 'true',
+        },
+        [
+          h('img', {
+            class: 'media-lib-nav-icon',
+            src: iconUrl('plug'),
+            alt: '',
+            'aria-hidden': 'true',
+          }),
+          h('span', {
+            class: 'media-lib-nav-label',
+            text: t('mediaLibrary.section.yourSource', 'Your image source'),
+          }),
+        ],
+      );
       sourceNav.append(infoItem);
       sidebar.append(sourceDivider, sourceNav);
     }
@@ -220,8 +253,13 @@ export function createMediaLibrarySidebar({
     const topTags = getTopTags(currentItems, 8);
     if (topTags.length > 0) {
       const tagsDivider = h('div', { class: 'media-lib-nav-divider' });
-      const tagsHeader = h('div', { class: 'media-lib-nav-header', text: t('mediaLibrary.tags', 'Tags') });
-      const tagsGroup = h('nav', { class: 'media-lib-nav-group media-lib-tags-nav' });
+      const tagsHeader = h('div', {
+        class: 'media-lib-nav-header',
+        text: t('mediaLibrary.tags', 'Tags'),
+      });
+      const tagsGroup = h('nav', {
+        class: 'media-lib-nav-group media-lib-tags-nav',
+      });
 
       for (const { tag, count } of topTags) {
         const isActive = activeTag === tag;
@@ -235,8 +273,14 @@ export function createMediaLibrarySidebar({
           },
         });
 
-        const labelSpan = h('span', { class: 'media-lib-nav-label', text: `#${tag}` });
-        const countSpan = h('span', { class: 'media-lib-tag-count', text: String(count) });
+        const labelSpan = h('span', {
+          class: 'media-lib-nav-label',
+          text: `#${tag}`,
+        });
+        const countSpan = h('span', {
+          class: 'media-lib-tag-count',
+          text: String(count),
+        });
 
         btn.append(labelSpan, countSpan);
         tagsGroup.append(btn);

@@ -1,6 +1,9 @@
 /* global document */ // page.evaluate() callbacks below run in the browser context.
 import { renderSlideHtml } from '../utils/render-slide.js';
-import { getPuppeteerBrowser, toNodeBuffer } from '../utils/puppeteer-browser.js';
+import {
+  getPuppeteerBrowser,
+  toNodeBuffer,
+} from '../utils/puppeteer-browser.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import {
   escapeHtml,
@@ -8,9 +11,15 @@ import {
   embedImgSrcDataUrls,
   imageFieldKeysForType,
 } from '../utils/html-utils.js';
-import { buildPrismKatexCdnTags, buildPrismKatexInitScriptTag } from '../utils/prism-katex.js';
+import {
+  buildPrismKatexCdnTags,
+  buildPrismKatexInitScriptTag,
+} from '../utils/prism-katex.js';
 import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
-import { loadExportCssBundle, buildExportStyleContent } from '../export/css-bundle.js';
+import {
+  loadExportCssBundle,
+  buildExportStyleContent,
+} from '../export/css-bundle.js';
 
 /**
  * Build the standalone HTML document a PNG export renders.
@@ -28,7 +37,11 @@ import { loadExportCssBundle, buildExportStyleContent } from '../export/css-bund
  * @param {string} [options.lang] - Render language
  * @returns {Promise<string>} - Complete HTML document
  */
-export async function buildSlidePngHtml(repoRoot, slide, { theme = null, slideTypes = null, lang = null } = {}) {
+export async function buildSlidePngHtml(
+  repoRoot,
+  slide,
+  { theme = null, slideTypes = null, lang = null } = {},
+) {
   const css = await loadExportCssBundle(repoRoot, theme, null);
 
   const cloned = structuredClone(slide);
@@ -37,18 +50,22 @@ export async function buildSlidePngHtml(repoRoot, slide, { theme = null, slideTy
     if (cloned?.content?.[k]) {
       // embedRemote: inline remote http(s) images through the SSRF guard (or
       // strip) so no user-supplied URL reaches headless Chrome. Security 2.
-      cloned.content[k] = await toDataUrlIfLocal(
-        repoRoot,
-        cloned.content[k],
-        { includeClient: true, embedRemote: true }
-      );
+      cloned.content[k] = await toDataUrlIfLocal(repoRoot, cloned.content[k], {
+        includeClient: true,
+        embedRemote: true,
+      });
     }
   }
 
   let slideHtml =
     cloned?.type === 'video-slide'
       ? await renderVideoSlidePngHtml(cloned)
-      : renderSlideHtml(cloned, { theme, slideTypes, stripEditorAttrs: true, lang });
+      : renderSlideHtml(cloned, {
+          theme,
+          slideTypes,
+          stripEditorAttrs: true,
+          lang,
+        });
   slideHtml = await embedImgSrcDataUrls(repoRoot, slideHtml, {
     includeClient: true,
     embedRemote: true,
@@ -81,7 +98,7 @@ ${buildExportStyleContent(css)}
 export async function renderSlideToPngBuffer(
   repoRoot,
   slide,
-  { scale = 2, theme = null, slideTypes = null, lang = null } = {}
+  { scale = 2, theme = null, slideTypes = null, lang = null } = {},
 ) {
   const s = Math.max(1, Math.min(3, Number(scale) || 2));
   const browser = await getPuppeteerBrowser({ featureName: 'PNG export' });
@@ -92,7 +109,11 @@ export async function renderSlideToPngBuffer(
       height: 900,
       deviceScaleFactor: s,
     });
-    const html = await buildSlidePngHtml(repoRoot, slide, { theme, slideTypes, lang });
+    const html = await buildSlidePngHtml(repoRoot, slide, {
+      theme,
+      slideTypes,
+      lang,
+    });
     await page.setContent(html, { waitUntil: 'networkidle0' });
     try {
       await page.evaluate(() => document.fonts?.ready);
@@ -110,7 +131,7 @@ export async function renderSlideToPngBuffer(
               img.onerror = resolve;
               setTimeout(resolve, 5000); // 5s timeout per image
             });
-          })
+          }),
         );
       });
     } catch {

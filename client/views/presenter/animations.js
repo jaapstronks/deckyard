@@ -27,7 +27,10 @@ function retriggerCssAnimation(el, { preClass, animClass } = {}) {
  * @param {Element} el
  * @param {Object} deps
  */
-function typeTextInElement(el, { registerCleanup, setRaf, setTimeoutSafe, msPerChar = 28 } = {}) {
+function typeTextInElement(
+  el,
+  { registerCleanup, setRaf, setTimeoutSafe, msPerChar = 28 } = {},
+) {
   if (!el) return;
   const fullText =
     el.dataset?.fullText != null
@@ -37,7 +40,8 @@ function typeTextInElement(el, { registerCleanup, setRaf, setTimeoutSafe, msPerC
 
   const cleanup = () => {
     try {
-      if (el.dataset?.fullText != null) el.textContent = String(el.dataset.fullText);
+      if (el.dataset?.fullText != null)
+        el.textContent = String(el.dataset.fullText);
       el.style.minHeight = '';
     } catch {}
   };
@@ -144,7 +148,7 @@ export function createPresenterAnimator() {
     // Today we only have one explicit "presenter-only" animation:
     // payoff-slide logo zoom-in (CSS classes defined in slides CSS).
     const payoffLogos = Array.from(
-      slideSectionEl.querySelectorAll('.payoff-logo')
+      slideSectionEl.querySelectorAll('.payoff-logo'),
     );
     if (payoffLogos.length) {
       raf = requestAnimationFrame(() => {

@@ -37,7 +37,7 @@ export function buildEmbedHtml(
     headHtml = '',
     watermark = null,
     slideTypes = null,
-  } = {}
+  } = {},
 ) {
   pres = filterForPublished(pres);
   const themeId = String(theme?.id || DEFAULT_THEME_ID);
@@ -71,7 +71,13 @@ export function buildEmbedHtml(
       const ariaHidden = isFirst ? 'false' : 'true';
       let innerHtml = '';
       try {
-        innerHtml = renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, headingShift: headingShifts[i], lang: deckLang });
+        innerHtml = renderSlideHtml(s, {
+          theme,
+          slideTypes,
+          stripEditorAttrs: true,
+          headingShift: headingShifts[i],
+          lang: deckLang,
+        });
       } catch (e) {
         const msg = escapeHtml(String(e?.message || e));
         innerHtml = `
@@ -84,7 +90,7 @@ export function buildEmbedHtml(
         `;
       }
       return `<section id="slide-${i + 1}" class="deck-slide${activeClass}" data-slide-id="${escapeHtml(
-        s.id
+        s.id,
       )}" data-slide-index="${i}" role="group" aria-roledescription="slide" aria-label="${label}" aria-hidden="${ariaHidden}" tabindex="-1"${inertAttr}>${innerHtml}</section>`;
     })
     .join('\n');
@@ -107,7 +113,9 @@ export function buildEmbedHtml(
   };
 
   // Build external font link/script tags for managed fonts (Adobe, Monotype, Google)
-  const externalFontLinks = Array.isArray(theme?.externalFontLinks) ? theme.externalFontLinks : [];
+  const externalFontLinks = Array.isArray(theme?.externalFontLinks)
+    ? theme.externalFontLinks
+    : [];
   function isSafeUrl(url) {
     try {
       const parsed = new URL(url);
@@ -119,14 +127,19 @@ export function buildEmbedHtml(
   const externalFontCssLinks = externalFontLinks
     .filter((l) => l.type === 'css' && l.url)
     .filter((l) => isSafeUrl(l.url))
-    .map((l) => `<link rel="stylesheet" href="${l.url.replace(/"/g, '&quot;')}" />`)
+    .map(
+      (l) =>
+        `<link rel="stylesheet" href="${l.url.replace(/"/g, '&quot;')}" />`,
+    )
     .join('\n    ');
   const externalFontScripts = externalFontLinks
     .filter((l) => l.type === 'js' && l.url)
     .filter((l) => isSafeUrl(l.url))
     .map((l) => `<script src="${l.url.replace(/"/g, '&quot;')}"></script>`)
     .join('\n    ');
-  const externalFontHtml = [externalFontCssLinks, externalFontScripts].filter(Boolean).join('\n    ');
+  const externalFontHtml = [externalFontCssLinks, externalFontScripts]
+    .filter(Boolean)
+    .join('\n    ');
 
   return renderEmbedHtmlDocument({
     title,
@@ -155,7 +168,8 @@ export function parseEmbedOptionsFromUrl(url) {
   const langSwitch = parseBoolParam(sp?.get('langSwitch'), false);
 
   // start/slideIndex: both supported; prefer explicit start
-  const startRaw = sp?.get('start') != null ? sp.get('start') : sp?.get('slideIndex');
+  const startRaw =
+    sp?.get('start') != null ? sp.get('start') : sp?.get('slideIndex');
   const start = Math.max(0, Number(startRaw || 0) || 0);
 
   const allowedOrigins = parseAllowedOriginsParam(sp?.get('allowedOrigins'));

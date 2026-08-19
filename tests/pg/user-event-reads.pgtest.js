@@ -19,7 +19,12 @@ import crypto from 'node:crypto';
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { closeTestDb, openTestDb, pgDescribe, truncate } from './helpers/harness.js';
+import {
+  closeTestDb,
+  openTestDb,
+  pgDescribe,
+  truncate,
+} from './helpers/harness.js';
 import { seedDefaultOrganization } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
 import {
@@ -34,16 +39,13 @@ const ALICE = 'alice@example.com';
 
 /** Seed one activity event and return its id (for the last_read_event_id FK). */
 async function seedEvent() {
-  const res = await createActivityEvent(
-    ctx,
-    {
-      eventType: EVENT_TYPES.PRESENTATION_CREATED,
-      entityType: ENTITY_TYPES.PRESENTATION,
-      // entity_id is a NOT NULL uuid column (no FK); any uuid is valid.
-      entityId: crypto.randomUUID(),
-      actorEmail: ALICE,
-    }
-  );
+  const res = await createActivityEvent(ctx, {
+    eventType: EVENT_TYPES.PRESENTATION_CREATED,
+    entityType: ENTITY_TYPES.PRESENTATION,
+    // entity_id is a NOT NULL uuid column (no FK); any uuid is valid.
+    entityId: crypto.randomUUID(),
+    actorEmail: ALICE,
+  });
   assert.equal(res.ok, true);
   return res.event.id;
 }
@@ -103,6 +105,10 @@ pgDescribe('updateUserEventRead (real PostgreSQL)', () => {
 
     const rows = await readRows();
     assert.equal(rows.length, 1, 'the marker survives the event deletion');
-    assert.equal(rows[0].last_read_event_id, null, 'but its FK is nulled, not orphaned');
+    assert.equal(
+      rows[0].last_read_event_id,
+      null,
+      'but its FK is nulled, not orphaned',
+    );
   });
 });

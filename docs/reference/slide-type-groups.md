@@ -7,13 +7,13 @@ their own hand-written table.
 
 Those two tables disagreed. Of the 33 offerable types they agreed on 28:
 
-| Type | Picker said | Settings said |
-|---|---|---|
-| `process-slide` | `layouts` | `process`, a heading of its own |
-| `timeline-slide` | `layouts` | `process` |
-| `payoff-slide` | *absent* → computed "Other" | `other`, spelled out |
-| `end-slide` | *absent* → computed "Other" | `other`, spelled out |
-| `custom-html-slide` | *absent* → computed "Other" | `other`, spelled out |
+| Type                | Picker said                 | Settings said                   |
+| ------------------- | --------------------------- | ------------------------------- |
+| `process-slide`     | `layouts`                   | `process`, a heading of its own |
+| `timeline-slide`    | `layouts`                   | `process`                       |
+| `payoff-slide`      | _absent_ → computed "Other" | `other`, spelled out            |
+| `end-slide`         | _absent_ → computed "Other" | `other`, spelled out            |
+| `custom-html-slide` | _absent_ → computed "Other" | `other`, spelled out            |
 
 The disagreement is not the interesting part; the reason it survived is. Both
 surfaces fold a type they have never heard of into an "Other" bucket without
@@ -36,16 +36,16 @@ export default {
 
 The vocabulary is six shelves, defined in `shared/slide-types/authoring-groups.js`:
 
-| `group` | What it means | Members |
-|---|---|---|
-| `basic` | the handful most decks are actually built from — familiarity, not shape | 5 |
-| `media` | carries an image, video or embedded page | 7 |
-| `layouts` | a structured arrangement of blocks, cards or steps | 4 |
-| `data` | argues with figures, comparisons or diagrams | 8 |
-| `interaction` | the audience answers, or the slide runs on a clock | 6 |
-| `other` | the long tail: closing slides and the escape hatch | 3 |
+| `group`       | What it means                                                           | Members |
+| ------------- | ----------------------------------------------------------------------- | ------- |
+| `basic`       | the handful most decks are actually built from — familiarity, not shape | 5       |
+| `media`       | carries an image, video or embedded page                                | 7       |
+| `layouts`     | a structured arrangement of blocks, cards or steps                      | 4       |
+| `data`        | argues with figures, comparisons or diagrams                            | 8       |
+| `interaction` | the audience answers, or the slide runs on a clock                      | 6       |
+| `other`       | the long tail: closing slides and the escape hatch                      | 3       |
 
-A deprecated type declares none: curation is about what an author may *insert*,
+A deprecated type declares none: curation is about what an author may _insert_,
 and a deprecated type is already unreachable from every insertion path.
 
 `other` is in the vocabulary rather than being "everything undeclared", because
@@ -59,8 +59,8 @@ The tempting move is to delete the axis and group by the `structure` facet,
 which is already declared, derivable from the field schema, and CI-enforced.
 That was measured, and it does not work.
 
-`structure` answers *what shape is the content*. Someone opening the insert
-picker is asking *what am I putting on this slide*. Deriving one from the other
+`structure` answers _what shape is the content_. Someone opening the insert
+picker is asking _what am I putting on this slide_. Deriving one from the other
 gives:
 
 - **`media` disappears.** `image-slide`, `image-text-slide`, `video-slide` and
@@ -85,13 +85,13 @@ which is not a fact about any one type. So:
 
 - **membership** comes from the declarations, via
   `typesInGroup(group, order, types)`;
-- **order** stays with the consumer, as a *hint*: `PICKER_GROUP_ORDER` in
+- **order** stays with the consumer, as a _hint_: `PICKER_GROUP_ORDER` in
   `client/views/editor/slide-type-picker/data.js` and `CATEGORY_ORDER` in
   `client/views/settings/tabs/slide-types-tab/categories.js`.
 
 A member the hint does not name sorts after the ones it does. A name in a hint
 that no longer declares that group is ignored. Both are harmless — which is the
-whole point, because a stale *membership* table was not.
+whole point, because a stale _membership_ table was not.
 
 ## Anyone may declare a shelf
 
@@ -99,7 +99,7 @@ whole point, because a stale *membership* table was not.
 core and only core. The first version of this axis read it directly, which meant
 a type in `custom/slide-types/` could declare `group: 'media'` and be dropped
 without a word — not "forks are excluded" (they are offered, on a hardcoded
-*Custom* shelf), but the narrower and worse **a fork cannot choose its shelf**.
+_Custom_ shelf), but the narrower and worse **a fork cannot choose its shelf**.
 Under the model Deckyard is aiming at, a fork is a peer implementation rather
 than a patch on ours, so "core declares, everyone else gets a fixed shelf" is the
 wrong asymmetry.
@@ -108,15 +108,15 @@ The lookup therefore asks the definition first and treats the aggregator as
 core's answer to the same question:
 
 ```js
-slideTypeGroup(type, def)   // def.group, else core's declaration, else ''
-typesInGroup(group, order, types)   // enumerates the live map, not the artifact
+slideTypeGroup(type, def); // def.group, else core's declaration, else ''
+typesInGroup(group, order, types); // enumerates the live map, not the artifact
 ```
 
 Three consequences worth stating outright:
 
 - **A declared group wins over the Custom shelf.** A fork type that declares
   `media` is offered beside the other media types, because someone inserting a
-  slide is asking what goes on it, not who wrote the type. *Custom* is then the
+  slide is asking what goes on it, not who wrote the type. _Custom_ is then the
   shelf for a type that declares nothing — which is also how an org keeps its own
   types together, if that is what it wants: by declaring nothing.
 - **The declaration travels.** The editor holds the `/api/slide-types` response,
@@ -127,7 +127,7 @@ Three consequences worth stating outright:
   answer, or to no shelf — never to a made-up heading.
 
 Tier-2 (builder-UI) types have no `group` column yet, so they declare nothing and
-land on *Custom*. That is the fallback doing its job, not a rule about where
+land on _Custom_. That is the fallback doing its job, not a rule about where
 database-backed types belong.
 
 The general form of this — it applies to every companion derived from a generated
@@ -148,7 +148,7 @@ aggregator — is written out as the five-rule seam rule in
 5. **The consumers derive** — both surfaces resolve to the same membership, and
    each order hint only reorders: it can neither add a type nor drop one.
 6. **The ceiling** — no module outside the declaration and its two consumers has
-   a type vocabulary that is *exactly* one shelf.
+   a type vocabulary that is _exactly_ one shelf.
 7. **The seam** — the definition beats the aggregator, a non-core declarant gets
    its shelf, and an unknown value degrades. Plus, in
    `tests/slide-type-api-companions.test.js`, that the route serves what the

@@ -30,8 +30,16 @@ export const DEFAULT_TITLE_LAYOUT = 'bottom';
 /** Corner rounding presets → the `--t-radius*` triple. */
 export const RADIUS_SCALES = {
   none: { '--t-radius': '0px', '--t-radius-sm': '0px', '--t-radius-lg': '0px' },
-  soft: { '--t-radius': '16px', '--t-radius-sm': '12px', '--t-radius-lg': '20px' },
-  round: { '--t-radius': '28px', '--t-radius-sm': '20px', '--t-radius-lg': '36px' },
+  soft: {
+    '--t-radius': '16px',
+    '--t-radius-sm': '12px',
+    '--t-radius-lg': '20px',
+  },
+  round: {
+    '--t-radius': '28px',
+    '--t-radius-sm': '20px',
+    '--t-radius-lg': '36px',
+  },
 };
 
 /**
@@ -52,8 +60,7 @@ const HEADING_TRANSFORMS = ['none', 'uppercase', 'lowercase', 'capitalize'];
 const str = (v, max = 500) =>
   typeof v === 'string' ? v.trim().slice(0, max) : '';
 
-const enumOr = (v, allowed, fallback) =>
-  allowed.includes(v) ? v : fallback;
+const enumOr = (v, allowed, fallback) => (allowed.includes(v) ? v : fallback);
 
 const strList = (v, { max = 64, maxLen = 500 } = {}) =>
   (Array.isArray(v) ? v : [])
@@ -112,7 +119,7 @@ function sanitizeTypography(raw) {
     out.headingTransform = enumOr(
       raw.headingTransform,
       HEADING_TRANSFORMS,
-      'none'
+      'none',
     );
   }
   if (raw.headingWeight !== undefined) {
@@ -120,7 +127,7 @@ function sanitizeTypography(raw) {
     // Clamp to the CSS font-weight range, rounded to the nearest hundred.
     if (Number.isFinite(n)) {
       out.headingWeight = String(
-        Math.min(900, Math.max(100, Math.round(n / 100) * 100))
+        Math.min(900, Math.max(100, Math.round(n / 100) * 100)),
       );
     }
   }
@@ -221,7 +228,8 @@ export function validateThemeConfig(raw) {
   if (locks) out.locks = locks;
 
   const cssVarOverrides = sanitizeCssVarOverrides(raw.cssVarOverrides);
-  if (Object.keys(cssVarOverrides).length) out.cssVarOverrides = cssVarOverrides;
+  if (Object.keys(cssVarOverrides).length)
+    out.cssVarOverrides = cssVarOverrides;
 
   // Nothing beyond the version marker: treat as unconfigured.
   return Object.keys(out).length === 1 ? {} : out;

@@ -55,7 +55,9 @@ function simpleMarkdownToHtml(md) {
   html = html.replace(/\x00LINK(\d+)\x00/g, (_, idx) => {
     const link = links[Number(idx)];
     const label = escapeHtml(link.label);
-    return isSafeLinkUrl(link.url) ? `<a href="${escapeHtml(link.url)}">${label}</a>` : label;
+    return isSafeLinkUrl(link.url)
+      ? `<a href="${escapeHtml(link.url)}">${label}</a>`
+      : label;
   });
   // Line breaks → paragraphs
   html = html
@@ -105,7 +107,9 @@ function isTruthy(val) {
  * Background class helper.
  */
 function bgClass(val) {
-  const bg = String(val || 'lime').trim().toLowerCase();
+  const bg = String(val || 'lime')
+    .trim()
+    .toLowerCase();
   if (bg === 'mist') return 'is-mist';
   if (bg === 'transparent') return 'is-transparent';
   return 'is-lime';
@@ -141,7 +145,10 @@ function tokenize(template) {
   while ((match = regex.exec(template)) !== null) {
     // Text before this tag
     if (match.index > lastIndex) {
-      tokens.push({ type: T.TEXT, value: template.slice(lastIndex, match.index) });
+      tokens.push({
+        type: T.TEXT,
+        value: template.slice(lastIndex, match.index),
+      });
     }
 
     const inner = match[1].trim();
@@ -245,7 +252,7 @@ function evaluate(nodes, data, loopCtx) {
         break;
       case T.MARKDOWN:
         out += simpleMarkdownToHtml(
-          String(resolvePath(node.field, data, loopCtx) ?? '')
+          String(resolvePath(node.field, data, loopCtx) ?? ''),
         );
         break;
       case T.BGCLASS:

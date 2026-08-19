@@ -43,7 +43,10 @@ export const inlineEdit = {
   icons: {
     selector: '.icon-card-icon[data-inline-icon]',
     afterWrite: (slide) => {
-      if (Array.isArray(slide?.content?.items) && slide.content.items.length > 0) {
+      if (
+        Array.isArray(slide?.content?.items) &&
+        slide.content.items.length > 0
+      ) {
         syncIconCardsToNumbered(slide);
       }
     },

@@ -48,9 +48,15 @@ export function showCopyFallbackModal(text, label) {
   const modalApi = createModal(h, { title: label || t('common.copy', 'Copy') });
   const hint = h('div', {
     class: 'help',
-    text: t('common.copyManualHint', 'Select the text below and copy it manually (Ctrl/Cmd+C).'),
+    text: t(
+      'common.copyManualHint',
+      'Select the text below and copy it manually (Ctrl/Cmd+C).',
+    ),
   });
-  const field = createTextArea(h, { value: String(text ?? ''), minHeight: '160px' });
+  const field = createTextArea(h, {
+    value: String(text ?? ''),
+    minHeight: '160px',
+  });
   field.textarea.readOnly = true;
   const actions = h('div', { class: 'row is-end is-mt-8' });
   actions.append(
@@ -58,7 +64,7 @@ export function showCopyFallbackModal(text, label) {
       class: 'btn btn-primary',
       text: t('common.done', 'Done'),
       onclick: () => modalApi.close(),
-    })
+    }),
   );
   modalApi.content.append(hint, field.wrap, actions);
   modalApi.show(document.body);

@@ -1,4 +1,7 @@
-import { getPresentation, updatePresentation } from '../../../storage/presentations/index.js';
+import {
+  getPresentation,
+  updatePresentation,
+} from '../../../storage/presentations/index.js';
 import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import { translatePresentationStringsFillMissing } from '../../../utils/ai.js';
 import {
@@ -23,7 +26,7 @@ const missingTranslationJobs = new Map();
 
 export async function handlePresentationTranslateMissing(
   { repoRoot, storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   const flags = getFeatureFlags();
@@ -35,7 +38,8 @@ export async function handlePresentationTranslateMissing(
   const vendor = getOptionalString(body, 'vendor');
   const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
-  if (!canWritePresentation({ user: authedUser, pres })) return unauthorized(res);
+  if (!canWritePresentation({ user: authedUser, pres }))
+    return unauthorized(res);
 
   pres.i18n = pres.i18n && typeof pres.i18n === 'object' ? pres.i18n : {};
   pres.i18n.versions =
@@ -69,7 +73,13 @@ export async function handlePresentationTranslateMissing(
   const missingInfo = computeMissingTranslation({ source: src, target: tgt });
   const missingCount = Number(missingInfo?.missingCount || 0) || 0;
   if (!missingCount) {
-    serveJson(res, 200, { ok: true, from, to, updated: false, missingCount: 0 });
+    serveJson(res, 200, {
+      ok: true,
+      from,
+      to,
+      updated: false,
+      missingCount: 0,
+    });
     return true;
   }
 
@@ -96,7 +106,7 @@ export async function handlePresentationTranslateMissing(
         targetPresentation: tgt,
         missing: missingInfo.missing,
       },
-      { from, to, vendor }
+      { from, to, vendor },
     );
 
     const fresh = await getPresentation(storageScope, id);

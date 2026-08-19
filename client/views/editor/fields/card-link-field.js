@@ -24,7 +24,13 @@ import { t } from '../../../lib/ui-i18n.js';
  * @param {string} [o.help]
  * @returns {HTMLElement}
  */
-export function fieldCardLink({ value = '', slides = [], onChange, label, help } = {}) {
+export function fieldCardLink({
+  value = '',
+  slides = [],
+  onChange,
+  label,
+  help,
+} = {}) {
   const input = h('input', {
     class: 'form-input',
     value: value || '',
@@ -34,7 +40,10 @@ export function fieldCardLink({ value = '', slides = [], onChange, label, help }
 
   const select = h('select', { class: 'form-input card-link-picker' });
   select.append(
-    h('option', { value: '', text: t('editor.cards.linkPickCustom', 'URL / custom…') })
+    h('option', {
+      value: '',
+      text: t('editor.cards.linkPickCustom', 'URL / custom…'),
+    }),
   );
   for (const s of slides) {
     select.append(h('option', { value: `#slide:${s.id}`, text: s.label }));
@@ -59,7 +68,10 @@ export function fieldCardLink({ value = '', slides = [], onChange, label, help }
   });
 
   const children = [
-    h('div', { class: 'field-label', text: label || t('editor.cards.link', 'Link (optional)') }),
+    h('div', {
+      class: 'field-label',
+      text: label || t('editor.cards.link', 'Link (optional)'),
+    }),
     h('div', { class: 'row card-link-row' }, [input, select]),
   ];
   if (help) children.push(h('div', { class: 'help', text: help }));

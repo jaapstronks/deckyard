@@ -1,7 +1,7 @@
 # Nested surfaces: text that does not sit on the slide
 
 How an element that paints its own background gets a text colour that reads
-against *that* background instead of against the slide's.
+against _that_ background instead of against the slide's.
 
 This is a reference page: it describes what is, not what will change. The
 slide-level half of the story — how the slide itself picks a text colour, and
@@ -11,7 +11,7 @@ what a theme must declare for it — is in
 
 ## The distinction
 
-A slide answers one question about colour: *what reads on my background?* The
+A slide answers one question about colour: _what reads on my background?_ The
 answer lands in `--color-text` / `--color-text-muted`, and every component
 downstream reads those tokens. A background image or a background variant may
 redirect them, and the whole slide follows.
@@ -22,14 +22,14 @@ slide's answer is now about a surface that is not there any more.
 
 That is one defect, and it showed up three times:
 
-| Where | The surface | The text | Result |
-| --- | --- | --- | --- |
-| Funnel stage bars | the theme's lime, unchanged | `--color-text`, flipped to white by the `calm` variant | white on a light bar |
-| Poll results panel | `#ebebeb` | inherited `#fafafa` | ~1.1:1 |
-| List bullet markers | the slide background | the brand accent, which follows nothing | dots nearly invisible on a dark variant |
+| Where               | The surface                 | The text                                               | Result                                  |
+| ------------------- | --------------------------- | ------------------------------------------------------ | --------------------------------------- |
+| Funnel stage bars   | the theme's lime, unchanged | `--color-text`, flipped to white by the `calm` variant | white on a light bar                    |
+| Poll results panel  | `#ebebeb`                   | inherited `#fafafa`                                    | ~1.1:1                                  |
+| List bullet markers | the slide background        | the brand accent, which follows nothing                | dots nearly invisible on a dark variant |
 
 `pickTextColorForBg()` (`shared/color-utils.js`) does exactly the right work,
-but it is only called where a *theme token* supplies the background. A colour
+but it is only called where a _theme token_ supplies the background. A colour
 that lives in slide CSS — a hardcoded `#ebebeb`, a `--slide-bg-lime`, a
 `color-mix()` — is invisible to it. The contrast rule was formulated; it just
 stopped at the slide background.
@@ -41,19 +41,19 @@ and the text tokens are redirected for its whole subtree — the same mechanism
 `.slide.slide-bg-<id>` uses one level up.
 
 ```html
-<div class="poll-results on-surface-light">
+<div class="poll-results on-surface-light"></div>
 ```
 
 Five surfaces, defined once in
 `client/styles/slides/01-layout-and-title/00-base.css`:
 
-| Class | Text colour | Use for |
-| --- | --- | --- |
-| `on-surface-light` | `--t-text-color-dark` | any near-white plate: cards, panels, form states |
-| `on-surface-dark` | `--t-text-color-light` | the theme's deep surface |
-| `on-surface-accent` | `--t-color-accent-contrast` | a filled brand-accent block |
-| `on-surface-lime` | `--t-slide-bg-lime-text` | an element painting the theme's lime |
-| `on-surface-mist` | `--t-slide-bg-mist-text` | an element painting the theme's mist |
+| Class               | Text colour                 | Use for                                          |
+| ------------------- | --------------------------- | ------------------------------------------------ |
+| `on-surface-light`  | `--t-text-color-dark`       | any near-white plate: cards, panels, form states |
+| `on-surface-dark`   | `--t-text-color-light`      | the theme's deep surface                         |
+| `on-surface-accent` | `--t-color-accent-contrast` | a filled brand-accent block                      |
+| `on-surface-lime`   | `--t-slide-bg-lime-text`    | an element painting the theme's lime             |
+| `on-surface-mist`   | `--t-slide-bg-mist-text`    | an element painting the theme's mist             |
 
 `light` and `dark` are the theme's two poles — the same pair background-image
 auto-contrast picks between. The other three read a **derived** token: for
@@ -78,7 +78,10 @@ the background overrides the text on the same selector:
 ```css
 .slide-funnel.slide-bg-lime .stage-bar {
   background: var(--color-accent, #375c5d);
-  --surface-text: var(--t-color-accent-contrast, var(--t-text-color-light, #ffffff));
+  --surface-text: var(
+    --t-color-accent-contrast,
+    var(--t-text-color-light, #ffffff)
+  );
 }
 ```
 
@@ -97,15 +100,21 @@ A bullet dot has no text colour to follow, and the accent it carries does not
 follow a background variant either. So it gets its own token:
 
 ```css
-.slide { --slide-marker-color: var(--color-accent); }
+.slide {
+  --slide-marker-color: var(--color-accent);
+}
 ```
 
 On a slide that has flipped its text colour — a background image, or a variant
 that declared one — the accent is no longer guaranteed against that ground, so
-the dot is mixed mostly toward the colour that *is* guaranteed there:
+the dot is mixed mostly toward the colour that _is_ guaranteed there:
 
 ```css
---slide-marker-color: color-mix(in srgb, var(--color-accent) 35%, var(--slide-bg-text));
+--slide-marker-color: color-mix(
+  in srgb,
+  var(--color-accent) 35%,
+  var(--slide-bg-text)
+);
 ```
 
 A brand tint without betting on it. The threshold a graphic has to clear is the
@@ -143,7 +152,7 @@ background, which the slide-level logic already answers for.
   built with `color-mix()` against an unknown slide background (the
   `--interaction-surface` family is `white 92%` mixed with `--color-background`)
   cannot be resolved without a layout engine. Those are classed `light` because
-  they are light *by construction* — 92% white over anything is light — rather
+  they are light _by construction_ — 92% white over anything is light — rather
   than because a number was computed.
 - **Gradient variants cannot be measured.** A theme variant whose `value` is a
   gradient has no single background colour, so its `textColor` is taken on the

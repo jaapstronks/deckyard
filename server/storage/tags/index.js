@@ -130,7 +130,11 @@ export async function getTagsForPresentations(storageScope, presentationIds) {
  * @param {string[]} tagNames - Array of tag names
  * @returns {Promise<Array<{id: string, name: string}>>}
  */
-export async function setTagsForPresentation(storageScope, presentationId, tagNames) {
+export async function setTagsForPresentation(
+  storageScope,
+  presentationId,
+  tagNames,
+) {
   const ctx = resolveScope(storageScope, 'setTagsForPresentation');
   const db = getDb();
   const orgId = getOrgId(ctx);
@@ -197,7 +201,7 @@ export async function setTagsForPresentation(storageScope, presentationId, tagNa
           presentation_id: presentationId,
           tag_id: tag.id,
           created_at: now(),
-        }))
+        })),
       )
       .execute();
   }
@@ -279,7 +283,9 @@ export async function searchTags(storageScope, prefix, limit = 10) {
   const db = getDb();
   const orgId = getOrgId(ctx);
 
-  const searchTerm = String(prefix || '').trim().toLowerCase();
+  const searchTerm = String(prefix || '')
+    .trim()
+    .toLowerCase();
   if (!searchTerm) {
     return listTags(storageScope);
   }

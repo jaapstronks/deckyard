@@ -56,22 +56,22 @@
   letter-spacing: 0.03em;
 }
 
-.font-source-badge[data-source="upload"] {
+.font-source-badge[data-source='upload'] {
   background: hsl(var(--app-bg-secondary));
   color: hsl(var(--app-text-secondary));
 }
 
-.font-source-badge[data-source="adobe"] {
+.font-source-badge[data-source='adobe'] {
   background: hsl(0 80% 95%);
   color: hsl(0 70% 40%);
 }
 
-.font-source-badge[data-source="monotype"] {
+.font-source-badge[data-source='monotype'] {
   background: hsl(220 70% 95%);
   color: hsl(220 60% 40%);
 }
 
-.font-source-badge[data-source="google"] {
+.font-source-badge[data-source='google'] {
   background: hsl(140 50% 93%);
   color: hsl(140 50% 30%);
 }
@@ -144,7 +144,9 @@
   border: 1px solid hsl(var(--app-border-subtle));
   cursor: pointer;
   font-size: var(--ps-text-sm);
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .font-source-option:hover {
@@ -156,7 +158,7 @@
   background: hsl(var(--app-accent-soft) / 0.1);
 }
 
-.font-source-option input[type="radio"] {
+.font-source-option input[type='radio'] {
   accent-color: hsl(var(--app-accent-primary));
 }
 

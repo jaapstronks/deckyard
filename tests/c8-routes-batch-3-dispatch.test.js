@@ -16,9 +16,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ROUTES as CONVERT_ROUTES, handleConvert } from '../server/routes/api/convert.js';
-import { ROUTES as QUESTIONS_ROUTES, handleQuestions } from '../server/routes/api/questions.js';
-import { ROUTES as PROFILE_ROUTES, handleProfile } from '../server/routes/api/profile.js';
+import {
+  ROUTES as CONVERT_ROUTES,
+  handleConvert,
+} from '../server/routes/api/convert.js';
+import {
+  ROUTES as QUESTIONS_ROUTES,
+  handleQuestions,
+} from '../server/routes/api/questions.js';
+import {
+  ROUTES as PROFILE_ROUTES,
+  handleProfile,
+} from '../server/routes/api/profile.js';
 
 function select(routes, method, pathname) {
   for (const route of routes) {
@@ -34,7 +43,14 @@ function select(routes, method, pathname) {
 }
 
 function mockRes() {
-  return { statusCode: null, writeHead(c) { this.statusCode = c; }, end() {}, setHeader() {} };
+  return {
+    statusCode: null,
+    writeHead(c) {
+      this.statusCode = c;
+    },
+    end() {},
+    setHeader() {},
+  };
 }
 
 function ctx(method, pathname, authedUser = { email: 'a@b.test' }) {
@@ -55,7 +71,11 @@ function ctx(method, pathname, authedUser = { email: 'a@b.test' }) {
 function named(routes, method, path, handlerName) {
   const route = select(routes, method, path);
   assert.ok(route, `${method} ${path} matches a route`);
-  assert.equal(route.handler.name, handlerName, `${method} ${path} → ${handlerName}`);
+  assert.equal(
+    route.handler.name,
+    handlerName,
+    `${method} ${path} → ${handlerName}`,
+  );
 }
 
 // ─── convert (three exact Form A paths, no module guard) ───
@@ -74,7 +94,11 @@ test('convert: a wrong method falls through (no 405)', async () => {
   ]) {
     assert.equal(select(CONVERT_ROUTES, method, path), null);
     const { ctx: c } = ctx(method, path);
-    assert.equal(await handleConvert(c), false, `${method} ${path} not handled`);
+    assert.equal(
+      await handleConvert(c),
+      false,
+      `${method} ${path} not handled`,
+    );
   }
 });
 
@@ -109,9 +133,24 @@ test('questions: an unmatched moderate path falls through', async () => {
 // ─── profile (module prefix + email guard; Form B own image; admin combined) ───
 
 test('profile: routes resolve to their named handlers', () => {
-  named(PROFILE_ROUTES, 'POST', '/api/profile/image', 'handleProfileImageUpload');
-  named(PROFILE_ROUTES, 'DELETE', '/api/profile/image', 'handleProfileImageDelete');
-  named(PROFILE_ROUTES, 'POST', '/api/profile/image/x%40y.test', 'handleProfileImageAdmin');
+  named(
+    PROFILE_ROUTES,
+    'POST',
+    '/api/profile/image',
+    'handleProfileImageUpload',
+  );
+  named(
+    PROFILE_ROUTES,
+    'DELETE',
+    '/api/profile/image',
+    'handleProfileImageDelete',
+  );
+  named(
+    PROFILE_ROUTES,
+    'POST',
+    '/api/profile/image/x%40y.test',
+    'handleProfileImageAdmin',
+  );
 });
 
 test('profile: the module guards run before dispatch', async () => {
@@ -137,7 +176,10 @@ test('profile: the admin path keeps guard-before-method (403 non-admin, 405 admi
   assert.equal(nonAdmin.res.statusCode, 403, 'non-admin PATCH → 403');
 
   // Admin with a wrong method: guards pass, the internal method dispatch 405s.
-  const admin = ctx('PATCH', '/api/profile/image/x%40y.test', { email: 'a@b.test', isAdmin: true });
+  const admin = ctx('PATCH', '/api/profile/image/x%40y.test', {
+    email: 'a@b.test',
+    isAdmin: true,
+  });
   await handleProfile(admin.ctx);
   assert.equal(admin.res.statusCode, 405, 'admin PATCH → 405');
 });

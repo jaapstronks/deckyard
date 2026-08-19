@@ -27,7 +27,10 @@ import {
 export function createCollectionsBar({ api, root }) {
   const collectionsApi = createCollectionsApi({ api });
 
-  const el = h('section', { class: 'collections-bar', 'aria-label': t('slideLibrary.collections.title', 'Collections') });
+  const el = h('section', {
+    class: 'collections-bar',
+    'aria-label': t('slideLibrary.collections.title', 'Collections'),
+  });
   const headerRow = h('div', { class: 'collections-bar-header' });
   const listWrap = h('div', { class: 'collections-bar-list' });
   el.append(headerRow, listWrap);
@@ -43,7 +46,8 @@ export function createCollectionsBar({ api, root }) {
       try {
         const r = await api(`/api/slide-library/${shelf}`);
         for (const it of Array.isArray(r?.items) ? r.items : []) {
-          if (it?.id && !slideIndex.has(it.id)) slideIndex.set(it.id, { ...it, _shelf: shelf });
+          if (it?.id && !slideIndex.has(it.id))
+            slideIndex.set(it.id, { ...it, _shelf: shelf });
         }
       } catch {
         // Ignore; unresolved members degrade gracefully in the modal.
@@ -60,7 +64,10 @@ export function createCollectionsBar({ api, root }) {
   const renderHeader = () => {
     headerRow.innerHTML = '';
     headerRow.append(
-      h('h3', { class: 'collections-bar-title', text: t('slideLibrary.collections.title', 'Collections') }),
+      h('h3', {
+        class: 'collections-bar-title',
+        text: t('slideLibrary.collections.title', 'Collections'),
+      }),
       h('button', {
         class: 'btn btn-secondary is-compact',
         type: 'button',
@@ -71,11 +78,13 @@ export function createCollectionsBar({ api, root }) {
             mode: 'create',
             collectionsApi,
             onSaved: () => {
-              toast.success(t('slideLibrary.collections.created', 'Collection created.'));
+              toast.success(
+                t('slideLibrary.collections.created', 'Collection created.'),
+              );
               afterChange();
             },
           }),
-      })
+      }),
     );
   };
 
@@ -99,15 +108,28 @@ export function createCollectionsBar({ api, root }) {
         });
       },
     });
-    main.append(h('span', { class: 'collection-chip-name', text: col.name || t('slideLibrary.preview.untitled', 'Untitled') }));
+    main.append(
+      h('span', {
+        class: 'collection-chip-name',
+        text: col.name || t('slideLibrary.preview.untitled', 'Untitled'),
+      }),
+    );
     if (col.shelf === 'organization') {
-      main.append(h('span', { class: 'collection-chip-badge', text: t('slideLibrary.shelf.organization', 'Team') }));
+      main.append(
+        h('span', {
+          class: 'collection-chip-badge',
+          text: t('slideLibrary.shelf.organization', 'Team'),
+        }),
+      );
     }
     main.append(
       h('span', {
         class: 'collection-chip-count',
-        text: String(col.slideCount ?? (Array.isArray(col.slideIds) ? col.slideIds.length : 0)),
-      })
+        text: String(
+          col.slideCount ??
+            (Array.isArray(col.slideIds) ? col.slideIds.length : 0),
+        ),
+      }),
     );
 
     const actions = h('div', { class: 'collection-chip-actions' });
@@ -135,21 +157,30 @@ export function createCollectionsBar({ api, root }) {
         text: '×',
         onclick: async () => {
           const ok = await confirmModal(h, root, {
-            title: t('slideLibrary.collections.delete.title', 'Delete collection'),
-            message: t('slideLibrary.collections.delete.confirm', 'Delete “{name}”? The slides themselves are not deleted.', { name: col.name || '' }),
+            title: t(
+              'slideLibrary.collections.delete.title',
+              'Delete collection',
+            ),
+            message: t(
+              'slideLibrary.collections.delete.confirm',
+              'Delete “{name}”? The slides themselves are not deleted.',
+              { name: col.name || '' },
+            ),
             confirmLabel: t('common.delete', 'Delete'),
             danger: true,
           });
           if (!ok) return;
           try {
             await collectionsApi.remove(col.shelf, col.id);
-            toast.success(t('slideLibrary.collections.deleted', 'Collection deleted.'));
+            toast.success(
+              t('slideLibrary.collections.deleted', 'Collection deleted.'),
+            );
             afterChange();
           } catch (e) {
             toast.error(String(e?.message || e));
           }
         },
-      })
+      }),
     );
 
     chip.append(main, actions);
@@ -158,13 +189,19 @@ export function createCollectionsBar({ api, root }) {
 
   const renderList = () => {
     listWrap.innerHTML = '';
-    const all = [...(collections.personal || []), ...(collections.organization || [])];
+    const all = [
+      ...(collections.personal || []),
+      ...(collections.organization || []),
+    ];
     if (!all.length) {
       listWrap.append(
         h('div', {
           class: 'help collections-bar-empty',
-          text: t('slideLibrary.collections.empty', 'Group reusable slides into a named, ordered collection to start decks from.'),
-        })
+          text: t(
+            'slideLibrary.collections.empty',
+            'Group reusable slides into a named, ordered collection to start decks from.',
+          ),
+        }),
       );
       return;
     }

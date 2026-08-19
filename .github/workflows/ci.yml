@@ -38,6 +38,7 @@ jobs:
           test -x "$CHROME_PATH"
           echo "PUPPETEER_EXECUTABLE_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
       - run: npm run lint
+      - run: npm run format:check
       - run: npm test
 
   # Second run of the SAME suite, with a fork slide type dropped into

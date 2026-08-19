@@ -112,9 +112,15 @@ function renderData(data) {
     const date = formatDate(lead.submittedAt);
     listEl.appendChild(
       h('li', { class: 'md-item' }, [
-        h('div', { class: 'md-item-title', text: lead.name || data.email || '(record)' }),
-        h('div', { class: 'md-item-meta', text: date ? `Submitted ${date}` : 'Submitted' }),
-      ])
+        h('div', {
+          class: 'md-item-title',
+          text: lead.name || data.email || '(record)',
+        }),
+        h('div', {
+          class: 'md-item-meta',
+          text: date ? `Submitted ${date}` : 'Submitted',
+        }),
+      ]),
     );
   }
 
@@ -127,16 +133,20 @@ async function loadData() {
   show(loadingEl);
   try {
     const resp = await fetch(
-      `${API}?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`
+      `${API}?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`,
     );
     if (resp.ok) {
       renderData(await resp.json());
     } else if (resp.status === 401) {
-      showRequestForm('That link is invalid or has expired. Request a new one below.');
+      showRequestForm(
+        'That link is invalid or has expired. Request a new one below.',
+      );
     } else if (resp.status === 429) {
       showRequestForm('Too many requests. Please try again in a few minutes.');
     } else {
-      showRequestForm('Something went wrong loading your data. Request a new link below.');
+      showRequestForm(
+        'Something went wrong loading your data. Request a new link below.',
+      );
     }
   } catch {
     showRequestForm('Network error. Request a new link below.');
@@ -164,7 +174,7 @@ confirmYes?.addEventListener('click', async () => {
   try {
     const resp = await fetch(
       `${API}?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`,
-      { method: 'DELETE' }
+      { method: 'DELETE' },
     );
     if (resp.ok) {
       hide(dataView);
@@ -174,9 +184,11 @@ confirmYes?.addEventListener('click', async () => {
       show(doneEl);
     } else if (resp.status === 401) {
       // The link expired between viewing and erasing, or was already spent.
-      eraseMsg.textContent = 'That link has expired. Request a fresh one to erase your data.';
+      eraseMsg.textContent =
+        'That link has expired. Request a fresh one to erase your data.';
     } else if (resp.status === 429) {
-      eraseMsg.textContent = 'Too many requests. Please try again in a few minutes.';
+      eraseMsg.textContent =
+        'Too many requests. Please try again in a few minutes.';
       confirmYes.disabled = false;
       confirmNo.disabled = false;
     } else {

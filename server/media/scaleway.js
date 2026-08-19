@@ -27,7 +27,7 @@ async function ensureS3() {
     s3Presigner = presignerMod;
   } catch (err) {
     throw new Error(
-      'AWS SDK not installed. Run: npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner'
+      'AWS SDK not installed. Run: npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner',
     );
   }
 }
@@ -85,7 +85,11 @@ export class ScalewayProvider extends MediaProvider {
   getStatus() {
     return {
       name: 'scaleway',
-      configured: !!(this.config.accessKeyId && this.config.secretAccessKey && this.config.bucket),
+      configured: !!(
+        this.config.accessKeyId &&
+        this.config.secretAccessKey &&
+        this.config.bucket
+      ),
       supportsPresigned: true,
     };
   }
@@ -116,7 +120,9 @@ export class ScalewayProvider extends MediaProvider {
     });
 
     const publicUrl = this._getPublicUrl(key);
-    const expiresAt = new Date(Date.now() + PRESIGNED_URL_EXPIRY * 1000).toISOString();
+    const expiresAt = new Date(
+      Date.now() + PRESIGNED_URL_EXPIRY * 1000,
+    ).toISOString();
 
     return {
       uploadUrl,
@@ -129,7 +135,12 @@ export class ScalewayProvider extends MediaProvider {
     };
   }
 
-  async uploadBuffer({ buffer, filename, contentType, maxBytes = MAX_FILE_SIZE }) {
+  async uploadBuffer({
+    buffer,
+    filename,
+    contentType,
+    maxBytes = MAX_FILE_SIZE,
+  }) {
     if (!ALLOWED_CONTENT_TYPES.has(contentType)) {
       throw new ValidationError(`Unsupported content type: ${contentType}`);
     }
@@ -154,7 +165,7 @@ export class ScalewayProvider extends MediaProvider {
         Body: buffer,
         ContentType: contentType,
         ContentLength: buffer.length,
-      })
+      }),
     );
 
     return {
@@ -183,7 +194,7 @@ export class ScalewayProvider extends MediaProvider {
         new s3Commands.HeadObjectCommand({
           Bucket: this.config.bucket,
           Key: key,
-        })
+        }),
       );
 
       return {
@@ -207,7 +218,7 @@ export class ScalewayProvider extends MediaProvider {
         new s3Commands.DeleteObjectCommand({
           Bucket: this.config.bucket,
           Key: key,
-        })
+        }),
       );
       return true;
     } catch {
@@ -270,7 +281,9 @@ export class ScalewayProvider extends MediaProvider {
   _parseDataUrl(dataUrl) {
     const m = String(dataUrl).match(/^data:([^;]+);base64,(.*)$/);
     if (!m) {
-      throw new ValidationError('Invalid data URL (expected data:<mime>;base64,...)');
+      throw new ValidationError(
+        'Invalid data URL (expected data:<mime>;base64,...)',
+      );
     }
     return { mime: m[1], base64: m[2] };
   }

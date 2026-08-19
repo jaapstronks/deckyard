@@ -56,9 +56,8 @@ delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_SECRET;
 delete process.env.AUTH_DEV_BYPASS;
 
-const { resolveChromeExecutablePath } = await import(
-  '../server/utils/puppeteer-browser.js'
-);
+const { resolveChromeExecutablePath } =
+  await import('../server/utils/puppeteer-browser.js');
 
 const chromePath = await resolveChromeExecutablePath();
 const isCi = /^(1|true|yes)$/i.test(String(process.env.CI || '').trim());
@@ -84,33 +83,28 @@ before(async () => {
 
   const { createFakeDb } = await import('./helpers/fake-db.js');
   const { __setTestDb } = await import('../server/db/client.js');
-  const { initializeStorage, __resetStorageForTests } = await import(
-    '../server/storage/lifecycle.js'
-  );
-  const { createPresentation } = await import(
-    '../server/storage/presentations/index.js'
-  );
-  const { createShareLink } = await import(
-    '../server/storage/share-links/index.js'
-  );
-  const { upsertPublishedEntry, newPublishId } = await import(
-    '../server/storage/published/index.js'
-  );
-  const { createLiveSession, updateLiveSessionState } = await import(
-    '../server/storage/live-sessions/index.js'
-  );
+  const { initializeStorage, __resetStorageForTests } =
+    await import('../server/storage/lifecycle.js');
+  const { createPresentation } =
+    await import('../server/storage/presentations/index.js');
+  const { createShareLink } =
+    await import('../server/storage/share-links/index.js');
+  const { upsertPublishedEntry, newPublishId } =
+    await import('../server/storage/published/index.js');
+  const { createLiveSession, updateLiveSessionState } =
+    await import('../server/storage/live-sessions/index.js');
   const { testScope } = await import('./helpers/storage-scope.js');
   const { handleApi } = await import('../server/routes/api.js');
   const { handleStatic } = await import('../server/routes/static.js');
-  const { CLIENT_DIR, SHARED_PUBLIC_DIRS, repoRoot } = await import(
-    '../server/config/paths.js'
-  );
-  const { applySecurityHeaders } = await import(
-    '../server/utils/security-headers.js'
-  );
+  const { CLIENT_DIR, SHARED_PUBLIC_DIRS, repoRoot } =
+    await import('../server/config/paths.js');
+  const { applySecurityHeaders } =
+    await import('../server/utils/security-headers.js');
 
   __setTestDb(
-    createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] })
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    }),
   );
   await initializeStorage();
 
@@ -120,8 +114,14 @@ before(async () => {
     title: 'Smoke deck',
     ownerEmail: OWNER,
     slides: [
-      { type: 'title-slide', content: { title: SLIDE_ONE, subheading: 'first' } },
-      { type: 'title-slide', content: { title: SLIDE_TWO, subheading: 'second' } },
+      {
+        type: 'title-slide',
+        content: { title: SLIDE_ONE, subheading: 'first' },
+      },
+      {
+        type: 'title-slide',
+        content: { title: SLIDE_TWO, subheading: 'second' },
+      },
     ],
   });
 
@@ -134,7 +134,9 @@ before(async () => {
   });
 
   // Share-viewer fixture: a view-permission share link → /s/:token.
-  const share = await createShareLink(testScope(), deck.id, { permission: 'view' });
+  const share = await createShareLink(testScope(), deck.id, {
+    permission: 'view',
+  });
   const shareToken = share.token || share.shareLink?.token || share.link?.token;
 
   // Presenter↔follow fixture: a live session standing in for "the presenter is
@@ -142,7 +144,7 @@ before(async () => {
   const presenterScope = { repoRoot, organizationId: ORG };
   const session = await createLiveSession(
     { repoRoot, organizationId: ORG, actorEmail: null },
-    { presentationId: deck.id }
+    { presentationId: deck.id },
   );
   const pushLiveSlide = (index) =>
     updateLiveSessionState(presenterScope, session.sessionId, {
@@ -160,7 +162,7 @@ before(async () => {
     try {
       const url = new URL(
         req.url || '/',
-        `http://${req.headers.host || 'localhost'}`
+        `http://${req.headers.host || 'localhost'}`,
       );
       applySecurityHeaders(req, res, url.pathname);
       if (url.pathname.startsWith('/api/')) {
@@ -186,7 +188,11 @@ before(async () => {
   const browser = await puppeteer.launch({
     headless: true,
     executablePath: chromePath,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+    ],
   });
 
   ctx = {
@@ -233,7 +239,7 @@ async function waitForSlideText(page, re, timeout = 10000) {
       return !!el && new RegExp(pattern).test(el.textContent || '');
     },
     { timeout },
-    re.source
+    re.source,
   );
 }
 
@@ -242,90 +248,143 @@ test('the published public viewer renders the deck', { skip }, async () => {
   try {
     await waitForSlideText(page, new RegExp(SLIDE_ONE));
     const slideText = await page.$eval('.slide', (el) => el.textContent || '');
-    assert.match(slideText, new RegExp(SLIDE_ONE), 'slide 1 text should render');
-    assert.deepEqual(pageErrors, [], 'the public viewer must not throw on boot');
+    assert.match(
+      slideText,
+      new RegExp(SLIDE_ONE),
+      'slide 1 text should render',
+    );
+    assert.deepEqual(
+      pageErrors,
+      [],
+      'the public viewer must not throw on boot',
+    );
   } finally {
     await page.close();
   }
 });
 
-test('the share viewer renders the deck for a valid token', { skip }, async () => {
-  const { page, pageErrors } = await openViewer(`/s/${ctx.shareToken}`);
-  try {
-    // The deck lives inside the share-viewer chrome — assert both, so a bare
-    // `.slide` from some other view could never satisfy this.
-    await page.waitForSelector('.share-viewer-slide', { timeout: 10000 });
-    await waitForSlideText(page, new RegExp(SLIDE_ONE));
-    const slideText = await page.$eval(
-      '.share-viewer-slide .slide',
-      (el) => el.textContent || ''
-    );
-    assert.match(slideText, new RegExp(SLIDE_ONE), 'share viewer should paint the deck');
-    assert.deepEqual(pageErrors, [], 'the share viewer must not throw on boot');
-  } finally {
-    await page.close();
-  }
-});
+test(
+  'the share viewer renders the deck for a valid token',
+  { skip },
+  async () => {
+    const { page, pageErrors } = await openViewer(`/s/${ctx.shareToken}`);
+    try {
+      // The deck lives inside the share-viewer chrome — assert both, so a bare
+      // `.slide` from some other view could never satisfy this.
+      await page.waitForSelector('.share-viewer-slide', { timeout: 10000 });
+      await waitForSlideText(page, new RegExp(SLIDE_ONE));
+      const slideText = await page.$eval(
+        '.share-viewer-slide .slide',
+        (el) => el.textContent || '',
+      );
+      assert.match(
+        slideText,
+        new RegExp(SLIDE_ONE),
+        'share viewer should paint the deck',
+      );
+      assert.deepEqual(
+        pageErrors,
+        [],
+        'the share viewer must not throw on boot',
+      );
+    } finally {
+      await page.close();
+    }
+  },
+);
 
-test('the share viewer shows an error (not a white screen) for an unknown token', {
-  skip,
-}, async () => {
-  const { page } = await openViewer('/s/this-token-does-not-exist');
-  try {
-    // The view must resolve to a visible error card, never a blank page and
-    // never a leaked deck slide.
-    const body = await page.waitForFunction(
-      () => {
-        const text = (document.body?.textContent || '').trim();
-        return text.length > 0 ? text : false;
-      },
-      { timeout: 10000 }
-    );
-    const text = await body.jsonValue();
-    assert.ok(text.length > 0, 'an unknown token must not yield a blank page');
-    const hasSlide = await page.$('.slide');
-    assert.equal(hasSlide, null, 'no deck slide should render for an unknown token');
-    const hasErrorCard = await page.$('[class*="error"]');
-    assert.ok(hasErrorCard, 'an error card should render for an unknown token');
-  } finally {
-    await page.close();
-  }
-});
+test(
+  'the share viewer shows an error (not a white screen) for an unknown token',
+  {
+    skip,
+  },
+  async () => {
+    const { page } = await openViewer('/s/this-token-does-not-exist');
+    try {
+      // The view must resolve to a visible error card, never a blank page and
+      // never a leaked deck slide.
+      const body = await page.waitForFunction(
+        () => {
+          const text = (document.body?.textContent || '').trim();
+          return text.length > 0 ? text : false;
+        },
+        { timeout: 10000 },
+      );
+      const text = await body.jsonValue();
+      assert.ok(
+        text.length > 0,
+        'an unknown token must not yield a blank page',
+      );
+      const hasSlide = await page.$('.slide');
+      assert.equal(
+        hasSlide,
+        null,
+        'no deck slide should render for an unknown token',
+      );
+      const hasErrorCard = await page.$('[class*="error"]');
+      assert.ok(
+        hasErrorCard,
+        'an error card should render for an unknown token',
+      );
+    } finally {
+      await page.close();
+    }
+  },
+);
 
 test('the presenter view renders the deck stage', { skip }, async () => {
   const { page, pageErrors } = await openViewer(`/present/${ctx.deck.id}`);
   try {
     await waitForSlideText(page, new RegExp(SLIDE_ONE));
     const slideText = await page.$eval('.slide', (el) => el.textContent || '');
-    assert.match(slideText, new RegExp(SLIDE_ONE), 'presenter should paint the deck');
-    assert.deepEqual(pageErrors, [], 'the presenter view must not throw on boot');
-  } finally {
-    await page.close();
-  }
-});
-
-test('the follow view mirrors the presenter live session and tracks slide changes', {
-  skip,
-}, async () => {
-  const { page, pageErrors } = await openViewer(`/follow/${ctx.deck.id}`);
-  try {
-    // Coupling 1: the follow view shows the presenter's *current* live slide
-    // (seeded on slide 1), not a default first slide of its own.
-    await waitForSlideText(page, new RegExp(SLIDE_ONE));
-
-    // Coupling 2: advance the presenter's live session onto slide 2. The follow
-    // view must track it (via the SSE push, or the polling safety-net).
-    await ctx.pushLiveSlide(1);
-    await waitForSlideText(page, new RegExp(SLIDE_TWO));
-
-    const slideText = await page.$eval('.slide', (el) => el.textContent || '');
     assert.match(
       slideText,
-      new RegExp(SLIDE_TWO),
-      'follow should track the presenter to slide 2'
+      new RegExp(SLIDE_ONE),
+      'presenter should paint the deck',
     );
-    assert.deepEqual(pageErrors, [], 'the follow view must not throw on boot');
+    assert.deepEqual(
+      pageErrors,
+      [],
+      'the presenter view must not throw on boot',
+    );
   } finally {
     await page.close();
   }
 });
+
+test(
+  'the follow view mirrors the presenter live session and tracks slide changes',
+  {
+    skip,
+  },
+  async () => {
+    const { page, pageErrors } = await openViewer(`/follow/${ctx.deck.id}`);
+    try {
+      // Coupling 1: the follow view shows the presenter's *current* live slide
+      // (seeded on slide 1), not a default first slide of its own.
+      await waitForSlideText(page, new RegExp(SLIDE_ONE));
+
+      // Coupling 2: advance the presenter's live session onto slide 2. The follow
+      // view must track it (via the SSE push, or the polling safety-net).
+      await ctx.pushLiveSlide(1);
+      await waitForSlideText(page, new RegExp(SLIDE_TWO));
+
+      const slideText = await page.$eval(
+        '.slide',
+        (el) => el.textContent || '',
+      );
+      assert.match(
+        slideText,
+        new RegExp(SLIDE_TWO),
+        'follow should track the presenter to slide 2',
+      );
+      assert.deepEqual(
+        pageErrors,
+        [],
+        'the follow view must not throw on boot',
+      );
+    } finally {
+      await page.close();
+    }
+  },
+);

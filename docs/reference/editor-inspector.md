@@ -16,7 +16,7 @@ one of three surfaces:
    manipulation of images: a draggable focal point, and double-click to
    replace a filled image. Empty slots keep a "+ Add image" affordance (they
    have nothing to occlude) and accept a desktop file-drop. Everything
-   *settable* on an image (replace, alt, fit, focus grid, per-item metadata)
+   _settable_ on an image (replace, alt, fit, focus grid, per-item metadata)
    lives in the inspector's "This image" tab, not on the image - see the
    editing-surface principle in `docs/reference/editing-surfaces.md`. Descriptor
    registry: `client/views/editor/inline-edit/descriptors.js` (custom types
@@ -25,7 +25,7 @@ one of three surfaces:
 2. **The "Edit all text" bulk modal** (`client/views/editor/bulk-edit-modal.js`) -
    the non-wysiwyg mode: all content fields in one list on the left, a live
    contain-scaled preview on the right, ‹ x/N › navigation across the deck.
-   It mounts the *existing* form field renderers in a `contentOnly` mode
+   It mounts the _existing_ form field renderers in a `contentOnly` mode
    (no chrome, no Background/Accessibility), so items add/remove/reorder,
    markdown editors and validation are parity-safe **by construction** - it
    renders every non-Background/non-a11y field a type has.
@@ -114,7 +114,7 @@ and the zoom button. The inspector pane itself has **no header row**: the
 "INSPECTOR" title duplicated the already-active Inspector pane tab, so the
 row was dropped (declutter 2026-07-26) and only its collapse × survives, in
 a zero-height slot (`.editor-form-close-slot`) that floats it over the first
-field's label band. It is appended *after* the element tab bar so it cannot
+field's label band. It is appended _after_ the element tab bar so it cannot
 cover the "Slide" tab, and it is always visible — hover-only would strand
 touch users, and the × has to sit inside the surface it dismisses.
 
@@ -148,7 +148,7 @@ the companion matrix; the map itself comes from the generated aggregator
   `custom/slide-types/` narrows its own settings pane the same way it declares
   `inline` or `schematic`. See `docs/reference/slide-type-directory.md`.
 - **Unknown (custom/fork) types fall back conservatively**: a type neither side
-  narrows keeps every schema field *except* the proven-wysiwyg-covered keys
+  narrows keeps every schema field _except_ the proven-wysiwyg-covered keys
   (`getInlineFormTextKeys`, fed by the descriptor's `formText`). Dropping more
   would risk orphaning a field the fork has no other surface for. An empty
   keep-list (`[]`) is a real answer and is not the same as no keep-list.
@@ -211,7 +211,7 @@ contents are small (Accessibility), or keep it closed and put the state in the
 summary when opening would cost most of the rail (Background image's
 thumbnail). Either way the summary carries a **filled indicator**.
 
-**Accessibility status chip.** `a11yTitle`/`a11ySummary` are *overrides*, not
+**Accessibility status chip.** `a11yTitle`/`a11ySummary` are _overrides_, not
 the primary mechanism: export and present announce a slide by its own heading
 and only fall back to `a11yTitle` when set (`server/export/html.js`
 `slideA11yLabel`). So an empty section is not "undescribed", and the summary
@@ -232,9 +232,9 @@ Selecting a canvas element grows the pane a **tab bar**; with nothing selected
 there is no tab bar - just the slide form (identical to the pre-tab pane).
 
 - **Selection state** lives in the controller (`selectedElement =
-  {kind:'image'|'card', idx} | null`), cleared on slide change. Canvas
+{kind:'image'|'card', idx} | null`), cleared on slide change. Canvas
   interactions set it: a single click on a filled image →
-  `onOpenElementSettings({image, idx})` (selects it *and* opens the rail on the
+  `onOpenElementSettings({image, idx})` (selects it _and_ opens the rail on the
   "This image" tab, the single doorway to everything settable); editing a card's
   text or clicking its icon → `{card, idx}`; a plain-text edit or empty-slide
   click clears it. Double-clicking a filled image, or clicking an empty slot,
@@ -298,7 +298,7 @@ active theme declares via **`theme.textSwatches`** — a list of fixed slots
 (`brand-1`/`brand-2`/`brand-3`) each backed by a `--t-color-<slot>` token, with
 an optional label (string or `{ nl, en }`, like `backgroundLabels`). Rationale
 for a curated theme palette rather than exposing the background swatches
-directly: the `--t-slide-bg-*` swatches are *surface fills* (e.g. `lime` is
+directly: the `--t-slide-bg-*` swatches are _surface fills_ (e.g. `lime` is
 often white), so they fail as text colours — a theme picks legible on-brand
 colours here instead. Normalization (`normalizeTheme`) keeps only slots the
 theme actually coloured, so the control never shows a swatch that would resolve
@@ -307,7 +307,7 @@ tokens. Stored values stay portable tokens: a deck carrying `brand-1` on a
 theme that never defined it falls back to the default text colour (the
 `currentColor` fallback in the `tf-color-brand-*` CSS), not a broken colour.
 
-**Size scale (`tf-size-sm/lg`).** A plain `em` multiplier would *replace* the
+**Size scale (`tf-size-sm/lg`).** A plain `em` multiplier would _replace_ the
 px font-sizes several types set (content body 28/25/22px per density) with a
 fraction of the parent size, shrinking rather than scaling. Instead `tf-size-*`
 only set a `--tf-size-scale` custom property on the field element (`sm` 0.85,
@@ -333,7 +333,7 @@ It replaces a table hand-written during the 2026-07-16 audit and re-audited on
 card-stack a `cardCount` keep and image-text `imageFit`/`focusX/Y` keeps long
 after those left the keep-lists, listed four per-column keeps for
 content-columns where only `columnCount` remains, and still called the title
-slide's `meta` field "byline, attribution". The *rationale* for a keep-list is
+slide's `meta` field "byline, attribution". The _rationale_ for a keep-list is
 deliberately not restated here - it lives as JSDoc beside the declaration in
 `shared/slide-types/types/<name>/inline-edit.js`, which is what someone
 changing the list reads.
@@ -341,10 +341,10 @@ changing the list reads.
 Column semantics:
 
 - **Canvas (wysiwyg)**: the descriptor's `formText` - the keys whose editing
-  is *fully* covered on the slide surface. A field the canvas edits only
+  is _fully_ covered on the slide surface. A field the canvas edits only
   partly (an icon picker, a KPI delta) is deliberately absent, so this column
   is a coverage claim rather than a list of what is clickable.
-- **Bulk modal (only home)**: the fields that *rely* on the "Edit all text"
+- **Bulk modal (only home)**: the fields that _rely_ on the "Edit all text"
   modal - surfaced by the schema and claimed by nothing else. Four claimants
   are subtracted, each from a declaration: `formText`, the keep-list, the
   descriptor's element knobs (`media` in flat mode, `focus`, `fit`, `bleed` -
@@ -367,6 +367,7 @@ consolidation.
 
 Not repeated per row, because they are the same for all
 <!--gen:slide-type-count-->34<!--/gen:slide-type-count--> types: `slideBgImage`,
+
 `slideBgFit`, `slideBgFocusX/Y`, `slideBgOverlay`, `slideBgText`, `slideLogo`
 (Background image section), `a11yTitle`/`a11ySummary` (Accessibility) and the
 per-type `background`/`bgCustomColor` colour field - all **inspector**
@@ -377,42 +378,44 @@ and an inactive alias collection (`steps`, `stages`) follows its array field
 rather than getting a home of its own.
 
 <!--gen:slide-type-coverage-->
-| Type | Canvas (wysiwyg) | Bulk modal (only home) | Inspector keeps |
-|---|---|---|---|
-| `title-slide` | `title`, `subheading`, `meta` | – | `logoCorner` |
-| `chapter-title-slide` | `title`, `subheading` | – | `layout` |
-| `content-slide` | `title`, `subheading`, `body` | – | `layout`, `density`, `actions` |
-| `table-slide` | `title`, `caption` | `rows` | `headerRow`, `tableStyle`, `animateByCell`, `cornerCell` |
-| `list-slide` | `title`, `subheading`, `items` | – | `variant`, `layout`, `density` |
-| `kpi-metrics-slide` | `title`, `subheading`, `bottomSubheading` | `metrics` | `accent`, `countUp` |
-| `image-text-slide` | `title`, `caption`, `body` | `images` | `imageRole`, `density`, `textColumns`, `imageSide`, `imageWidth`, `imageBackground`, `actions` |
-| `video-slide` | `title` | – | `source`, `autoplay`, `bunnyLibraryId`, `watchUrl` |
-| `team-cards-slide` | `title`, `subheading`, `bottomSubheading`, `subheading2` | `members` | `textPosition`, `imageShape`, `imageAspect`, `showPhotoFrame`, `columnSplit` |
-| `logo-wall-slide` | `title`, `subheading` | `logos` | – |
-| `icon-card-grid-slide` | `title`, `subheading`, `bottomSubheading` | `items` | `layout` |
-| `payoff-slide` | – | – | – |
-| `quote-slide` | `quote`, `authorName`, `authorTitle` | `quotes` | – |
-| `image-slide` | `title`, `subheading`, `bottomSubheading`, `caption` | – | `imageRole`, `zoomSteps`, `zoomLevel`, `zoomPositions` |
-| `embed-slide` | `title` | – | `embedUrl`, `aspectRatio`, `sandbox` |
-| `countdown-slide` | `title` | – | `durationMinutes`, `durationSeconds`, `autoStart`, `flashOnZero`, `soundOnZero`, `zeroText` |
-| `poll-slide` | `question`, `option{n}` | – | `onClose`, `onCloseTarget` |
-| `likert-slide` | `question`, `option{n}` | – | `onClose`, `onCloseTarget` |
-| `likert-slider-slide` | `question`, `minLabel`, `maxLabel` | – | – |
-| `feedback-slide` | `question` | – | `placeholder` |
-| `lead-capture-slide` | `title`, `description`, `nameLabel`, `emailLabel`, `submitLabel` | – | `thankYouTitle`, `thankYouMessage`, `privacyText`, `privacyUrl` |
-| `follow-invite-slide` | – | – | – |
-| `chart-slide` | `title`, `subheading`, `bottomSubheading` | – | `chartType`, `data`, `showLegend`, `showValues`, `pieLabelMode`, `xLabel`, `yLabel`, `series{n}Label` |
-| `text-blocks-slide` | `title`, `subheading`, `bottomSubheading` | `rows` | – |
-| `comparison-slide` | `title`, `subheading`, `bottomSubheading`, `leftTitle`, `leftBody`, `rightTitle`, `rightBody`, `verdict` | – | – |
-| `process-slide` | `title`, `subheading`, `bottomSubheading`, `items`, `steps` | – | `direction` |
-| `timeline-slide` | `title`, `subheading`, `bottomSubheading`, `items` | – | – |
-| `matrix-slide` | `title`, `subheading`, `bottomSubheading`, `cells` | – | – |
-| `funnel-slide` | `title`, `subheading`, `bottomSubheading`, `items`, `stages` | – | – |
-| `pyramid-slide` | `title`, `subheading`, `bottomSubheading`, `levels` | – | – |
-| `cycle-slide` | `title`, `subheading`, `bottomSubheading`, `centerLabel`, `items`, `stages` | – | – |
-| `gallery-slide` | `title`, `subheading`, `bottomSubheading` | `images` | `layout` |
-| `custom-html-slide` | – | `html`, `css` | – |
-| `end-slide` | `title`, `body`, `contactName`, `contactEmail`, `contactPhone` | – | `contactUrl`, `social{n}Label`, `social{n}Url` |
+
+| Type                   | Canvas (wysiwyg)                                                                                         | Bulk modal (only home) | Inspector keeps                                                                                       |
+| ---------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------- |
+| `title-slide`          | `title`, `subheading`, `meta`                                                                            | –                      | `logoCorner`                                                                                          |
+| `chapter-title-slide`  | `title`, `subheading`                                                                                    | –                      | `layout`                                                                                              |
+| `content-slide`        | `title`, `subheading`, `body`                                                                            | –                      | `layout`, `density`, `actions`                                                                        |
+| `table-slide`          | `title`, `caption`                                                                                       | `rows`                 | `headerRow`, `tableStyle`, `animateByCell`, `cornerCell`                                              |
+| `list-slide`           | `title`, `subheading`, `items`                                                                           | –                      | `variant`, `layout`, `density`                                                                        |
+| `kpi-metrics-slide`    | `title`, `subheading`, `bottomSubheading`                                                                | `metrics`              | `accent`, `countUp`                                                                                   |
+| `image-text-slide`     | `title`, `caption`, `body`                                                                               | `images`               | `imageRole`, `density`, `textColumns`, `imageSide`, `imageWidth`, `imageBackground`, `actions`        |
+| `video-slide`          | `title`                                                                                                  | –                      | `source`, `autoplay`, `bunnyLibraryId`, `watchUrl`                                                    |
+| `team-cards-slide`     | `title`, `subheading`, `bottomSubheading`, `subheading2`                                                 | `members`              | `textPosition`, `imageShape`, `imageAspect`, `showPhotoFrame`, `columnSplit`                          |
+| `logo-wall-slide`      | `title`, `subheading`                                                                                    | `logos`                | –                                                                                                     |
+| `icon-card-grid-slide` | `title`, `subheading`, `bottomSubheading`                                                                | `items`                | `layout`                                                                                              |
+| `payoff-slide`         | –                                                                                                        | –                      | –                                                                                                     |
+| `quote-slide`          | `quote`, `authorName`, `authorTitle`                                                                     | `quotes`               | –                                                                                                     |
+| `image-slide`          | `title`, `subheading`, `bottomSubheading`, `caption`                                                     | –                      | `imageRole`, `zoomSteps`, `zoomLevel`, `zoomPositions`                                                |
+| `embed-slide`          | `title`                                                                                                  | –                      | `embedUrl`, `aspectRatio`, `sandbox`                                                                  |
+| `countdown-slide`      | `title`                                                                                                  | –                      | `durationMinutes`, `durationSeconds`, `autoStart`, `flashOnZero`, `soundOnZero`, `zeroText`           |
+| `poll-slide`           | `question`, `option{n}`                                                                                  | –                      | `onClose`, `onCloseTarget`                                                                            |
+| `likert-slide`         | `question`, `option{n}`                                                                                  | –                      | `onClose`, `onCloseTarget`                                                                            |
+| `likert-slider-slide`  | `question`, `minLabel`, `maxLabel`                                                                       | –                      | –                                                                                                     |
+| `feedback-slide`       | `question`                                                                                               | –                      | `placeholder`                                                                                         |
+| `lead-capture-slide`   | `title`, `description`, `nameLabel`, `emailLabel`, `submitLabel`                                         | –                      | `thankYouTitle`, `thankYouMessage`, `privacyText`, `privacyUrl`                                       |
+| `follow-invite-slide`  | –                                                                                                        | –                      | –                                                                                                     |
+| `chart-slide`          | `title`, `subheading`, `bottomSubheading`                                                                | –                      | `chartType`, `data`, `showLegend`, `showValues`, `pieLabelMode`, `xLabel`, `yLabel`, `series{n}Label` |
+| `text-blocks-slide`    | `title`, `subheading`, `bottomSubheading`                                                                | `rows`                 | –                                                                                                     |
+| `comparison-slide`     | `title`, `subheading`, `bottomSubheading`, `leftTitle`, `leftBody`, `rightTitle`, `rightBody`, `verdict` | –                      | –                                                                                                     |
+| `process-slide`        | `title`, `subheading`, `bottomSubheading`, `items`, `steps`                                              | –                      | `direction`                                                                                           |
+| `timeline-slide`       | `title`, `subheading`, `bottomSubheading`, `items`                                                       | –                      | –                                                                                                     |
+| `matrix-slide`         | `title`, `subheading`, `bottomSubheading`, `cells`                                                       | –                      | –                                                                                                     |
+| `funnel-slide`         | `title`, `subheading`, `bottomSubheading`, `items`, `stages`                                             | –                      | –                                                                                                     |
+| `pyramid-slide`        | `title`, `subheading`, `bottomSubheading`, `levels`                                                      | –                      | –                                                                                                     |
+| `cycle-slide`          | `title`, `subheading`, `bottomSubheading`, `centerLabel`, `items`, `stages`                              | –                      | –                                                                                                     |
+| `gallery-slide`        | `title`, `subheading`, `bottomSubheading`                                                                | `images`               | `layout`                                                                                              |
+| `custom-html-slide`    | –                                                                                                        | `html`, `css`          | –                                                                                                     |
+| `end-slide`            | `title`, `body`, `contactName`, `contactEmail`, `contactPhone`                                           | –                      | `contactUrl`, `social{n}Label`, `social{n}Url`                                                        |
+
 <!--/gen:slide-type-coverage-->
 
 Two shorthands the keeps-model JSDoc in `inspector-form.js` still refers to,

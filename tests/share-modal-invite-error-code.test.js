@@ -39,9 +39,8 @@ globalThis.getComputedStyle = dom.window.getComputedStyle;
 
 const { h } = await import('../client/lib/dom.js');
 const { api } = await import('../client/lib/api.js');
-const { createCollaboratorsSection } = await import(
-  '../client/views/editor/modals/share-modal/collaborators-section.js'
-);
+const { createCollaboratorsSection } =
+  await import('../client/views/editor/modals/share-modal/collaborators-section.js');
 
 const PRESENTATION_ID = 'p1';
 const INVITEE = { email: 'sarah@example.com', name: 'Sarah' };
@@ -55,7 +54,10 @@ function jsonResponse(status, body) {
   return {
     ok: status >= 200 && status < 300,
     status,
-    headers: { get: (k) => (k.toLowerCase() === 'content-type' ? 'application/json' : null) },
+    headers: {
+      get: (k) =>
+        k.toLowerCase() === 'content-type' ? 'application/json' : null,
+    },
     json: async () => body,
     text: async () => JSON.stringify(body),
   };
@@ -109,13 +111,13 @@ async function inviteOne(section) {
   await afterDebounce();
 
   const item = section.element.querySelector(
-    `.user-autocomplete-item[data-email="${INVITEE.email}"]`
+    `.user-autocomplete-item[data-email="${INVITEE.email}"]`,
   );
   assert.ok(item, 'the autocomplete offered the invitee');
   item.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
 
-  const addBtn = [...section.element.querySelectorAll('button')].find(
-    (b) => b.classList.contains('btn-primary')
+  const addBtn = [...section.element.querySelectorAll('button')].find((b) =>
+    b.classList.contains('btn-primary'),
   );
   assert.ok(addBtn, 'the invite button is present');
   addBtn.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
@@ -146,7 +148,7 @@ test('a 409 that carries a friendly message still reaches the already-collaborat
   assert.doesNotMatch(
     errors[0].message,
     /already_exists/,
-    'the raw machine code never reaches the user'
+    'the raw machine code never reaches the user',
   );
 });
 
@@ -181,6 +183,6 @@ test('an unrelated failure that merely mentions the string is not mistaken for i
   assert.doesNotMatch(
     errors[0].message,
     /already collaborators/i,
-    'the friendly branch belongs to the code, not to the substring'
+    'the friendly branch belongs to the code, not to the substring',
   );
 });

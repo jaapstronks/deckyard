@@ -50,7 +50,7 @@ function snippetBlock({ label, code, help }) {
   });
   head.append(
     h('div', { class: 'field-label', text: label }),
-    copyButton(() => code)
+    copyButton(() => code),
   );
   wrap.append(head);
 
@@ -80,9 +80,9 @@ export function renderMcpConnectCard() {
       class: 'help',
       text: t(
         'settings.mcp.description',
-        'Deckyard speaks the Model Context Protocol: point Claude Desktop, Cursor, or a remote agent at this server to create and edit decks in natural language. Remote access authenticates with one of the API keys above.'
+        'Deckyard speaks the Model Context Protocol: point Claude Desktop, Cursor, or a remote agent at this server to create and edit decks in natural language. Remote access authenticates with one of the API keys above.',
       ),
-    })
+    }),
   );
 
   // Remote agents (HTTP/SSE) — authenticates with a Deckyard API key.
@@ -94,7 +94,7 @@ export function renderMcpConnectCard() {
       },
     },
     null,
-    2
+    2,
   );
 
   // Local tools (stdio) — Claude Desktop / Cursor, no API key needed.
@@ -110,7 +110,7 @@ export function renderMcpConnectCard() {
       },
     },
     null,
-    2
+    2,
   );
 
   card.append(
@@ -118,7 +118,7 @@ export function renderMcpConnectCard() {
       label: t('settings.mcp.remote.label', 'Remote agents (HTTP + API key)'),
       help: t(
         'settings.mcp.remote.help',
-        'Endpoint /mcp. Create a key above and send it as a Bearer token.'
+        'Endpoint /mcp. Create a key above and send it as a Bearer token.',
       ),
       code: remoteConfig,
     }),
@@ -126,10 +126,10 @@ export function renderMcpConnectCard() {
       label: t('settings.mcp.desktop.label', 'Claude Desktop / Cursor (local)'),
       help: t(
         'settings.mcp.desktop.help',
-        'Add to claude_desktop_config.json. Local stdio needs no API key; set the owner email so decks are attributed to you.'
+        'Add to claude_desktop_config.json. Local stdio needs no API key; set the owner email so decks are attributed to you.',
       ),
       code: desktopConfig,
-    })
+    }),
   );
 
   // Plain REST alternative — link to the served OpenAPI spec.
@@ -148,7 +148,7 @@ export function renderMcpConnectCard() {
       target: '_blank',
       rel: 'noopener',
       text: t('settings.mcp.rest.link', 'View the OpenAPI spec'),
-    })
+    }),
   );
   card.append(restRow);
 

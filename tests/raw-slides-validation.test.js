@@ -63,14 +63,18 @@ describe('validateRefinedSlidesStrict', () => {
   it('rejects empty slides array', () => {
     assert.throws(
       () => validateRefinedSlidesStrict([]),
-      (err) => err instanceof RawSlideValidationError && err.details.field === 'slides'
+      (err) =>
+        err instanceof RawSlideValidationError &&
+        err.details.field === 'slides',
     );
   });
 
   it('rejects overlong title with maxLength detail', () => {
     const longTitle = 'x'.repeat(500);
     try {
-      validateRefinedSlidesStrict([{ type: 'title-slide', content: { title: longTitle } }]);
+      validateRefinedSlidesStrict([
+        { type: 'title-slide', content: { title: longTitle } },
+      ]);
       assert.fail('should have thrown');
     } catch (err) {
       assert.ok(err instanceof RawSlideValidationError);
@@ -83,9 +87,11 @@ describe('validateRefinedSlidesStrict', () => {
 
 describe('diffAppliedFixes', () => {
   it('reports truncation on overlong title', () => {
-    const input = [{ type: 'title-slide', content: { title: 'x'.repeat(500) } }];
+    const input = [
+      { type: 'title-slide', content: { title: 'x'.repeat(500) } },
+    ];
     const fixed = validateAndFixRefinedSlides(
-      input.map((s) => ({ type: s.type, content: s.content }))
+      input.map((s) => ({ type: s.type, content: s.content })),
     );
     const fixes = diffAppliedFixes(input, fixed);
     const titleFix = fixes.find((f) => f.field === 'title');
@@ -98,20 +104,26 @@ describe('diffAppliedFixes', () => {
       title: `Item ${i + 1}`,
       text: 'short',
     }));
-    const input = [{ type: 'list-slide', content: { title: 'L', items, layout: 'one-column' } }];
+    const input = [
+      {
+        type: 'list-slide',
+        content: { title: 'L', items, layout: 'one-column' },
+      },
+    ];
     const fixed = validateAndFixRefinedSlides(
-      input.map((s) => ({ type: s.type, content: s.content }))
+      input.map((s) => ({ type: s.type, content: s.content })),
     );
     const fixes = diffAppliedFixes(input, fixed);
-    assert.ok(fixes.some((f) => f.field === 'layout'), 'expected a layout fix');
+    assert.ok(
+      fixes.some((f) => f.field === 'layout'),
+      'expected a layout fix',
+    );
   });
 
   it('returns empty array when nothing changed', () => {
-    const input = [
-      { type: 'title-slide', content: { title: 'Hello' } },
-    ];
+    const input = [{ type: 'title-slide', content: { title: 'Hello' } }];
     const fixed = validateAndFixRefinedSlides(
-      input.map((s) => ({ type: s.type, content: s.content }))
+      input.map((s) => ({ type: s.type, content: s.content })),
     );
     const fixes = diffAppliedFixes(input, fixed);
     assert.deepStrictEqual(fixes, []);

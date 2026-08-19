@@ -220,14 +220,17 @@ async function verifyDualKey(db, key) {
   };
 
   const mismatchedSamples = await sampleFor('mismatched');
-  const unlinkedSamples = (await sampleFor('unlinked')).map(({ email }) => ({ email }));
+  const unlinkedSamples = (await sampleFor('unlinked')).map(({ email }) => ({
+    email,
+  }));
 
   return {
     table,
     idColumn,
     emailColumn,
     label,
-    total: counts.linked + counts.external + counts.unlinked + counts.mismatched,
+    total:
+      counts.linked + counts.external + counts.unlinked + counts.mismatched,
     ...counts,
     mismatchedSamples,
     unlinkedSamples,
@@ -271,7 +274,7 @@ export async function verifyIdentityConsistency() {
         unlinked,
         checks,
       };
-    }
+    },
   );
 }
 
@@ -293,21 +296,23 @@ export function formatIdentityReport(report) {
     lines.push(
       `${c.label} (${c.table}.${c.idColumn} ↔ ${c.emailColumn}): ` +
         `${c.total} rows — ${c.linked} linked, ${c.external} external, ` +
-        `${c.unlinked} unlinked, ${c.mismatched} mismatched`
+        `${c.unlinked} unlinked, ${c.mismatched} mismatched`,
     );
     for (const s of c.unlinkedSamples) {
-      lines.push(`    unlinked: ${s.email} has a users row but no id — re-run the backfill`);
+      lines.push(
+        `    unlinked: ${s.email} has a users row but no id — re-run the backfill`,
+      );
     }
     for (const s of c.mismatchedSamples) {
       lines.push(
-        `    MISMATCH: row says ${s.email}, user ${s.userId} is ${s.userEmail ?? '(no users row)'}`
+        `    MISMATCH: row says ${s.email}, user ${s.userId} is ${s.userEmail ?? '(no users row)'}`,
       );
     }
   }
   lines.push(
     report.ok
       ? `OK — every linked row agrees with its users row (${report.unlinked} repairable, 0 mismatched).`
-      : `FAILED — ${report.mismatched} row(s) name two different people.`
+      : `FAILED — ${report.mismatched} row(s) name two different people.`,
   );
   return lines;
 }

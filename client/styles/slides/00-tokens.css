@@ -15,16 +15,16 @@
      ========================================================================= */
 
   /* Core scale tokens */
-  --slide-text-xs: 14px;     /* Captions, labels */
-  --slide-text-sm: 16px;     /* Small text, dates */
-  --slide-text-base: 20px;   /* Default body text */
-  --slide-text-md: 24px;     /* Emphasized body, step titles */
-  --slide-text-lg: 28px;     /* Large body, subtitles */
-  --slide-text-xl: 34px;     /* Small headings */
-  --slide-text-2xl: 44px;    /* Section headings */
-  --slide-text-3xl: 52px;    /* Large headings */
-  --slide-text-4xl: 64px;    /* Title slides */
-  --slide-text-5xl: 80px;    /* Hero titles */
+  --slide-text-xs: 14px; /* Captions, labels */
+  --slide-text-sm: 16px; /* Small text, dates */
+  --slide-text-base: 20px; /* Default body text */
+  --slide-text-md: 24px; /* Emphasized body, step titles */
+  --slide-text-lg: 28px; /* Large body, subtitles */
+  --slide-text-xl: 34px; /* Small headings */
+  --slide-text-2xl: 44px; /* Section headings */
+  --slide-text-3xl: 52px; /* Large headings */
+  --slide-text-4xl: 64px; /* Title slides */
+  --slide-text-5xl: 80px; /* Hero titles */
 
   /* Semantic typography aliases */
   --slide-font-size-title: var(--slide-text-4xl);
@@ -32,7 +32,9 @@
   --slide-font-size-subheading: var(--slide-text-lg);
   --slide-font-size-body: var(--slide-text-base);
   --slide-font-size-caption: var(--slide-text-sm);
-  --slide-font-size-label: var(--slide-text-xs); /* kickers, eyebrows, axis labels */
+  --slide-font-size-label: var(
+    --slide-text-xs
+  ); /* kickers, eyebrows, axis labels */
   /* The card pattern. Unlike the roles above, these two are *contextual*: a
      card sets them for its own density and its parts read them, so the values
      here are the default a card inherits when it sets nothing. See
@@ -62,16 +64,16 @@
      ========================================================================= */
 
   /* Core spacing tokens (8px base) */
-  --slide-space-1: 4px;      /* Tight gaps (inline elements) */
-  --slide-space-2: 8px;      /* Minimum spacing */
-  --slide-space-3: 12px;     /* Small gaps (related items) */
-  --slide-space-4: 16px;     /* Standard gaps */
-  --slide-space-5: 20px;     /* Medium gaps */
-  --slide-space-6: 24px;     /* Section gaps */
-  --slide-space-8: 32px;     /* Large gaps */
-  --slide-space-10: 40px;    /* Extra large gaps */
-  --slide-space-12: 48px;    /* Section separators */
-  --slide-space-16: 64px;    /* Slide padding */
+  --slide-space-1: 4px; /* Tight gaps (inline elements) */
+  --slide-space-2: 8px; /* Minimum spacing */
+  --slide-space-3: 12px; /* Small gaps (related items) */
+  --slide-space-4: 16px; /* Standard gaps */
+  --slide-space-5: 20px; /* Medium gaps */
+  --slide-space-6: 24px; /* Section gaps */
+  --slide-space-8: 32px; /* Large gaps */
+  --slide-space-10: 40px; /* Extra large gaps */
+  --slide-space-12: 48px; /* Section separators */
+  --slide-space-16: 64px; /* Slide padding */
   /* Slide-frame steps: wider than the slide padding, for the few places that
      have to read as a frame rather than a gap — a title slide's gutter, the
      gap between two card groups. Same ratio band as the steps below them
@@ -154,12 +156,18 @@
   /* The display accent for dark grounds (quote attribution line): a theme
      sets --t-color-accent-on-dark; the default is the same accent-lightening
      the on-dark link uses. */
-  --slide-accent-on-dark: var(--t-color-accent-on-dark, var(--slide-link-on-dark));
+  --slide-accent-on-dark: var(
+    --t-color-accent-on-dark,
+    var(--slide-link-on-dark)
+  );
   /* The soft accent plane and its pair (icon blocks): derived by
      theme-normalize (the theme's bright mist tint, or the accent when mist is
      dark), theme-overridable via --t-color-accent-soft. */
   --slide-accent-soft: var(--t-color-accent-soft, var(--slide-bg-mist));
-  --slide-on-accent-soft: var(--t-color-accent-soft-contrast, var(--slide-on-mist));
+  --slide-on-accent-soft: var(
+    --t-color-accent-soft-contrast,
+    var(--slide-on-mist)
+  );
 
   /* Emphasis: the plane a type fills to make a band stand out — table header
      and label-column planes, kickers. Fed by the accent pair; a distinct role
@@ -209,15 +217,15 @@
      Consistent opacity values for overlays, borders, and text muting.
      ========================================================================= */
 
-  --slide-opacity-subtle: 0.08;    /* Barely visible (hover states) */
-  --slide-opacity-light: 0.12;     /* Light borders, separators */
-  --slide-opacity-muted: 0.18;     /* Muted elements */
-  --slide-opacity-soft: 0.22;      /* Soft overlays */
-  --slide-opacity-medium: 0.45;    /* Medium visibility */
-  --slide-opacity-strong: 0.65;    /* Strong but not solid */
-  --slide-opacity-visible: 0.75;   /* Clearly visible */
+  --slide-opacity-subtle: 0.08; /* Barely visible (hover states) */
+  --slide-opacity-light: 0.12; /* Light borders, separators */
+  --slide-opacity-muted: 0.18; /* Muted elements */
+  --slide-opacity-soft: 0.22; /* Soft overlays */
+  --slide-opacity-medium: 0.45; /* Medium visibility */
+  --slide-opacity-strong: 0.65; /* Strong but not solid */
+  --slide-opacity-visible: 0.75; /* Clearly visible */
   --slide-opacity-prominent: 0.82; /* Prominent elements */
-  --slide-opacity-solid: 0.92;     /* Nearly solid */
+  --slide-opacity-solid: 0.92; /* Nearly solid */
 
   /* =========================================================================
      BORDER RADIUS
@@ -225,10 +233,13 @@
      Consistent corner rounding. Integrates with theme via --t-radius tokens.
      ========================================================================= */
 
-  --slide-radius-sm: var(--t-radius-sm, 10px);   /* Small elements (buttons, tags) */
-  --slide-radius-md: var(--t-radius, 18px);      /* Cards, panels */
-  --slide-radius-lg: var(--t-radius-lg, 24px);   /* Large containers */
-  --slide-radius-full: 999px;                     /* Pills, circles */
+  --slide-radius-sm: var(
+    --t-radius-sm,
+    10px
+  ); /* Small elements (buttons, tags) */
+  --slide-radius-md: var(--t-radius, 18px); /* Cards, panels */
+  --slide-radius-lg: var(--t-radius-lg, 24px); /* Large containers */
+  --slide-radius-full: 999px; /* Pills, circles */
 
   /* =========================================================================
      SHADOWS
@@ -289,15 +300,15 @@
      that reads well on any slide background); a theme can override any token
      to match its own code styling. Token roles map to Prism token groups. */
   --slide-code-bg: #1e1e2e;
-  --slide-code-text: #cdd6f4;        /* default foreground */
-  --slide-code-comment: #6c7086;     /* comment, prolog, doctype, cdata */
+  --slide-code-text: #cdd6f4; /* default foreground */
+  --slide-code-comment: #6c7086; /* comment, prolog, doctype, cdata */
   --slide-code-punctuation: #bac2de; /* punctuation */
-  --slide-code-number: #fab387;      /* property, tag, boolean, number, constant, symbol */
-  --slide-code-string: #a6e3a1;      /* selector, attr-name, string, char, builtin, inserted */
-  --slide-code-operator: #89dceb;    /* operator, entity, url */
-  --slide-code-keyword: #cba6f7;     /* atrule, attr-value, keyword */
-  --slide-code-function: #89b4fa;    /* function, class-name */
-  --slide-code-variable: #f9e2af;    /* regex, important, variable */
+  --slide-code-number: #fab387; /* property, tag, boolean, number, constant, symbol */
+  --slide-code-string: #a6e3a1; /* selector, attr-name, string, char, builtin, inserted */
+  --slide-code-operator: #89dceb; /* operator, entity, url */
+  --slide-code-keyword: #cba6f7; /* atrule, attr-value, keyword */
+  --slide-code-function: #89b4fa; /* function, class-name */
+  --slide-code-variable: #f9e2af; /* regex, important, variable */
 
   /* =========================================================================
      COMPONENT-SPECIFIC TOKENS

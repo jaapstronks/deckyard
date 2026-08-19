@@ -4,8 +4,8 @@
 .slide-poll,
 .slide-likert {
   --interaction-surface: rgba(255, 255, 255, 0.92);
-  --interaction-surface-2: rgba(255, 255, 255, 0.70);
-  --interaction-border: rgba(0, 0, 0, 0.10);
+  --interaction-surface-2: rgba(255, 255, 255, 0.7);
+  --interaction-border: rgba(0, 0, 0, 0.1);
   /* Read the shared elevation tokens: they carry the theme shadow-scale and the
      single @media print flattening from 00-tokens.css for free, so this slide
      needs no local print guard of its own. */
@@ -17,7 +17,11 @@
   .slide-poll,
   .slide-likert {
     --interaction-surface: color-mix(in srgb, white 92%, var(--slide-surface));
-    --interaction-surface-2: color-mix(in srgb, white 76%, var(--slide-surface));
+    --interaction-surface-2: color-mix(
+      in srgb,
+      white 76%,
+      var(--slide-surface)
+    );
     --interaction-border: color-mix(in srgb, currentColor 16%, transparent);
   }
 }
@@ -177,11 +181,21 @@
 }
 
 /* Alternate bar colors using chart palette */
-.slide-poll .poll-bar-row:nth-child(1) .poll-bar-fill { background: var(--slide-chart-0); }
-.slide-poll .poll-bar-row:nth-child(2) .poll-bar-fill { background: var(--slide-chart-1); }
-.slide-poll .poll-bar-row:nth-child(3) .poll-bar-fill { background: var(--slide-chart-2); }
-.slide-poll .poll-bar-row:nth-child(4) .poll-bar-fill { background: var(--slide-chart-3); }
-.slide-poll .poll-bar-row:nth-child(5) .poll-bar-fill { background: var(--slide-chart-4); }
+.slide-poll .poll-bar-row:nth-child(1) .poll-bar-fill {
+  background: var(--slide-chart-0);
+}
+.slide-poll .poll-bar-row:nth-child(2) .poll-bar-fill {
+  background: var(--slide-chart-1);
+}
+.slide-poll .poll-bar-row:nth-child(3) .poll-bar-fill {
+  background: var(--slide-chart-2);
+}
+.slide-poll .poll-bar-row:nth-child(4) .poll-bar-fill {
+  background: var(--slide-chart-3);
+}
+.slide-poll .poll-bar-row:nth-child(5) .poll-bar-fill {
+  background: var(--slide-chart-4);
+}
 
 .slide-poll .poll-bar-count {
   display: flex;
@@ -402,9 +416,7 @@
   position: absolute;
   top: 14px;
   left: calc(
-    8.4% +
-      (var(--i, 0) / var(--likert-axis-denom, 9)) *
-        (100% - 16.8%)
+    8.4% + (var(--i, 0) / var(--likert-axis-denom, 9)) * (100% - 16.8%)
   );
   transform: translateX(-50%);
   text-align: center;
@@ -481,5 +493,3 @@
 .slide-poll .poll-follow-codes {
   margin-top: var(--slide-space-3);
 }
-
-

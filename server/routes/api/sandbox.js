@@ -28,7 +28,11 @@ async function handleSandboxExamples({ repoRoot, res }) {
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'GET', pattern: '/api/sandbox/examples', handler: handleSandboxExamples },
+  {
+    method: 'GET',
+    pattern: '/api/sandbox/examples',
+    handler: handleSandboxExamples,
+  },
 ];
 
 /**

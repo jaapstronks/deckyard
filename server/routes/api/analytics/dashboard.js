@@ -33,20 +33,27 @@ export async function handleDashboard(ctx) {
   const opts = { period };
 
   // Fetch all dashboard data in parallel
-  const [summary, timeline, topPresentations, sourceBreakdown] = await Promise.all([
-    getDashboardSummary(authedUser.email, authedUser.organizationId, opts),
-    getDashboardTimeline(authedUser.email, authedUser.organizationId, opts),
-    getTopPresentations(authedUser.email, authedUser.organizationId, { ...opts, limit: 10 }),
-    getSourceBreakdown(authedUser.email, authedUser.organizationId, opts),
-  ]);
+  const [summary, timeline, topPresentations, sourceBreakdown] =
+    await Promise.all([
+      getDashboardSummary(authedUser.email, authedUser.organizationId, opts),
+      getDashboardTimeline(authedUser.email, authedUser.organizationId, opts),
+      getTopPresentations(authedUser.email, authedUser.organizationId, {
+        ...opts,
+        limit: 10,
+      }),
+      getSourceBreakdown(authedUser.email, authedUser.organizationId, opts),
+    ]);
 
-  return serveJson(res, 200, {
-    summary: summary.summary,
-    trend: summary.trend,
-    timeline,
-    topPresentations,
-    sourceBreakdown,
-  }), true;
+  return (
+    serveJson(res, 200, {
+      summary: summary.summary,
+      trend: summary.trend,
+      timeline,
+      topPresentations,
+      sourceBreakdown,
+    }),
+    true
+  );
 }
 
 /**
@@ -61,7 +68,10 @@ export async function handlePresentationsList(ctx) {
 
   const period = url.searchParams.get('period') || '30d';
   const sort = url.searchParams.get('sort') || 'views';
-  const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 100);
+  const limit = Math.min(
+    parseInt(url.searchParams.get('limit') || '20', 10),
+    100,
+  );
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
   if (!VALID_PERIODS.includes(period)) {
@@ -69,14 +79,17 @@ export async function handlePresentationsList(ctx) {
   }
 
   if (!VALID_SORTS.includes(sort)) {
-    return badRequest(res, 'Invalid sort. Use views, duration, completion, or recent');
+    return badRequest(
+      res,
+      'Invalid sort. Use views, duration, completion, or recent',
+    );
   }
 
   const result = await getPresentationsWithAnalytics(
     authedUser.email,
     authedUser.organizationId,
-    { period, sort, limit, offset }
+    { period, sort, limit, offset },
   );
 
-  return serveJson(res, 200, result), true;
+  return (serveJson(res, 200, result), true);
 }

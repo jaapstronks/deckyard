@@ -63,7 +63,7 @@ export function createContrastBadge({ size = 'body', label = '' } = {}) {
   const children = [sample, readout];
   if (label) {
     children.unshift(
-      h('span', { class: 'theme-contrast-pair-label', text: label })
+      h('span', { class: 'theme-contrast-pair-label', text: label }),
     );
   }
 
@@ -72,7 +72,7 @@ export function createContrastBadge({ size = 'body', label = '' } = {}) {
   const el = h(
     'div',
     { class: 'theme-contrast-badge', role: 'status', 'aria-live': 'polite' },
-    children
+    children,
   );
 
   /**
@@ -98,11 +98,11 @@ export function createContrastBadge({ size = 'body', label = '' } = {}) {
     apcaEl.title = result.disagree
       ? t(
           'settings.themes.contrast.disagreeHint',
-          'APCA and WCAG disagree here. WCAG is the standard to meet; APCA models perceived contrast better, especially for light text on dark backgrounds.'
+          'APCA and WCAG disagree here. WCAG is the standard to meet; APCA models perceived contrast better, especially for light text on dark backgrounds.',
         )
       : t(
           'settings.themes.contrast.apcaHint',
-          'APCA perceptual contrast (candidate method for WCAG 3), shown alongside the WCAG verdict.'
+          'APCA perceptual contrast (candidate method for WCAG 3), shown alongside the WCAG verdict.',
         );
 
     el.dataset.level = result.level;

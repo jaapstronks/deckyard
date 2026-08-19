@@ -120,7 +120,7 @@ function parseTopLevelImports(cssText) {
       // Extract URL from: @import "x";  @import 'x';  @import url("x");
       const m =
         stmt.match(
-          /@import\s+(?:url\(\s*)?(?:"([^"]+)"|'([^']+)'|([^)\s;]+))(?:\s*\))?/i
+          /@import\s+(?:url\(\s*)?(?:"([^"]+)"|'([^']+)'|([^)\s;]+))(?:\s*\))?/i,
         ) || [];
       const url = (m[1] || m[2] || m[3] || '').trim();
       const media = stmt

@@ -31,7 +31,11 @@ export function remapOffset(cur, next, pos) {
   while (start < minLen && c[start] === n[start]) start += 1;
   let endCur = c.length;
   let endNext = n.length;
-  while (endCur > start && endNext > start && c[endCur - 1] === n[endNext - 1]) {
+  while (
+    endCur > start &&
+    endNext > start &&
+    c[endCur - 1] === n[endNext - 1]
+  ) {
     endCur -= 1;
     endNext -= 1;
   }
@@ -61,7 +65,10 @@ export function applyRemoteTextareaValue(ta, next) {
   const { scrollTop } = ta;
   ta.value = value;
   try {
-    ta.setSelectionRange(remapOffset(cur, value, selStart), remapOffset(cur, value, selEnd));
+    ta.setSelectionRange(
+      remapOffset(cur, value, selStart),
+      remapOffset(cur, value, selEnd),
+    );
   } catch {
     // Selection APIs can throw on detached/hidden elements; the value is set.
   }

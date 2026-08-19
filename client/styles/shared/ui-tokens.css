@@ -3,11 +3,11 @@
 
 /* Typography + spacing scale (app chrome only) */
 :root {
-  --ps-font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
-    'Apple Color Emoji', 'Segoe UI Emoji';
-  --ps-font-mono: 'JetBrains Mono', ui-monospace,
-    SFMono-Regular, Menlo, Monaco, Consolas,
+  --ps-font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
+  --ps-font-mono:
+    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     'Liberation Mono', 'Courier New', monospace;
 
   --ps-text-xs: 0.6875rem;
@@ -31,27 +31,27 @@
 
      Decision: docs/plans/briefs/css-tokens-beyond-color.md § as (a).
      Conversion rule and the gate: docs/reference/css-tokens.md. */
-  --ps-space-0-5: 0.125rem;  /* 2px  */
-  --ps-space-1: 0.25rem;     /* 4px  */
-  --ps-space-1-5: 0.375rem;  /* 6px  */
-  --ps-space-2: 0.5rem;      /* 8px  */
-  --ps-space-2-5: 0.625rem;  /* 10px */
-  --ps-space-3: 0.75rem;     /* 12px */
-  --ps-space-3-5: 0.875rem;  /* 14px */
-  --ps-space-4: 1rem;        /* 16px */
-  --ps-space-4-5: 1.125rem;  /* 18px */
-  --ps-space-5: 1.25rem;     /* 20px */
+  --ps-space-0-5: 0.125rem; /* 2px  */
+  --ps-space-1: 0.25rem; /* 4px  */
+  --ps-space-1-5: 0.375rem; /* 6px  */
+  --ps-space-2: 0.5rem; /* 8px  */
+  --ps-space-2-5: 0.625rem; /* 10px */
+  --ps-space-3: 0.75rem; /* 12px */
+  --ps-space-3-5: 0.875rem; /* 14px */
+  --ps-space-4: 1rem; /* 16px */
+  --ps-space-4-5: 1.125rem; /* 18px */
+  --ps-space-5: 1.25rem; /* 20px */
   /* 4px ticks from here up. `-7`, `-9` and `-15` close gaps the old scale left
      where in-scope CSS actually spends values: 28px (×6), 36px (×2), 60px (×1).
      There is deliberately no `-11` (44px), `-13` (52px) or `-14` (56px) — none
      of those is used by a margin/padding/gap anywhere in scope. */
-  --ps-space-6: 1.5rem;      /* 24px */
-  --ps-space-7: 1.75rem;     /* 28px */
-  --ps-space-8: 2rem;        /* 32px */
-  --ps-space-9: 2.25rem;     /* 36px */
-  --ps-space-10: 2.5rem;     /* 40px */
-  --ps-space-12: 3rem;       /* 48px */
-  --ps-space-15: 3.75rem;    /* 60px */
+  --ps-space-6: 1.5rem; /* 24px */
+  --ps-space-7: 1.75rem; /* 28px */
+  --ps-space-8: 2rem; /* 32px */
+  --ps-space-9: 2.25rem; /* 36px */
+  --ps-space-10: 2.5rem; /* 40px */
+  --ps-space-12: 3rem; /* 48px */
+  --ps-space-15: 3.75rem; /* 60px */
 
   --ps-radius-sm: 0.25rem;
   --ps-radius-md: 0.375rem;
@@ -76,23 +76,23 @@
      (a slide's background/content/overlay layers, cards, thumbnails) stays as
      plain small integers — those are not app layers and deliberately do not use
      this scale. */
-  --z-behind: -1;      /* decorative layers sent behind their own content */
-  --z-base: 0;         /* default in-flow stacking */
-  --z-raised: 10;      /* lifted just above siblings (resize handles, sticky cells) */
-  --z-sticky: 50;      /* sticky in-flow chrome bars */
-  --z-nav: 90;         /* fixed side navigation */
-  --z-header: 100;     /* fixed app headers, dropdown menus, floating action buttons */
+  --z-behind: -1; /* decorative layers sent behind their own content */
+  --z-base: 0; /* default in-flow stacking */
+  --z-raised: 10; /* lifted just above siblings (resize handles, sticky cells) */
+  --z-sticky: 50; /* sticky in-flow chrome bars */
+  --z-nav: 90; /* fixed side navigation */
+  --z-header: 100; /* fixed app headers, dropdown menus, floating action buttons */
   --z-drawer-backdrop: 199; /* scrim behind an off-canvas drawer */
-  --z-drawer: 200;     /* off-canvas drawers, fixed side panels, notification panel */
-  --z-overlay: 1000;   /* modal backdrops and full-screen overlays */
-  --z-modal: 1100;     /* dialogs stacked above their own backdrop */
-  --z-banner: 1150;    /* system-wide banner (e.g. sandbox notice) */
-  --z-toast: 1200;     /* transient toasts, above modals */
-  --z-loading: 2000;   /* blocking full-screen veil: AI-generation loading modal */
-  --z-lightbox: 3000;  /* full-screen preview lightboxes (slide-type peek, version-compare enlarge), above the loading veil */
-  --z-consent: 4000;   /* cookie-consent legal gate: banner, its full-screen scrim, and settings panel */
+  --z-drawer: 200; /* off-canvas drawers, fixed side panels, notification panel */
+  --z-overlay: 1000; /* modal backdrops and full-screen overlays */
+  --z-modal: 1100; /* dialogs stacked above their own backdrop */
+  --z-banner: 1150; /* system-wide banner (e.g. sandbox notice) */
+  --z-toast: 1200; /* transient toasts, above modals */
+  --z-loading: 2000; /* blocking full-screen veil: AI-generation loading modal */
+  --z-lightbox: 3000; /* full-screen preview lightboxes (slide-type peek, version-compare enlarge), above the loading veil */
+  --z-consent: 4000; /* cookie-consent legal gate: banner, its full-screen scrim, and settings panel */
   --z-skip-link: 5000; /* WCAG skip-link — the keyboard escape hatch, above every overlay */
-  --z-drag: 999999;    /* drag ghost — the ceiling, above everything */
+  --z-drag: 999999; /* drag ghost — the ceiling, above everything */
 
   --ps-topbar-height: 56px;
   --ps-slides-collapsed-width: 64px;
@@ -155,11 +155,14 @@
   --app-warning-text: 23 82% 31%;
 
   --app-shadow-sm: 0 1px 2px 0 hsl(220 13% 13% / 0.04);
-  --app-shadow-md: 0 2px 4px -1px hsl(220 13% 13% / 0.06),
+  --app-shadow-md:
+    0 2px 4px -1px hsl(220 13% 13% / 0.06),
     0 4px 6px -1px hsl(220 13% 13% / 0.08);
-  --app-shadow-lg: 0 4px 6px -2px hsl(220 13% 13% / 0.05),
+  --app-shadow-lg:
+    0 4px 6px -2px hsl(220 13% 13% / 0.05),
     0 10px 15px -3px hsl(220 13% 13% / 0.08);
-  --app-shadow-xl: 0 10px 25px -5px hsl(220 13% 13% / 0.1),
+  --app-shadow-xl:
+    0 10px 25px -5px hsl(220 13% 13% / 0.1),
     0 20px 40px -10px hsl(220 13% 13% / 0.12);
 
   /* Logo treatment (overview topbar logo.svg is black by default) */
@@ -216,12 +219,12 @@
   --app-warning-text: 45 85% 68%;
 
   --app-shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.2);
-  --app-shadow-md: 0 2px 4px -1px hsl(0 0% 0% / 0.25),
-    0 4px 6px -1px hsl(0 0% 0% / 0.3);
-  --app-shadow-lg: 0 4px 6px -2px hsl(0 0% 0% / 0.2),
-    0 10px 15px -3px hsl(0 0% 0% / 0.35);
-  --app-shadow-xl: 0 10px 25px -5px hsl(0 0% 0% / 0.3),
-    0 20px 40px -10px hsl(0 0% 0% / 0.4);
+  --app-shadow-md:
+    0 2px 4px -1px hsl(0 0% 0% / 0.25), 0 4px 6px -1px hsl(0 0% 0% / 0.3);
+  --app-shadow-lg:
+    0 4px 6px -2px hsl(0 0% 0% / 0.2), 0 10px 15px -3px hsl(0 0% 0% / 0.35);
+  --app-shadow-xl:
+    0 10px 25px -5px hsl(0 0% 0% / 0.3), 0 20px 40px -10px hsl(0 0% 0% / 0.4);
 
   --app-logo-filter: invert(1);
   --app-icon-filter: invert(1);

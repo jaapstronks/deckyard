@@ -99,8 +99,8 @@ function createSurfacesSection({ config, onChange }) {
     t('settings.themes.config.surfaces', 'Surfaces'),
     t(
       'settings.themes.config.surfacesHint',
-      'How rounded and how raised the shapes on a slide feel. Both scale the design system rather than replacing it.'
-    )
+      'How rounded and how raised the shapes on a slide feel. Both scale the design system rather than replacing it.',
+    ),
   );
 
   el.append(
@@ -127,7 +127,7 @@ function createSurfacesSection({ config, onChange }) {
         writeValue(config, 'surfaces', 'shadow', v);
         onChange();
       },
-    })
+    }),
   );
 
   return { el };
@@ -142,8 +142,8 @@ function createTypographySection({ config, onChange }) {
     t('settings.themes.config.typography', 'Heading treatment'),
     t(
       'settings.themes.config.typographyHint',
-      'Applies to headings across every slide type. The fonts themselves are set above.'
-    )
+      'Applies to headings across every slide type. The fonts themselves are set above.',
+    ),
   );
 
   el.append(
@@ -167,7 +167,7 @@ function createTypographySection({ config, onChange }) {
         writeValue(config, 'typography', 'headingWeight', v);
         onChange();
       },
-    })
+    }),
   );
 
   return { el };
@@ -190,8 +190,8 @@ function createLocksSection({ config, onChange }) {
     t('settings.themes.config.locks', 'Locked by the theme'),
     t(
       'settings.themes.config.locksHint',
-      'A locked property is not editable per slide, and an override an existing slide already carries is ignored when it renders. Unlocking gives every slide its own value back.'
-    )
+      'A locked property is not editable per slide, and an override an existing slide already carries is ignored when it renders. Unlocking gives every slide its own value back.',
+    ),
   );
 
   for (const prop of LOCKABLE_PROPERTIES) {
@@ -207,7 +207,8 @@ function createLocksSection({ config, onChange }) {
       onchange: (e) => {
         const locked = !!e.target.checked;
         if (locked) {
-          if (!config.locks || typeof config.locks !== 'object') config.locks = {};
+          if (!config.locks || typeof config.locks !== 'object')
+            config.locks = {};
           config.locks[prop] = 'locked';
         } else if (config.locks) {
           delete config.locks[prop];
@@ -220,7 +221,7 @@ function createLocksSection({ config, onChange }) {
       h('div', { class: 'row is-gap-2 is-items-start theme-config-lock' }, [
         input,
         h('label', { for: id, text: t(key, fallback) }),
-      ])
+      ]),
     );
   }
 

@@ -12,7 +12,9 @@ export function openFollowInviteSuggestModal({
   onSkip,
 } = {}) {
   const backdrop = h('div', { class: 'modal-backdrop ps-modal-overlay' });
-  const modal = h('div', { class: 'modal ps-modal follow-invite-suggest-modal' });
+  const modal = h('div', {
+    class: 'modal ps-modal follow-invite-suggest-modal',
+  });
   const header = h('div', { class: 'ps-modal-header' });
   const title = h('h2', {
     text: t('editor.followInviteSuggest.title', 'Add a QR code slide?'),
@@ -36,9 +38,9 @@ export function openFollowInviteSuggestModal({
           stroke: 'currentColor',
           'stroke-width': '2',
         },
-        [h('path', { d: 'M18 6L6 18M6 6l12 12' })]
+        [h('path', { d: 'M18 6L6 18M6 6l12 12' })],
       ),
-    ]
+    ],
   );
   header.append(title, closeBtn);
 
@@ -48,7 +50,7 @@ export function openFollowInviteSuggestModal({
     class: 'follow-invite-suggest-description',
     text: t(
       'editor.followInviteSuggest.description',
-      'You\'re adding an interactive slide that requires audience participation. To let your audience join, you need a "Follow along" slide with a QR code. Would you like to add one?'
+      'You\'re adding an interactive slide that requires audience participation. To let your audience join, you need a "Follow along" slide with a QR code. Would you like to add one?',
     ),
   });
 
@@ -67,7 +69,10 @@ export function openFollowInviteSuggestModal({
   const addBeforeBtn = h('button', {
     class: 'btn btn-secondary',
     type: 'button',
-    text: t('editor.followInviteSuggest.addBeforeCurrent', 'Add before this slide'),
+    text: t(
+      'editor.followInviteSuggest.addBeforeCurrent',
+      'Add before this slide',
+    ),
     onclick: () => {
       close(false);
       onAddBeforeCurrent?.();

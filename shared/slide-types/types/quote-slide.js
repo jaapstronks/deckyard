@@ -87,10 +87,10 @@ function quoteBlockInnerHtml({
               ${portraitsHtml}
               <div>
                 <div class="name" data-inline-field="${nameField}" dir="auto">${escapeHtml(
-                  authorName
+                  authorName,
                 )}</div>
                 <div class="role" data-inline-field="${titleField}" dir="auto">${escapeHtml(
-                  authorTitle
+                  authorTitle,
                 )}</div>
               </div>
             </footer>`;
@@ -147,8 +147,8 @@ function extraPortraitParts(item) {
           fallbacks: [item?.authorName],
           hardFallback: 'Portrait',
         }),
-        null
-      )
+        null,
+      ),
     );
   }
   return parts;
@@ -172,7 +172,7 @@ export function quoteFontScale(count, quoteTexts) {
   const bands = { 1: [0.78, 1], 2: [0.6, 0.82], 3: [0.46, 0.62] };
   const [min, max] = bands[count] || bands[3];
   const lengths = quoteTexts.map((q) =>
-    typeof q === 'string' ? q.trim().length : 0
+    typeof q === 'string' ? q.trim().length : 0,
   );
   const avg = lengths.length
     ? lengths.reduce((a, b) => a + b, 0) / lengths.length
@@ -402,7 +402,9 @@ export default {
       // group (Layout chip); `quoteAlign` is the only stored form.
       const groupClass = groupAlignClass(QUOTE_BLOCK.group, content);
       const alignClass = groupClass ? ` ${groupClass}` : '';
-      const portraitsHtml = portraitsWrap(primaryPortraitParts(content, editMode));
+      const portraitsHtml = portraitsWrap(
+        primaryPortraitParts(content, editMode),
+      );
       const inner = quoteBlockInnerHtml({
         quote: content?.quote,
         authorName: content?.authorName,
@@ -467,15 +469,15 @@ export default {
 
     const styleVars = {
       ...(vars || {}),
-      '--quote-scale': quoteFontScale(
-        count,
-        [content?.quote, ...extras.map(({ item }) => item?.quote)]
-      ),
+      '--quote-scale': quoteFontScale(count, [
+        content?.quote,
+        ...extras.map(({ item }) => item?.quote),
+      ]),
     };
 
     return `
         <div class="slide slide-quote is-multi" data-quote-count="${count}"${styleAttrFromVars(
-          styleVars
+          styleVars,
         )}>
           <div class="slide-inner">
             ${itemsHtml}

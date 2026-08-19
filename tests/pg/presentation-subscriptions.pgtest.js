@@ -13,7 +13,12 @@
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { closeTestDb, openTestDb, pgDescribe, truncate } from './helpers/harness.js';
+import {
+  closeTestDb,
+  openTestDb,
+  pgDescribe,
+  truncate,
+} from './helpers/harness.js';
 import { seedDefaultOrganization, seedPresentation } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
 import {

@@ -8,11 +8,7 @@ import { normalizeQuery } from './search.js';
 /**
  * Attach click handler to a slide item
  */
-export function attachClickHandler({
-  item,
-  slide,
-  context,
-}) {
+export function attachClickHandler({ item, slide, context }) {
   const {
     pres,
     slideListEl,
@@ -80,7 +76,7 @@ export function attachClickHandler({
         // Keep keyboard navigation anchored in the list.
         requestAnimationFrame(() => {
           const el = slideListEl.querySelector(
-            `.list-item.slide-item[data-slide-id="${s.id}"]`
+            `.list-item.slide-item[data-slide-id="${s.id}"]`,
           );
           el?.focus?.();
         });

@@ -24,7 +24,15 @@ import {
  * @param {Array} options.requiredFields - Field keys that are required when enabled
  * @returns {Object} { el, getValues, setValues, setDisabled, validate }
  */
-function createProviderCard({ key, title, description, privacyFriendly, privacyNote, fields, requiredFields = [] }) {
+function createProviderCard({
+  key,
+  title,
+  description,
+  privacyFriendly,
+  privacyNote,
+  fields,
+  requiredFields = [],
+}) {
   const card = h('div', { class: 'analytics-provider-card' });
 
   // Header with toggle
@@ -44,13 +52,19 @@ function createProviderCard({ key, title, description, privacyFriendly, privacyN
   if (privacyFriendly) {
     const badge = h('span', {
       class: 'analytics-provider-badge privacy-friendly',
-      text: t('settings.analytics.providers.privacyFriendly', 'Privacy-friendly'),
+      text: t(
+        'settings.analytics.providers.privacyFriendly',
+        'Privacy-friendly',
+      ),
     });
     titleEl.append(badge);
   } else {
     const badge = h('span', {
       class: 'analytics-provider-badge requires-consent',
-      text: t('settings.analytics.providers.requiresConsent', 'Requires consent'),
+      text: t(
+        'settings.analytics.providers.requiresConsent',
+        'Requires consent',
+      ),
     });
     titleEl.append(badge);
   }
@@ -119,7 +133,7 @@ function createProviderCard({ key, title, description, privacyFriendly, privacyN
     class: 'analytics-provider-warning',
     text: t(
       'settings.analytics.validation.enabledButMissing',
-      'Provider is enabled but required fields are missing. It won\'t be active until configured.'
+      "Provider is enabled but required fields are missing. It won't be active until configured.",
     ),
   });
   warningEl.style.display = 'none';
@@ -216,7 +230,7 @@ export function createAnalyticsTab({ user }) {
     class: 'settings-tab-description',
     text: t(
       'settings.analytics.description',
-      'External analytics complement built-in insights by tracking cross-site visitor journeys. Choose privacy-friendly providers that respect your visitors.'
+      'External analytics complement built-in insights by tracking cross-site visitor journeys. Choose privacy-friendly providers that respect your visitors.',
     ),
   });
 
@@ -230,22 +244,25 @@ export function createAnalyticsTab({ user }) {
     h('span', {
       text: t(
         'settings.analytics.envVarsNote',
-        'Analytics can also be configured via environment variables. Settings configured here will override environment variables.'
+        'Analytics can also be configured via environment variables. Settings configured here will override environment variables.',
       ),
-    })
+    }),
   );
 
   // Privacy-friendly section
   const privacySection = h('div', { class: 'analytics-section' });
   const privacySectionTitle = h('h3', {
     class: 'analytics-section-title privacy-friendly',
-    text: t('settings.analytics.privacyFriendlySection', 'Privacy-Friendly Providers'),
+    text: t(
+      'settings.analytics.privacyFriendlySection',
+      'Privacy-Friendly Providers',
+    ),
   });
   const privacySectionDesc = h('p', {
     class: 'analytics-section-description',
     text: t(
       'settings.analytics.privacyFriendlyDesc',
-      'These providers are designed with privacy in mind. They typically do not use cookies and are GDPR-compliant by default.'
+      'These providers are designed with privacy in mind. They typically do not use cookies and are GDPR-compliant by default.',
     ),
   });
   privacySection.append(privacySectionTitle, privacySectionDesc);
@@ -256,7 +273,7 @@ export function createAnalyticsTab({ user }) {
     title: 'Umami',
     description: t(
       'settings.analytics.providers.umami.description',
-      'Cookie-free, GDPR compliant, open-source analytics. Can be self-hosted.'
+      'Cookie-free, GDPR compliant, open-source analytics. Can be self-hosted.',
     ),
     privacyFriendly: true,
     requiredFields: ['websiteId'],
@@ -265,14 +282,20 @@ export function createAnalyticsTab({ user }) {
         key: 'websiteId',
         label: t('settings.analytics.providers.umami.websiteId', 'Website ID'),
         placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-        hint: t('settings.analytics.providers.umami.websiteIdHint', 'Found in your Umami dashboard under Settings > Websites'),
+        hint: t(
+          'settings.analytics.providers.umami.websiteIdHint',
+          'Found in your Umami dashboard under Settings > Websites',
+        ),
         maxLength: 64,
       },
       {
         key: 'url',
         label: t('settings.analytics.providers.umami.url', 'Server URL'),
         placeholder: 'https://cloud.umami.is',
-        hint: t('settings.analytics.providers.umami.urlHint', 'Leave empty for Umami Cloud, or enter your self-hosted URL'),
+        hint: t(
+          'settings.analytics.providers.umami.urlHint',
+          'Leave empty for Umami Cloud, or enter your self-hosted URL',
+        ),
         maxLength: 255,
       },
     ],
@@ -284,7 +307,7 @@ export function createAnalyticsTab({ user }) {
     title: 'Plausible',
     description: t(
       'settings.analytics.providers.plausible.description',
-      'Lightweight, cookie-free analytics. EU-hosted cloud option available.'
+      'Lightweight, cookie-free analytics. EU-hosted cloud option available.',
     ),
     privacyFriendly: true,
     requiredFields: ['domain'],
@@ -293,14 +316,20 @@ export function createAnalyticsTab({ user }) {
         key: 'domain',
         label: t('settings.analytics.providers.plausible.domain', 'Domain'),
         placeholder: 'example.com',
-        hint: t('settings.analytics.providers.plausible.domainHint', 'The domain you want to track'),
+        hint: t(
+          'settings.analytics.providers.plausible.domainHint',
+          'The domain you want to track',
+        ),
         maxLength: 255,
       },
       {
         key: 'url',
         label: t('settings.analytics.providers.plausible.url', 'Server URL'),
         placeholder: 'https://plausible.io',
-        hint: t('settings.analytics.providers.plausible.urlHint', 'Leave empty for Plausible Cloud, or enter your self-hosted URL'),
+        hint: t(
+          'settings.analytics.providers.plausible.urlHint',
+          'Leave empty for Plausible Cloud, or enter your self-hosted URL',
+        ),
         maxLength: 255,
       },
     ],
@@ -312,7 +341,7 @@ export function createAnalyticsTab({ user }) {
     title: 'Matomo',
     description: t(
       'settings.analytics.providers.matomo.description',
-      'Full-featured, self-hostable analytics with cookie-free tracking mode.'
+      'Full-featured, self-hostable analytics with cookie-free tracking mode.',
     ),
     privacyFriendly: true,
     requiredFields: ['url', 'siteId'],
@@ -321,29 +350,47 @@ export function createAnalyticsTab({ user }) {
         key: 'url',
         label: t('settings.analytics.providers.matomo.url', 'Matomo URL'),
         placeholder: 'https://analytics.example.com',
-        hint: t('settings.analytics.providers.matomo.urlHint', 'Your Matomo server URL'),
+        hint: t(
+          'settings.analytics.providers.matomo.urlHint',
+          'Your Matomo server URL',
+        ),
         maxLength: 255,
       },
       {
         key: 'siteId',
         label: t('settings.analytics.providers.matomo.siteId', 'Site ID'),
         placeholder: '1',
-        hint: t('settings.analytics.providers.matomo.siteIdHint', 'Found in Matomo under Settings > Websites > Manage'),
+        hint: t(
+          'settings.analytics.providers.matomo.siteIdHint',
+          'Found in Matomo under Settings > Websites > Manage',
+        ),
         maxLength: 32,
       },
       {
         key: 'disableCookies',
-        label: t('settings.analytics.providers.matomo.disableCookies', 'Disable cookies (recommended)'),
+        label: t(
+          'settings.analytics.providers.matomo.disableCookies',
+          'Disable cookies (recommended)',
+        ),
         type: 'checkbox',
         defaultValue: true,
-        hint: t('settings.analytics.providers.matomo.disableCookiesHint', 'Track without setting any cookies'),
+        hint: t(
+          'settings.analytics.providers.matomo.disableCookiesHint',
+          'Track without setting any cookies',
+        ),
       },
       {
         key: 'requireConsent',
-        label: t('settings.analytics.providers.matomo.requireConsent', 'Require consent'),
+        label: t(
+          'settings.analytics.providers.matomo.requireConsent',
+          'Require consent',
+        ),
         type: 'checkbox',
         defaultValue: false,
-        hint: t('settings.analytics.providers.matomo.requireConsentHint', 'Wait for explicit user consent before tracking'),
+        hint: t(
+          'settings.analytics.providers.matomo.requireConsentHint',
+          'Wait for explicit user consent before tracking',
+        ),
       },
     ],
   });
@@ -360,7 +407,7 @@ export function createAnalyticsTab({ user }) {
     class: 'analytics-section-description',
     text: t(
       'settings.analytics.requiresConsentDesc',
-      'These providers set cookies and require a consent banner under GDPR/ePrivacy. Consider privacy-friendly alternatives above.'
+      'These providers set cookies and require a consent banner under GDPR/ePrivacy. Consider privacy-friendly alternatives above.',
     ),
   });
   consentSection.append(consentSectionTitle, consentSectionDesc);
@@ -371,20 +418,26 @@ export function createAnalyticsTab({ user }) {
     title: 'Google Analytics 4',
     description: t(
       'settings.analytics.providers.googleAnalytics.description',
-      'Google\'s analytics platform. Widely used but sets cookies.'
+      "Google's analytics platform. Widely used but sets cookies.",
     ),
     privacyFriendly: false,
     requiredFields: ['measurementId'],
     privacyNote: t(
       'settings.analytics.providers.googleAnalytics.privacyNote',
-      'Google Analytics sets cookies and shares data with Google. You should display a cookie consent banner and update your privacy policy when using this provider.'
+      'Google Analytics sets cookies and shares data with Google. You should display a cookie consent banner and update your privacy policy when using this provider.',
     ),
     fields: [
       {
         key: 'measurementId',
-        label: t('settings.analytics.providers.googleAnalytics.measurementId', 'Measurement ID'),
+        label: t(
+          'settings.analytics.providers.googleAnalytics.measurementId',
+          'Measurement ID',
+        ),
         placeholder: 'G-XXXXXXXXXX',
-        hint: t('settings.analytics.providers.googleAnalytics.measurementIdHint', 'Found in GA4 > Admin > Data Streams > your stream'),
+        hint: t(
+          'settings.analytics.providers.googleAnalytics.measurementIdHint',
+          'Found in GA4 > Admin > Data Streams > your stream',
+        ),
         maxLength: 32,
       },
     ],
@@ -393,7 +446,10 @@ export function createAnalyticsTab({ user }) {
   consentSection.append(ga4Card.el);
 
   // Save button
-  const actions = h('div', { class: 'row is-end', style: 'margin-top: var(--ps-space-4);' });
+  const actions = h('div', {
+    class: 'row is-end',
+    style: 'margin-top: var(--ps-space-4);',
+  });
   const btnSave = h('button', {
     class: 'btn btn-primary',
     text: t('common.save', 'Save'),

@@ -26,18 +26,18 @@ its own console so the laptop keeps notes/next/timer.
 `client/lib/net/present-channel.js` wraps a `BroadcastChannel` named
 `deckyard:present:<id>`. It is **local** (same-origin, same-browser) and instant
 — no server round-trip. This deliberately complements, rather than duplicates,
-the SSE live-session, which handles cross-*device* follow/companion. A no-op
+the SSE live-session, which handles cross-_device_ follow/companion. A no-op
 fallback keeps things working where `BroadcastChannel` is unavailable.
 
 Message kinds (`{ kind, state? }`):
 
-| kind    | payload                                   | direction            |
-|---------|-------------------------------------------|----------------------|
-| `hello` | —                                         | projector → master   |
-| `state` | `{ slideIndex, stepIdx, stepParagraphs }` | master → projector   |
-| `hl`    | highlighter mirror event (slide-space)    | master → projector   |
-| `codes` | `{ nl, en }` session join codes           | master → projector   |
-| `bye`   | —                                         | either, on teardown  |
+| kind    | payload                                   | direction           |
+| ------- | ----------------------------------------- | ------------------- |
+| `hello` | —                                         | projector → master  |
+| `state` | `{ slideIndex, stepIdx, stepParagraphs }` | master → projector  |
+| `hl`    | highlighter mirror event (slide-space)    | master → projector  |
+| `codes` | `{ nl, en }` session join codes           | master → projector  |
+| `bye`   | —                                         | either, on teardown |
 
 A projector emits `hello` on load; the master replies with the current `state`,
 a highlighter `emitSnapshot()`, and the follow `codes` — so a window opened

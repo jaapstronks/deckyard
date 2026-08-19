@@ -83,23 +83,24 @@ NOTION_FEATURE=true
 
 ## NPM Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm start` | Start development server |
-| `npm test` | Run the node test suite |
-| `npm run lint` | ESLint gate; CI runs it before the tests |
-| `npm run test:pg` | Storage-layer suite against a real PostgreSQL (see `docs/developer/pg-test-suite.md`) |
-| `npm run mcp` | Start the MCP server over stdio (for Claude Desktop etc.) |
-| `npm run vendor:collab` | Rebuild the vendored Yjs/Hocuspocus client bundle |
-| `npm run seed:bg-demo` | Seed the background-contrast demo deck |
-| `npm run audit` | Code audit report (file sizes, complexity) |
-| `npm run db:migrate` | Run pending database migrations |
-| `npm run db:migrate:down` | Rollback last migration |
-| `npm run db:migrate:status` | Show migration status |
-| `npm run db:import` | Import file data into PostgreSQL |
-| `npm run i18n:audit` | Find hardcoded copy that bypasses `t()`, and orphan keys |
-| `npm run i18n:sync` | Sync missing keys across locales |
-| `npm run i18n:validate` | Validate translation files |
+| Script                                    | Description                                                                                 |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `npm start`                               | Start development server                                                                    |
+| `npm test`                                | Run the node test suite                                                                     |
+| `npm run lint`                            | ESLint gate; CI runs it before the tests                                                    |
+| `npm run format` / `npm run format:check` | Prettier (write / check); the check gates CI next to lint — see `docs/developer/linting.md` |
+| `npm run test:pg`                         | Storage-layer suite against a real PostgreSQL (see `docs/developer/pg-test-suite.md`)       |
+| `npm run mcp`                             | Start the MCP server over stdio (for Claude Desktop etc.)                                   |
+| `npm run vendor:collab`                   | Rebuild the vendored Yjs/Hocuspocus client bundle                                           |
+| `npm run seed:bg-demo`                    | Seed the background-contrast demo deck                                                      |
+| `npm run audit`                           | Code audit report (file sizes, complexity)                                                  |
+| `npm run db:migrate`                      | Run pending database migrations                                                             |
+| `npm run db:migrate:down`                 | Rollback last migration                                                                     |
+| `npm run db:migrate:status`               | Show migration status                                                                       |
+| `npm run db:import`                       | Import file data into PostgreSQL                                                            |
+| `npm run i18n:audit`                      | Find hardcoded copy that bypasses `t()`, and orphan keys                                    |
+| `npm run i18n:sync`                       | Sync missing keys across locales                                                            |
+| `npm run i18n:validate`                   | Validate translation files                                                                  |
 
 ---
 
@@ -170,6 +171,7 @@ DEBUG_LOG=1 npm start
 ```
 
 Look for log prefixes:
+
 - `[Server]` - HTTP request handling
 - `[Storage]` - Data persistence
 - `[DB]` - Database operations
@@ -243,6 +245,7 @@ DATABASE_SSL_REJECT_UNAUTHORIZED=false
 ### AUTH_DEV_BYPASS in Production
 
 If you see this error:
+
 ```
 SECURITY WARNING: AUTH_DEV_BYPASS is enabled in production!
 ```
@@ -308,21 +311,22 @@ const { createFakeDb, touchedTables } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 
 const db = createFakeDb({ users: [/* seed rows */] });
-__setTestDb(db);          // every storage module now runs against the double
+__setTestDb(db); // every storage module now runs against the double
 // ... call the storage function under test ...
-__setTestDb(null);        // uninstall in afterEach
+__setTestDb(null); // uninstall in afterEach
 ```
 
-**Reach for it when** you need to assert what the storage layer *does* against
+**Reach for it when** you need to assert what the storage layer _does_ against
 the DB — which rows it writes, which tables it reads, which lookups it skips.
 
 **What it deliberately models** (tests depend on these):
+
 - **UNIQUE constraints** — the globally unique `users.email` and the
   `(user_id, organization_id)` membership pair throw a pg-shaped
   `UniqueViolationError` (code `23505`), so a path that wrongly re-inserts an
   existing person fails loudly.
 - **`db.__queryLog` / `touchedTables(db, op?)`** — every table touched, in order,
-  so a test can assert what was *not* queried (e.g. single-organization mode issues
+  so a test can assert what was _not_ queried (e.g. single-organization mode issues
   no membership lookups at all).
 - **`db.__tables`** — direct access to the backing rows for arrange/assert.
 - **jsonb round-trip** — columns written via the `jsonb()` helper read back as
@@ -362,6 +366,7 @@ node scripts/test-concurrent-votes.js <presentationId> [numClients] [voteRounds]
 ```
 
 Requirements:
+
 - Server running
 - Presentation open in presenter mode
 - Navigated to a poll or likert slide

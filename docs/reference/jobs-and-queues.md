@@ -26,7 +26,7 @@ one, and no feature is gated on the queue existing.
 Separately, a running instance has recurring maintenance that has nothing to do
 with any request: expiring tokens, trimming analytics, revoking lapsed share
 links, sending the weekly digest. Those are plain `setInterval` loops started at
-boot in `server/server.js` and stopped on shutdown. They are deliberately *not*
+boot in `server/server.js` and stopped on shutdown. They are deliberately _not_
 BullMQ jobs: they need no distribution, no retries and no result, and running
 them on every instance of a multi-instance deploy is at worst redundant, not
 wrong. Each is also runnable as a one-off from the CLI.
@@ -43,7 +43,7 @@ The shared queue layer (`server/jobs/queue/`, 5 modules, 1.039 lines):
 - `server/jobs/queue/workers/export-worker.js` — the `export` queue: pptx,
   handoff-zip, pdf-slides, notes-docx, notes-md, html.
 - `server/jobs/queue/workers/translate-worker.js` — the `translate` queue.
-  Currently has no producer; see *Implementation status*.
+  Currently has no producer; see _Implementation status_.
 - `server/jobs/queue/workers/bulk-export-worker.js` — the `heavy` queue's
   `bulk-export` job, plus the per-user active/last-completed bookkeeping.
 
@@ -88,11 +88,11 @@ route treats a job as durable state.
 
 Per-queue defaults (`DEFAULT_JOB_OPTIONS` in `connection.js`):
 
-| Queue | Attempts | Backoff | Keep completed | Keep failed |
-|---|---|---|---|---|
-| `export` | 2 | exponential, 5 s | 1 h | 24 h |
-| `translate` | 2 | exponential, 10 s | 1 h | 24 h |
-| `heavy` | 1 | — | 30 min | 24 h |
+| Queue       | Attempts | Backoff           | Keep completed | Keep failed |
+| ----------- | -------- | ----------------- | -------------- | ----------- |
+| `export`    | 2        | exponential, 5 s  | 1 h            | 24 h        |
+| `translate` | 2        | exponential, 10 s | 1 h            | 24 h        |
+| `heavy`     | 1        | —                 | 30 min         | 24 h        |
 
 Each worker keeps its own in-process **result store**, a `Map` with a
 `setTimeout` eviction: 1 hour for export and translate results (base64 buffers),
@@ -216,13 +216,13 @@ than at whatever time the process happened to boot.
 
 ## Config & flags
 
-| Variable | Effect |
-|---|---|
-| `REDIS_URL` | Full connection URL. When set (or `REDIS_HOST` is), the queue system initializes; otherwise everything runs synchronously. |
-| `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` / `REDIS_DB` | The discrete-parameter alternative to `REDIS_URL`. |
-| `REDIS_ENABLED=false` | Explicitly disables Redis even when a URL or host is configured — the supported way to force the synchronous path. |
+| Variable                                                      | Effect                                                                                                                                                                                                   |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `REDIS_URL`                                                   | Full connection URL. When set (or `REDIS_HOST` is), the queue system initializes; otherwise everything runs synchronously.                                                                               |
+| `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` / `REDIS_DB`   | The discrete-parameter alternative to `REDIS_URL`.                                                                                                                                                       |
+| `REDIS_ENABLED=false`                                         | Explicitly disables Redis even when a URL or host is configured — the supported way to force the synchronous path.                                                                                       |
 | `ANALYTICS_RETENTION_DAYS`, `ANALYTICS_IP_ANONYMIZATION_DAYS` | Seed the defaults for `settings.analytics.retention.*`; the cleanup job reads the settings value (admin UI wins). See [`analytics.md`](analytics.md) and [`analytics-privacy.md`](analytics-privacy.md). |
-| `ACTIVITY_RETENTION_DAYS` | Retention for `activity_events`, default 180. Those rows carry actor emails, which is why they expire at all. |
+| `ACTIVITY_RETENTION_DAYS`                                     | Retention for `activity_events`, default 180. Those rows carry actor emails, which is why they expire at all.                                                                                            |
 
 The intervals themselves are not env-configurable: they are defaults in each
 module (auth 1 h, analytics 24 h, retention 24 h, digest 24 h at `runAtHour`),
@@ -263,7 +263,7 @@ and Redis optional throughout.** Where the code stands, as of 2026-08-05:
   a decision, not a doc note — it sits on the internal dead-code worklist until
   it is made.
 - **Result stores are per-process, not shared.** Two app instances behind a load
-  balancer share the *queue* but not the *results*: a poll or download that
+  balancer share the _queue_ but not the _results_: a poll or download that
   lands on the instance that did not run the job finds nothing. Single-instance
   deployments — every supported shape today — are unaffected, but the queue's
   distribution promise stops at the result boundary. Leaving this as-is is a

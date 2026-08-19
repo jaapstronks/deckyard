@@ -36,7 +36,10 @@ import {
   closePuppeteerBrowser,
 } from '../server/utils/puppeteer-browser.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const cfg = { maxPx: 2600, quality: 80 };
 
 // --- pure pieces, no browser -------------------------------------------------
@@ -55,7 +58,10 @@ test('displayCap: a small display size yields a small cap, clamped both ends', (
 
 /** Run `fn` with PDF_EXPORT_* env vars set (undefined = unset). */
 function withEnv(env, fn) {
-  const keys = ['PDF_EXPORT_IMAGE_RETINA_SCALE', 'PDF_EXPORT_IMAGE_COMPRESSION'];
+  const keys = [
+    'PDF_EXPORT_IMAGE_RETINA_SCALE',
+    'PDF_EXPORT_IMAGE_COMPRESSION',
+  ];
   const saved = {};
   for (const k of keys) {
     saved[k] = process.env[k];
@@ -77,26 +83,35 @@ function withEnv(env, fn) {
 test('retinaScale: default 2, valid override in [1, 4], else fallback', () => {
   withEnv({}, () => assert.equal(retinaScale(), DEFAULT_RETINA_SCALE));
   withEnv({ PDF_EXPORT_IMAGE_RETINA_SCALE: '3' }, () =>
-    assert.equal(retinaScale(), 3)
+    assert.equal(retinaScale(), 3),
   );
   // Out-of-range and garbage fall back to the default (envInt contract; the
   // pre-family parser clamped 100 → 4 instead).
   withEnv({ PDF_EXPORT_IMAGE_RETINA_SCALE: '100' }, () =>
-    assert.equal(retinaScale(), DEFAULT_RETINA_SCALE)
+    assert.equal(retinaScale(), DEFAULT_RETINA_SCALE),
   );
   withEnv({ PDF_EXPORT_IMAGE_RETINA_SCALE: '0' }, () =>
-    assert.equal(retinaScale(), DEFAULT_RETINA_SCALE)
+    assert.equal(retinaScale(), DEFAULT_RETINA_SCALE),
   );
   withEnv({ PDF_EXPORT_IMAGE_RETINA_SCALE: 'nope' }, () =>
-    assert.equal(retinaScale(), DEFAULT_RETINA_SCALE)
+    assert.equal(retinaScale(), DEFAULT_RETINA_SCALE),
   );
 });
 
 test('hasMeasurableImages: only local <img src> counts', () => {
   assert.equal(hasMeasurableImages(['<img src="/uploads/a.jpg">']), true);
-  assert.equal(hasMeasurableImages(['<img src="/custom/themes/x/assets/a.png">']), true);
-  assert.equal(hasMeasurableImages(['<img src="https://example.com/a.jpg">']), false);
-  assert.equal(hasMeasurableImages(['<img src="data:image/png;base64,AAAA">']), false);
+  assert.equal(
+    hasMeasurableImages(['<img src="/custom/themes/x/assets/a.png">']),
+    true,
+  );
+  assert.equal(
+    hasMeasurableImages(['<img src="https://example.com/a.jpg">']),
+    false,
+  );
+  assert.equal(
+    hasMeasurableImages(['<img src="data:image/png;base64,AAAA">']),
+    false,
+  );
   assert.equal(hasMeasurableImages(['<p>no images here</p>']), false);
   // Non-global regex: repeated calls must not carry state between them.
   const docs = ['<img src="/uploads/a.jpg">', '<img src="/uploads/b.jpg">'];
@@ -106,14 +121,19 @@ test('hasMeasurableImages: only local <img src> counts', () => {
 
 test('displayAwareEmbedTransform: null when compression is off', () => {
   withEnv({ PDF_EXPORT_IMAGE_COMPRESSION: 'off' }, () =>
-    assert.equal(displayAwareEmbedTransform(new Map()), null)
+    assert.equal(displayAwareEmbedTransform(new Map()), null),
   );
 });
 
 test('displayAwareEmbedTransform: an unmeasured url keeps the flat cap', async () => {
   const raw = await bigOpaqueJpeg(2400);
   const transform = withEnv({}, () => displayAwareEmbedTransform(new Map()));
-  const { buf } = await transform(raw, 'jpg', 'image/jpeg', '/uploads/unknown.jpg');
+  const { buf } = await transform(
+    raw,
+    'jpg',
+    'image/jpeg',
+    '/uploads/unknown.jpg',
+  );
   const meta = await sharp(buf).metadata();
   // No measurement → flat cap 2600 → 2400 source kept (never enlarged).
   assert.equal(Math.max(meta.width, meta.height), 2400);
@@ -123,7 +143,12 @@ test('displayAwareEmbedTransform: a small measured url is shrunk to its cap', as
   const raw = await bigOpaqueJpeg(2400);
   const displayPx = new Map([['/uploads/thumb.jpg', 300]]);
   const transform = withEnv({}, () => displayAwareEmbedTransform(displayPx));
-  const { buf } = await transform(raw, 'jpg', 'image/jpeg', '/uploads/thumb.jpg');
+  const { buf } = await transform(
+    raw,
+    'jpg',
+    'image/jpeg',
+    '/uploads/thumb.jpg',
+  );
   const meta = await sharp(buf).metadata();
   assert.equal(Math.max(meta.width, meta.height), 600); // 300 * 2 retina
 });
@@ -168,7 +193,9 @@ async function withUpload(buf, ext = 'jpg') {
 
 /** Longest-edge px of every embedded JPEG in the export HTML. */
 async function embeddedJpegLongestEdges(html) {
-  const payloads = [...html.matchAll(/data:image\/jpeg;base64,([A-Za-z0-9+/=]+)/g)].map((m) => m[1]);
+  const payloads = [
+    ...html.matchAll(/data:image\/jpeg;base64,([A-Za-z0-9+/=]+)/g),
+  ].map((m) => m[1]);
   const edges = [];
   for (const b64 of payloads) {
     const meta = await sharp(Buffer.from(b64, 'base64')).metadata();
@@ -185,11 +212,15 @@ test(
     try {
       const images = [];
       for (let i = 0; i < 6; i++) {
-        const [url, cleanup] = await withUpload(await bigOpaqueJpeg(2400, i + 1));
+        const [url, cleanup] = await withUpload(
+          await bigOpaqueJpeg(2400, i + 1),
+        );
         cleanups.push(cleanup);
         images.push({ src: url, caption: '', alt: '' });
       }
-      const [bleedUrl, bleedCleanup] = await withUpload(await bigOpaqueJpeg(2400, 99));
+      const [bleedUrl, bleedCleanup] = await withUpload(
+        await bigOpaqueJpeg(2400, 99),
+      );
       cleanups.push(bleedCleanup);
 
       const pres = {
@@ -198,7 +229,11 @@ test(
         theme: 'default',
         lang: 'en',
         slides: [
-          { id: 'g', type: 'gallery-slide', content: { layout: 'grid', images } },
+          {
+            id: 'g',
+            type: 'gallery-slide',
+            content: { layout: 'grid', images },
+          },
           {
             id: 'f',
             type: 'image-slide',
@@ -208,7 +243,9 @@ test(
       };
 
       const html = await buildSlidesPdfHtml(repoRoot, pres, {});
-      const edges = (await embeddedJpegLongestEdges(html)).sort((a, b) => a - b);
+      const edges = (await embeddedJpegLongestEdges(html)).sort(
+        (a, b) => a - b,
+      );
       assert.equal(edges.length, 7, 'six grid items plus one full-bleed');
 
       // The six grid thumbnails: capped near their display size (~480px * 2),
@@ -228,7 +265,10 @@ test(
         bleed >= 2000,
         `full-bleed embedded at ${bleed}px, expected near source resolution (>=2000)`,
       );
-      assert.ok(bleed > Math.max(...grid) * 1.5, 'full-bleed must stay far sharper than a grid item');
+      assert.ok(
+        bleed > Math.max(...grid) * 1.5,
+        'full-bleed must stay far sharper than a grid item',
+      );
     } finally {
       for (const c of cleanups) await c();
     }

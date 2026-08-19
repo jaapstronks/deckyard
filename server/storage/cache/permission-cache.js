@@ -27,7 +27,9 @@ const cacheAccessOrder = [];
  */
 function getConfig() {
   return {
-    ttlSeconds: envInt('PERMISSION_CACHE_TTL_SECONDS', DEFAULT_TTL_SECONDS, { min: 1 }),
+    ttlSeconds: envInt('PERMISSION_CACHE_TTL_SECONDS', DEFAULT_TTL_SECONDS, {
+      min: 1,
+    }),
     maxSize: envInt('PERMISSION_CACHE_MAX_SIZE', DEFAULT_MAX_SIZE, { min: 1 }),
   };
 }
@@ -161,7 +163,11 @@ export async function getCachedPermission(presentationId, userEmail) {
  * @param {string|null} permission - Permission to cache
  * @returns {Promise<void>}
  */
-export async function setCachedPermission(presentationId, userEmail, permission) {
+export async function setCachedPermission(
+  presentationId,
+  userEmail,
+  permission,
+) {
   const key = makeCacheKey(presentationId, userEmail);
   const config = getConfig();
 
@@ -201,4 +207,3 @@ export async function invalidatePermission(presentationId, userEmail) {
     cacheAccessOrder.splice(idx, 1);
   }
 }
-

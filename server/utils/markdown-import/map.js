@@ -31,7 +31,9 @@ export function mapParsedDeckToSlides(parsed, opts = {}) {
   const theme = opts.theme || String(meta.theme || 'default');
   const title = String(meta.title || opts.title || 'Imported presentation');
 
-  const mappedSlides = slides.map((s, i) => mapSingleSlide(s, i, slides.length));
+  const mappedSlides = slides.map((s, i) =>
+    mapSingleSlide(s, i, slides.length),
+  );
 
   return {
     format: DECK_FORMAT_ID,
@@ -155,21 +157,30 @@ function isImageOnly(parsed) {
 
 function hasColumnHeadings(parsed) {
   if (!parsed.columns) return false;
-  const leftHasHeading = HEADING_RE.test(parsed.columns.left.split('\n')[0]?.trim() || '');
-  const rightHasHeading = HEADING_RE.test(parsed.columns.right.split('\n')[0]?.trim() || '');
+  const leftHasHeading = HEADING_RE.test(
+    parsed.columns.left.split('\n')[0]?.trim() || '',
+  );
+  const rightHasHeading = HEADING_RE.test(
+    parsed.columns.right.split('\n')[0]?.trim() || '',
+  );
   return leftHasHeading || rightHasHeading;
 }
 
 function isBoldColonList(parsed) {
   const lines = parsed.body.split('\n').filter((l) => l.trim());
-  const listLines = lines.filter((l) => l.trim().startsWith('-') || l.trim().startsWith('*'));
+  const listLines = lines.filter(
+    (l) => l.trim().startsWith('-') || l.trim().startsWith('*'),
+  );
   if (listLines.length < 2) return false;
   const boldColonLines = listLines.filter((l) => {
     const content = l.trim().replace(/^[-*]\s*/, '');
     return BOLD_COLON_RE.test(content);
   });
   // At least 2 items and majority match the pattern
-  return boldColonLines.length >= 2 && boldColonLines.length / listLines.length >= 0.5;
+  return (
+    boldColonLines.length >= 2 &&
+    boldColonLines.length / listLines.length >= 0.5
+  );
 }
 
 function isGallery(parsed) {
@@ -206,18 +217,30 @@ function hasChartCodeBlock(parsed) {
 function buildSlide(type, parsed, contentOverrides = {}) {
   // Route to specific builders where we have structured extraction
   switch (type) {
-    case 'title-slide':       return buildTitleSlide(parsed, contentOverrides);
-    case 'chapter-title-slide': return buildChapterSlide(parsed, contentOverrides);
-    case 'quote-slide':       return buildQuoteSlide(parsed, contentOverrides);
-    case 'image-slide':       return buildImageSlide(parsed, contentOverrides);
-    case 'image-text-slide':  return buildImageTextSlide(parsed, contentOverrides);
-    case 'comparison-slide':  return buildComparisonSlide(parsed, contentOverrides);
-    case 'table-slide':       return buildTableSlide(parsed, contentOverrides);
-    case 'list-slide':        return buildListSlide(parsed, contentOverrides);
-    case 'payoff-slide':      return buildPayoffSlide(parsed, contentOverrides);
-    case 'chart-slide':       return buildChartSlide(parsed, contentOverrides);
-    case 'kpi-metrics-slide': return buildKpiSlide(parsed, contentOverrides);
-    case 'gallery-slide':     return buildGallerySlide(parsed, contentOverrides);
+    case 'title-slide':
+      return buildTitleSlide(parsed, contentOverrides);
+    case 'chapter-title-slide':
+      return buildChapterSlide(parsed, contentOverrides);
+    case 'quote-slide':
+      return buildQuoteSlide(parsed, contentOverrides);
+    case 'image-slide':
+      return buildImageSlide(parsed, contentOverrides);
+    case 'image-text-slide':
+      return buildImageTextSlide(parsed, contentOverrides);
+    case 'comparison-slide':
+      return buildComparisonSlide(parsed, contentOverrides);
+    case 'table-slide':
+      return buildTableSlide(parsed, contentOverrides);
+    case 'list-slide':
+      return buildListSlide(parsed, contentOverrides);
+    case 'payoff-slide':
+      return buildPayoffSlide(parsed, contentOverrides);
+    case 'chart-slide':
+      return buildChartSlide(parsed, contentOverrides);
+    case 'kpi-metrics-slide':
+      return buildKpiSlide(parsed, contentOverrides);
+    case 'gallery-slide':
+      return buildGallerySlide(parsed, contentOverrides);
     case 'content-slide': {
       if (contentOverrides.layout === 'two-column') {
         return buildTwoColumnContentSlide(parsed, contentOverrides);
@@ -253,10 +276,14 @@ function buildTitleSlide(parsed, overrides = {}) {
 
 function buildChapterSlide(parsed, overrides = {}) {
   const heading = parsed.headings[0]?.text || 'Section';
-  return slide('chapter-title-slide', {
-    title: heading,
-    ...overrides,
-  }, parsed.notes);
+  return slide(
+    'chapter-title-slide',
+    {
+      title: heading,
+      ...overrides,
+    },
+    parsed.notes,
+  );
 }
 
 function buildQuoteSlide(parsed, overrides = {}) {
@@ -285,25 +312,33 @@ function buildQuoteSlide(parsed, overrides = {}) {
   let quoteText = quoteLines.join(' ').trim();
   quoteText = quoteText.replace(/^[""\u201C]+|[""\u201D]+$/g, '').trim();
 
-  return slide('quote-slide', {
-    quote: quoteText || 'Quote',
-    authorName: authorName,
-    authorTitle: authorTitle,
-    ...overrides,
-  }, parsed.notes);
+  return slide(
+    'quote-slide',
+    {
+      quote: quoteText || 'Quote',
+      authorName: authorName,
+      authorTitle: authorTitle,
+      ...overrides,
+    },
+    parsed.notes,
+  );
 }
 
 function buildImageSlide(parsed, overrides = {}) {
   const img = parsed.images[0] || {};
   const heading = parsed.headings[0];
 
-  return slide('image-slide', {
-    title: heading?.text || '',
-    image: img.src || '',
-    alt: img.alt || '',
-    caption: img.caption || '',
-    ...overrides,
-  }, parsed.notes);
+  return slide(
+    'image-slide',
+    {
+      title: heading?.text || '',
+      image: img.src || '',
+      alt: img.alt || '',
+      caption: img.caption || '',
+      ...overrides,
+    },
+    parsed.notes,
+  );
 }
 
 function buildImageTextSlide(parsed, overrides = {}) {
@@ -313,21 +348,29 @@ function buildImageTextSlide(parsed, overrides = {}) {
   // Body without the image markdown and the first heading
   let bodyText = parsed.body;
   // Remove image syntax
-  bodyText = bodyText.replace(/!\[[^\]]*\]\([^)]*(?:\s+"[^"]*")?\)/g, '').trim();
+  bodyText = bodyText
+    .replace(/!\[[^\]]*\]\([^)]*(?:\s+"[^"]*")?\)/g, '')
+    .trim();
   // Remove first heading
   if (heading) {
-    bodyText = bodyText.replace(new RegExp(`^#{1,6}\\s+${escapeRegex(heading.text)}`, 'm'), '').trim();
+    bodyText = bodyText
+      .replace(new RegExp(`^#{1,6}\\s+${escapeRegex(heading.text)}`, 'm'), '')
+      .trim();
   }
 
-  return slide('image-text-slide', {
-    title: heading?.text || '',
-    body: bodyText || '',
-    image: img.src || '',
-    alt: img.alt || '',
-    caption: img.caption || '',
-    imageSide: overrides.imageSide || 'left',
-    ...overrides,
-  }, parsed.notes);
+  return slide(
+    'image-text-slide',
+    {
+      title: heading?.text || '',
+      body: bodyText || '',
+      image: img.src || '',
+      alt: img.alt || '',
+      caption: img.caption || '',
+      imageSide: overrides.imageSide || 'left',
+      ...overrides,
+    },
+    parsed.notes,
+  );
 }
 
 function buildComparisonSlide(parsed, overrides = {}) {
@@ -340,14 +383,18 @@ function buildComparisonSlide(parsed, overrides = {}) {
   // Overall heading (before column markers)
   const heading = getPreColumnHeading(parsed);
 
-  return slide('comparison-slide', {
-    title: heading || '',
-    leftTitle: leftParts.title || '',
-    leftBody: leftParts.body || '',
-    rightTitle: rightParts.title || '',
-    rightBody: rightParts.body || '',
-    ...overrides,
-  }, parsed.notes);
+  return slide(
+    'comparison-slide',
+    {
+      title: heading || '',
+      leftTitle: leftParts.title || '',
+      leftBody: leftParts.body || '',
+      rightTitle: rightParts.title || '',
+      rightBody: rightParts.body || '',
+      ...overrides,
+    },
+    parsed.notes,
+  );
 }
 
 function buildTwoColumnContentSlide(parsed, overrides = {}) {
@@ -357,25 +404,33 @@ function buildTwoColumnContentSlide(parsed, overrides = {}) {
   const { left, right } = parsed.columns || { left: '', right: '' };
   const body = left + '\n\n' + right;
 
-  return slide('content-slide', {
-    title: heading || '',
-    body: body.trim(),
-    layout: 'two-column',
-    ...overrides,
-  }, parsed.notes);
+  return slide(
+    'content-slide',
+    {
+      title: heading || '',
+      body: body.trim(),
+      layout: 'two-column',
+      ...overrides,
+    },
+    parsed.notes,
+  );
 }
 
 function buildTableSlide(parsed, overrides = {}) {
   const heading = parsed.headings[0];
   const tableData = parseMarkdownTable(parsed.body);
 
-  return slide('table-slide', {
-    title: heading?.text || '',
-    headerRow: tableData.hasHeader ? 'on' : 'off',
-    colCount: String(tableData.colCount),
-    rows: tableData.rows,
-    ...overrides,
-  }, parsed.notes);
+  return slide(
+    'table-slide',
+    {
+      title: heading?.text || '',
+      headerRow: tableData.hasHeader ? 'on' : 'off',
+      colCount: String(tableData.colCount),
+      rows: tableData.rows,
+      ...overrides,
+    },
+    parsed.notes,
+  );
 }
 
 function buildListSlide(parsed, overrides = {}) {
@@ -424,11 +479,15 @@ function buildListSlide(parsed, overrides = {}) {
     }
   }
 
-  return slide('list-slide', {
-    title: heading?.text || '',
-    items: items.slice(0, 8), // max 8 items
-    ...overrides,
-  }, parsed.notes);
+  return slide(
+    'list-slide',
+    {
+      title: heading?.text || '',
+      items: items.slice(0, 8), // max 8 items
+      ...overrides,
+    },
+    parsed.notes,
+  );
 }
 
 function buildPayoffSlide(_parsed, overrides = {}) {
@@ -439,24 +498,32 @@ function buildChartSlide(parsed, overrides = {}) {
   const heading = parsed.headings[0];
   // Look for CSV data in a code block
   const csvBlock = parsed.codeBlocks.find(
-    (b) => b.lang === 'csv' || b.lang === 'tsv' || b.lang === ''
+    (b) => b.lang === 'csv' || b.lang === 'tsv' || b.lang === '',
   );
 
-  return slide('chart-slide', {
-    title: heading?.text || '',
-    chartType: parsed.frontmatter?.chartType || 'bar',
-    data: csvBlock?.code || parsed.frontmatter?.data || '',
-    ...overrides,
-  }, parsed.notes);
+  return slide(
+    'chart-slide',
+    {
+      title: heading?.text || '',
+      chartType: parsed.frontmatter?.chartType || 'bar',
+      data: csvBlock?.code || parsed.frontmatter?.data || '',
+      ...overrides,
+    },
+    parsed.notes,
+  );
 }
 
 function buildKpiSlide(parsed, overrides = {}) {
   const heading = parsed.headings[0];
   // KPI data can come from frontmatter (deferred: requires richer YAML)
-  return slide('kpi-metrics-slide', {
-    title: heading?.text || '',
-    ...overrides,
-  }, parsed.notes);
+  return slide(
+    'kpi-metrics-slide',
+    {
+      title: heading?.text || '',
+      ...overrides,
+    },
+    parsed.notes,
+  );
 }
 
 function buildGallerySlide(parsed, overrides = {}) {
@@ -467,34 +534,46 @@ function buildGallerySlide(parsed, overrides = {}) {
     caption: img.caption || '',
   }));
 
-  return slide('gallery-slide', {
-    title: heading?.text || '',
-    images: images.slice(0, 12), // max 12 images
-    ...overrides,
-  }, parsed.notes);
+  return slide(
+    'gallery-slide',
+    {
+      title: heading?.text || '',
+      images: images.slice(0, 12), // max 12 images
+      ...overrides,
+    },
+    parsed.notes,
+  );
 }
 
 function buildCodeSlide(parsed, overrides = {}) {
   const heading = parsed.headings[0];
 
   // Collect code blocks into the body, preserving language markers
-  const codeBody = parsed.codeBlocks.map((block) => {
-    const langTag = block.lang ? `\`\`\`${block.lang}` : '```';
-    return `${langTag}\n${block.code}\`\`\``;
-  }).join('\n\n');
+  const codeBody = parsed.codeBlocks
+    .map((block) => {
+      const langTag = block.lang ? `\`\`\`${block.lang}` : '```';
+      return `${langTag}\n${block.code}\`\`\``;
+    })
+    .join('\n\n');
 
   // Combine any non-code text with the code blocks
   let bodyText = parsed.body;
   if (heading) {
-    bodyText = bodyText.replace(new RegExp(`^#{1,6}\\s+${escapeRegex(heading.text)}`, 'm'), '').trim();
+    bodyText = bodyText
+      .replace(new RegExp(`^#{1,6}\\s+${escapeRegex(heading.text)}`, 'm'), '')
+      .trim();
   }
 
-  return slide('content-slide', {
-    title: heading?.text || '',
-    body: bodyText || codeBody || '',
-    layout: 'one-column',
-    ...overrides,
-  }, parsed.notes);
+  return slide(
+    'content-slide',
+    {
+      title: heading?.text || '',
+      body: bodyText || codeBody || '',
+      layout: 'one-column',
+      ...overrides,
+    },
+    parsed.notes,
+  );
 }
 
 function buildContentSlide(parsed, overrides = {}) {
@@ -503,15 +582,21 @@ function buildContentSlide(parsed, overrides = {}) {
   let bodyText = parsed.body;
   // Remove first heading from body
   if (heading) {
-    bodyText = bodyText.replace(new RegExp(`^#{1,6}\\s+${escapeRegex(heading.text)}`, 'm'), '').trim();
+    bodyText = bodyText
+      .replace(new RegExp(`^#{1,6}\\s+${escapeRegex(heading.text)}`, 'm'), '')
+      .trim();
   }
 
-  return slide('content-slide', {
-    title: heading?.text || '',
-    body: bodyText || '',
-    layout: 'one-column',
-    ...overrides,
-  }, parsed.notes);
+  return slide(
+    'content-slide',
+    {
+      title: heading?.text || '',
+      body: bodyText || '',
+      layout: 'one-column',
+      ...overrides,
+    },
+    parsed.notes,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -639,7 +724,11 @@ function parseMarkdownTable(body) {
     return row;
   });
 
-  return { hasHeader, colCount: Math.min(colCount, 10), rows: rows.slice(0, 40) };
+  return {
+    hasHeader,
+    colCount: Math.min(colCount, 10),
+    rows: rows.slice(0, 40),
+  };
 }
 
 function escapeRegex(str) {

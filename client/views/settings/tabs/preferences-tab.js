@@ -26,7 +26,10 @@ import {
   invalidateSettingsCache,
   updateMySettings,
 } from '../../../lib/net/settings.js';
-import { getLangShortLabel, getLangDisplayName } from '../../../lib/format/lang-selector.js';
+import {
+  getLangShortLabel,
+  getLangDisplayName,
+} from '../../../lib/format/lang-selector.js';
 import { createUserNotificationsSection } from '../sections/index.js';
 import { disableForSandbox } from '../sandbox-disable.js';
 import { createColorPicker } from '../theme-editor/color-picker.js';
@@ -58,14 +61,16 @@ export function createPreferencesTab({ user, nav }) {
     h('div', {
       class: 'field-label',
       text: t('settings.uiLocale.title', 'Application language'),
-    })
+    }),
   );
-  const uiLocaleSelect = h('select', { class: 'form-input settings-compact-control' });
+  const uiLocaleSelect = h('select', {
+    class: 'form-input settings-compact-control',
+  });
   const uiLocaleHint = h('div', {
     class: 'help',
     text: t(
       'settings.uiLocale.hint',
-      "The language of this application's interface, unrelated to the language used in slides."
+      "The language of this application's interface, unrelated to the language used in slides.",
     ),
   });
   uiLocaleCard.append(uiLocaleSelect, uiLocaleHint);
@@ -76,7 +81,7 @@ export function createPreferencesTab({ user, nav }) {
     h('div', {
       class: 'field-label',
       text: t('settings.slideLangMode.title', 'Slides language mode'),
-    })
+    }),
   );
   let langMode = readLangMode();
   let langControlEl = null;
@@ -87,7 +92,7 @@ export function createPreferencesTab({ user, nav }) {
   const langControlWrap = h('div', {
     title: t(
       'settings.slideLangMode.titleHint',
-      'Language mode (default for new presentations and AI)'
+      'Language mode (default for new presentations and AI)',
     ),
   });
 
@@ -105,9 +110,10 @@ export function createPreferencesTab({ user, nav }) {
   const buildLangControl = (supportedList) => {
     langControlWrap.innerHTML = '';
     langButtons = {};
-    const langs = Array.isArray(supportedList) && supportedList.length > 0
-      ? supportedList
-      : ['nl', 'en-GB'];
+    const langs =
+      Array.isArray(supportedList) && supportedList.length > 0
+        ? supportedList
+        : ['nl', 'en-GB'];
 
     useDropdownForLang = langs.length > 2;
 
@@ -160,7 +166,7 @@ export function createPreferencesTab({ user, nav }) {
     class: 'help',
     text: t(
       'settings.slideLangMode.hint',
-      'Used for the editor\'s "language mode", AI output, and slide translation tools.'
+      'Used for the editor\'s "language mode", AI output, and slide translation tools.',
     ),
   });
   langCard.append(langControlWrap, langHint);
@@ -174,37 +180,45 @@ export function createPreferencesTab({ user, nav }) {
     h('div', {
       class: 'field-label',
       text: t('settings.privacy.title', 'Privacy'),
-    })
+    }),
   );
   const privacyHint = h('div', {
     class: 'help',
     text: t(
       'settings.privacy.hint',
-      'Control how your engagement is tracked when viewing presentations.'
+      'Control how your engagement is tracked when viewing presentations.',
     ),
   });
 
   // Allow view attribution toggle
-  const { element: allowAttributionLabel, input: allowAttributionCheck } = labeledCheckbox({
-    text: t('settings.privacy.allowAttribution', 'Allow my name to be shown in engagement insights'),
-  });
+  const { element: allowAttributionLabel, input: allowAttributionCheck } =
+    labeledCheckbox({
+      text: t(
+        'settings.privacy.allowAttribution',
+        'Allow my name to be shown in engagement insights',
+      ),
+    });
   const allowAttributionHint = h('div', {
     class: 'help',
     text: t(
       'settings.privacy.allowAttributionHint',
-      'When enabled, presenters can see your name instead of just "team member viewed".'
+      'When enabled, presenters can see your name instead of just "team member viewed".',
     ),
   });
 
   // Disable all tracking toggle
-  const { element: disableTrackingLabel, input: disableTrackingCheck } = labeledCheckbox({
-    text: t('settings.privacy.disableTracking', 'Opt out of all engagement tracking'),
-  });
+  const { element: disableTrackingLabel, input: disableTrackingCheck } =
+    labeledCheckbox({
+      text: t(
+        'settings.privacy.disableTracking',
+        'Opt out of all engagement tracking',
+      ),
+    });
   const disableTrackingHint = h('div', {
     class: 'help',
     text: t(
       'settings.privacy.disableTrackingHint',
-      'When enabled, your views will not be recorded in any analytics.'
+      'When enabled, your views will not be recorded in any analytics.',
     ),
   });
 
@@ -222,35 +236,67 @@ export function createPreferencesTab({ user, nav }) {
     h('div', {
       class: 'field-label',
       text: t('settings.digest.title', 'Weekly Digest'),
-    })
+    }),
   );
   const digestHint = h('div', {
     class: 'help',
     text: t(
       'settings.digest.hint',
-      'Receive a weekly email summary of your presentation engagement.'
+      'Receive a weekly email summary of your presentation engagement.',
     ),
   });
 
   // Digest enabled toggle
-  const { element: digestEnabledLabel, input: digestEnabledCheck } = labeledCheckbox({
-    text: t('settings.digest.enabled', 'Send weekly engagement digest'),
-    checked: true,
-  });
+  const { element: digestEnabledLabel, input: digestEnabledCheck } =
+    labeledCheckbox({
+      text: t('settings.digest.enabled', 'Send weekly engagement digest'),
+      checked: true,
+    });
 
   // Digest day of week
-  const digestDaySelect = h('select', { class: 'select', 'aria-label': t('settings.digest.dayOfWeek', 'Send digest on') }, [
-    h('option', { value: '0', text: t('settings.digest.dayOfWeek.0', 'Sunday') }),
-    h('option', { value: '1', text: t('settings.digest.dayOfWeek.1', 'Monday') }),
-    h('option', { value: '2', text: t('settings.digest.dayOfWeek.2', 'Tuesday') }),
-    h('option', { value: '3', text: t('settings.digest.dayOfWeek.3', 'Wednesday') }),
-    h('option', { value: '4', text: t('settings.digest.dayOfWeek.4', 'Thursday') }),
-    h('option', { value: '5', text: t('settings.digest.dayOfWeek.5', 'Friday') }),
-    h('option', { value: '6', text: t('settings.digest.dayOfWeek.6', 'Saturday') }),
-  ]);
+  const digestDaySelect = h(
+    'select',
+    {
+      class: 'select',
+      'aria-label': t('settings.digest.dayOfWeek', 'Send digest on'),
+    },
+    [
+      h('option', {
+        value: '0',
+        text: t('settings.digest.dayOfWeek.0', 'Sunday'),
+      }),
+      h('option', {
+        value: '1',
+        text: t('settings.digest.dayOfWeek.1', 'Monday'),
+      }),
+      h('option', {
+        value: '2',
+        text: t('settings.digest.dayOfWeek.2', 'Tuesday'),
+      }),
+      h('option', {
+        value: '3',
+        text: t('settings.digest.dayOfWeek.3', 'Wednesday'),
+      }),
+      h('option', {
+        value: '4',
+        text: t('settings.digest.dayOfWeek.4', 'Thursday'),
+      }),
+      h('option', {
+        value: '5',
+        text: t('settings.digest.dayOfWeek.5', 'Friday'),
+      }),
+      h('option', {
+        value: '6',
+        text: t('settings.digest.dayOfWeek.6', 'Saturday'),
+      }),
+    ],
+  );
   digestDaySelect.value = '1'; // Default to Monday
   const digestDayField = h('label', { class: 'field-row' }, [
-    h('span', { class: 'field-row-label', text: t('settings.digest.dayOfWeek', 'Send digest on') }),
+    h('span', {
+      class: 'field-row-label',
+      text: t('settings.digest.dayOfWeek', 'Send digest on'),
+    }),
     digestDaySelect,
   ]);
 
@@ -266,13 +312,13 @@ export function createPreferencesTab({ user, nav }) {
     h('div', {
       class: 'field-label',
       text: t('settings.highlighter.title', 'Presenter Highlighter'),
-    })
+    }),
   );
   const highlighterHint = h('div', {
     class: 'help',
     text: t(
       'settings.highlighter.hint',
-      'Customize the laser pointer and drawing tool colors and thickness.'
+      'Customize the laser pointer and drawing tool colors and thickness.',
     ),
   });
 
@@ -285,12 +331,16 @@ export function createPreferencesTab({ user, nav }) {
 
   // Thickness slider
   const thicknessLabel = h('label', { class: 'field-row' }, [
-    h('span', { class: 'field-row-label', text: t('settings.highlighter.thickness', 'Thickness') }),
+    h('span', {
+      class: 'field-row-label',
+      text: t('settings.highlighter.thickness', 'Thickness'),
+    }),
   ]);
   const thicknessValue = h('span', {
     class: 'settings-thickness-value',
     text: '4',
-    style: 'min-width: 24px; text-align: right; font-variant-numeric: tabular-nums;',
+    style:
+      'min-width: 24px; text-align: right; font-variant-numeric: tabular-nums;',
   });
   const thicknessSlider = h('input', {
     type: 'range',
@@ -304,33 +354,47 @@ export function createPreferencesTab({ user, nav }) {
       thicknessValue.textContent = e.target.value;
     },
   });
-  const thicknessRow = h('div', {
-    class: 'row gap-2',
-    style: 'align-items: center;',
-  }, [thicknessSlider, thicknessValue]);
+  const thicknessRow = h(
+    'div',
+    {
+      class: 'row gap-2',
+      style: 'align-items: center;',
+    },
+    [thicknessSlider, thicknessValue],
+  );
   thicknessLabel.append(thicknessRow);
 
   // Persistent draw toggle
-  const { element: persistentDrawLabel, input: persistentDrawCheck } = labeledCheckbox({
-    text: t('settings.highlighter.persistentDraw', 'Keep drawings visible until cleared'),
-  });
+  const { element: persistentDrawLabel, input: persistentDrawCheck } =
+    labeledCheckbox({
+      text: t(
+        'settings.highlighter.persistentDraw',
+        'Keep drawings visible until cleared',
+      ),
+    });
   const persistentDrawHint = h('div', {
     class: 'help',
     text: t(
       'settings.highlighter.persistentDrawHint',
-      'Drawings stay on screen until you press C to clear or move to the next slide.'
+      'Drawings stay on screen until you press C to clear or move to the next slide.',
     ),
   });
 
   const highlighterOptions = h('div', { class: 'stack gap-3' }, [
     highlighterColorPicker.el,
     thicknessLabel,
-    h('div', { class: 'stack gap-1' }, [persistentDrawLabel, persistentDrawHint]),
+    h('div', { class: 'stack gap-1' }, [
+      persistentDrawLabel,
+      persistentDrawHint,
+    ]),
   ]);
   highlighterCard.append(highlighterHint, highlighterOptions);
 
   // Save button
-  const actions = h('div', { class: 'row is-end', style: 'margin-top: var(--ps-space-4);' });
+  const actions = h('div', {
+    class: 'row is-end',
+    style: 'margin-top: var(--ps-space-4);',
+  });
   const btnSave = h('button', {
     class: 'btn btn-primary',
     text: t('common.save', 'Save'),
@@ -356,7 +420,7 @@ export function createPreferencesTab({ user, nav }) {
     content: digestCard,
     message: t(
       'sandbox.settings.digest',
-      'The weekly digest is off in the sandbox — there’s no account to email. In your own Deckyard, get a weekly summary of how your decks are performing.'
+      'The weekly digest is off in the sandbox — there’s no account to email. In your own Deckyard, get a weekly summary of how your decks are performing.',
     ),
   });
 
@@ -364,7 +428,9 @@ export function createPreferencesTab({ user, nav }) {
   let loaded = false;
 
   const applySupportedUi = (supportedList) => {
-    const supported = new Set(Array.isArray(supportedList) ? supportedList : []);
+    const supported = new Set(
+      Array.isArray(supportedList) ? supportedList : [],
+    );
     const supportedArr = Array.isArray(supportedList) ? supportedList : [];
 
     // Ensure langMode is valid for the supported set
@@ -405,7 +471,10 @@ export function createPreferencesTab({ user, nav }) {
     loaded = true;
 
     try {
-      const [my, app] = await Promise.all([fetchMySettings(), fetchAppSettings()]);
+      const [my, app] = await Promise.all([
+        fetchMySettings(),
+        fetchAppSettings(),
+      ]);
       if (typeof my?.uiLang === 'string') langMode = my.uiLang;
       // A `?lang=` URL param overrides the saved preference for the
       // session, so the picker must show the language actually in effect — not
@@ -420,29 +489,29 @@ export function createPreferencesTab({ user, nav }) {
       applySupportedUi(supportedSlideLangs);
 
       // User notification preferences (default to true if not set)
-      const myNotif = my?.notifications && typeof my.notifications === 'object'
-        ? my.notifications
-        : {};
+      const myNotif =
+        my?.notifications && typeof my.notifications === 'object'
+          ? my.notifications
+          : {};
       userNotifications.setValues(myNotif);
 
       // Privacy settings
-      const myPrivacy = my?.privacy && typeof my.privacy === 'object'
-        ? my.privacy
-        : {};
+      const myPrivacy =
+        my?.privacy && typeof my.privacy === 'object' ? my.privacy : {};
       allowAttributionCheck.checked = myPrivacy?.allowViewAttribution === true;
       disableTrackingCheck.checked = myPrivacy?.disableAllTracking === true;
 
       // Digest settings
-      const myDigest = my?.digest && typeof my.digest === 'object'
-        ? my.digest
-        : {};
+      const myDigest =
+        my?.digest && typeof my.digest === 'object' ? my.digest : {};
       digestEnabledCheck.checked = myDigest?.enabled !== false;
       digestDaySelect.value = String(myDigest?.dayOfWeek ?? 1);
 
       // Highlighter settings
-      const myHighlighter = my?.highlighter && typeof my.highlighter === 'object'
-        ? my.highlighter
-        : {};
+      const myHighlighter =
+        my?.highlighter && typeof my.highlighter === 'object'
+          ? my.highlighter
+          : {};
       highlighterColorPicker.setValue(myHighlighter?.color || '#ef4444');
       const thickness = parseInt(myHighlighter?.thickness, 10) || 4;
       thicknessSlider.value = String(thickness);
@@ -455,15 +524,27 @@ export function createPreferencesTab({ user, nav }) {
       uiLocaleSelect.innerHTML = '';
       if (!locales.length) {
         uiLocaleSelect.append(
-          h('option', { value: 'en', text: 'English', selected: myUiLocale === 'en' }),
-          h('option', { value: 'nl', text: 'Nederlands', selected: myUiLocale === 'nl' })
+          h('option', {
+            value: 'en',
+            text: 'English',
+            selected: myUiLocale === 'en',
+          }),
+          h('option', {
+            value: 'nl',
+            text: 'Nederlands',
+            selected: myUiLocale === 'nl',
+          }),
         );
       } else {
         const makeOption = (l) => {
           const id = String(l?.id || '').trim();
           const label = String(l?.label || '').trim();
           if (!id || !label) return null;
-          return h('option', { value: id, text: label, selected: id === myUiLocale });
+          return h('option', {
+            value: id,
+            text: label,
+            selected: id === myUiLocale,
+          });
         };
         const tier1 = locales.filter((l) => Number(l?.tier) === 1);
         const tier2 = locales.filter((l) => Number(l?.tier) === 2);
@@ -476,13 +557,18 @@ export function createPreferencesTab({ user, nav }) {
             h(
               'optgroup',
               { label: t('settings.uiLocale.tier1', 'Fully supported') },
-              tier1.map(makeOption).filter(Boolean)
+              tier1.map(makeOption).filter(Boolean),
             ),
             h(
               'optgroup',
-              { label: t('settings.uiLocale.tier2', 'Best effort — falls back to English') },
-              tier2.map(makeOption).filter(Boolean)
-            )
+              {
+                label: t(
+                  'settings.uiLocale.tier2',
+                  'Best effort — falls back to English',
+                ),
+              },
+              tier2.map(makeOption).filter(Boolean),
+            ),
           );
         } else {
           for (const l of locales) {
@@ -504,7 +590,9 @@ export function createPreferencesTab({ user, nav }) {
     try {
       // Use selectedOptions for more reliable value reading across browsers
       const selectedOption = uiLocaleSelect.selectedOptions?.[0];
-      const uiLocale = String(selectedOption?.value || uiLocaleSelect.value || '').trim() || 'en';
+      const uiLocale =
+        String(selectedOption?.value || uiLocaleSelect.value || '').trim() ||
+        'en';
       const userNotifValues = userNotifications.getValues();
       const updatedMe = await updateMySettings({
         uiLocale,
@@ -526,7 +614,8 @@ export function createPreferencesTab({ user, nav }) {
       });
 
       // Keep local language mode in sync with saved settings (and supported set).
-      if (typeof updatedMe?.uiLang === 'string') writeLangMode(updatedMe.uiLang);
+      if (typeof updatedMe?.uiLang === 'string')
+        writeLangMode(updatedMe.uiLang);
       else writeLangMode(defaultLang());
 
       invalidateSettingsCache();
@@ -536,14 +625,17 @@ export function createPreferencesTab({ user, nav }) {
       });
 
       // Apply locale immediately - use the saved value from server or fallback to what user selected
-      const finalLocale = typeof updatedMe?.uiLocale === 'string' ? updatedMe.uiLocale : uiLocale;
+      const finalLocale =
+        typeof updatedMe?.uiLocale === 'string' ? updatedMe.uiLocale : uiLocale;
       // An explicit save supersedes a `?lang=` session override — clear it
       // before applying, so the re-rendered picker shows the saved choice.
       clearSessionLocaleOverride();
       await setUiLocale(finalLocale);
 
       // Re-render current route (important if UI locale changed).
-      nav?.(location.pathname + (location.search || '') + (location.hash || ''));
+      nav?.(
+        location.pathname + (location.search || '') + (location.hash || ''),
+      );
     } catch (e) {
       toast.error(String(e?.message || e), { id: 'settings-save' });
     } finally {

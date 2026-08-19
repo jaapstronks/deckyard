@@ -22,7 +22,17 @@ import {
 } from '../shared/theme-config-schema.js';
 
 test('garbage input yields an empty config, never a throw', () => {
-  for (const input of [null, undefined, '', 'nope', 42, [], [1, 2], true, NaN]) {
+  for (const input of [
+    null,
+    undefined,
+    '',
+    'nope',
+    42,
+    [],
+    [1, 2],
+    true,
+    NaN,
+  ]) {
     assert.deepEqual(validateThemeConfig(input), {});
   }
 });
@@ -37,10 +47,22 @@ test('a real config carries a version marker', () => {
 });
 
 test('surface enums are clamped to known scales', () => {
-  assert.equal(validateThemeConfig({ surfaces: { radius: 'round' } }).surfaces.radius, 'round');
-  assert.equal(validateThemeConfig({ surfaces: { radius: 'wat' } }).surfaces.radius, 'soft');
-  assert.equal(validateThemeConfig({ surfaces: { shadow: 'none' } }).surfaces.shadow, 'none');
-  assert.equal(validateThemeConfig({ surfaces: { shadow: 99 } }).surfaces.shadow, 'soft');
+  assert.equal(
+    validateThemeConfig({ surfaces: { radius: 'round' } }).surfaces.radius,
+    'round',
+  );
+  assert.equal(
+    validateThemeConfig({ surfaces: { radius: 'wat' } }).surfaces.radius,
+    'soft',
+  );
+  assert.equal(
+    validateThemeConfig({ surfaces: { shadow: 'none' } }).surfaces.shadow,
+    'none',
+  );
+  assert.equal(
+    validateThemeConfig({ surfaces: { shadow: 99 } }).surfaces.shadow,
+    'soft',
+  );
 
   // Every scale name resolves to real token values.
   for (const scale of Object.values(RADIUS_SCALES)) {
@@ -50,24 +72,31 @@ test('surface enums are clamped to known scales', () => {
 });
 
 test('heading weight is clamped and rounded to the CSS range', () => {
-  const w = (v) => validateThemeConfig({ typography: { headingWeight: v } }).typography.headingWeight;
+  const w = (v) =>
+    validateThemeConfig({ typography: { headingWeight: v } }).typography
+      .headingWeight;
   assert.equal(w(700), '700');
   assert.equal(w(740), '700');
   assert.equal(w(760), '800');
   assert.equal(w(5000), '900');
   assert.equal(w(-10), '100');
   // A non-numeric weight is dropped entirely rather than coerced to a default.
-  assert.deepEqual(validateThemeConfig({ typography: { headingWeight: 'bold' } }), {});
+  assert.deepEqual(
+    validateThemeConfig({ typography: { headingWeight: 'bold' } }),
+    {},
+  );
 });
 
 test('heading transform falls back to none for unknown values', () => {
   assert.equal(
-    validateThemeConfig({ typography: { headingTransform: 'uppercase' } }).typography.headingTransform,
-    'uppercase'
+    validateThemeConfig({ typography: { headingTransform: 'uppercase' } })
+      .typography.headingTransform,
+    'uppercase',
   );
   assert.equal(
-    validateThemeConfig({ typography: { headingTransform: 'sideways' } }).typography.headingTransform,
-    'none'
+    validateThemeConfig({ typography: { headingTransform: 'sideways' } })
+      .typography.headingTransform,
+    'none',
   );
 });
 
@@ -76,7 +105,7 @@ test('cssVarOverrides accepts only --t- tokens', () => {
     cssVarOverrides: {
       '--t-color-accent': '#ff0000',
       '--x-evil': 'red',
-      'color': 'red',
+      color: 'red',
       '--t-ui-panel-bg': '#000',
       '--t-BAD KEY': 'x',
     },
@@ -134,7 +163,10 @@ test('slideBackgrounds go through the same guard as file themes', () => {
     ],
   });
 
-  assert.deepEqual(out.slideBackgrounds.map((b) => b.id), ['calm']);
+  assert.deepEqual(
+    out.slideBackgrounds.map((b) => b.id),
+    ['calm'],
+  );
 });
 
 test('backgroundPresets drop empty and non-string entries', () => {
@@ -145,24 +177,39 @@ test('backgroundPresets drop empty and non-string entries', () => {
 });
 
 test('gradient normalizes to a boolean', () => {
-  assert.deepEqual(validateThemeConfig({ gradient: { enabled: 'yes' } }).gradient, {
-    enabled: true,
+  assert.deepEqual(
+    validateThemeConfig({ gradient: { enabled: 'yes' } }).gradient,
+    {
+      enabled: true,
+    },
+  );
+  assert.deepEqual(validateThemeConfig({ gradient: {} }).gradient, {
+    enabled: false,
   });
-  assert.deepEqual(validateThemeConfig({ gradient: {} }).gradient, { enabled: false });
 });
 
 test('logo variants keep only the four known slots', () => {
   const out = validateThemeConfig({
-    logos: { dark: '/d.svg', light: '/l.svg', sideways: '/s.svg', darkSmall: '' },
+    logos: {
+      dark: '/d.svg',
+      light: '/l.svg',
+      sideways: '/s.svg',
+      darkSmall: '',
+    },
   });
   assert.deepEqual(out.logos, { dark: '/d.svg', light: '/l.svg' });
 });
 
 test('slideTypes are dropped when both lists are empty', () => {
-  assert.equal(validateThemeConfig({ slideTypes: { include: [], exclude: [] } }).slideTypes, undefined);
+  assert.equal(
+    validateThemeConfig({ slideTypes: { include: [], exclude: [] } })
+      .slideTypes,
+    undefined,
+  );
   assert.deepEqual(
-    validateThemeConfig({ slideTypes: { exclude: ['quote-slide', ''] } }).slideTypes,
-    { include: [], exclude: ['quote-slide'] }
+    validateThemeConfig({ slideTypes: { exclude: ['quote-slide', ''] } })
+      .slideTypes,
+    { include: [], exclude: ['quote-slide'] },
   );
 });
 
@@ -183,8 +230,13 @@ test('validation is idempotent — a validated config revalidates unchanged', ()
 });
 
 test('validateThemeConfig whitelists titleLayout and drops unknown values', () => {
-  assert.equal(validateThemeConfig({ titleLayout: 'center' }).titleLayout, 'center');
+  assert.equal(
+    validateThemeConfig({ titleLayout: 'center' }).titleLayout,
+    'center',
+  );
   assert.equal(validateThemeConfig({ titleLayout: 'top' }).titleLayout, 'top');
   // Unknown token is dropped entirely (normalize supplies the default later).
-  assert.ok(!('titleLayout' in validateThemeConfig({ titleLayout: 'diagonal' })));
-})
+  assert.ok(
+    !('titleLayout' in validateThemeConfig({ titleLayout: 'diagonal' })),
+  );
+});

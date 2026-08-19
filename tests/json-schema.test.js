@@ -8,7 +8,10 @@ import {
   slideTypeContentSchema,
   deckJsonSchema,
 } from '../shared/slide-types/json-schema.js';
-import { TYPE_ID_PATTERN, tryParseTypeId } from '../shared/slide-types/type-id.js';
+import {
+  TYPE_ID_PATTERN,
+  tryParseTypeId,
+} from '../shared/slide-types/type-id.js';
 import { validate } from './helpers/json-schema-validate.js';
 
 /**
@@ -20,7 +23,7 @@ import { validate } from './helpers/json-schema-validate.js';
 
 /** Core (non-custom) types, for deterministic assertions across installs. */
 const CORE_ENTRIES = Object.entries(SLIDE_TYPES).filter(
-  ([name]) => !CUSTOM_SLIDE_TYPE_NAMES.includes(name)
+  ([name]) => !CUSTOM_SLIDE_TYPE_NAMES.includes(name),
 );
 
 // --- generator unit tests -------------------------------------------------
@@ -28,20 +31,35 @@ const CORE_ENTRIES = Object.entries(SLIDE_TYPES).filter(
 test('fieldToJsonSchema maps every declared field type to a valid base', () => {
   // string-ish types -> type:'string'; images/items -> array.
   const asType = {
-    string: 'string', markdown: 'string', csv: 'string', code: 'string',
-    color: 'string', enum: 'string', image: 'string',
-    images: 'array', items: 'array',
+    string: 'string',
+    markdown: 'string',
+    csv: 'string',
+    code: 'string',
+    color: 'string',
+    enum: 'string',
+    image: 'string',
+    images: 'array',
+    items: 'array',
   };
   for (const [type, want] of Object.entries(asType)) {
     assert.equal(fieldToJsonSchema({ type, key: 'x' }).type, want, `${type}`);
   }
   // number/boolean allow the '' cleared value, so they are anyOf wrappers.
-  assert.equal(fieldToJsonSchema({ type: 'number', key: 'n' }).anyOf[0].type, 'number');
-  assert.equal(fieldToJsonSchema({ type: 'boolean', key: 'b' }).anyOf[0].type, 'boolean');
+  assert.equal(
+    fieldToJsonSchema({ type: 'number', key: 'n' }).anyOf[0].type,
+    'number',
+  );
+  assert.equal(
+    fieldToJsonSchema({ type: 'boolean', key: 'b' }).anyOf[0].type,
+    'boolean',
+  );
 });
 
 test('field-level constraints flow into the schema', () => {
-  assert.equal(fieldToJsonSchema({ type: 'string', key: 't', maxLength: 40 }).maxLength, 40);
+  assert.equal(
+    fieldToJsonSchema({ type: 'string', key: 't', maxLength: 40 }).maxLength,
+    40,
+  );
   const num = fieldToJsonSchema({ type: 'number', key: 'n', min: 0, max: 100 });
   assert.equal(num.anyOf[0].minimum, 0);
   assert.equal(num.anyOf[0].maximum, 100);
@@ -53,11 +71,18 @@ test('enum fields list their options plus the cleared-value convention', () => {
   const schema = fieldToJsonSchema({
     type: 'enum',
     key: 'fit',
-    options: [{ value: 'cover', label: 'Fill' }, { value: 'contain', label: 'Fit' }],
+    options: [
+      { value: 'cover', label: 'Fill' },
+      { value: 'contain', label: 'Fit' },
+    ],
   });
   assert.deepEqual(schema.enum, ['cover', 'contain', '']);
   // The background field stays an open string (theme variant slugs).
-  const bg = fieldToJsonSchema({ type: 'enum', key: 'background', options: [] });
+  const bg = fieldToJsonSchema({
+    type: 'enum',
+    key: 'background',
+    options: [],
+  });
   assert.equal(bg.enum, undefined);
   assert.equal(bg.type, 'string');
 });
@@ -101,8 +126,13 @@ test('deprecated and hidden fields stay out of the published contract', () => {
   assert.deepEqual(schema.required, ['title']);
   // Still lenient: a deck carrying the legacy key validates.
   assert.deepEqual(
-    validate(schema, { title: 'x', legacyCount: '3', legacyMirror: 'y' }, 'demo-slide', []),
-    []
+    validate(
+      schema,
+      { title: 'x', legacyCount: '3', legacyMirror: 'y' },
+      'demo-slide',
+      [],
+    ),
+    [],
   );
 });
 
@@ -124,24 +154,36 @@ test('team-cards publishes members[], not its 175 numbered mirror keys', () => {
   // The concrete leak this filter closes: `fields[]` is the editor's list and
   // carries card1Image…card25Linkedin beside members[]. Publishing those under
   // `properties` stated the legacy representation as the contract.
-  const schema = slideTypeContentSchema('team-cards-slide', SLIDE_TYPES['team-cards-slide']);
+  const schema = slideTypeContentSchema(
+    'team-cards-slide',
+    SLIDE_TYPES['team-cards-slide'],
+  );
   const keys = Object.keys(schema.properties);
   assert.ok(keys.includes('members'), 'the array shape is the contract');
-  assert.deepEqual(keys.filter((k) => /^card\d/.test(k)), []);
+  assert.deepEqual(
+    keys.filter((k) => /^card\d/.test(k)),
+    [],
+  );
   assert.ok(!keys.includes('cardCount'));
 });
 
 test('no core type publishes a field it marked deprecated or hidden', () => {
   const leaks = [];
   for (const [name, def] of CORE_ENTRIES) {
-    const published = new Set(Object.keys(slideTypeContentSchema(name, def).properties));
+    const published = new Set(
+      Object.keys(slideTypeContentSchema(name, def).properties),
+    );
     for (const field of def.fields || []) {
       if (!field?.key) continue;
       if (field.deprecated !== true && field.hidden !== true) continue;
       if (published.has(field.key)) leaks.push(`${name}.${field.key}`);
     }
   }
-  assert.deepEqual(leaks, [], `legacy fields published as contract:\n${leaks.join('\n')}`);
+  assert.deepEqual(
+    leaks,
+    [],
+    `legacy fields published as contract:\n${leaks.join('\n')}`,
+  );
 });
 
 // --- deck schema structure ------------------------------------------------
@@ -168,14 +210,21 @@ test('the deck schema is self-contained and discriminates content by type', () =
     // A branch fires on every spelling of one type: the stored key is always
     // among them, and each spelling belongs to exactly one branch (otherwise
     // two content contracts would apply to the same slide).
-    assert.ok(Array.isArray(spellings) && spellings.length, `no spellings on ${ref}`);
-    assert.equal(spellings.filter((s) => names.includes(s)).length, 1, spellings.join(','));
+    assert.ok(
+      Array.isArray(spellings) && spellings.length,
+      `no spellings on ${ref}`,
+    );
+    assert.equal(
+      spellings.filter((s) => names.includes(s)).length,
+      1,
+      spellings.join(','),
+    );
   }
   const allSpellings = branches.flatMap((b) => b.if.properties.type.enum);
   assert.equal(
     new Set(allSpellings).size,
     allSpellings.length,
-    'a spelling may select only one content contract'
+    'a spelling may select only one content contract',
   );
 });
 
@@ -193,14 +242,21 @@ test('a canonical reverse-DNS type keeps its content contract', () => {
       type,
       content: SLIDE_TYPES['title-slide'].defaults || {},
     });
-    assert.deepEqual(validate(schema, good, 'deck', []), [], `${type} validates`);
+    assert.deepEqual(
+      validate(schema, good, 'deck', []),
+      [],
+      `${type} validates`,
+    );
 
     const bad = deckWith({
       id: '9a0b1c2d-3e4f-4a5b-8c9d-0e1f2a3b4c5d',
       type,
       content: { title: 123 },
     });
-    assert.ok(validate(schema, bad, 'deck', []).length, `${type} keeps its shape`);
+    assert.ok(
+      validate(schema, bad, 'deck', []).length,
+      `${type} keeps its shape`,
+    );
   }
 });
 
@@ -222,10 +278,19 @@ test('a deck carrying an unknown slide type validates', () => {
   // against our own published schema while the same spec promises leniency and
   // leaves additionalProperties open everywhere else.
   const schema = deckJsonSchema(SLIDE_TYPES);
-  assert.equal(schema.$defs.slide.properties.type.enum, undefined, 'no enum of our names');
+  assert.equal(
+    schema.$defs.slide.properties.type.enum,
+    undefined,
+    'no enum of our names',
+  );
   assert.ok(schema.$defs.slide.properties.type.pattern, 'a shape instead');
 
-  for (const type of ['acme-hero', 'acme/hero', 'acme/hero@2', 'custom-org-thing']) {
+  for (const type of [
+    'acme-hero',
+    'acme/hero',
+    'acme/hero@2',
+    'custom-org-thing',
+  ]) {
     const deck = deckWith({
       id: '9a0b1c2d-3e4f-4a5b-8c9d-0e1f2a3b4c5d',
       type,
@@ -233,7 +298,11 @@ test('a deck carrying an unknown slide type validates', () => {
       // matches no `if` branch, so no content contract applies to it.
       content: { whateverTheDeclarantWanted: 42 },
     });
-    assert.deepEqual(validate(schema, deck, 'deck', []), [], `${type} should validate`);
+    assert.deepEqual(
+      validate(schema, deck, 'deck', []),
+      [],
+      `${type} should validate`,
+    );
   }
 });
 
@@ -253,11 +322,21 @@ test('a known type still gets its content contract, and a malformed id is still 
     type: 'title-slide',
     content: { title: 123 },
   });
-  assert.ok(validate(schema, bad, 'deck', []).length, 'a known type keeps its shape');
+  assert.ok(
+    validate(schema, bad, 'deck', []).length,
+    'a known type keeps its shape',
+  );
 
   for (const type of ['Title-Slide', 'a//b', 'acme/hero@', '-leading', '']) {
-    const deck = deckWith({ id: '9a0b1c2d-3e4f-4a5b-8c9d-0e1f2a3b4c5d', type, content: {} });
-    assert.ok(validate(schema, deck, 'deck', []).length, `${JSON.stringify(type)} is not a type id`);
+    const deck = deckWith({
+      id: '9a0b1c2d-3e4f-4a5b-8c9d-0e1f2a3b4c5d',
+      type,
+      content: {},
+    });
+    assert.ok(
+      validate(schema, deck, 'deck', []).length,
+      `${JSON.stringify(type)} is not a type id`,
+    );
   }
 });
 
@@ -282,7 +361,17 @@ test('the type pattern is the parser grammar, not a second copy of it', () => {
     assert.ok(tryParseTypeId(ref), `${ref} parses`);
     assert.ok(re.test(ref), `${ref} matches the published pattern`);
   }
-  for (const ref of ['Title', 'a b', 'a/b/c', '/x', 'x@', 'a.b', 'a..b', '.a.b', 'a.b.']) {
+  for (const ref of [
+    'Title',
+    'a b',
+    'a/b/c',
+    '/x',
+    'x@',
+    'a.b',
+    'a..b',
+    '.a.b',
+    'a.b.',
+  ]) {
     assert.equal(tryParseTypeId(ref), null, `${ref} does not parse`);
     assert.ok(!re.test(ref), `${ref} does not match the published pattern`);
   }
@@ -303,7 +392,16 @@ test('lang accepts any BCP 47 tag, not just the two the editor authors in', () =
   const lang = schema.properties.lang;
   assert.equal(lang.enum, undefined, 'no two-language enum');
   const re = new RegExp(lang.pattern);
-  for (const tag of ['nl', 'en-GB', 'en', 'pt-BR', 'zh-Hant-TW', 'de-CH-1901', 'es-419', 'ja']) {
+  for (const tag of [
+    'nl',
+    'en-GB',
+    'en',
+    'pt-BR',
+    'zh-Hant-TW',
+    'de-CH-1901',
+    'es-419',
+    'ja',
+  ]) {
     assert.ok(re.test(tag), `${tag} is a well-formed language tag`);
   }
   for (const tag of ['', 'english', 'e', 'nl_NL', 'nl-']) {
@@ -315,7 +413,7 @@ test('lang accepts any BCP 47 tag, not just the two the editor authors in', () =
       type: 'end-slide',
       content: SLIDE_TYPES['end-slide'].defaults || {},
     },
-    { lang: 'pt-BR' }
+    { lang: 'pt-BR' },
   );
   assert.deepEqual(validate(schema, deck, 'deck', []), []);
 });
@@ -329,11 +427,18 @@ test('every core slide type default content validates against its generated sche
   for (const [name, def] of CORE_ENTRIES) {
     const schema = slideTypeContentSchema(name, def);
     const content =
-      def.defaultsByLang?.['en-GB'] || def.defaultsByLang?.['nl'] || def.defaults || {};
+      def.defaultsByLang?.['en-GB'] ||
+      def.defaultsByLang?.['nl'] ||
+      def.defaults ||
+      {};
     const errors = validate(schema, content, name, []);
     if (errors.length) failures.push(`${name}: ${errors.join('; ')}`);
   }
-  assert.deepEqual(failures, [], `default content failed its schema:\n${failures.join('\n')}`);
+  assert.deepEqual(
+    failures,
+    [],
+    `default content failed its schema:\n${failures.join('\n')}`,
+  );
 });
 
 test('per-type schema with meta carries a versioned $id', () => {

@@ -9,8 +9,15 @@
  */
 
 import { createDataSourceProvider } from '../provider-base.js';
-import { notionFetchJson, fetchAllBlockChildren, notionEnabled } from '../../notion/client.js';
-import { richTextToPlain, pageTitleFromProperties } from '../../notion/parser.js';
+import {
+  notionFetchJson,
+  fetchAllBlockChildren,
+  notionEnabled,
+} from '../../notion/client.js';
+import {
+  richTextToPlain,
+  pageTitleFromProperties,
+} from '../../notion/parser.js';
 import { AppError } from '../../errors.js';
 
 /**
@@ -32,13 +39,16 @@ async function queryDatabase(config) {
 
   const resp = await notionFetchJson(
     `/databases/${encodeURIComponent(databaseId)}/query`,
-    { method: 'POST', body }
+    { method: 'POST', body },
   );
 
   const results = Array.isArray(resp?.results) ? resp.results : [];
 
   return results.map((page) => {
-    const row = { _id: page.id, _title: pageTitleFromProperties(page.properties) };
+    const row = {
+      _id: page.id,
+      _title: pageTitleFromProperties(page.properties),
+    };
 
     for (const [propName, prop] of Object.entries(page.properties || {})) {
       row[propName] = extractPropertyValue(prop);
@@ -111,7 +121,9 @@ function extractRollupValue(rollup) {
     case 'date':
       return rollup.date?.start || '';
     case 'array':
-      return (rollup.array || []).map((item) => extractPropertyValue(item)).join(', ');
+      return (rollup.array || [])
+        .map((item) => extractPropertyValue(item))
+        .join(', ');
     default:
       return '';
   }

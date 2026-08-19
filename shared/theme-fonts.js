@@ -10,16 +10,32 @@ export const CURATED_FONTS = [
   { family: 'Open Sans', category: 'sans-serif', weights: [400, 600, 700] },
   { family: 'Lato', category: 'sans-serif', weights: [400, 700] },
   { family: 'Roboto', category: 'sans-serif', weights: [400, 500, 700] },
-  { family: 'Montserrat', category: 'sans-serif', weights: [400, 500, 600, 700] },
+  {
+    family: 'Montserrat',
+    category: 'sans-serif',
+    weights: [400, 500, 600, 700],
+  },
   { family: 'Poppins', category: 'sans-serif', weights: [400, 500, 600, 700] },
   { family: 'Nunito', category: 'sans-serif', weights: [400, 600, 700] },
-  { family: 'Work Sans', category: 'sans-serif', weights: [400, 500, 600, 700] },
+  {
+    family: 'Work Sans',
+    category: 'sans-serif',
+    weights: [400, 500, 600, 700],
+  },
   { family: 'DM Sans', category: 'sans-serif', weights: [400, 500, 700] },
-  { family: 'Plus Jakarta Sans', category: 'sans-serif', weights: [400, 500, 600, 700] },
+  {
+    family: 'Plus Jakarta Sans',
+    category: 'sans-serif',
+    weights: [400, 500, 600, 700],
+  },
   { family: 'Raleway', category: 'sans-serif', weights: [400, 500, 600, 700] },
   { family: 'Cabin', category: 'sans-serif', weights: [400, 500, 600, 700] },
   { family: 'Rubik', category: 'sans-serif', weights: [400, 500, 700] },
-  { family: 'Quicksand', category: 'sans-serif', weights: [400, 500, 600, 700] },
+  {
+    family: 'Quicksand',
+    category: 'sans-serif',
+    weights: [400, 500, 600, 700],
+  },
   { family: 'Manrope', category: 'sans-serif', weights: [400, 500, 600, 700] },
   { family: 'Source Sans 3', category: 'sans-serif', weights: [400, 600, 700] },
   { family: 'Nunito Sans', category: 'sans-serif', weights: [400, 600, 700] },
@@ -39,8 +55,16 @@ export const CURATED_FONTS = [
   { family: 'Instrument Serif', category: 'serif', weights: [400] },
 
   // Display - Distinctive fonts best suited for headings
-  { family: 'Bricolage Grotesque', category: 'display', weights: [400, 600, 700] },
-  { family: 'Red Hat Display', category: 'display', weights: [400, 500, 700, 900] },
+  {
+    family: 'Bricolage Grotesque',
+    category: 'display',
+    weights: [400, 600, 700],
+  },
+  {
+    family: 'Red Hat Display',
+    category: 'display',
+    weights: [400, 500, 700, 900],
+  },
   { family: 'DM Serif Display', category: 'display', weights: [400] },
   { family: 'Space Grotesk', category: 'display', weights: [400, 500, 700] },
   { family: 'Archivo', category: 'display', weights: [400, 500, 600, 700] },
@@ -49,8 +73,16 @@ export const CURATED_FONTS = [
 
   // Monospace - Code-style fonts for technical content
   { family: 'JetBrains Mono', category: 'monospace', weights: [400, 500, 700] },
-  { family: 'Source Code Pro', category: 'monospace', weights: [400, 500, 600, 700] },
-  { family: 'IBM Plex Mono', category: 'monospace', weights: [400, 500, 600, 700] },
+  {
+    family: 'Source Code Pro',
+    category: 'monospace',
+    weights: [400, 500, 600, 700],
+  },
+  {
+    family: 'IBM Plex Mono',
+    category: 'monospace',
+    weights: [400, 500, 600, 700],
+  },
 ];
 
 /**
@@ -218,11 +250,13 @@ export function curatedFontFaces(family) {
  * @returns {string}
  */
 export function cssStringEscape(value) {
-  return String(value ?? '')
-    // eslint-disable-next-line no-control-regex
-    .replace(/[\u0000-\u001f\u007f]/g, '')
-    .replace(/\\/g, '\\\\')
-    .replace(/'/g, "\\'");
+  return (
+    String(value ?? '')
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\u0000-\u001f\u007f]/g, '')
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+  );
 }
 
 /**
@@ -298,4 +332,3 @@ export function mergeFontFaces(faces) {
     };
   });
 }
-

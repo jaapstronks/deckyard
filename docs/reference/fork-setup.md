@@ -59,12 +59,14 @@ custom/ai/*
    `custom/themes/your-org/theme.json` (recommended folder layout — see
    `docs/developer/themes.md` for the flat legacy layout and a migration
    recipe):
+
    ```
    custom/themes/your-org/
      theme.json
      assets/images/your-logo.svg
      assets/fonts/YourFont-Regular.woff2
    ```
+
    ```json
    {
      "id": "your-org",
@@ -78,6 +80,7 @@ custom/ai/*
      }
    }
    ```
+
    Deck-content assets shared across themes (uploaded images, partner logos)
    still live in `custom/assets/`.
 
@@ -85,6 +88,7 @@ custom/ai/*
    background images automatically (on deck import, and when converting a
    chapter-title slide). Without it they stay flat — Deckyard will never reach
    for its own demo imagery:
+
    ```json
    {
      "backgroundPresets": [
@@ -95,6 +99,7 @@ custom/ai/*
    ```
 
 2. **Add your assets** in `custom/assets/`:
+
    ```
    custom/assets/
    ├── images/
@@ -111,7 +116,7 @@ custom/ai/*
 
 Deckyard's AI deck generation ships with a good, generic set of prompts and a
 core slide-type catalog. A fork can override both without patching the
-pipeline: the OSS repo carries the *mechanism* (builders, schemas, the LLM
+pipeline: the OSS repo carries the _mechanism_ (builders, schemas, the LLM
 transport) plus a base copy layer, and resolves your overrides on top of it
 (base-then-overlay, last writer wins). The `custom/ai/` folder is empty in OSS
 (only `.gitkeep` is tracked) and gitignored, exactly like `custom/themes` and
@@ -130,7 +135,12 @@ keeps its call signature. Anything you don't override falls back to the base.
 // custom/ai/prompts.js
 export default {
   // Same signature as the base builder it replaces.
-  buildPhase1SystemPrompt({ detectedLang, requestedLang, targetSlides, estimatedInputLines }) {
+  buildPhase1SystemPrompt({
+    detectedLang,
+    requestedLang,
+    targetSlides,
+    estimatedInputLines,
+  }) {
     return `...your tuned outline system prompt...`;
   },
 };
@@ -138,12 +148,12 @@ export default {
 
 The overridable builder names (from `server/utils/ai/prompts/base/index.js`):
 
-| Builder | Used for |
-|---------|----------|
-| `buildPhase1SystemPrompt` / `buildPhase1UserPrompt` | outline generation |
-| `buildPhase2SystemPrompt` / `buildPhase2UserPrompt` | full-deck (slide) generation |
-| `buildRevisionSystemPrompt` / `buildRevisionUserPrompt` | outline revision |
-| `buildSectionSystemPrompt` / `buildSectionUserPrompt` | per-section refine |
+| Builder                                                  | Used for                             |
+| -------------------------------------------------------- | ------------------------------------ |
+| `buildPhase1SystemPrompt` / `buildPhase1UserPrompt`      | outline generation                   |
+| `buildPhase2SystemPrompt` / `buildPhase2UserPrompt`      | full-deck (slide) generation         |
+| `buildRevisionSystemPrompt` / `buildRevisionUserPrompt`  | outline revision                     |
+| `buildSectionSystemPrompt` / `buildSectionUserPrompt`    | per-section refine                   |
 | `buildSlideIterationPrompt` / `buildDeckIterationPrompt` | "Refine" iteration on a slide / deck |
 
 Rules the loader enforces (a typo fails loud, never silent): only
@@ -164,7 +174,10 @@ the rest of the core entry is preserved.
 export default {
   'content-slide': {
     description: 'Your house-style description of when to use a content slide.',
-    bestFor: ['dense explanatory points', 'a single argument built out in prose'],
+    bestFor: [
+      'dense explanatory points',
+      'a single argument built out in prose',
+    ],
     notFor: ['lists (use list-slide)', 'comparisons (use comparison-slide)'],
   },
 };
@@ -174,7 +187,7 @@ Overridable fields: `description`, `bestFor`, `notFor`, `category`,
 `resolveInPhase1`. Keys must match a core type name (e.g. `content-slide`,
 `quote-slide`, `image-text-slide` — see
 `server/utils/ai/slide-catalog/type-ai.js` for the full list); an unknown
-type name or a stray field is dropped with a warning. To *add* an entirely new
+type name or a stray field is dropped with a warning. To _add_ an entirely new
 slide type (rather than override a core one), define it in
 `custom/slide-types/*.js` with an `ai` block — that path adds to the catalog;
 this one overrides.
@@ -185,6 +198,7 @@ wired up beyond dropping the file in `custom/ai/`.
 ### Step 4: Set Your Default Theme
 
 Create or edit `.env`:
+
 ```bash
 DEFAULT_THEME=your-org
 ```
@@ -285,5 +299,6 @@ holds decks in file storage, import them once with
 `docker compose exec app npm run db:import` — see `docs/ops/self-hosting.md`.
 
 Make sure your `.env` file on the server has:
+
 - `DEFAULT_THEME=your-org` (your theme ID)
 - Any API keys (OpenAI, ImageKit, etc.)

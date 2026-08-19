@@ -99,11 +99,15 @@
   font-size: var(--ps-text-base);
   border: none;
   opacity: 0;
-  transition: opacity var(--ps-transition-fast), background var(--ps-transition-fast);
+  transition:
+    opacity var(--ps-transition-fast),
+    background var(--ps-transition-fast);
 }
 
 .presentation-card:hover .presentation-card-title-row .presentation-card-more,
-.presentation-card:focus-within .presentation-card-title-row .presentation-card-more {
+.presentation-card:focus-within
+  .presentation-card-title-row
+  .presentation-card-more {
   opacity: 1;
 }
 
@@ -361,7 +365,9 @@
   opacity: 0;
   pointer-events: none;
   box-shadow: var(--app-shadow-lg);
-  transition: opacity var(--ps-transition-fast), transform var(--ps-transition-fast);
+  transition:
+    opacity var(--ps-transition-fast),
+    transform var(--ps-transition-fast);
 }
 
 .presentation-card:hover .presentation-card-present,
@@ -469,7 +475,9 @@
   z-index: 100;
   opacity: 0;
   pointer-events: none;
-  transition: transform var(--ps-transition-normal), opacity var(--ps-transition-normal);
+  transition:
+    transform var(--ps-transition-normal),
+    opacity var(--ps-transition-normal);
 }
 
 .bulk-action-bar.is-visible {
@@ -603,7 +611,9 @@
   border-radius: var(--ps-radius-xl);
   padding: var(--ps-space-4);
   border: 1px solid hsl(var(--author-group-accent) / 0.15);
-  transition: background var(--ps-transition-normal), border-color var(--ps-transition-normal);
+  transition:
+    background var(--ps-transition-normal),
+    border-color var(--ps-transition-normal);
 }
 
 .shared-author-group:hover {

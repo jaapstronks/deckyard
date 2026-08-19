@@ -17,10 +17,7 @@
 export { SLIDE_TYPE_CATALOG } from './definitions.js';
 
 // Re-export examples
-export {
-  SLIDE_TYPE_EXAMPLES,
-  getSlideTypeExamples,
-} from './examples.js';
+export { SLIDE_TYPE_EXAMPLES, getSlideTypeExamples } from './examples.js';
 
 // Re-export builders
 export {
@@ -58,7 +55,11 @@ async function loadCombinedCustomCatalog() {
     ...Object.keys(customCatalog),
   ]);
   const overrides = await loadCustomCatalogOverrides({ knownTypes });
-  return { combined: { ...customCatalog, ...overrides }, added: customCatalog, overrides };
+  return {
+    combined: { ...customCatalog, ...overrides },
+    added: customCatalog,
+    overrides,
+  };
 }
 
 // Auto-initialize on module load (server-side only)

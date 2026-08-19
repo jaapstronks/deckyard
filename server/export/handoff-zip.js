@@ -12,13 +12,7 @@ function safeScale(n) {
   return Math.max(1, Math.min(3, s));
 }
 
-function buildReadmeMd({
-  title,
-  slideCount,
-  lang,
-  scale,
-  filenames,
-}) {
+function buildReadmeMd({ title, slideCount, lang, scale, filenames }) {
   const lines = [];
   lines.push(`# Presentation handoff bundle`);
   lines.push('');
@@ -29,17 +23,27 @@ function buildReadmeMd({
   lines.push('');
   lines.push('## Contents');
   lines.push('');
-  lines.push(`- **${filenames.pptx}**: PowerPoint (each slide is a PNG image inside PPTX).`);
+  lines.push(
+    `- **${filenames.pptx}**: PowerPoint (each slide is a PNG image inside PPTX).`,
+  );
   lines.push(`- **${filenames.pdf}**: PDF (one slide per page).`);
-  lines.push(`- **${filenames.html}**: Standalone HTML viewer (offline, assets embedded).`);
+  lines.push(
+    `- **${filenames.html}**: Standalone HTML viewer (offline, assets embedded).`,
+  );
   lines.push(`- **${filenames.pngDir}/**: Individual PNG slides.`);
   lines.push('');
   lines.push('## Notes');
   lines.push('');
-  lines.push('- Bunny videos may be embedded as MP4 in PPTX (if BUNNY_PULLZONE is configured).');
-  lines.push('- YouTube/Vimeo videos are exported as placeholders with instructions.');
+  lines.push(
+    '- Bunny videos may be embedded as MP4 in PPTX (if BUNNY_PULLZONE is configured).',
+  );
+  lines.push(
+    '- YouTube/Vimeo videos are exported as placeholders with instructions.',
+  );
   lines.push('- Video slides in PNG/PDF remain static placeholders.');
-  lines.push('- If a conference system needs "native" editable PPTX elements, that is a separate (future) fidelity project.');
+  lines.push(
+    '- If a conference system needs "native" editable PPTX elements, that is a separate (future) fidelity project.',
+  );
   lines.push('');
   return lines.join('\n');
 }
@@ -47,7 +51,7 @@ function buildReadmeMd({
 export async function buildHandoffZipBuffer(
   repoRoot,
   pres,
-  { theme = null, scale = 2, lang = '', slideTypes = null } = {}
+  { theme = null, scale = 2, lang = '', slideTypes = null } = {},
 ) {
   const filteredPres = stripLiveOnlySlidesFromPresentation(pres);
   const slides = Array.isArray(filteredPres?.slides) ? filteredPres.slides : [];
@@ -85,7 +89,12 @@ export async function buildHandoffZipBuffer(
   const pngFolder = zip.folder(filenames.pngDir);
   for (let i = 0; i < slides.length; i += 1) {
     const slide = slides[i];
-    const buf = await renderSlideToPngBuffer(repoRoot, slide, { scale: s, theme, slideTypes, lang: deckLang });
+    const buf = await renderSlideToPngBuffer(repoRoot, slide, {
+      scale: s,
+      theme,
+      slideTypes,
+      lang: deckLang,
+    });
     const name = `slide-${String(i + 1).padStart(2, '0')}.png`;
     pngFolder.file(name, buf);
   }
@@ -98,7 +107,7 @@ export async function buildHandoffZipBuffer(
       lang: String(lang || ''),
       scale: s,
       filenames,
-    })
+    }),
   );
 
   const out = await zip.generateAsync({

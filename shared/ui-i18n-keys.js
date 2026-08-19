@@ -26,9 +26,7 @@ function normalizeOption(opt) {
 function addKeysToOption(base, raw) {
   const opt = normalizeOption(raw);
   const id =
-    safeKeyPart(opt.value || opt.label) ||
-    safeKeyPart(opt.label) ||
-    'option';
+    safeKeyPart(opt.value || opt.label) || safeKeyPart(opt.label) || 'option';
   const next = { ...opt };
   if (!next.labelKey) next.labelKey = `${base}.option.${id}.label`;
   if (typeof next.title === 'string' && !next.titleKey)

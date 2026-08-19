@@ -17,10 +17,22 @@ import { createSandboxLibraryExplainer } from './sandbox-library-explainer.js';
  */
 export function createSlideLibraryView({ api, nav }) {
   const view = h('div', { class: 'sidebar-view', 'data-view': 'slideLibrary' });
-  const title = h('h2', { class: 'presentation-grid-title', text: t('slideLibrary.modal.title', 'Slide library') });
-  const hint = h('p', { class: 'help', text: t('slideLibrary.modal.browseHelp', 'Browse your slide library. Copy a slide to paste later, or start a new presentation with it.') });
+  const title = h('h2', {
+    class: 'presentation-grid-title',
+    text: t('slideLibrary.modal.title', 'Slide library'),
+  });
+  const hint = h('p', {
+    class: 'help',
+    text: t(
+      'slideLibrary.modal.browseHelp',
+      'Browse your slide library. Copy a slide to paste later, or start a new presentation with it.',
+    ),
+  });
   const mount = h('div', { class: 'ps-slide-library-view-mount' });
-  const loading = h('div', { class: 'help', text: t('common.loading', 'Loading...') });
+  const loading = h('div', {
+    class: 'help',
+    text: t('common.loading', 'Loading...'),
+  });
 
   let loaded = false;
   let picker = null;
@@ -39,9 +51,16 @@ export function createSlideLibraryView({ api, nav }) {
         _fromLibrary: true,
       };
       await navigator.clipboard.writeText(JSON.stringify(slideData));
-      toast.success(t('slideLibrary.copy.done', 'Slide copied! Paste it in a presentation with Ctrl/Cmd+V.'));
+      toast.success(
+        t(
+          'slideLibrary.copy.done',
+          'Slide copied! Paste it in a presentation with Ctrl/Cmd+V.',
+        ),
+      );
     } catch (e) {
-      toast.error(t('slideLibrary.copy.failed', 'Failed to copy slide to clipboard.'));
+      toast.error(
+        t('slideLibrary.copy.failed', 'Failed to copy slide to clipboard.'),
+      );
     }
   }
 
@@ -57,7 +76,8 @@ export function createSlideLibraryView({ api, nav }) {
 
       // Dominant language: the picker's active language (single-slide "Use"
       // path forwards it via _selectedLang), else fall back to the picker state.
-      const selectedLang = items[0]?._selectedLang || picker?.getActiveLang?.() || 'nl';
+      const selectedLang =
+        items[0]?._selectedLang || picker?.getActiveLang?.() || 'nl';
       // Use the theme of the first item; with none known the server picks
       // the default (sandbox-aware), so no client-side fallback here.
       const theme = items[0]?.themeId || null;
@@ -66,21 +86,34 @@ export function createSlideLibraryView({ api, nav }) {
       const result = await createDeckFromLibraryItems({
         api,
         items,
-        title: t('slideLibrary.newPresentation.defaultTitle', 'New Presentation'),
+        title: t(
+          'slideLibrary.newPresentation.defaultTitle',
+          'New Presentation',
+        ),
         theme,
         lang: selectedLang,
       });
 
-      const msg = items.length === 1
-        ? t('slideLibrary.newPresentation.done', 'Presentation created!')
-        : t('slideLibrary.newPresentation.doneMultiple', 'Presentation created with {count} slides!', { count: String(items.length) });
+      const msg =
+        items.length === 1
+          ? t('slideLibrary.newPresentation.done', 'Presentation created!')
+          : t(
+              'slideLibrary.newPresentation.doneMultiple',
+              'Presentation created with {count} slides!',
+              { count: String(items.length) },
+            );
       toast.success(msg);
 
       if (result?.id) {
         nav?.(`/app/${result.id}`);
       }
     } catch (e) {
-      toast.error(t('slideLibrary.newPresentation.failed', 'Failed to create presentation.'));
+      toast.error(
+        t(
+          'slideLibrary.newPresentation.failed',
+          'Failed to create presentation.',
+        ),
+      );
     }
   }
 
@@ -134,7 +167,10 @@ export function createSlideLibraryView({ api, nav }) {
       view.append(
         title,
         hint,
-        h('div', { class: 'help is-error', text: t('slideLibrary.loadError', 'Failed to load slide library.') })
+        h('div', {
+          class: 'help is-error',
+          text: t('slideLibrary.loadError', 'Failed to load slide library.'),
+        }),
       );
     }
   }

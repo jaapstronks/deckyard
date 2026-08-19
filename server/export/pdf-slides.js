@@ -4,13 +4,23 @@ import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { escapeHtml, embedImgSrcDataUrls } from '../utils/html-utils.js';
 import { debugLog } from '../utils/debug-log.js';
-import { buildPrismKatexCdnTags, buildPrismKatexInitScript } from '../utils/prism-katex.js';
+import {
+  buildPrismKatexCdnTags,
+  buildPrismKatexInitScript,
+} from '../utils/prism-katex.js';
 import { getAppBaseUrl } from '../config/utils.js';
 import { resolveVideoThumbnailDataUrl } from './video-thumbnail.js';
 import { resolveVideoWatchUrl, videoPdfCopy } from './video-watch-url.js';
-import { loadExportCssBundle, buildExportStyleContent, embedSlideImages } from './css-bundle.js';
+import {
+  loadExportCssBundle,
+  buildExportStyleContent,
+  embedSlideImages,
+} from './css-bundle.js';
 import { pdfImageEmbedTransform } from './image-compress.js';
-import { measureImageDisplayPx, displayAwareEmbedTransform } from './image-measure.js';
+import {
+  measureImageDisplayPx,
+  displayAwareEmbedTransform,
+} from './image-measure.js';
 import { rasterizeGradientBackgrounds } from './gradient-raster.js';
 
 /**
@@ -34,7 +44,7 @@ import { rasterizeGradientBackgrounds } from './gradient-raster.js';
  */
 async function renderVideoSlidePdfHtml(
   slide,
-  { pres, slideIndex, baseUrl, docLang, transform = null, cache = null }
+  { pres, slideIndex, baseUrl, docLang, transform = null, cache = null },
 ) {
   const content = slide && typeof slide === 'object' ? slide.content : {};
   const title = String(content?.title || '').trim();
@@ -48,10 +58,13 @@ async function renderVideoSlidePdfHtml(
   // The still: the video's own poster, fetched and inlined here rather than left
   // as a remote <img src> for the generic embed pass. Bunny's CDN 403s a request
   // without a referer, so that pass would silently drop it. See video-thumbnail.js.
-  const thumbnailDataUrl = await resolveVideoThumbnailDataUrl(content, { transform, cache });
+  const thumbnailDataUrl = await resolveVideoThumbnailDataUrl(content, {
+    transform,
+    cache,
+  });
   const stillHtml = thumbnailDataUrl
     ? `<img class="vpdf-still" src="${escapeHtml(thumbnailDataUrl)}" alt="${escapeHtml(
-        title || copy.kicker
+        title || copy.kicker,
       )}" />`
     : `<div class="vpdf-still vpdf-still--empty"></div>`;
 
@@ -73,11 +86,13 @@ async function renderVideoSlidePdfHtml(
   // Printed link text drops the scheme (and a trailing slash): the reader has to
   // read or retype it, and `https://` is noise in both cases. The href keeps it.
   const { url } = resolveVideoWatchUrl(slide, pres, { baseUrl, slideIndex });
-  const linkText = String(url || '').replace(/^https?:\/\//i, '').replace(/\/$/, '');
+  const linkText = String(url || '')
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/$/, '');
   const linkHtml = url
     ? `<p class="vpdf-lead">${escapeHtml(copy.lead)}</p>
        <a class="vpdf-url" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(
-         linkText
+         linkText,
        )}</a>`
     : `<p class="vpdf-lead">${escapeHtml(copy.noUrl)}</p>`;
 
@@ -296,7 +311,7 @@ ${PDF_DOC_CSS}`;
 export async function buildSlidesPdfHtml(
   repoRoot,
   pres,
-  { theme = null, watermark = null, slideTypes = null } = {}
+  { theme = null, watermark = null, slideTypes = null } = {},
 ) {
   pres = filterForExport(pres);
   const docLang = resolveDocLangFromPresentation(pres);
@@ -346,8 +361,8 @@ export async function buildSlidesPdfHtml(
             slideTypes,
             stripEditorAttrs: true,
             lang: resolveDeckLang(pres),
-          })
-    )
+          }),
+    ),
   );
 
   // A themed slide background built from alpha gradients leaves Chrome as a
@@ -371,9 +386,13 @@ export async function buildSlidesPdfHtml(
   // <img src> images the pass below inlines are measured; skipped entirely when
   // compression is off or there is nothing local to embed. See image-measure.js.
   const displayPx = imageTransform
-    ? await measureImageDisplayPx({ slidesHtml, styleContent: buildStyleContent(css) })
+    ? await measureImageDisplayPx({
+        slidesHtml,
+        styleContent: buildStyleContent(css),
+      })
     : new Map();
-  const imgSrcTransform = displayAwareEmbedTransform(displayPx) ?? imageTransform;
+  const imgSrcTransform =
+    displayAwareEmbedTransform(displayPx) ?? imageTransform;
 
   let pagesHtml = slidesHtml
     .map((slideHtml, i) => {

@@ -20,7 +20,12 @@ export function parseSimpleYaml(text) {
   try {
     const result = yamlParse(text);
     // yaml.parse can return non-objects for scalar YAML
-    if (result === null || result === undefined || typeof result !== 'object' || Array.isArray(result)) {
+    if (
+      result === null ||
+      result === undefined ||
+      typeof result !== 'object' ||
+      Array.isArray(result)
+    ) {
       return {};
     }
     return result;

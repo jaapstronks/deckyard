@@ -22,11 +22,14 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
     class: 'help',
     text: t(
       'fonts.adobeHelp',
-      'Enter your Adobe Fonts (Typekit) project ID to discover available fonts. You can find it at fonts.adobe.com/my_fonts > Web Projects.'
+      'Enter your Adobe Fonts (Typekit) project ID to discover available fonts. You can find it at fonts.adobe.com/my_fonts > Web Projects.',
     ),
   });
 
-  const inputRow = h('div', { class: 'row gap-2', style: 'align-items: flex-end;' });
+  const inputRow = h('div', {
+    class: 'row gap-2',
+    style: 'align-items: flex-end;',
+  });
 
   const fieldWrap = h('div', { class: 'stack', style: 'flex: 1;' });
   const label = h('label', {
@@ -54,7 +57,9 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
   discoverBtn.addEventListener('click', async () => {
     const projectId = input.value.trim();
     if (!projectId) {
-      toast.error(t('fonts.adobeProjectRequired', 'Please enter a project ID.'));
+      toast.error(
+        t('fonts.adobeProjectRequired', 'Please enter a project ID.'),
+      );
       return;
     }
 
@@ -70,7 +75,13 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
 
       if (!result.families || result.families.length === 0) {
         resultsContainer.append(
-          h('div', { class: 'help', text: t('fonts.noFontsFound', 'No font families found in this project.') })
+          h('div', {
+            class: 'help',
+            text: t(
+              'fonts.noFontsFound',
+              'No font families found in this project.',
+            ),
+          }),
         );
         return;
       }
@@ -83,13 +94,17 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
           h('div', { class: 'font-discover-family-name', text: family.name }),
           h('div', {
             class: 'font-discover-family-variants',
-            text: t('fonts.variantCountList', '{count} variant(s): {variants}', {
-              count: family.variants.length,
-              variants: family.variants
-                .map((v) => `${v.weight}${v.style === 'italic' ? 'i' : ''}`)
-                .join(', '),
-            }),
-          })
+            text: t(
+              'fonts.variantCountList',
+              '{count} variant(s): {variants}',
+              {
+                count: family.variants.length,
+                variants: family.variants
+                  .map((v) => `${v.weight}${v.style === 'italic' ? 'i' : ''}`)
+                  .join(', '),
+              },
+            ),
+          }),
         );
 
         const importBtn = h('button', {
@@ -102,20 +117,29 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
           importBtn.disabled = true;
           importBtn.textContent = t('fonts.importing', 'Importing...');
           try {
-            const imported = await api('/api/font-families/import-adobe-family', {
-              method: 'POST',
-              body: JSON.stringify({
-                projectId,
-                familyName: family.name,
-                category: 'sans-serif',
-                variants: family.variants,
+            const imported = await api(
+              '/api/font-families/import-adobe-family',
+              {
+                method: 'POST',
+                body: JSON.stringify({
+                  projectId,
+                  familyName: family.name,
+                  category: 'sans-serif',
+                  variants: family.variants,
+                }),
+              },
+            );
+            toast.success(
+              t('fonts.importSuccess', 'Imported "{name}".', {
+                name: family.name,
               }),
-            });
-            toast.success(t('fonts.importSuccess', 'Imported "{name}".', { name: family.name }));
+            );
             importBtn.textContent = t('fonts.imported', 'Imported');
             if (onImport) onImport(imported);
           } catch (err) {
-            toast.error(err.message || t('fonts.importError', 'Failed to import font.'));
+            toast.error(
+              err.message || t('fonts.importError', 'Failed to import font.'),
+            );
             importBtn.disabled = false;
             importBtn.textContent = t('fonts.import', 'Import');
           }
@@ -125,7 +149,9 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
         resultsContainer.append(row);
       }
     } catch (err) {
-      toast.error(err.message || t('fonts.discoverError', 'Failed to discover fonts.'));
+      toast.error(
+        err.message || t('fonts.discoverError', 'Failed to discover fonts.'),
+      );
     } finally {
       discoverBtn.disabled = false;
       discoverBtn.textContent = t('fonts.discover', 'Discover Fonts');

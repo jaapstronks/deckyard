@@ -6,7 +6,10 @@ import { buildSlidesPngZipBuffer } from '../../export/png-zip.js';
 import { buildPptxBuffer } from '../../export/pptx.js';
 import { buildHandoffZipBuffer } from '../../export/handoff-zip.js';
 import { buildDeckBundle, DECK_MIMETYPE } from '../../export/deck-bundle.js';
-import { buildNotesDocxBuffer, buildNotesMarkdown } from '../../export/notes.js';
+import {
+  buildNotesDocxBuffer,
+  buildNotesMarkdown,
+} from '../../export/notes.js';
 import { renderSlideToPngBuffer } from '../../render/png.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { renderSlidesToPdfBuffer } from '../../render/pdf.js';
@@ -44,7 +47,8 @@ const exportRoutes = [
     contentType: DECK_MIMETYPE,
     extension: '.deck',
     stripLiveOnly: false,
-    buildContent: async (ctx, { repoRoot }) => buildDeckBundle(repoRoot, ctx.pres),
+    buildContent: async (ctx, { repoRoot }) =>
+      buildDeckBundle(repoRoot, ctx.pres),
   }),
 
   // HTML export (download)
@@ -53,21 +57,30 @@ const exportRoutes = [
     contentType: 'text/html; charset=utf-8',
     extension: '.html',
     buildContent: async (ctx, { repoRoot }) =>
-      buildStandaloneHtml(repoRoot, ctx.filteredPres, { theme: ctx.theme, slideTypes: ctx.slideTypes }),
+      buildStandaloneHtml(repoRoot, ctx.filteredPres, {
+        theme: ctx.theme,
+        slideTypes: ctx.slideTypes,
+      }),
   }),
 
   // PDF preview (browser render, then print-to-PDF)
   createHtmlPreviewRoute({
     pattern: /^\/api\/presentations\/([^/]+)\/export\/pdf$/,
     buildHtml: async (ctx, { repoRoot }) =>
-      buildPrintHtml(repoRoot, ctx.filteredPres, { theme: ctx.theme, slideTypes: ctx.slideTypes }),
+      buildPrintHtml(repoRoot, ctx.filteredPres, {
+        theme: ctx.theme,
+        slideTypes: ctx.slideTypes,
+      }),
   }),
 
   // PDF slides preview
   createHtmlPreviewRoute({
     pattern: /^\/api\/presentations\/([^/]+)\/export\/pdf-slides$/,
     buildHtml: async (ctx, { repoRoot }) =>
-      buildSlidesPdfHtml(repoRoot, ctx.filteredPres, { theme: ctx.theme, slideTypes: ctx.slideTypes }),
+      buildSlidesPdfHtml(repoRoot, ctx.filteredPres, {
+        theme: ctx.theme,
+        slideTypes: ctx.slideTypes,
+      }),
   }),
 
   // Server-rendered PDF download (deterministic across browsers/OS).
@@ -88,7 +101,10 @@ const exportRoutes = [
   createHtmlPreviewRoute({
     pattern: /^\/api\/presentations\/([^/]+)\/export\/png$/,
     buildHtml: async (ctx, { repoRoot }) =>
-      buildSlidesPngExportHtml(repoRoot, ctx.filteredPres, { theme: ctx.theme, slideTypes: ctx.slideTypes }),
+      buildSlidesPngExportHtml(repoRoot, ctx.filteredPres, {
+        theme: ctx.theme,
+        slideTypes: ctx.slideTypes,
+      }),
   }),
 
   // PNG slides bundled as a single ZIP ("Download all PNGs")
@@ -109,12 +125,17 @@ const exportRoutes = [
   // PPTX export (supports async via queue)
   createAsyncExportRoute({
     pattern: /^\/api\/presentations\/([^/]+)\/export\/pptx$/,
-    contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    contentType:
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     extension: '.pptx',
     exportType: 'pptx',
     buildContent: async (ctx, { repoRoot, url }) => {
       const scale = parseScaleParam(url);
-      const result = await buildPptxBuffer(repoRoot, ctx.filteredPres, { scale, theme: ctx.theme, slideTypes: ctx.slideTypes });
+      const result = await buildPptxBuffer(repoRoot, ctx.filteredPres, {
+        scale,
+        theme: ctx.theme,
+        slideTypes: ctx.slideTypes,
+      });
       // Store warnings on context for potential logging/debugging
       ctx.pptxWarnings = result.warnings;
       return result.buffer;
@@ -143,13 +164,15 @@ const exportRoutes = [
     pattern: /^\/api\/presentations\/([^/]+)\/export\/notes\.md$/,
     contentType: 'text/markdown; charset=utf-8',
     extension: '-notes.md',
-    buildContent: (ctx) => buildNotesMarkdown(ctx.filteredPres, { includeEmpty: true }),
+    buildContent: (ctx) =>
+      buildNotesMarkdown(ctx.filteredPres, { includeEmpty: true }),
   }),
 
   // Notes DOCX export
   createExportRoute({
     pattern: /^\/api\/presentations\/([^/]+)\/export\/notes\.docx$/,
-    contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    contentType:
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     extension: '-notes.docx',
     buildContent: async (ctx) => {
       const md = buildNotesMarkdown(ctx.filteredPres, { includeEmpty: true });
@@ -160,7 +183,11 @@ const exportRoutes = [
 
 // GET /api/presentations/:id/export/png/:n.png - Special handler for an
 // individual PNG slide (has extra URL param)
-async function handlePngSlideExport({ repoRoot, storageScope, res, url, authedUser }, presentationId, slideNumRaw) {
+async function handlePngSlideExport(
+  { repoRoot, storageScope, res, url, authedUser },
+  presentationId,
+  slideNumRaw,
+) {
   const slideNum = Number(slideNumRaw || 0) || 0; // 1-based
 
   const ctx = await prepareExportContext({
@@ -175,7 +202,9 @@ async function handlePngSlideExport({ repoRoot, storageScope, res, url, authedUs
 
   if (!ctx) return true;
 
-  const slides = Array.isArray(ctx.filteredPres?.slides) ? ctx.filteredPres.slides : [];
+  const slides = Array.isArray(ctx.filteredPres?.slides)
+    ? ctx.filteredPres.slides
+    : [];
   if (slideNum < 1 || slideNum > slides.length) {
     badRequest(res, 'Unknown slide');
     return true;
@@ -218,7 +247,11 @@ async function handlePngSlideExport({ repoRoot, storageScope, res, url, authedUs
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/export\/png\/(\d+)\.png$/, handler: handlePngSlideExport },
+  {
+    method: 'GET',
+    pattern: /^\/api\/presentations\/([^/]+)\/export\/png\/(\d+)\.png$/,
+    handler: handlePngSlideExport,
+  },
 ];
 
 export const handleExports = withErrorHandler('export', async (context) => {

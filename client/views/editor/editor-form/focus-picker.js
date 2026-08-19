@@ -109,6 +109,10 @@ export function renderFocusGridField({
   });
   actions.append(resetBtn);
 
-  wrap.append(grid, actions, helpText ? h('div', { class: 'help', text: helpText }) : null);
+  wrap.append(
+    grid,
+    actions,
+    helpText ? h('div', { class: 'help', text: helpText }) : null,
+  );
   return wrap;
 }

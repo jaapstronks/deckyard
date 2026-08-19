@@ -42,9 +42,7 @@ import { renderFollowInviteForm } from './slide-forms/follow-invite.js';
  *   touches declared fields, and this slide must never flip language), so its
  *   enabled-toggle and custom-copy inputs cannot be schema-driven.
  */
-const SLIDE_FORMS = new Map([
-  ['follow-invite-slide', renderFollowInviteForm],
-]);
+const SLIDE_FORMS = new Map([['follow-invite-slide', renderFollowInviteForm]]);
 
 /**
  * Routes to the appropriate slide form renderer based on slide type

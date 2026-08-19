@@ -13,7 +13,8 @@ function add(out, key, value) {
 }
 
 function normalizeOption(opt) {
-  if (typeof opt === 'string') return { value: opt, label: opt, title: opt, ariaLabel: opt };
+  if (typeof opt === 'string')
+    return { value: opt, label: opt, title: opt, ariaLabel: opt };
   if (opt && typeof opt === 'object') {
     const value = String(opt.value ?? '');
     const label = String(opt.label ?? opt.title ?? value);
@@ -42,8 +43,7 @@ function walkFields({ out, type, fields, prefix }) {
 
     if (typeof f?.placeholder === 'string')
       add(out, `${base}.placeholder`, f.placeholder);
-    if (typeof f?.helpText === 'string')
-      add(out, `${base}.help`, f.helpText);
+    if (typeof f?.helpText === 'string') add(out, `${base}.help`, f.helpText);
 
     if (Array.isArray(f?.options)) {
       for (const raw of f.options) {
@@ -84,11 +84,18 @@ async function main() {
     walkFields({ out, type, fields: def?.fields, prefix });
   }
 
-  const target = path.join(REPO_ROOT, 'docs', 'i18n', 'slide-type-copy-dump.json');
+  const target = path.join(
+    REPO_ROOT,
+    'docs',
+    'i18n',
+    'slide-type-copy-dump.json',
+  );
   await fs.mkdir(path.dirname(target), { recursive: true });
   await fs.writeFile(target, JSON.stringify(out, null, 2) + '\n', 'utf8');
   // eslint-disable-next-line no-console
-  console.log(`[dump] Wrote ${Object.keys(out).length} strings -> ${path.relative(REPO_ROOT, target)}`);
+  console.log(
+    `[dump] Wrote ${Object.keys(out).length} strings -> ${path.relative(REPO_ROOT, target)}`,
+  );
 }
 
 main().catch((err) => {
@@ -96,5 +103,3 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-
-

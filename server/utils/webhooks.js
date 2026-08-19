@@ -30,7 +30,10 @@ function resolveActorId(authedUser) {
 
 /** Webhook config reads run outside any request: instance-level settings. */
 function webhookSettingsScope(repoRoot) {
-  return crossOrganizationScope(repoRoot ?? null, 'webhook dispatch: config is instance-level');
+  return crossOrganizationScope(
+    repoRoot ?? null,
+    'webhook dispatch: config is instance-level',
+  );
 }
 
 function pickDisplayName({ authedUser, userSettings }) {
@@ -48,7 +51,7 @@ function pickDisplayName({ authedUser, userSettings }) {
 export async function postJson(
   url,
   payload,
-  { timeoutMs = 4500, headers = {}, signingSecret = '' } = {}
+  { timeoutMs = 4500, headers = {}, signingSecret = '' } = {},
 ) {
   const u = String(url || '').trim();
   if (!u) return { ok: false, status: 0, error: 'Missing URL' };
@@ -109,15 +112,19 @@ function buildInteractionPayload({
     session: {
       id: String(sessionId || '').trim() || null,
     },
-    interaction: interaction && typeof interaction === 'object'
-      ? {
-          type: String(interaction.type || '').trim() || null,
-          slideId: String(interaction.slideId || '').trim() || null,
-          totals: Array.isArray(interaction.totals) ? interaction.totals : null,
-          total: typeof interaction.total === 'number' ? interaction.total : null,
-          status: String(interaction.status || '').trim() || null,
-        }
-      : null,
+    interaction:
+      interaction && typeof interaction === 'object'
+        ? {
+            type: String(interaction.type || '').trim() || null,
+            slideId: String(interaction.slideId || '').trim() || null,
+            totals: Array.isArray(interaction.totals)
+              ? interaction.totals
+              : null,
+            total:
+              typeof interaction.total === 'number' ? interaction.total : null,
+            status: String(interaction.status || '').trim() || null,
+          }
+        : null,
   };
 }
 
@@ -148,7 +155,9 @@ function buildCommonPayload({
     publishId && publishSlug ? `/p/${publishId}-${publishSlug}` : null;
   const publicUrl = publicPath ? toAbsoluteUrl(origin, publicPath) : null;
 
-  const email = String(authedUser?.email || '').trim().toLowerCase();
+  const email = String(authedUser?.email || '')
+    .trim()
+    .toLowerCase();
   const name = pickDisplayName({ authedUser, userSettings });
 
   return {
@@ -166,7 +175,8 @@ function buildCommonPayload({
       description:
         typeof pres?.description === 'string' ? pres.description : '',
       theme: typeof pres?.theme === 'string' ? pres.theme : '',
-      visibility: typeof pres?.visibility === 'string' ? pres.visibility : 'private',
+      visibility:
+        typeof pres?.visibility === 'string' ? pres.visibility : 'private',
       published:
         publishId && publishSlug
           ? {
@@ -204,7 +214,9 @@ function buildSlideLibraryPayload({
   const slidePath = slideId ? `/app/slide-library/organization/${slideId}` : '';
   const slideUrl = slidePath ? toAbsoluteUrl(origin, slidePath) : null;
 
-  const email = String(authedUser?.email || '').trim().toLowerCase();
+  const email = String(authedUser?.email || '')
+    .trim()
+    .toLowerCase();
   const name = pickDisplayName({ authedUser, userSettings });
 
   return {
@@ -219,10 +231,13 @@ function buildSlideLibraryPayload({
     slide: {
       id: slideId || null,
       name: typeof slideItem?.name === 'string' ? slideItem.name : '',
-      description: typeof slideItem?.description === 'string' ? slideItem.description : '',
-      slideType: typeof slideItem?.slideType === 'string' ? slideItem.slideType : '',
+      description:
+        typeof slideItem?.description === 'string' ? slideItem.description : '',
+      slideType:
+        typeof slideItem?.slideType === 'string' ? slideItem.slideType : '',
       themeId: typeof slideItem?.themeId === 'string' ? slideItem.themeId : '',
-      previewUrl: typeof slideItem?.previewUrl === 'string' ? slideItem.previewUrl : null,
+      previewUrl:
+        typeof slideItem?.previewUrl === 'string' ? slideItem.previewUrl : null,
       url: slideUrl,
     },
     links: {
@@ -237,7 +252,13 @@ function buildSlideLibraryPayload({
 export async function maybeFireWebhook(
   repoRoot,
   req,
-  { event = '', pres = null, slideItem = null, authedUser = null, extra = null } = {}
+  {
+    event = '',
+    pres = null,
+    slideItem = null,
+    authedUser = null,
+    extra = null,
+  } = {},
 ) {
   const e = String(event || '').trim();
   if (!e) return;
@@ -267,22 +288,23 @@ export async function maybeFireWebhook(
     : null;
 
   // Use different payload builder for slide library events
-  const payload = e === 'slide.added_to_organization_library'
-    ? buildSlideLibraryPayload({
-        event: e,
-        authedUser,
-        userSettings,
-        slideItem,
-        req,
-      })
-    : buildCommonPayload({
-        event: e,
-        authedUser,
-        userSettings,
-        pres,
-        req,
-        extra,
-      });
+  const payload =
+    e === 'slide.added_to_organization_library'
+      ? buildSlideLibraryPayload({
+          event: e,
+          authedUser,
+          userSettings,
+          slideItem,
+          req,
+        })
+      : buildCommonPayload({
+          event: e,
+          authedUser,
+          userSettings,
+          pres,
+          req,
+          extra,
+        });
 
   // Best-effort: never block the API response on webhook delivery.
   void postJson(url, payload, {
@@ -291,7 +313,7 @@ export async function maybeFireWebhook(
   }).then((r) => {
     if (!r.ok) {
       log.warn(
-        `failed event=${e} status=${r.status} url=${url} err=${r.error || ''}`.trim()
+        `failed event=${e} status=${r.status} url=${url} err=${r.error || ''}`.trim(),
       );
     }
   });
@@ -309,7 +331,7 @@ export async function maybeFireWebhook(
 export async function maybeFireLeadWebhook(
   repoRoot,
   req,
-  { presentation = null, slideId = '', lead = null } = {}
+  { presentation = null, slideId = '', lead = null } = {},
 ) {
   if (!repoRoot || !lead) return;
 
@@ -352,7 +374,7 @@ export async function maybeFireLeadWebhook(
   }).then((r) => {
     if (!r.ok) {
       log.warn(
-        `failed event=lead.submitted status=${r.status} url=${url} err=${r.error || ''}`.trim()
+        `failed event=lead.submitted status=${r.status} url=${url} err=${r.error || ''}`.trim(),
       );
     }
   });
@@ -360,7 +382,7 @@ export async function maybeFireLeadWebhook(
 
 export async function maybeFireInteractionWebhook(
   repoRoot,
-  { event = '', sessionId = '', interaction = null } = {}
+  { event = '', sessionId = '', interaction = null } = {},
 ) {
   const e = String(event || '').trim();
   if (!e) return;
@@ -395,7 +417,7 @@ export async function maybeFireInteractionWebhook(
   }).then((r) => {
     if (!r.ok) {
       log.warn(
-        `failed event=${e} status=${r.status} url=${url} err=${r.error || ''}`.trim()
+        `failed event=${e} status=${r.status} url=${url} err=${r.error || ''}`.trim(),
       );
     }
   });

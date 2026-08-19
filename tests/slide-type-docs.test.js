@@ -33,13 +33,13 @@ import {
  * for free — which is the point of these docs existing.
  */
 
-test('every generated doc is byte-identical to the committed file', () => {
-  for (const [rel, expected] of buildAllDocs()) {
+test('every generated doc is byte-identical to the committed file', async () => {
+  for (const [rel, expected] of await buildAllDocs()) {
     const actual = fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8');
     assert.equal(
       actual,
       expected,
-      `${rel} is out of date — run \`node scripts/generate-slide-type-docs.js\``
+      `${rel} is out of date — run \`node scripts/generate-slide-type-docs.js\``,
     );
   }
 });
@@ -57,24 +57,26 @@ function inventoryTable(doc) {
 
 test('the inventory lists exactly the core registry, in registration order', () => {
   const doc = fs.readFileSync(path.join(REPO_ROOT, INVENTORY_DOC), 'utf8');
-  const listed = [...inventoryTable(doc).matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]);
+  const listed = [...inventoryTable(doc).matchAll(/^\| `([^`]+)`\s*\|/gm)].map(
+    (m) => m[1],
+  );
   assert.deepEqual(
     listed,
     CORE_SLIDE_TYPE_NAMES,
-    'the inventory table must match CORE_SLIDE_TYPE_NAMES exactly'
+    'the inventory table must match CORE_SLIDE_TYPE_NAMES exactly',
   );
 });
 
 test('the declared-not-built table lists exactly the reserved names', () => {
   const doc = fs.readFileSync(path.join(REPO_ROOT, INVENTORY_DOC), 'utf8');
   const section = doc.split('\n## Declared, not built')[1] || '';
-  const listed = [...section.matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]);
+  const listed = [...section.matchAll(/^\| `([^`]+)`\s*\|/gm)].map((m) => m[1]);
   assert.deepEqual(listed, DECLARED_SLIDE_TYPE_NAMES);
   for (const name of listed) {
     assert.equal(
       CORE_SLIDE_TYPE_NAMES.includes(name),
       false,
-      `${name} is registered — it belongs in the inventory table, not here`
+      `${name} is registered — it belongs in the inventory table, not here`,
     );
   }
 });
@@ -87,7 +89,7 @@ test('the stated count equals the real core type count (fork-stable)', () => {
   // Custom types (a fork's custom/slide-types/) must not inflate the count.
   assert.ok(
     Object.keys(SLIDE_TYPES).length >= CORE_SLIDE_TYPE_NAMES.length,
-    'SLIDE_TYPES is core plus any custom'
+    'SLIDE_TYPES is core plus any custom',
   );
 });
 
@@ -95,11 +97,17 @@ test('every prose count marker holds the current core count', () => {
   for (const rel of COUNT_MARKER_FILES) {
     const text = fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8');
     const nums = [
-      ...text.matchAll(/<!--gen:slide-type-count-->(\d+)<!--\/gen:slide-type-count-->/g),
+      ...text.matchAll(
+        /<!--gen:slide-type-count-->(\d+)<!--\/gen:slide-type-count-->/g,
+      ),
     ].map((m) => Number(m[1]));
     assert.ok(nums.length > 0, `${rel}: expected at least one count marker`);
     for (const n of nums) {
-      assert.equal(n, coreCount(), `${rel}: stale count marker (${n} ≠ ${coreCount()})`);
+      assert.equal(
+        n,
+        coreCount(),
+        `${rel}: stale count marker (${n} ≠ ${coreCount()})`,
+      );
     }
   }
 });
@@ -115,8 +123,10 @@ test('every prose count marker holds the current core count', () => {
 /** Rows of a generated region, as the type name in the first cell. */
 function regionTypes(rel, region) {
   const text = fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8');
-  const body = text.split(`<!--gen:${region}-->`)[1]?.split(`<!--/gen:${region}-->`)[0] ?? '';
-  return [...body.matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]);
+  const body =
+    text.split(`<!--gen:${region}-->`)[1]?.split(`<!--/gen:${region}-->`)[0] ??
+    '';
+  return [...body.matchAll(/^\| `([^`]+)`\s*\|/gm)].map((m) => m[1]);
 }
 
 test('both per-type tables cover exactly the core registry, in registration order', () => {
@@ -125,7 +135,7 @@ test('both per-type tables cover exactly the core registry, in registration orde
       assert.deepEqual(
         regionTypes(rel, region),
         CORE_SLIDE_TYPE_NAMES,
-        `${rel} (${region}): rows must be exactly CORE_SLIDE_TYPE_NAMES`
+        `${rel} (${region}): rows must be exactly CORE_SLIDE_TYPE_NAMES`,
       );
     }
   }
@@ -133,8 +143,13 @@ test('both per-type tables cover exactly the core registry, in registration orde
 
 test('a missing generated region is an error, not a silent skip', () => {
   assert.throws(
-    () => applyRegions('# doc\n\nno markers here\n', { 'slide-type-coverage': () => 'x' }, 'x.md'),
-    /missing generated region/
+    () =>
+      applyRegions(
+        '# doc\n\nno markers here\n',
+        { 'slide-type-coverage': () => 'x' },
+        'x.md',
+      ),
+    /missing generated region/,
   );
 });
 
@@ -146,17 +161,20 @@ test('a missing generated region is an error, not a silent skip', () => {
 test('the inspector-keeps column restates the declaration', () => {
   const text = fs.readFileSync(
     path.join(REPO_ROOT, 'docs/reference/editor-inspector.md'),
-    'utf8'
+    'utf8',
   );
   for (const row of coverageRows()) {
-    const line = text.split('\n').find((l) => l.startsWith(`| \`${row.type}\` |`));
+    // Prettier pads table cells to the column width, hence the `\s*`.
+    const line = text
+      .split('\n')
+      .find((l) => new RegExp(`^\\| \`${row.type}\`\\s*\\|`).test(l));
     assert.ok(line, `${row.type}: no row in the coverage table`);
     const cell = line.split('|')[4].trim();
     const expected = condenseKeys(row.keeps || []);
     assert.equal(
       cell,
       expected.length ? expected.map((k) => `\`${k}\``).join(', ') : '–',
-      `${row.type}: keeps column does not match inspectorKeeps`
+      `${row.type}: keeps column does not match inspectorKeeps`,
     );
   }
 });
@@ -170,7 +188,13 @@ test('the inspector-keeps column restates the declaration', () => {
  * the field types with no canvas affordance.
  */
 test('no settings-shaped field relies on the bulk modal alone', () => {
-  const SETTINGS_TYPES = new Set(['enum', 'boolean', 'number', 'color', 'icon']);
+  const SETTINGS_TYPES = new Set([
+    'enum',
+    'boolean',
+    'number',
+    'color',
+    'icon',
+  ]);
   /**
    * Keys the inspector genuinely renders, through a per-type widget in
    * `renderInspectorExtrasByType` rather than through the keep-list. That
@@ -196,7 +220,7 @@ test('no settings-shaped field relies on the bulk modal alone', () => {
     [],
     'parity violation — a settings field must render in the inspector (or be ' +
       'claimed by the Layout chip / an element knob), never in the bulk modal only:\n' +
-      offenders.join('\n')
+      offenders.join('\n'),
   );
 });
 
@@ -207,11 +231,16 @@ test('no settings-shaped field relies on the bulk modal alone', () => {
  * `a{n}yTitle`.
  */
 test('condenseKeys collapses families and leaves lone keys alone', () => {
-  assert.deepEqual(condenseKeys(['col1Title', 'col1Text', 'col2Title', 'col2Text']), [
-    'col{n}Title',
-    'col{n}Text',
+  assert.deepEqual(
+    condenseKeys(['col1Title', 'col1Text', 'col2Title', 'col2Text']),
+    ['col{n}Title', 'col{n}Text'],
+  );
+  assert.deepEqual(condenseKeys(['col1Block1Body', 'col2Block3Body']), [
+    'col{n}Block{m}Body',
   ]);
-  assert.deepEqual(condenseKeys(['col1Block1Body', 'col2Block3Body']), ['col{n}Block{m}Body']);
-  assert.deepEqual(condenseKeys(['a11yTitle', 'bunnyLibraryId']), ['a11yTitle', 'bunnyLibraryId']);
+  assert.deepEqual(condenseKeys(['a11yTitle', 'bunnyLibraryId']), [
+    'a11yTitle',
+    'bunnyLibraryId',
+  ]);
   assert.deepEqual(condenseKeys([]), []);
 });

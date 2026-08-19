@@ -12,7 +12,13 @@ import { createDataSourceProvider } from '../provider-base.js';
 import { apiFetch } from '../../api-fetch.js';
 import { assertPublicHttpUrl } from '../../ssrf-guard.js';
 
-const BLOCKED_HEADERS = new Set(['host', 'authorization', 'cookie', 'set-cookie', 'proxy-authorization']);
+const BLOCKED_HEADERS = new Set([
+  'host',
+  'authorization',
+  'cookie',
+  'set-cookie',
+  'proxy-authorization',
+]);
 
 /**
  * Parse CSV text into a 2D array of strings.

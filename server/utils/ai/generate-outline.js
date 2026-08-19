@@ -26,8 +26,8 @@ const log = createLogger('generate-outline');
  * @returns {{ targetSlides: number, estimatedInputLines: number }}
  */
 export function calculateTargetSlides(rawContent, targetLength) {
-  const lines = rawContent.split('\n').filter(l => l.trim()).length;
-  const words = rawContent.split(/\s+/).filter(w => w.trim()).length;
+  const lines = rawContent.split('\n').filter((l) => l.trim()).length;
+  const words = rawContent.split(/\s+/).filter((w) => w.trim()).length;
 
   // Pre-defined targets for user selections
   const presets = {
@@ -67,8 +67,8 @@ function normalizePhase1Output(parsed) {
   // Normalize status messages
   if (Array.isArray(parsed.statusMessages)) {
     output.statusMessages = parsed.statusMessages
-      .map(msg => String(msg || '').trim())
-      .filter(msg => msg.length > 0);
+      .map((msg) => String(msg || '').trim())
+      .filter((msg) => msg.length > 0);
   }
 
   // Add fallback messages if none were generated
@@ -94,7 +94,10 @@ function normalizePhase1Output(parsed) {
       'Slides opmaken...',
       'Details toevoegen...',
     ];
-    while (output.statusMessages.length < minMessages && genericMessages.length > 0) {
+    while (
+      output.statusMessages.length < minMessages &&
+      genericMessages.length > 0
+    ) {
       output.statusMessages.push(genericMessages.shift());
     }
   }
@@ -120,7 +123,9 @@ function normalizePhase1Output(parsed) {
         intent,
         roughContent: String(slide?.roughContent || '').trim(),
         presenterNotes: String(slide?.presenterNotes || '').trim(),
-        hints: Array.isArray(slide?.hints) ? slide.hints.map(h => String(h).trim()) : [],
+        hints: Array.isArray(slide?.hints)
+          ? slide.hints.map((h) => String(h).trim())
+          : [],
         groupId: slide?.groupId != null ? String(slide.groupId).trim() : null,
       });
     }
@@ -146,7 +151,9 @@ function normalizePhase1Output(parsed) {
  */
 function normalizeIntent(intent) {
   const valid = ['opening', 'chapter', 'content', 'quote', 'closing'];
-  const normalized = String(intent || 'content').toLowerCase().trim();
+  const normalized = String(intent || 'content')
+    .toLowerCase()
+    .trim();
   return valid.includes(normalized) ? normalized : 'content';
 }
 
@@ -158,7 +165,10 @@ function resolveStructuralSlide(slide) {
   const { intent, roughContent, index, presenterNotes } = slide;
 
   if (intent === 'chapter') {
-    const lines = roughContent.split('\n').map(l => l.trim()).filter(Boolean);
+    const lines = roughContent
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
     return {
       originalIndex: index,
       type: 'chapter-title-slide',
@@ -172,7 +182,10 @@ function resolveStructuralSlide(slide) {
   }
 
   if (intent === 'quote') {
-    const lines = roughContent.split('\n').map(l => l.trim()).filter(Boolean);
+    const lines = roughContent
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
     // Try to extract quote, author name, and title
     let quote = lines[0] || '';
     let authorName = lines[1] || '';
@@ -225,25 +238,37 @@ function resolveStructuralSlide(slide) {
  * @param {Function} options.onLog - Callback to log the conversation
  * @returns {Promise<Object>} The presentation outline
  */
-export async function generateOutline(rawContent, {
-  userName = '',
-  targetLang = null,
-  vendor = null,
-  targetLength = 'auto',
-  rawFirstSlideTitle = '',
-  onLog = null,
-} = {}) {
+export async function generateOutline(
+  rawContent,
+  {
+    userName = '',
+    targetLang = null,
+    vendor = null,
+    targetLength = 'auto',
+    rawFirstSlideTitle = '',
+    onLog = null,
+  } = {},
+) {
   const startTime = Date.now();
   // Plan role: the outline drives the whole deck's structure and type
   // selection, so the Claude vendor uses a stronger model here (Opus).
-  const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor, role: 'plan' });
+  const {
+    vendor: resolvedVendor,
+    apiKey,
+    model,
+  } = getLlmConfig({ vendor, role: 'plan' });
 
   const detectedLang = detectDeckLanguage(rawContent);
   const requestedLang = normalizeLang(targetLang);
 
   // Calculate target slide count based on content and user preference
-  const { targetSlides, estimatedInputLines } = calculateTargetSlides(rawContent, targetLength);
-  log.info(`Target: ${targetSlides} slides for ${estimatedInputLines} lines (targetLength: ${targetLength})`);
+  const { targetSlides, estimatedInputLines } = calculateTargetSlides(
+    rawContent,
+    targetLength,
+  );
+  log.info(
+    `Target: ${targetSlides} slides for ${estimatedInputLines} lines (targetLength: ${targetLength})`,
+  );
 
   const systemPrompt = prompts.buildPhase1SystemPrompt({
     detectedLang,

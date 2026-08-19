@@ -177,7 +177,9 @@ export function createPresenterHighlighter({
 
     // Calculate sizes based on thickness setting
     const strokeWidth = thickness * scale;
-    const laserRadius = (DEFAULT_LASER_RADIUS + (thickness - DEFAULT_DRAW_STROKE_WIDTH) * 1.5) * scale;
+    const laserRadius =
+      (DEFAULT_LASER_RADIUS + (thickness - DEFAULT_DRAW_STROKE_WIDTH) * 1.5) *
+      scale;
 
     for (const stroke of strokes) {
       if (stroke.points.length < 2) continue;
@@ -427,7 +429,8 @@ export function createPresenterHighlighter({
       case 'mode':
         if (ev.color) setColor(ev.color);
         if (ev.thickness) setThickness(ev.thickness);
-        if (typeof ev.persistent === 'boolean') setPersistentDraw(ev.persistent);
+        if (typeof ev.persistent === 'boolean')
+          setPersistentDraw(ev.persistent);
         setMode(ev.mode || null);
         break;
       case 'color':

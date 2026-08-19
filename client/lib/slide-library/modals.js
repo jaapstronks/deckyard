@@ -59,7 +59,8 @@ export function createSlideLibraryModals({
     const modal = h('div', { class: 'modal ps-modal ps-lib-lightbox-modal' });
 
     const header = h('div', { class: 'ps-modal-header' });
-    const titleText = cleanStr(it?.name) || t('slideLibrary.preview.untitled', 'Untitled');
+    const titleText =
+      cleanStr(it?.name) || t('slideLibrary.preview.untitled', 'Untitled');
     const title = h('h2', { text: titleText });
 
     // Header actions (Edit + Close)
@@ -116,11 +117,17 @@ export function createSlideLibraryModals({
     const metaSection = h('div', { class: 'ps-lib-lightbox-meta' });
 
     // Description field
-    const descLabel = h('label', { class: 'field-label', text: t('slideLibrary.description', 'Description') });
+    const descLabel = h('label', {
+      class: 'field-label',
+      text: t('slideLibrary.description', 'Description'),
+    });
     const descInput = h('textarea', {
       class: 'form-input',
       rows: 2,
-      placeholder: t('slideLibrary.descriptionPlaceholder', 'Add a description...'),
+      placeholder: t(
+        'slideLibrary.descriptionPlaceholder',
+        'Add a description...',
+      ),
       value: it?.description || '',
     });
     const descField = h('div', { class: 'field' });
@@ -132,14 +139,21 @@ export function createSlideLibraryModals({
       if (newDesc === (it?.description || '')) return;
       const result = await apiOps.saveDescription(shelf, it, newDesc);
       if (!result.ok) {
-        toast.error(t('slideLibrary.descriptionSaveError', 'Failed to save description'));
+        toast.error(
+          t('slideLibrary.descriptionSaveError', 'Failed to save description'),
+        );
       }
       rerender?.();
     });
 
     // Tags field
-    const tagsLabel = h('label', { class: 'field-label', text: t('slideLibrary.tags', 'Tags') });
-    const initialTagNames = Array.isArray(it?.tags) ? it.tags.map((t) => t.name || t) : [];
+    const tagsLabel = h('label', {
+      class: 'field-label',
+      text: t('slideLibrary.tags', 'Tags'),
+    });
+    const initialTagNames = Array.isArray(it?.tags)
+      ? it.tags.map((t) => t.name || t)
+      : [];
     const tagEditor = createTagEditor({
       api,
       initialTags: initialTagNames,
@@ -229,9 +243,18 @@ export function createSlideLibraryModals({
     copyOption.append(
       h('div', { class: 'ps-lib-use-option-icon' }, [copyIconEl]),
       h('div', { class: 'ps-lib-use-option-text' }, [
-        h('div', { class: 'ps-lib-use-option-title', text: t('slideLibrary.useModal.copy', 'Copy to clipboard') }),
-        h('div', { class: 'ps-lib-use-option-desc', text: t('slideLibrary.useModal.copy.desc', 'Paste it into any presentation with Ctrl/Cmd+V') }),
-      ])
+        h('div', {
+          class: 'ps-lib-use-option-title',
+          text: t('slideLibrary.useModal.copy', 'Copy to clipboard'),
+        }),
+        h('div', {
+          class: 'ps-lib-use-option-desc',
+          text: t(
+            'slideLibrary.useModal.copy.desc',
+            'Paste it into any presentation with Ctrl/Cmd+V',
+          ),
+        }),
+      ]),
     );
 
     // New presentation option
@@ -246,9 +269,18 @@ export function createSlideLibraryModals({
     newPresOption.append(
       h('div', { class: 'ps-lib-use-option-icon', text: '📄' }),
       h('div', { class: 'ps-lib-use-option-text' }, [
-        h('div', { class: 'ps-lib-use-option-title', text: t('slideLibrary.useModal.newPresentation', 'New presentation') }),
-        h('div', { class: 'ps-lib-use-option-desc', text: t('slideLibrary.useModal.newPresentation.desc', 'Create a new presentation starting with this slide') }),
-      ])
+        h('div', {
+          class: 'ps-lib-use-option-title',
+          text: t('slideLibrary.useModal.newPresentation', 'New presentation'),
+        }),
+        h('div', {
+          class: 'ps-lib-use-option-desc',
+          text: t(
+            'slideLibrary.useModal.newPresentation.desc',
+            'Create a new presentation starting with this slide',
+          ),
+        }),
+      ]),
     );
 
     optionsWrap.append(copyOption, newPresOption);

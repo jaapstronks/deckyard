@@ -159,7 +159,9 @@ export async function readDeckBundle(buffer) {
   // Accepts the historical `vnd.slidecreator.deck` too: bundles already in the
   // wild carry it, and a published format does not stop reading its own past.
   if (!isDeckMimetype(mimetype)) {
-    throw new Error('Not a .deck bundle: mimetype sentinel missing or mismatched');
+    throw new Error(
+      'Not a .deck bundle: mimetype sentinel missing or mismatched',
+    );
   }
 
   const manifestEntry = zip.file('manifest.json');

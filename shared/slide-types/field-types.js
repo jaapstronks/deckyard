@@ -51,11 +51,17 @@ function pathOf(field) {
 function validateText(val, field) {
   const errors = [];
   const path = pathOf(field);
-  if (field.required && !isNonEmptyString(val)) errors.push(`${path} is required`);
+  if (field.required && !isNonEmptyString(val))
+    errors.push(`${path} is required`);
   // Optional text fields may be missing/null in older decks or external
   // integrations. Only enforce the string type when a value is present.
-  if (val != null && typeof val !== 'string') errors.push(`${path} must be a string`);
-  if (field.maxLength && typeof val === 'string' && val.length > field.maxLength) {
+  if (val != null && typeof val !== 'string')
+    errors.push(`${path} must be a string`);
+  if (
+    field.maxLength &&
+    typeof val === 'string' &&
+    val.length > field.maxLength
+  ) {
     errors.push(`${path} exceeds max length (${field.maxLength})`);
   }
   return errors;
@@ -64,13 +70,16 @@ function validateText(val, field) {
 function validateNumber(val, field) {
   const errors = [];
   const path = pathOf(field);
-  if (field.required && !isPresentValue(val)) errors.push(`${path} is required`);
+  if (field.required && !isPresentValue(val))
+    errors.push(`${path} is required`);
   // Accept a real number or a finite numeric string (older decks/integrations
   // sometimes store "50"); reject anything that is not coercible.
   if (isPresentValue(val)) {
     const ok =
       (typeof val === 'number' && Number.isFinite(val)) ||
-      (typeof val === 'string' && val.trim() !== '' && Number.isFinite(Number(val)));
+      (typeof val === 'string' &&
+        val.trim() !== '' &&
+        Number.isFinite(Number(val)));
     if (!ok) errors.push(`${path} must be a number`);
   }
   return errors;
@@ -79,7 +88,8 @@ function validateNumber(val, field) {
 function validateBoolean(val, field) {
   const errors = [];
   const path = pathOf(field);
-  if (field.required && !isPresentValue(val)) errors.push(`${path} is required`);
+  if (field.required && !isPresentValue(val))
+    errors.push(`${path} is required`);
   // Cleared boolean fields use the repo's '' convention (like enums); only a
   // present non-empty value must be an actual boolean.
   if (val != null && val !== '' && typeof val !== 'boolean') {
@@ -91,12 +101,17 @@ function validateBoolean(val, field) {
 function validateUrl(val, field) {
   const errors = [];
   const path = pathOf(field);
-  if (field.required && !isNonEmptyString(val)) errors.push(`${path} is required`);
+  if (field.required && !isNonEmptyString(val))
+    errors.push(`${path} is required`);
   if (val != null && typeof val !== 'string') {
     errors.push(`${path} must be a string`);
     return errors;
   }
-  if (field.maxLength && typeof val === 'string' && val.length > field.maxLength) {
+  if (
+    field.maxLength &&
+    typeof val === 'string' &&
+    val.length > field.maxLength
+  ) {
     errors.push(`${path} exceeds max length (${field.maxLength})`);
   }
   // A present value must be a link we would actually render: http(s)/mailto or
@@ -111,7 +126,8 @@ function validateUrl(val, field) {
 function validateColor(val, field) {
   const errors = [];
   const path = pathOf(field);
-  if (field.required && !isPresentValue(val)) errors.push(`${path} is required`);
+  if (field.required && !isPresentValue(val))
+    errors.push(`${path} is required`);
   // Colours are stored as a theme token or a raw string; we only guard the
   // coarse type here (format varies by theme/picker).
   if (val != null && val !== '' && typeof val !== 'string') {
@@ -123,7 +139,8 @@ function validateColor(val, field) {
 function validateEnum(val, field) {
   const errors = [];
   const path = pathOf(field);
-  if (field.required && !isNonEmptyString(val)) errors.push(`${path} is required`);
+  if (field.required && !isNonEmptyString(val))
+    errors.push(`${path} is required`);
   const allowed = enumOptionValues(field);
   // The background field also accepts theme-defined variant ids
   // (theme.slideBackgrounds - see shared/theme-slide-backgrounds.js).
@@ -135,7 +152,12 @@ function validateEnum(val, field) {
     SLIDE_BG_ID_RE.test(val);
   // Cleared enum fields use the repo's '' convention: empty = unset / follow the
   // type default. Required enums still reject '' via the required check above.
-  if (val != null && val !== '' && !allowed.includes(val) && !isThemeBgVariant) {
+  if (
+    val != null &&
+    val !== '' &&
+    !allowed.includes(val) &&
+    !isThemeBgVariant
+  ) {
     errors.push(`${path} must be one of: ${allowed.join(', ')}`);
   }
   return errors;
@@ -144,9 +166,11 @@ function validateEnum(val, field) {
 function validateImage(val, field) {
   const errors = [];
   const path = pathOf(field);
-  if (field.required && !isNonEmptyString(val)) errors.push(`${path} is required`);
+  if (field.required && !isNonEmptyString(val))
+    errors.push(`${path} is required`);
   // A single image is a URL/reference string.
-  if (val != null && typeof val !== 'string') errors.push(`${path} must be a string`);
+  if (val != null && typeof val !== 'string')
+    errors.push(`${path} must be a string`);
   return errors;
 }
 
@@ -214,7 +238,9 @@ function validateItems(val, field) {
           errors.push(`${path}[${i}].${f.key} must be a string`);
         }
         if (f.maxLength && typeof iv === 'string' && iv.length > f.maxLength) {
-          errors.push(`${path}[${i}].${f.key} exceeds max length (${f.maxLength})`);
+          errors.push(
+            `${path}[${i}].${f.key} exceeds max length (${f.maxLength})`,
+          );
         }
       }
     }
@@ -267,7 +293,7 @@ export const FIELD_TYPES = {
   },
   boolean: {
     label: 'Toggle',
-    description: 'Boolean toggle. Cleared fields use the `\'\'` convention.',
+    description: "Boolean toggle. Cleared fields use the `''` convention.",
     docExtra: '`required`',
     valueKind: 'boolean',
     validate: validateBoolean,
@@ -290,7 +316,8 @@ export const FIELD_TYPES = {
   image: {
     label: 'Image',
     description: 'Image picker (stores a URL/reference string)',
-    docExtra: "`presetSource` (`'backgrounds'` or `'partnerlogos'`), `required`",
+    docExtra:
+      "`presetSource` (`'backgrounds'` or `'partnerlogos'`), `required`",
     valueKind: 'string',
     validate: validateImage,
   },
@@ -325,7 +352,10 @@ export const FIELD_TYPE_NAMES = Object.keys(FIELD_TYPES).sort();
 
 /** Whether `type` is a declared field type. */
 export function isKnownFieldType(type) {
-  return typeof type === 'string' && Object.prototype.hasOwnProperty.call(FIELD_TYPES, type);
+  return (
+    typeof type === 'string' &&
+    Object.prototype.hasOwnProperty.call(FIELD_TYPES, type)
+  );
 }
 
 /**

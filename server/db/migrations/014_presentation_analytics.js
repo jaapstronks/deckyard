@@ -17,13 +17,13 @@ export const up = async (db) => {
     .createTable('view_sessions')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade').notNull()
+      col.references('presentations.id').onDelete('cascade').notNull(),
     )
     .addColumn('session_token', 'varchar(64)', (col) => col.unique().notNull())
     .addColumn('source_type', 'varchar(20)', (col) => col.notNull())
@@ -86,13 +86,13 @@ export const up = async (db) => {
     .createTable('slide_views')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('view_session_id', 'uuid', (col) =>
-      col.references('view_sessions.id').onDelete('cascade').notNull()
+      col.references('view_sessions.id').onDelete('cascade').notNull(),
     )
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade').notNull()
+      col.references('presentations.id').onDelete('cascade').notNull(),
     )
     .addColumn('slide_id', 'uuid', (col) => col.notNull())
     .addColumn('slide_index', 'integer', (col) => col.notNull())
@@ -125,13 +125,13 @@ export const up = async (db) => {
     .createTable('analytics_snapshots')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade').notNull()
+      col.references('presentations.id').onDelete('cascade').notNull(),
     )
     .addColumn('period_type', 'varchar(10)', (col) => col.notNull())
     .addColumn('period_start', 'timestamptz', (col) => col.notNull())
@@ -139,7 +139,9 @@ export const up = async (db) => {
     .addColumn('total_views', 'integer', (col) => col.defaultTo(0))
     .addColumn('unique_viewers', 'integer', (col) => col.defaultTo(0))
     .addColumn('avg_duration_seconds', 'integer', (col) => col.defaultTo(0))
-    .addColumn('slide_metrics', 'jsonb', (col) => col.defaultTo(sql`'{}'::jsonb`))
+    .addColumn('slide_metrics', 'jsonb', (col) =>
+      col.defaultTo(sql`'{}'::jsonb`),
+    )
     .addColumn('poll_engagement_rate', sql`decimal(5,4)`)
     .addColumn('feedback_count', 'integer', (col) => col.defaultTo(0))
     .addColumn('question_count', 'integer', (col) => col.defaultTo(0))
@@ -161,13 +163,13 @@ export const up = async (db) => {
     .createTable('analytics_reports')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade').notNull()
+      col.references('presentations.id').onDelete('cascade').notNull(),
     )
     .addColumn('title', 'varchar(255)', (col) => col.notNull())
     .addColumn('report_type', 'varchar(30)', (col) => col.notNull())
@@ -177,7 +179,9 @@ export const up = async (db) => {
     .addColumn('share_expires_at', 'timestamptz')
     .addColumn('is_public', 'boolean', (col) => col.defaultTo(false))
     .addColumn('report_data', 'jsonb', (col) => col.defaultTo(sql`'{}'::jsonb`))
-    .addColumn('generated_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('generated_at', 'timestamptz', (col) =>
+      col.defaultTo(sql`now()`),
+    )
     .addColumn('created_by', 'varchar(320)', (col) => col.notNull())
     .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
     .execute();
@@ -200,16 +204,31 @@ export const up = async (db) => {
 
 export const down = async (db) => {
   // Drop indexes first
-  await db.schema.dropIndex('idx_analytics_reports_presentation').ifExists().execute();
-  await db.schema.dropIndex('idx_analytics_reports_share_token').ifExists().execute();
-  await db.schema.dropIndex('idx_analytics_snapshots_presentation_period').ifExists().execute();
-  await db.schema.dropIndex('idx_slide_views_presentation_slide').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_analytics_reports_presentation')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_analytics_reports_share_token')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_analytics_snapshots_presentation_period')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_slide_views_presentation_slide')
+    .ifExists()
+    .execute();
   await db.schema.dropIndex('idx_slide_views_session').ifExists().execute();
   await db.schema.dropIndex('idx_view_sessions_active').ifExists().execute();
   await db.schema.dropIndex('idx_view_sessions_token').ifExists().execute();
   await db.schema.dropIndex('idx_view_sessions_device').ifExists().execute();
   await db.schema.dropIndex('idx_view_sessions_source').ifExists().execute();
-  await db.schema.dropIndex('idx_view_sessions_presentation_started').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_view_sessions_presentation_started')
+    .ifExists()
+    .execute();
 
   // Drop tables
   await db.schema.dropTable('analytics_reports').ifExists().execute();

@@ -21,7 +21,10 @@ export async function renderResetPassword(root, { nav } = {}) {
   const token = url.searchParams.get('token');
 
   if (!token) {
-    subtitle.textContent = t('resetPassword.invalidToken', 'This reset link is invalid or has expired.');
+    subtitle.textContent = t(
+      'resetPassword.invalidToken',
+      'This reset link is invalid or has expired.',
+    );
     const loginLink = h('a', {
       href: '/login',
       class: 'auth-link',
@@ -37,13 +40,22 @@ export async function renderResetPassword(root, { nav } = {}) {
 
   // Validate token
   try {
-    const res = await fetch(`/api/auth/reset-password/validate?token=${encodeURIComponent(token)}`);
+    const res = await fetch(
+      `/api/auth/reset-password/validate?token=${encodeURIComponent(token)}`,
+    );
     const data = await res.json();
 
     if (!data.ok) {
-      subtitle.textContent = data.reason === 'expired'
-        ? t('resetPassword.expiredToken', 'This reset link has expired. Please request a new one.')
-        : t('resetPassword.invalidToken', 'This reset link is invalid or has expired.');
+      subtitle.textContent =
+        data.reason === 'expired'
+          ? t(
+              'resetPassword.expiredToken',
+              'This reset link has expired. Please request a new one.',
+            )
+          : t(
+              'resetPassword.invalidToken',
+              'This reset link is invalid or has expired.',
+            );
 
       const forgotLink = h('a', {
         href: '/forgot-password',
@@ -61,7 +73,7 @@ export async function renderResetPassword(root, { nav } = {}) {
     // Token is valid - show password form
     subtitle.textContent = t(
       'resetPassword.resetFor',
-      'Resetting password for {email}'
+      'Resetting password for {email}',
     ).replace('{email}', data.maskedEmail);
 
     const password = h('input', {
@@ -95,13 +107,19 @@ export async function renderResetPassword(root, { nav } = {}) {
 
       // Validate
       if (pw.length < 8) {
-        status.textContent = t('resetPassword.passwordTooShort', 'Password must be at least 8 characters.');
+        status.textContent = t(
+          'resetPassword.passwordTooShort',
+          'Password must be at least 8 characters.',
+        );
         status.className = 'auth-status is-error';
         return;
       }
 
       if (pw !== pwConfirm) {
-        status.textContent = t('resetPassword.passwordMismatch', 'Passwords do not match.');
+        status.textContent = t(
+          'resetPassword.passwordMismatch',
+          'Passwords do not match.',
+        );
         status.className = 'auth-status is-error';
         return;
       }
@@ -120,7 +138,10 @@ export async function renderResetPassword(root, { nav } = {}) {
         form.innerHTML = '';
         const successMsg = h('div', {
           class: 'auth-status is-success',
-          text: t('resetPassword.success', 'Password has been reset successfully. You can now log in.'),
+          text: t(
+            'resetPassword.success',
+            'Password has been reset successfully. You can now log in.',
+          ),
         });
         successMsg.style.textAlign = 'left';
         successMsg.style.marginBottom = 'var(--ps-space-4)';
@@ -138,21 +159,31 @@ export async function renderResetPassword(root, { nav } = {}) {
 
         form.append(successMsg, loginLink);
       } catch (err) {
-        status.textContent = err.message || t('resetPassword.error', 'Something went wrong. Please try again.');
+        status.textContent =
+          err.message ||
+          t('resetPassword.error', 'Something went wrong. Please try again.');
         status.className = 'auth-status is-error';
         busyManager.setBusy(false);
       }
     };
 
     btn.onclick = submit;
-    password.addEventListener('keydown', (ev) => ev.key === 'Enter' && confirmPassword.focus());
-    confirmPassword.addEventListener('keydown', (ev) => ev.key === 'Enter' && submit());
+    password.addEventListener(
+      'keydown',
+      (ev) => ev.key === 'Enter' && confirmPassword.focus(),
+    );
+    confirmPassword.addEventListener(
+      'keydown',
+      (ev) => ev.key === 'Enter' && submit(),
+    );
 
     form.append(password, confirmPassword, btn, status);
     password.focus();
-
   } catch (err) {
-    subtitle.textContent = t('resetPassword.error', 'Something went wrong. Please try again.');
+    subtitle.textContent = t(
+      'resetPassword.error',
+      'Something went wrong. Please try again.',
+    );
     const loginLink = h('a', {
       href: '/login',
       class: 'auth-link',

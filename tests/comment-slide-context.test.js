@@ -51,7 +51,12 @@ describe('slideContextFor', () => {
 
 describe('buildSlideSnapshot', () => {
   it('copies id, type and content only', () => {
-    const snap = buildSlideSnapshot({ id: 's1', type: 'x', content: { a: 1 }, notes: 'secret' });
+    const snap = buildSlideSnapshot({
+      id: 's1',
+      type: 'x',
+      content: { a: 1 },
+      notes: 'secret',
+    });
     assert.deepEqual(snap, { id: 's1', type: 'x', content: { a: 1 } });
   });
 
@@ -87,21 +92,46 @@ describe('checkActorCommentAccess', () => {
   const OWNER = 'owner@example.com';
   const OTHER = 'other@example.com';
   const privateDeck = { id: 'p1', ownerEmail: OWNER, visibility: 'private' };
-  const organizationDeck = { id: 'w1', ownerEmail: OWNER, visibility: 'organization' };
+  const organizationDeck = {
+    id: 'w1',
+    ownerEmail: OWNER,
+    visibility: 'organization',
+  };
 
   it('owner and organization users can comment', () => {
-    assert.equal(checkActorCommentAccess({ pres: privateDeck, actor: { email: OWNER } }), true);
-    assert.equal(checkActorCommentAccess({ pres: organizationDeck, actor: { email: OTHER } }), true);
+    assert.equal(
+      checkActorCommentAccess({ pres: privateDeck, actor: { email: OWNER } }),
+      true,
+    );
+    assert.equal(
+      checkActorCommentAccess({
+        pres: organizationDeck,
+        actor: { email: OTHER },
+      }),
+      true,
+    );
   });
 
   it('outsiders cannot comment on private decks', () => {
-    assert.equal(checkActorCommentAccess({ pres: privateDeck, actor: { email: OTHER } }), false);
+    assert.equal(
+      checkActorCommentAccess({ pres: privateDeck, actor: { email: OTHER } }),
+      false,
+    );
   });
 
   it('comment/edit collaborators can, view collaborators cannot', () => {
     const base = { pres: privateDeck, actor: { email: OTHER } };
-    assert.equal(checkActorCommentAccess({ ...base, collaboratorPermission: 'comment' }), true);
-    assert.equal(checkActorCommentAccess({ ...base, collaboratorPermission: 'edit' }), true);
-    assert.equal(checkActorCommentAccess({ ...base, collaboratorPermission: 'view' }), false);
+    assert.equal(
+      checkActorCommentAccess({ ...base, collaboratorPermission: 'comment' }),
+      true,
+    );
+    assert.equal(
+      checkActorCommentAccess({ ...base, collaboratorPermission: 'edit' }),
+      true,
+    );
+    assert.equal(
+      checkActorCommentAccess({ ...base, collaboratorPermission: 'view' }),
+      false,
+    );
   });
 });

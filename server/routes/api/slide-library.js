@@ -41,7 +41,9 @@ function cleanThemeId(v) {
 }
 
 function actorEmail(authedUser) {
-  return String(authedUser?.email || '').trim().toLowerCase();
+  return String(authedUser?.email || '')
+    .trim()
+    .toLowerCase();
 }
 
 // GET /api/slide-library/usage - Per-user usage ("new to you" tracking):
@@ -58,7 +60,11 @@ async function handleUsageRecord({ storageScope, req, res, authedUser }) {
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const r = await recordSlideLibraryUsage(storageScope, actorEmail(authedUser), body?.items);
+  const r = await recordSlideLibraryUsage(
+    storageScope,
+    actorEmail(authedUser),
+    body?.items,
+  );
   serveJson(res, 200, { ok: true, recorded: r?.recorded || 0 });
   return true;
 }
@@ -71,7 +77,9 @@ async function handlePersonalList({ storageScope, res, url, authedUser }) {
   // Attach tags to each item
   if (Array.isArray(out?.items) && out.items.length > 0) {
     const ids = out.items.map((it) => it.id);
-    const tagsMap = await getTagsForSlideLibraryItems(storageScope, ids, { userEmail: email });
+    const tagsMap = await getTagsForSlideLibraryItems(storageScope, ids, {
+      userEmail: email,
+    });
     for (const item of out.items) {
       item.tags = tagsMap.get(item.id) || [];
     }
@@ -95,7 +103,10 @@ async function handlePersonalCreate({ storageScope, req, res, authedUser }) {
 }
 
 // PATCH /api/slide-library/personal/:id - Update a personal item
-async function handlePersonalUpdate({ storageScope, req, res, authedUser }, id) {
+async function handlePersonalUpdate(
+  { storageScope, req, res, authedUser },
+  id,
+) {
   const email = actorEmail(authedUser);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
@@ -103,14 +114,19 @@ async function handlePersonalUpdate({ storageScope, req, res, authedUser }, id) 
   const r = await updatePersonalLibraryItem(storageScope, email, id, body, {
     actorEmail: email,
   });
-  if (!r.ok) return r.reason === 'not_found' ? notFound(res) : badRequest(res, r.reason);
+  if (!r.ok)
+    return r.reason === 'not_found' ? notFound(res) : badRequest(res, r.reason);
   serveJson(res, 200, r.item);
   return true;
 }
 
 // DELETE /api/slide-library/personal/:id - Delete a personal item
 async function handlePersonalDelete({ storageScope, res, authedUser }, id) {
-  const r = await deletePersonalLibraryItem(storageScope, actorEmail(authedUser), id);
+  const r = await deletePersonalLibraryItem(
+    storageScope,
+    actorEmail(authedUser),
+    id,
+  );
   if (!r.ok) return notFound(res);
   serveJson(res, 200, { ok: true });
   return true;
@@ -120,11 +136,16 @@ async function handlePersonalDelete({ storageScope, res, authedUser }, id) {
 async function handleOrganizationList({ storageScope, res, url, authedUser }) {
   const email = actorEmail(authedUser);
   const themeId = cleanThemeId(url.searchParams.get('theme') || '');
-  const out = await listOrganizationLibrary(storageScope, { themeId, userEmail: email });
+  const out = await listOrganizationLibrary(storageScope, {
+    themeId,
+    userEmail: email,
+  });
   // Attach tags to each item
   if (Array.isArray(out?.items) && out.items.length > 0) {
     const ids = out.items.map((it) => it.id);
-    const tagsMap = await getTagsForSlideLibraryItems(storageScope, ids, { userEmail: email });
+    const tagsMap = await getTagsForSlideLibraryItems(storageScope, ids, {
+      userEmail: email,
+    });
     for (const item of out.items) {
       item.tags = tagsMap.get(item.id) || [];
     }
@@ -134,12 +155,20 @@ async function handleOrganizationList({ storageScope, res, url, authedUser }) {
 }
 
 // POST /api/slide-library/organization - Save a slide to the organization library
-async function handleOrganizationCreate({ repoRoot, storageScope, req, res, authedUser }) {
+async function handleOrganizationCreate({
+  repoRoot,
+  storageScope,
+  req,
+  res,
+  authedUser,
+}) {
   const email = actorEmail(authedUser);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const r = await createOrganizationLibraryItem(storageScope, body, { actorEmail: email });
+  const r = await createOrganizationLibraryItem(storageScope, body, {
+    actorEmail: email,
+  });
   if (!r.ok) return badRequest(res, r.reason);
 
   // Generate preview image for the slide library item
@@ -157,7 +186,7 @@ async function handleOrganizationCreate({ repoRoot, storageScope, req, res, auth
         repoRoot,
         mockSlide,
         theme,
-        `lib-${r.item.id}`
+        `lib-${r.item.id}`,
       );
     }
   } catch (err) {
@@ -180,7 +209,10 @@ async function handleOrganizationCreate({ repoRoot, storageScope, req, res, auth
 // Permission model:
 // - Favorites are per-user and always allowed for authed users.
 // - Trashing (soft delete) is restricted to admins or the creator.
-async function handleOrganizationUpdate({ storageScope, req, res, authedUser }, id) {
+async function handleOrganizationUpdate(
+  { storageScope, req, res, authedUser },
+  id,
+) {
   const email = actorEmail(authedUser);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
@@ -194,7 +226,10 @@ async function handleOrganizationUpdate({ storageScope, req, res, authedUser }, 
         // trash right across a rename. Falls back to the e-mail for items
         // whose creator has no users row.
         if (authedUser?.isAdmin) return true;
-        return matchesIdentity(authedUser, { userId: item?.createdById, email: item?.createdBy });
+        return matchesIdentity(authedUser, {
+          userId: item?.createdById,
+          email: item?.createdBy,
+        });
       },
     });
     if (!r.ok) {
@@ -206,8 +241,11 @@ async function handleOrganizationUpdate({ storageScope, req, res, authedUser }, 
     return true;
   }
 
-  const r = await updateOrganizationLibraryItem(storageScope, id, body, { actorEmail: email });
-  if (!r.ok) return r.reason === 'not_found' ? notFound(res) : badRequest(res, r.reason);
+  const r = await updateOrganizationLibraryItem(storageScope, id, body, {
+    actorEmail: email,
+  });
+  if (!r.ok)
+    return r.reason === 'not_found' ? notFound(res) : badRequest(res, r.reason);
   serveJson(res, 200, r.item);
   return true;
 }
@@ -221,7 +259,10 @@ async function handleOrganizationDelete({ storageScope, res, authedUser }, id) {
       // Id-first identity match (T10 PR F2), e-mail fallback for a creator
       // with no users row.
       if (authedUser?.isAdmin) return true;
-      return matchesIdentity(authedUser, { userId: item?.createdById, email: item?.createdBy });
+      return matchesIdentity(authedUser, {
+        userId: item?.createdById,
+        email: item?.createdBy,
+      });
     },
   });
   if (!r.ok) {
@@ -235,7 +276,9 @@ async function handleOrganizationDelete({ storageScope, res, authedUser }, id) {
 
 // GET /api/slide-library/personal/:id/tags | /api/slide-library/organization/:id/tags
 async function handleItemTagsGet({ storageScope, res, authedUser }, id) {
-  const tags = await getTagsForSlideLibraryItem(storageScope, id, { userEmail: actorEmail(authedUser) });
+  const tags = await getTagsForSlideLibraryItem(storageScope, id, {
+    userEmail: actorEmail(authedUser),
+  });
   serveJson(res, 200, tags);
   return true;
 }
@@ -251,7 +294,9 @@ async function handleItemTagsPut({ storageScope, req, res, authedUser }, id) {
   if (!Array.isArray(tagNames)) {
     return badRequest(res, 'Expected { tags: [...] }');
   }
-  const tags = await setTagsForSlideLibraryItem(storageScope, id, tagNames, { userEmail: actorEmail(authedUser) });
+  const tags = await setTagsForSlideLibraryItem(storageScope, id, tagNames, {
+    userEmail: actorEmail(authedUser),
+  });
   serveJson(res, 200, tags);
   return true;
 }
@@ -270,27 +315,104 @@ async function handleItemTagsPut({ storageScope, req, res, authedUser }, id) {
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'GET', pattern: '/api/slide-library/usage', handler: handleUsageList },
-  { method: 'POST', pattern: '/api/slide-library/usage', handler: handleUsageRecord },
-  { pattern: '/api/slide-library/usage', handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']) },
-  { method: 'GET', pattern: '/api/slide-library/personal', handler: handlePersonalList },
-  { method: 'POST', pattern: '/api/slide-library/personal', handler: handlePersonalCreate },
-  { pattern: '/api/slide-library/personal', handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']) },
-  { method: 'PATCH', pattern: /^\/api\/slide-library\/personal\/([^/]+)$/, handler: handlePersonalUpdate },
-  { method: 'DELETE', pattern: /^\/api\/slide-library\/personal\/([^/]+)$/, handler: handlePersonalDelete },
-  { pattern: /^\/api\/slide-library\/personal\/([^/]+)$/, handler: ({ res }) => methodNotAllowed(res, ['PATCH', 'DELETE']) },
-  { method: 'GET', pattern: '/api/slide-library/organization', handler: handleOrganizationList },
-  { method: 'POST', pattern: '/api/slide-library/organization', handler: handleOrganizationCreate },
-  { pattern: '/api/slide-library/organization', handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']) },
-  { method: 'PATCH', pattern: /^\/api\/slide-library\/organization\/([^/]+)$/, handler: handleOrganizationUpdate },
-  { method: 'DELETE', pattern: /^\/api\/slide-library\/organization\/([^/]+)$/, handler: handleOrganizationDelete },
-  { pattern: /^\/api\/slide-library\/organization\/([^/]+)$/, handler: ({ res }) => methodNotAllowed(res, ['PATCH', 'DELETE']) },
-  { method: 'GET', pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/, handler: handleItemTagsGet },
-  { method: 'PUT', pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/, handler: handleItemTagsPut },
-  { pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/, handler: ({ res }) => methodNotAllowed(res, ['GET', 'PUT']) },
-  { method: 'GET', pattern: /^\/api\/slide-library\/organization\/([^/]+)\/tags$/, handler: handleItemTagsGet },
-  { method: 'PUT', pattern: /^\/api\/slide-library\/organization\/([^/]+)\/tags$/, handler: handleItemTagsPut },
-  { pattern: /^\/api\/slide-library\/organization\/([^/]+)\/tags$/, handler: ({ res }) => methodNotAllowed(res, ['GET', 'PUT']) },
+  {
+    method: 'GET',
+    pattern: '/api/slide-library/usage',
+    handler: handleUsageList,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/slide-library/usage',
+    handler: handleUsageRecord,
+  },
+  {
+    pattern: '/api/slide-library/usage',
+    handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']),
+  },
+  {
+    method: 'GET',
+    pattern: '/api/slide-library/personal',
+    handler: handlePersonalList,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/slide-library/personal',
+    handler: handlePersonalCreate,
+  },
+  {
+    pattern: '/api/slide-library/personal',
+    handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']),
+  },
+  {
+    method: 'PATCH',
+    pattern: /^\/api\/slide-library\/personal\/([^/]+)$/,
+    handler: handlePersonalUpdate,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/slide-library\/personal\/([^/]+)$/,
+    handler: handlePersonalDelete,
+  },
+  {
+    pattern: /^\/api\/slide-library\/personal\/([^/]+)$/,
+    handler: ({ res }) => methodNotAllowed(res, ['PATCH', 'DELETE']),
+  },
+  {
+    method: 'GET',
+    pattern: '/api/slide-library/organization',
+    handler: handleOrganizationList,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/slide-library/organization',
+    handler: handleOrganizationCreate,
+  },
+  {
+    pattern: '/api/slide-library/organization',
+    handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']),
+  },
+  {
+    method: 'PATCH',
+    pattern: /^\/api\/slide-library\/organization\/([^/]+)$/,
+    handler: handleOrganizationUpdate,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/slide-library\/organization\/([^/]+)$/,
+    handler: handleOrganizationDelete,
+  },
+  {
+    pattern: /^\/api\/slide-library\/organization\/([^/]+)$/,
+    handler: ({ res }) => methodNotAllowed(res, ['PATCH', 'DELETE']),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/,
+    handler: handleItemTagsGet,
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/,
+    handler: handleItemTagsPut,
+  },
+  {
+    pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/,
+    handler: ({ res }) => methodNotAllowed(res, ['GET', 'PUT']),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/slide-library\/organization\/([^/]+)\/tags$/,
+    handler: handleItemTagsGet,
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/api\/slide-library\/organization\/([^/]+)\/tags$/,
+    handler: handleItemTagsPut,
+  },
+  {
+    pattern: /^\/api\/slide-library\/organization\/([^/]+)\/tags$/,
+    handler: ({ res }) => methodNotAllowed(res, ['GET', 'PUT']),
+  },
 ];
 
 /**

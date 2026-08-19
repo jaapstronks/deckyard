@@ -19,18 +19,18 @@ export const SUPPORTED_LANGS = ['nl', 'en-GB'];
  * Includes all 12 i18n languages from client/i18n/manifest.json.
  */
 export const TRANSLATION_LANGS = [
-  'nl',     // Dutch
-  'en-GB',  // British English
-  'de',     // German
-  'fr',     // French
-  'es',     // Spanish
-  'pt',     // Portuguese
-  'it',     // Italian
-  'pl',     // Polish
-  'fi',     // Finnish
-  'da',     // Danish
-  'sv',     // Swedish
-  'no',     // Norwegian
+  'nl', // Dutch
+  'en-GB', // British English
+  'de', // German
+  'fr', // French
+  'es', // Spanish
+  'pt', // Portuguese
+  'it', // Italian
+  'pl', // Polish
+  'fi', // Finnish
+  'da', // Danish
+  'sv', // Swedish
+  'no', // Norwegian
 ];
 
 export function translateKeysForSlideType(type) {
@@ -38,7 +38,8 @@ export function translateKeysForSlideType(type) {
   if (!def || !Array.isArray(def.fields)) return [];
   return def.fields
     .filter(
-      (f) => f && (f.type === 'string' || f.type === 'markdown' || f.type === 'csv')
+      (f) =>
+        f && (f.type === 'string' || f.type === 'markdown' || f.type === 'csv'),
     )
     .map((f) => f.key)
     .filter((k) => typeof k === 'string' && k.trim());
@@ -152,7 +153,7 @@ function missingTranslationCount(fromVer, toVer) {
   const tgtById = new Map(
     tgtSlides
       .filter((s) => s && typeof s === 'object' && typeof s.id === 'string')
-      .map((s) => [s.id, s])
+      .map((s) => [s.id, s]),
   );
 
   for (const src of srcSlides) {
@@ -236,7 +237,9 @@ export function normalizeI18n(pres) {
     v.slides = normalizeSlides(v.slides);
     // Normalize any existing follow-invite slides (set presentationId, strip
     // the stored language keys — the version's own language is the answer).
-    v.slides = normalizeFollowInviteSlides(v.slides, { presentationId: pres.id });
+    v.slides = normalizeFollowInviteSlides(v.slides, {
+      presentationId: pres.id,
+    });
   }
 
   // Track missing translation fields (computed, lightweight).
@@ -251,8 +254,10 @@ export function normalizeI18n(pres) {
       missingEnGbToNl: en && nl ? missingTranslationCount(en, nl) : null,
     };
     progress.hasIncomplete =
-      (typeof progress.missingNlToEnGb === 'number' && progress.missingNlToEnGb > 0) ||
-      (typeof progress.missingEnGbToNl === 'number' && progress.missingEnGbToNl > 0);
+      (typeof progress.missingNlToEnGb === 'number' &&
+        progress.missingNlToEnGb > 0) ||
+      (typeof progress.missingEnGbToNl === 'number' &&
+        progress.missingEnGbToNl > 0);
     i18n.progress = progress;
   } catch {
     // ignore

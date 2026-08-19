@@ -72,12 +72,27 @@ export default {
     },
   ],
   defaultsByLang: {
-    nl: { title: 'Sectietitel', subheading: '', layout: 'center', titleBlockAlign: 'left' },
-    'en-GB': { title: 'Chapter title', subheading: '', layout: 'center', titleBlockAlign: 'left' },
+    nl: {
+      title: 'Sectietitel',
+      subheading: '',
+      layout: 'center',
+      titleBlockAlign: 'left',
+    },
+    'en-GB': {
+      title: 'Chapter title',
+      subheading: '',
+      layout: 'center',
+      titleBlockAlign: 'left',
+    },
   },
   // Back-compat fallback. `titleBlockAlign` is listed so activeLayoutVariantId
   // resolves a tile as active on decks predating the field.
-  defaults: { title: 'Chapter title', subheading: '', layout: 'center', titleBlockAlign: 'left' },
+  defaults: {
+    title: 'Chapter title',
+    subheading: '',
+    layout: 'center',
+    titleBlockAlign: 'left',
+  },
   renderHtml: (content, slide) => {
     const vars = gradientVarsForSlide(slide?.id, 'chapter');
     const layout = LAYOUTS.includes(content?.layout)

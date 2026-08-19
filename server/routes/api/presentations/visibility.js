@@ -1,4 +1,7 @@
-import { getPresentation, updatePresentation } from '../../../storage/presentations/index.js';
+import {
+  getPresentation,
+  updatePresentation,
+} from '../../../storage/presentations/index.js';
 import {
   badRequest,
   methodNotAllowed,
@@ -8,14 +11,17 @@ import {
   jsonError,
   requireJsonBody,
 } from '../../../utils/http.js';
-import { canChangePresentationVisibility, isPresentationAuthor } from '../../../utils/presentation-authz.js';
+import {
+  canChangePresentationVisibility,
+  isPresentationAuthor,
+} from '../../../utils/presentation-authz.js';
 import { maybeFireWebhook } from '../../../utils/webhooks.js';
 import { parseIfMatchRevision } from './helpers.js';
 import { getOptionalBoolean } from '../../../utils/request-validators.js';
 
 export async function handlePresentationVisibility(
   { repoRoot, storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'PATCH') return methodNotAllowed(res, ['PATCH']);
   const existing = await getPresentation(storageScope, id);
@@ -29,10 +35,16 @@ export async function handlePresentationVisibility(
     body?.visibility === 'organization'
       ? 'organization'
       : body?.visibility === 'private'
-      ? 'private'
-      : null;
+        ? 'private'
+        : null;
   if (!nextVisibility) return badRequest(res, 'Invalid visibility');
-  if (!canChangePresentationVisibility({ user: authedUser, pres: existing, nextVisibility }))
+  if (
+    !canChangePresentationVisibility({
+      user: authedUser,
+      pres: existing,
+      nextVisibility,
+    })
+  )
     return unauthorized(res);
 
   // Handle isViewOnly flag (only when sharing to the organization)
@@ -45,7 +57,10 @@ export async function handlePresentationVisibility(
     }
     // View-only requires organization visibility
     if (isViewOnly && nextVisibility !== 'organization') {
-      return badRequest(res, 'View-only presentations must be visible to the organization');
+      return badRequest(
+        res,
+        'View-only presentations must be visible to the organization',
+      );
     }
     nextIsViewOnly = isViewOnly;
   }
@@ -60,7 +75,11 @@ export async function handlePresentationVisibility(
   if (expectedRevision == null)
     return jsonError(res, 428, 'missing_if_match', 'Missing If-Match revision');
 
-  const nextPres = { ...existing, visibility: nextVisibility, isViewOnly: nextIsViewOnly };
+  const nextPres = {
+    ...existing,
+    visibility: nextVisibility,
+    isViewOnly: nextIsViewOnly,
+  };
   // Optimistic-lock failures (ConflictError/LockedError from
   // updatePresentation) are AppErrors — the withErrorHandler wrapper on the
   // presentations dispatcher emits them through the canonical envelope.
@@ -71,7 +90,10 @@ export async function handlePresentationVisibility(
     allowViewOnlyChange: true,
   });
 
-  if (existing?.visibility !== 'organization' && updated?.visibility === 'organization') {
+  if (
+    existing?.visibility !== 'organization' &&
+    updated?.visibility === 'organization'
+  ) {
     await maybeFireWebhook(repoRoot, req, {
       event: 'presentation.moved_to_organization',
       pres: updated,

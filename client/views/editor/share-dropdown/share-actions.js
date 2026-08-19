@@ -21,7 +21,12 @@ export async function handleNotionPublish({ api, toast, pres }) {
   const slug = pres?.published?.slug || '';
 
   if (!notionPageId || !publishId) {
-    toast?.(t('editor.publish.notion.notAvailable', 'Notion publishing not available for this presentation.'));
+    toast?.(
+      t(
+        'editor.publish.notion.notAvailable',
+        'Notion publishing not available for this presentation.',
+      ),
+    );
     return;
   }
 
@@ -33,7 +38,7 @@ export async function handleNotionPublish({ api, toast, pres }) {
     title: t('editor.publish.notion', 'Add to Notion page'),
     message: t(
       'editor.publish.notion.confirm',
-      'Add presentation embed to the source Notion page?'
+      'Add presentation embed to the source Notion page?',
     ),
   });
   if (!confirmed) return;
@@ -43,9 +48,18 @@ export async function handleNotionPublish({ api, toast, pres }) {
       method: 'POST',
       body: JSON.stringify({ pageId: notionPageId, embedUrl, title, lang }),
     });
-    toast?.(result?.message || t('editor.publish.notion.success', 'Added to Notion page!'));
+    toast?.(
+      result?.message ||
+        t('editor.publish.notion.success', 'Added to Notion page!'),
+    );
   } catch (e) {
     const msg = e?.message || String(e);
-    toast?.(t('editor.publish.notion.failedWithReason', 'Failed to add to Notion: {reason}', { reason: msg }));
+    toast?.(
+      t(
+        'editor.publish.notion.failedWithReason',
+        'Failed to add to Notion: {reason}',
+        { reason: msg },
+      ),
+    );
   }
 }

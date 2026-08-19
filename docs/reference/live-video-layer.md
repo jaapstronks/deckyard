@@ -2,7 +2,7 @@
 
 A presentation can embed a live video stream (presenter webcam, event feed) as
 a **persistent overlay** that floats on top of the slides. The player lives in
-its own DOM layer (`.video-layer`) appended to the stage wrapper, *outside* the
+its own DOM layer (`.video-layer`) appended to the stage wrapper, _outside_ the
 slide container, so the stream keeps playing across slide transitions; only its
 position animates (CSS transition on `left`/`top`/`width`, 0.3s ease-out). This
 is distinct from the `video-slide` type, which embeds video as slide content
@@ -62,15 +62,15 @@ percentage-based `{ x, y, width }`; height follows from a fixed 16:9 aspect
 ratio (CSS `padding-bottom: 56.25%`). Unknown/missing presets fall back to
 `pip-top-right`.
 
-| Preset | x | y | width |
-|--------|----|----|-------|
-| `pip-top-right` | 72 | 4 | 25 |
-| `pip-top-left` | 3 | 4 | 25 |
-| `pip-bottom-right` | 72 | 58 | 25 |
-| `pip-bottom-left` | 3 | 58 | 25 |
-| `strip-top` | 0 | 0 | 100 |
-| `strip-bottom` | 0 | 75 | 100 |
-| `center` | 25 | 15 | 50 |
+| Preset             | x   | y   | width |
+| ------------------ | --- | --- | ----- |
+| `pip-top-right`    | 72  | 4   | 25    |
+| `pip-top-left`     | 3   | 4   | 25    |
+| `pip-bottom-right` | 72  | 58  | 25    |
+| `pip-bottom-left`  | 3   | 58  | 25    |
+| `strip-top`        | 0   | 0   | 100   |
+| `strip-bottom`     | 0   | 75  | 100   |
+| `center`           | 25  | 15  | 50    |
 
 ## Providers and playback
 
@@ -78,15 +78,15 @@ Detection (`detectStreamProvider`) checks `.m3u8`/`.mpd` extensions first,
 then hostname patterns. `buildEmbedUrl` turns the pasted URL into either an
 iframe embed URL (with autoplay+mute params baked in) or a raw stream URL.
 
-| Provider | Detected from | Player |
-|----------|---------------|--------|
-| `youtube` | youtube.com / youtu.be / youtube-nocookie.com | iframe (`youtube-nocookie.com/embed/<id>`) |
-| `vimeo` | vimeo.com | iframe (`player.vimeo.com/video/<id>`) |
-| `bunny` | mediadelivery.net / video.bunnycdn.com | iframe (`iframe.mediadelivery.net/embed/<lib>/<id>`) |
-| `cloudflare` | cloudflarestream.com / videodelivery.net | iframe (`iframe.videodelivery.net/<id>`) |
-| `mux` | mux.com / mux.dev | `<video>` + hls.js (rewritten to `stream.mux.com/<id>.m3u8`) |
-| `hls` | any `.m3u8` URL | `<video>`; native HLS on Safari, else hls.js |
-| `dash` | any `.mpd` URL | `<video>` with plain `src` (dash.js deferred; only works where natively supported) |
+| Provider     | Detected from                                 | Player                                                                             |
+| ------------ | --------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `youtube`    | youtube.com / youtu.be / youtube-nocookie.com | iframe (`youtube-nocookie.com/embed/<id>`)                                         |
+| `vimeo`      | vimeo.com                                     | iframe (`player.vimeo.com/video/<id>`)                                             |
+| `bunny`      | mediadelivery.net / video.bunnycdn.com        | iframe (`iframe.mediadelivery.net/embed/<lib>/<id>`)                               |
+| `cloudflare` | cloudflarestream.com / videodelivery.net      | iframe (`iframe.videodelivery.net/<id>`)                                           |
+| `mux`        | mux.com / mux.dev                             | `<video>` + hls.js (rewritten to `stream.mux.com/<id>.m3u8`)                       |
+| `hls`        | any `.m3u8` URL                               | `<video>`; native HLS on Safari, else hls.js                                       |
+| `dash`       | any `.mpd` URL                                | `<video>` with plain `src` (dash.js deferred; only works where natively supported) |
 
 hls.js is **not an npm dependency**: `client/lib/slide-runtime/ensure-hls.js` lazy-loads
 `hls.js@1` from the jsdelivr CDN (promise-cached) only when a non-Safari
@@ -104,12 +104,12 @@ iframes it reloads the iframe with the mute param stripped
 Below 768px viewport width, CSS (`72-video-layer.css`) overrides the JS-applied
 position via `data-mobile-position` on `.video-layer`:
 
-| `mobilePosition` | Behaviour |
-|------------------|-----------|
-| `bottom` (default) | Fixed to bottom, full width (height from 16:9 ratio) |
-| `top` | Fixed to top, full width |
-| `hidden` | `display: none` on mobile |
-| `pip` | Fixed bottom-right corner, 40% width clamped to 140–200px |
+| `mobilePosition`   | Behaviour                                                 |
+| ------------------ | --------------------------------------------------------- |
+| `bottom` (default) | Fixed to bottom, full width (height from 16:9 ratio)      |
+| `top`              | Fixed to top, full width                                  |
+| `hidden`           | `display: none` on mobile                                 |
+| `pip`              | Fixed bottom-right corner, 40% width clamped to 140–200px |
 
 Position transitions are disabled on mobile.
 
@@ -126,20 +126,20 @@ getCurrentSlide })`, with `setConfig(pres.settings.liveVideo)` on load and
   `liveVideo.enabled && streamUrl`.
 
 The **present window** (`client/views/present-window.js`, the projection
-window in two-window mode) does *not* mount the layer, and the editor canvas
+window in two-window mode) does _not_ mount the layer, and the editor canvas
 shows no video.
 
 ## Files involved
 
-| File | Role |
-|------|------|
-| `shared/video-stream-providers.js` | Provider detection, embed-URL builders, position presets, `resolvePosition` (shared, but currently client-only consumers) |
-| `client/lib/slide-runtime/video-layer.js` | `createVideoLayer` factory: DOM scaffold, player build/teardown, unmute, positioning |
-| `client/lib/slide-runtime/ensure-hls.js` | Lazy CDN loader for hls.js |
-| `client/styles/base/04-editor-and-misc/72-video-layer.css` | Layer positioning, transitions, mobile docks, error/unmute styling |
-| `shared/slide-types/presentation.js` | `settings.liveVideo` defaults on new presentations |
-| `client/views/editor/modals/settings-modal.js` | Settings normalization + "Live Video" section UI |
-| `client/views/presenter.js`, `client/views/follow.js`, `client/views/share-viewer.js` | Mount points |
+| File                                                                                  | Role                                                                                                                      |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `shared/video-stream-providers.js`                                                    | Provider detection, embed-URL builders, position presets, `resolvePosition` (shared, but currently client-only consumers) |
+| `client/lib/slide-runtime/video-layer.js`                                             | `createVideoLayer` factory: DOM scaffold, player build/teardown, unmute, positioning                                      |
+| `client/lib/slide-runtime/ensure-hls.js`                                              | Lazy CDN loader for hls.js                                                                                                |
+| `client/styles/base/04-editor-and-misc/72-video-layer.css`                            | Layer positioning, transitions, mobile docks, error/unmute styling                                                        |
+| `shared/slide-types/presentation.js`                                                  | `settings.liveVideo` defaults on new presentations                                                                        |
+| `client/views/editor/modals/settings-modal.js`                                        | Settings normalization + "Live Video" section UI                                                                          |
+| `client/views/presenter.js`, `client/views/follow.js`, `client/views/share-viewer.js` | Mount points                                                                                                              |
 
 ## Not built (boundary notes)
 

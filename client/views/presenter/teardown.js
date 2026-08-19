@@ -45,9 +45,7 @@ export function createPresenterTeardown({
   return () => {
     animator.cancel();
     try {
-      const section =
-        stage?.querySelector?.('.deck-slide.is-active') ||
-        null;
+      const section = stage?.querySelector?.('.deck-slide.is-active') || null;
       if (section) pauseVideoEmbeds(section);
     } catch {}
     cleanupSlideRuntimes(stage);
@@ -60,15 +58,9 @@ export function createPresenterTeardown({
     try {
       detachSwipe?.();
     } catch {}
-    document.removeEventListener(
-      'fullscreenchange',
-      syncFullscreenClass
-    );
-    document.documentElement.classList.remove(
-      'is-fullscreen'
-    );
-    if (typeof closeSessionEvents === 'function')
-      closeSessionEvents();
+    document.removeEventListener('fullscreenchange', syncFullscreenClass);
+    document.documentElement.classList.remove('is-fullscreen');
+    if (typeof closeSessionEvents === 'function') closeSessionEvents();
     // Null the captured handle so a double unmount doesn't re-close the
     // session — mirrors the original inline teardown's guard.
     closeSessionEvents = null;
@@ -110,9 +102,7 @@ export function createPresenterTeardown({
     }
     if (document.fullscreenElement) {
       try {
-        const p =
-          document.exitFullscreen &&
-          document.exitFullscreen();
+        const p = document.exitFullscreen && document.exitFullscreen();
         if (p?.catch) p.catch(() => {});
       } catch {}
     }

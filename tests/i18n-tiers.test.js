@@ -17,7 +17,10 @@ import { fileURLToPath } from 'node:url';
 
 import { LOCALES, TIER_1, TIER_2, tierOf } from '../scripts/i18n-tiers.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const i18nDir = path.join(repoRoot, 'client', 'i18n');
 
 test('every shipped locale declares a tier of 1 or 2', () => {
@@ -25,7 +28,7 @@ test('every shipped locale declares a tier of 1 or 2', () => {
     assert.ok(
       l.tier === 1 || l.tier === 2,
       `locale "${l.id}" has tier ${JSON.stringify(l.tier)} — must be 1 or 2 ` +
-        `(client/i18n/manifest.json)`
+        `(client/i18n/manifest.json)`,
     );
   }
 });
@@ -48,7 +51,7 @@ test('every shipped locale has a translation directory', () => {
     const dir = path.join(i18nDir, l.id);
     assert.ok(
       fs.existsSync(dir) && fs.statSync(dir).isDirectory(),
-      `locale "${l.id}" is in the manifest but client/i18n/${l.id}/ is missing`
+      `locale "${l.id}" is in the manifest but client/i18n/${l.id}/ is missing`,
     );
   }
 });

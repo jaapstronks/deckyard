@@ -30,13 +30,19 @@ globalThis.MouseEvent = dom.window.MouseEvent;
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const { h } = await import('../client/lib/dom.js');
-const { createTimelineChart } = await import('../client/views/analytics/timeline-chart.js');
-const { createVisibilityToggle } = await import('../client/views/editor/slide-visibility-menu.js');
+const { createTimelineChart } =
+  await import('../client/views/analytics/timeline-chart.js');
+const { createVisibilityToggle } =
+  await import('../client/views/editor/slide-visibility-menu.js');
 const { applyVisibilityPreset } = await import('../shared/slide-visibility.js');
 
 test('visibility toggle renders an SVG eye icon in the SVG namespace', () => {
   const visibleSlide = {};
-  const button = createVisibilityToggle({ h, slide: visibleSlide, onToggle: () => {} });
+  const button = createVisibilityToggle({
+    h,
+    slide: visibleSlide,
+    onToggle: () => {},
+  });
 
   const svg = button.querySelector('svg');
   assert.ok(svg, 'toggle contains an <svg>');
@@ -48,20 +54,28 @@ test('visibility toggle renders an SVG eye icon in the SVG namespace', () => {
   const circle = svg.querySelector('circle');
   assert.ok(circle, 'visible state draws the eye circle');
   assert.equal(circle.namespaceURI, SVG_NS);
-  assert.equal(svg.querySelector('line'), null, 'no eye-off strike when visible');
+  assert.equal(
+    svg.querySelector('line'),
+    null,
+    'no eye-off strike when visible',
+  );
 });
 
 test('visibility toggle swaps to the eye-off (line) icon when hidden', () => {
   const hiddenSlide = {};
   applyVisibilityPreset(hiddenSlide, 'hidden');
-  const button = createVisibilityToggle({ h, slide: hiddenSlide, onToggle: () => {} });
+  const button = createVisibilityToggle({
+    h,
+    slide: hiddenSlide,
+    onToggle: () => {},
+  });
 
   const svg = button.querySelector('svg');
   assert.ok(svg.querySelector('line'), 'hidden state draws the eye-off strike');
   assert.equal(svg.querySelector('circle'), null, 'no eye circle when hidden');
   assert.ok(
     button.classList.contains('is-visibility-restricted'),
-    'button flags the restricted state'
+    'button flags the restricted state',
   );
 });
 
@@ -102,7 +116,11 @@ test('timeline chart bar hover wires the tooltip handler through h()', () => {
 
   const bar = el.querySelector('rect.analytics-chart-bar');
   bar.dispatchEvent(new MouseEvent('mouseenter'));
-  assert.equal(tooltip.style.display, 'block', 'mouseenter (onmouseenter) shows the tooltip');
+  assert.equal(
+    tooltip.style.display,
+    'block',
+    'mouseenter (onmouseenter) shows the tooltip',
+  );
 
   bar.dispatchEvent(new MouseEvent('mouseleave'));
   assert.equal(tooltip.style.display, 'none', 'mouseleave hides it again');
@@ -111,5 +129,8 @@ test('timeline chart bar hover wires the tooltip handler through h()', () => {
 test('timeline chart shows the empty state (no SVG) for no data', () => {
   const { el } = createTimelineChart({ h, data: [] });
   assert.equal(el.querySelector('svg'), null, 'no chart drawn');
-  assert.ok(el.querySelector('.analytics-empty-state'), 'empty state shown instead');
+  assert.ok(
+    el.querySelector('.analytics-empty-state'),
+    'empty state shown instead',
+  );
 });

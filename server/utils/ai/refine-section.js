@@ -44,7 +44,7 @@ export async function refineSectionWithAi(
     vendor = null,
     disabledSlideTypes = [],
     customSlideTypes = [],
-  } = {}
+  } = {},
 ) {
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
 
@@ -58,8 +58,8 @@ export async function refineSectionWithAi(
     requestedLang === 'nl'
       ? 'DUTCH'
       : requestedLang === 'en-GB'
-      ? 'ENGLISH (UK)'
-      : 'the same language as the existing slides';
+        ? 'ENGLISH (UK)'
+        : 'the same language as the existing slides';
 
   const deckSummary = summarizeDeckForPrompt(presentationToDeck(presentation), {
     maxSlides: 60,
@@ -98,11 +98,17 @@ export async function refineSectionWithAi(
     // The raw response rides along as a field for logging, never the envelope.
     throw new LlmError(
       `${resolvedVendor} did not return a valid revised section ({ slides: [...] }).`,
-      { statusCode: 502, vendor: resolvedVendor, response: content, phase: 'refine-section' }
+      {
+        statusCode: 502,
+        vendor: resolvedVendor,
+        response: content,
+        phase: 'refine-section',
+      },
     );
   }
 
-  const rationale = typeof obj?.rationale === 'string' ? obj.rationale.trim() : '';
+  const rationale =
+    typeof obj?.rationale === 'string' ? obj.rationale.trim() : '';
   const review = revised.map((s) => ({
     why: typeof s?.why === 'string' ? s.why.trim() : '',
   }));

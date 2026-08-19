@@ -11,12 +11,15 @@
 
 /** @type {Object} InlineDescriptor for lead-capture-slide. */
 export const inlineEdit = {
-    ghosts: [
-      { field: 'description', anchors: [{ sel: '.lead-capture-header', pos: 'append' }] },
-    ],
-    // Thank-you / privacy fields render only post-submit → stay in the form.
-    formText: ['title', 'description', 'nameLabel', 'emailLabel', 'submitLabel'],
-  };
+  ghosts: [
+    {
+      field: 'description',
+      anchors: [{ sel: '.lead-capture-header', pos: 'append' }],
+    },
+  ],
+  // Thank-you / privacy fields render only post-submit → stay in the form.
+  formText: ['title', 'description', 'nameLabel', 'emailLabel', 'submitLabel'],
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the
@@ -26,4 +29,9 @@ export const inlineEdit = {
  * config texts, were bulk-only (audit 2026-07-21).
  * @type {string[]}
  */
-export const inspectorKeeps = ['thankYouTitle', 'thankYouMessage', 'privacyText', 'privacyUrl'];
+export const inspectorKeeps = [
+  'thankYouTitle',
+  'thankYouMessage',
+  'privacyText',
+  'privacyUrl',
+];

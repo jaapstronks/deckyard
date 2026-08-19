@@ -25,23 +25,28 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { maybeAttachCollab, shutdownCollab } = await import('../server/collab/mount.js');
-const { createPresentation, getPresentation } = await import(
-  '../server/storage/presentations/index.js'
-);
-const { createPresenceSession } = await import('../client/lib/collab/presence-session.js');
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { maybeAttachCollab, shutdownCollab } =
+  await import('../server/collab/mount.js');
+const { createPresentation, getPresentation } =
+  await import('../server/storage/presentations/index.js');
+const { createPresenceSession } =
+  await import('../client/lib/collab/presence-session.js');
 const { Y } = await import('../client/vendor/collab.js');
 const { createDeckYdocCodec } = await import('../shared/collab/deck-ydoc.js');
-const { createLiveDocBinder } = await import('../client/lib/collab/live-doc-binder.js');
+const { createLiveDocBinder } =
+  await import('../client/lib/collab/live-doc-binder.js');
 
 // The mount still takes a `repoRoot`; storage ignores it now that PostgreSQL
 // is the only backend.
 const REPO_ROOT = process.cwd();
 
-__setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+__setTestDb(
+  createFakeDb({
+    organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+  }),
+);
 await initializeStorage();
 
 // `closeStorage()` would call `db.destroy()`, which the in-memory double does
@@ -115,44 +120,58 @@ test('editor binder: two clients over a live mount', async (t) => {
   const firstId = a.pres.slides[0].id;
   const listId = crypto.randomUUID();
 
-  await t.test('a field edit propagates and keeps slide object identity', async () => {
-    const bSlideRef = b.pres.slides.find((s) => s.id === firstId);
-    a.pres.slides[0].content.title = 'Hallo van Alice';
-    a.binder.syncLocal();
-    await waitFor(
-      () => b.pres.slides.find((s) => s.id === firstId)?.content?.title === 'Hallo van Alice'
-    );
-    // The form's onChange closures hold the slide object — identity must survive.
-    assert.equal(b.pres.slides.find((s) => s.id === firstId), bSlideRef);
-    const ev = b.remoteEvents.find((e) => e.changedSlideIds.has(firstId));
-    assert.ok(ev, 'onRemoteApplied should report the changed slide');
-  });
+  await t.test(
+    'a field edit propagates and keeps slide object identity',
+    async () => {
+      const bSlideRef = b.pres.slides.find((s) => s.id === firstId);
+      a.pres.slides[0].content.title = 'Hallo van Alice';
+      a.binder.syncLocal();
+      await waitFor(
+        () =>
+          b.pres.slides.find((s) => s.id === firstId)?.content?.title ===
+          'Hallo van Alice',
+      );
+      // The form's onChange closures hold the slide object — identity must survive.
+      assert.equal(
+        b.pres.slides.find((s) => s.id === firstId),
+        bSlideRef,
+      );
+      const ev = b.remoteEvents.find((e) => e.changedSlideIds.has(firstId));
+      assert.ok(ev, 'onRemoteApplied should report the changed slide');
+    },
+  );
 
-  await t.test('concurrent edits in different fields both survive', async () => {
-    a.pres.slides[0].notes = 'Notitie van Alice';
-    b.pres.slides[0].content.title = 'Titel van Bob';
-    a.binder.syncLocal();
-    b.binder.syncLocal();
-    await waitFor(
-      () =>
-        a.pres.slides[0].content.title === 'Titel van Bob' &&
-        b.pres.slides[0].notes === 'Notitie van Alice'
-    );
-  });
+  await t.test(
+    'concurrent edits in different fields both survive',
+    async () => {
+      a.pres.slides[0].notes = 'Notitie van Alice';
+      b.pres.slides[0].content.title = 'Titel van Bob';
+      a.binder.syncLocal();
+      b.binder.syncLocal();
+      await waitFor(
+        () =>
+          a.pres.slides[0].content.title === 'Titel van Bob' &&
+          b.pres.slides[0].notes === 'Notitie van Alice',
+      );
+    },
+  );
 
-  await t.test('same-field concurrent typing merges at character level', async () => {
-    const base = a.pres.slides[0].content.title;
-    assert.equal(b.pres.slides[0].content.title, base);
-    a.pres.slides[0].content.title = `Links ${base}`;
-    b.pres.slides[0].content.title = `${base} rechts`;
-    a.binder.syncLocal();
-    b.binder.syncLocal();
-    await waitFor(
-      () =>
-        a.pres.slides[0].content.title === `Links ${base} rechts` &&
-        b.pres.slides[0].content.title === `Links ${base} rechts`
-    );
-  });
+  await t.test(
+    'same-field concurrent typing merges at character level',
+    async () => {
+      const base = a.pres.slides[0].content.title;
+      assert.equal(b.pres.slides[0].content.title, base);
+      a.pres.slides[0].content.title = `Links ${base}`;
+      b.pres.slides[0].content.title = `${base} rechts`;
+      a.binder.syncLocal();
+      b.binder.syncLocal();
+      await waitFor(
+        () =>
+          a.pres.slides[0].content.title === `Links ${base} rechts` &&
+          b.pres.slides[0].content.title === `Links ${base} rechts`,
+      );
+    },
+  );
 
   await t.test('adding a slide propagates with projected content', async () => {
     a.pres.slides.push({
@@ -173,46 +192,54 @@ test('editor binder: two clients over a live mount', async (t) => {
     assert.equal(got.content.title, 'Lijstje');
     assert.deepEqual(
       got.content.items.map((i) => i.title),
-      ['Een', 'Twee']
+      ['Een', 'Twee'],
     );
   });
 
-  await t.test('concurrent item edits on different items both survive', async () => {
-    const ai = a.pres.slides.find((s) => s.id === listId);
-    const bi = b.pres.slides.find((s) => s.id === listId);
-    ai.content.items = ai.content.items.map((it, i) =>
-      i === 0 ? { ...it, text: 'door Alice' } : it
-    );
-    bi.content.items = bi.content.items.map((it, i) =>
-      i === 1 ? { ...it, text: 'door Bob' } : it
-    );
-    a.binder.syncLocal();
-    b.binder.syncLocal();
-    await waitFor(() => {
-      const itemsA = a.pres.slides.find((s) => s.id === listId).content.items;
-      const itemsB = b.pres.slides.find((s) => s.id === listId).content.items;
-      return (
-        itemsA[0].text === 'door Alice' &&
-        itemsA[1].text === 'door Bob' &&
-        itemsB[0].text === 'door Alice' &&
-        itemsB[1].text === 'door Bob'
+  await t.test(
+    'concurrent item edits on different items both survive',
+    async () => {
+      const ai = a.pres.slides.find((s) => s.id === listId);
+      const bi = b.pres.slides.find((s) => s.id === listId);
+      ai.content.items = ai.content.items.map((it, i) =>
+        i === 0 ? { ...it, text: 'door Alice' } : it,
       );
-    });
-  });
+      bi.content.items = bi.content.items.map((it, i) =>
+        i === 1 ? { ...it, text: 'door Bob' } : it,
+      );
+      a.binder.syncLocal();
+      b.binder.syncLocal();
+      await waitFor(() => {
+        const itemsA = a.pres.slides.find((s) => s.id === listId).content.items;
+        const itemsB = b.pres.slides.find((s) => s.id === listId).content.items;
+        return (
+          itemsA[0].text === 'door Alice' &&
+          itemsA[1].text === 'door Bob' &&
+          itemsB[0].text === 'door Alice' &&
+          itemsB[1].text === 'door Bob'
+        );
+      });
+    },
+  );
 
   await t.test('adding and removing items converges', async () => {
     const ai = a.pres.slides.find((s) => s.id === listId);
     ai.content.items = [...ai.content.items, { title: 'Drie', text: 'derde' }];
     a.binder.syncLocal();
     await waitFor(
-      () => b.pres.slides.find((s) => s.id === listId).content.items.length === 3
+      () =>
+        b.pres.slides.find((s) => s.id === listId).content.items.length === 3,
     );
     const bi = b.pres.slides.find((s) => s.id === listId);
     bi.content.items = bi.content.items.filter((_, i) => i !== 0);
     b.binder.syncLocal();
     await waitFor(() => {
       const itemsA = a.pres.slides.find((s) => s.id === listId).content.items;
-      return itemsA.length === 2 && itemsA[0].title === 'Twee' && itemsA[1].title === 'Drie';
+      return (
+        itemsA.length === 2 &&
+        itemsA[0].title === 'Twee' &&
+        itemsA[1].title === 'Drie'
+      );
     });
   });
 
@@ -224,11 +251,13 @@ test('editor binder: two clients over a live mount', async (t) => {
     a.pres.slides.unshift(moved);
     a.binder.syncLocal();
     await waitFor(
-      () => b.pres.slides[0]?.id === moved.id && b.pres.slides.length === ids.length
+      () =>
+        b.pres.slides[0]?.id === moved.id &&
+        b.pres.slides.length === ids.length,
     );
     assert.deepEqual(
       b.pres.slides.map((s) => s.id),
-      a.pres.slides.map((s) => s.id)
+      a.pres.slides.map((s) => s.id),
     );
     assert.equal(b.pres.slides[0].content.title, moved.content.title);
   });
@@ -252,7 +281,7 @@ test('editor binder: two clients over a live mount', async (t) => {
     await waitFor(
       () =>
         a.pres.slides[0].notes === 'Bob blijft staan' &&
-        b.pres.slides[0].content.title === 'Alice undo-test'
+        b.pres.slides[0].content.title === 'Alice undo-test',
     );
 
     assert.ok(a.binder.canUndo());
@@ -260,7 +289,7 @@ test('editor binder: two clients over a live mount', async (t) => {
     await waitFor(
       () =>
         a.pres.slides[0].content.title === before &&
-        b.pres.slides[0].content.title === before
+        b.pres.slides[0].content.title === before,
     );
     // Bob's concurrent edit is untouched by Alice's undo.
     assert.equal(a.pres.slides[0].notes, 'Bob blijft staan');
@@ -284,13 +313,14 @@ test('editor binder: two clients over a live mount', async (t) => {
       () =>
         a.pres.slides.length === countBefore &&
         b.pres.slides.length === countBefore &&
-        b.pres.slides.some((s) => s.id === removed.id)
+        b.pres.slides.some((s) => s.id === removed.id),
     );
   });
 
   await t.test('adding a language version + projectLanguage', async () => {
     await sleep(500);
-    a.pres.i18n = a.pres.i18n && typeof a.pres.i18n === 'object' ? a.pres.i18n : {};
+    a.pres.i18n =
+      a.pres.i18n && typeof a.pres.i18n === 'object' ? a.pres.i18n : {};
     a.pres.i18n.active = 'nl';
     a.pres.i18n.dominant = 'nl';
     a.pres.i18n.versions = a.pres.i18n.versions || {};
@@ -305,7 +335,7 @@ test('editor binder: two clients over a live mount', async (t) => {
     // Same structure, untranslated texts project as empty strings.
     assert.deepEqual(
       projected.slides.map((s) => s.id),
-      a.pres.slides.map((s) => s.id)
+      a.pres.slides.map((s) => s.id),
     );
     assert.equal(projected.slides[0].content.title, '');
     assert.equal(projected.i18n?.versions?.['en-GB']?.title, 'Our binder deck');
@@ -328,12 +358,21 @@ test('editor binder: two clients over a live mount', async (t) => {
     assert.notEqual(b.pres.slides[0].content.title, 'English title');
   });
 
-  await t.test('the debounced store persists the converged deck JSON', async () => {
-    const p = await waitFor(async () => {
-      const cur = await getPresentation(testScope(), stored.id);
-      return cur?.title === 'Onze binder-deck' && cur?.i18n?.versions?.['en-GB'] ? cur : null;
-    });
-    assert.ok(p.slides.some((s) => s.id === listId));
-    assert.equal(p.i18n.versions['en-GB'].slides[0]?.content?.title, 'English title');
-  });
+  await t.test(
+    'the debounced store persists the converged deck JSON',
+    async () => {
+      const p = await waitFor(async () => {
+        const cur = await getPresentation(testScope(), stored.id);
+        return cur?.title === 'Onze binder-deck' &&
+          cur?.i18n?.versions?.['en-GB']
+          ? cur
+          : null;
+      });
+      assert.ok(p.slides.some((s) => s.id === listId));
+      assert.equal(
+        p.i18n.versions['en-GB'].slides[0]?.content?.title,
+        'English title',
+      );
+    },
+  );
 });

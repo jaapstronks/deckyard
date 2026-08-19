@@ -30,7 +30,7 @@ export function renderCommentBodyNodes(body, h) {
           class: 'comment-mention-chip',
           title: seg.email,
           text: `@${seg.name}`,
-        })
+        }),
       );
     } else if (seg.type === 'link') {
       // The URL is already scheme-checked by the parser (`safeLinkUrl`), so an
@@ -43,7 +43,7 @@ export function renderCommentBodyNodes(body, h) {
           rel: 'noopener noreferrer nofollow',
           title: seg.url,
           text: seg.label,
-        })
+        }),
       );
     } else {
       nodes.push(seg.text);

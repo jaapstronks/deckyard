@@ -25,7 +25,8 @@ async function main() {
   let only = null;
   let force = false;
   for (let i = 0; i < argv.length; i += 1) {
-    if (argv[i] === '--cases') only = argv[(i += 1)].split(',').map((s) => s.trim());
+    if (argv[i] === '--cases')
+      only = argv[(i += 1)].split(',').map((s) => s.trim());
     else if (argv[i] === '--force') force = true;
   }
 
@@ -61,7 +62,7 @@ async function main() {
         const text = await toText(bytes, asset, originalPath);
         await fs.writeFile(textPath, text);
         console.log(
-          `  ✓ ${asset.file} — ${formatBytes(bytes.length)} → ${countWords(text)} words`
+          `  ✓ ${asset.file} — ${formatBytes(bytes.length)} → ${countWords(text)} words`,
         );
       } catch (err) {
         failures += 1;
@@ -71,7 +72,9 @@ async function main() {
   }
 
   if (failures) {
-    console.error(`\n${failures} asset(s) failed. Fix the URLs in case.json and re-run.`);
+    console.error(
+      `\n${failures} asset(s) failed. Fix the URLs in case.json and re-run.`,
+    );
     process.exitCode = 1;
   } else {
     console.log('\nAll assets fetched.');
@@ -87,14 +90,20 @@ async function download(url, expectedType) {
     headers: { 'user-agent': USER_AGENT, accept: '*/*' },
     redirect: 'follow',
   });
-  if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+  if (!response.ok)
+    throw new Error(`HTTP ${response.status} ${response.statusText}`);
   const bytes = Buffer.from(await response.arrayBuffer());
 
   // Several publisher CDNs answer missing files with 200 + an HTML error page.
   // Status alone would let that be cached as a "PDF", so verify the payload.
-  if (expectedType === 'pdf' && !bytes.subarray(0, 5).toString('latin1').startsWith('%PDF')) {
+  if (
+    expectedType === 'pdf' &&
+    !bytes.subarray(0, 5).toString('latin1').startsWith('%PDF')
+  ) {
     const contentType = response.headers.get('content-type') || 'unknown';
-    throw new Error(`expected a PDF but got ${contentType} (likely a soft 404)`);
+    throw new Error(
+      `expected a PDF but got ${contentType} (likely a soft 404)`,
+    );
   }
   return bytes;
 }
@@ -112,12 +121,15 @@ async function toText(bytes, asset, originalPath) {
 
   if (type === 'pdf') {
     // Reuse the app's own PDF parser rather than a second pdf-parse binding.
-    const { parsePdf } = await import('../../server/utils/convert-file/pdf-parser.js');
+    const { parsePdf } =
+      await import('../../server/utils/convert-file/pdf-parser.js');
     const parsed = await parsePdf(bytes);
     if (!parsed.slides.length) {
       throw new Error(parsed.errors.join('; ') || 'no text extracted');
     }
-    return cleanText(parsed.slides.map((page) => page.textContent).join('\n\n'));
+    return cleanText(
+      parsed.slides.map((page) => page.textContent).join('\n\n'),
+    );
   }
 
   if (type === 'html') {
@@ -132,7 +144,9 @@ async function toText(bytes, asset, originalPath) {
     return cleanText(bytes.toString('utf8'));
   }
 
-  throw new Error(`Unsupported asset type "${asset.type}" for ${path.basename(originalPath)}`);
+  throw new Error(
+    `Unsupported asset type "${asset.type}" for ${path.basename(originalPath)}`,
+  );
 }
 
 /**
@@ -158,8 +172,11 @@ function htmlToText(html) {
       .replace(/<\/(p|div|section|article|li|h[1-6]|tr|blockquote)>/gi, '\n')
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<li[^>]*>/gi, '- ')
-      .replace(/<h([1-6])[^>]*>/gi, (_, level) => `\n${'#'.repeat(Number(level))} `)
-      .replace(/<[^>]+>/g, ' ')
+      .replace(
+        /<h([1-6])[^>]*>/gi,
+        (_, level) => `\n${'#'.repeat(Number(level))} `,
+      )
+      .replace(/<[^>]+>/g, ' '),
   );
 }
 
@@ -183,11 +200,14 @@ function wikitextToText(wikitext) {
       .replace(/\[\[([^\]]+)\]\]/g, '$1')
       .replace(/\[https?:\/\/\S+\s+([^\]]+)\]/g, '$1')
       .replace(/\[https?:\/\/\S+\]/g, ' ')
-      .replace(/^(=+)\s*(.*?)\s*\1\s*$/gm, (_, eq, title) => `\n${'#'.repeat(eq.length)} ${title}`)
+      .replace(
+        /^(=+)\s*(.*?)\s*\1\s*$/gm,
+        (_, eq, title) => `\n${'#'.repeat(eq.length)} ${title}`,
+      )
       .replace(/'''''(.*?)'''''/g, '$1')
       .replace(/'''(.*?)'''/g, '$1')
       .replace(/''(.*?)''/g, '$1')
-      .replace(/<[^>]+>/g, ' ')
+      .replace(/<[^>]+>/g, ' '),
   );
 }
 
@@ -205,13 +225,12 @@ function decodeEntities(text) {
     '&euro;': '€',
     '&hellip;': '…',
   };
-  return text
-    .replace(/&[a-z]+;|&#\d+;/gi, (entity) => {
-      const lower = entity.toLowerCase();
-      if (named[lower]) return named[lower];
-      const numeric = entity.match(/&#(\d+);/);
-      return numeric ? String.fromCodePoint(Number(numeric[1])) : ' ';
-    });
+  return text.replace(/&[a-z]+;|&#\d+;/gi, (entity) => {
+    const lower = entity.toLowerCase();
+    if (named[lower]) return named[lower];
+    const numeric = entity.match(/&#(\d+);/);
+    return numeric ? String.fromCodePoint(Number(numeric[1])) : ' ';
+  });
 }
 
 /**

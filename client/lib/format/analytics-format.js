@@ -13,7 +13,10 @@ import { t } from '../ui-i18n.js';
  * @param {boolean} [options.dashIfZero] - Render a falsy / sub-second value as "—"
  * @returns {string} Formatted duration (e.g., "3:45" or "1:23:45")
  */
-export function formatDuration(seconds, { short = false, dashIfZero = false } = {}) {
+export function formatDuration(
+  seconds,
+  { short = false, dashIfZero = false } = {},
+) {
   if (dashIfZero && (!seconds || seconds < 1)) return '—';
   const s = Math.max(0, Math.floor(seconds || 0));
   const hours = Math.floor(s / 3600);

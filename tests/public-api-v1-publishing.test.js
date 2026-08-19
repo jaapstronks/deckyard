@@ -28,7 +28,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 process.env.STORAGE_MODE = 'postgres';
 
@@ -41,7 +43,8 @@ const FOREIGN_DECK_ID = 'deck-of-someone-else';
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
-const { handlePublishing } = await import('../server/routes/public-api/v1/publishing.js');
+const { handlePublishing } =
+  await import('../server/routes/public-api/v1/publishing.js');
 
 const STORED_PUBLISHED = {
   id: 'pub-aaaa',
@@ -60,7 +63,11 @@ async function installDb() {
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
     presentations: [
       deckRow({ id: DECK_ID, owner: KEY_OWNER }),
-      deckRow({ id: PUBLISHED_DECK_ID, owner: KEY_OWNER, published: STORED_PUBLISHED }),
+      deckRow({
+        id: PUBLISHED_DECK_ID,
+        owner: KEY_OWNER,
+        published: STORED_PUBLISHED,
+      }),
       deckRow({ id: FOREIGN_DECK_ID, owner: 'someone-else@example.com' }),
     ],
     published_presentations: [
@@ -129,12 +136,16 @@ function makeCtx(method, deckId, { permissions = ['read', 'write'] } = {}) {
     statusCode: null,
     body: null,
     headers: {},
-    setHeader(name, value) { this.headers[name] = value; },
+    setHeader(name, value) {
+      this.headers[name] = value;
+    },
     writeHead(status, headers) {
       this.statusCode = status;
       Object.assign(this.headers, headers);
     },
-    end(payload) { this.body = payload ? JSON.parse(payload) : null; },
+    end(payload) {
+      this.body = payload ? JSON.parse(payload) : null;
+    },
   };
 
   return {
@@ -142,9 +153,24 @@ function makeCtx(method, deckId, { permissions = ['read', 'write'] } = {}) {
     res,
     url: new URL(`http://localhost/api/v1/presentations/${deckId}/publish`),
     repoRoot: process.cwd(),
-    storageScope: { repoRoot: process.cwd(), organizationId: ORG, actorEmail: KEY_OWNER },
-    apiKey: { id: 'key-1', tier: 'free', ownerEmail: KEY_OWNER, permissions, organizationId: ORG },
-    authedUser: { id: null, email: KEY_OWNER, role: 'user', organizationId: ORG },
+    storageScope: {
+      repoRoot: process.cwd(),
+      organizationId: ORG,
+      actorEmail: KEY_OWNER,
+    },
+    apiKey: {
+      id: 'key-1',
+      tier: 'free',
+      ownerEmail: KEY_OWNER,
+      permissions,
+      organizationId: ORG,
+    },
+    authedUser: {
+      id: null,
+      email: KEY_OWNER,
+      role: 'user',
+      organizationId: ORG,
+    },
   };
 }
 
@@ -179,7 +205,11 @@ test('POST /publish publishes the deck and answers the public path', async () =>
   assert.equal(entry.id, body.publishId);
 
   const stored = storedDeck(db, DECK_ID);
-  assert.equal(stored.published.id, body.publishId, 'the deck document carries the publish state');
+  assert.equal(
+    stored.published.id,
+    body.publishId,
+    'the deck document carries the publish state',
+  );
   assert.equal(stored.published.slug, body.slug);
 });
 
@@ -189,11 +219,16 @@ test('POST /publish on an already-published deck reuses the publish id', async (
   await handlePublishing(ctx);
 
   assert.equal(ctx.res.statusCode, 200);
-  assert.equal(ctx.res.body.publishId, STORED_PUBLISHED.id, 'republish keeps the public link stable');
   assert.equal(
-    publishRows(db).filter((row) => row.presentation_id === PUBLISHED_DECK_ID).length,
+    ctx.res.body.publishId,
+    STORED_PUBLISHED.id,
+    'republish keeps the public link stable',
+  );
+  assert.equal(
+    publishRows(db).filter((row) => row.presentation_id === PUBLISHED_DECK_ID)
+      .length,
     1,
-    'no second entry appears'
+    'no second entry appears',
   );
 });
 
@@ -202,7 +237,11 @@ test('POST /publish without the write permission is refused with 403', async () 
   const ctx = makeCtx('POST', DECK_ID, { permissions: ['read'] });
   await handlePublishing(ctx);
   assert.equal(ctx.res.statusCode, 403);
-  assert.equal(storedDeck(db, DECK_ID).published, null, 'the deck stays unpublished');
+  assert.equal(
+    storedDeck(db, DECK_ID).published,
+    null,
+    'the deck stays unpublished',
+  );
 });
 
 test("POST /publish on someone else's private deck is refused with 403", async () => {
@@ -210,7 +249,11 @@ test("POST /publish on someone else's private deck is refused with 403", async (
   const ctx = makeCtx('POST', FOREIGN_DECK_ID);
   await handlePublishing(ctx);
   assert.equal(ctx.res.statusCode, 403);
-  assert.equal(storedDeck(db, FOREIGN_DECK_ID).published, null, 'the foreign deck stays unpublished');
+  assert.equal(
+    storedDeck(db, FOREIGN_DECK_ID).published,
+    null,
+    'the foreign deck stays unpublished',
+  );
 });
 
 test('POST /publish on an unknown deck answers 404', async () => {
@@ -271,7 +314,7 @@ test('DELETE /publish removes the entry and clears the deck column', async () =>
   assert.equal(
     publishRows(db).some((row) => row.presentation_id === PUBLISHED_DECK_ID),
     false,
-    'the publish entry is gone'
+    'the publish entry is gone',
   );
   // An explicit null, not a dropped key: the storage layer reads an absent
   // key as "leave this column alone" (see the partial-write tests).
@@ -284,7 +327,11 @@ test('DELETE /publish on an unpublished deck still answers 200', async () => {
   await handlePublishing(ctx);
 
   assert.equal(ctx.res.statusCode, 200);
-  assert.deepEqual(ctx.res.body, { unpublished: true }, 'unpublish is idempotent');
+  assert.deepEqual(
+    ctx.res.body,
+    { unpublished: true },
+    'unpublish is idempotent',
+  );
 });
 
 test('DELETE /publish without the write permission is refused with 403', async () => {
@@ -294,7 +341,7 @@ test('DELETE /publish without the write permission is refused with 403', async (
   assert.equal(ctx.res.statusCode, 403);
   assert.ok(
     publishRows(db).some((row) => row.presentation_id === PUBLISHED_DECK_ID),
-    'the publish entry survives'
+    'the publish entry survives',
   );
 });
 
@@ -314,7 +361,10 @@ test('PATCH /publish answers 405 with the allowed methods', async () => {
   const ctx = makeCtx('PATCH', DECK_ID);
   await handlePublishing(ctx);
   assert.equal(ctx.res.statusCode, 405);
-  assert.equal(ctx.res.headers.Allow ?? ctx.res.headers.allow, 'GET, POST, DELETE');
+  assert.equal(
+    ctx.res.headers.Allow ?? ctx.res.headers.allow,
+    'GET, POST, DELETE',
+  );
 });
 
 test('a pathname outside the publish surface is not handled', async () => {

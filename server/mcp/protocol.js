@@ -5,7 +5,10 @@
  * Supports stdio transport (primary) and SSE transport (future).
  */
 
-import { MaintenanceWriteError, assertWritable } from '../config/maintenance.js';
+import {
+  MaintenanceWriteError,
+  assertWritable,
+} from '../config/maintenance.js';
 
 const PROTOCOL_VERSION = '2024-11-05';
 const SERVER_NAME = 'deckyard';
@@ -65,7 +68,10 @@ function withPresentationIdAlias(inputSchema, handler) {
     ...inputSchema,
     properties: {
       ...props,
-      id: { type: 'string', description: 'Presentation ID (alias for presentationId)' },
+      id: {
+        type: 'string',
+        description: 'Presentation ID (alias for presentationId)',
+      },
     },
   };
 
@@ -108,9 +114,15 @@ export class McpServer {
   tool(name, description, inputSchema, handler, { readOnly = false } = {}) {
     const { inputSchema: schema, handler: wrapped } = withPresentationIdAlias(
       inputSchema,
-      handler
+      handler,
     );
-    this.tools.set(name, { name, description, inputSchema: schema, handler: wrapped, readOnly });
+    this.tools.set(name, {
+      name,
+      description,
+      inputSchema: schema,
+      handler: wrapped,
+      readOnly,
+    });
   }
 
   /**
@@ -165,7 +177,11 @@ export class McpServer {
         return jsonRpcResponse(id, {});
 
       default:
-        return jsonRpcError(id, ErrorCodes.METHOD_NOT_FOUND, `Unknown method: ${method}`);
+        return jsonRpcError(
+          id,
+          ErrorCodes.METHOD_NOT_FOUND,
+          `Unknown method: ${method}`,
+        );
     }
   }
 
@@ -202,7 +218,11 @@ export class McpServer {
     const { name, arguments: args } = params || {};
 
     if (!name || !this.tools.has(name)) {
-      return jsonRpcError(id, ErrorCodes.METHOD_NOT_FOUND, `Unknown tool: ${name}`);
+      return jsonRpcError(
+        id,
+        ErrorCodes.METHOD_NOT_FOUND,
+        `Unknown tool: ${name}`,
+      );
     }
 
     const tool = this.tools.get(name);
@@ -217,10 +237,12 @@ export class McpServer {
       } catch (err) {
         if (!(err instanceof MaintenanceWriteError)) throw err;
         return jsonRpcResponse(id, {
-          content: [{
-            type: 'text',
-            text: `Error: ${err.message} Writes are refused until maintenance ends; retry in ${err.retryAfter} seconds. Read tools keep working.`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Error: ${err.message} Writes are refused until maintenance ends; retry in ${err.retryAfter} seconds. Read tools keep working.`,
+            },
+          ],
           isError: true,
         });
       }
@@ -229,17 +251,24 @@ export class McpServer {
     try {
       const result = await tool.handler(args || {}, context);
       return jsonRpcResponse(id, {
-        content: [{
-          type: 'text',
-          text: typeof result === 'string' ? result : JSON.stringify(result, null, 2),
-        }],
+        content: [
+          {
+            type: 'text',
+            text:
+              typeof result === 'string'
+                ? result
+                : JSON.stringify(result, null, 2),
+          },
+        ],
       });
     } catch (err) {
       return jsonRpcResponse(id, {
-        content: [{
-          type: 'text',
-          text: `Error: ${err.message}`,
-        }],
+        content: [
+          {
+            type: 'text',
+            text: `Error: ${err.message}`,
+          },
+        ],
         isError: true,
       });
     }
@@ -261,7 +290,11 @@ export class McpServer {
     const { name, arguments: args } = params || {};
 
     if (!name || !this.prompts.has(name)) {
-      return jsonRpcError(id, ErrorCodes.METHOD_NOT_FOUND, `Unknown prompt: ${name}`);
+      return jsonRpcError(
+        id,
+        ErrorCodes.METHOD_NOT_FOUND,
+        `Unknown prompt: ${name}`,
+      );
     }
 
     const prompt = this.prompts.get(name);
@@ -301,7 +334,11 @@ export function runStdio(server) {
           process.stdout.write(response + '\n');
         }
       } catch (err) {
-        const errResp = jsonRpcError(null, ErrorCodes.PARSE_ERROR, 'Parse error');
+        const errResp = jsonRpcError(
+          null,
+          ErrorCodes.PARSE_ERROR,
+          'Parse error',
+        );
         process.stdout.write(errResp + '\n');
       }
     }

@@ -53,7 +53,12 @@ export function createLlmProvider({
 
     const bodyText = await resp.text();
     if (!resp.ok) {
-      throw LlmError.fromProviderFailure(name, resp.status, bodyText, params.model);
+      throw LlmError.fromProviderFailure(
+        name,
+        resp.status,
+        bodyText,
+        params.model,
+      );
     }
 
     if (parseUsage) {
@@ -95,7 +100,12 @@ export function createOptionalBearerHeaders(apiKey) {
  * @param {Object} params - Request parameters
  * @returns {Object} Request body
  */
-export function transformOpenAiCompatibleRequest({ model, temperature = 0.2, responseFormat, messages = [] }) {
+export function transformOpenAiCompatibleRequest({
+  model,
+  temperature = 0.2,
+  responseFormat,
+  messages = [],
+}) {
   return {
     model,
     ...(supportsSampling(model) ? { temperature } : {}),
@@ -121,7 +131,9 @@ export function transformOpenAiCompatibleRequest({ model, temperature = 0.2, res
  */
 function supportsSampling(model) {
   // gpt-5.5 and up, any gpt-6+, and the o-series reasoning models.
-  return !/^(gpt-5\.(?:[5-9]|\d{2})|gpt-[6-9]|o[1-9])/i.test(String(model || ''));
+  return !/^(gpt-5\.(?:[5-9]|\d{2})|gpt-[6-9]|o[1-9])/i.test(
+    String(model || ''),
+  );
 }
 
 /**
@@ -151,7 +163,8 @@ export function parseOpenAiCompatibleUsage(bodyText) {
   const usage = safeJsonParse(bodyText)?.usage;
   if (!usage) return null;
 
-  const num = (value) => (Number.isFinite(Number(value)) && Number(value) > 0 ? Number(value) : 0);
+  const num = (value) =>
+    Number.isFinite(Number(value)) && Number(value) > 0 ? Number(value) : 0;
   const cachedTokens = num(usage.prompt_tokens_details?.cached_tokens);
 
   return {

@@ -42,7 +42,7 @@ export function showEditorLoadingSkeleton(root) {
       h('div', { class: 'skeleton-slide-row' }, [
         block('skeleton-slide-num'),
         block('skeleton-slide-thumb'),
-      ])
+      ]),
     );
   }
   const left = h('div', { class: 'panel slides-panel' }, [
@@ -56,7 +56,7 @@ export function showEditorLoadingSkeleton(root) {
       h('div', { class: 'skeleton-field' }, [
         block('skeleton-label'),
         block('skeleton-input'),
-      ])
+      ]),
     );
   }
   const inspector = h('div', { class: 'panel inspector-panel' }, [
@@ -87,7 +87,10 @@ export function showEditorLoadingSkeleton(root) {
   const shell = h(
     'div',
     { class: `app-shell editor-shell ${SKELETON_CLASS}` },
-    [topbar, h('div', { class: 'layout' }, [left, slideBar, preview, inspector])]
+    [
+      topbar,
+      h('div', { class: 'layout' }, [left, slideBar, preview, inspector]),
+    ],
   );
   root.append(shell);
   return () => shell.remove();

@@ -69,7 +69,7 @@ export function createPresenterConsole({ theme, presentationId } = {}) {
     'aria-label': t('presenter.console.targetLabel', 'Target (minutes)'),
     title: t(
       'presenter.console.targetTitle',
-      'Target time in minutes (e.g. 20 or 20:00). Elapsed turns red when exceeded.'
+      'Target time in minutes (e.g. 20 or 20:00). Elapsed turns red when exceeded.',
     ),
   });
 
@@ -88,7 +88,7 @@ export function createPresenterConsole({ theme, presentationId } = {}) {
         targetHintEl.textContent = t(
           'presenter.console.targetSet',
           'Target {time}',
-          { time: formatClock(state.targetSeconds) }
+          { time: formatClock(state.targetSeconds) },
         );
         targetHintEl.hidden = false;
       } else {
@@ -158,7 +158,9 @@ export function createPresenterConsole({ theme, presentationId } = {}) {
 
   // --- Notes block -------------------------------------------------------
   // `notes-body` opts into the shared markdown-in-chrome styling (60-notes.css).
-  const notesBody = h('div', { class: 'presenter-console-notes-body notes-body' });
+  const notesBody = h('div', {
+    class: 'presenter-console-notes-body notes-body',
+  });
   const notesBlock = h('section', { class: 'presenter-console-notes' }, [
     h('div', {
       class: 'presenter-console-label',
@@ -173,7 +175,7 @@ export function createPresenterConsole({ theme, presentationId } = {}) {
       class: 'presenter-console',
       'aria-label': t('presenter.console.title', 'Presenter console'),
     },
-    [timerBlock, nextBlock, notesBlock]
+    [timerBlock, nextBlock, notesBlock],
   );
 
   const update = ({ current, next, idx = 0, total = 0 } = {}) => {
@@ -197,7 +199,7 @@ export function createPresenterConsole({ theme, presentationId } = {}) {
         h('div', {
           class: 'help thumb-overlay is-muted',
           text: t('presenter.console.endOfDeck', 'End of deck'),
-        })
+        }),
       );
       nextMeta.textContent = '';
     }

@@ -32,9 +32,15 @@ export const up = async (db) => {
   await sql`DROP INDEX IF EXISTS idx_organizations_subdomain`.execute(db);
   await sql`DROP INDEX IF EXISTS idx_organizations_custom_domain`.execute(db);
 
-  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS subdomain`.execute(db);
-  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS custom_domain`.execute(db);
-  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS billing_email`.execute(db);
+  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS subdomain`.execute(
+    db,
+  );
+  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS custom_domain`.execute(
+    db,
+  );
+  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS billing_email`.execute(
+    db,
+  );
 };
 
 export const down = async (db) => {

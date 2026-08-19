@@ -44,7 +44,11 @@ const facade = await import('../server/storage/presentations/index.js');
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
-__setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+__setTestDb(
+  createFakeDb({
+    organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+  }),
+);
 await initializeStorage();
 
 // ─── the rule: no scope, no answer ──────────────────────────────────────────
@@ -56,7 +60,7 @@ test('a bare repoRoot string is refused, and says what to pass instead', () => {
       err instanceof TypeError &&
       /takes a storage scope, not a repoRoot string/.test(err.message) &&
       /createStorageScope/.test(err.message),
-    'the old call shape must fail loudly, not read the default organization'
+    'the old call shape must fail loudly, not read the default organization',
   );
 });
 
@@ -65,7 +69,7 @@ test('null and undefined are refused', () => {
     assert.throws(
       () => resolveScope(value, 'getPresentation'),
       /requires a storage scope/,
-      `${value} must not resolve to anything`
+      `${value} must not resolve to anything`,
     );
   }
 });
@@ -74,18 +78,25 @@ test('a scope that states no organization is refused', () => {
   assert.throws(
     () => resolveScope({ repoRoot: '/srv/deckyard' }, 'listPresentations'),
     /no organizationId/,
-    'the facade may not fill in the default organization for a caller that gave none'
+    'the facade may not fill in the default organization for a caller that gave none',
   );
 });
 
 test('an empty-string organization counts as none', () => {
-  assert.throws(() => resolveScope({ organizationId: '' }, 'getPresentation'), /no organizationId/);
+  assert.throws(
+    () => resolveScope({ organizationId: '' }, 'getPresentation'),
+    /no organizationId/,
+  );
 });
 
 test('an organization-scoped scope resolves to exactly what it stated', () => {
   const resolved = resolveScope(
-    { repoRoot: '/srv/deckyard', organizationId: ORG, actorEmail: 'alice@example.com' },
-    'getPresentation'
+    {
+      repoRoot: '/srv/deckyard',
+      organizationId: ORG,
+      actorEmail: 'alice@example.com',
+    },
+    'getPresentation',
   );
   assert.equal(resolved.organizationId, ORG);
   assert.equal(resolved.actorEmail, 'alice@example.com');
@@ -96,11 +107,18 @@ test('an organization-scoped scope resolves to exactly what it stated', () => {
 
 test('a cross-organization read is allowed when the operation permits it', () => {
   const resolved = resolveScope(
-    crossOrganizationScope('/srv/deckyard', 'share link: the share token is the authorization'),
+    crossOrganizationScope(
+      '/srv/deckyard',
+      'share link: the share token is the authorization',
+    ),
     'getPresentation',
-    { allowCrossOrganization: true }
+    { allowCrossOrganization: true },
   );
-  assert.equal(resolved.organizationId, undefined, 'no organization filter is applied');
+  assert.equal(
+    resolved.organizationId,
+    undefined,
+    'no organization filter is applied',
+  );
   assert.match(resolved.crossOrganization, /share token/);
 });
 
@@ -109,17 +127,21 @@ test('a cross-organization scope cannot reach an operation that writes', () => {
     () =>
       resolveScope(
         crossOrganizationScope(null, 'lead capture from a published deck'),
-        'updatePresentation'
+        'updatePresentation',
       ),
     /cannot run cross-organization/,
-    'an unscoped write would land wherever the storage layer guessed'
+    'an unscoped write would land wherever the storage layer guessed',
   );
 });
 
 test('cross-organization cannot reach a listing either', () => {
   assert.throws(
-    () => resolveScope(crossOrganizationScope(null, 'anything'), 'listPresentations'),
-    /cannot run cross-organization/
+    () =>
+      resolveScope(
+        crossOrganizationScope(null, 'anything'),
+        'listPresentations',
+      ),
+    /cannot run cross-organization/,
   );
 });
 
@@ -131,7 +153,7 @@ test('crossOrganizationScope insists on a reason, so unscoped reads stay countab
 test('a stated organization wins over a cross-organization declaration', () => {
   const resolved = resolveScope(
     { organizationId: ORG, crossOrganization: 'belt and braces' },
-    'updatePresentation'
+    'updatePresentation',
   );
   assert.equal(resolved.organizationId, ORG, 'the write stays scoped');
 });
@@ -146,16 +168,27 @@ test('singleOrganizationScope answers with the configured organization', () => {
 
 test('jobScope prefers the organization the job payload carries', () => {
   const scope = jobScope(
-    { repoRoot: '/srv', organizationId: 'org-from-payload', actorEmail: 'a@b.c' },
-    'export job'
+    {
+      repoRoot: '/srv',
+      organizationId: 'org-from-payload',
+      actorEmail: 'a@b.c',
+    },
+    'export job',
   );
   assert.equal(scope.organizationId, 'org-from-payload');
   assert.equal(scope.actorEmail, 'a@b.c');
 });
 
 test('a job enqueued before the organization travelled still runs single-organization', () => {
-  const scope = jobScope({ repoRoot: '/srv', ownerEmail: 'a@b.c' }, 'export job');
-  assert.equal(scope.organizationId, ORG, 'exact here: this instance has one organization');
+  const scope = jobScope(
+    { repoRoot: '/srv', ownerEmail: 'a@b.c' },
+    'export job',
+  );
+  assert.equal(
+    scope.organizationId,
+    ORG,
+    'exact here: this instance has one organization',
+  );
   assert.equal(scope.actorEmail, 'a@b.c');
 });
 
@@ -164,23 +197,31 @@ test('a job enqueued before the organization travelled still runs single-organiz
 test('createStorageScope produces a scope the facade accepts', () => {
   const scope = createStorageScope(
     { email: 'alice@example.com', organizationId: ORG },
-    { repoRoot: '/srv/deckyard' }
+    { repoRoot: '/srv/deckyard' },
   );
   const resolved = resolveScope(scope, 'getPresentation');
   assert.equal(resolved.organizationId, ORG);
   assert.equal(resolved.actorEmail, 'alice@example.com');
-  assert.equal(repoRootOf(scope), '/srv/deckyard', 'the file fallback still gets its path');
+  assert.equal(
+    repoRootOf(scope),
+    '/srv/deckyard',
+    'the file fallback still gets its path',
+  );
 });
 
 test('a session pending database validation cannot smuggle an organization through', () => {
   const scope = createStorageScope(
-    { email: 'mallory@example.com', organizationId: 'org-unverified', _needsDbValidation: true },
-    { repoRoot: '/srv' }
+    {
+      email: 'mallory@example.com',
+      organizationId: 'org-unverified',
+      _needsDbValidation: true,
+    },
+    { repoRoot: '/srv' },
   );
   assert.equal(
     scope.organizationId,
     ORG,
-    'the unverified claim is dropped, exactly as it was before scopes existed'
+    'the unverified claim is dropped, exactly as it was before scopes existed',
   );
 });
 
@@ -208,7 +249,7 @@ test('every facade entry point refuses a bare repoRoot', async () => {
     await assert.rejects(
       async () => invoke(facade[name]),
       /takes a storage scope, not a repoRoot string/,
-      `${name}() must refuse the pre-scope call shape`
+      `${name}() must refuse the pre-scope call shape`,
     );
   }
 });
@@ -222,20 +263,25 @@ test('every facade entry point refuses a bare repoRoot', async () => {
 // The facade contract above cannot catch that: the cache reaches the facade
 // through a dynamic import, so nothing type-checks the hand-off. These pin it.
 
-const { getPresentationCached } = await import('../server/storage/presentations/cache.js');
-const { followAudienceScope } = await import('../server/routes/api/follow/helpers.js');
+const { getPresentationCached } =
+  await import('../server/storage/presentations/cache.js');
+const { followAudienceScope } =
+  await import('../server/routes/api/follow/helpers.js');
 
 test('the presentation cache passes its caller scope through to the facade', async () => {
   // Resolves to null (empty database) — what matters is that it resolves
   // at all instead of throwing the scope TypeError at the audience.
-  const pres = await getPresentationCached(followAudienceScope('/srv'), 'deck-1');
+  const pres = await getPresentationCached(
+    followAudienceScope('/srv'),
+    'deck-1',
+  );
   assert.equal(pres, null);
 });
 
 test('the presentation cache refuses a bare repoRoot, like the facade does', async () => {
   await assert.rejects(
     async () => getPresentationCached('/srv', 'deck-1'),
-    /takes a storage scope, not a repoRoot string/
+    /takes a storage scope, not a repoRoot string/,
   );
 });
 
@@ -259,14 +305,23 @@ test('the presentation cache refuses a bare repoRoot, like the facade does', asy
 const smallFacades = {
   'slide-library/index.js': [
     ['listPersonalLibrary', (fn) => fn('/srv', 'a@b.c')],
-    ['createPersonalLibraryItem', (fn) => fn('/srv', 'a@b.c', { name: 'x', slideType: 'title-slide' })],
+    [
+      'createPersonalLibraryItem',
+      (fn) => fn('/srv', 'a@b.c', { name: 'x', slideType: 'title-slide' }),
+    ],
     ['updatePersonalLibraryItem', (fn) => fn('/srv', 'a@b.c', 'item-1', {})],
     ['deletePersonalLibraryItem', (fn) => fn('/srv', 'a@b.c', 'item-1')],
     ['listOrganizationLibrary', (fn) => fn('/srv', {})],
     ['getOrganizationLibraryItem', (fn) => fn('/srv', 'item-1', {})],
-    ['createOrganizationLibraryItem', (fn) => fn('/srv', { name: 'x', slideType: 'title-slide' })],
+    [
+      'createOrganizationLibraryItem',
+      (fn) => fn('/srv', { name: 'x', slideType: 'title-slide' }),
+    ],
     ['updateOrganizationLibraryItem', (fn) => fn('/srv', 'item-1', {})],
-    ['setOrganizationLibraryItemTrashed', (fn) => fn('/srv', 'item-1', { trashed: true })],
+    [
+      'setOrganizationLibraryItemTrashed',
+      (fn) => fn('/srv', 'item-1', { trashed: true }),
+    ],
     ['deleteOrganizationLibraryItem', (fn) => fn('/srv', 'item-1', {})],
     // These three never had a scope argument to begin with.
     ['getTagsForSlideLibraryItem', (fn) => fn('item-1', {})],
@@ -275,12 +330,18 @@ const smallFacades = {
   ],
   'slide-library-usage/index.js': [
     ['listSlideLibraryUsage', (fn) => fn('/srv', 'a@b.c')],
-    ['recordSlideLibraryUsage', (fn) => fn('/srv', 'a@b.c', [{ type: 'slide', id: 'x' }])],
+    [
+      'recordSlideLibraryUsage',
+      (fn) => fn('/srv', 'a@b.c', [{ type: 'slide', id: 'x' }]),
+    ],
   ],
   'published/index.js': [
     ['getPublishedIndex', (fn) => fn('/srv')],
     ['getPublishedById', (fn) => fn('/srv', 'pub-1')],
-    ['upsertPublishedEntry', (fn) => fn('/srv', { publishId: 'pub-1', presentationId: 'deck-1' })],
+    [
+      'upsertPublishedEntry',
+      (fn) => fn('/srv', { publishId: 'pub-1', presentationId: 'deck-1' }),
+    ],
     ['removePublishedEntry', (fn) => fn('/srv', 'pub-1')],
     ['updatePublishedSlug', (fn) => fn('/srv', 'pub-1', 'slug')],
     ['listPublishedForFeed', (fn) => fn('/srv')],
@@ -322,18 +383,24 @@ const smallFacades = {
     ['getImageFavorites', (fn) => fn('a@b.c')],
     ['toggleImageFavorite', (fn) => fn('img-1', 'a@b.c')],
   ],
-  'image-library-usage.js': [['getImageLibraryUsage', (fn) => fn('/srv', '/uploads/x.png')]],
+  'image-library-usage.js': [
+    ['getImageLibraryUsage', (fn) => fn('/srv', '/uploads/x.png')],
+  ],
 };
 
 for (const [file, calls] of Object.entries(smallFacades)) {
   test(`${file} refuses every pre-scope call shape`, async () => {
     const mod = await import(`../server/storage/${file}`);
     for (const [name, invoke] of calls) {
-      assert.equal(typeof mod[name], 'function', `${name} is exported from ${file}`);
+      assert.equal(
+        typeof mod[name],
+        'function',
+        `${name} is exported from ${file}`,
+      );
       await assert.rejects(
         async () => invoke(mod[name]),
         /server\/storage\/scope\.js/,
-        `${name}() must refuse the pre-scope call shape and point at the contract`
+        `${name}() must refuse the pre-scope call shape and point at the contract`,
       );
     }
   });
@@ -344,10 +411,19 @@ test('a publish id is the one read the published facade may do unscoped', () => 
   // globally unique publish id, so the token is the authorization. Every other
   // function on that facade — including the index the feed lists from — must
   // state its organization.
-  const scope = crossOrganizationScope(null, 'published deck: the publish id is the authorization');
-  assert.doesNotThrow(() =>
-    resolveScope(scope, 'getPublishedById', { allowCrossOrganization: true })
+  const scope = crossOrganizationScope(
+    null,
+    'published deck: the publish id is the authorization',
   );
-  assert.throws(() => resolveScope(scope, 'getPublishedIndex'), /cannot run cross-organization/);
-  assert.throws(() => resolveScope(scope, 'upsertPublishedEntry'), /cannot run cross-organization/);
+  assert.doesNotThrow(() =>
+    resolveScope(scope, 'getPublishedById', { allowCrossOrganization: true }),
+  );
+  assert.throws(
+    () => resolveScope(scope, 'getPublishedIndex'),
+    /cannot run cross-organization/,
+  );
+  assert.throws(
+    () => resolveScope(scope, 'upsertPublishedEntry'),
+    /cannot run cross-organization/,
+  );
 });

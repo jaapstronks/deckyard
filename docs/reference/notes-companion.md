@@ -31,12 +31,12 @@ guest, who may write comments on exactly the deck their token addressed.
 
 ## Where it lives
 
-| Surface | File |
-|---------|------|
-| The four capability-based routes | `server/routes/api/live-session-audience.js` |
-| Presenter-only routes (state push, interactions, feedback export, control) | `server/routes/api/live-sessions.js` |
-| The targeted notes write | `server/storage/presentations/slide-notes.js` |
-| The companion view | `client/views/notes/` (edit UI in `notes-editor.js`) |
+| Surface                                                                    | File                                                 |
+| -------------------------------------------------------------------------- | ---------------------------------------------------- |
+| The four capability-based routes                                           | `server/routes/api/live-session-audience.js`         |
+| Presenter-only routes (state push, interactions, feedback export, control) | `server/routes/api/live-sessions.js`                 |
+| The targeted notes write                                                   | `server/storage/presentations/slide-notes.js`        |
+| The companion view                                                         | `client/views/notes/` (edit UI in `notes-editor.js`) |
 
 The audience module is dispatched from the **public block** of
 `server/routes/api/index.js`, before the login gate — the same block that serves
@@ -70,7 +70,7 @@ settings, no version history. A join link is not a login.
 
 Anonymous writes are throttled per IP (`allowCompanionNotesWrite` in
 `server/utils/rate-limit.js`) — a volume cap rather than a guess cap, since the
-caller *is* allowed to write; it just must not be usable to hammer the slides
+caller _is_ allowed to write; it just must not be usable to hammer the slides
 column. Notes longer than `MAX_NOTES_LENGTH` are a 400.
 
 ## Concurrency

@@ -47,7 +47,7 @@ modal (`replaceSlide`).
 
 ## Add-slides batch review
 
-"AI: add slides" results with N≥2 open `ai-batch-review-modal.js` *before*
+"AI: add slides" results with N≥2 open `ai-batch-review-modal.js` _before_
 anything is inserted. Shows the AI's batch rationale, per-slide why,
 alternatives, and Accept / Adjust / Discard. **Adjust** re-generates
 server-side from the original request + prior batch + feedback (revision mode

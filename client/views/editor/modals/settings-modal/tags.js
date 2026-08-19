@@ -18,7 +18,7 @@ export function buildTagsSection({ h, pres, api }) {
     class: 'help',
     text: t(
       'editor.deckSettings.tags.help',
-      'Add tags to organize and filter presentations. Press Enter or comma to add.'
+      'Add tags to organize and filter presentations. Press Enter or comma to add.',
     ),
   });
 
@@ -53,8 +53,11 @@ export function buildTagsSection({ h, pres, api }) {
       wrap.append(
         h('div', {
           class: 'help',
-          text: t('editor.deckSettings.tags.error', 'Failed to load tag editor.'),
-        })
+          text: t(
+            'editor.deckSettings.tags.error',
+            'Failed to load tag editor.',
+          ),
+        }),
       );
     }
   } else {
@@ -63,9 +66,9 @@ export function buildTagsSection({ h, pres, api }) {
         class: 'help',
         text: t(
           'editor.deckSettings.tags.unavailable',
-          'Tags are not available in this mode.'
+          'Tags are not available in this mode.',
         ),
-      })
+      }),
     );
   }
 

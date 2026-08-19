@@ -1,12 +1,21 @@
 import { safeFilename } from '../utils/filename.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
-import { badRequest, notFound, unauthorized, serveJson } from '../utils/http.js';
+import {
+  badRequest,
+  notFound,
+  unauthorized,
+  serveJson,
+} from '../utils/http.js';
 import { getPresentation } from '../storage/presentations/index.js';
 import { normalizeLang, projectPresentationForLang } from '../utils/i18n.js';
 import { loadThemeAssets } from '../utils/themes.js';
 import { canReadPresentation } from '../utils/presentation-authz.js';
 import { getCollaboratorPermission } from '../storage/collaborators.js';
-import { addJob, isQueueAvailable, QUEUE_NAMES } from '../jobs/queue/connection.js';
+import {
+  addJob,
+  isQueueAvailable,
+  QUEUE_NAMES,
+} from '../jobs/queue/connection.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 
 /**
@@ -23,7 +32,12 @@ export function getLangSuffix(exportLang) {
  * @param {Object} options - Header options
  * @returns {Object} Headers object
  */
-function buildExportHeaders({ contentType, filename, langSuffix = '', extension }) {
+function buildExportHeaders({
+  contentType,
+  filename,
+  langSuffix = '',
+  extension,
+}) {
   const fullFilename = `${safeFilename(filename + langSuffix)}${extension}`;
   return {
     'Content-Type': contentType,
@@ -60,13 +74,19 @@ export async function prepareExportContext({
     ? await getCollaboratorPermission(presentationId, authedUser.email)
     : null;
 
-  if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
+  if (
+    !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
+  ) {
     unauthorized(res);
     return null;
   }
 
-  const projected = exportLang ? projectPresentationForLang(pres, exportLang) : pres;
-  const filteredPres = stripLiveOnly ? stripLiveOnlySlidesFromPresentation(projected) : projected;
+  const projected = exportLang
+    ? projectPresentationForLang(pres, exportLang)
+    : pres;
+  const filteredPres = stripLiveOnly
+    ? stripLiveOnlySlidesFromPresentation(projected)
+    : projected;
   const theme = await loadThemeAssets(repoRoot, projected?.theme);
   const langSuffix = getLangSuffix(exportLang);
 
@@ -101,8 +121,16 @@ export function parseScaleParam(url, defaultScale = 2) {
  * @param {Object} res - Response object
  * @param {Object} options - Response options
  */
-export function sendExportResponse(res, { contentType, filename, langSuffix, extension, data }) {
-  const headers = buildExportHeaders({ contentType, filename, langSuffix, extension });
+export function sendExportResponse(
+  res,
+  { contentType, filename, langSuffix, extension, data },
+) {
+  const headers = buildExportHeaders({
+    contentType,
+    filename,
+    langSuffix,
+    extension,
+  });
   res.writeHead(200, headers);
   res.end(data);
 }
@@ -145,7 +173,14 @@ export function createExportRoute(config) {
     getFilename = (ctx) => ctx.title,
   } = config;
 
-  return async function handler({ repoRoot, storageScope, req, res, url, authedUser }) {
+  return async function handler({
+    repoRoot,
+    storageScope,
+    req,
+    res,
+    url,
+    authedUser,
+  }) {
     const match = url.pathname.match(pattern);
     if (!match || req.method !== method) return false;
 
@@ -189,7 +224,14 @@ export function createExportRoute(config) {
 export function createHtmlPreviewRoute(config) {
   const { pattern, method = 'GET', stripLiveOnly = true, buildHtml } = config;
 
-  return async function handler({ repoRoot, storageScope, req, res, url, authedUser }) {
+  return async function handler({
+    repoRoot,
+    storageScope,
+    req,
+    res,
+    url,
+    authedUser,
+  }) {
     const match = url.pathname.match(pattern);
     if (!match || req.method !== method) return false;
 
@@ -244,7 +286,14 @@ export function createAsyncExportRoute(config) {
     getFilename = (ctx) => ctx.title,
   } = config;
 
-  return async function handler({ repoRoot, storageScope, req, res, url, authedUser }) {
+  return async function handler({
+    repoRoot,
+    storageScope,
+    req,
+    res,
+    url,
+    authedUser,
+  }) {
     const match = url.pathname.match(pattern);
     if (!match || req.method !== method) return false;
 
@@ -263,13 +312,18 @@ export function createAsyncExportRoute(config) {
       const collaboratorPermission = authedUser?.email
         ? await getCollaboratorPermission(presentationId, authedUser.email)
         : null;
-      if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
+      if (
+        !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
+      ) {
         return unauthorized(res);
       }
 
       // Queue the job
       const exportLang = normalizeLang(url.searchParams.get('lang'));
-      const scale = Math.max(1, Math.min(3, Number(url.searchParams.get('scale')) || 2));
+      const scale = Math.max(
+        1,
+        Math.min(3, Number(url.searchParams.get('scale')) || 2),
+      );
 
       const { jobId, queued } = await addJob(QUEUE_NAMES.EXPORT, exportType, {
         presentationId,

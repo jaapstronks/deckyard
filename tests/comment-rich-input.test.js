@@ -85,7 +85,7 @@ test('the server still parses the mentions out of a round-tripped body', () => {
   const mentions = parseMentions(roundTrip(body));
   assert.deepEqual(
     mentions.map((m) => m.email),
-    ['ann@x.com', 'bo@y.com']
+    ['ann@x.com', 'bo@y.com'],
   );
 });
 
@@ -129,7 +129,10 @@ test('a chip serialises back to markup even when nested in a wrapper', () => {
   // find the chip and must not lose the line break.
   const el = document.createElement('div');
   const line1 = document.createElement('div');
-  line1.append(document.createTextNode('hi '), createMentionChip({ name: 'Ann', email: 'ann@x.com' }));
+  line1.append(
+    document.createTextNode('hi '),
+    createMentionChip({ name: 'Ann', email: 'ann@x.com' }),
+  );
   const line2 = document.createElement('div');
   line2.append(document.createTextNode('bye'));
   el.append(line1, line2);
@@ -190,7 +193,11 @@ test('Enter submits, Shift+Enter does not', () => {
   document.body.append(input.el);
 
   input.el.dispatchEvent(
-    new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+    new dom.window.KeyboardEvent('keydown', {
+      key: 'Enter',
+      bubbles: true,
+      cancelable: true,
+    }),
   );
   assert.equal(submits, 1);
 
@@ -200,7 +207,7 @@ test('Enter submits, Shift+Enter does not', () => {
       shiftKey: true,
       bubbles: true,
       cancelable: true,
-    })
+    }),
   );
   assert.equal(submits, 1, 'Shift+Enter must insert a newline, not submit');
   input.el.remove();
@@ -217,7 +224,11 @@ test('Enter does not submit while the mention popover claims it', () => {
 
   const press = () =>
     input.el.dispatchEvent(
-      new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+      new dom.window.KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+        cancelable: true,
+      }),
     );
 
   press();
@@ -270,8 +281,16 @@ test('an unsafe URL never becomes a link, and its markup survives as text', () =
   ]) {
     const body = `klik [hier](${url}) niet`;
     const el = hydrate(body);
-    assert.equal(el.querySelectorAll('[data-link-url]').length, 0, `${url} must not linkify`);
-    assert.equal(serializeRichInput(el), body, `${url} must round-trip as literal text`);
+    assert.equal(
+      el.querySelectorAll('[data-link-url]').length,
+      0,
+      `${url} must not linkify`,
+    );
+    assert.equal(
+      serializeRichInput(el),
+      body,
+      `${url} must round-trip as literal text`,
+    );
   }
 });
 

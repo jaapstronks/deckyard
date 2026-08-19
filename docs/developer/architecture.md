@@ -57,13 +57,14 @@ deckyard/
 
 The `custom/` directories are gitignored in the OSS repo, so they persist through upstream updates:
 
-| Directory | Purpose | Loaded At |
-|-----------|---------|-----------|
-| `custom/slide-types/` | Custom slide type definitions | Server startup |
-| `custom/themes/` | Custom theme JSON configs | Runtime (on demand) |
-| `custom/assets/` | Custom fonts, images, logos | Static file serving |
+| Directory             | Purpose                       | Loaded At           |
+| --------------------- | ----------------------------- | ------------------- |
+| `custom/slide-types/` | Custom slide type definitions | Server startup      |
+| `custom/themes/`      | Custom theme JSON configs     | Runtime (on demand) |
+| `custom/assets/`      | Custom fonts, images, logos   | Static file serving |
 
 These directories enable organizations to customize without modifying core code. See:
+
 - `docs/developer/slide-types.md` - Custom slide types + AI integration
 - `docs/developer/themes.md` - Custom themes
 
@@ -106,10 +107,19 @@ means "already answered, stop here".
 ```javascript
 import { withPresentationAuth } from '../../utils/route-middleware.js';
 
-export async function handlePresentationLockAcquire({ repoRoot, req, res, authedUser } = {}, id) {
+export async function handlePresentationLockAcquire(
+  { repoRoot, req, res, authedUser } = {},
+  id,
+) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({
+    repoRoot,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
   if (!pres) return true; // 404/401 already sent
 
   // Handle the request…
@@ -139,7 +149,7 @@ was removed in 1.x. Old file data imports once with `npm run db:import`.
 
 ```javascript
 // Storage mode validation (server/config/database.js)
-STORAGE_MODE=postgres   // unset means postgres; "file" stops the boot
+STORAGE_MODE = postgres; // unset means postgres; "file" stops the boot
 ```
 
 `postgres` is the only accepted value, spelled exactly like that — anything
@@ -205,6 +215,7 @@ Payload = { email, role, name, exp, v }
 ### Sandbox Mode
 
 Guest authentication for public demos:
+
 - Per-visitor ephemeral session
 - No login required
 - 24-hour TTL for data cleanup
@@ -256,8 +267,8 @@ Server-Sent Events power the non-CRDT real-time updates:
 // server/services/comment-events.js
 // In-memory map: presentationId → Set<Response>
 
-addClient(presentationId, res);  // Subscribe
-broadcastToPresentation(id, 'comment:created', data);  // Broadcast
+addClient(presentationId, res); // Subscribe
+broadcastToPresentation(id, 'comment:created', data); // Broadcast
 // Heartbeat every 30s prevents proxy timeout
 ```
 
@@ -286,14 +297,14 @@ Export uses a factory pattern (`server/export/pipeline.js`):
 
 ### Supported Formats
 
-| Format | Engine | Notes |
-|--------|--------|-------|
-| JSON | Native | Deck format for import/export |
-| HTML | Embedded | Standalone with all assets inline |
-| PDF | Puppeteer | Print-to-PDF or slide screenshots |
-| PNG | Puppeteer + Sharp | 1600x900px default, 1-3x scaling |
-| PPTX | pptxgenjs | PowerPoint with embedded images |
-| Notes | Markdown/DOCX | Speaker notes extraction |
+| Format | Engine            | Notes                             |
+| ------ | ----------------- | --------------------------------- |
+| JSON   | Native            | Deck format for import/export     |
+| HTML   | Embedded          | Standalone with all assets inline |
+| PDF    | Puppeteer         | Print-to-PDF or slide screenshots |
+| PNG    | Puppeteer + Sharp | 1600x900px default, 1-3x scaling  |
+| PPTX   | pptxgenjs         | PowerPoint with embedded images   |
+| Notes  | Markdown/DOCX     | Speaker notes extraction          |
 
 ### PNG Rendering Flow
 
@@ -327,7 +338,12 @@ export default {
   fields: [
     { key: 'title', label: 'Title', type: 'string', required: true },
     { key: 'body', label: 'Body', type: 'markdown' },
-    { key: 'background', label: 'Background', type: 'enum', options: ['lime', 'mist'] },
+    {
+      key: 'background',
+      label: 'Background',
+      type: 'enum',
+      options: ['lime', 'mist'],
+    },
   ],
   defaults: {
     title: 'New slide',
@@ -357,7 +373,9 @@ Slides can have runtime behavior (timers, event listeners, SSE connections). If 
 ```javascript
 // client/lib/slide-runtime.js
 export function attachSlideRuntime(slideEl) {
-  const timer = setInterval(() => { /* ... */ }, 1000);
+  const timer = setInterval(() => {
+    /* ... */
+  }, 1000);
 
   // Return cleanup function
   return () => {
@@ -420,17 +438,17 @@ comma-separated env values rather than hand-rolling another split/trim/filter.
 
 ## Key Architectural Decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| No framework | Minimal dependencies, full control |
-| Functional middleware | Composition over inheritance, explicit data flow |
-| Storage abstraction | Swappable backends with a one-shot file→Postgres import path (`db:import`) |
-| In-memory SSE | Fast, no message queue (sessions reset on restart) |
-| Atomic file writes | Temp + rename prevents corruption |
-| Puppeteer rendering | Server-side PNG/PDF at request time |
-| Feature flags | Toggle AI, uploads, demo mode per deployment |
-| Session versioning | Invalidate all sessions on password change |
-| Slide-level locks | Concurrent editing with per-slide acquisition (phased out when `COLLAB_LIVE_EDITS` is on) |
-| Collab as optional layer | Yjs/Hocuspocus behind a flag; flag-off path byte-identical to classic saves |
-| MCP alongside REST | Agents use the same storage/validation layer as the UI |
-| Rate limiting | Token bucket per IP for abuse prevention |
+| Decision                 | Rationale                                                                                 |
+| ------------------------ | ----------------------------------------------------------------------------------------- |
+| No framework             | Minimal dependencies, full control                                                        |
+| Functional middleware    | Composition over inheritance, explicit data flow                                          |
+| Storage abstraction      | Swappable backends with a one-shot file→Postgres import path (`db:import`)                |
+| In-memory SSE            | Fast, no message queue (sessions reset on restart)                                        |
+| Atomic file writes       | Temp + rename prevents corruption                                                         |
+| Puppeteer rendering      | Server-side PNG/PDF at request time                                                       |
+| Feature flags            | Toggle AI, uploads, demo mode per deployment                                              |
+| Session versioning       | Invalidate all sessions on password change                                                |
+| Slide-level locks        | Concurrent editing with per-slide acquisition (phased out when `COLLAB_LIVE_EDITS` is on) |
+| Collab as optional layer | Yjs/Hocuspocus behind a flag; flag-off path byte-identical to classic saves               |
+| MCP alongside REST       | Agents use the same storage/validation layer as the UI                                    |
+| Rate limiting            | Token bucket per IP for abuse prevention                                                  |

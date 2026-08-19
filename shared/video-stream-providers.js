@@ -21,7 +21,11 @@ const PROVIDERS = [
     id: 'youtube',
     match: (url) => {
       const h = url.hostname.toLowerCase();
-      return h === 'youtu.be' || h.endsWith('youtube.com') || h.endsWith('youtube-nocookie.com');
+      return (
+        h === 'youtu.be' ||
+        h.endsWith('youtube.com') ||
+        h.endsWith('youtube-nocookie.com')
+      );
     },
   },
   {
@@ -47,7 +51,9 @@ const PROVIDERS = [
     match: (url) => {
       const h = url.hostname.toLowerCase();
       // Covers customer-<id>.cloudflarestream.com and *.videodelivery.net
-      return h.endsWith('cloudflarestream.com') || h.endsWith('videodelivery.net');
+      return (
+        h.endsWith('cloudflarestream.com') || h.endsWith('videodelivery.net')
+      );
     },
   },
 ];
@@ -209,7 +215,12 @@ export function buildEmbedUrl(input, provider) {
  * Returns true when the provider should be rendered in an <iframe>.
  */
 export function isIframeProvider(provider) {
-  return provider === 'youtube' || provider === 'vimeo' || provider === 'bunny' || provider === 'cloudflare';
+  return (
+    provider === 'youtube' ||
+    provider === 'vimeo' ||
+    provider === 'bunny' ||
+    provider === 'cloudflare'
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -217,23 +228,23 @@ export function isIframeProvider(provider) {
 // ---------------------------------------------------------------------------
 
 export const POSITION_PRESETS = {
-  'pip-top-right':    { x: 72, y: 4, width: 25 },
-  'pip-top-left':     { x: 3,  y: 4, width: 25 },
+  'pip-top-right': { x: 72, y: 4, width: 25 },
+  'pip-top-left': { x: 3, y: 4, width: 25 },
   'pip-bottom-right': { x: 72, y: 58, width: 25 },
-  'pip-bottom-left':  { x: 3,  y: 58, width: 25 },
-  'strip-top':        { x: 0,  y: 0, width: 100 },
-  'strip-bottom':     { x: 0,  y: 75, width: 100 },
-  'center':           { x: 25, y: 15, width: 50 },
+  'pip-bottom-left': { x: 3, y: 58, width: 25 },
+  'strip-top': { x: 0, y: 0, width: 100 },
+  'strip-bottom': { x: 0, y: 75, width: 100 },
+  center: { x: 25, y: 15, width: 50 },
 };
 
 export const POSITION_PRESET_LABELS = {
-  'pip-top-right':    'PiP top-right',
-  'pip-top-left':     'PiP top-left',
+  'pip-top-right': 'PiP top-right',
+  'pip-top-left': 'PiP top-left',
   'pip-bottom-right': 'PiP bottom-right',
-  'pip-bottom-left':  'PiP bottom-left',
-  'strip-top':        'Strip top',
-  'strip-bottom':     'Strip bottom',
-  'center':           'Center',
+  'pip-bottom-left': 'PiP bottom-left',
+  'strip-top': 'Strip top',
+  'strip-bottom': 'Strip bottom',
+  center: 'Center',
 };
 
 export const MOBILE_POSITIONS = {
@@ -251,7 +262,9 @@ export function resolvePosition(presetOrCustom) {
   if (!presetOrCustom) return POSITION_PRESETS['pip-top-right'];
 
   if (typeof presetOrCustom === 'string') {
-    return POSITION_PRESETS[presetOrCustom] || POSITION_PRESETS['pip-top-right'];
+    return (
+      POSITION_PRESETS[presetOrCustom] || POSITION_PRESETS['pip-top-right']
+    );
   }
 
   if (typeof presetOrCustom === 'object') {

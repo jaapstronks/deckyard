@@ -95,7 +95,9 @@ export async function compressImageForEmbed(buf, ext, mime, config) {
     let outMime;
     if (meta.hasAlpha) {
       // Preserve transparency: stay PNG, but re-encode at max deflate.
-      out = await pipeline.png({ compressionLevel: 9, palette: true }).toBuffer();
+      out = await pipeline
+        .png({ compressionLevel: 9, palette: true })
+        .toBuffer();
       outMime = 'image/png';
     } else {
       out = await pipeline

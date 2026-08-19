@@ -50,18 +50,23 @@ test('exactly the four interaction types are live, with their protocol kind', ()
 });
 
 test('option counts per live type are unchanged', () => {
-  const poll = { content: { option1: 'a', option2: 'b', option3: '', option4: 'd' } };
+  const poll = {
+    content: { option1: 'a', option2: 'b', option3: '', option4: 'd' },
+  };
   assert.equal(getOptionCountForSlide('poll-slide', poll), 3);
 
   const likert = {
     content: Object.fromEntries(
-      Array.from({ length: 7 }, (_v, i) => [`option${i + 1}`, `o${i + 1}`])
+      Array.from({ length: 7 }, (_v, i) => [`option${i + 1}`, `o${i + 1}`]),
     ),
   };
   assert.equal(getOptionCountForSlide('likert-slide', likert), 7);
 
   // The slider's stops are fixed by the widget, not authored.
-  assert.equal(getOptionCountForSlide('likert-slider-slide', { content: {} }), 10);
+  assert.equal(
+    getOptionCountForSlide('likert-slider-slide', { content: {} }),
+    10,
+  );
 
   // Free text has no options, and neither has anything that is not live.
   assert.equal(getOptionCountForSlide('feedback-slide', { content: {} }), 0);
@@ -73,7 +78,7 @@ test('the audience is offered an interaction on exactly the live slides', () => 
   const caps = (slideType, status = 'live') =>
     computeAudienceCapabilitiesFromState(
       { status, slideType, slideId: 's1', sessionId: 'sess1' },
-      {}
+      {},
     );
 
   for (const [type, kind] of Object.entries(LIVE)) {

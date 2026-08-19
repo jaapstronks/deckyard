@@ -18,11 +18,19 @@ import { notionFetchJson } from '../server/utils/notion/client.js';
 import { appendBlocksToPage } from '../server/utils/notion/blocks.js';
 import { fetchNotionPage } from '../server/utils/notion/pages.js';
 import { refreshSlideData } from '../server/utils/data-source/index.js';
-import { AppError, ValidationError, isAppError } from '../server/utils/errors.js';
+import {
+  AppError,
+  ValidationError,
+  isAppError,
+} from '../server/utils/errors.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
-const isAppErrorWithStatus = (status) => (err) => isAppError(err) && err.statusCode === status;
+const isAppErrorWithStatus = (status) => (err) =>
+  isAppError(err) && err.statusCode === status;
 
 test('unconfigured Notion answers 501, envelope code stays internal_error', async () => {
   delete process.env.NOTION_SECRET;
@@ -35,20 +43,29 @@ test('unconfigured Notion answers 501, envelope code stays internal_error', asyn
       // the same code errorToResponse() produced before the conversion.
       assert.equal(err.toJSON().error, 'internal_error');
       return true;
-    }
+    },
   );
 });
 
 test('notion input validation throws 400 ValidationError', async () => {
-  await assert.rejects(() => appendBlocksToPage('', []), (err) => err instanceof ValidationError && err.statusCode === 400);
-  await assert.rejects(() => appendBlocksToPage('abc'.repeat(12), []), isAppErrorWithStatus(400));
-  await assert.rejects(() => fetchNotionPage('not a notion url'), isAppErrorWithStatus(400));
+  await assert.rejects(
+    () => appendBlocksToPage('', []),
+    (err) => err instanceof ValidationError && err.statusCode === 400,
+  );
+  await assert.rejects(
+    () => appendBlocksToPage('abc'.repeat(12), []),
+    isAppErrorWithStatus(400),
+  );
+  await assert.rejects(
+    () => fetchNotionPage('not a notion url'),
+    isAppErrorWithStatus(400),
+  );
 });
 
 test('data-source validation failures stay 400', async () => {
   await assert.rejects(
     () => refreshSlideData({ provider: 'no-such-provider' }, {}),
-    isAppErrorWithStatus(400)
+    isAppErrorWithStatus(400),
   );
 });
 
@@ -58,16 +75,27 @@ test('no bare .statusCode assignment left in the three converted trees', () => {
     for (const entry of readdirSync(dir)) {
       const full = path.join(dir, entry);
       if (statSync(full).isDirectory()) walk(full);
-      else if (entry.endsWith('.js') && /\.statusCode = /.test(readFileSync(full, 'utf8'))) {
+      else if (
+        entry.endsWith('.js') &&
+        /\.statusCode = /.test(readFileSync(full, 'utf8'))
+      ) {
         offenders.push(path.relative(repoRoot, full));
       }
     }
   };
   walk(path.join(repoRoot, 'server/utils/notion'));
   walk(path.join(repoRoot, 'server/utils/data-source'));
-  const features = readFileSync(path.join(repoRoot, 'server/config/features.js'), 'utf8');
-  if (/\.statusCode = /.test(features)) offenders.push('server/config/features.js');
-  assert.deepEqual(offenders, [], `These modules must throw AppError subclasses: ${offenders.join(', ')}`);
+  const features = readFileSync(
+    path.join(repoRoot, 'server/config/features.js'),
+    'utf8',
+  );
+  if (/\.statusCode = /.test(features))
+    offenders.push('server/config/features.js');
+  assert.deepEqual(
+    offenders,
+    [],
+    `These modules must throw AppError subclasses: ${offenders.join(', ')}`,
+  );
 });
 
 test('upstream Notion payloads never reach the serialized envelope', () => {

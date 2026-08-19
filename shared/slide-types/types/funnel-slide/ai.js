@@ -19,24 +19,24 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       Conversion/sales funnel with 3-6 stages.
       First stage = widest (most volume), last = narrowest.
       Each stage has label, optional value/metric, and description.
     `,
-    bestFor: [
-      'Sales funnels (Leads > Qualified > Closed)',
-      'Marketing funnels (Awareness > Interest > Conversion)',
-      'Recruitment funnels',
-      'Any narrowing process with decreasing numbers',
-    ],
-    notFor: [
-      'Hierarchies without quantity reduction (use pyramid)',
-      'Processes that don\'t narrow (use process-slide)',
-      'Circular processes (use cycle-slide)',
-    ],
+  bestFor: [
+    'Sales funnels (Leads > Qualified > Closed)',
+    'Marketing funnels (Awareness > Interest > Conversion)',
+    'Recruitment funnels',
+    'Any narrowing process with decreasing numbers',
+  ],
+  notFor: [
+    'Hierarchies without quantity reduction (use pyramid)',
+    "Processes that don't narrow (use process-slide)",
+    'Circular processes (use cycle-slide)',
+  ],
 };
 
 /**

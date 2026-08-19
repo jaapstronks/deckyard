@@ -49,7 +49,9 @@ function hostOf(value) {
  */
 export function allowedHosts(req) {
   const set = new Set();
-  const reqHost = String(req.headers?.host || '').trim().toLowerCase();
+  const reqHost = String(req.headers?.host || '')
+    .trim()
+    .toLowerCase();
   if (reqHost) set.add(reqHost);
   for (const v of [envStr('APP_URL'), envStr('DOMAIN')]) {
     const h = hostOf(v);

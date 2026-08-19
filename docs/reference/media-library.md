@@ -3,7 +3,7 @@
 ## Purpose & scope
 
 Deckyard stores two different things about an image and keeps them apart. The
-**bytes** live behind a *media provider* — either the local filesystem under
+**bytes** live behind a _media provider_ — either the local filesystem under
 `/uploads` or an S3-compatible bucket (Scaleway Object Storage) — reached through
 one interface so the rest of the server never knows which is active. The
 **catalogue entry** (url, title, description, alt texts, photographer, tags,
@@ -12,7 +12,7 @@ provider concern; finding an image again is a library concern.
 
 This document covers the server side: the provider seam (`server/media/`), the
 library store (`server/storage/image-library/`), the stock-media bridges
-(Unsplash, Giphy, bundled gradients) and the routes on top. The *client* side —
+(Unsplash, Giphy, bundled gradients) and the routes on top. The _client_ side —
 how the editor picks an image and which providers the chooser offers — is
 [`image-picker-seam.md`](image-picker-seam.md); the gradient source is
 [`bundled-gradients.md`](bundled-gradients.md); which image property lives where
@@ -89,23 +89,23 @@ Routes:
 Table `image_library` (`server/db/migrations/001_initial_schema.js`, extended by
 `server/db/migrations/033_image_library_enhancements.js`):
 
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid | primary key |
-| `organization_id` | uuid | FK → `organizations(id)` **ON DELETE CASCADE** |
-| `url` | text | NOT NULL — `/uploads/…`, a bucket/CDN URL, or a remote URL |
-| `title` | varchar(255) | |
-| `description` | varchar(200) | |
-| `photographer` | varchar(120) | attribution (Unsplash fills this) |
-| `tags` | text[] | free-form; `logo`, `unsplash`, `giphy`, … |
-| `alts` | jsonb | per-language alt text, default `{"nl":"","en-GB":""}` |
-| `sources` | text[] | provenance |
-| `uploaded_by` | varchar(320) | added by 033; indexed with `organization_id` |
-| `created_at` / `updated_at` | timestamptz | |
+| Column                      | Type         | Notes                                                      |
+| --------------------------- | ------------ | ---------------------------------------------------------- |
+| `id`                        | uuid         | primary key                                                |
+| `organization_id`           | uuid         | FK → `organizations(id)` **ON DELETE CASCADE**             |
+| `url`                       | text         | NOT NULL — `/uploads/…`, a bucket/CDN URL, or a remote URL |
+| `title`                     | varchar(255) |                                                            |
+| `description`               | varchar(200) |                                                            |
+| `photographer`              | varchar(120) | attribution (Unsplash fills this)                          |
+| `tags`                      | text[]       | free-form; `logo`, `unsplash`, `giphy`, …                  |
+| `alts`                      | jsonb        | per-language alt text, default `{"nl":"","en-GB":""}`      |
+| `sources`                   | text[]       | provenance                                                 |
+| `uploaded_by`               | varchar(320) | added by 033; indexed with `organization_id`               |
+| `created_at` / `updated_at` | timestamptz  |                                                            |
 
 Table `image_library_favorites` (033) — `(image_id, user_email,
 organization_id)` composite primary key, both FKs **ON DELETE CASCADE**, indexed
-on `(organization_id, user_email)`. Favourites are per user *within* an
+on `(organization_id, user_email)`. Favourites are per user _within_ an
 organization, so the same person in two organizations has two sets.
 
 There is **no row for the bytes**: a media provider key is not persisted
@@ -118,10 +118,10 @@ logo, or an avatar) that points at it.
   `uploadDataUrl` decodes it, checks the mime against `MIME_TO_EXT`, optimises
   rasters via `sharp`, writes `<safe-base>-<uuid>.<ext>` into `uploadsDir()` and
   returns `{filename, url, mime, bytes}`. Adding it to the catalogue is a
-  *separate* `POST /api/image-library` — an upload is not automatically a library
+  _separate_ `POST /api/image-library` — an upload is not automatically a library
   item.
 - **Upload, bucket provider** — `POST /api/media/presign {filename, contentType,
-  size}` returns a presigned PUT plus the eventual `publicUrl` and a key
+size}` returns a presigned PUT plus the eventual `publicUrl` and a key
   `uploads/<YYYY/MM>/<safe-base>-<uuid>.<ext>`; the browser PUTs the bytes
   straight to the bucket; `POST /api/media/confirm {key}` verifies the object
   exists. Presign is refused when the active provider reports
@@ -137,11 +137,11 @@ logo, or an avatar) that points at it.
   step; picking one writes its URL onto the slide.
 - **Alt text** — `POST /api/image-library/generate-alts` (ad-hoc URL) or
   `/api/image-library/:id/generate-alts` (an existing item) returns
-  `{alts: {nl, en-GB}}` as a *preview*; it does not persist. Saving is a
+  `{alts: {nl, en-GB}}` as a _preview_; it does not persist. Saving is a
   subsequent `PUT`.
 - **Usage & replace** — `GET /api/image-library/:id/usage` joins the image URL
   against the organization's decks and publish index. `POST
-  /api/image-library/:id/replace-upload` swaps the bytes behind an existing
+/api/image-library/:id/replace-upload` swaps the bytes behind an existing
   `/uploads/…` URL in place (so every deck using it updates at once); it is
   refused for any item whose URL is not a local upload, and the replacement's
   mime must match the existing extension.
@@ -151,30 +151,30 @@ logo, or an avatar) that points at it.
 
 ## Config & flags
 
-| Name | Where | Purpose / default |
-|---|---|---|
-| `MEDIA_STORAGE_MODE` | `media/config.js` | `auto` (default), `scaleway`, `local`. `auto` picks Scaleway when configured. `scaleway` throws at startup if it is not. |
-| `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_BUCKET` | `media/config.js` | All three required to count as configured. |
-| `SCW_REGION`, `SCW_ENDPOINT`, `SCW_CDN_URL` | `media/config.js` | Default region `nl-ams`; endpoint defaults to `https://s3.<region>.scw.cloud`; CDN URL optional. |
-| `UPLOADS_DIR` / `SANDBOX_UPLOADS_DIR` | `server/config/storage-paths.js` | Override the local upload directory. It defaults to an `uploads` directory under `server/` (`uploads-sandbox` in sandbox mode), created at boot by `server/server.js` — so neither is in the repo. |
-| `IMAGEKIT_PRIVATE_KEY`, `IMAGEKIT_PUBLIC_KEY`, `IMAGEKIT_URL_ENDPOINT` | `media/imagekit.js` | Required for the DAM panel; missing ones surface as `issues`. |
-| `IMAGEKIT_UPLOAD_FOLDER`, `IMAGEKIT_TAG_PREFIX`, `IMAGEKIT_METADATA_FIELD_ALT_SEED` | `media/imagekit.js` | Optional; missing ones surface as `warnings`. Tag prefix defaults to `deck:`. |
-| `UNSPLASH_ACCESS_KEY` | `integrations/unsplash.js` | Enables Unsplash search/import. |
-| `GIPHY_API_KEY` | `integrations/giphy.js` | Enables Giphy search/trending/import. |
+| Name                                                                                | Where                            | Purpose / default                                                                                                                                                                                  |
+| ----------------------------------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MEDIA_STORAGE_MODE`                                                                | `media/config.js`                | `auto` (default), `scaleway`, `local`. `auto` picks Scaleway when configured. `scaleway` throws at startup if it is not.                                                                           |
+| `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_BUCKET`                                    | `media/config.js`                | All three required to count as configured.                                                                                                                                                         |
+| `SCW_REGION`, `SCW_ENDPOINT`, `SCW_CDN_URL`                                         | `media/config.js`                | Default region `nl-ams`; endpoint defaults to `https://s3.<region>.scw.cloud`; CDN URL optional.                                                                                                   |
+| `UPLOADS_DIR` / `SANDBOX_UPLOADS_DIR`                                               | `server/config/storage-paths.js` | Override the local upload directory. It defaults to an `uploads` directory under `server/` (`uploads-sandbox` in sandbox mode), created at boot by `server/server.js` — so neither is in the repo. |
+| `IMAGEKIT_PRIVATE_KEY`, `IMAGEKIT_PUBLIC_KEY`, `IMAGEKIT_URL_ENDPOINT`              | `media/imagekit.js`              | Required for the DAM panel; missing ones surface as `issues`.                                                                                                                                      |
+| `IMAGEKIT_UPLOAD_FOLDER`, `IMAGEKIT_TAG_PREFIX`, `IMAGEKIT_METADATA_FIELD_ALT_SEED` | `media/imagekit.js`              | Optional; missing ones surface as `warnings`. Tag prefix defaults to `deck:`.                                                                                                                      |
+| `UNSPLASH_ACCESS_KEY`                                                               | `integrations/unsplash.js`       | Enables Unsplash search/import.                                                                                                                                                                    |
+| `GIPHY_API_KEY`                                                                     | `integrations/giphy.js`          | Enables Giphy search/trending/import.                                                                                                                                                              |
 
 Feature flags (`server/config/flags-snapshot.js`):
 
-| Flag | Effect |
-|---|---|
-| `IMAGEKIT_ONLY` | Forces both `enableUploads` and `enableImageLibrary` off — ImageKit becomes the only image source. |
-| `UPLOADS_ENABLED=false` | Blocks the upload paths (also forced by demo and sandbox mode). |
-| `IMAGE_LIBRARY_ENABLED=false` | `/api/image-library/*` answers 404. |
-| `DEMO_MODE` / sandbox mode | Library is read-only (GET only): no upload, no create, no edit, no delete, no alt-text generation. Sandbox additionally prepends `listSandboxMedia()` to the listing. |
-| `aiAltText` | Derived: alt-text generation needs AI enabled *and* OpenAI as the configured default vendor. |
+| Flag                          | Effect                                                                                                                                                                |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `IMAGEKIT_ONLY`               | Forces both `enableUploads` and `enableImageLibrary` off — ImageKit becomes the only image source.                                                                    |
+| `UPLOADS_ENABLED=false`       | Blocks the upload paths (also forced by demo and sandbox mode).                                                                                                       |
+| `IMAGE_LIBRARY_ENABLED=false` | `/api/image-library/*` answers 404.                                                                                                                                   |
+| `DEMO_MODE` / sandbox mode    | Library is read-only (GET only): no upload, no create, no edit, no delete, no alt-text generation. Sandbox additionally prepends `listSandboxMedia()` to the listing. |
+| `aiAltText`                   | Derived: alt-text generation needs AI enabled _and_ OpenAI as the configured default vendor.                                                                          |
 
 Per-provider stock toggles are **settings**, not env vars: `stockMedia.<bundled|
 unsplash|giphy>.enabled` in app settings (`server/storage/settings.js`). A
-provider must be both *configured* (key present) and *enabled* (toggled on) to
+provider must be both _configured_ (key present) and _enabled_ (toggled on) to
 answer anything but `status`.
 
 Size ceilings, all hardcoded: local upload 10 MB, presigned upload 20 MB,
@@ -183,7 +183,7 @@ stock-media import 20 MB (GIFs are large), in-place replace 10 MB.
 ## Authz & tenancy
 
 - **Everything here is behind the session login gate.** All five route modules
-  are dispatched *after* the `unauthorized(res)` check in
+  are dispatched _after_ the `unauthorized(res)` check in
   `server/routes/api/index.js` — none of them is reachable anonymously on an
   auth-enabled instance. The `if (!authedUser)` checks and "public" comments
   inside the handlers are a second layer that only bites when auth is disabled
@@ -201,7 +201,7 @@ stock-media import 20 MB (GIFs are large), in-place replace 10 MB.
   router when `flags.enableUploads` is off.
 - **Bytes are not tenant-scoped.** A `/uploads/<uuid>.<ext>` URL or a bucket
   object URL is a capability: anyone holding it can fetch it, which is what makes
-  published decks and share links work. Isolation is on the *catalogue*, not on
+  published decks and share links work. Isolation is on the _catalogue_, not on
   the file. Uploaded content is served inert to keep an uploaded SVG from
   executing.
 

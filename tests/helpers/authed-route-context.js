@@ -29,7 +29,10 @@ export async function authedRouteContext({ repoRoot, req, res, url }) {
     try {
       const isDesigner = await resolveDesignerCapability(authedUser);
       authedUser = { ...authedUser, isDesigner };
-      authedUser = { ...authedUser, canEditCustomHtml: canEditCustomHtml(authedUser) };
+      authedUser = {
+        ...authedUser,
+        canEditCustomHtml: canEditCustomHtml(authedUser),
+      };
     } catch {
       // Fail open — do not block on designer resolution, as index.js does.
     }

@@ -115,14 +115,23 @@ export const down = async (db) => {
   await db.schema.dropIndex('idx_feedback_session').ifExists().execute();
   await db.schema.dropIndex('idx_questions_session').ifExists().execute();
   await db.schema.dropIndex('idx_interactions_session').ifExists().execute();
-  await db.schema.dropIndex('idx_present_sessions_activity').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_present_sessions_activity')
+    .ifExists()
+    .execute();
   await db.schema.dropIndex('idx_present_sessions_pres').ifExists().execute();
   await db.schema.dropIndex('idx_present_sessions_org').ifExists().execute();
   await db.schema.dropIndex('idx_follow_codes_expires').ifExists().execute();
   await db.schema.dropIndex('idx_slide_library_org_scope').ifExists().execute();
   await db.schema.dropIndex('idx_image_library_org').ifExists().execute();
-  await db.schema.dropIndex('idx_presentation_versions_created').ifExists().execute();
-  await db.schema.dropIndex('idx_presentation_versions_pres_id').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_presentation_versions_created')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_presentation_versions_pres_id')
+    .ifExists()
+    .execute();
   await db.schema.dropIndex('idx_users_org_id').ifExists().execute();
   await db.schema.dropIndex('idx_presentations_scope').ifExists().execute();
   await db.schema.dropIndex('idx_presentations_modified').ifExists().execute();

@@ -26,17 +26,16 @@ async function getOrCreateFollowCode(followUrl) {
     });
     if (!res.ok) return '';
     const data = await res.json().catch(() => ({}));
-    const code = String(data?.code || '').trim().toUpperCase();
+    const code = String(data?.code || '')
+      .trim()
+      .toUpperCase();
     return code;
   })();
   followCodeCache.set(key, p);
   return await p;
 }
 
-export function initFollowInviteSlides(
-  rootEl,
-  { enableResize = true } = {}
-) {
+export function initFollowInviteSlides(rootEl, { enableResize = true } = {}) {
   if (!rootEl?.querySelectorAll) return () => {};
   const cleanups = [];
 
@@ -44,14 +43,17 @@ export function initFollowInviteSlides(
   try {
     const goEls = [];
     if (rootEl.matches?.('[data-follow-go-url="1"]')) goEls.push(rootEl);
-    goEls.push(...Array.from(rootEl.querySelectorAll('[data-follow-go-url="1"]')));
+    goEls.push(
+      ...Array.from(rootEl.querySelectorAll('[data-follow-go-url="1"]')),
+    );
     const goAbs = absUrlFor('/go');
     for (const el of goEls) {
       try {
         if (el.tagName === 'A') {
           el.setAttribute('href', goAbs);
           if (!String(el.textContent || '').trim()) el.textContent = goAbs;
-          else if (String(el.textContent || '').trim() === '/go') el.textContent = goAbs;
+          else if (String(el.textContent || '').trim() === '/go')
+            el.textContent = goAbs;
         } else {
           el.textContent = goAbs;
         }
@@ -68,7 +70,7 @@ export function initFollowInviteSlides(
     if (rootEl.matches?.('canvas[data-follow-qr="1"]')) canvases.push(rootEl);
   } catch {}
   canvases.push(
-    ...Array.from(rootEl.querySelectorAll('canvas[data-follow-qr="1"]'))
+    ...Array.from(rootEl.querySelectorAll('canvas[data-follow-qr="1"]')),
   );
 
   for (const canvas of canvases) {
@@ -81,8 +83,7 @@ export function initFollowInviteSlides(
 
     const rerender = () => {
       try {
-        const isFollowInviteQr =
-          !!canvas?.classList?.contains?.('sfi-qr');
+        const isFollowInviteQr = !!canvas?.classList?.contains?.('sfi-qr');
 
         // Ensure the canvas never visually exceeds its card width.
         try {
@@ -101,7 +102,7 @@ export function initFollowInviteSlides(
           0;
         const maxPx = Math.min(
           560,
-          Math.max(160, Math.floor((cardW || window.innerWidth) - 28))
+          Math.max(160, Math.floor((cardW || window.innerWidth) - 28)),
         );
         const ok = renderQrToCanvas(canvas, url, {
           maxPx,
@@ -110,7 +111,9 @@ export function initFollowInviteSlides(
         // Fallback: canvas rendering can fail in some contexts; use data URL image.
         const img = h('img');
         img.alt = t('qr.alt', 'QR code');
-        img.src = createQrDataUrl(url, { size: Math.min(420, Math.max(220, maxPx)) });
+        img.src = createQrDataUrl(url, {
+          size: Math.min(420, Math.max(220, maxPx)),
+        });
         if (isFollowInviteQr) img.className = 'sfi-qr';
         img.style.maxWidth = '100%';
         img.style.height = 'auto';
@@ -142,8 +145,11 @@ export function initFollowInviteSlides(
   // (Some views render slides without a presenter session context.)
   try {
     const codeEls = Array.from(rootEl.querySelectorAll('.sfi-code'));
-    const placeholders = codeEls.filter((el) =>
-      String(el?.textContent || '').trim().replace(/-/g, '') === ''
+    const placeholders = codeEls.filter(
+      (el) =>
+        String(el?.textContent || '')
+          .trim()
+          .replace(/-/g, '') === '',
     );
     if (placeholders.length) {
       const anyCanvas =
@@ -152,7 +158,10 @@ export function initFollowInviteSlides(
         null;
       const followUrl =
         String(anyCanvas?.dataset?.followUrl || '').trim() ||
-        String(rootEl.querySelector('canvas[data-follow-qr="1"]')?.dataset?.followUrl || '').trim();
+        String(
+          rootEl.querySelector('canvas[data-follow-qr="1"]')?.dataset
+            ?.followUrl || '',
+        ).trim();
       if (followUrl) {
         getOrCreateFollowCode(followUrl)
           .then((code) => {

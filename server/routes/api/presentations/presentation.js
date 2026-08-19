@@ -27,7 +27,10 @@ import {
 } from '../../../services/activity-events.js';
 import { notifyDeckActivity } from '../../../services/deck-activity-notifications.js';
 import { filterForViewOnly } from '../../../utils/public-output.js';
-import { broadcastToPresentation, PresentationEventTypes } from '../../../services/comment-events.js';
+import {
+  broadcastToPresentation,
+  PresentationEventTypes,
+} from '../../../services/comment-events.js';
 import { scheduleDeckThumbnailWarm } from './thumbnail.js';
 
 /**
@@ -37,10 +40,16 @@ import { scheduleDeckThumbnailWarm } from './thumbnail.js';
  */
 export async function handlePresentationRevision(
   { storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'read',
+  });
   if (!pres) return true;
   serveJson(res, 200, {
     id: pres.id,
@@ -53,16 +62,25 @@ export async function handlePresentationRevision(
 
 export async function handlePresentationItem(
   { storageScope, req, res, url, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method === 'GET') {
-    const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'read' });
+    const pres = await withPresentationAuth({
+      storageScope,
+      id,
+      authedUser,
+      res,
+      permission: 'read',
+    });
     if (!pres) return true;
 
     // Determine user's effective permission for the client UI
     let collaboratorPermission = null;
     if (authedUser?.email) {
-      collaboratorPermission = await getCollaboratorPermission(id, authedUser.email);
+      collaboratorPermission = await getCollaboratorPermission(
+        id,
+        authedUser.email,
+      );
     }
     const userPermission = getEffectivePermission({
       user: authedUser,
@@ -116,7 +134,13 @@ export async function handlePresentationItem(
     const jsonResult = await requireJsonBody(req, res);
     if (!jsonResult.ok) return true;
     const body = jsonResult.body;
-    const existing = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
+    const existing = await withPresentationAuth({
+      storageScope,
+      id,
+      authedUser,
+      res,
+      permission: 'write',
+    });
     if (!existing) return true;
 
     // If-Match is required for everyone, admins included. Admins used to bypass
@@ -125,7 +149,12 @@ export async function handlePresentationItem(
     // writer goes through the same optimistic-lock + slide-level merge path.
     const expectedRevision = parseIfMatchRevision(req);
     if (expectedRevision == null)
-      return jsonError(res, 428, 'missing_if_match', 'Missing If-Match revision');
+      return jsonError(
+        res,
+        428,
+        'missing_if_match',
+        'Missing If-Match revision',
+      );
 
     // Gate: only capability-holders may create or change raw HTML/CSS on a
     // custom-html-slide. Non-capable users may still keep/reorder such slides.
@@ -133,7 +162,7 @@ export async function handlePresentationItem(
       const violation = customHtmlEditViolation(
         existing.slides,
         body.slides,
-        canEditCustomHtml(authedUser)
+        canEditCustomHtml(authedUser),
       );
       if (violation) return forbidden(res, violation);
     }
@@ -192,13 +221,21 @@ export async function handlePresentationItem(
 
     // Record activity event (non-blocking)
     if (authedUser?.email) {
-
       // Slides this actor added, for the slide.added feed event.
-      const submittedSlides = Array.isArray(body?.slides) ? body.slides : updated.slides;
-      const addedSlideIds = diffAddedSlideIds(existing.slides, submittedSlides, updated.slides);
+      const submittedSlides = Array.isArray(body?.slides)
+        ? body.slides
+        : updated.slides;
+      const addedSlideIds = diffAddedSlideIds(
+        existing.slides,
+        submittedSlides,
+        updated.slides,
+      );
 
       // Check if visibility changed to organization
-      if (existing.visibility !== updated.visibility && updated.visibility === 'organization') {
+      if (
+        existing.visibility !== updated.visibility &&
+        updated.visibility === 'organization'
+      ) {
         void recordPresentationMovedToOrganization({
           presentation: updated,
           actor: authedUser,
@@ -257,14 +294,24 @@ export async function handlePresentationItem(
     // Deck-grid raster: queue a debounced re-render when this save changed
     // slide 1, so the next Home load is a cache hit instead of the thing that
     // triggers the render. No-ops for every other save.
-    scheduleDeckThumbnailWarm({ scope: storageScope, before: existing, after: updated });
+    scheduleDeckThumbnailWarm({
+      scope: storageScope,
+      before: existing,
+      after: updated,
+    });
 
     serveJson(res, 200, updated);
     return true;
   }
 
   if (req.method === 'DELETE') {
-    const existing = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'delete' });
+    const existing = await withPresentationAuth({
+      storageScope,
+      id,
+      authedUser,
+      res,
+      permission: 'delete',
+    });
     if (!existing) return true;
 
     // Parse optional message from request body

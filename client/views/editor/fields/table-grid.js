@@ -1,5 +1,8 @@
 import { parseMarkdownTable } from '../../../../shared/markdown.js';
-import { MAX_COLS, MAX_ROWS } from '../../../../shared/slide-types/types/table-slide.js';
+import {
+  MAX_COLS,
+  MAX_ROWS,
+} from '../../../../shared/slide-types/types/table-slide.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createModal, createTextArea } from '../../../lib/dom/modal.js';
@@ -74,9 +77,10 @@ function tableToMarkdown({ header, rows, colCount }) {
   const h = Array.from({ length: cols }, (_v, idx) => header?.[idx] || '');
   const sep = Array.from({ length: cols }, () => '---');
   const body = (rows || []).map((r) =>
-    Array.from({ length: cols }, (_v, idx) => r?.[idx] || '')
+    Array.from({ length: cols }, (_v, idx) => r?.[idx] || ''),
   );
-  const line = (cells) => `| ${cells.map((c) => String(c || '').trim()).join(' | ')} |`;
+  const line = (cells) =>
+    `| ${cells.map((c) => String(c || '').trim()).join(' | ')} |`;
   return [line(h), line(sep), ...body.map(line)].join('\n');
 }
 
@@ -171,7 +175,7 @@ function buildTableGrid({
       h('span', {
         text: colLabel(c),
         title: t('editor.table.colTitle', 'Column {col}', { col: colLabel(c) }),
-      })
+      }),
     );
     if (colCount > 1) {
       head.append(
@@ -184,7 +188,7 @@ function buildTableGrid({
           onclick: () => {
             if (deleteColumn(slide, c)) onStructure?.();
           },
-        })
+        }),
       );
     }
     hr.append(head);
@@ -201,7 +205,7 @@ function buildTableGrid({
           if (addColumn(slide)) onStructure?.();
         },
       }),
-    ])
+    ]),
   );
   thead.append(hr);
   table.append(thead);
@@ -223,12 +227,9 @@ function buildTableGrid({
             : String(rIdx + 1),
         title:
           headerEnabled && rIdx === 0
-            ? t(
-                'editor.table.headerRowHelp',
-                'Header row (rendered as <th>)'
-              )
+            ? t('editor.table.headerRowHelp', 'Header row (rendered as <th>)')
             : t('editor.table.rowTitle', 'Row {n}', { n: rIdx + 1 }),
-      })
+      }),
     );
 
     for (let c = 1; c <= colCount; c += 1) {
@@ -263,7 +264,7 @@ function buildTableGrid({
             if (deleteRow(slide, rIdx)) onStructure?.();
           },
         }),
-      ])
+      ]),
     );
 
     tbody.append(tr);
@@ -272,18 +273,22 @@ function buildTableGrid({
   // "+ Row" bar below the last row (contextual, replaces the old top cluster)
   const addTr = h('tr', { class: 'table-editor-addrow-tr' });
   addTr.append(
-    h('td', { colspan: String(colCount + 2), class: 'table-editor-addrow-td' }, [
-      h('button', {
-        class: 'btn btn-secondary is-compact-sm table-editor-addrow-btn',
-        text: t('editor.table.addRow', '+ Row'),
-        disabled: rows.length >= MAX_ROWS,
-        onclick: () => {
-          if (addRow(slide)) {
-            onStructure?.({ focusCell: { r: rows.length, c: 1 } });
-          }
-        },
-      }),
-    ])
+    h(
+      'td',
+      { colspan: String(colCount + 2), class: 'table-editor-addrow-td' },
+      [
+        h('button', {
+          class: 'btn btn-secondary is-compact-sm table-editor-addrow-btn',
+          text: t('editor.table.addRow', '+ Row'),
+          disabled: rows.length >= MAX_ROWS,
+          onclick: () => {
+            if (addRow(slide)) {
+              onStructure?.({ focusCell: { r: rows.length, c: 1 } });
+            }
+          },
+        }),
+      ],
+    ),
   );
   tbody.append(addTr);
   table.append(tbody);
@@ -310,10 +315,7 @@ function openTableEditorModal({
 } = {}) {
   const modal = createModal(h, {
     title: t('editor.table.edit', 'Edit table'),
-    hint: t(
-      'editor.table.editHint',
-      'Changes apply to the slide immediately.'
-    ),
+    hint: t('editor.table.editHint', 'Changes apply to the slide immediately.'),
     modalClass: 'table-editor-modal',
     // Sync the compact sidebar grid with whatever happened in the modal.
     onClose: () => rerenderEditor?.(),
@@ -336,7 +338,7 @@ function openTableEditorModal({
           scheduleUiRefresh?.();
           rebuild(opts || {});
         },
-      })
+      }),
     );
   };
   rebuild();
@@ -380,10 +382,7 @@ export function createTableGridEditor({
     h('button', {
       class: 'btn btn-secondary is-compact-sm',
       text: t('editor.table.edit', 'Edit table'),
-      title: t(
-        'editor.table.editTip',
-        'Open a roomy table editor in a dialog'
-      ),
+      title: t('editor.table.editTip', 'Open a roomy table editor in a dialog'),
       onclick: () =>
         openTableEditorModal({
           h,
@@ -392,7 +391,7 @@ export function createTableGridEditor({
           rerenderEditor,
           scheduleUiRefresh,
         }),
-    })
+    }),
   );
   wrap.append(labelRow);
 
@@ -408,7 +407,7 @@ export function createTableGridEditor({
         rerenderEditor?.();
         scheduleUiRefresh?.();
       },
-    })
+    }),
   );
 
   wrap.append(
@@ -418,17 +417,18 @@ export function createTableGridEditor({
         rows: Math.max(rows.length, 1),
         cols: colCount,
       }),
-    })
+    }),
   );
 
   // Import from markdown
   const importWrap = h('details', { class: 'table-editor-import' });
   importWrap.append(
-    h('summary', { text: t('editor.table.importTitle', 'Import from Markdown table') })
+    h('summary', {
+      text: t('editor.table.importTitle', 'Import from Markdown table'),
+    }),
   );
   const ta = h('textarea', { class: 'form-input form-textarea-md' });
-  ta.placeholder =
-    '| Col A | Col B |\n| --- | --- |\n| Val 1 | Val 2 |';
+  ta.placeholder = '| Col A | Col B |\n| --- | --- |\n| Val 1 | Val 2 |';
 
   const importActions = h('div', { class: 'row is-wrap' });
   importActions.append(
@@ -438,7 +438,9 @@ export function createTableGridEditor({
       onclick: async () => {
         const parsed = parseMarkdownTable(ta.value || '');
         if (!parsed) {
-          toast.error(t('editor.table.importNotFound', 'No Markdown table found.'));
+          toast.error(
+            t('editor.table.importNotFound', 'No Markdown table found.'),
+          );
           return;
         }
         const cols = clampInt(parsed.colCount, 1, MAX_COLS);
@@ -447,21 +449,17 @@ export function createTableGridEditor({
 
         const newRows = [];
         const header = Array.from({ length: cols }, (_v, idx) =>
-          parsed.header?.[idx] == null ? '' : String(parsed.header[idx])
+          parsed.header?.[idx] == null ? '' : String(parsed.header[idx]),
         );
         newRows.push(
-          Object.fromEntries(
-            header.map((v, idx) => [`c${idx + 1}`, v])
-          )
+          Object.fromEntries(header.map((v, idx) => [`c${idx + 1}`, v])),
         );
         for (const r of parsed.rows || []) {
           const cells = Array.from({ length: cols }, (_v, idx) =>
-            r?.[idx] == null ? '' : String(r[idx])
+            r?.[idx] == null ? '' : String(r[idx]),
           );
           newRows.push(
-            Object.fromEntries(
-              cells.map((v, idx) => [`c${idx + 1}`, v])
-            )
+            Object.fromEntries(cells.map((v, idx) => [`c${idx + 1}`, v])),
           );
         }
         slide.content.rows = newRows.slice(0, MAX_ROWS);
@@ -480,15 +478,20 @@ export function createTableGridEditor({
         const header = headerOn && rs.length ? rs[0] : emptyRow(cols);
         const body = headerOn ? rs.slice(1) : rs;
         const md = tableToMarkdown({
-          header: Array.from({ length: cols }, (_v, idx) => header[`c${idx + 1}`] || ''),
+          header: Array.from(
+            { length: cols },
+            (_v, idx) => header[`c${idx + 1}`] || '',
+          ),
           rows: body.map((row) =>
-            Array.from({ length: cols }, (_v, idx) => row[`c${idx + 1}`] || '')
+            Array.from({ length: cols }, (_v, idx) => row[`c${idx + 1}`] || ''),
           ),
           colCount: cols,
         });
         try {
           await navigator.clipboard.writeText(md);
-          toast.success(t('editor.table.copied', 'Markdown table copied to clipboard.'));
+          toast.success(
+            t('editor.table.copied', 'Markdown table copied to clipboard.'),
+          );
         } catch {
           // Clipboard blocked: show the markdown in a read-only modal to copy manually.
           const m = createModal(h, {
@@ -500,19 +503,18 @@ export function createTableGridEditor({
           m.show(document.body);
         }
       },
-    })
+    }),
   );
   importWrap.append(
     ta,
     importActions,
     h('div', {
       class: 'help',
-      text:
-        t(
-          'editor.table.tip',
-          'Tip: paste directly from Sheets/Excel as a Markdown pipe-table, or use a table from a content slide.'
-        ),
-    })
+      text: t(
+        'editor.table.tip',
+        'Tip: paste directly from Sheets/Excel as a Markdown pipe-table, or use a table from a content slide.',
+      ),
+    }),
   );
   wrap.append(importWrap);
 

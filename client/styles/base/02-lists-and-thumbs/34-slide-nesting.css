@@ -79,7 +79,9 @@
   color: hsl(var(--app-text-secondary));
   transition: all 0.15s ease;
   z-index: 5;
-  box-shadow: 0 1px 3px hsl(0 0% 0% / 0.12), 0 1px 2px hsl(0 0% 0% / 0.08);
+  box-shadow:
+    0 1px 3px hsl(0 0% 0% / 0.12),
+    0 1px 2px hsl(0 0% 0% / 0.08);
 }
 
 :where(
@@ -107,7 +109,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-collapse-toggle svg {
+  .slide-collapse-toggle
+  svg {
   width: 12px;
   height: 12px;
   transition: transform 0.2s ease;
@@ -124,7 +127,9 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-item--expanded .slide-collapse-toggle svg {
+  .slide-item--expanded
+  .slide-collapse-toggle
+  svg {
   transform: rotate(90deg);
 }
 
@@ -138,7 +143,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-item--parent:not(.slide-item--expanded) .thumb-mini {
+  .slide-item--parent:not(.slide-item--expanded)
+  .thumb-mini {
   position: relative;
 }
 
@@ -151,7 +157,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-item--parent:not(.slide-item--expanded) .thumb-mini::before,
+  .slide-item--parent:not(.slide-item--expanded)
+  .thumb-mini::before,
 :where(
     .app-shell,
     .modal-backdrop,
@@ -161,7 +168,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-item--parent:not(.slide-item--expanded) .thumb-mini::after {
+  .slide-item--parent:not(.slide-item--expanded)
+  .thumb-mini::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -182,7 +190,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-item--parent:not(.slide-item--expanded) .thumb-mini::before {
+  .slide-item--parent:not(.slide-item--expanded)
+  .thumb-mini::before {
   transform: translate(3px, 3px);
   opacity: 0.6;
 }
@@ -197,7 +206,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-item--parent:not(.slide-item--expanded) .thumb-mini::after {
+  .slide-item--parent:not(.slide-item--expanded)
+  .thumb-mini::after {
   transform: translate(6px, 6px);
   opacity: 0.3;
 }
@@ -289,7 +299,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-item.is-drop-nest .slide-nest-hint {
+  .slide-item.is-drop-nest
+  .slide-nest-hint {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -346,7 +357,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-item--expanded .slide-children-count {
+  .slide-item--expanded
+  .slide-children-count {
   display: none;
 }
 

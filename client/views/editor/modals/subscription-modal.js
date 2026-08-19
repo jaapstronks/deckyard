@@ -11,27 +11,44 @@ const LEVELS = [
   {
     value: null,
     label: () => t('subscription.level.default', 'Your default'),
-    help: () => t('subscription.level.default.help', 'Follow your global notification setting.'),
+    help: () =>
+      t(
+        'subscription.level.default.help',
+        'Follow your global notification setting.',
+      ),
   },
   {
     value: 'watching',
     label: () => t('subscription.level.watching', 'Watching'),
-    help: () => t('subscription.level.watching.help', 'Every comment on this deck.'),
+    help: () =>
+      t('subscription.level.watching.help', 'Every comment on this deck.'),
   },
   {
     value: 'participating',
     label: () => t('subscription.level.participating', 'Participating'),
-    help: () => t('subscription.level.participating.help', 'Threads you write in, replies to you, and your own decks.'),
+    help: () =>
+      t(
+        'subscription.level.participating.help',
+        'Threads you write in, replies to you, and your own decks.',
+      ),
   },
   {
     value: 'mentions_only',
     label: () => t('subscription.level.mentionsOnly', 'Mentions only'),
-    help: () => t('subscription.level.mentionsOnly.help', 'Only when someone @mentions you.'),
+    help: () =>
+      t(
+        'subscription.level.mentionsOnly.help',
+        'Only when someone @mentions you.',
+      ),
   },
   {
     value: 'mute',
     label: () => t('subscription.level.mute', 'Mute'),
-    help: () => t('subscription.level.mute.help', 'Silence this deck. Direct @mentions still reach you.'),
+    help: () =>
+      t(
+        'subscription.level.mute.help',
+        'Silence this deck. Direct @mentions still reach you.',
+      ),
   },
 ];
 
@@ -51,7 +68,9 @@ export async function openSubscriptionModal({ h, api, toast, presentationId }) {
     current = resp?.level ?? null;
     defaultLevel = resp?.defaultLevel || 'participating';
   } catch {
-    toast?.error?.(t('subscription.loadFailed', 'Could not load notification setting'));
+    toast?.error?.(
+      t('subscription.loadFailed', 'Could not load notification setting'),
+    );
     return;
   }
 
@@ -72,31 +91,45 @@ export async function openSubscriptionModal({ h, api, toast, presentationId }) {
 
   for (const level of LEVELS) {
     const isDefaultRow = level.value === null;
-    const defaultLabel = LEVELS.find((l) => l.value === defaultLevel)?.label() || defaultLevel;
-    const btn = h('button', {
-      type: 'button',
-      class: 'subscription-level-option',
-      onclick: async () => {
-        try {
-          await api(`/api/presentations/${presentationId}/subscription`, {
-            method: 'PUT',
-            body: JSON.stringify({ level: level.value }),
-          });
-          current = level.value;
-          syncSelected();
-          toast?.success?.(t('subscription.saved', 'Notification setting saved'));
-          modalApi.close();
-        } catch {
-          toast?.error?.(t('subscription.saveFailed', 'Could not save notification setting'));
-        }
+    const defaultLabel =
+      LEVELS.find((l) => l.value === defaultLevel)?.label() || defaultLevel;
+    const btn = h(
+      'button',
+      {
+        type: 'button',
+        class: 'subscription-level-option',
+        onclick: async () => {
+          try {
+            await api(`/api/presentations/${presentationId}/subscription`, {
+              method: 'PUT',
+              body: JSON.stringify({ level: level.value }),
+            });
+            current = level.value;
+            syncSelected();
+            toast?.success?.(
+              t('subscription.saved', 'Notification setting saved'),
+            );
+            modalApi.close();
+          } catch {
+            toast?.error?.(
+              t(
+                'subscription.saveFailed',
+                'Could not save notification setting',
+              ),
+            );
+          }
+        },
       },
-    }, [
-      h('span', {
-        class: 'subscription-level-label',
-        text: isDefaultRow ? `${level.label()} (${defaultLabel})` : level.label(),
-      }),
-      h('span', { class: 'subscription-level-help', text: level.help() }),
-    ]);
+      [
+        h('span', {
+          class: 'subscription-level-label',
+          text: isDefaultRow
+            ? `${level.label()} (${defaultLabel})`
+            : level.label(),
+        }),
+        h('span', { class: 'subscription-level-help', text: level.help() }),
+      ],
+    );
     buttons.push({ btn, value: level.value });
     list.append(btn);
   }
@@ -107,10 +140,10 @@ export async function openSubscriptionModal({ h, api, toast, presentationId }) {
       class: 'help',
       text: t(
         'subscription.hint',
-        'Controls which comment activity on this deck notifies you (bell and email). Direct @mentions always come through.'
+        'Controls which comment activity on this deck notifies you (bell and email). Direct @mentions always come through.',
       ),
     }),
-    list
+    list,
   );
   modalApi.show(document.body);
 }

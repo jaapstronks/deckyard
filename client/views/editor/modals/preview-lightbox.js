@@ -33,9 +33,7 @@ export function createPreviewLightbox({
 
   const open = () => {
     const selectedSlideId = getSelectedSlideId?.();
-    const slide = (pres?.slides || []).find(
-      (s) => s?.id === selectedSlideId
-    );
+    const slide = (pres?.slides || []).find((s) => s?.id === selectedSlideId);
     if (!slide) return;
 
     const unlockScroll = lockDocumentScroll?.();
@@ -59,8 +57,16 @@ export function createPreviewLightbox({
         title: t('comments.addPositioned', 'Add comment to specific spot'),
       });
       pinBtn.append(
-        h('img', { class: 'btn-pin-icon', src: iconUrl('map-pin'), alt: '', 'aria-hidden': 'true' }),
-        h('span', { class: 'pin-comment-btn-label', text: t('comments.pinCommentLabel', 'Comment') })
+        h('img', {
+          class: 'btn-pin-icon',
+          src: iconUrl('map-pin'),
+          alt: '',
+          'aria-hidden': 'true',
+        }),
+        h('span', {
+          class: 'pin-comment-btn-label',
+          text: t('comments.pinCommentLabel', 'Comment'),
+        }),
       );
       pinHint = h('span', {
         class: 'pin-mode-hint',
@@ -72,27 +78,53 @@ export function createPreviewLightbox({
 
     // Slide navigation controls
     const headerNav = h('div', { class: 'preview-lightbox-nav' });
-    const prevBtn = h('button', {
-      class: 'btn btn-secondary btn-icon preview-lightbox-nav-btn',
-      type: 'button',
-      'aria-label': t('common.previous', 'Previous slide'),
-      onclick: () => navigateSlide(-1),
-    }, [
-      h('svg', { width: '18', height: '18', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
-        h('path', { d: 'M15 18l-6-6 6-6' }),
-      ]),
-    ]);
+    const prevBtn = h(
+      'button',
+      {
+        class: 'btn btn-secondary btn-icon preview-lightbox-nav-btn',
+        type: 'button',
+        'aria-label': t('common.previous', 'Previous slide'),
+        onclick: () => navigateSlide(-1),
+      },
+      [
+        h(
+          'svg',
+          {
+            width: '18',
+            height: '18',
+            viewBox: '0 0 24 24',
+            fill: 'none',
+            stroke: 'currentColor',
+            'stroke-width': '2',
+          },
+          [h('path', { d: 'M15 18l-6-6 6-6' })],
+        ),
+      ],
+    );
     const slideCounter = h('span', { class: 'preview-lightbox-counter' });
-    const nextBtn = h('button', {
-      class: 'btn btn-secondary btn-icon preview-lightbox-nav-btn',
-      type: 'button',
-      'aria-label': t('common.next', 'Next slide'),
-      onclick: () => navigateSlide(1),
-    }, [
-      h('svg', { width: '18', height: '18', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
-        h('path', { d: 'M9 18l6-6-6-6' }),
-      ]),
-    ]);
+    const nextBtn = h(
+      'button',
+      {
+        class: 'btn btn-secondary btn-icon preview-lightbox-nav-btn',
+        type: 'button',
+        'aria-label': t('common.next', 'Next slide'),
+        onclick: () => navigateSlide(1),
+      },
+      [
+        h(
+          'svg',
+          {
+            width: '18',
+            height: '18',
+            viewBox: '0 0 24 24',
+            fill: 'none',
+            stroke: 'currentColor',
+            'stroke-width': '2',
+          },
+          [h('path', { d: 'M9 18l6-6-6-6' })],
+        ),
+      ],
+    );
     headerNav.append(prevBtn, slideCounter, nextBtn);
 
     const headerRight = h('div', { class: 'ps-modal-header-right' });
@@ -115,9 +147,9 @@ export function createPreviewLightbox({
             stroke: 'currentColor',
             'stroke-width': '2',
           },
-          [h('path', { d: 'M18 6L6 18M6 6l12 12' })]
+          [h('path', { d: 'M18 6L6 18M6 6l12 12' })],
         ),
-      ]
+      ],
     );
     headerRight.append(closeBtn);
     header.append(headerLeft, headerNav, headerRight);
@@ -158,8 +190,10 @@ export function createPreviewLightbox({
       const stageRect = stage.getBoundingClientRect();
       const x = comment.positionX;
       const y = comment.positionY;
-      const pixelX = thumbRect.left - stageRect.left + (x / 100) * thumbRect.width;
-      const pixelY = thumbRect.top - stageRect.top + (y / 100) * thumbRect.height;
+      const pixelX =
+        thumbRect.left - stageRect.left + (x / 100) * thumbRect.width;
+      const pixelY =
+        thumbRect.top - stageRect.top + (y / 100) * thumbRect.height;
 
       const positionClasses = ['comment-detail-popup'];
       if (x > 50) positionClasses.push('anchor-right');
@@ -174,7 +208,10 @@ export function createPreviewLightbox({
       const headerEl = h('div', { class: 'comment-detail-header' });
       const authorEl = h('span', {
         class: 'comment-detail-author',
-        text: comment.authorName || comment.authorEmail || t('comments.unknownAuthor', 'Unknown'),
+        text:
+          comment.authorName ||
+          comment.authorEmail ||
+          t('comments.unknownAuthor', 'Unknown'),
       });
       const timeEl = h('span', {
         class: 'comment-detail-time',
@@ -199,7 +236,10 @@ export function createPreviewLightbox({
           const replyEl = h('div', { class: 'comment-detail-reply' });
           const replyAuthor = h('span', {
             class: 'comment-detail-reply-author',
-            text: reply.authorName || reply.authorEmail || t('comments.unknownAuthor', 'Unknown'),
+            text:
+              reply.authorName ||
+              reply.authorEmail ||
+              t('comments.unknownAuthor', 'Unknown'),
           });
           const replyBody = h('span', { class: 'comment-detail-reply-body' });
           replyBody.append(...renderCommentBodyNodes(reply.body, h));
@@ -223,9 +263,14 @@ export function createPreviewLightbox({
         const days = Math.floor(diff / 86400000);
 
         if (minutes < 1) return t('comments.time.justNow', 'Just now');
-        if (minutes < 60) return t('comments.time.minutesAgo', '{count}m ago', { count: minutes });
-        if (hours < 24) return t('comments.time.hoursAgo', '{count}h ago', { count: hours });
-        if (days < 7) return t('comments.time.daysAgo', '{count}d ago', { count: days });
+        if (minutes < 60)
+          return t('comments.time.minutesAgo', '{count}m ago', {
+            count: minutes,
+          });
+        if (hours < 24)
+          return t('comments.time.hoursAgo', '{count}h ago', { count: hours });
+        if (days < 7)
+          return t('comments.time.daysAgo', '{count}d ago', { count: days });
         return date.toLocaleDateString();
       } catch {
         return '';
@@ -246,8 +291,10 @@ export function createPreviewLightbox({
 
       const thumbRect = bigThumb.getBoundingClientRect();
       const stageRect = stage.getBoundingClientRect();
-      const pixelX = thumbRect.left - stageRect.left + (x / 100) * thumbRect.width;
-      const pixelY = thumbRect.top - stageRect.top + (y / 100) * thumbRect.height;
+      const pixelX =
+        thumbRect.left - stageRect.left + (x / 100) * thumbRect.width;
+      const pixelY =
+        thumbRect.top - stageRect.top + (y / 100) * thumbRect.height;
 
       const positionClasses = ['positioned-comment-popup'];
       if (x > 50) positionClasses.push('anchor-right');
@@ -359,7 +406,7 @@ export function createPreviewLightbox({
     function navigateSlide(delta) {
       const slides = pres?.slides || [];
       const sid = getSelectedSlideId?.();
-      const currentIndex = slides.findIndex(s => s?.id === sid);
+      const currentIndex = slides.findIndex((s) => s?.id === sid);
       const newIndex = currentIndex + delta;
       if (newIndex < 0 || newIndex >= slides.length) return;
       const newSlide = slides[newIndex];
@@ -376,7 +423,7 @@ export function createPreviewLightbox({
     function updateNavState() {
       const slides = pres?.slides || [];
       const sid = getSelectedSlideId?.();
-      const idx = slides.findIndex(s => s?.id === sid);
+      const idx = slides.findIndex((s) => s?.id === sid);
       if (idx < 0) {
         slideCounter.textContent = '';
         prevBtn.disabled = true;
@@ -396,7 +443,9 @@ export function createPreviewLightbox({
       markersContainer = bigThumb.querySelector('.comment-markers-container');
       bigThumb.innerHTML = '';
       if (!s) return;
-      bigThumb.append(renderSlideElement(s, { theme, presentationId: pres?.id }));
+      bigThumb.append(
+        renderSlideElement(s, { theme, presentationId: pres?.id }),
+      );
       // Re-append markers container after slide content
       if (markersContainer) {
         bigThumb.appendChild(markersContainer);
@@ -426,7 +475,8 @@ export function createPreviewLightbox({
           close();
         }
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT')
+          return;
         e.preventDefault();
         navigateSlide(e.key === 'ArrowLeft' ? -1 : 1);
       }
@@ -460,9 +510,11 @@ export function createPreviewLightbox({
     modal.addEventListener('click', (e) => {
       if (commentMarkers?.isInAddMode?.()) return;
       if (header.contains(e.target)) return;
-      if (!bigThumb.contains(e.target) &&
-          !positionedPopup?.contains(e.target) &&
-          !commentDetailPopup?.contains(e.target)) {
+      if (
+        !bigThumb.contains(e.target) &&
+        !positionedPopup?.contains(e.target) &&
+        !commentDetailPopup?.contains(e.target)
+      ) {
         close();
       }
     });

@@ -7,4 +7,7 @@
  * @see ./analytics/index.js for the modular implementation
  */
 
-export { handleAnalytics, handleAnalyticsReportPublic } from './analytics/index.js';
+export {
+  handleAnalytics,
+  handleAnalyticsReportPublic,
+} from './analytics/index.js';

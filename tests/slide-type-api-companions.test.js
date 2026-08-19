@@ -41,7 +41,12 @@ import { handleSlideTypes } from '../server/routes/api/slide-types.js';
 /** Drive the route the way the server does and hand back the parsed body. */
 async function fetchMeta() {
   let body = '';
-  const res = { writeHead() {}, end(chunk) { body = chunk; } };
+  const res = {
+    writeHead() {},
+    end(chunk) {
+      body = chunk;
+    },
+  };
   const handled = await handleSlideTypes({
     req: { method: 'GET' },
     res,
@@ -58,15 +63,20 @@ describe('the companions travel', () => {
   it('every offerable type is served a group', () => {
     const missing = Object.keys(SLIDE_TYPES)
       .filter((name) => !SLIDE_TYPES[name]?.deprecated)
-      .filter((name) => slideTypeGroup(name, SLIDE_TYPES[name]) && !META[name]?.group)
+      .filter(
+        (name) => slideTypeGroup(name, SLIDE_TYPES[name]) && !META[name]?.group,
+      )
       .sort();
     assert.deepStrictEqual(
       missing,
       [],
-      'a type resolves to a shelf on the server but the editor is not told which'
+      'a type resolves to a shelf on the server but the editor is not told which',
     );
     const served = Object.values(META).filter((m) => m.group).length;
-    assert.ok(served > 30, `only ${served} types carry a group; the check would be vacuous`);
+    assert.ok(
+      served > 30,
+      `only ${served} types carry a group; the check would be vacuous`,
+    );
   });
 
   it('what is served is what the facet modules resolve', () => {
@@ -77,19 +87,27 @@ describe('the companions travel', () => {
       assert.deepStrictEqual(
         m.schematic ?? null,
         slideTypeSchematic(name, def),
-        `${name}: schematic`
+        `${name}: schematic`,
       );
       assert.deepStrictEqual(
         m.sampleContent,
         slideTypeSample(name, def),
-        `${name}: sampleContent`
+        `${name}: sampleContent`,
       );
-      assert.equal(m.description ?? '', slideTypeDescription(name, def), `${name}: description`);
-      assert.equal(m.aliases ?? '', slideTypeAliases(name, def), `${name}: aliases`);
+      assert.equal(
+        m.description ?? '',
+        slideTypeDescription(name, def),
+        `${name}: description`,
+      );
+      assert.equal(
+        m.aliases ?? '',
+        slideTypeAliases(name, def),
+        `${name}: aliases`,
+      );
       assert.deepStrictEqual(
         m.inspectorKeeps ?? null,
         slideTypeInspectorKeeps(name, def),
-        `${name}: inspectorKeeps`
+        `${name}: inspectorKeeps`,
       );
     }
   });
@@ -100,11 +118,22 @@ describe('the companions travel', () => {
     // the inspector falls back to everything. Serving `[]` for both would strip
     // the settings pane of every fork type.
     const missing = Object.keys(SLIDE_TYPES)
-      .filter((name) => slideTypeInspectorKeeps(name, SLIDE_TYPES[name]) && !META[name]?.inspectorKeeps)
+      .filter(
+        (name) =>
+          slideTypeInspectorKeeps(name, SLIDE_TYPES[name]) &&
+          !META[name]?.inspectorKeeps,
+      )
       .sort();
-    assert.deepStrictEqual(missing, [], 'a type has a keep-list the editor is not told');
+    assert.deepStrictEqual(
+      missing,
+      [],
+      'a type has a keep-list the editor is not told',
+    );
     const served = Object.values(META).filter((m) => m.inspectorKeeps).length;
-    assert.ok(served > 30, `only ${served} types carry a keep-list; the check would be vacuous`);
+    assert.ok(
+      served > 30,
+      `only ${served} types carry a keep-list; the check would be vacuous`,
+    );
   });
 
   it('a deprecated type is served no shelf', () => {
@@ -116,7 +145,7 @@ describe('the companions travel', () => {
       stale,
       [],
       'curation is about what an author may insert; a deprecated type is already ' +
-        'unreachable from every insertion path'
+        'unreachable from every insertion path',
     );
   });
 
@@ -125,12 +154,17 @@ describe('the companions travel', () => {
     // Date or an undefined leaf would arrive at the editor changed or missing,
     // and the editor would fall back to core without anything saying so.
     for (const [name, m] of Object.entries(META)) {
-      for (const key of ['group', 'schematic', 'sampleContent', 'inspectorKeeps']) {
+      for (const key of [
+        'group',
+        'schematic',
+        'sampleContent',
+        'inspectorKeeps',
+      ]) {
         if (m[key] === undefined) continue;
         assert.deepStrictEqual(
           JSON.parse(JSON.stringify(m[key])),
           m[key],
-          `${name}: ${key} is not JSON-safe`
+          `${name}: ${key} is not JSON-safe`,
         );
       }
     }
@@ -155,14 +189,23 @@ describe('a non-core declaration reaches the editor', () => {
 
   it('its group, glyph, example and keep-list all resolve from the definition', () => {
     assert.equal(slideTypeGroup('acme-hero', forkDef), 'media');
-    assert.deepStrictEqual(slideTypeSchematic('acme-hero', forkDef), { kind: 'image' });
-    assert.deepStrictEqual(slideTypeSample('acme-hero', forkDef), { title: 'Welcome' });
-    assert.equal(slideTypeDescription('acme-hero', forkDef), 'A big hero header');
+    assert.deepStrictEqual(slideTypeSchematic('acme-hero', forkDef), {
+      kind: 'image',
+    });
+    assert.deepStrictEqual(slideTypeSample('acme-hero', forkDef), {
+      title: 'Welcome',
+    });
+    assert.equal(
+      slideTypeDescription('acme-hero', forkDef),
+      'A big hero header',
+    );
     assert.equal(slideTypeAliases('acme-hero', forkDef), 'banner splash hero');
-    assert.deepStrictEqual(slideTypeInspectorKeeps('acme-hero', forkDef), ['overlay']);
+    assert.deepStrictEqual(slideTypeInspectorKeeps('acme-hero', forkDef), [
+      'overlay',
+    ]);
   });
 
-  it('and each degrades to nothing rather than to a core type\'s answer', () => {
+  it("and each degrades to nothing rather than to a core type's answer", () => {
     assert.equal(slideTypeGroup('acme-hero', { label: 'Hero' }), '');
     assert.equal(slideTypeSchematic('acme-hero', { label: 'Hero' }), null);
     assert.equal(slideTypeSample('acme-hero', { label: 'Hero' }), undefined);
@@ -174,18 +217,35 @@ describe('a non-core declaration reaches the editor', () => {
   it('an empty keep-list is an answer, not an absence', () => {
     // `[]` says "the canvas covers all of it"; null says "nobody narrowed this".
     // The inspector's fallback branches on exactly that difference.
-    assert.deepStrictEqual(slideTypeInspectorKeeps('acme-hero', { inspectorKeeps: [] }), []);
-    assert.equal(slideTypeInspectorKeeps('acme-hero', { inspectorKeeps: 'layout' }), null);
-    assert.equal(slideTypeInspectorKeeps('acme-hero', { inspectorKeeps: [1, 2] }), null);
+    assert.deepStrictEqual(
+      slideTypeInspectorKeeps('acme-hero', { inspectorKeeps: [] }),
+      [],
+    );
+    assert.equal(
+      slideTypeInspectorKeeps('acme-hero', { inspectorKeeps: 'layout' }),
+      null,
+    );
+    assert.equal(
+      slideTypeInspectorKeeps('acme-hero', { inspectorKeeps: [1, 2] }),
+      null,
+    );
   });
 
   it('a definition may override core per companion, without touching the others', () => {
-    const overridden = { ...SLIDE_TYPES['quote-slide'], schematic: { kind: 'image' } };
-    assert.deepStrictEqual(slideTypeSchematic('quote-slide', overridden), { kind: 'image' });
-    assert.equal(slideTypeGroup('quote-slide', overridden), slideTypeGroup('quote-slide'));
+    const overridden = {
+      ...SLIDE_TYPES['quote-slide'],
+      schematic: { kind: 'image' },
+    };
+    assert.deepStrictEqual(slideTypeSchematic('quote-slide', overridden), {
+      kind: 'image',
+    });
+    assert.equal(
+      slideTypeGroup('quote-slide', overridden),
+      slideTypeGroup('quote-slide'),
+    );
     assert.deepStrictEqual(
       slideTypeSample('quote-slide', overridden),
-      slideTypeSample('quote-slide')
+      slideTypeSample('quote-slide'),
     );
   });
 });
@@ -197,17 +257,27 @@ describe('the preset override still outranks the definition', () => {
   const [type, presetId] = firstPresetOverride();
 
   it('the fixture is real', () => {
-    assert.ok(presetId, 'no type declares a presetSchematics entry; the check is vacuous');
+    assert.ok(
+      presetId,
+      'no type declares a presetSchematics entry; the check is vacuous',
+    );
   });
 
   it('a preset tile keeps its own glyph even when the definition has one', () => {
     const preset = slideTypeSchematic(type, null, presetId);
-    const withDefGlyph = slideTypeSchematic(type, { schematic: { kind: 'image' } }, presetId);
+    const withDefGlyph = slideTypeSchematic(
+      type,
+      { schematic: { kind: 'image' } },
+      presetId,
+    );
     assert.deepStrictEqual(withDefGlyph, preset);
     // …and without a preset id, the definition wins as usual.
-    assert.deepStrictEqual(slideTypeSchematic(type, { schematic: { kind: 'image' } }), {
-      kind: 'image',
-    });
+    assert.deepStrictEqual(
+      slideTypeSchematic(type, { schematic: { kind: 'image' } }),
+      {
+        kind: 'image',
+      },
+    );
   });
 });
 

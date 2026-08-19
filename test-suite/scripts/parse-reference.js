@@ -18,7 +18,8 @@ async function main() {
   let only = null;
   let force = false;
   for (let i = 0; i < argv.length; i += 1) {
-    if (argv[i] === '--cases') only = argv[(i += 1)].split(',').map((s) => s.trim());
+    if (argv[i] === '--cases')
+      only = argv[(i += 1)].split(',').map((s) => s.trim());
     else if (argv[i] === '--force') force = true;
   }
 
@@ -55,7 +56,7 @@ async function main() {
       await fs.writeFile(outputPath, JSON.stringify(parsed, null, 2));
       console.log(
         `[${testCase.id}] ${slides.length} slides, ${parsed.totalWords} words ` +
-          `(${Math.round(parsed.totalWords / Math.max(1, slides.length))}/slide)`
+          `(${Math.round(parsed.totalWords / Math.max(1, slides.length))}/slide)`,
       );
     } catch (err) {
       failures += 1;
@@ -80,7 +81,8 @@ async function parseSlidePdf(pdfPath) {
   const bytes = await fs.readFile(pdfPath);
   // The app's parser already returns text per page, which is what preserves
   // slide boundaries here.
-  const { parsePdf } = await import('../../server/utils/convert-file/pdf-parser.js');
+  const { parsePdf } =
+    await import('../../server/utils/convert-file/pdf-parser.js');
   const parsed = await parsePdf(bytes);
   if (!parsed.slides.length) {
     throw new Error(parsed.errors.join('; ') || 'no text extracted');
@@ -93,7 +95,9 @@ async function parseSlidePdf(pdfPath) {
       .filter(Boolean);
 
     // Skip slide numbers and other one-token furniture when picking a title.
-    const titleIndex = lines.findIndex((line) => line.length > 3 && !/^\d+$/.test(line));
+    const titleIndex = lines.findIndex(
+      (line) => line.length > 3 && !/^\d+$/.test(line),
+    );
     const title = titleIndex >= 0 ? lines[titleIndex] : '';
     const body = lines.filter((_, i) => i !== titleIndex).join('\n');
     const text = body.trim();

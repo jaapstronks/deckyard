@@ -122,11 +122,16 @@ export default {
     const hasBottom = hasBottomSubheading(content);
     const hasHeader = !!(title || subheadingHtml);
 
-    const leftTitle = typeof content?.leftTitle === 'string' ? content.leftTitle.trim() : '';
-    const leftBody = typeof content?.leftBody === 'string' ? content.leftBody.trim() : '';
-    const rightTitle = typeof content?.rightTitle === 'string' ? content.rightTitle.trim() : '';
-    const rightBody = typeof content?.rightBody === 'string' ? content.rightBody.trim() : '';
-    const verdict = typeof content?.verdict === 'string' ? content.verdict.trim() : '';
+    const leftTitle =
+      typeof content?.leftTitle === 'string' ? content.leftTitle.trim() : '';
+    const leftBody =
+      typeof content?.leftBody === 'string' ? content.leftBody.trim() : '';
+    const rightTitle =
+      typeof content?.rightTitle === 'string' ? content.rightTitle.trim() : '';
+    const rightBody =
+      typeof content?.rightBody === 'string' ? content.rightBody.trim() : '';
+    const verdict =
+      typeof content?.verdict === 'string' ? content.verdict.trim() : '';
 
     const leftTitleHtml = leftTitle
       ? `<h3 class="side-title" data-inline-field="leftTitle" dir="auto">${escapeHtml(leftTitle)}</h3>`

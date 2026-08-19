@@ -8,7 +8,11 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 
-import { getAppName, getHelpUrl, getBranding } from '../server/config/branding.js';
+import {
+  getAppName,
+  getHelpUrl,
+  getBranding,
+} from '../server/config/branding.js';
 
 describe('getAppName', () => {
   let saved;
@@ -57,7 +61,12 @@ describe('getHelpUrl', () => {
   });
 
   it('rejects non-http(s) schemes (javascript:, ftp:, relative)', () => {
-    for (const bad of ['javascript:alert(1)', 'ftp://x', '/docs', 'docs.example.com']) {
+    for (const bad of [
+      'javascript:alert(1)',
+      'ftp://x',
+      '/docs',
+      'docs.example.com',
+    ]) {
       process.env.HELP_URL = bad;
       assert.equal(getHelpUrl(), null, `expected null for ${bad}`);
     }

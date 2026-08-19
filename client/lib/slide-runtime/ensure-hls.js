@@ -12,9 +12,16 @@ export function ensureHlsJs() {
     const existing = document.querySelector('script[data-hls-loader="1"]');
     if (existing) {
       // Script tag exists but may have already finished loading before we attached listeners.
-      if (globalThis.Hls) { resolve(); return; }
+      if (globalThis.Hls) {
+        resolve();
+        return;
+      }
       existing.addEventListener('load', () => resolve(), { once: true });
-      existing.addEventListener('error', () => reject(new Error('Failed to load hls.js')), { once: true });
+      existing.addEventListener(
+        'error',
+        () => reject(new Error('Failed to load hls.js')),
+        { once: true },
+      );
       return;
     }
     const s = document.createElement('script');
@@ -22,7 +29,11 @@ export function ensureHlsJs() {
     s.async = true;
     s.dataset.hlsLoader = '1';
     s.addEventListener('load', () => resolve(), { once: true });
-    s.addEventListener('error', () => reject(new Error('Failed to load hls.js')), { once: true });
+    s.addEventListener(
+      'error',
+      () => reject(new Error('Failed to load hls.js')),
+      { once: true },
+    );
     document.head.append(s);
   });
   return hlsPromise;

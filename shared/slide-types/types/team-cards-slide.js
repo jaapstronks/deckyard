@@ -45,11 +45,18 @@ function resolveMembers(content) {
   }
 
   // Legacy format: card{N}Name, card{N}Byline, etc.
-  const count = Math.max(1, Math.min(MAX_CARDS, Number(content?.cardCount) || 1));
+  const count = Math.max(
+    1,
+    Math.min(MAX_CARDS, Number(content?.cardCount) || 1),
+  );
   // Be forgiving: scan beyond cardCount for populated cards
   let maxUsedIdx = 0;
   for (let i = 1; i <= MAX_CARDS; i++) {
-    if (content?.[`card${i}Image`] || content?.[`card${i}Name`] || content?.[`card${i}Byline`]) {
+    if (
+      content?.[`card${i}Image`] ||
+      content?.[`card${i}Name`] ||
+      content?.[`card${i}Byline`]
+    ) {
       maxUsedIdx = i;
     }
   }
@@ -181,7 +188,12 @@ export default {
         { key: 'alt', type: 'string', label: 'Photo alt text', maxLength: 180 },
         { key: 'name', type: 'string', label: 'Title', maxLength: 80 },
         { key: 'byline', type: 'string', label: 'Caption', maxLength: 120 },
-        { key: 'linkedin', type: 'string', label: 'LinkedIn URL', maxLength: 300 },
+        {
+          key: 'linkedin',
+          type: 'string',
+          label: 'LinkedIn URL',
+          maxLength: 300,
+        },
       ],
     },
     {
@@ -374,9 +386,10 @@ export default {
       });
 
       // Only apply focus position for square aspect (cropped images)
-      const focusStyle = imageAspect === 'square'
-        ? objectPositionStyleAttrFromFocus({ focusX, focusY })
-        : '';
+      const focusStyle =
+        imageAspect === 'square'
+          ? objectPositionStyleAttrFromFocus({ focusX, focusY })
+          : '';
 
       // Inline-edit hook: clicking the photo (filled or empty placeholder) in
       // the WYSIWYG editor opens a media popover (image + alt + LinkedIn). The
@@ -404,7 +417,7 @@ export default {
       const linkedinUrl = normalizeLinkedinUrl(member.linkedin);
       const linkedinHtml = linkedinUrl
         ? `<a class="team-card-linkedin" href="${escapeHtml(linkedinUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(
-            name ? `LinkedIn - ${name}` : 'LinkedIn'
+            name ? `LinkedIn - ${name}` : 'LinkedIn',
           )}">${LINKEDIN_ICON_SVG}</a>`
         : '';
 
@@ -415,16 +428,17 @@ export default {
         cardContent = `${nameHtml}${photoHtml}${bylineHtml}${linkedinHtml}`;
       } else {
         // Below (default): both title and caption below image
-        const textHtml = (nameHtml || bylineHtml || linkedinHtml)
-          ? `<div class="team-card-text">${nameHtml}${bylineHtml}${linkedinHtml}</div>`
-          : '';
+        const textHtml =
+          nameHtml || bylineHtml || linkedinHtml
+            ? `<div class="team-card-text">${nameHtml}${bylineHtml}${linkedinHtml}</div>`
+            : '';
         cardContent = `${photoHtml}${textHtml}`;
       }
 
       const itemAttrs = ` data-inline-item="members" data-inline-item-index="${idx}"`;
       return `
         <div class="team-card" role="group" aria-label="${escapeHtml(
-          name || `Block ${idx + 1}`
+          name || `Block ${idx + 1}`,
         )}"${itemAttrs}>
           ${cardContent}
         </div>
@@ -489,7 +503,8 @@ export default {
       return `
         <div class="slide slide-team-cards ${bg} text-${textPosition} aspect-${imageAspect} shape-${imageShape}${
           showPhotoFrame ? ' has-photo-frame' : ''
-        }${hasHeader ? ' has-header' : ''
+        }${
+          hasHeader ? ' has-header' : ''
         }${hasBottom ? ' has-bottom-subheading' : ''} has-column-split" data-card-count="${count}" data-split-left="${leftCols}" data-split-right="${rightCols}">
           <div class="slide-inner">
             ${headerHtml}
@@ -528,7 +543,8 @@ export default {
     return `
       <div class="slide slide-team-cards ${bg} text-${textPosition} aspect-${imageAspect} shape-${imageShape}${
         showPhotoFrame ? ' has-photo-frame' : ''
-      }${hasHeader ? ' has-header' : ''
+      }${
+        hasHeader ? ' has-header' : ''
       }${hasBottom ? ' has-bottom-subheading' : ''}" data-card-count="${count}">
         <div class="slide-inner">
           ${headerHtml}

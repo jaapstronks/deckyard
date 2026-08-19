@@ -7,7 +7,10 @@ export function getQaName() {
 
 export function setQaName(name) {
   const KEY = 'qa.name';
-  const v = String(name || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+  const v = String(name || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 60);
   if (!v) storage.remove(KEY);
   else storage.set(KEY, v);
   return v;

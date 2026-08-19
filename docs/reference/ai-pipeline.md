@@ -3,8 +3,8 @@
 ## Purpose & scope
 
 Deckyard turns raw input — pasted text, a Notion page, a brief — into a deck by
-running a **two-phase pipeline**: phase 1 plans an *outline* without knowing that
-slide types exist, phase 2 *refines* each outline slide into a concrete slide
+running a **two-phase pipeline**: phase 1 plans an _outline_ without knowing that
+slide types exist, phase 2 _refines_ each outline slide into a concrete slide
 type with structured content, and a validation layer repairs what the model got
 wrong before anything is persisted. The same machinery, with different prompts,
 powers append, section refine, single-slide conversion, deck iteration, deck
@@ -12,7 +12,7 @@ compression, presentation analysis and version comparison.
 
 This document covers that pipeline: the transport layer to the LLM vendors, the
 prompt seam, the slide-type catalogue the model is shown, the validate-and-fix
-stage, the routes, and where the output lands. The *review UI* over generated
+stage, the routes, and where the output lands. The _review UI_ over generated
 decks is [`ai-slide-review.md`](ai-slide-review.md); the standalone copy-paste
 prompt artifact is [`ai-wizard-prompts.md`](ai-wizard-prompts.md) (not wired into
 the app). Adding a slide type — including the `ai.js` that feeds the catalogue —
@@ -23,10 +23,10 @@ is [`../developer/slide-types.md`](../developer/slide-types.md).
 Transport (`server/utils/llm/`, 13 modules):
 
 - `server/utils/llm/index.js` — `requestChatCompletionContent({vendor, apiKey,
-  model, temperature, responseFormat, maxTokens, messages})`, the single call
+model, temperature, responseFormat, maxTokens, messages})`, the single call
   every AI feature goes through.
 - `server/utils/llm/config.js` — `detectDefaultVendor()`, `getLlmConfig({vendor,
-  role})`, `getLlmStatus()`. Resolves vendor + model + key, including the
+role})`, `getLlmStatus()`. Resolves vendor + model + key, including the
   sandbox's Mistral-only stance and the `role: 'plan'` stronger-model rule.
 - `server/utils/llm/env.js` — `requireEnv` / `optionalEnv`.
 - `server/utils/llm/error.js` — `LlmError`, the normalised vendor failure.
@@ -179,16 +179,16 @@ Everything else is files on disk: conversation logs under `server/logs/ai/`
 
 ## Config & flags
 
-| Name | Where | Purpose / default |
-|---|---|---|
-| `LLM_VENDOR` | `utils/llm/config.js` | Explicit default vendor. Must be a known vendor (`shared/llm-vendors.js`). |
-| `OPENAI_API` + `OPENAI_MODEL` | idem | Model default `gpt-5.2`. |
-| `CLAUDE_API` + `CLAUDE_MODEL` / `CLAUDE_MODEL_PLAN` | idem | Fill default `claude-sonnet-5`; plan default `claude-opus-4-8`. A pinned `CLAUDE_MODEL` applies everywhere unless `CLAUDE_MODEL_PLAN` overrides the plan step. |
-| `MISTRAL_API` + `MISTRAL_MODEL` | idem | Default `mistral-large-latest` (`mistral-small-latest` in sandbox). |
-| `DEEPSEEK_API` + `DEEPSEEK_MODEL` | idem | Default `deepseek-chat`. |
-| `OPENAI_COMPAT_ENDPOINT` + `OPENAI_COMPAT_MODEL` + `OPENAI_COMPAT_API` | idem | Any OpenAI-compatible endpoint; the key is optional (local servers). |
-| `AI_VALIDATION_LOGGING` | `utils/ai/validation-logging.js` | On unless set to `false`. |
-| `NODE_ENV` | `utils/ai/logging.js` | Full conversation logging is disabled in production. |
+| Name                                                                   | Where                            | Purpose / default                                                                                                                                              |
+| ---------------------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LLM_VENDOR`                                                           | `utils/llm/config.js`            | Explicit default vendor. Must be a known vendor (`shared/llm-vendors.js`).                                                                                     |
+| `OPENAI_API` + `OPENAI_MODEL`                                          | idem                             | Model default `gpt-5.2`.                                                                                                                                       |
+| `CLAUDE_API` + `CLAUDE_MODEL` / `CLAUDE_MODEL_PLAN`                    | idem                             | Fill default `claude-sonnet-5`; plan default `claude-opus-4-8`. A pinned `CLAUDE_MODEL` applies everywhere unless `CLAUDE_MODEL_PLAN` overrides the plan step. |
+| `MISTRAL_API` + `MISTRAL_MODEL`                                        | idem                             | Default `mistral-large-latest` (`mistral-small-latest` in sandbox).                                                                                            |
+| `DEEPSEEK_API` + `DEEPSEEK_MODEL`                                      | idem                             | Default `deepseek-chat`.                                                                                                                                       |
+| `OPENAI_COMPAT_ENDPOINT` + `OPENAI_COMPAT_MODEL` + `OPENAI_COMPAT_API` | idem                             | Any OpenAI-compatible endpoint; the key is optional (local servers).                                                                                           |
+| `AI_VALIDATION_LOGGING`                                                | `utils/ai/validation-logging.js` | On unless set to `false`.                                                                                                                                      |
+| `NODE_ENV`                                                             | `utils/ai/logging.js`            | Full conversation logging is disabled in production.                                                                                                           |
 
 Feature flags (`server/config/flags-snapshot.js`): `enableAi` — off with
 `AI_ENABLED=false`, **demo mode** or **sandbox mode** — when false makes the
@@ -201,9 +201,9 @@ nothing else — an explicit request for another vendor is a `400`, not a silent
 downgrade. In practice sandbox mode also forces `enableAi` off, so this is a
 belt-and-braces rule at the config layer rather than the live path.
 
-Fork seams: `utils/ai/prompts/custom-loader.js` overrides prompt *copy*;
+Fork seams: `utils/ai/prompts/custom-loader.js` overrides prompt _copy_;
 `slide-catalog/custom-loader.js` adds a fork's own slide types to the catalogue;
-`slide-catalog/custom-catalog-loader.js` overrides the AI copy of a *core* type.
+`slide-catalog/custom-catalog-loader.js` overrides the AI copy of a _core_ type.
 The mechanism (builders, schemas, transport) is not overridable — that is the
 point of the seam.
 
@@ -214,7 +214,7 @@ point of the seam.
 - **Deck-scoped verbs** (append, refine-section, iterate, compress, convert,
   analyze, version-compare) resolve the deck through the presentation authz
   middleware first, so AI cannot reach a deck the caller could not open. The
-  generation verbs create a *new* deck in the caller's scope.
+  generation verbs create a _new_ deck in the caller's scope.
 - **Org context flows into the prompt**: `loadSlideTypeContext(authedUser)` reads
   the caller's organization's disabled and custom slide types, so a model never
   offers a type that organization turned off. Theme context comes from the deck's

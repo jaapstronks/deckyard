@@ -40,7 +40,8 @@ export async function fetchFontAsDataUrl(url, format = 'woff2') {
   try {
     await assertPublicHttpUrl(url);
   } catch (e) {
-    if (e?.code === 'SSRF_BAD_SCHEME') throw new Error('Font URL must use HTTP(S)');
+    if (e?.code === 'SSRF_BAD_SCHEME')
+      throw new Error('Font URL must use HTTP(S)');
     if (e?.code === 'SSRF_BLOCKED_ADDRESS')
       throw new Error('Font URL must not point to internal addresses');
     throw new Error('Invalid font URL');
@@ -50,7 +51,10 @@ export async function fetchFontAsDataUrl(url, format = 'woff2') {
   const timeout = setTimeout(() => controller.abort(), 15000);
   try {
     // redirect:'error' so a public URL can't 30x-bounce into private space.
-    const resp = await fetch(url, { signal: controller.signal, redirect: 'error' });
+    const resp = await fetch(url, {
+      signal: controller.signal,
+      redirect: 'error',
+    });
     if (!resp.ok) return null;
     // Don't embed an internal service's document/data response as a "font".
     // Best-effort blocklist (fonts arrive as font/*, octet-stream, or with no
@@ -60,7 +64,11 @@ export async function fetchFontAsDataUrl(url, format = 'woff2') {
       .split(';')[0]
       .trim()
       .toLowerCase();
-    if (/^(text\/|application\/(json|xml|xhtml|javascript|ld\+json))/.test(contentType)) {
+    if (
+      /^(text\/|application\/(json|xml|xhtml|javascript|ld\+json))/.test(
+        contentType,
+      )
+    ) {
       return null;
     }
     const buf = Buffer.from(await resp.arrayBuffer());
@@ -131,7 +139,10 @@ export async function buildEmbeddedFontCss(repoRoot, theme = null) {
 
     const sourceKey = `${format} ${url || `path:${relPath}`}`;
     if (!sources.has(sourceKey)) {
-      sources.set(sourceKey, resolveEmbedSource(repoRoot, { url, path: relPath, format }));
+      sources.set(
+        sourceKey,
+        resolveEmbedSource(repoRoot, { url, path: relPath, format }),
+      );
     }
 
     faces.push({

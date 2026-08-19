@@ -80,8 +80,13 @@ export function createShareViewerCommentsSection({
     text: t('comments.post', 'Post'),
     onclick: () => submitComment(),
   });
-  const inputControls = h('div', { class: 'share-viewer-comments-input-controls' });
-  inputControls.append(createCommentLinkButton({ input: commentInput }), submitBtn);
+  const inputControls = h('div', {
+    class: 'share-viewer-comments-input-controls',
+  });
+  inputControls.append(
+    createCommentLinkButton({ input: commentInput }),
+    submitBtn,
+  );
   inputArea.append(commentInput.el, inputControls);
 
   section.append(header, list, inputArea);
@@ -109,10 +114,12 @@ export function createShareViewerCommentsSection({
       renderComments();
     } catch (err) {
       list.innerHTML = '';
-      list.append(h('div', {
-        class: 'share-viewer-comments-error',
-        text: t('comments.error.loadFailed', 'Failed to load comments'),
-      }));
+      list.append(
+        h('div', {
+          class: 'share-viewer-comments-error',
+          text: t('comments.error.loadFailed', 'Failed to load comments'),
+        }),
+      );
     }
   }
 
@@ -122,7 +129,10 @@ export function createShareViewerCommentsSection({
     if (comments.length === 0) {
       const emptyEl = h('div', {
         class: 'share-viewer-comments-empty',
-        text: t('comments.empty.none', 'No comments yet. Be the first to add one!'),
+        text: t(
+          'comments.empty.none',
+          'No comments yet. Be the first to add one!',
+        ),
       });
       list.append(emptyEl);
       return;
@@ -163,7 +173,10 @@ export function createShareViewerCommentsSection({
     const headerEl = h('div', { class: 'share-viewer-comment-header' });
     const authorEl = h('span', {
       class: 'share-viewer-comment-author',
-      text: comment.authorName || comment.authorEmail || t('comments.unknownAuthor', 'Unknown'),
+      text:
+        comment.authorName ||
+        comment.authorEmail ||
+        t('comments.unknownAuthor', 'Unknown'),
     });
     const timeEl = h('span', {
       class: 'share-viewer-comment-time',
@@ -186,7 +199,9 @@ export function createShareViewerCommentsSection({
         type: 'button',
         text: t('comments.reply', 'Reply'),
         onclick: () => {
-          let replyInput = threadEl.querySelector('.share-viewer-comment-reply-input');
+          let replyInput = threadEl.querySelector(
+            '.share-viewer-comment-reply-input',
+          );
           if (replyInput) {
             replyInput.remove();
           } else {
@@ -248,7 +263,11 @@ export function createShareViewerCommentsSection({
       text: t('comments.reply', 'Reply'),
       onclick: submitReply,
     });
-    container.append(replyInput.el, createCommentLinkButton({ input: replyInput }), btn);
+    container.append(
+      replyInput.el,
+      createCommentLinkButton({ input: replyInput }),
+      btn,
+    );
     return container;
   }
 
@@ -272,12 +291,15 @@ export function createShareViewerCommentsSection({
   }
 
   async function deleteCommentAction(commentId) {
-    if (!(await confirmModal(h, document.body, {
-      title: t('comments.delete', 'Delete'),
-      message: t('comments.deleteConfirm', 'Delete this comment?'),
-      confirmLabel: t('comments.delete', 'Delete'),
-      danger: true,
-    }))) return;
+    if (
+      !(await confirmModal(h, document.body, {
+        title: t('comments.delete', 'Delete'),
+        message: t('comments.deleteConfirm', 'Delete this comment?'),
+        confirmLabel: t('comments.delete', 'Delete'),
+        danger: true,
+      }))
+    )
+      return;
     try {
       await commentsApi.deleteComment(commentId);
       loadComments();

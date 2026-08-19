@@ -17,7 +17,19 @@ export { buildPhase1SystemPrompt, buildPhase1UserPrompt } from './outline.js';
 // without a cycle). Advertising it as an override name would accept and log a
 // fork's override while never actually invoking it. Forks tune the theme
 // section by overriding the enclosing `buildPhase2SystemPrompt` instead.
-export { buildPhase2SystemPrompt, buildPhase2UserPrompt } from './refine-slides.js';
-export { buildRevisionSystemPrompt, buildRevisionUserPrompt } from './revise-outline.js';
-export { buildSectionSystemPrompt, buildSectionUserPrompt } from './refine-section.js';
-export { buildSlideIterationPrompt, buildDeckIterationPrompt } from './iterate-deck.js';
+export {
+  buildPhase2SystemPrompt,
+  buildPhase2UserPrompt,
+} from './refine-slides.js';
+export {
+  buildRevisionSystemPrompt,
+  buildRevisionUserPrompt,
+} from './revise-outline.js';
+export {
+  buildSectionSystemPrompt,
+  buildSectionUserPrompt,
+} from './refine-section.js';
+export {
+  buildSlideIterationPrompt,
+  buildDeckIterationPrompt,
+} from './iterate-deck.js';

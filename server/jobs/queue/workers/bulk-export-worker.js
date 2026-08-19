@@ -134,7 +134,13 @@ export function clearActiveBulkExport(userEmail) {
  * @param {string} [params.organizationId]
  * @param {string} [params.repoRoot]
  */
-async function sendExportNotifications({ userEmail, jobId, manifest, organizationId, repoRoot }) {
+async function sendExportNotifications({
+  userEmail,
+  jobId,
+  manifest,
+  organizationId,
+  repoRoot,
+}) {
   const stats = manifest?.stats || {};
   const baseUrl = getAppBaseUrl();
   const downloadUrl = `${baseUrl}/settings#export`;
@@ -143,7 +149,7 @@ async function sendExportNotifications({ userEmail, jobId, manifest, organizatio
   try {
     const scope = jobScope(
       { organizationId, actorEmail: userEmail, repoRoot },
-      'sendExportNotifications'
+      'sendExportNotifications',
     );
 
     const presCount = stats.presentations || 0;
@@ -166,7 +172,8 @@ async function sendExportNotifications({ userEmail, jobId, manifest, organizatio
 
   // 2. Email notification (lazy import to avoid circular deps)
   try {
-    const { sendExportReadyNotification } = await import('../../../integrations/email/senders-export.js');
+    const { sendExportReadyNotification } =
+      await import('../../../integrations/email/senders-export.js');
     await sendExportReadyNotification({
       recipientEmail: userEmail,
       stats,
@@ -231,7 +238,7 @@ async function processBulkExportJob(job) {
 
     log.info(
       `Bulk export complete for ${userEmail}: ` +
-      `${manifest.stats.presentations} presentations, ${size} bytes`
+        `${manifest.stats.presentations} presentations, ${size} bytes`,
     );
 
     // Send notifications (non-blocking)
@@ -263,11 +270,7 @@ async function processBulkExportJob(job) {
  * @returns {Promise<Object|null>} Worker instance
  */
 export async function initializeBulkExportWorker() {
-  return registerWorker(
-    QUEUE_NAMES.HEAVY,
-    processBulkExportJob,
-    {
-      concurrency: 1,
-    }
-  );
+  return registerWorker(QUEUE_NAMES.HEAVY, processBulkExportJob, {
+    concurrency: 1,
+  });
 }

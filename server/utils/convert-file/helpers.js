@@ -38,7 +38,11 @@ export function detectFileType(filename, mimeType) {
   }
 
   // RTF documents
-  if (ext === 'rtf' || mimeType === 'application/rtf' || mimeType === 'text/rtf') {
+  if (
+    ext === 'rtf' ||
+    mimeType === 'application/rtf' ||
+    mimeType === 'text/rtf'
+  ) {
     return 'rtf';
   }
 
@@ -48,12 +52,21 @@ export function detectFileType(filename, mimeType) {
   }
 
   // Markdown (.md)
-  if (ext === 'md' || ext === 'markdown' || mimeType === 'text/markdown' || mimeType === 'text/x-markdown') {
+  if (
+    ext === 'md' ||
+    ext === 'markdown' ||
+    mimeType === 'text/markdown' ||
+    mimeType === 'text/x-markdown'
+  ) {
     return 'md';
   }
 
   // Zip bundle (.zip) — markdown + images
-  if (ext === 'zip' || mimeType === 'application/zip' || mimeType === 'application/x-zip-compressed') {
+  if (
+    ext === 'zip' ||
+    mimeType === 'application/zip' ||
+    mimeType === 'application/x-zip-compressed'
+  ) {
     return 'zip';
   }
 
@@ -117,7 +130,7 @@ export function firstSlideIsTitle(firstSlideContent, outline) {
   const outlineSubtitle = String(outline.subtitle || '').toLowerCase();
 
   // Check 1: Very short content (just a title, maybe subtitle)
-  const lines = text.split('\n').filter(l => l.trim()).length;
+  const lines = text.split('\n').filter((l) => l.trim()).length;
   if (lines <= 3) {
     // Few lines = likely a title slide
     log.info('First slide looks like a title (few lines)');
@@ -156,7 +169,8 @@ export function slideNeedsReview(slide) {
 
   // Check for TODO markers
   if (title.includes('todo') || body.includes('todo')) return true;
-  if (title.includes('needs review') || body.includes('needs review')) return true;
+  if (title.includes('needs review') || body.includes('needs review'))
+    return true;
 
   // Check for placeholder content
   if (title.includes('[image slide') || title.includes('[visual')) return true;
@@ -193,7 +207,15 @@ export function getReviewReason(slide) {
 /**
  * Supported file extensions
  */
-export const SUPPORTED_EXTENSIONS = ['pptx', 'pdf', 'docx', 'rtf', 'odt', 'md', 'zip'];
+export const SUPPORTED_EXTENSIONS = [
+  'pptx',
+  'pdf',
+  'docx',
+  'rtf',
+  'odt',
+  'md',
+  'zip',
+];
 
 /**
  * Supported MIME types

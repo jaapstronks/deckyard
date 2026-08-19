@@ -64,10 +64,22 @@ export const up = async (db) => {
 };
 
 export const down = async (db) => {
-  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS subdomain`.execute(db);
-  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS custom_domain`.execute(db);
-  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS billing_email`.execute(db);
-  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS logo_url`.execute(db);
-  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS display_name`.execute(db);
-  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS description`.execute(db);
+  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS subdomain`.execute(
+    db,
+  );
+  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS custom_domain`.execute(
+    db,
+  );
+  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS billing_email`.execute(
+    db,
+  );
+  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS logo_url`.execute(
+    db,
+  );
+  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS display_name`.execute(
+    db,
+  );
+  await sql`ALTER TABLE organizations DROP COLUMN IF EXISTS description`.execute(
+    db,
+  );
 };

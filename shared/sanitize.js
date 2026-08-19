@@ -28,13 +28,18 @@ async function initPurify() {
 
   initPromise = (async () => {
     // Browser environment
-    if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
+    if (
+      typeof window !== 'undefined' &&
+      typeof window.document !== 'undefined'
+    ) {
       const DOMPurify = globalThis.DOMPurify || window.DOMPurify;
       if (DOMPurify) {
         purify = DOMPurify;
         return purify;
       }
-      throw new Error('DOMPurify not available in browser. Ensure it is loaded.');
+      throw new Error(
+        'DOMPurify not available in browser. Ensure it is loaded.',
+      );
     }
 
     // Node.js environment
@@ -53,13 +58,41 @@ async function initPurify() {
  */
 const DEFAULT_ALLOWED_TAGS = [
   // Block elements
-  'p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-  'ul', 'ol', 'li', 'blockquote', 'pre', 'code',
-  'table', 'thead', 'tbody', 'tr', 'th', 'td',
-  'hr', 'br',
+  'p',
+  'div',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'ul',
+  'ol',
+  'li',
+  'blockquote',
+  'pre',
+  'code',
+  'table',
+  'thead',
+  'tbody',
+  'tr',
+  'th',
+  'td',
+  'hr',
+  'br',
   // Inline elements
-  'strong', 'b', 'em', 'i', 'u', 's', 'strike',
-  'a', 'span', 'sub', 'sup', 'mark',
+  'strong',
+  'b',
+  'em',
+  'i',
+  'u',
+  's',
+  'strike',
+  'a',
+  'span',
+  'sub',
+  'sup',
+  'mark',
   // Media (sanitized attributes)
   'img',
 ];
@@ -68,16 +101,35 @@ const DEFAULT_ALLOWED_TAGS = [
  * Default allowed attributes
  */
 const DEFAULT_ALLOWED_ATTR = [
-  'href', 'target', 'rel', 'title', 'alt', 'src',
-  'class', 'id', 'style',
-  'colspan', 'rowspan', 'scope',
-  'data-lang', 'data-math', // Code highlighting and math rendering
+  'href',
+  'target',
+  'rel',
+  'title',
+  'alt',
+  'src',
+  'class',
+  'id',
+  'style',
+  'colspan',
+  'rowspan',
+  'scope',
+  'data-lang',
+  'data-math', // Code highlighting and math rendering
 ];
 
 /**
  * Inline-only allowed tags (for sanitizeInline)
  */
-const INLINE_ALLOWED_TAGS = ['strong', 'b', 'em', 'i', 'a', 'span', 'br', 'code'];
+const INLINE_ALLOWED_TAGS = [
+  'strong',
+  'b',
+  'em',
+  'i',
+  'a',
+  'span',
+  'br',
+  'code',
+];
 
 /**
  * Inline-only allowed attributes
@@ -118,7 +170,7 @@ export async function sanitizeHtml(html, config = {}) {
         attrs += ' rel="noopener noreferrer"';
       }
       return `<a ${attrs}>`;
-    }
+    },
   );
 
   return result;
@@ -192,7 +244,7 @@ function escapeFallback(html) {
         ? 'this Node process never called initSanitizer() (see server/server.js and server/mcp/index.js)'
         : 'DOMPurify did not load in this page';
     console.warn(
-      `[sanitize] No DOMPurify available: ${cause}. Markup is escaped, so authored HTML and rendered markdown appear as visible text.`
+      `[sanitize] No DOMPurify available: ${cause}. Markup is escaped, so authored HTML and rendered markdown appear as visible text.`,
     );
   }
   return html
@@ -222,7 +274,10 @@ export function sanitizeHtmlSync(html, config = {}) {
   }
 
   // Browser environment with DOMPurify available
-  if (typeof window !== 'undefined' && (globalThis.DOMPurify || window.DOMPurify)) {
+  if (
+    typeof window !== 'undefined' &&
+    (globalThis.DOMPurify || window.DOMPurify)
+  ) {
     const DOMPurify = globalThis.DOMPurify || window.DOMPurify;
     return DOMPurify.sanitize(html, {
       ALLOWED_TAGS: config.ALLOWED_TAGS || DEFAULT_ALLOWED_TAGS,
@@ -242,9 +297,22 @@ export function sanitizeHtmlSync(html, config = {}) {
  * loads, and form submission while still allowing rich layout markup.
  */
 const SLIDE_FORBID_TAGS = [
-  'script', 'noscript', 'style', 'iframe', 'object', 'embed',
-  'form', 'input', 'button', 'textarea', 'select', 'option',
-  'link', 'meta', 'base', 'title',
+  'script',
+  'noscript',
+  'style',
+  'iframe',
+  'object',
+  'embed',
+  'form',
+  'input',
+  'button',
+  'textarea',
+  'select',
+  'option',
+  'link',
+  'meta',
+  'base',
+  'title',
 ];
 
 /**
@@ -312,7 +380,10 @@ export function sanitizeInlineSync(html) {
     });
   }
 
-  if (typeof window !== 'undefined' && (globalThis.DOMPurify || window.DOMPurify)) {
+  if (
+    typeof window !== 'undefined' &&
+    (globalThis.DOMPurify || window.DOMPurify)
+  ) {
     const DOMPurify = globalThis.DOMPurify || window.DOMPurify;
     return DOMPurify.sanitize(html, {
       ALLOWED_TAGS: INLINE_ALLOWED_TAGS,

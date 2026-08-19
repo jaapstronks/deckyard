@@ -23,11 +23,13 @@ function showKeyDisplayModal(fullKey, onClose) {
   });
 
   const warning = h('div', { class: 'api-key-warning' }, [
-    h('strong', { text: t('settings.apiKeys.copyWarningTitle', 'Copy this key now') }),
+    h('strong', {
+      text: t('settings.apiKeys.copyWarningTitle', 'Copy this key now'),
+    }),
     h('p', {
       text: t(
         'settings.apiKeys.copyWarning',
-        'This is the only time you will see this key. Store it somewhere safe.'
+        'This is the only time you will see this key. Store it somewhere safe.',
       ),
     }),
   ]);
@@ -67,7 +69,7 @@ function showKeyDisplayModal(fullKey, onClose) {
         title: t('common.close', 'Close'),
         message: t(
           'settings.apiKeys.confirmCloseWithoutCopy',
-          'You haven\'t copied the key yet. Are you sure you want to close?'
+          "You haven't copied the key yet. Are you sure you want to close?",
         ),
       });
       if (!confirmClose) return;
@@ -76,7 +78,10 @@ function showKeyDisplayModal(fullKey, onClose) {
     onClose();
   };
 
-  const btnRow = h('div', { class: 'row is-end', style: 'gap: 8px; margin-top: 16px;' });
+  const btnRow = h('div', {
+    class: 'row is-end',
+    style: 'gap: 8px; margin-top: 16px;',
+  });
   btnRow.append(doneBtn, copyBtn);
 
   modal.append(modalTitle, warning, keyDisplay, btnRow);
@@ -107,7 +112,10 @@ export function showCreateModal(onSuccess) {
   const nameInput = h('input', {
     class: 'form-input',
     type: 'text',
-    placeholder: t('settings.apiKeys.createModal.namePlaceholder', 'e.g., Claude Desktop, CI Pipeline'),
+    placeholder: t(
+      'settings.apiKeys.createModal.namePlaceholder',
+      'e.g., Claude Desktop, CI Pipeline',
+    ),
   });
   nameLabel.append(nameLabelText, nameInput);
 
@@ -121,21 +129,75 @@ export function showCreateModal(onSuccess) {
   const permissionCheckboxes = h('div', { class: 'stack', style: 'gap: 8px;' });
 
   const permissions = [
-    { value: 'read', label: t('settings.apiKeys.permissions.read', 'Read'), desc: t('settings.apiKeys.permissionDesc.read', 'Read presentations, themes, and slide types'), defaultChecked: true },
-    { value: 'write', label: t('settings.apiKeys.permissions.write', 'Write'), desc: t('settings.apiKeys.permissionDesc.write', 'Create, update, and delete presentations'), defaultChecked: true },
-    { value: 'ai', label: t('settings.apiKeys.permissions.ai', 'AI'), desc: t('settings.apiKeys.permissionDesc.ai', 'Use AI generation and refinement features'), defaultChecked: false },
-    { value: 'export', label: t('settings.apiKeys.permissions.export', 'Export'), desc: t('settings.apiKeys.permissionDesc.export', 'Export presentations to HTML, JSON, or PDF'), defaultChecked: false },
-    { value: 'comments:read', label: t('settings.apiKeys.permissions.commentsRead', 'Comments: read'), desc: t('settings.apiKeys.permissionDesc.commentsRead', 'Read comments on accessible presentations'), defaultChecked: false },
-    { value: 'comments:write', label: t('settings.apiKeys.permissions.commentsWrite', 'Comments: write'), desc: t('settings.apiKeys.permissionDesc.commentsWrite', 'Add comments and replies, resolve or reopen them'), defaultChecked: false },
+    {
+      value: 'read',
+      label: t('settings.apiKeys.permissions.read', 'Read'),
+      desc: t(
+        'settings.apiKeys.permissionDesc.read',
+        'Read presentations, themes, and slide types',
+      ),
+      defaultChecked: true,
+    },
+    {
+      value: 'write',
+      label: t('settings.apiKeys.permissions.write', 'Write'),
+      desc: t(
+        'settings.apiKeys.permissionDesc.write',
+        'Create, update, and delete presentations',
+      ),
+      defaultChecked: true,
+    },
+    {
+      value: 'ai',
+      label: t('settings.apiKeys.permissions.ai', 'AI'),
+      desc: t(
+        'settings.apiKeys.permissionDesc.ai',
+        'Use AI generation and refinement features',
+      ),
+      defaultChecked: false,
+    },
+    {
+      value: 'export',
+      label: t('settings.apiKeys.permissions.export', 'Export'),
+      desc: t(
+        'settings.apiKeys.permissionDesc.export',
+        'Export presentations to HTML, JSON, or PDF',
+      ),
+      defaultChecked: false,
+    },
+    {
+      value: 'comments:read',
+      label: t('settings.apiKeys.permissions.commentsRead', 'Comments: read'),
+      desc: t(
+        'settings.apiKeys.permissionDesc.commentsRead',
+        'Read comments on accessible presentations',
+      ),
+      defaultChecked: false,
+    },
+    {
+      value: 'comments:write',
+      label: t('settings.apiKeys.permissions.commentsWrite', 'Comments: write'),
+      desc: t(
+        'settings.apiKeys.permissionDesc.commentsWrite',
+        'Add comments and replies, resolve or reopen them',
+      ),
+      defaultChecked: false,
+    },
   ];
 
   for (const permission of permissions) {
     const { element: checkRow } = labeledCheckbox({
       className: 'api-key-permission-checkbox',
       checked: permission.defaultChecked,
-      inputAttrs: { value: permission.value, 'data-permission': permission.value },
+      inputAttrs: {
+        value: permission.value,
+        'data-permission': permission.value,
+      },
       content: h('div', { class: 'api-key-permission-text' }, [
-        h('span', { class: 'api-key-permission-label', text: permission.label }),
+        h('span', {
+          class: 'api-key-permission-label',
+          text: permission.label,
+        }),
         h('span', { class: 'api-key-permission-desc', text: permission.desc }),
       ]),
     });
@@ -165,40 +227,64 @@ export function showCreateModal(onSuccess) {
     if (busy) return;
 
     const name = nameInput.value.trim();
-    const selectedPermissions = Array.from(permissionCheckboxes.querySelectorAll('input[type="checkbox"]:checked'))
-      .map(cb => cb.value);
+    const selectedPermissions = Array.from(
+      permissionCheckboxes.querySelectorAll('input[type="checkbox"]:checked'),
+    ).map((cb) => cb.value);
 
     if (!name) {
-      status.textContent = t('settings.apiKeys.createModal.nameRequired', 'Please enter a key name.');
+      status.textContent = t(
+        'settings.apiKeys.createModal.nameRequired',
+        'Please enter a key name.',
+      );
       return;
     }
 
     if (selectedPermissions.length === 0) {
-      status.textContent = t('settings.apiKeys.createModal.permissionRequired', 'Please select at least one permission.');
+      status.textContent = t(
+        'settings.apiKeys.createModal.permissionRequired',
+        'Please select at least one permission.',
+      );
       return;
     }
 
     busy = true;
     btnSubmit.disabled = true;
     nameInput.disabled = true;
-    permissionCheckboxes.querySelectorAll('input').forEach(cb => cb.disabled = true);
-    status.textContent = t('settings.apiKeys.createModal.creating', 'Creating...');
+    permissionCheckboxes
+      .querySelectorAll('input')
+      .forEach((cb) => (cb.disabled = true));
+    status.textContent = t(
+      'settings.apiKeys.createModal.creating',
+      'Creating...',
+    );
 
-    const result = await createApiKey({ name, permissions: selectedPermissions });
+    const result = await createApiKey({
+      name,
+      permissions: selectedPermissions,
+    });
 
     if (result.key) {
       // Show the key display modal
       showKeyDisplayModal(result.key.key, () => {
-        toast.success(t('settings.apiKeys.createModal.success', 'API key created successfully.'));
+        toast.success(
+          t(
+            'settings.apiKeys.createModal.success',
+            'API key created successfully.',
+          ),
+        );
         overlay.remove();
         onSuccess();
       });
     } else {
-      status.textContent = result.error || t('settings.apiKeys.createModal.error', 'Failed to create API key.');
+      status.textContent =
+        result.error ||
+        t('settings.apiKeys.createModal.error', 'Failed to create API key.');
       busy = false;
       btnSubmit.disabled = false;
       nameInput.disabled = false;
-      permissionCheckboxes.querySelectorAll('input').forEach(cb => cb.disabled = false);
+      permissionCheckboxes
+        .querySelectorAll('input')
+        .forEach((cb) => (cb.disabled = false));
     }
   };
 

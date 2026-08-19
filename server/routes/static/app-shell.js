@@ -27,7 +27,7 @@ function serverRenderedTypesHeadHtml() {
   const names = OVERRIDDEN_CORE_SLIDE_TYPE_NAMES;
   if (!Array.isArray(names) || names.length === 0) return '';
   return `<script>window.__DECK_SERVER_RENDERED_TYPES__=${JSON.stringify(
-    names
+    names,
   )};</script>`;
 }
 
@@ -54,7 +54,7 @@ export async function injectSeoDebugAnalytics(html, { req, url, repoRoot }) {
   if (isClientDebugLogEnabled()) {
     html = html.replace(
       '</head>',
-      `  <script>window.__DEBUG_LOG__=true;</script>\n</head>`
+      `  <script>window.__DEBUG_LOG__=true;</script>\n</head>`,
     );
   }
   // Fork override → server render. Present only when a fork overrides a core
@@ -66,7 +66,10 @@ export async function injectSeoDebugAnalytics(html, { req, url, repoRoot }) {
     html = html.replace('</head>', `  ${serverRenderedTypes}\n</head>`);
   }
   const appSettings = await getAppSettings(
-    crossOrganizationScope(repoRoot, 'app shell boot: external analytics config is instance-level')
+    crossOrganizationScope(
+      repoRoot,
+      'app shell boot: external analytics config is instance-level',
+    ),
   );
   const analytics = analyticsHeadHtml({
     context: 'app',
@@ -163,7 +166,11 @@ export async function handleAppRoutes(ctx) {
     await serveAppIndex(ctx);
     return true;
   }
-  if (p === '/forgot-password' || p === '/reset-password' || p === '/magic-login') {
+  if (
+    p === '/forgot-password' ||
+    p === '/reset-password' ||
+    p === '/magic-login'
+  ) {
     await serveAppIndex(ctx);
     return true;
   }

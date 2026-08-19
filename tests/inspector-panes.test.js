@@ -19,16 +19,17 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>', {
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 
-const { createInspectorPanes } = await import(
-  '../client/views/editor/inspector-panes.js'
-);
+const { createInspectorPanes } =
+  await import('../client/views/editor/inspector-panes.js');
 
 function setup() {
   const panelEl = document.createElement('div');
   let collapsed = false;
   const panes = createInspectorPanes({
     panelEl,
-    setCollapsed: (v) => { collapsed = v; },
+    setCollapsed: (v) => {
+      collapsed = v;
+    },
     isCollapsed: () => collapsed,
   });
   const settings = document.createElement('div');
@@ -41,7 +42,9 @@ function setup() {
     settings,
     comments,
     isCollapsed: () => collapsed,
-    setCollapsed: (v) => { collapsed = v; },
+    setCollapsed: (v) => {
+      collapsed = v;
+    },
   };
 }
 

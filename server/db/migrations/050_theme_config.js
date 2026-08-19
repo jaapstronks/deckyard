@@ -17,7 +17,7 @@ export const up = async (db) => {
   await db.schema
     .alterTable('themes')
     .addColumn('config', 'jsonb', (col) =>
-      col.notNull().defaultTo(sql`'{}'::jsonb`)
+      col.notNull().defaultTo(sql`'{}'::jsonb`),
     )
     .execute();
 };

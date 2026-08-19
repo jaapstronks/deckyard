@@ -1,11 +1,14 @@
-import { renderSlideHtml, computeHeadingShifts } from '../utils/render-slide.js';
-import { filterForExport, filterForPublished } from '../utils/public-output.js';
-import { resolveDocLangFromPresentation, getDocDir } from '../utils/doc-lang.js';
-import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import {
-  escapeHtml,
-  embedImgSrcDataUrls,
-} from '../utils/html-utils.js';
+  renderSlideHtml,
+  computeHeadingShifts,
+} from '../utils/render-slide.js';
+import { filterForExport, filterForPublished } from '../utils/public-output.js';
+import {
+  resolveDocLangFromPresentation,
+  getDocDir,
+} from '../utils/doc-lang.js';
+import { resolveDeckLang } from '../../shared/i18n-utils.js';
+import { escapeHtml, embedImgSrcDataUrls } from '../utils/html-utils.js';
 import {
   buildPrismKatexCdnTags,
   buildPrismKatexInitScript,
@@ -13,15 +16,28 @@ import {
 } from '../utils/prism-katex.js';
 import { loadExportCssBundle, embedSlideImages } from './css-bundle.js';
 import { inlineLocalFontUrls } from '../utils/embed-fonts.js';
-import { getSlideEffectiveDuration, DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../shared/slide-timing.js';
+import {
+  getSlideEffectiveDuration,
+  DEFAULT_ADVANCE_INTERVAL_SECONDS,
+} from '../../shared/slide-timing.js';
 
 export async function buildStandaloneHtml(
   repoRoot,
   pres,
-  { headHtml = '', topbarRightHtml = '', theme = null, watermark = null, context = 'export', presentationId = '', slideTypes = null, description = null } = {}
+  {
+    headHtml = '',
+    topbarRightHtml = '',
+    theme = null,
+    watermark = null,
+    context = 'export',
+    presentationId = '',
+    slideTypes = null,
+    description = null,
+  } = {},
 ) {
   // Apply the appropriate visibility filter based on context
-  pres = context === 'published' ? filterForPublished(pres) : filterForExport(pres);
+  pres =
+    context === 'published' ? filterForPublished(pres) : filterForExport(pres);
   const docLang = resolveDocLangFromPresentation(pres);
   // The deck's own language, for slide types that render built-in copy. Not
   // the same value as docLang: that one always answers (falling back to nl for
@@ -62,11 +78,16 @@ export async function buildStandaloneHtml(
       return false;
     }
   }
-  const externalFontLinks = Array.isArray(theme?.externalFontLinks) ? theme.externalFontLinks : [];
+  const externalFontLinks = Array.isArray(theme?.externalFontLinks)
+    ? theme.externalFontLinks
+    : [];
   const externalFontCssLinks = externalFontLinks
     .filter((l) => l.type === 'css' && l.url)
     .filter((l) => isSafeUrl(l.url))
-    .map((l) => `<link rel="stylesheet" href="${l.url.replace(/"/g, '&quot;')}" />`)
+    .map(
+      (l) =>
+        `<link rel="stylesheet" href="${l.url.replace(/"/g, '&quot;')}" />`,
+    )
     .join('\n    ');
   const externalFontScripts = externalFontLinks
     .filter((l) => l.type === 'js' && l.url)
@@ -89,10 +110,14 @@ export async function buildStandaloneHtml(
     pres?.settings?.autoAdvance && typeof pres.settings.autoAdvance === 'object'
       ? pres.settings.autoAdvance
       : {};
-  const autoAdvanceEnabled = !!autoAdvanceCfg.enabled && autoAdvanceCfg.mode !== 'pacing';
+  const autoAdvanceEnabled =
+    !!autoAdvanceCfg.enabled && autoAdvanceCfg.mode !== 'pacing';
   const autoAdvanceLoop = !!autoAdvanceCfg.loop;
-  const autoAdvanceInterval = Number(autoAdvanceCfg.intervalSeconds) || DEFAULT_ADVANCE_INTERVAL_SECONDS;
-  const slideDurations = slides.map((s) => getSlideEffectiveDuration(s, autoAdvanceInterval));
+  const autoAdvanceInterval =
+    Number(autoAdvanceCfg.intervalSeconds) || DEFAULT_ADVANCE_INTERVAL_SECONDS;
+  const slideDurations = slides.map((s) =>
+    getSlideEffectiveDuration(s, autoAdvanceInterval),
+  );
   const autoAdvanceJson = JSON.stringify({
     enabled: autoAdvanceEnabled,
     loop: autoAdvanceLoop,
@@ -104,24 +129,22 @@ export async function buildStandaloneHtml(
   // the single <h1>; chapter sections push their slides one level deeper.
   const headingShifts = computeHeadingShifts(slides);
   let slidesHtml = slides
-    .map(
-      (s, i) => {
-        const c =
-          s?.content && typeof s.content === 'object' ? s.content : {};
-        const a11yTitle = typeof c?.a11yTitle === 'string' ? c.a11yTitle.trim() : '';
-        const a11ySummary =
-          typeof c?.a11ySummary === 'string' ? c.a11ySummary.trim() : '';
-        const a11yTitleAttr = a11yTitle
-          ? ` data-a11y-title="${escapeHtml(a11yTitle)}"`
-          : '';
-        const a11ySummaryAttr = a11ySummary
-          ? ` data-a11y-summary="${escapeHtml(a11ySummary)}"`
-          : '';
-        return `<section class="deck-slide" data-slide-id="${escapeHtml(
-          s.id
-        )}"${a11yTitleAttr}${a11ySummaryAttr}>${renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, headingShift: headingShifts[i], lang: deckLang })}</section>`;
-      }
-    )
+    .map((s, i) => {
+      const c = s?.content && typeof s.content === 'object' ? s.content : {};
+      const a11yTitle =
+        typeof c?.a11yTitle === 'string' ? c.a11yTitle.trim() : '';
+      const a11ySummary =
+        typeof c?.a11ySummary === 'string' ? c.a11ySummary.trim() : '';
+      const a11yTitleAttr = a11yTitle
+        ? ` data-a11y-title="${escapeHtml(a11yTitle)}"`
+        : '';
+      const a11ySummaryAttr = a11ySummary
+        ? ` data-a11y-summary="${escapeHtml(a11ySummary)}"`
+        : '';
+      return `<section class="deck-slide" data-slide-id="${escapeHtml(
+        s.id,
+      )}"${a11yTitleAttr}${a11ySummaryAttr}>${renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, headingShift: headingShifts[i], lang: deckLang })}</section>`;
+    })
     .join('\n');
   slidesHtml = await embedImgSrcDataUrls(repoRoot, slidesHtml, {
     includeClient: true,

@@ -82,7 +82,13 @@ export function assertPublishingEnabled() {
  * @param {string} params.publishId - The publish id (names the rendered file).
  * @returns {Promise<string>} The OG image URL.
  */
-export async function buildPublishOgImage({ repoRoot, storageScope, pres, actorEmail, publishId }) {
+export async function buildPublishOgImage({
+  repoRoot,
+  storageScope,
+  pres,
+  actorEmail,
+  publishId,
+}) {
   let ogImageUrl = DEFAULT_OG_IMAGE;
   try {
     // First slide that isn't a follow-invite-slide (those are internal).
@@ -99,7 +105,10 @@ export async function buildPublishOgImage({ repoRoot, storageScope, pres, actorE
         const ownerEmail = pres?.ownerEmail || pres?.createdBy || actorEmail;
         if (ownerEmail) {
           try {
-            const userSettings = await getUserSettings(storageScope, ownerEmail);
+            const userSettings = await getUserSettings(
+              storageScope,
+              ownerEmail,
+            );
             authorInfo = {
               name: userSettings?.profile?.name || ownerEmail.split('@')[0],
               imageUrl: userSettings?.profile?.imageUrl || '',
@@ -116,7 +125,7 @@ export async function buildPublishOgImage({ repoRoot, storageScope, pres, actorE
         firstSlide,
         theme,
         `og-${publishId}`,
-        { showAuthor, authorInfo }
+        { showAuthor, authorInfo },
       );
     } else {
       // No media provider: pick an image out of the deck content.
@@ -144,7 +153,13 @@ export async function buildPublishOgImage({ repoRoot, storageScope, pres, actorE
  * @returns {Promise<{publishId: string, slug: string, path: string, ogImageUrl: string}>}
  * @throws {ForbiddenError} When publishing is disabled (sandbox mode).
  */
-export async function publishPresentation({ repoRoot, storageScope, req, pres, actor }) {
+export async function publishPresentation({
+  repoRoot,
+  storageScope,
+  req,
+  pres,
+  actor,
+}) {
   // Backstop: the routes gate this early (before loading the deck), but re-check
   // here so no core caller can skip the policy.
   assertPublishingEnabled();

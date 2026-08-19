@@ -43,7 +43,7 @@ import { randomUUID } from 'node:crypto';
  */
 export async function seedBilingualDeck(
   api,
-  { title, theme, dominant, titles, versions }
+  { title, theme, dominant, titles, versions },
 ) {
   const created = await api.post('/api/presentations', { title, theme });
   const id = created?.id || created?.presentation?.id;
@@ -61,7 +61,7 @@ export async function seedBilingualDeck(
       Object.keys(versions).map((lang) => [
         lang,
         { title: titles[lang], slides: versions[lang] },
-      ])
+      ]),
     ),
   };
   await api.put(`/api/presentations/${id}`, full, {
@@ -87,7 +87,7 @@ export async function seedBilingualDeck(
  */
 export async function startLiveSession(
   api,
-  { deckId, slideId, slideType, slideIndex }
+  { deckId, slideId, slideType, slideIndex },
 ) {
   const session = await api.post('/api/live-sessions', {
     presentationId: deckId,
@@ -132,12 +132,12 @@ export async function seedPollVotes(base, { deckId, slideId, votes }) {
             Cookie: `sb_int=${randomUUID()}`,
           },
           body: JSON.stringify({ optionIndex: option }),
-        }
+        },
       );
       if (!res.ok) {
         const text = await res.text().catch(() => '');
         throw new Error(
-          `Vote ${cast + 1} (option ${option}) failed: ${res.status} ${text}`.trim()
+          `Vote ${cast + 1} (option ${option}) failed: ${res.status} ${text}`.trim(),
         );
       }
       cast += 1;
@@ -162,13 +162,13 @@ export async function seedPollVotes(base, { deckId, slideId, votes }) {
  */
 async function waitForPollTotal(
   base,
-  { deckId, slideId, total, timeoutMs = 15_000 }
+  { deckId, slideId, total, timeoutMs = 15_000 },
 ) {
   const deadline = Date.now() + timeoutMs;
   let seen = null;
   while (Date.now() < deadline) {
     const res = await fetch(
-      `${base}/api/follow/${deckId}/interactions/${slideId}/state`
+      `${base}/api/follow/${deckId}/interactions/${slideId}/state`,
     );
     if (res.ok) {
       const body = await res.json().catch(() => null);
@@ -178,7 +178,7 @@ async function waitForPollTotal(
     await new Promise((r) => setTimeout(r, 250));
   }
   throw new Error(
-    `Poll tally never reached ${total} (last saw ${seen}) for slide ${slideId}`
+    `Poll tally never reached ${total} (last saw ${seen}) for slide ${slideId}`,
   );
 }
 
@@ -201,7 +201,7 @@ export async function dismissPresenterStartGate(page) {
   await page.waitForFunction(
     (sel) => !document.querySelector(sel),
     { timeout: 10_000 },
-    START_CURTAIN
+    START_CURTAIN,
   );
 }
 
@@ -241,7 +241,9 @@ export const PRESENTER_CONSOLE_TARGET_SECONDS = 20 * 60;
 export async function stubTranslateFields(page, targetContent) {
   await page.setRequestInterception(true);
   page.on('request', (request) => {
-    if (!/\/api\/presentations\/[^/]+\/translate\/fields$/.test(request.url())) {
+    if (
+      !/\/api\/presentations\/[^/]+\/translate\/fields$/.test(request.url())
+    ) {
       request.continue().catch(() => {});
       return;
     }
@@ -308,7 +310,7 @@ export async function rewriteJoinOrigin(page, origin) {
   }, origin);
   if (!rewrote) {
     throw new Error(
-      'Join-screen origin rewrite matched nothing — [data-follow-go-url] moved.'
+      'Join-screen origin rewrite matched nothing — [data-follow-go-url] moved.',
     );
   }
 }

@@ -52,7 +52,7 @@ export function openAiBatchReviewModal({
       title: t('editor.aiReview.title', 'Review AI slides'),
       hint: t(
         'editor.aiReview.hint',
-        'Nothing has been added yet. Inspect the proposed slides, switch types where useful, then accept or adjust the batch.'
+        'Nothing has been added yet. Inspect the proposed slides, switch types where useful, then accept or adjust the batch.',
       ),
       modalClass: 'modal-ai-review',
       // The batch only exists in this modal until it's accepted: guard the
@@ -61,14 +61,14 @@ export function openAiBatchReviewModal({
       isDirty: () => true,
       confirmMessage: t(
         'editor.aiReview.closeConfirm',
-        'Close the review and discard the generated slides? Nothing has been added to the deck yet.'
+        'Close the review and discard the generated slides? Nothing has been added to the deck yet.',
       ),
       onClose: (result) => {
         grid?.teardown();
         if (!result?.accepted) onDiscard?.();
       },
     },
-    openOverlayClosers
+    openOverlayClosers,
   );
 
   const rationaleEl = h('div', { class: 'ai-review-rationale' });
@@ -92,7 +92,9 @@ export function openAiBatchReviewModal({
       status.textContent = text || '';
     },
     replaceSlide: (slide, next) => {
-      const i = slides.findIndex((s) => s === slide || (slide.id && s.id === slide.id));
+      const i = slides.findIndex(
+        (s) => s === slide || (slide.id && s.id === slide.id),
+      );
       if (i >= 0) slides[i] = next;
       grid.render();
     },
@@ -115,13 +117,16 @@ export function openAiBatchReviewModal({
     rows: '2',
     placeholder: t(
       'editor.aiReview.feedbackPlaceholder',
-      'E.g. make it 3 slides, turn the list into a timeline, shorter texts…'
+      'E.g. make it 3 slides, turn the list into a timeline, shorter texts…',
     ),
   });
   const feedbackWrap = h('div', { class: 'ai-review-feedback stack' }, [
     h('div', {
       class: 'field-label',
-      text: t('editor.aiReview.feedbackLabel', 'Want something different? Describe it and adjust the batch'),
+      text: t(
+        'editor.aiReview.feedbackLabel',
+        'Want something different? Describe it and adjust the batch',
+      ),
     }),
     feedbackTa,
   ]);
@@ -173,7 +178,7 @@ export function openAiBatchReviewModal({
     if (!feedback) {
       status.textContent = t(
         'editor.aiReview.feedbackRequired',
-        'First describe what should change.'
+        'First describe what should change.',
       );
       feedbackTa.focus();
       return;
@@ -185,7 +190,10 @@ export function openAiBatchReviewModal({
         method: 'POST',
         body: JSON.stringify({
           ...request,
-          priorSlides: slides.map((s) => ({ type: s.type, content: s.content })),
+          priorSlides: slides.map((s) => ({
+            type: s.type,
+            content: s.content,
+          })),
           feedback,
         }),
       });
@@ -193,7 +201,7 @@ export function openAiBatchReviewModal({
       if (!next.length) {
         status.textContent = t(
           'editor.aiAppend.noneReceived',
-          'No slides received (please try again).'
+          'No slides received (please try again).',
         );
         return;
       }
@@ -208,7 +216,7 @@ export function openAiBatchReviewModal({
         t('editor.aiReview.adjusted', 'Batch updated ({count} slides)', {
           count: slides.length,
         }),
-        { id: 'ai-review-adjusted' }
+        { id: 'ai-review-adjusted' },
       );
     } catch (e) {
       status.textContent = String(e?.message || e);

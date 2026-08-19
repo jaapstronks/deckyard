@@ -58,14 +58,14 @@ function getInitialsColor(str) {
   }
   // Use a limited set of pleasant colors
   const colors = [
-    { r: 79, g: 70, b: 229 },   // Indigo
-    { r: 16, g: 185, b: 129 },  // Emerald
-    { r: 236, g: 72, b: 153 },  // Pink
-    { r: 245, g: 158, b: 11 },  // Amber
-    { r: 6, g: 182, b: 212 },   // Cyan
-    { r: 139, g: 92, b: 246 },  // Violet
-    { r: 34, g: 197, b: 94 },   // Green
-    { r: 249, g: 115, b: 22 },  // Orange
+    { r: 79, g: 70, b: 229 }, // Indigo
+    { r: 16, g: 185, b: 129 }, // Emerald
+    { r: 236, g: 72, b: 153 }, // Pink
+    { r: 245, g: 158, b: 11 }, // Amber
+    { r: 6, g: 182, b: 212 }, // Cyan
+    { r: 139, g: 92, b: 246 }, // Violet
+    { r: 34, g: 197, b: 94 }, // Green
+    { r: 249, g: 115, b: 22 }, // Orange
   ];
   return colors[Math.abs(hash) % colors.length];
 }
@@ -84,7 +84,7 @@ async function createAvatarBuffer({ imageBuffer, name, size = AVATAR_SIZE }) {
   const circle = Buffer.from(
     `<svg width="${size}" height="${size}">
       <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="white"/>
-    </svg>`
+    </svg>`,
   );
 
   // If we have an image buffer, use it
@@ -92,10 +92,12 @@ async function createAvatarBuffer({ imageBuffer, name, size = AVATAR_SIZE }) {
     try {
       const resized = await sharp(imageBuffer)
         .resize(size, size, { fit: 'cover' })
-        .composite([{
-          input: circle,
-          blend: 'dest-in',
-        }])
+        .composite([
+          {
+            input: circle,
+            blend: 'dest-in',
+          },
+        ])
         .png()
         .toBuffer();
       return resized;
@@ -115,7 +117,7 @@ async function createAvatarBuffer({ imageBuffer, name, size = AVATAR_SIZE }) {
       <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle"
             font-family="system-ui, -apple-system, sans-serif" font-size="${fontSize}"
             font-weight="600" fill="white">${initials}</text>
-    </svg>`
+    </svg>`,
   );
 
   return sharp(svg).png().toBuffer();
@@ -145,7 +147,11 @@ export async function generateAuthorOverlay({ name, imageBuffer }) {
   const fontSize = 14;
 
   // Create avatar
-  const avatarBuffer = await createAvatarBuffer({ imageBuffer, name, size: AVATAR_SIZE });
+  const avatarBuffer = await createAvatarBuffer({
+    imageBuffer,
+    name,
+    size: AVATAR_SIZE,
+  });
 
   // Create the badge background with rounded corners and subtle backdrop blur effect
   // Using a gradient overlay for a more polished look
@@ -171,18 +177,20 @@ export async function generateAuthorOverlay({ name, imageBuffer }) {
             font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
             font-size="${fontSize}" font-weight="500" fill="${TEXT_COLOR}"
             style="letter-spacing: 0.01em;">${escapeXml(firstName)}</text>
-    </svg>`
+    </svg>`,
   );
 
   // Composite avatar onto badge
   const avatarTop = Math.round((PILL_HEIGHT - AVATAR_SIZE) / 2);
 
   const overlay = await sharp(pillSvg)
-    .composite([{
-      input: avatarBuffer,
-      left: PILL_PADDING_H,
-      top: avatarTop,
-    }])
+    .composite([
+      {
+        input: avatarBuffer,
+        left: PILL_PADDING_H,
+        top: avatarTop,
+      },
+    ])
     .png()
     .toBuffer();
 

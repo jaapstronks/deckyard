@@ -36,7 +36,10 @@ export function createReadOnlyController({ shell } = {}) {
     shell.classList.toggle('is-read-only', readOnlyMode);
     if (!readOnlyMode) return;
     const bannerText = maintenanceReadOnly
-      ? t('maintenance.readOnly.banner', 'Paused for maintenance - your work is kept')
+      ? t(
+          'maintenance.readOnly.banner',
+          'Paused for maintenance - your work is kept',
+        )
       : t('editor.readOnly.banner', 'View only - someone else is editing');
     shell.style.setProperty('--read-only-banner-text', `"${bannerText}"`);
   };

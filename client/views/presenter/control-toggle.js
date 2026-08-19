@@ -34,7 +34,7 @@ export function createPresenterControlToggle({ h, api, getSessionId } = {}) {
     try {
       await api(
         `/api/live-sessions/${sessionId}/control/${on ? 'enable' : 'disable'}`,
-        { method: 'POST', body: '{}' }
+        { method: 'POST', body: '{}' },
       );
       label.classList.toggle('is-active', on);
     } catch (e) {

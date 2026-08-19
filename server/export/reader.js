@@ -12,14 +12,20 @@
  * without bespoke code and the output can't drift from the type definitions.
  */
 
-import { getSlideType, SLIDE_TYPES } from '../../shared/slide-types/registry.js';
+import {
+  getSlideType,
+  SLIDE_TYPES,
+} from '../../shared/slide-types/registry.js';
 import {
   slideHeading,
   renderSlideBodySemanticHtml,
 } from '../../shared/slide-types/semantic-projection.js';
 import { renderUnresolvedSlideSemanticHtml } from '../../shared/slide-types/unresolved.js';
 import { filterForExport, filterForPublished } from '../utils/public-output.js';
-import { resolveDocLangFromPresentation, getDocDir } from '../utils/doc-lang.js';
+import {
+  resolveDocLangFromPresentation,
+  getDocDir,
+} from '../utils/doc-lang.js';
 import { escapeHtml } from '../utils/html-utils.js';
 
 // Self-contained, reflow-first stylesheet. Relative units + a single readable
@@ -111,11 +117,17 @@ img { max-width: 100%; height: auto; }
 export function buildReaderHtml(
   _repoRoot,
   pres,
-  { context = 'export', slideTypes = null, canonicalUrl = '', headHtml = '' } = {}
+  {
+    context = 'export',
+    slideTypes = null,
+    canonicalUrl = '',
+    headHtml = '',
+  } = {},
 ) {
   const filtered =
     context === 'published' ? filterForPublished(pres) : filterForExport(pres);
-  const registry = slideTypes && typeof slideTypes === 'object' ? slideTypes : SLIDE_TYPES;
+  const registry =
+    slideTypes && typeof slideTypes === 'object' ? slideTypes : SLIDE_TYPES;
   const docLang = resolveDocLangFromPresentation(filtered);
   const docDir = getDocDir(docLang);
 
@@ -131,7 +143,7 @@ export function buildReaderHtml(
   const toc = headings
     .map(
       ({ text, index }) =>
-        `<li><a href="#slide-${index + 1}">${escapeHtml(text)}</a></li>`
+        `<li><a href="#slide-${index + 1}">${escapeHtml(text)}</a></li>`,
     )
     .join('\n        ');
 
@@ -144,7 +156,10 @@ export function buildReaderHtml(
       // *complete* surface of that contract (no canvas size limit), so it is
       // where an author recovers content the placeholder slide had to truncate.
       const inner = def
-        ? renderSlideBodySemanticHtml(slide, def, { headingKey: key, headingText: text })
+        ? renderSlideBodySemanticHtml(slide, def, {
+            headingKey: key,
+            headingText: text,
+          })
         : renderUnresolvedSlideSemanticHtml(slide, { headingKey: key });
       return `<section id="slide-${n}" class="reader-slide" aria-labelledby="slide-${n}-title">
         <h2 id="slide-${n}-title"><span class="reader-num">${n}.</span>${escapeHtml(text)}</h2>
@@ -156,7 +171,9 @@ export function buildReaderHtml(
   const viewLink = canonicalUrl
     ? `<p class="reader-viewlink"><a href="${escapeHtml(canonicalUrl)}">View the slides</a></p>`
     : '';
-  const descHtml = description ? `<p class="reader-desc">${escapeHtml(description)}</p>` : '';
+  const descHtml = description
+    ? `<p class="reader-desc">${escapeHtml(description)}</p>`
+    : '';
 
   return `<!doctype html>
 <html lang="${escapeHtml(docLang)}" dir="${escapeHtml(docDir)}">

@@ -61,11 +61,7 @@ import { createStepIndicatorRenderer } from './step-indicator.js';
 import { createPresenterConsoleToggle } from './console-toggle.js';
 import { buildPresenterTopbar } from './topbar.js';
 
-export async function renderPresenter(
-  root,
-  id,
-  { nav } = {}
-) {
+export async function renderPresenter(root, id, { nav } = {}) {
   // Make presentation ID globally available for lead capture forms
   window.__PRESENTATION_ID__ = id;
 
@@ -212,9 +208,10 @@ export async function renderPresenter(
   // Topbar pause/resume button (hidden when auto-advance is disabled; handlers wired after timer creation)
   const autoAdvanceBtn = h('button', {
     class: 'btn btn-secondary',
-    text: autoAdvanceMode === 'pacing'
-      ? t('presenter.pacingPause', 'Pause timer')
-      : t('presenter.autoAdvancePause', 'Pause auto'),
+    text:
+      autoAdvanceMode === 'pacing'
+        ? t('presenter.pacingPause', 'Pause timer')
+        : t('presenter.autoAdvancePause', 'Pause auto'),
     title: t('presenter.autoAdvanceToggle', 'Toggle auto-advance (A)'),
     hidden: !autoAdvanceEnabled,
   });
@@ -296,14 +293,10 @@ export async function renderPresenter(
     getDeck: () => deckCtl,
   });
 
-  const detachStageScale = attachStageScale(
-    stageWrap,
-    stage,
-    {
-      baseW: 1600,
-      baseH: 900,
-    }
-  );
+  const detachStageScale = attachStageScale(stageWrap, stage, {
+    baseW: 1600,
+    baseH: 900,
+  });
 
   // Highlighter / laser pointer overlay - load user settings for color/thickness
   let highlighterColor = '#ef4444';
@@ -311,9 +304,12 @@ export async function renderPresenter(
   let highlighterPersistentDraw = false;
   try {
     const mySettings = await fetchMySettings({ maxAgeMs: 5000 });
-    if (mySettings?.highlighter?.color) highlighterColor = mySettings.highlighter.color;
-    if (mySettings?.highlighter?.thickness) highlighterThickness = mySettings.highlighter.thickness;
-    if (mySettings?.highlighter?.persistentDraw) highlighterPersistentDraw = true;
+    if (mySettings?.highlighter?.color)
+      highlighterColor = mySettings.highlighter.color;
+    if (mySettings?.highlighter?.thickness)
+      highlighterThickness = mySettings.highlighter.thickness;
+    if (mySettings?.highlighter?.persistentDraw)
+      highlighterPersistentDraw = true;
   } catch {
     // Use defaults if settings fail to load
   }
@@ -378,10 +374,7 @@ export async function renderPresenter(
         // Reset auto-advance timer on slide change
         if (autoAdvanceEnabled) {
           const st = deckCtl?.getState?.();
-          autoAdvance.onSlideChanged(
-            st?.idx ?? 0,
-            st?.slidesCount ?? 0
-          );
+          autoAdvance.onSlideChanged(st?.idx ?? 0, st?.slidesCount ?? 0);
         }
         if (sid && lastInteractionBySlideId.has(sid)) {
           const st = lastInteractionBySlideId.get(sid);
@@ -445,13 +438,11 @@ export async function renderPresenter(
     api,
     getSessionId: () => sessionId,
     getSessionPresentationId: () => sessionPresId,
-    getCurrentSlide: () =>
-      deckCtl?.getState?.()?.current || null,
+    getCurrentSlide: () => deckCtl?.getState?.()?.current || null,
     getCurrentIndex: () => deckCtl?.getState?.()?.idx ?? 0,
     getStepParagraphs: () => stepParagraphs,
   });
-  postSessionState = (partial) =>
-    statePoster.postSessionState(partial);
+  postSessionState = (partial) => statePoster.postSessionState(partial);
 
   const syncInteractionUi = () => interactionCtl.sync();
 
@@ -507,11 +498,13 @@ export async function renderPresenter(
   // so manual navigation is ignored. Auto mode only — in pacing mode (or with no
   // timer) strict would trap the deck with no way to move.
   const isStrictNav = () =>
-    autoAdvanceEnabled && autoAdvanceMode === 'auto' && !!autoAdvanceCfg?.strict;
+    autoAdvanceEnabled &&
+    autoAdvanceMode === 'auto' &&
+    !!autoAdvanceCfg?.strict;
   const guardNav = (fn) => () => {
     if (isStrictNav()) {
       edgeHintCtl.show(
-        t('presenter.strictNav', 'Timer only — manual navigation is off')
+        t('presenter.strictNav', 'Timer only — manual navigation is off'),
       );
       return;
     }
@@ -546,7 +539,7 @@ export async function renderPresenter(
       edgeHintCtl.show(
         newValue
           ? t('presenter.persistentDrawOn', 'Drawings: persistent')
-          : t('presenter.persistentDrawOff', 'Drawings: fading')
+          : t('presenter.persistentDrawOff', 'Drawings: fading'),
       );
     },
     onToggleAutoAdvance: () => {
@@ -580,7 +573,7 @@ export async function renderPresenter(
           title: t('presenter.leave.title', 'Leave presentation?'),
           message: t(
             'presenter.leave.message',
-            'Return to the editor? You can start presenting again anytime.'
+            'Return to the editor? You can start presenting again anytime.',
           ),
           confirmLabel: t('presenter.leave.confirm', 'Leave'),
           cancelLabel: t('presenter.leave.stay', 'Stay'),
@@ -591,10 +584,7 @@ export async function renderPresenter(
       if (ok) goToEditor();
     },
   });
-  document.addEventListener(
-    'fullscreenchange',
-    syncFullscreenClass
-  );
+  document.addEventListener('fullscreenchange', syncFullscreenClass);
   syncFullscreenClass();
 
   // Swipe navigation for presenting from a phone or tablet. Bound to
@@ -642,16 +632,12 @@ export async function renderPresenter(
       },
       onDeckUpdated: (data) => {
         // Live-update deck when a question is promoted into the presentation.
-        if (
-          data?.presentationId &&
-          String(data.presentationId) !== String(id)
-        )
+        if (data?.presentationId && String(data.presentationId) !== String(id))
           return;
         deckCtl
           ?.refreshDeck?.()
           .then(() => {
-            const nextPres =
-              deckCtl?.getState?.()?.presentation || null;
+            const nextPres = deckCtl?.getState?.()?.presentation || null;
             if (nextPres) pres = nextPres;
           })
           .catch(() => {});
@@ -677,7 +663,7 @@ export async function renderPresenter(
           const state = deckCtl?.getState?.();
           const slides = state?.slides || [];
           const targetIdx = slides.findIndex(
-            (s) => String(s?.id || '') === onCloseTarget
+            (s) => String(s?.id || '') === onCloseTarget,
           );
           if (targetIdx >= 0) {
             deckCtl?.show?.(targetIdx);
@@ -699,8 +685,7 @@ export async function renderPresenter(
       // The deck is initially rendered before the presenter session is created,
       // so follow-invite slides would otherwise miss the "Alternative" codes block.
       try {
-        const curId =
-          deckCtl?.getState?.()?.current?.id || '';
+        const curId = deckCtl?.getState?.()?.current?.id || '';
         deckCtl?.setPresentation?.(pres, {
           keepCurrentSlideId: curId,
         });

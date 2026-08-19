@@ -106,7 +106,9 @@ export function openEditModal({
   const def = SLIDE_TYPES[slideType];
 
   if (!def) {
-    toast.error(t('slideLibrary.edit.unsupportedType', 'Cannot edit this slide type.'));
+    toast.error(
+      t('slideLibrary.edit.unsupportedType', 'Cannot edit this slide type.'),
+    );
     return;
   }
 
@@ -118,7 +120,12 @@ export function openEditModal({
   });
 
   if (fields.length === 0) {
-    toast.error(t('slideLibrary.edit.noEditableFields', 'This slide type has no editable text fields.'));
+    toast.error(
+      t(
+        'slideLibrary.edit.noEditableFields',
+        'This slide type has no editable text fields.',
+      ),
+    );
     return;
   }
 
@@ -189,7 +196,7 @@ export function openEditModal({
       const scale = Math.min(
         (containerRect.width - 24) / slideW,
         (containerRect.height - 24) / slideH,
-        0.5
+        0.5,
       );
       previewThumb.style.setProperty('--thumb-scale', String(scale));
     });
@@ -203,10 +210,15 @@ export function openEditModal({
   };
 
   for (const field of fields) {
-    const fieldEl = createFieldEditor(h, field, workingContent[field.key], (key, val) => {
-      workingContent[key] = val;
-      schedulePreviewUpdate();
-    });
+    const fieldEl = createFieldEditor(
+      h,
+      field,
+      workingContent[field.key],
+      (key, val) => {
+        workingContent[key] = val;
+        schedulePreviewUpdate();
+      },
+    );
     form.append(fieldEl);
   }
 
@@ -214,7 +226,10 @@ export function openEditModal({
 
   // Preview column
   const previewCol = h('div', { class: 'ps-lib-edit-preview' });
-  const previewLabel = h('div', { class: 'field-label', text: t('slideLibrary.edit.preview', 'Preview') });
+  const previewLabel = h('div', {
+    class: 'field-label',
+    text: t('slideLibrary.edit.preview', 'Preview'),
+  });
   const previewThumb = h('div', { class: 'thumb ps-lib-edit-preview-thumb' });
   previewCol.append(previewLabel, previewThumb);
 
@@ -233,7 +248,10 @@ export function openEditModal({
   saveBtn.addEventListener('click', async () => {
     const name = String(workingName || '').trim();
     if (!name) {
-      status.textContent = t('slideLibrary.edit.nameRequired', 'Please enter a name.');
+      status.textContent = t(
+        'slideLibrary.edit.nameRequired',
+        'Please enter a name.',
+      );
       nameInput.focus();
       return;
     }
@@ -258,7 +276,11 @@ export function openEditModal({
       }
       close(true);
     } else {
-      status.textContent = String(result.error?.message || result.error || t('common.saveFailed', 'Save failed'));
+      status.textContent = String(
+        result.error?.message ||
+          result.error ||
+          t('common.saveFailed', 'Save failed'),
+      );
       toast.error(t('slideLibrary.edit.saveFailed', 'Failed to save slide.'));
       saving = false;
       saveBtn.disabled = false;

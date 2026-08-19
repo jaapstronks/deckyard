@@ -34,7 +34,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const SLIDES_DIR = path.join(repoRoot, 'client', 'styles', 'slides');
 
 /**
@@ -136,7 +139,8 @@ function isBlurredLiteral(layer) {
 }
 
 /** Matches `box-shadow:` and any `--…shadow…:` custom-property declaration. */
-const DECL_RE = /(?:^|[;{])\s*(box-shadow|--[\w-]*shadow[\w-]*)\s*:\s*([^;}]*)/g;
+const DECL_RE =
+  /(?:^|[;{])\s*(box-shadow|--[\w-]*shadow[\w-]*)\s*:\s*([^;}]*)/g;
 
 /** Recursively collect every `.css` file under a directory. */
 function collectCss(dir) {
@@ -183,7 +187,10 @@ function findViolations(file) {
 
 test('every blurred elevation shadow in client/styles/slides/** reads from a --slide-shadow-* token', () => {
   const files = collectCss(SLIDES_DIR);
-  assert.ok(files.length > 0, 'expected slide stylesheets under client/styles/slides');
+  assert.ok(
+    files.length > 0,
+    'expected slide stylesheets under client/styles/slides',
+  );
 
   const violations = files.flatMap(findViolations);
 
@@ -205,11 +212,31 @@ test('every blurred elevation shadow in client/styles/slides/** reads from a --s
 
 test('the guardrail parser flags a blurred literal and clears rings and tokens', () => {
   // Guards the guard: if these classifications ever flip, the scan above is lying.
-  assert.equal(isBlurredLiteral('0 4px 24px rgba(0, 0, 0, 0.10)'), true, 'blur radius > 0');
-  assert.equal(isBlurredLiteral('0 8px 32px rgba(0, 0, 0, 0.12)'), true, 'blur radius > 0');
-  assert.equal(isBlurredLiteral('0 0 0 6px rgba(0, 0, 0, 0.10)'), false, 'hard ring, blur 0');
-  assert.equal(isBlurredLiteral('inset 0 0 0 1.5px rgb(255 255 255 / 0.6)'), false, 'inset ring');
-  assert.equal(isBlurredLiteral('var(--slide-shadow-card)'), false, 'token reference');
+  assert.equal(
+    isBlurredLiteral('0 4px 24px rgba(0, 0, 0, 0.10)'),
+    true,
+    'blur radius > 0',
+  );
+  assert.equal(
+    isBlurredLiteral('0 8px 32px rgba(0, 0, 0, 0.12)'),
+    true,
+    'blur radius > 0',
+  );
+  assert.equal(
+    isBlurredLiteral('0 0 0 6px rgba(0, 0, 0, 0.10)'),
+    false,
+    'hard ring, blur 0',
+  );
+  assert.equal(
+    isBlurredLiteral('inset 0 0 0 1.5px rgb(255 255 255 / 0.6)'),
+    false,
+    'inset ring',
+  );
+  assert.equal(
+    isBlurredLiteral('var(--slide-shadow-card)'),
+    false,
+    'token reference',
+  );
   assert.equal(isBlurredLiteral('none'), false, 'no shadow');
 
   // The composite the KPI tile uses: the ring layer clears, the blur layer flags.

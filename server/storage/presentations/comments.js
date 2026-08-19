@@ -123,33 +123,37 @@ async function annotateThreadReadState(db, threads, scope) {
     .selectFrom('comment_thread_reads')
     .select(['comment_id', 'last_read_at'])
     .where('user_email', '=', userEmail)
-    .where('comment_id', 'in', threads.map((t) => t.id))
+    .where(
+      'comment_id',
+      'in',
+      threads.map((t) => t.id),
+    )
     .execute();
   const readAtByComment = new Map(
-    rows.map((r) => [r.comment_id, new Date(r.last_read_at).getTime()])
+    rows.map((r) => [r.comment_id, new Date(r.last_read_at).getTime()]),
   );
 
   for (const thread of threads) {
     const messages = [thread, ...(thread.replies || [])];
     const lastActivity = Math.max(
-      ...messages.map((m) => new Date(m.createdAt).getTime())
+      ...messages.map((m) => new Date(m.createdAt).getTime()),
     );
     thread.lastActivityAt = new Date(lastActivity).toISOString();
 
     // Only activity from others can make a thread unread, and your own
     // later reply counts as an implicit read (you saw what you answered).
     const foreign = messages.filter(
-      (m) => normalizeEmail(m.authorEmail) !== userEmail
+      (m) => normalizeEmail(m.authorEmail) !== userEmail,
     );
     if (foreign.length === 0) {
       thread.unreadForUser = false;
       continue;
     }
     const lastForeign = Math.max(
-      ...foreign.map((m) => new Date(m.createdAt).getTime())
+      ...foreign.map((m) => new Date(m.createdAt).getTime()),
     );
     const own = messages.filter(
-      (m) => normalizeEmail(m.authorEmail) === userEmail
+      (m) => normalizeEmail(m.authorEmail) === userEmail,
     );
     const lastOwn = own.length
       ? Math.max(...own.map((m) => new Date(m.createdAt).getTime()))
@@ -189,13 +193,16 @@ export async function getThreadParticipants(scope, commentId) {
       .selectFrom('presentation_comments')
       .select('author_email')
       .where('organization_id', '=', orgId)
-      .where((eb) => eb.or([
-        eb('id', '=', rootId),
-        eb('parent_id', '=', rootId),
-      ]))
+      .where((eb) =>
+        eb.or([eb('id', '=', rootId), eb('parent_id', '=', rootId)]),
+      )
       .execute();
 
-    return [...new Set(rows.map((r) => normalizeEmail(r.author_email)).filter(Boolean))];
+    return [
+      ...new Set(
+        rows.map((r) => normalizeEmail(r.author_email)).filter(Boolean),
+      ),
+    ];
   });
 }
 
@@ -239,14 +246,18 @@ export async function markThreadsRead(scope, presentationId, commentIds) {
     const now = nowIso();
     await db
       .insertInto('comment_thread_reads')
-      .values(valid.map((row) => ({
-        organization_id: orgId,
-        user_email: userEmail,
-        comment_id: row.id,
-        last_read_at: now,
-      })))
+      .values(
+        valid.map((row) => ({
+          organization_id: orgId,
+          user_email: userEmail,
+          comment_id: row.id,
+          last_read_at: now,
+        })),
+      )
       .onConflict((oc) =>
-        oc.columns(['user_email', 'comment_id']).doUpdateSet({ last_read_at: now })
+        oc
+          .columns(['user_email', 'comment_id'])
+          .doUpdateSet({ last_read_at: now }),
       )
       .execute();
 
@@ -315,7 +326,9 @@ export async function listRecentCommentsForOwner(scope, opts = {}) {
   const ownership = ['owned', 'shared', 'all'].includes(opts?.ownership)
     ? opts.ownership
     : 'all';
-  const authorEmail = opts?.authorEmail ? normalizeEmail(opts.authorEmail) : null;
+  const authorEmail = opts?.authorEmail
+    ? normalizeEmail(opts.authorEmail)
+    : null;
   const status = ['open', 'resolved', 'dismissed', 'all'].includes(opts?.status)
     ? opts.status
     : 'all';
@@ -341,7 +354,10 @@ export async function listRecentCommentsForOwner(scope, opts = {}) {
     if (status !== 'all') query = query.where('status', '=', status);
     if (opts?.since) query = query.where('created_at', '>=', opts.since);
 
-    const rows = await query.orderBy('created_at', 'desc').limit(limit).execute();
+    const rows = await query
+      .orderBy('created_at', 'desc')
+      .limit(limit)
+      .execute();
 
     const comments = rows.map((row) => {
       const comment = rowToComment(row);
@@ -424,8 +440,10 @@ export async function createComment(scope, presentationId, data) {
     }
 
     // Position values (percentage 0-100, null if not positioned)
-    const positionX = typeof data?.positionX === 'number' ? data.positionX : null;
-    const positionY = typeof data?.positionY === 'number' ? data.positionY : null;
+    const positionX =
+      typeof data?.positionX === 'number' ? data.positionX : null;
+    const positionY =
+      typeof data?.positionY === 'number' ? data.positionY : null;
 
     // AI suggestion fields
     const commentType = data?.commentType || 'human';
@@ -434,7 +452,8 @@ export async function createComment(scope, presentationId, data) {
 
     // Snapshot of the commented slide at create time (see migration 041);
     // captured by the caller, only meaningful for comments with a slideId.
-    const slideSnapshot = data?.slideId && data?.slideSnapshot ? data.slideSnapshot : null;
+    const slideSnapshot =
+      data?.slideId && data?.slideSnapshot ? data.slideSnapshot : null;
 
     const row = await db
       .insertInto('presentation_comments')

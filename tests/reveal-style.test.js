@@ -31,21 +31,24 @@ test('deck setting wins over theme default', () => {
       settings: { revealStyle: 'typewriter' },
       theme: { revealStyle: 'default' },
     }),
-    'typewriter'
+    'typewriter',
   );
 });
 
 test('theme default applies when the deck has no setting', () => {
   assert.equal(
     resolveRevealStyle({ settings: {}, theme: { revealStyle: 'typewriter' } }),
-    'typewriter'
+    'typewriter',
   );
 });
 
 test('falls back to DEFAULT_REVEAL_STYLE when nothing is set', () => {
   assert.equal(resolveRevealStyle({}), DEFAULT_REVEAL_STYLE);
   assert.equal(resolveRevealStyle(), DEFAULT_REVEAL_STYLE);
-  assert.equal(resolveRevealStyle({ settings: {}, theme: {} }), DEFAULT_REVEAL_STYLE);
+  assert.equal(
+    resolveRevealStyle({ settings: {}, theme: {} }),
+    DEFAULT_REVEAL_STYLE,
+  );
 });
 
 test('an unknown deck value does not mask a valid theme default', () => {
@@ -54,7 +57,7 @@ test('an unknown deck value does not mask a valid theme default', () => {
       settings: { revealStyle: 'bogus' },
       theme: { revealStyle: 'typewriter' },
     }),
-    'typewriter'
+    'typewriter',
   );
 });
 
@@ -64,6 +67,6 @@ test('unknown values everywhere resolve to the safe default', () => {
       settings: { revealStyle: 'bogus' },
       theme: { revealStyle: 'also-bogus' },
     }),
-    DEFAULT_REVEAL_STYLE
+    DEFAULT_REVEAL_STYLE,
   );
 });

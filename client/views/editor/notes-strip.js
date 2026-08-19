@@ -56,7 +56,10 @@ export function createNotesStrip({
   chevron.classList.add('notes-strip-chevron');
   toggleBtn.append(
     chevron,
-    h('span', { class: 'notes-strip-title', text: t('editor.notes.title', 'Presenter notes') })
+    h('span', {
+      class: 'notes-strip-title',
+      text: t('editor.notes.title', 'Presenter notes'),
+    }),
   );
 
   const headerActions = h('div', { class: 'row notes-strip-actions' });
@@ -66,13 +69,19 @@ export function createNotesStrip({
         class: 'btn btn-secondary btn-sm',
         type: 'button',
         text: t('editor.notes.qr', 'Notes (QR)'),
-        title: t('editor.companion.title', 'Open speaker notes companion on your phone (QR code).'),
+        title: t(
+          'editor.companion.title',
+          'Open speaker notes companion on your phone (QR code).',
+        ),
         onclick: () => onOpenQr(),
-      })
+      }),
     );
   }
 
-  const header = h('div', { class: 'row spread notes-strip-header' }, [toggleBtn, headerActions]);
+  const header = h('div', { class: 'row spread notes-strip-header' }, [
+    toggleBtn,
+    headerActions,
+  ]);
 
   const textarea = h('textarea', {
     class: 'form-input notes-strip-input',
@@ -81,7 +90,7 @@ export function createNotesStrip({
     'data-collab-field-key': 'notes',
     placeholder: t(
       'editor.notes.placeholder',
-      "Text you write here shows on your phone. Click 'Notes (QR)' to show a QR code for your phone."
+      "Text you write here shows on your phone. Click 'Notes (QR)' to show a QR code for your phone.",
     ),
   });
   textarea.addEventListener('input', () => {

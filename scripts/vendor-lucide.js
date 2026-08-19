@@ -30,7 +30,7 @@ async function main() {
 
   if (!(await exists(srcDir))) {
     throw new Error(
-      'Could not find lucide-static icons directory. Did npm install run?'
+      'Could not find lucide-static icons directory. Did npm install run?',
     );
   }
 
@@ -84,7 +84,7 @@ async function main() {
     await fs.writeFile(
       path.join(destDir, 'tags.json'),
       JSON.stringify(trimmed),
-      'utf8'
+      'utf8',
     );
     // eslint-disable-next-line no-console
     console.log(`Wrote search tags for ${Object.keys(trimmed).length} icons`);
@@ -104,14 +104,14 @@ async function main() {
         aliases,
       },
       null,
-      2
+      2,
     ),
-    'utf8'
+    'utf8',
   );
 
   // eslint-disable-next-line no-console
   console.log(
-    `Vendored ${copied.length} Lucide icons to ${path.relative(repoRoot, destDir)}`
+    `Vendored ${copied.length} Lucide icons to ${path.relative(repoRoot, destDir)}`,
   );
   if (aliases.length) {
     // eslint-disable-next-line no-console
@@ -120,7 +120,7 @@ async function main() {
   if (missing.length) {
     // eslint-disable-next-line no-console
     console.warn(
-      `Missing ${missing.length} icons (not found in package): ${missing.join(', ')}`
+      `Missing ${missing.length} icons (not found in package): ${missing.join(', ')}`,
     );
   }
 }

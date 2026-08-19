@@ -36,9 +36,21 @@ import {
 export const ROUTES = [
   { method: 'GET', pattern: '/api/notion/status', handler: handleNotionStatus },
   { method: 'POST', pattern: '/api/notion/fetch', handler: handleNotionFetch },
-  { method: 'POST', pattern: '/api/notion/publish', handler: handleNotionPublish },
-  { method: 'POST', pattern: '/api/notion/import', handler: handleNotionImport },
-  { method: 'POST', pattern: '/api/notion/import/stream', handler: handleNotionImportStream },
+  {
+    method: 'POST',
+    pattern: '/api/notion/publish',
+    handler: handleNotionPublish,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/notion/import',
+    handler: handleNotionImport,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/notion/import/stream',
+    handler: handleNotionImportStream,
+  },
 ];
 
 /**
@@ -51,9 +63,21 @@ export const ROUTES = [
  * @type {import('../../utils/router.js').Route[]}
  */
 export const GATED_ROUTES = [
-  { method: 'POST', pattern: '/api/notion/subjects', handler: handleNotionSubjects },
-  { method: 'POST', pattern: '/api/notion/compose', handler: handleNotionCompose },
-  { method: 'POST', pattern: '/api/notion/suggest', handler: handleNotionSuggest },
+  {
+    method: 'POST',
+    pattern: '/api/notion/subjects',
+    handler: handleNotionSubjects,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/notion/compose',
+    handler: handleNotionCompose,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/notion/suggest',
+    handler: handleNotionSuggest,
+  },
 ];
 
 /**

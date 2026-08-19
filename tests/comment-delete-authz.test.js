@@ -26,33 +26,50 @@ const pres = { ownerEmail: OWNER, createdBy: OWNER };
 describe('canDeleteComment', () => {
   it('lets the comment author delete their own comment', () => {
     const comment = { authorEmail: AUTHOR };
-    assert.equal(canDeleteComment({ user: { email: AUTHOR }, pres, comment }), true);
+    assert.equal(
+      canDeleteComment({ user: { email: AUTHOR }, pres, comment }),
+      true,
+    );
   });
 
   it('lets an admin delete any comment', () => {
     const comment = { authorEmail: BOT };
     assert.equal(
-      canDeleteComment({ user: { email: 'someone@else.com', isAdmin: true }, pres, comment }),
-      true
+      canDeleteComment({
+        user: { email: 'someone@else.com', isAdmin: true },
+        pres,
+        comment,
+      }),
+      true,
     );
   });
 
   it('lets the presentation owner delete an AI-suggestion comment they did not author', () => {
     const comment = { authorEmail: BOT, commentType: 'ai-suggestion' };
-    assert.equal(canDeleteComment({ user: { email: OWNER }, pres, comment }), true);
+    assert.equal(
+      canDeleteComment({ user: { email: OWNER }, pres, comment }),
+      true,
+    );
   });
 
   it('lets the presentation creator delete a guest/collaborator comment', () => {
     const createdPres = { ownerEmail: 'other@example.com', createdBy: OWNER };
     const comment = { authorEmail: 'guest@example.com' };
-    assert.equal(canDeleteComment({ user: { email: OWNER }, pres: createdPres, comment }), true);
+    assert.equal(
+      canDeleteComment({ user: { email: OWNER }, pres: createdPres, comment }),
+      true,
+    );
   });
 
-  it('does not let an unrelated reader delete someone else\'s comment', () => {
+  it("does not let an unrelated reader delete someone else's comment", () => {
     const comment = { authorEmail: AUTHOR };
     assert.equal(
-      canDeleteComment({ user: { email: 'reader@example.com' }, pres, comment }),
-      false
+      canDeleteComment({
+        user: { email: 'reader@example.com' },
+        pres,
+        comment,
+      }),
+      false,
     );
   });
 

@@ -35,8 +35,16 @@ describe('collectAssetRefs', () => {
   const deck = {
     slides: [
       { content: { image: '/uploads/a.png', title: 'hi' } },
-      { content: { gallery: ['/uploads/b.jpg', 'https://x/y.png', '/uploads/a.png'] } },
-      { content: { items: [{ src: '/uploads/c.webp' }, { src: '/uploads/b.jpg' }] } },
+      {
+        content: {
+          gallery: ['/uploads/b.jpg', 'https://x/y.png', '/uploads/a.png'],
+        },
+      },
+      {
+        content: {
+          items: [{ src: '/uploads/c.webp' }, { src: '/uploads/b.jpg' }],
+        },
+      },
       { content: { note: 'no assets here' } },
     ],
   };
@@ -63,7 +71,10 @@ describe('rewriteAssetRefs', () => {
         { id: '2', content: { items: [{ src: '/uploads/b.jpg' }] } },
       ],
     };
-    const map = { '/uploads/a.png': 'assets/aa.png', '/uploads/b.jpg': 'assets/bb.jpg' };
+    const map = {
+      '/uploads/a.png': 'assets/aa.png',
+      '/uploads/b.jpg': 'assets/bb.jpg',
+    };
     const out = rewriteAssetRefs(deck, (ref) => map[ref]);
     assert.equal(out.slides[0].content.image, 'assets/aa.png');
     assert.equal(out.slides[0].content.title, 'keep');
@@ -78,9 +89,21 @@ describe('rewriteAssetRefs', () => {
     assert.equal(out.slides[0].content.image, '/uploads/a.png');
   });
   it('round-trips: rewrite forward then back is identity for content', () => {
-    const deck = { slides: [{ content: { image: '/uploads/a.png', x: [1, { y: '/uploads/b.jpg' }] } }] };
-    const fwd = { '/uploads/a.png': 'assets/aa.png', '/uploads/b.jpg': 'assets/bb.jpg' };
-    const back = { 'assets/aa.png': '/uploads/a.png', 'assets/bb.jpg': '/uploads/b.jpg' };
+    const deck = {
+      slides: [
+        {
+          content: { image: '/uploads/a.png', x: [1, { y: '/uploads/b.jpg' }] },
+        },
+      ],
+    };
+    const fwd = {
+      '/uploads/a.png': 'assets/aa.png',
+      '/uploads/b.jpg': 'assets/bb.jpg',
+    };
+    const back = {
+      'assets/aa.png': '/uploads/a.png',
+      'assets/bb.jpg': '/uploads/b.jpg',
+    };
     const there = rewriteAssetRefs(deck, (r) => fwd[r]);
     // back-map keys are bundle refs, which are NOT upload refs, so rewriteAssetRefs
     // (which only touches upload refs) won't reverse them — verify via a manual walk.
@@ -112,7 +135,10 @@ describe('rewriteBundleRefs', () => {
         { content: { items: [{ src: 'assets/bb.jpg' }] } },
       ],
     };
-    const map = { 'assets/aa.png': '/uploads/a-1.png', 'assets/bb.jpg': '/uploads/b-2.jpg' };
+    const map = {
+      'assets/aa.png': '/uploads/a-1.png',
+      'assets/bb.jpg': '/uploads/b-2.jpg',
+    };
     const out = rewriteBundleRefs(deck, (r) => map[r]);
     assert.equal(out.slides[0].content.image, '/uploads/a-1.png');
     assert.equal(out.slides[0].content.title, 'keep');
@@ -126,9 +152,21 @@ describe('rewriteBundleRefs', () => {
     assert.equal(out.slides[0].content.image, 'assets/gone.png');
   });
   it('round-trips: rewriteAssetRefs then rewriteBundleRefs is identity', () => {
-    const deck = { slides: [{ content: { image: '/uploads/a.png', x: [1, { y: '/uploads/b.jpg' }] } }] };
-    const fwd = { '/uploads/a.png': 'assets/aa.png', '/uploads/b.jpg': 'assets/bb.jpg' };
-    const back = { 'assets/aa.png': '/uploads/a.png', 'assets/bb.jpg': '/uploads/b.jpg' };
+    const deck = {
+      slides: [
+        {
+          content: { image: '/uploads/a.png', x: [1, { y: '/uploads/b.jpg' }] },
+        },
+      ],
+    };
+    const fwd = {
+      '/uploads/a.png': 'assets/aa.png',
+      '/uploads/b.jpg': 'assets/bb.jpg',
+    };
+    const back = {
+      'assets/aa.png': '/uploads/a.png',
+      'assets/bb.jpg': '/uploads/b.jpg',
+    };
     const there = rewriteAssetRefs(deck, (r) => fwd[r]);
     const backAgain = rewriteBundleRefs(there, (r) => back[r]);
     assert.deepEqual(backAgain, deck);

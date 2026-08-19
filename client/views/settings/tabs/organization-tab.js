@@ -31,7 +31,7 @@ export function createOrganizationTab({ user }) {
     h('h2', {
       class: 'settings-tab-title',
       text: t('settings.tabs.organization', 'Organization'),
-    })
+    }),
   );
 
   let loaded = false;

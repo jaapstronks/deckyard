@@ -19,11 +19,23 @@ import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
-import { parseJson, generateSlug, isValidSlug, getUserIdByEmail } from './utils/helpers.js';
+import {
+  parseJson,
+  generateSlug,
+  isValidSlug,
+  getUserIdByEmail,
+} from './utils/helpers.js';
 import { validateUsage } from '../../shared/slide-types/usage.js';
 
 // Valid field types for custom slide types
-const VALID_FIELD_TYPES = ['string', 'markdown', 'image', 'images', 'enum', 'items'];
+const VALID_FIELD_TYPES = [
+  'string',
+  'markdown',
+  'image',
+  'images',
+  'enum',
+  'items',
+];
 const MAX_FIELDS = 30;
 const MAX_LABEL_LEN = 255;
 
@@ -138,7 +150,8 @@ export async function createCustomSlideType(scope, data) {
   }
 
   const baseType = data?.baseType ? String(data.baseType).trim() : null;
-  const template = data?.template && typeof data.template === 'string' ? data.template : null;
+  const template =
+    data?.template && typeof data.template === 'string' ? data.template : null;
   const css = data?.css && typeof data.css === 'string' ? data.css : null;
 
   // Rejected rather than truncated: an author is standing right here, and a
@@ -175,7 +188,9 @@ export async function createCustomSlideType(scope, data) {
         base_type: baseType,
         fields: JSON.stringify(fieldsResult.fields),
         defaults: JSON.stringify(sanitizeDefaults(data?.defaults)),
-        defaults_by_lang: data?.defaultsByLang ? JSON.stringify(data.defaultsByLang) : null,
+        defaults_by_lang: data?.defaultsByLang
+          ? JSON.stringify(data.defaultsByLang)
+          : null,
         template,
         css,
         usage: usageResult.usage,
@@ -183,7 +198,9 @@ export async function createCustomSlideType(scope, data) {
         sort_order: typeof data?.sortOrder === 'number' ? data.sortOrder : 0,
         created_at: now,
         updated_at: now,
-        created_by: scope?.actorEmail ? await getUserIdByEmail(db, orgId, scope.actorEmail) : null,
+        created_by: scope?.actorEmail
+          ? await getUserIdByEmail(db, orgId, scope.actorEmail)
+          : null,
       })
       .returningAll()
       .executeTakeFirst();
@@ -236,7 +253,9 @@ export async function updateCustomSlideType(scope, typeId, updates) {
     }
 
     if ('baseType' in updates) {
-      updateData.base_type = updates.baseType ? String(updates.baseType).trim() : null;
+      updateData.base_type = updates.baseType
+        ? String(updates.baseType).trim()
+        : null;
     }
 
     if ('fields' in updates) {
@@ -258,7 +277,8 @@ export async function updateCustomSlideType(scope, typeId, updates) {
     }
 
     if ('template' in updates) {
-      updateData.template = typeof updates.template === 'string' ? updates.template : null;
+      updateData.template =
+        typeof updates.template === 'string' ? updates.template : null;
     }
 
     if ('css' in updates) {
@@ -278,7 +298,8 @@ export async function updateCustomSlideType(scope, typeId, updates) {
     }
 
     if ('sortOrder' in updates) {
-      updateData.sort_order = typeof updates.sortOrder === 'number' ? updates.sortOrder : 0;
+      updateData.sort_order =
+        typeof updates.sortOrder === 'number' ? updates.sortOrder : 0;
     }
 
     const row = await db
@@ -428,17 +449,21 @@ function validateFields(fields) {
 
     const clean = { key, type, label };
     if (field.required === true) clean.required = true;
-    if (typeof field.maxLength === 'number' && field.maxLength > 0) clean.maxLength = field.maxLength;
-    if (typeof field.placeholder === 'string') clean.placeholder = field.placeholder;
+    if (typeof field.maxLength === 'number' && field.maxLength > 0)
+      clean.maxLength = field.maxLength;
+    if (typeof field.placeholder === 'string')
+      clean.placeholder = field.placeholder;
     if (typeof field.helpText === 'string') clean.helpText = field.helpText;
 
     if (type === 'enum') {
-      if (!Array.isArray(field.options) || field.options.length === 0) return { ok: false };
+      if (!Array.isArray(field.options) || field.options.length === 0)
+        return { ok: false };
       clean.options = field.options;
     }
 
     if (type === 'items') {
-      if (!Array.isArray(field.itemFields) || field.itemFields.length === 0) return { ok: false };
+      if (!Array.isArray(field.itemFields) || field.itemFields.length === 0)
+        return { ok: false };
       const sub = validateFields(field.itemFields);
       if (!sub.ok) return { ok: false };
       clean.itemFields = sub.fields;

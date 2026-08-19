@@ -34,21 +34,41 @@ import { sql } from 'kysely';
 export const up = async (db) => {
   // 1. slide_library: column + values + index name
   await sql`ALTER TABLE slide_library RENAME COLUMN scope TO shelf`.execute(db);
-  await sql`UPDATE slide_library SET shelf = 'organization' WHERE shelf = 'team'`.execute(db);
-  await sql`ALTER INDEX IF EXISTS idx_slide_library_org_scope RENAME TO idx_slide_library_org_shelf`.execute(db);
+  await sql`UPDATE slide_library SET shelf = 'organization' WHERE shelf = 'team'`.execute(
+    db,
+  );
+  await sql`ALTER INDEX IF EXISTS idx_slide_library_org_scope RENAME TO idx_slide_library_org_shelf`.execute(
+    db,
+  );
 
   // 2. slide_collections: column + values + index name
-  await sql`ALTER TABLE slide_collections RENAME COLUMN scope TO shelf`.execute(db);
-  await sql`UPDATE slide_collections SET shelf = 'organization' WHERE shelf = 'team'`.execute(db);
-  await sql`ALTER INDEX IF EXISTS idx_slide_collections_org_scope RENAME TO idx_slide_collections_org_shelf`.execute(db);
+  await sql`ALTER TABLE slide_collections RENAME COLUMN scope TO shelf`.execute(
+    db,
+  );
+  await sql`UPDATE slide_collections SET shelf = 'organization' WHERE shelf = 'team'`.execute(
+    db,
+  );
+  await sql`ALTER INDEX IF EXISTS idx_slide_collections_org_scope RENAME TO idx_slide_collections_org_shelf`.execute(
+    db,
+  );
 };
 
 export const down = async (db) => {
-  await sql`ALTER INDEX IF EXISTS idx_slide_collections_org_shelf RENAME TO idx_slide_collections_org_scope`.execute(db);
-  await sql`UPDATE slide_collections SET shelf = 'team' WHERE shelf = 'organization'`.execute(db);
-  await sql`ALTER TABLE slide_collections RENAME COLUMN shelf TO scope`.execute(db);
+  await sql`ALTER INDEX IF EXISTS idx_slide_collections_org_shelf RENAME TO idx_slide_collections_org_scope`.execute(
+    db,
+  );
+  await sql`UPDATE slide_collections SET shelf = 'team' WHERE shelf = 'organization'`.execute(
+    db,
+  );
+  await sql`ALTER TABLE slide_collections RENAME COLUMN shelf TO scope`.execute(
+    db,
+  );
 
-  await sql`ALTER INDEX IF EXISTS idx_slide_library_org_shelf RENAME TO idx_slide_library_org_scope`.execute(db);
-  await sql`UPDATE slide_library SET shelf = 'team' WHERE shelf = 'organization'`.execute(db);
+  await sql`ALTER INDEX IF EXISTS idx_slide_library_org_shelf RENAME TO idx_slide_library_org_scope`.execute(
+    db,
+  );
+  await sql`UPDATE slide_library SET shelf = 'team' WHERE shelf = 'organization'`.execute(
+    db,
+  );
   await sql`ALTER TABLE slide_library RENAME COLUMN shelf TO scope`.execute(db);
 };

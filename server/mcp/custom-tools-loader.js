@@ -41,7 +41,7 @@ export async function loadCustomToolsRegistrar() {
     const fn = mod.default ?? mod.registerCustomTools;
     if (typeof fn !== 'function') {
       log.warn(
-        'custom/mcp-tools.js exists but exports no function (default or registerCustomTools) — ignored'
+        'custom/mcp-tools.js exists but exports no function (default or registerCustomTools) — ignored',
       );
       return null;
     }

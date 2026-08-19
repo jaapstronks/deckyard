@@ -30,7 +30,9 @@
 .new-pres-section {
   border: 2px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-lg);
-  transition: border-color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
 }
 
 .new-pres-section.is-selected {
@@ -48,7 +50,7 @@
   user-select: none;
 }
 
-.new-pres-section-header input[type="radio"] {
+.new-pres-section-header input[type='radio'] {
   flex-shrink: 0;
   accent-color: hsl(var(--app-accent-primary));
 }
@@ -75,7 +77,9 @@
   flex-basis: 100%;
   font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-secondary));
-  padding-left: calc(var(--ps-space-4) + var(--ps-space-2)); /* align with title after radio */
+  padding-left: calc(
+    var(--ps-space-4) + var(--ps-space-2)
+  ); /* align with title after radio */
   margin-top: calc(-1 * var(--ps-space-1));
 }
 
@@ -157,7 +161,10 @@
   border-radius: var(--ps-radius-md);
   background: hsl(var(--app-bg-elevated));
   cursor: pointer;
-  transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    transform 0.15s,
+    box-shadow 0.2s;
   overflow: hidden;
   padding: 0;
   text-align: center;
@@ -238,7 +245,9 @@
   padding-left: var(--ps-space-7);
   border-radius: var(--ps-radius-md);
   position: relative;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   list-style: none;
 }
 
@@ -386,7 +395,9 @@
   color: hsl(var(--app-text-primary));
   font: inherit;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .creation-rail-item:hover:not(:disabled) {
@@ -635,7 +646,8 @@
   display: inline-flex;
   align-items: center;
   gap: var(--ps-space-2);
-  padding: var(--ps-space-1) var(--ps-space-1-5) var(--ps-space-1) var(--ps-space-2);
+  padding: var(--ps-space-1) var(--ps-space-1-5) var(--ps-space-1)
+    var(--ps-space-2);
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-md);
   background: hsl(var(--app-bg-sunken));
@@ -714,7 +726,9 @@
   background: hsl(var(--app-bg-surface));
   cursor: pointer;
   color: hsl(var(--app-text-primary));
-  transition: border-color var(--ps-transition-fast), background var(--ps-transition-fast);
+  transition:
+    border-color var(--ps-transition-fast),
+    background var(--ps-transition-fast);
 }
 
 .creation-collection-card:hover {
@@ -780,7 +794,9 @@
   border-radius: var(--ps-radius-lg);
   background: hsl(var(--app-bg-sunken));
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
 }
 
 .import-slides-dropzone:hover,
@@ -907,7 +923,9 @@
   border: 2px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-lg);
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
 }
 
 .share-option:hover {
@@ -920,7 +938,7 @@
   background: hsl(var(--app-accent-primary) / 0.05);
 }
 
-.share-option input[type="radio"] {
+.share-option input[type='radio'] {
   margin-top: var(--ps-space-1);
   flex-shrink: 0;
 }
@@ -1030,7 +1048,9 @@
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-md);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 
 .change-theme-option:hover {
@@ -1043,7 +1063,7 @@
   background: hsl(var(--app-accent-primary) / 0.06);
 }
 
-.change-theme-option input[type="radio"] {
+.change-theme-option input[type='radio'] {
   margin-top: var(--ps-space-0-5);
   flex-shrink: 0;
 }
@@ -1275,7 +1295,9 @@
 
 .compare-thumb-clickable {
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
 }
 
 .compare-thumb-clickable:hover {
@@ -1503,7 +1525,11 @@
 
 .subscription-level-option.is-selected {
   border-color: hsl(var(--app-accent-primary));
-  background: color-mix(in srgb, hsl(var(--app-accent-primary)) 6%, transparent);
+  background: color-mix(
+    in srgb,
+    hsl(var(--app-accent-primary)) 6%,
+    transparent
+  );
 }
 
 .subscription-level-label {

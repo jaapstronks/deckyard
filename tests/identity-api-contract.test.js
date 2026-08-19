@@ -27,7 +27,9 @@ import assert from 'node:assert/strict';
 // Auth config must be in place before the modules under test are imported.
 // Assembled rather than written as one literal so secret scanners do not flag
 // it; authConfigError() only requires MIN_AUTH_SECRET_LENGTH characters.
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
 delete process.env.MULTI_ORG_ENABLED;
@@ -42,16 +44,14 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { hashPassword } = await import('../server/utils/password-hash.js');
 const auth = await import('../server/auth/auth.js');
 
-const { sanitizePresentation } = await import(
-  '../server/routes/public-api/v1/presentations.js'
-);
-const { isCommentOwner } = await import('../client/lib/comments/comment-authz.js');
-const { isPresentationAuthor: clientIsAuthor, isSlideLockedForUser } = await import(
-  '../client/lib/slide-authoring/slide-lock-authz.js'
-);
-const { isPresentationAuthor: serverIsAuthor } = await import(
-  '../server/utils/presentation-authz.js'
-);
+const { sanitizePresentation } =
+  await import('../server/routes/public-api/v1/presentations.js');
+const { isCommentOwner } =
+  await import('../client/lib/comments/comment-authz.js');
+const { isPresentationAuthor: clientIsAuthor, isSlideLockedForUser } =
+  await import('../client/lib/slide-authoring/slide-lock-authz.js');
+const { isPresentationAuthor: serverIsAuthor } =
+  await import('../server/utils/presentation-authz.js');
 
 const passwordHash = await hashPassword('correct-horse-battery');
 
@@ -98,7 +98,11 @@ function requestWithSession(user) {
 
 test('logging in yields the stable user id, not just an address', async () => {
   seedDb();
-  const user = await auth.verifyLoginAsync('alice@example.com', 'correct-horse-battery', {});
+  const user = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct-horse-battery',
+    {},
+  );
 
   assert.equal(user.id, USER_ID);
   assert.equal(user.email, 'alice@example.com');
@@ -106,7 +110,11 @@ test('logging in yields the stable user id, not just an address', async () => {
 
 test('the session resolved from a cookie carries the same id', async () => {
   seedDb();
-  const login = await auth.verifyLoginAsync('alice@example.com', 'correct-horse-battery', {});
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct-horse-battery',
+    {},
+  );
   const me = await auth.getUserFromRequestAsync(requestWithSession(login), {});
 
   // /api/auth/me serves this object verbatim, so what the route returns is
@@ -137,7 +145,13 @@ test('the public-API shape carries the identity ids beside the display email', (
 });
 
 test('the owner email is still redacted for anyone else — the id is not', () => {
-  const pres = { id: 'p1', title: 'Deck', ownerId: USER_ID, ownerEmail: 'alice@example.com', slides: [] };
+  const pres = {
+    id: 'p1',
+    title: 'Deck',
+    ownerId: USER_ID,
+    ownerEmail: 'alice@example.com',
+    slides: [],
+  };
   const asStranger = sanitizePresentation(pres, [], 'bob@example.com');
 
   // Redaction is about disclosing a person's address, which an opaque id does
@@ -147,7 +161,12 @@ test('the owner email is still redacted for anyone else — the id is not', () =
 });
 
 test('a deck with no user record behind its owner reports a null id, not an error', () => {
-  const pres = { id: 'p1', title: 'Deck', ownerEmail: 'external@partner.test', slides: [] };
+  const pres = {
+    id: 'p1',
+    title: 'Deck',
+    ownerEmail: 'external@partner.test',
+    slides: [],
+  };
   const out = sanitizePresentation(pres, [], 'external@partner.test');
 
   assert.equal(out.ownerId, null);
@@ -172,7 +191,10 @@ test('the client mirrors grant the owner by id, under any address', () => {
 
   assert.equal(clientIsAuthor(owner, dualKeyDeck), true);
   assert.equal(isCommentOwner(owner, dualKeyDeck), true);
-  assert.equal(isSlideLockedForUser({ lockedByAuthor: true }, owner, dualKeyDeck), false);
+  assert.equal(
+    isSlideLockedForUser({ lockedByAuthor: true }, owner, dualKeyDeck),
+    false,
+  );
   // …and the server agrees, which is the whole point of the shared rule.
   assert.equal(serverIsAuthor({ user: owner, pres: dualKeyDeck }), true);
 });
@@ -182,17 +204,33 @@ test("a different user carrying the owner's address is refused by both", () => {
 
   assert.equal(clientIsAuthor(twin, dualKeyDeck), false);
   assert.equal(isCommentOwner(twin, dualKeyDeck), false);
-  assert.equal(isSlideLockedForUser({ lockedByAuthor: true }, twin, dualKeyDeck), true);
+  assert.equal(
+    isSlideLockedForUser({ lockedByAuthor: true }, twin, dualKeyDeck),
+    true,
+  );
   assert.equal(serverIsAuthor({ user: twin, pres: dualKeyDeck }), false);
 });
 
 test('the id-less shapes still fall back to the email on the client too', () => {
   // File mode / an external owner: no ids anywhere, the address is all there is.
-  const legacyDeck = { id: 'p2', visibility: 'private', ownerEmail: 'legacy@example.com' };
+  const legacyDeck = {
+    id: 'p2',
+    visibility: 'private',
+    ownerEmail: 'legacy@example.com',
+  };
 
-  assert.equal(clientIsAuthor({ email: 'legacy@example.com' }, legacyDeck), true);
-  assert.equal(isCommentOwner({ email: 'legacy@example.com' }, legacyDeck), true);
-  assert.equal(clientIsAuthor({ email: 'someone@example.com' }, legacyDeck), false);
+  assert.equal(
+    clientIsAuthor({ email: 'legacy@example.com' }, legacyDeck),
+    true,
+  );
+  assert.equal(
+    isCommentOwner({ email: 'legacy@example.com' }, legacyDeck),
+    true,
+  );
+  assert.equal(
+    clientIsAuthor({ email: 'someone@example.com' }, legacyDeck),
+    false,
+  );
 });
 
 test('an admin keeps the admin override on the client mirrors', () => {

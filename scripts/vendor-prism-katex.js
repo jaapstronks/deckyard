@@ -35,13 +35,13 @@ async function readVersion(pkgName) {
     const pkg = JSON.parse(
       await fs.readFile(
         path.join(repoRoot, 'node_modules', pkgName, 'package.json'),
-        'utf8'
-      )
+        'utf8',
+      ),
     );
     return pkg.version;
   } catch {
     throw new Error(
-      `Could not read node_modules/${pkgName}/package.json. Did npm install run?`
+      `Could not read node_modules/${pkgName}/package.json. Did npm install run?`,
     );
   }
 }
@@ -69,9 +69,9 @@ async function writeManifest(destDir, source, version, files) {
         files,
       },
       null,
-      2
+      2,
     )}\n`,
-    'utf8'
+    'utf8',
   );
 }
 
@@ -91,24 +91,24 @@ async function vendorPrism() {
     await copyWithHash(
       path.join(srcDir, 'components', 'prism-core.min.js'),
       destDir,
-      'components/prism-core.min.js'
-    )
+      'components/prism-core.min.js',
+    ),
   );
   for (const name of components) {
     files.push(
       await copyWithHash(
         path.join(srcDir, 'components', `prism-${name}.min.js`),
         destDir,
-        `components/prism-${name}.min.js`
-      )
+        `components/prism-${name}.min.js`,
+      ),
     );
   }
   files.push(
     await copyWithHash(
       path.join(srcDir, 'themes', 'prism-tomorrow.min.css'),
       destDir,
-      'themes/prism-tomorrow.min.css'
-    )
+      'themes/prism-tomorrow.min.css',
+    ),
   );
 
   await writeManifest(destDir, 'prismjs', version, files);
@@ -133,8 +133,8 @@ async function vendorKatex() {
       await copyWithHash(
         path.join(srcDir, 'fonts', font),
         destDir,
-        `fonts/${font}`
-      )
+        `fonts/${font}`,
+      ),
     );
   }
 
@@ -147,7 +147,7 @@ async function main() {
   const katex = await vendorKatex();
   // eslint-disable-next-line no-console
   console.log(
-    `Vendored Prism ${prism.version} (${prism.count} files) and KaTeX ${katex.version} (${katex.count} files) to client/vendor/`
+    `Vendored Prism ${prism.version} (${prism.count} files) and KaTeX ${katex.version} (${katex.count} files) to client/vendor/`,
   );
 }
 

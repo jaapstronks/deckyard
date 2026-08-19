@@ -84,12 +84,16 @@ export function readLangMode() {
  * @returns {string|null}
  */
 export function langFromUiLocale(locale) {
-  const tag = String(locale || '').trim().toLowerCase();
+  const tag = String(locale || '')
+    .trim()
+    .toLowerCase();
   if (!tag) return null;
   const exact = supportedLangs.find((l) => l.toLowerCase() === tag);
   if (exact) return exact;
   const base = tag.split('-')[0];
-  return supportedLangs.find((l) => l.toLowerCase().split('-')[0] === base) || null;
+  return (
+    supportedLangs.find((l) => l.toLowerCase().split('-')[0] === base) || null
+  );
 }
 
 /**

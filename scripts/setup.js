@@ -82,7 +82,11 @@ const AI_PROVIDERS = {
 // and warn at setup instead of leaving the AI features mysteriously off.
 const AI_KEY_ALIASES = [
   { stray: 'OPENAI_API_KEY', canonical: 'OPENAI_API', label: 'OpenAI' },
-  { stray: 'ANTHROPIC_API_KEY', canonical: 'CLAUDE_API', label: 'Claude (Anthropic)' },
+  {
+    stray: 'ANTHROPIC_API_KEY',
+    canonical: 'CLAUDE_API',
+    label: 'Claude (Anthropic)',
+  },
 ];
 
 /**
@@ -110,7 +114,7 @@ export function strayAiKeyWarnings(content) {
     if (hasEnvValue(content, stray) && !hasEnvValue(content, canonical)) {
       warnings.push(
         `⚠ Found ${stray} in .env, but Deckyard reads ${canonical} for ${label}. ` +
-          `Rename it to ${canonical}= or the key is ignored.`
+          `Rename it to ${canonical}= or the key is ignored.`,
       );
     }
   }
@@ -186,7 +190,8 @@ export function flagUpdates(flags = {}) {
   } else if (ai === 'ollama') {
     updates.OPENAI_COMPAT_ENDPOINT =
       flags['ollama-endpoint'] || 'http://localhost:11434/v1/chat/completions';
-    if (flags['ollama-model']) updates.OPENAI_COMPAT_MODEL = flags['ollama-model'];
+    if (flags['ollama-model'])
+      updates.OPENAI_COMPAT_MODEL = flags['ollama-model'];
   }
 
   const auth = String(flags.auth || 'off').toLowerCase();
@@ -207,7 +212,8 @@ export function flagUpdates(flags = {}) {
   if (flags['app-url']) updates.APP_URL = flags['app-url'];
   else if (!authOn) updates.APP_URL = `http://localhost:${port}`;
 
-  if (flags.theme && flags.theme !== DEFAULT_THEME_ID) updates.DEFAULT_THEME = flags.theme;
+  if (flags.theme && flags.theme !== DEFAULT_THEME_ID)
+    updates.DEFAULT_THEME = flags.theme;
 
   return updates;
 }
@@ -219,7 +225,9 @@ async function runWizard() {
     return a || def || '';
   };
   const askYesNo = async (q, def = false) => {
-    const a = (await rl.question(`${q} [${def ? 'Y/n' : 'y/N'}]: `)).trim().toLowerCase();
+    const a = (await rl.question(`${q} [${def ? 'Y/n' : 'y/N'}]: `))
+      .trim()
+      .toLowerCase();
     if (!a) return def;
     return a === 'y' || a === 'yes';
   };
@@ -233,7 +241,9 @@ async function runWizard() {
     // --- AI provider ---
     console.log('\nAI wizard (optional). Pick a provider, or none:');
     const keys = Object.keys(AI_PROVIDERS);
-    keys.forEach((k, i) => console.log(`  ${i + 1}) ${AI_PROVIDERS[k]?.label || 'None'}`));
+    keys.forEach((k, i) =>
+      console.log(`  ${i + 1}) ${AI_PROVIDERS[k]?.label || 'None'}`),
+    );
     const pick = await ask('Provider number', '1');
     const chosen = keys[(parseInt(pick, 10) || 1) - 1] || 'none';
     const provider = AI_PROVIDERS[chosen];
@@ -249,12 +259,17 @@ async function runWizard() {
     }
 
     // --- auth ---
-    console.log('\nAuthentication. Leave off for a local single-user try; turn');
+    console.log(
+      '\nAuthentication. Leave off for a local single-user try; turn',
+    );
     console.log('on for anything reachable from the internet.');
     const authOn = await askYesNo('Enable authentication?', false);
     if (authOn) {
       updates.AUTH_SECRET = generateSecret();
-      updates.AUTH_ADMIN_EMAIL = await ask('Admin email (gets the admin role)', '');
+      updates.AUTH_ADMIN_EMAIL = await ask(
+        'Admin email (gets the admin role)',
+        '',
+      );
       // Leave AUTH_ENABLED unset → defaults to enabled when a secret is present.
       console.log('  Generated a strong AUTH_SECRET for you.');
       const publicUrl = await ask(
@@ -291,10 +306,13 @@ async function main() {
   await writeFile(ENV_PATH, content, 'utf8');
 
   console.log(`\n✓ Wrote ${ENV_PATH}`);
-  for (const warning of strayAiKeyWarnings(content)) console.log(`  ${warning}`);
+  for (const warning of strayAiKeyWarnings(content))
+    console.log(`  ${warning}`);
   if (nonInteractive) {
     console.log('  (non-interactive defaults: auth disabled, no AI provider)');
-    console.log('  Run `npm run setup` interactively to add an API key or enable auth.');
+    console.log(
+      '  Run `npm run setup` interactively to add an API key or enable auth.',
+    );
   }
   console.log('  Start Deckyard with: npm run start');
 }
@@ -305,7 +323,9 @@ async function main() {
 function invokedDirectly() {
   if (!process.argv[1]) return false;
   try {
-    return import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href;
+    return (
+      import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href
+    );
   } catch {
     return false;
   }

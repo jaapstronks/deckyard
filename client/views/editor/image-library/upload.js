@@ -1,7 +1,12 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { getFeatures } from '../../../lib/state/features.js';
-import { readFileAsDataUrl, getAllTags, installTagsAutocomplete, createFieldWrap } from './utils.js';
+import {
+  readFileAsDataUrl,
+  getAllTags,
+  installTagsAutocomplete,
+  createFieldWrap,
+} from './utils.js';
 
 // Cache media status to avoid repeated API calls
 let _mediaStatus = null;
@@ -46,7 +51,9 @@ export async function uploadFile(api, file) {
     });
 
     if (!uploadResp.ok) {
-      throw new Error(`Upload failed: ${uploadResp.status} ${uploadResp.statusText}`);
+      throw new Error(
+        `Upload failed: ${uploadResp.status} ${uploadResp.statusText}`,
+      );
     }
 
     // Confirm the upload completed
@@ -103,13 +110,22 @@ export function createImageLibraryUpload({
 
   if (uploadsDisabled) {
     addWrap.append(
-      h('div', { class: 'field-label', text: t('imageLibrary.addNew', 'Add new') }),
+      h('div', {
+        class: 'field-label',
+        text: t('imageLibrary.addNew', 'Add new'),
+      }),
       h('div', {
         class: 'help',
         text: getFeatures()?.sandboxMode
-          ? t('imageLibrary.readOnlySandbox', 'Uploads are off in the sandbox. Use Unsplash or Giphy to add images.')
-          : t('imageLibrary.readOnly', 'Uploads are disabled. The library is read-only.'),
-      })
+          ? t(
+              'imageLibrary.readOnlySandbox',
+              'Uploads are off in the sandbox. Use Unsplash or Giphy to add images.',
+            )
+          : t(
+              'imageLibrary.readOnly',
+              'Uploads are disabled. The library is read-only.',
+            ),
+      }),
     );
     return { element: addWrap };
   }
@@ -135,11 +151,17 @@ export function createImageLibraryUpload({
     text: t('imageLibrary.dropzone.hint', 'PNG, JPG, SVG supported'),
   });
 
-  const dropzone = h('div', { class: 'image-lib-dropzone' }, [dropzoneIcon, dropzoneText, dropzoneHint]);
+  const dropzone = h('div', { class: 'image-lib-dropzone' }, [
+    dropzoneIcon,
+    dropzoneText,
+    dropzoneHint,
+  ]);
 
   // Preview section (hidden initially)
   const previewImg = h('img', { class: 'image-lib-preview-img', alt: '' });
-  const previewWrap = h('div', { class: 'image-lib-preview', hidden: true }, [previewImg]);
+  const previewWrap = h('div', { class: 'image-lib-preview', hidden: true }, [
+    previewImg,
+  ]);
 
   // Change image button (shown after upload)
   const btnChangeImage = h('button', {
@@ -147,21 +169,36 @@ export function createImageLibraryUpload({
     text: t('imageLibrary.changeImage', 'Change image'),
     onclick: () => inputFile.click(),
   });
-  const changeImageRow = h('div', { class: 'image-lib-change-row', hidden: true }, [btnChangeImage]);
+  const changeImageRow = h(
+    'div',
+    { class: 'image-lib-change-row', hidden: true },
+    [btnChangeImage],
+  );
 
   // URL input as alternative (collapsible)
   const inputUrl = h('input', {
     class: 'form-input',
-    placeholder: t('imageLibrary.urlPlaceholder', 'Paste URL (e.g. /uploads/image.jpg)'),
+    placeholder: t(
+      'imageLibrary.urlPlaceholder',
+      'Paste URL (e.g. /uploads/image.jpg)',
+    ),
   });
   const urlToggle = h('button', {
     class: 'image-lib-url-toggle',
     text: t('imageLibrary.useUrl', 'Or use existing URL'),
     type: 'button',
   });
-  const urlSection = h('div', { class: 'image-lib-url-section', hidden: true }, [
-    createFieldWrap(h, t('imageLibrary.upload.url.label', 'Image URL'), inputUrl),
-  ]);
+  const urlSection = h(
+    'div',
+    { class: 'image-lib-url-section', hidden: true },
+    [
+      createFieldWrap(
+        h,
+        t('imageLibrary.upload.url.label', 'Image URL'),
+        inputUrl,
+      ),
+    ],
+  );
 
   urlToggle.addEventListener('click', () => {
     urlSection.hidden = !urlSection.hidden;
@@ -187,7 +224,10 @@ export function createImageLibraryUpload({
 
   const inPhotographer = h('input', {
     class: 'form-input',
-    placeholder: t('imageLibrary.photographerField', 'Photographer name (optional)'),
+    placeholder: t(
+      'imageLibrary.photographerField',
+      'Photographer name (optional)',
+    ),
   });
   const inAltNl = h('input', {
     class: 'form-input',
@@ -225,7 +265,8 @@ export function createImageLibraryUpload({
                 context: context || null,
               }),
             });
-            const a = resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
+            const a =
+              resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
             inAltNl.value = String(a?.nl || '');
             inAltEn.value = String(a?.['en-GB'] || '');
             setStatus(t('imageLibrary.alt.generated', 'Generated.'));
@@ -240,21 +281,31 @@ export function createImageLibraryUpload({
 
   // Alt text fields with optional generate button
   const altHeader = h('div', { class: 'row spread' }, [
-    h('div', { class: 'field-label', text: t('imageLibrary.altText', 'Alt text (accessibility)') }),
+    h('div', {
+      class: 'field-label',
+      text: t('imageLibrary.altText', 'Alt text (accessibility)'),
+    }),
     btnGenerateAlt,
   ]);
 
-  const metadataSection = h('div', { class: 'image-lib-metadata', hidden: true }, [
-    h('div', { class: 'field-label', text: t('imageLibrary.metadata', 'Image details (optional)') }),
-    h('div', { class: 'image-lib-metadata-grid' }, [
-      inDescription,
-      inTags,
-      inPhotographer,
-    ]),
-    tagsDatalist,
-    altHeader,
-    h('div', { class: 'image-lib-metadata-grid' }, [inAltNl, inAltEn]),
-  ]);
+  const metadataSection = h(
+    'div',
+    { class: 'image-lib-metadata', hidden: true },
+    [
+      h('div', {
+        class: 'field-label',
+        text: t('imageLibrary.metadata', 'Image details (optional)'),
+      }),
+      h('div', { class: 'image-lib-metadata-grid' }, [
+        inDescription,
+        inTags,
+        inPhotographer,
+      ]),
+      tagsDatalist,
+      altHeader,
+      h('div', { class: 'image-lib-metadata-grid' }, [inAltNl, inAltEn]),
+    ],
+  );
 
   // Action buttons (hidden until image uploaded)
   const btnCreate = h('button', {
@@ -298,12 +349,17 @@ export function createImageLibraryUpload({
         if (canAiAlt) {
           const genOk = await confirmModal(h, document.body, {
             title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
-            message: t('imageLibrary.alt.missingSuggestGenerate', 'Alt text is empty. Generate it with AI now? (Recommended)'),
+            message: t(
+              'imageLibrary.alt.missingSuggestGenerate',
+              'Alt text is empty. Generate it with AI now? (Recommended)',
+            ),
           });
           if (genOk) {
             try {
               setBusy(true);
-              setStatus(t('imageLibrary.alt.generating', 'Generating alt text…'));
+              setStatus(
+                t('imageLibrary.alt.generating', 'Generating alt text…'),
+              );
               const resp = await api('/api/image-library/generate-alts', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -314,7 +370,8 @@ export function createImageLibraryUpload({
                   context: context || null,
                 }),
               });
-              const a = resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
+              const a =
+                resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
               inAltNl.value = String(a?.nl || '');
               inAltEn.value = String(a?.['en-GB'] || '');
               setStatus(t('imageLibrary.alt.generated', 'Generated.'));
@@ -327,14 +384,20 @@ export function createImageLibraryUpload({
           } else {
             const ok = await confirmModal(h, document.body, {
               title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
-              message: t('imageLibrary.alt.missingConfirmUse', 'Alt text is still empty. Use this image anyway?'),
+              message: t(
+                'imageLibrary.alt.missingConfirmUse',
+                'Alt text is still empty. Use this image anyway?',
+              ),
             });
             if (!ok) return;
           }
         } else {
           const ok = await confirmModal(h, document.body, {
             title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
-            message: t('imageLibrary.alt.missingConfirmUse', 'Alt text is still empty. Use this image anyway?'),
+            message: t(
+              'imageLibrary.alt.missingConfirmUse',
+              'Alt text is still empty. Use this image anyway?',
+            ),
           });
           if (!ok) return;
         }
@@ -348,13 +411,17 @@ export function createImageLibraryUpload({
           photographer: inPhotographer.value || '',
           alts: { nl: inAltNl.value || '', 'en-GB': inAltEn.value || '' },
         },
-        { applyCaptionCredit: allowCaptionCredit && creditCb?.checked }
+        { applyCaptionCredit: allowCaptionCredit && creditCb?.checked },
       );
       onClose();
     },
   });
 
-  const actionsSection = h('div', { class: 'image-lib-actions', hidden: true }, [btnCreate, btnUseOnly]);
+  const actionsSection = h(
+    'div',
+    { class: 'image-lib-actions', hidden: true },
+    [btnCreate, btnUseOnly],
+  );
 
   // Show uploaded state
   const showUploadedState = (url) => {
@@ -368,7 +435,6 @@ export function createImageLibraryUpload({
     metadataSection.hidden = false;
     actionsSection.hidden = false;
   };
-
 
   // Handle file upload
   const handleFile = async (file) => {
@@ -422,7 +488,10 @@ export function createImageLibraryUpload({
 
   // Assemble component
   addWrap.append(
-    h('div', { class: 'field-label', text: t('imageLibrary.addNew', 'Add new image') }),
+    h('div', {
+      class: 'field-label',
+      text: t('imageLibrary.addNew', 'Add new image'),
+    }),
     inputFile,
     dropzone,
     urlToggle,
@@ -430,7 +499,7 @@ export function createImageLibraryUpload({
     previewWrap,
     changeImageRow,
     metadataSection,
-    actionsSection
+    actionsSection,
   );
 
   return { element: addWrap };

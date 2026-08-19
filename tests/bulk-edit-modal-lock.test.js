@@ -24,8 +24,10 @@ globalThis.Node = dom.window.Node;
 globalThis.Element = dom.window.Element;
 globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.getComputedStyle = dom.window.getComputedStyle;
-globalThis.requestAnimationFrame = dom.window.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
-globalThis.cancelAnimationFrame = dom.window.cancelAnimationFrame || clearTimeout;
+globalThis.requestAnimationFrame =
+  dom.window.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
+globalThis.cancelAnimationFrame =
+  dom.window.cancelAnimationFrame || clearTimeout;
 globalThis.ResizeObserver =
   dom.window.ResizeObserver ||
   class {
@@ -35,7 +37,8 @@ globalThis.ResizeObserver =
   };
 
 const { h } = await import('../client/lib/dom.js');
-const { createBulkEditModal } = await import('../client/views/editor/bulk-edit-modal.js');
+const { createBulkEditModal } =
+  await import('../client/views/editor/bulk-edit-modal.js');
 
 test('modal gates its form pane on locked slides and releases it again', () => {
   const pres = {
@@ -62,18 +65,34 @@ test('modal gates its form pane on locked slides and releases it again', () => {
   const modalEl = document.querySelector('.bulk-edit-modal');
   const note = document.querySelector('.bulk-edit-locked-note');
   assert.ok(modalEl, 'modal renders');
-  assert.equal(modalEl.classList.contains('is-locked'), false, 'editable slide: not locked');
+  assert.equal(
+    modalEl.classList.contains('is-locked'),
+    false,
+    'editable slide: not locked',
+  );
   assert.equal(note.hidden, true, 'editable slide: banner hidden');
 
-  const nextBtn = [...modalEl.querySelectorAll('button')].find((b) => b.textContent === '›');
+  const nextBtn = [...modalEl.querySelectorAll('button')].find(
+    (b) => b.textContent === '›',
+  );
   nextBtn.click();
   assert.equal(selectedId, 's2', 'navigated through the selection seam');
-  assert.equal(modalEl.classList.contains('is-locked'), true, 'locked slide: is-locked set');
+  assert.equal(
+    modalEl.classList.contains('is-locked'),
+    true,
+    'locked slide: is-locked set',
+  );
   assert.equal(note.hidden, false, 'locked slide: banner visible');
   assert.ok(note.textContent.length > 0, 'banner has text');
 
-  const prevBtn = [...modalEl.querySelectorAll('button')].find((b) => b.textContent === '‹');
+  const prevBtn = [...modalEl.querySelectorAll('button')].find(
+    (b) => b.textContent === '‹',
+  );
   prevBtn.click();
-  assert.equal(modalEl.classList.contains('is-locked'), false, 'back on editable slide: released');
+  assert.equal(
+    modalEl.classList.contains('is-locked'),
+    false,
+    'back on editable slide: released',
+  );
   assert.equal(note.hidden, true, 'banner hidden again');
 });

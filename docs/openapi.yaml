@@ -286,14 +286,14 @@ paths:
                 title:
                   type: string
                   description: Presentation title
-                  example: "Q1 Business Review"
+                  example: 'Q1 Business Review'
                 description:
                   type: string
                   description: Presentation description
                 themeId:
                   type: string
                   description: Theme ID to use
-                  example: "default"
+                  example: 'default'
                 language:
                   type: string
                   enum: [en-GB, nl]
@@ -1426,7 +1426,7 @@ paths:
                 raw:
                   type: string
                   description: The content to generate a presentation from
-                  example: "Create a presentation about sustainable energy..."
+                  example: 'Create a presentation about sustainable energy...'
                 vendor:
                   type: string
                   description: AI vendor to use (openai, anthropic, mistral)
@@ -2229,7 +2229,7 @@ components:
           description: >-
             Format sentinel. Written as `deckyard.deck`; the historical
             `slidecreator.deck` is still accepted on import.
-          example: "deckyard.deck"
+          example: 'deckyard.deck'
         version:
           type: integer
         title:

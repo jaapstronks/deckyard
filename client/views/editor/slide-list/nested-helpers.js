@@ -42,9 +42,7 @@ function getChildSlides(parentId, slides) {
  * @returns {string[]}
  */
 export function getChildIds(parentId, slides) {
-  return (slides || [])
-    .filter((s) => s.parentId === parentId)
-    .map((s) => s.id);
+  return (slides || []).filter((s) => s.parentId === parentId).map((s) => s.id);
 }
 
 /**

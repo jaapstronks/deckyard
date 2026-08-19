@@ -19,7 +19,12 @@ import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
-import { parseJson, generateSlug, isValidSlug, getUserIdByEmail } from './utils/helpers.js';
+import {
+  parseJson,
+  generateSlug,
+  isValidSlug,
+  getUserIdByEmail,
+} from './utils/helpers.js';
 
 const VALID_SOURCES = ['upload', 'adobe', 'monotype', 'google'];
 const VALID_CATEGORIES = ['sans-serif', 'serif', 'display', 'monospace'];
@@ -143,11 +148,15 @@ export async function createFontFamily(scope, data) {
         source,
         category,
         source_config: JSON.stringify(sanitizeSourceConfig(data?.sourceConfig)),
-        css_fallback: data?.cssFallback ? String(data.cssFallback).slice(0, 255) : null,
+        css_fallback: data?.cssFallback
+          ? String(data.cssFallback).slice(0, 255)
+          : null,
         sort_order: typeof data?.sortOrder === 'number' ? data.sortOrder : 0,
         created_at: now,
         updated_at: now,
-        created_by: scope?.actorEmail ? await getUserIdByEmail(db, orgId, scope.actorEmail) : null,
+        created_by: scope?.actorEmail
+          ? await getUserIdByEmail(db, orgId, scope.actorEmail)
+          : null,
       })
       .returningAll()
       .executeTakeFirst();
@@ -208,7 +217,7 @@ export async function updateFontFamily(scope, familyId, updates) {
 
     if ('sourceConfig' in updates) {
       updateData.source_config = JSON.stringify(
-        sanitizeSourceConfig(updates.sourceConfig)
+        sanitizeSourceConfig(updates.sourceConfig),
       );
     }
 
@@ -219,7 +228,8 @@ export async function updateFontFamily(scope, familyId, updates) {
     }
 
     if ('sortOrder' in updates) {
-      updateData.sort_order = typeof updates.sortOrder === 'number' ? updates.sortOrder : 0;
+      updateData.sort_order =
+        typeof updates.sortOrder === 'number' ? updates.sortOrder : 0;
     }
 
     const row = await db
@@ -389,9 +399,14 @@ export async function addFontVariant(scope, familyId, variantData) {
         font_family_id: familyId,
         weight,
         style,
-        filename: variantData?.filename ? String(variantData.filename).slice(0, 512) : null,
+        filename: variantData?.filename
+          ? String(variantData.filename).slice(0, 512)
+          : null,
         url: variantData?.url ? String(variantData.url).slice(0, 2048) : null,
-        file_size: typeof variantData?.fileSize === 'number' ? variantData.fileSize : null,
+        file_size:
+          typeof variantData?.fileSize === 'number'
+            ? variantData.fileSize
+            : null,
         format,
         created_at: nowIso(),
       })
@@ -426,7 +441,11 @@ export async function removeFontVariant(scope, variantId) {
     // Verify variant belongs to a family in this org
     const variant = await db
       .selectFrom('font_variants')
-      .innerJoin('font_families', 'font_families.id', 'font_variants.font_family_id')
+      .innerJoin(
+        'font_families',
+        'font_families.id',
+        'font_variants.font_family_id',
+      )
       .select([
         'font_variants.id',
         'font_variants.url',
@@ -441,10 +460,7 @@ export async function removeFontVariant(scope, variantId) {
       return { ok: false, reason: 'not_found' };
     }
 
-    await db
-      .deleteFrom('font_variants')
-      .where('id', '=', variantId)
-      .execute();
+    await db.deleteFrom('font_variants').where('id', '=', variantId).execute();
 
     // Update family's updated_at
     await db

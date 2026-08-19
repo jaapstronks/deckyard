@@ -4,7 +4,7 @@
 
 Deckyard measures **how a deck was viewed**: a viewer opens it through a share
 link, a published page, an embed or a live follow session; the browser opens a
-*view session*, heartbeats while the tab is alive, reports each slide it enters,
+_view session_, heartbeats while the tab is alive, reports each slide it enters,
 and ends the session on exit. The owner reads that back as an overview, a slide
 engagement table, a heatmap, a viewer journey, a session list and a live viewer
 count — and can freeze a date range into a shareable **analytics report**.
@@ -77,9 +77,9 @@ Routes:
 - `server/routes/api/analytics/reports.js` (280 lines) — report CRUD and
   share-token regeneration.
 - `server/routes/api/analytics/public.js` (83 lines) — `GET
-  /api/analytics/reports/:token`, the only unauthenticated read.
+/api/analytics/reports/:token`, the only unauthenticated read.
 - `server/routes/api/analytics/gdpr.js` (85 lines) — `GET`/`DELETE
-  /api/analytics/my-data`.
+/api/analytics/my-data`.
 - `server/routes/api/analytics.js` (10 lines) — a compatibility re-export of
   `analytics/index.js`.
 
@@ -103,27 +103,27 @@ Table `view_sessions` (`server/db/migrations/014_presentation_analytics.js`;
 `024_analytics_privacy.js` added `attribution_allowed`, `065_…` dropped
 `organization_id`, `066_…` dropped `is_internal`):
 
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid | primary key |
-| `presentation_id` | uuid | NOT NULL, FK → `presentations(id)` **ON DELETE CASCADE** |
-| `session_token` | varchar(64) | unique — 64 hex chars, the viewer's proof of possession |
-| `source_type` | varchar(20) | `share_link` \| `follow` \| `embed` \| `published` |
-| `source_id` | varchar(100) | share token, publish id, or live-session id |
-| `viewer_type` | varchar(20) | `anonymous` \| `guest` \| `authenticated` |
-| `viewer_email` | varchar(320) | only for an authenticated viewer |
-| `device_id` | varchar(100) | 32 hex, browser-generated; never leaves the DB raw |
-| `started_at` / `ended_at` / `last_activity_at` | timestamptz | `last_activity_at` drives the active-viewer query |
-| `duration_seconds` | integer | |
-| `exit_slide_id` / `exit_slide_index` | uuid / integer | where the viewer left |
-| `ip_address` | varchar(45) | nulled by the retention sweep |
-| `user_agent` | text | truncated to `MAX_USER_AGENT_LENGTH` |
-| `attribution_allowed` | boolean | viewer opted into having their name shown |
+| Column                                         | Type           | Notes                                                    |
+| ---------------------------------------------- | -------------- | -------------------------------------------------------- |
+| `id`                                           | uuid           | primary key                                              |
+| `presentation_id`                              | uuid           | NOT NULL, FK → `presentations(id)` **ON DELETE CASCADE** |
+| `session_token`                                | varchar(64)    | unique — 64 hex chars, the viewer's proof of possession  |
+| `source_type`                                  | varchar(20)    | `share_link` \| `follow` \| `embed` \| `published`       |
+| `source_id`                                    | varchar(100)   | share token, publish id, or live-session id              |
+| `viewer_type`                                  | varchar(20)    | `anonymous` \| `guest` \| `authenticated`                |
+| `viewer_email`                                 | varchar(320)   | only for an authenticated viewer                         |
+| `device_id`                                    | varchar(100)   | 32 hex, browser-generated; never leaves the DB raw       |
+| `started_at` / `ended_at` / `last_activity_at` | timestamptz    | `last_activity_at` drives the active-viewer query        |
+| `duration_seconds`                             | integer        |                                                          |
+| `exit_slide_id` / `exit_slide_index`           | uuid / integer | where the viewer left                                    |
+| `ip_address`                                   | varchar(45)    | nulled by the retention sweep                            |
+| `user_agent`                                   | text           | truncated to `MAX_USER_AGENT_LENGTH`                     |
+| `attribution_allowed`                          | boolean        | viewer opted into having their name shown                |
 
 The session row carries **no `organization_id`**: it inherits the organization from
 its presentation (tenant-isolation rule R2, migration 065 dropped the column).
 
-Table `slide_views` — one row per slide *visit*: `view_session_id` and
+Table `slide_views` — one row per slide _visit_: `view_session_id` and
 `presentation_id` (both cascade), `slide_id`, `slide_index`, `entered_at`,
 `exited_at`, `duration_seconds`, `visit_number` (a re-entry increments it).
 
@@ -140,7 +140,7 @@ never wired; migration 072 dropped them.)
 ## Flows
 
 - **Session start** — `POST /api/track/session/start {presentationId,
-  sourceType, sourceId?, deviceId?, viewerType?, viewerEmail?}`. The handler
+sourceType, sourceId?, deviceId?, viewerType?, viewerEmail?}`. The handler
   rate-limits by IP, validates the source type and device-id format, then calls
   `validatePresentationAccess`: the deck must exist and the claimed source must
   hold up (a `share_link` source must present a valid share token, a `follow`
@@ -153,7 +153,7 @@ never wired; migration 072 dropped them.)
   `last_activity_at` fresh (the client sends one every
   `HEARTBEAT_INTERVAL_MS`); `POST /api/track/slide/view` calls
   `transitionToSlide`, which closes the open slide view and opens the next.
-  Both are rate-limited twice: per IP *and* per session token.
+  Both are rate-limited twice: per IP _and_ per session token.
 - **Session end** — `POST /api/track/session/end` writes the exit slide and
   duration and closes every open slide view.
 - **Reading metrics** — the six `GET /api/presentations/:id/analytics…`
@@ -165,9 +165,9 @@ never wired; migration 072 dropped them.)
   `ACTIVE_THRESHOLD_SECONDS`), and force-closes after `SSE_TIMEOUT_MS`.
 - **Reports** — creating a report freezes the aggregation for a date range into
   `report_data` and optionally mints a 64-hex `share_token`. `GET
-  /api/analytics/reports/:token` serves it without a login: the token is the
+/api/analytics/reports/:token` serves it without a login: the token is the
   authorization, so the handler rate-limits against enumeration, validates the
-  token *shape* before hitting the database, and re-checks that the deck still
+  token _shape_ before hitting the database, and re-checks that the deck still
   exists and has not gone `private` (a private deck 403s even with a valid
   token). `POST …/regenerate-token` invalidates the old link.
 - **Retention** — the daily job deletes sessions and slide views older than the
@@ -177,17 +177,17 @@ never wired; migration 072 dropped them.)
 
 ## Config & flags
 
-| Name | Default | Purpose |
-|---|---|---|
-| `ANALYTICS_HEARTBEAT_INTERVAL_MS` | 30 000 | Client heartbeat cadence. |
-| `ANALYTICS_ACTIVE_THRESHOLD_SECONDS` | 60 | Window that counts a session as "active now". |
-| `ANALYTICS_SSE_TIMEOUT_MS` | 3 600 000 | Absolute lifetime of a realtime stream. |
-| `ANALYTICS_SSE_UPDATE_INTERVAL_MS` | 5 000 | Realtime push cadence. |
-| `ANALYTICS_MAX_USER_AGENT_LENGTH` | 500 | Truncation ceiling. |
-| `ANALYTICS_MAX_SLIDE_INDEX` | 1 000 | Sanity bound on a reported slide index. |
-| `ANALYTICS_RETENTION_DAYS` | 90 | **Seeds** the default raw-row deletion age; `settings.analytics.retention.sessionDataDays` overrides it. |
-| `ANALYTICS_IP_ANONYMIZATION_DAYS` | 7 | **Seeds** the default IP-nulling age; `settings.analytics.retention.ipAnonymizationDays` overrides it. |
-| `AUTH_SECRET` | — | Keys the per-deck device label HMAC. |
+| Name                                 | Default   | Purpose                                                                                                  |
+| ------------------------------------ | --------- | -------------------------------------------------------------------------------------------------------- |
+| `ANALYTICS_HEARTBEAT_INTERVAL_MS`    | 30 000    | Client heartbeat cadence.                                                                                |
+| `ANALYTICS_ACTIVE_THRESHOLD_SECONDS` | 60        | Window that counts a session as "active now".                                                            |
+| `ANALYTICS_SSE_TIMEOUT_MS`           | 3 600 000 | Absolute lifetime of a realtime stream.                                                                  |
+| `ANALYTICS_SSE_UPDATE_INTERVAL_MS`   | 5 000     | Realtime push cadence.                                                                                   |
+| `ANALYTICS_MAX_USER_AGENT_LENGTH`    | 500       | Truncation ceiling.                                                                                      |
+| `ANALYTICS_MAX_SLIDE_INDEX`          | 1 000     | Sanity bound on a reported slide index.                                                                  |
+| `ANALYTICS_RETENTION_DAYS`           | 90        | **Seeds** the default raw-row deletion age; `settings.analytics.retention.sessionDataDays` overrides it. |
+| `ANALYTICS_IP_ANONYMIZATION_DAYS`    | 7         | **Seeds** the default IP-nulling age; `settings.analytics.retention.ipAnonymizationDays` overrides it.   |
+| `AUTH_SECRET`                        | —         | Keys the per-deck device label HMAC.                                                                     |
 
 Third-party head snippet (`analytics/head.js`), separate from the above:
 `DISABLE_ANALYTICS`, `ANALYTICS_ALLOW_IN_SANDBOX`, `ANALYTICS_INCLUDE_EMBEDS`,
@@ -217,18 +217,18 @@ public report reads 10 / 0.2 per IP.
   call them. Their defence is not authentication but `validatePresentationAccess`
   (the claimed source must check out), strict format validation, and the rate
   limits above. Everything under `/api/analytics/*` except the public report
-  token sits *behind* the login gate.
+  token sits _behind_ the login gate.
 - **Per-deck reads** (`/api/presentations/:id/analytics…`) go through
   `withPresentationAuth({permission: 'read'})`, so deck-read is the bar for
   seeing a deck's numbers — the same permission as opening it. The realtime
-  stream and report *reads* use `read`; creating, updating, deleting a report and
+  stream and report _reads_ use `read`; creating, updating, deleting a report and
   regenerating its token require `write`.
 - **Cross-deck reads** (`/api/analytics/dashboard`, `/api/analytics/presentations`)
   are keyed on the caller's email and scoped to their organization.
 - **Reports** are stored with an `organization_id` and read through a scope. The
   public token route is the deliberate exception: it uses
   `crossOrganizationScope(null, 'public analytics report: the report token is
-  the authorization')` — the token *is* the capability, exactly as a share link
+the authorization')` — the token _is_ the capability, exactly as a share link
   is. General rules: [`tenant-isolation.md`](tenant-isolation.md).
 - **View sessions are not org-scoped rows**; queries reach them through their
   presentation. Deleting an organization cascades decks, and decks cascade

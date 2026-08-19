@@ -49,10 +49,11 @@ test('the registry declares only vocabulary names', async () => {
         if (f?.editor !== undefined) {
           assert.ok(
             FIELD_EDITOR_VALUES.includes(f.editor),
-            `${type}: ${path}${f.key} declares unknown editor "${f.editor}"`
+            `${type}: ${path}${f.key} declares unknown editor "${f.editor}"`,
           );
         }
-        if (Array.isArray(f?.itemFields)) walk(f.itemFields, `${path}${f.key}.`);
+        if (Array.isArray(f?.itemFields))
+          walk(f.itemFields, `${path}${f.key}.`);
       }
     };
     walk(def?.fields, '');

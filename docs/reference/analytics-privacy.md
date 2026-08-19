@@ -6,13 +6,13 @@ Deckyard records **view analytics** — who looked at a deck, for how long, and
 which slides — for the deck's owner. The viewers being measured are mostly
 **anonymous**: someone opening a share link or a live follow session has no
 account. This document states what is stored per viewer, how a viewer erases it,
-how long it is kept, and — because it is the load-bearing design decision — *why
+how long it is kept, and — because it is the load-bearing design decision — _why
 an anonymous viewer is identified by a possessed session token and never by a
-bare device id*.
+bare device id_.
 
 It describes the analytics-privacy seams as they stand after the
 analytics-privacy work (decisions recorded in `docs/plans/done/decisions.md`
-§ *analytics-privacy-naden*). The tenant-isolation rules it leans on live in
+§ _analytics-privacy-naden_). The tenant-isolation rules it leans on live in
 [`tenant-isolation.md`](tenant-isolation.md); the wider data-subject-rights
 surface for logged-in people is the GDPR export/erase endpoint below.
 
@@ -24,7 +24,7 @@ flow — see [`leads.md`](leads.md).
 
 - `server/routes/api/analytics-track.js` — the **public, unauthenticated**
   tracking routes the viewer's browser calls: `POST /api/track/session/{start,
-  heartbeat,end}`, `POST /api/track/slide/view`, and the erasure route
+heartbeat,end}`, `POST /api/track/slide/view`, and the erasure route
   `POST /api/track/my-data/erase`.
 - `server/routes/api/analytics/gdpr.js` — the **authenticated** counterpart:
   `GET`/`DELETE /api/analytics/my-data`, keyed by the logged-in email.
@@ -46,10 +46,10 @@ flow — see [`leads.md`](leads.md).
 A `view_sessions` row plus its `slide_views` children. The **identity** on the
 row differs by how the viewer arrived:
 
-| Viewer | Identity on the row | How they erase |
-|--------|--------------------|----------------|
-| **Logged-in** (a Deckyard account, e.g. a guest who verified their email to comment) | `viewer_email` | `DELETE /api/analytics/my-data`, authenticated — see below |
-| **Anonymous** (share link or follow, no account) | `device_id` — a random 32-hex value the *browser* generates and keeps in `localStorage` (`ps.analytics.deviceId`) | `POST /api/track/my-data/erase`, proving possession of a live session token |
+| Viewer                                                                               | Identity on the row                                                                                               | How they erase                                                              |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **Logged-in** (a Deckyard account, e.g. a guest who verified their email to comment) | `viewer_email`                                                                                                    | `DELETE /api/analytics/my-data`, authenticated — see below                  |
+| **Anonymous** (share link or follow, no account)                                     | `device_id` — a random 32-hex value the _browser_ generates and keeps in `localStorage` (`ps.analytics.deviceId`) | `POST /api/track/my-data/erase`, proving possession of a live session token |
 
 Also stored: `ip_address` (anonymized on a schedule, below), a truncated
 `user_agent`, timings, and the slides visited. There is **no** cross-organization
@@ -66,7 +66,7 @@ through `publicDeviceLabel(deviceId, presentationId)` —
 the same browser reads as a **different** label in every deck. This is what
 keeps two deck owners from lining up their viewer lists and establishing that
 one visitor is one person, while preserving the one signal the list actually
-uses: two visits from one browser to *the same* deck share a label ("a returning
+uses: two visits from one browser to _the same_ deck share a label ("a returning
 viewer"). Pinned by `tests/analytics-session-device-label.test.js`.
 
 ## Erasing your data
@@ -119,7 +119,7 @@ to before the UI is touched:
 
 ## Why a bare device id is not an accepted identifier (GDPR art. 11)
 
-The storage *could* match on `device_id` from client input, and an earlier
+The storage _could_ match on `device_id` from client input, and an earlier
 sketch considered it. It is deliberately refused, and the reason is a data-
 protection one, not merely a convenience.
 
@@ -132,14 +132,14 @@ raw value. The per-deck label narrows that, but the rule stands regardless: a
 value the subject cannot keep secret cannot authorize acting on their behalf.
 
 So the anonymous erase route requires a **live session token** as
-proof-of-possession. Holding it means *the browser that opened the session* is
+proof-of-possession. Holding it means _the browser that opened the session_ is
 asking to be forgotten — the one thing a device id alone cannot demonstrate.
 
 This has a deliberate consequence under **GDPR Article 11** ("processing not
 requiring identification"). Deckyard stores no additional identifier that would
 let it re-identify an anonymous viewer on request. A viewer who has kept a live
 session (or any working deck link that re-establishes one) can prove possession
-and erase — the button *is* that route. A viewer who has **no** working link and
+and erase — the button _is_ that route. A viewer who has **no** working link and
 **no** live session cannot be re-identified from a `device_id` they type in,
 because — as above — that would let anyone erase anyone. Per Article 11, the
 controller is not obliged to acquire or accept additional identifying

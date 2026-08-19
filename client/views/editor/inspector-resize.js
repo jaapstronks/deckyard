@@ -51,7 +51,10 @@ export function createInspectorResize({ h, panelEl, isCollapsed }) {
 
   const applyWidth = (w) => {
     const clamped = Math.max(MIN_WIDTH, Math.min(maxWidth(), w));
-    document.documentElement.style.setProperty('--inspector-width', `${clamped}px`);
+    document.documentElement.style.setProperty(
+      '--inspector-width',
+      `${clamped}px`,
+    );
     return clamped;
   };
 

@@ -24,7 +24,8 @@ globalThis.Node = dom.window.Node;
 globalThis.Element = dom.window.Element;
 globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.getComputedStyle = dom.window.getComputedStyle;
-globalThis.requestAnimationFrame = dom.window.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
+globalThis.requestAnimationFrame =
+  dom.window.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
 globalThis.ResizeObserver =
   dom.window.ResizeObserver ||
   class {
@@ -34,8 +35,10 @@ globalThis.ResizeObserver =
   };
 
 const { h } = await import('../client/lib/dom.js');
-const { createFieldRenderers } = await import('../client/views/editor/fields.js');
-const { createRerenderEditor } = await import('../client/views/editor/editor-form.js');
+const { createFieldRenderers } =
+  await import('../client/views/editor/fields.js');
+const { createRerenderEditor } =
+  await import('../client/views/editor/editor-form.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 
 function renderForm({ contentOnly, setInspectorCollapsed = null }) {
@@ -79,22 +82,49 @@ function renderForm({ contentOnly, setInspectorCollapsed = null }) {
 }
 
 test('contentOnly renders content fields without panel chrome or settings sections', () => {
-  const mount = renderForm({ contentOnly: true, setInspectorCollapsed: () => {} });
+  const mount = renderForm({
+    contentOnly: true,
+    setInspectorCollapsed: () => {},
+  });
 
   assert.ok(mount.querySelector('.editor-form'), 'form container renders');
-  assert.equal(mount.querySelector('.editor-form-close-slot'), null, 'no rail chrome');
-  assert.equal(mount.querySelector('.editor-bg-section'), null, 'no Background section');
-  assert.equal(mount.querySelector('.editor-text-fields'), null, 'no collapsed Text section');
-  assert.equal(mount.querySelector('.ai-iterate-panel'), null, 'no AI refine box');
+  assert.equal(
+    mount.querySelector('.editor-form-close-slot'),
+    null,
+    'no rail chrome',
+  );
+  assert.equal(
+    mount.querySelector('.editor-bg-section'),
+    null,
+    'no Background section',
+  );
+  assert.equal(
+    mount.querySelector('.editor-text-fields'),
+    null,
+    'no collapsed Text section',
+  );
+  assert.equal(
+    mount.querySelector('.ai-iterate-panel'),
+    null,
+    'no AI refine box',
+  );
 
   // Inline-covered text fields (title/subheading) render IN PLACE - the whole
   // point of the bulk surface. Background/a11y fields must not render at all.
   const labels = [...mount.querySelectorAll('label, .field-label')].map((el) =>
-    el.textContent.trim().toLowerCase()
+    el.textContent.trim().toLowerCase(),
   );
-  assert.ok(labels.some((l) => l.includes('title')), 'title field renders inline');
-  assert.ok(!labels.some((l) => l.includes('background')), 'no background field');
-  const editables = mount.querySelectorAll('input, textarea, [contenteditable]');
+  assert.ok(
+    labels.some((l) => l.includes('title')),
+    'title field renders inline',
+  );
+  assert.ok(
+    !labels.some((l) => l.includes('background')),
+    'no background field',
+  );
+  const editables = mount.querySelectorAll(
+    'input, textarea, [contenteditable]',
+  );
   assert.ok(editables.length > 0, 'editable content fields present');
 });
 
@@ -108,10 +138,18 @@ test('default mode keeps the rail chrome and the settings sections', () => {
       collapsed = v;
     },
   });
-  const closeBtn = mount.querySelector('.editor-form-close-slot .editor-form-close-btn');
+  const closeBtn = mount.querySelector(
+    '.editor-form-close-slot .editor-form-close-btn',
+  );
   assert.ok(closeBtn, 'collapse button renders');
   closeBtn.click();
   assert.equal(collapsed, true, 'clicking it collapses the rail');
-  assert.ok(mount.querySelector('.editor-bg-color'), 'background colour renders in the form');
-  assert.ok(mount.querySelector('.editor-bg-section'), 'Background image section renders');
+  assert.ok(
+    mount.querySelector('.editor-bg-color'),
+    'background colour renders in the form',
+  );
+  assert.ok(
+    mount.querySelector('.editor-bg-section'),
+    'Background image section renders',
+  );
 });

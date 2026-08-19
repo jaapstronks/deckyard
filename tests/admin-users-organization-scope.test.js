@@ -27,7 +27,9 @@ import assert from 'node:assert/strict';
 
 // Assembled rather than written as one literal so secret scanners do not flag
 // it; authConfigError() only requires MIN_AUTH_SECRET_LENGTH characters.
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
 process.env.MULTI_ORG_ENABLED = 'true';
@@ -41,13 +43,19 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const { sessionVersion } = await import('../server/utils/session-version.js');
 const auth = await import('../server/auth/auth.js');
-const { handleAdminUsers } = await import('../server/routes/api/admin-users.js');
-const { authedRouteContext } = await import('./helpers/authed-route-context.js');
+const { handleAdminUsers } =
+  await import('../server/routes/api/admin-users.js');
+const { authedRouteContext } =
+  await import('./helpers/authed-route-context.js');
 
 const UPDATED_AT = '2026-02-01T00:00:00.000Z';
 
 test.before(() => {
-  assert.equal(isMultiOrgEnabled(), true, 'multi-organization flag is on for this file');
+  assert.equal(
+    isMultiOrgEnabled(),
+    true,
+    'multi-organization flag is on for this file',
+  );
 });
 
 test.afterEach(() => {
@@ -76,7 +84,13 @@ function seedTwoOrgs() {
     settings: {},
   });
 
-  const membership = (id, userId, organizationId, role, isDesigner = false) => ({
+  const membership = (
+    id,
+    userId,
+    organizationId,
+    role,
+    isDesigner = false,
+  ) => ({
     id,
     user_id: userId,
     organization_id: organizationId,
@@ -128,7 +142,7 @@ function requestWithSession(method, organizationId, body) {
       name: 'alice',
       v: sessionVersion({ updated_at: UPDATED_AT }),
     },
-    { organizationId }
+    { organizationId },
   );
 
   return {
@@ -190,7 +204,7 @@ async function callAdminUsers(method, path, organizationId, body) {
 /** The membership row for a person in an organization, if any. */
 function membershipOf(db, userId, organizationId) {
   return db.__tables.user_organizations.find(
-    (r) => r.user_id === userId && r.organization_id === organizationId
+    (r) => r.user_id === userId && r.organization_id === organizationId,
   );
 }
 
@@ -203,17 +217,17 @@ test('the list follows the session organization, not the instance default', asyn
 
   const inAlpha = await callAdminUsers('GET', '/api/admin/users', ORG_A);
   assert.equal(inAlpha.status, 200);
-  assert.deepEqual(
-    inAlpha.body.users.map((u) => u.email).sort(),
-    ['alice@example.com', 'bob@example.com']
-  );
+  assert.deepEqual(inAlpha.body.users.map((u) => u.email).sort(), [
+    'alice@example.com',
+    'bob@example.com',
+  ]);
 
   const inBeta = await callAdminUsers('GET', '/api/admin/users', ORG_B);
   assert.equal(inBeta.status, 200);
   assert.deepEqual(
     inBeta.body.users.map((u) => u.email).sort(),
     ['carol@example.com'],
-    'switching organizations must change who the Users tab is about'
+    'switching organizations must change who the Users tab is about',
   );
 });
 
@@ -222,7 +236,11 @@ test('the designer flag is read from the session organization', async () => {
 
   const inBeta = await callAdminUsers('GET', '/api/admin/users', ORG_B);
   const carol = inBeta.body.users.find((u) => u.email === 'carol@example.com');
-  assert.equal(carol.isDesigner, true, 'Carol is a designer in Beta, which is where we are');
+  assert.equal(
+    carol.isDesigner,
+    true,
+    'Carol is a designer in Beta, which is where we are',
+  );
   assert.equal(carol.isExplicitDesigner, true);
 });
 
@@ -233,9 +251,14 @@ test('the designer flag is read from the session organization', async () => {
 test('the designer flag is written on the session organization membership', async () => {
   const db = seedTwoOrgs();
 
-  const { status } = await callAdminUsers('PATCH', '/api/admin/users/user-bob', ORG_A, {
-    isDesigner: true,
-  });
+  const { status } = await callAdminUsers(
+    'PATCH',
+    '/api/admin/users/user-bob',
+    ORG_A,
+    {
+      isDesigner: true,
+    },
+  );
   assert.equal(status, 200);
   assert.equal(membershipOf(db, 'user-bob', ORG_A).is_designer, true);
 });
@@ -249,15 +272,28 @@ test('a person outside the session organization cannot be edited from it', async
   // membership up in the *default* organization, finding one, and writing the
   // designer flag there — a write into an organization the admin was not even
   // looking at, from a screen listing entirely different people.
-  const { status } = await callAdminUsers('PATCH', '/api/admin/users/user-bob', ORG_B, {
-    isDesigner: true,
-  });
+  const { status } = await callAdminUsers(
+    'PATCH',
+    '/api/admin/users/user-bob',
+    ORG_B,
+    {
+      isDesigner: true,
+    },
+  );
 
-  assert.equal(status, 404, 'he is not in this organization, so there is nothing to edit');
+  assert.equal(
+    status,
+    404,
+    'he is not in this organization, so there is nothing to edit',
+  );
   assert.equal(
     membershipOf(db, 'user-bob', ORG_A).is_designer,
     false,
-    'and the organization we are not in stays untouched'
+    'and the organization we are not in stays untouched',
   );
-  assert.equal(db.__tables.user_organizations.length, before, 'no membership is invented');
+  assert.equal(
+    db.__tables.user_organizations.length,
+    before,
+    'no membership is invented',
+  );
 });

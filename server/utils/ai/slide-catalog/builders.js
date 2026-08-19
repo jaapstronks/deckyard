@@ -26,14 +26,20 @@ export function getPhase1SlideTypes() {
  * @returns {string[]} Array of slide type names
  */
 export function getPhase2SlideTypes(disabledSlideTypes = []) {
-  const disabled = new Set(Array.isArray(disabledSlideTypes) ? disabledSlideTypes : []);
-  return Object.entries(SLIDE_TYPE_CATALOG)
-    .filter(([type, def]) => !def.resolveInPhase1 && !disabled.has(type))
-    // A catalog entry is not by itself permission to offer the type: the
-    // definition's opt-out wins, so the flag means the same thing on every
-    // agent-facing path (see isAgentOptOut).
-    .filter(([type]) => !SLIDE_TYPES[type] || !isAgentOptOut(SLIDE_TYPES[type]))
-    .map(([type]) => type);
+  const disabled = new Set(
+    Array.isArray(disabledSlideTypes) ? disabledSlideTypes : [],
+  );
+  return (
+    Object.entries(SLIDE_TYPE_CATALOG)
+      .filter(([type, def]) => !def.resolveInPhase1 && !disabled.has(type))
+      // A catalog entry is not by itself permission to offer the type: the
+      // definition's opt-out wins, so the flag means the same thing on every
+      // agent-facing path (see isAgentOptOut).
+      .filter(
+        ([type]) => !SLIDE_TYPES[type] || !isAgentOptOut(SLIDE_TYPES[type]),
+      )
+      .map(([type]) => type)
+  );
 }
 
 /**
@@ -90,12 +96,17 @@ export function buildSlideTypeDescription(type) {
  * @param {Array} [options.disabledSlideTypes] - Org-level disabled types to exclude
  * @returns {string} Complete AI prompt with all slide type descriptions
  */
-export function buildPhase2CatalogPrompt({ disabledSlideTypes = [], customSlideTypes = [] } = {}) {
+export function buildPhase2CatalogPrompt({
+  disabledSlideTypes = [],
+  customSlideTypes = [],
+} = {}) {
   const phase2Types = getPhase2SlideTypes(disabledSlideTypes);
   const sections = phase2Types.map((type) => buildSlideTypeDescription(type));
 
   // Build custom type descriptions
-  const disabled = new Set(Array.isArray(disabledSlideTypes) ? disabledSlideTypes : []);
+  const disabled = new Set(
+    Array.isArray(disabledSlideTypes) ? disabledSlideTypes : [],
+  );
   const customSections = [];
   if (Array.isArray(customSlideTypes) && customSlideTypes.length > 0) {
     for (const ct of customSlideTypes) {
@@ -111,7 +122,8 @@ export function buildPhase2CatalogPrompt({ disabledSlideTypes = [], customSlideT
       if (fields.length) {
         lines.push('CONTENT SCHEMA:');
         lines.push('```json');
-        const example = ct.defaults && typeof ct.defaults === 'object' ? ct.defaults : {};
+        const example =
+          ct.defaults && typeof ct.defaults === 'object' ? ct.defaults : {};
         lines.push(JSON.stringify(example, null, 2));
         lines.push('```');
       }
@@ -188,11 +200,15 @@ particular, text-blocks-slide asserts causality/sequence via its arrows, so use
 it only when the rows really relate (cause→effect, input→output); for plain or
 parallel points, use list-slide or content-slide.
 
-${sections.join('\n')}${customSections.length ? `
+${sections.join('\n')}${
+    customSections.length
+      ? `
 
 ===============================================================================
 CUSTOM SLIDE TYPES (organization-specific)
 ===============================================================================
 
-${customSections.join('\n')}` : ''}`;
+${customSections.join('\n')}`
+      : ''
+  }`;
 }

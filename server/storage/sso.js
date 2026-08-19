@@ -103,7 +103,8 @@ export async function getOrCreateSsoUser(scope, identity, opts) {
     }
 
     const adminEmail = getAdminEmail();
-    const role = user.role === 'admin' || email === adminEmail ? 'admin' : 'user';
+    const role =
+      user.role === 'admin' || email === adminEmail ? 'admin' : 'user';
 
     return {
       ok: true,

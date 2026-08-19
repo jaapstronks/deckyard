@@ -64,13 +64,12 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { publicDeviceLabel, deviceLabelKeySource } = await import(
-  '../server/analytics/helpers.js'
-);
-const { handleSessions } = await import('../server/routes/api/analytics/metrics.js');
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { publicDeviceLabel, deviceLabelKeySource } =
+  await import('../server/analytics/helpers.js');
+const { handleSessions } =
+  await import('../server/routes/api/analytics/metrics.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 
 /** Two decks owned by the same person, so authorization is never the variable. */
@@ -184,10 +183,12 @@ async function callSessions(deck) {
       repoRoot: process.cwd(),
       storageScope: createStorageScope(OWNER, { repoRoot: process.cwd() }),
       res,
-      url: new URL(`http://decks.example.test/api/presentations/${deck}/analytics/sessions`),
+      url: new URL(
+        `http://decks.example.test/api/presentations/${deck}/analytics/sessions`,
+      ),
       authedUser: OWNER,
     },
-    deck
+    deck,
   );
 
   const raw = res.chunks.length ? res.chunks.join('') : null;
@@ -227,12 +228,16 @@ test('the same device reads as a different label in each deck', async () => {
   assert.notEqual(
     labelOne,
     labelTwo,
-    'two deck owners cannot line up their lists and find the same visitor'
+    'two deck owners cannot line up their lists and find the same visitor',
   );
   // Neither label is a truncation of the raw id — that is the cheap
   // alternative, and it would have preserved exactly this correlation.
   for (const label of [labelOne, labelTwo]) {
-    assert.notEqual(label, DEVICE.slice(0, 12), 'the label is derived, not a prefix');
+    assert.notEqual(
+      label,
+      DEVICE.slice(0, 12),
+      'the label is derived, not a prefix',
+    );
   }
 });
 
@@ -242,8 +247,16 @@ test('the same device reads as a different label in each deck', async () => {
 
 test('two visits from one device to one deck carry one label', async () => {
   seed([
-    sessionRow({ id: 'visit-1', deck: DECK_ONE, startedAt: '2026-03-01T10:00:00.000Z' }),
-    sessionRow({ id: 'visit-2', deck: DECK_ONE, startedAt: '2026-03-02T10:00:00.000Z' }),
+    sessionRow({
+      id: 'visit-1',
+      deck: DECK_ONE,
+      startedAt: '2026-03-01T10:00:00.000Z',
+    }),
+    sessionRow({
+      id: 'visit-2',
+      deck: DECK_ONE,
+      startedAt: '2026-03-02T10:00:00.000Z',
+    }),
   ]);
 
   const { status, body } = await callSessions(DECK_ONE);
@@ -253,12 +266,12 @@ test('two visits from one device to one deck carry one label', async () => {
   assert.equal(
     body.sessions[0].deviceId,
     body.sessions[1].deviceId,
-    'the returning-viewer signal the list is built on survives'
+    'the returning-viewer signal the list is built on survives',
   );
   assert.equal(
     body.sessions[0].deviceId,
     publicDeviceLabel(DEVICE, DECK_ONE),
-    'and it is the label the helper derives, not some other stable string'
+    'and it is the label the helper derives, not some other stable string',
   );
 });
 
@@ -268,7 +281,11 @@ test('a session without a device id keeps a null label', async () => {
   const { status, body } = await callSessions(DECK_ONE);
 
   assert.equal(status, 200);
-  assert.equal(body.sessions[0].deviceId, null, 'absent stays absent — nothing is invented');
+  assert.equal(
+    body.sessions[0].deviceId,
+    null,
+    'absent stays absent — nothing is invented',
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -290,19 +307,20 @@ test('no field of the response carries a raw device id', async () => {
   (function walk(value) {
     if (typeof value === 'string') strings.push(value);
     else if (Array.isArray(value)) value.forEach(walk);
-    else if (value && typeof value === 'object') Object.values(value).forEach(walk);
+    else if (value && typeof value === 'object')
+      Object.values(value).forEach(walk);
   })(body);
 
   assert.ok(strings.length > 0, 'the payload was actually inspected');
   for (const value of strings) {
     assert.ok(
       !RAW_DEVICE_ID_SHAPE.test(value),
-      `a 32-hex value reached the response: ${value}`
+      `a 32-hex value reached the response: ${value}`,
     );
   }
   assert.ok(
     !strings.includes(DEVICE),
-    'and the seeded device id specifically is nowhere in the payload'
+    'and the seeded device id specifically is nowhere in the payload',
   );
 });
 
@@ -325,7 +343,7 @@ test('no field of the response carries a session token', async () => {
   for (const session of body.sessions) {
     assert.ok(
       !('sessionToken' in session),
-      'the sessions list no longer exposes the sessionToken field'
+      'the sessions list no longer exposes the sessionToken field',
     );
   }
 
@@ -334,19 +352,20 @@ test('no field of the response carries a session token', async () => {
   (function walk(value) {
     if (typeof value === 'string') strings.push(value);
     else if (Array.isArray(value)) value.forEach(walk);
-    else if (value && typeof value === 'object') Object.values(value).forEach(walk);
+    else if (value && typeof value === 'object')
+      Object.values(value).forEach(walk);
   })(body);
 
   assert.ok(strings.length > 0, 'the payload was actually inspected');
   for (const value of strings) {
     assert.ok(
       !SESSION_TOKEN_SHAPE.test(value),
-      `a 64-hex session token reached the response: ${value}`
+      `a 64-hex session token reached the response: ${value}`,
     );
   }
   assert.ok(
     !strings.includes(TOKEN),
-    'and the seeded token specifically is nowhere in the payload'
+    'and the seeded token specifically is nowhere in the payload',
   );
 });
 
@@ -361,7 +380,7 @@ test('the label helper refuses to guess a deck', async () => {
   assert.throws(
     () => publicDeviceLabel(DEVICE, ''),
     /presentation id/,
-    'a deckless label would be an instance-wide identifier again'
+    'a deckless label would be an instance-wide identifier again',
   );
 });
 
@@ -385,7 +404,7 @@ test('the key source is auth-secret when one is set, ephemeral when not', () => 
     assert.deepEqual(
       deviceLabelKeySource(),
       { source: 'ephemeral' },
-      'no configured secret falls back to the ephemeral per-boot key'
+      'no configured secret falls back to the ephemeral per-boot key',
     );
   } finally {
     process.env.AUTH_SECRET = secret;
@@ -402,13 +421,21 @@ test('without a secret the helper still derives a label, and a different one', (
     const again = publicDeviceLabel(DEVICE, DECK_ONE);
 
     assert.match(first, /^[a-f0-9]{12}$/, 'a real 12-hex label, not a throw');
-    assert.equal(first, again, 'stable within the boot — a returning viewer still lines up');
+    assert.equal(
+      first,
+      again,
+      'stable within the boot — a returning viewer still lines up',
+    );
     assert.notEqual(
       first,
       withSecret,
-      'the ephemeral key is not the configured secret, nor a shared constant'
+      'the ephemeral key is not the configured secret, nor a shared constant',
     );
-    assert.notEqual(first, DEVICE.slice(0, 12), 'still derived, never a prefix of the raw id');
+    assert.notEqual(
+      first,
+      DEVICE.slice(0, 12),
+      'still derived, never a prefix of the raw id',
+    );
   } finally {
     process.env.AUTH_SECRET = secret;
   }
@@ -428,10 +455,14 @@ test('the session list does not 500 in a secretless boot with tracked sessions',
     assert.equal(status, 200, 'the list renders instead of throwing a 500');
     assert.equal(body.sessions.length, 2);
     for (const session of body.sessions) {
-      assert.match(session.deviceId, /^[a-f0-9]{12}$/, 'each session still carries a label');
+      assert.match(
+        session.deviceId,
+        /^[a-f0-9]{12}$/,
+        'each session still carries a label',
+      );
       assert.ok(
         !RAW_DEVICE_ID_SHAPE.test(session.deviceId),
-        'and the label is never the raw device id'
+        'and the label is never the raw device id',
       );
     }
   } finally {

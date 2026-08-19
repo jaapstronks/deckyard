@@ -63,7 +63,8 @@ export function createPresenceSession({
   url,
   WebSocketPolyfill,
 } = {}) {
-  if (!presentationId) throw new Error('createPresenceSession: presentationId is required');
+  if (!presentationId)
+    throw new Error('createPresenceSession: presentationId is required');
   const email = String(user?.email || '').toLowerCase();
   if (!email) throw new Error('createPresenceSession: user.email is required');
 
@@ -95,7 +96,12 @@ export function createPresenceSession({
     for (const [clientId, state] of awareness.getStates()) {
       if (clientId === awareness.clientID) continue;
       if (!state?.user?.email) continue;
-      peers.push({ clientId, user: state.user, view: state.view || null, focus: state.focus || null });
+      peers.push({
+        clientId,
+        user: state.user,
+        view: state.view || null,
+        focus: state.focus || null,
+      });
     }
     return peers;
   };
@@ -139,7 +145,7 @@ export function createPresenceSession({
     if (destroyed) return;
     awareness.setLocalStateField(
       'focus',
-      slideId && fieldPath ? { slideId, fieldPath } : null
+      slideId && fieldPath ? { slideId, fieldPath } : null,
     );
   }
 

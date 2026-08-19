@@ -7,7 +7,7 @@ import { normalizeTheme } from '../shared/theme-normalize.js';
 test('a normal type is insertable', () => {
   assert.equal(
     isInsertableSlideType({ type: 'content-slide', def: { label: 'Text' } }),
-    true
+    true,
   );
 });
 
@@ -17,7 +17,7 @@ test('deprecated types are never insertable (hidden from picker + AI)', () => {
       type: 'lead-capture-slide',
       def: { label: 'Lead capture', deprecated: true },
     }),
-    false
+    false,
   );
 });
 
@@ -26,7 +26,11 @@ test('split-partner-title-slide is removed: off the registry, and a stored slide
   // `deprecated: true` was a waypoint, not an end state. No successor — the
   // "two partner logos side by side" use case may return as reusable editorial
   // components rather than a bespoke type.
-  assert.equal(SLIDE_TYPES['split-partner-title-slide'], undefined, 'no longer registered');
+  assert.equal(
+    SLIDE_TYPES['split-partner-title-slide'],
+    undefined,
+    'no longer registered',
+  );
   // A deck that still carries one degrades to the archived-slide placeholder,
   // which names the type and keeps its content visible rather than throwing.
   const html = renderSlideHtml({
@@ -45,11 +49,18 @@ test('freeform-slide is removed: off the registry, and a stored slide degrades s
   // was retired as an authoring surface, no deck used it, so the type is gone
   // rather than carried forever as an exception every refactor must route
   // around. Re-adding it needs a product decision, not an import.
-  assert.equal(SLIDE_TYPES['freeform-slide'], undefined, 'no longer registered');
+  assert.equal(
+    SLIDE_TYPES['freeform-slide'],
+    undefined,
+    'no longer registered',
+  );
   // A deck that still carries one does not blow up: renderSlideHtml falls back
   // to the archived-slide placeholder, which names the type rather than
   // throwing, emitting nothing, or saying only "unknown".
-  const html = renderSlideHtml({ type: 'freeform-slide', content: { title: 'Old canvas' } });
+  const html = renderSlideHtml({
+    type: 'freeform-slide',
+    content: { title: 'Old canvas' },
+  });
   assert.match(html, /class="slide/);
   assert.match(html, /slide-unresolved/);
   assert.match(html, /freeform-slide/);
@@ -61,7 +72,11 @@ test('card-stack-slide is removed: off the registry, and a stored slide degrades
   // which carries the same items[] card shape. No lossless rename migration
   // (icon-card-grid adds icon/link), so a stored deck degrades to the archived
   // slide, which names the type and points at the rebuild target.
-  assert.equal(SLIDE_TYPES['card-stack-slide'], undefined, 'no longer registered');
+  assert.equal(
+    SLIDE_TYPES['card-stack-slide'],
+    undefined,
+    'no longer registered',
+  );
   const html = renderSlideHtml({
     type: 'card-stack-slide',
     content: { title: 'Old cards', card1Title: 'Insight' },
@@ -77,10 +92,19 @@ test('content-columns-slide is removed: off the registry, and a stored slide deg
   // core successor for the nested column shape. A stored deck degrades to the
   // archived-slide placeholder, which names the type and keeps its content
   // visible rather than throwing.
-  assert.equal(SLIDE_TYPES['content-columns-slide'], undefined, 'no longer registered');
+  assert.equal(
+    SLIDE_TYPES['content-columns-slide'],
+    undefined,
+    'no longer registered',
+  );
   const html = renderSlideHtml({
     type: 'content-columns-slide',
-    content: { title: 'Cols', columnCount: '2', col1Title: 'A', col2Title: 'B' },
+    content: {
+      title: 'Cols',
+      columnCount: '2',
+      col1Title: 'A',
+      col2Title: 'B',
+    },
   });
   assert.match(html, /class="slide/);
   assert.match(html, /slide-unresolved/);
@@ -94,17 +118,21 @@ test('lead-capture-slide is parked: deprecated + not insertable, still renders',
   // contract as the archived types: hidden from picker + AI, stored decks render.
   const def = SLIDE_TYPES['lead-capture-slide'];
   assert.ok(def, 'type stays registered so stored/forked decks keep rendering');
-  assert.equal(def.deprecated, true, 'marked deprecated (parked pending cookie-consent)');
+  assert.equal(
+    def.deprecated,
+    true,
+    'marked deprecated (parked pending cookie-consent)',
+  );
   assert.equal(
     isInsertableSlideType({ type: 'lead-capture-slide', def }),
     false,
-    'hidden from every insertion path (picker + AI)'
+    'hidden from every insertion path (picker + AI)',
   );
   // A stored lead-capture slide still renders via the kept render path.
   const html = def.renderHtml(
     { title: 'Stay in touch', thankYouTitle: 'Thanks', privacyText: 'I agree' },
     { id: 's1', type: 'lead-capture-slide' },
-    {}
+    {},
   );
   assert.match(html, /class="slide/);
   assert.match(html, /lead-capture-form/);
@@ -122,14 +150,25 @@ test('theme exclusion still applies to a theme file written with the legacy alia
     hiddenSlideTypes: ['poll-slide'],
   });
 
-  assert.ok(!('hiddenSlideTypes' in theme), 'alias folded away by normalization');
-  assert.equal(
-    isInsertableSlideType({ type: 'poll-slide', def: { label: 'Poll' }, theme }),
-    false
+  assert.ok(
+    !('hiddenSlideTypes' in theme),
+    'alias folded away by normalization',
   );
   assert.equal(
-    isInsertableSlideType({ type: 'content-slide', def: { label: 'Text' }, theme }),
-    true
+    isInsertableSlideType({
+      type: 'poll-slide',
+      def: { label: 'Poll' },
+      theme,
+    }),
+    false,
+  );
+  assert.equal(
+    isInsertableSlideType({
+      type: 'content-slide',
+      def: { label: 'Text' },
+      theme,
+    }),
+    true,
   );
 });
 
@@ -142,7 +181,7 @@ test('a raw, unnormalized theme carrying only the alias no longer hides anything
       def: { label: 'Poll' },
       theme: { id: 'raw', hiddenSlideTypes: ['poll-slide'] },
     }),
-    true
+    true,
   );
 });
 
@@ -153,15 +192,22 @@ test('org-disabled types are not insertable', () => {
       def: { label: 'Poll' },
       disabledSlideTypes: ['poll-slide'],
     }),
-    false
+    false,
   );
 });
 
 test('custom-html requires the capability', () => {
   const def = { label: 'Custom HTML' };
-  assert.equal(isInsertableSlideType({ type: 'custom-html-slide', def }), false);
   assert.equal(
-    isInsertableSlideType({ type: 'custom-html-slide', def, canEditCustomHtml: true }),
-    true
+    isInsertableSlideType({ type: 'custom-html-slide', def }),
+    false,
+  );
+  assert.equal(
+    isInsertableSlideType({
+      type: 'custom-html-slide',
+      def,
+      canEditCustomHtml: true,
+    }),
+    true,
   );
 });

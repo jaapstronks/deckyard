@@ -19,16 +19,19 @@
  */
 
 export const ai = {
-    category: 'interactive',
-    resolveInPhase1: false,
-    description: `
+  category: 'interactive',
+  resolveInPhase1: false,
+  description: `
       Survey-style question with labeled scale points (typically 5).
       "Strongly disagree" to "Strongly agree" style.
     `,
-    bestFor: [
-      'Agreement/disagreement questions',
-      'Satisfaction ratings',
-      'Any question with a labeled scale',
-    ],
-    notFor: ['Multiple choice (use poll-slide)', 'Numeric 1-10 rating (use likert-slider-slide)'],
+  bestFor: [
+    'Agreement/disagreement questions',
+    'Satisfaction ratings',
+    'Any question with a labeled scale',
+  ],
+  notFor: [
+    'Multiple choice (use poll-slide)',
+    'Numeric 1-10 rating (use likert-slider-slide)',
+  ],
 };

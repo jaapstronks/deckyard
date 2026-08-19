@@ -11,12 +11,18 @@
 
 /** @type {Object} InlineDescriptor for likert-slider-slide. */
 export const inlineEdit = {
-    ghosts: [
-      { field: 'minLabel', anchors: [{ sel: '.likert-slider-label', pos: 'append' }] },
-      { field: 'maxLabel', anchors: [{ sel: '.likert-slider-label.is-right', pos: 'append' }] },
-    ],
-    formText: ['question', 'minLabel', 'maxLabel'],
-  };
+  ghosts: [
+    {
+      field: 'minLabel',
+      anchors: [{ sel: '.likert-slider-label', pos: 'append' }],
+    },
+    {
+      field: 'maxLabel',
+      anchors: [{ sel: '.likert-slider-label.is-right', pos: 'append' }],
+    },
+  ],
+  formText: ['question', 'minLabel', 'maxLabel'],
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the

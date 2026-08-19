@@ -13,9 +13,15 @@ body {
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial,
+  font-family:
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Arial,
     sans-serif;
-  background: radial-gradient(
+  background:
+    radial-gradient(
       1200px 800px at 20% 10%,
       rgba(255, 255, 255, 0.08),
       transparent 60%
@@ -81,8 +87,7 @@ body {
   letter-spacing: 0.38em;
   text-transform: uppercase;
   text-align: center;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .go-input:focus {
@@ -124,11 +129,3 @@ body {
   opacity: 0.78;
   line-height: 1.35;
 }
-
-
-
-
-
-
-
-

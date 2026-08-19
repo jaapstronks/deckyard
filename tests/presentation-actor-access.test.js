@@ -25,75 +25,206 @@ import { checkActorAccess } from '../server/utils/presentation-authz/actor-acces
 const OWNER = 'owner@example.com';
 const OTHER = 'other@example.com';
 
-const privateDeck = { id: 'p1', ownerEmail: OWNER, createdBy: OWNER, visibility: 'private' };
-const organizationDeck = { id: 'w1', ownerEmail: OWNER, createdBy: OWNER, visibility: 'organization' };
+const privateDeck = {
+  id: 'p1',
+  ownerEmail: OWNER,
+  createdBy: OWNER,
+  visibility: 'private',
+};
+const organizationDeck = {
+  id: 'w1',
+  ownerEmail: OWNER,
+  createdBy: OWNER,
+  visibility: 'organization',
+};
 
 describe('checkActorAccess — private decks', () => {
   it('owner can read and write', () => {
-    assert.equal(checkActorAccess({ pres: privateDeck, actor: { email: OWNER }, access: 'read' }), true);
-    assert.equal(checkActorAccess({ pres: privateDeck, actor: { email: OWNER }, access: 'write' }), true);
+    assert.equal(
+      checkActorAccess({
+        pres: privateDeck,
+        actor: { email: OWNER },
+        access: 'read',
+      }),
+      true,
+    );
+    assert.equal(
+      checkActorAccess({
+        pres: privateDeck,
+        actor: { email: OWNER },
+        access: 'write',
+      }),
+      true,
+    );
   });
 
   it('non-collaborator can neither read nor write', () => {
-    assert.equal(checkActorAccess({ pres: privateDeck, actor: { email: OTHER }, access: 'read' }), false);
-    assert.equal(checkActorAccess({ pres: privateDeck, actor: { email: OTHER }, access: 'write' }), false);
+    assert.equal(
+      checkActorAccess({
+        pres: privateDeck,
+        actor: { email: OTHER },
+        access: 'read',
+      }),
+      false,
+    );
+    assert.equal(
+      checkActorAccess({
+        pres: privateDeck,
+        actor: { email: OTHER },
+        access: 'write',
+      }),
+      false,
+    );
   });
 
   it('view collaborator can read but not write', () => {
-    const opts = { pres: privateDeck, actor: { email: OTHER }, collaboratorPermission: 'view' };
+    const opts = {
+      pres: privateDeck,
+      actor: { email: OTHER },
+      collaboratorPermission: 'view',
+    };
     assert.equal(checkActorAccess({ ...opts, access: 'read' }), true);
     assert.equal(checkActorAccess({ ...opts, access: 'write' }), false);
   });
 
   it('comment collaborator can read but not write', () => {
-    const opts = { pres: privateDeck, actor: { email: OTHER }, collaboratorPermission: 'comment' };
+    const opts = {
+      pres: privateDeck,
+      actor: { email: OTHER },
+      collaboratorPermission: 'comment',
+    };
     assert.equal(checkActorAccess({ ...opts, access: 'read' }), true);
     assert.equal(checkActorAccess({ ...opts, access: 'write' }), false);
   });
 
   it('edit and admin collaborators can read and write', () => {
     for (const permission of ['edit', 'admin']) {
-      const opts = { pres: privateDeck, actor: { email: OTHER }, collaboratorPermission: permission };
-      assert.equal(checkActorAccess({ ...opts, access: 'read' }), true, `${permission} read`);
-      assert.equal(checkActorAccess({ ...opts, access: 'write' }), true, `${permission} write`);
+      const opts = {
+        pres: privateDeck,
+        actor: { email: OTHER },
+        collaboratorPermission: permission,
+      };
+      assert.equal(
+        checkActorAccess({ ...opts, access: 'read' }),
+        true,
+        `${permission} read`,
+      );
+      assert.equal(
+        checkActorAccess({ ...opts, access: 'write' }),
+        true,
+        `${permission} write`,
+      );
     }
   });
 });
 
 describe('checkActorAccess — organization decks', () => {
   it('any organization user can read and write a regular organization deck', () => {
-    assert.equal(checkActorAccess({ pres: organizationDeck, actor: { email: OTHER }, access: 'read' }), true);
-    assert.equal(checkActorAccess({ pres: organizationDeck, actor: { email: OTHER }, access: 'write' }), true);
+    assert.equal(
+      checkActorAccess({
+        pres: organizationDeck,
+        actor: { email: OTHER },
+        access: 'read',
+      }),
+      true,
+    );
+    assert.equal(
+      checkActorAccess({
+        pres: organizationDeck,
+        actor: { email: OTHER },
+        access: 'write',
+      }),
+      true,
+    );
   });
 
   it('view-only organization decks are readable but not writable by non-owners', () => {
     const viewOnly = { ...organizationDeck, isViewOnly: true };
-    assert.equal(checkActorAccess({ pres: viewOnly, actor: { email: OTHER }, access: 'read' }), true);
-    assert.equal(checkActorAccess({ pres: viewOnly, actor: { email: OTHER }, access: 'write' }), false);
+    assert.equal(
+      checkActorAccess({
+        pres: viewOnly,
+        actor: { email: OTHER },
+        access: 'read',
+      }),
+      true,
+    );
+    assert.equal(
+      checkActorAccess({
+        pres: viewOnly,
+        actor: { email: OTHER },
+        access: 'write',
+      }),
+      false,
+    );
     // The owner keeps write access
-    assert.equal(checkActorAccess({ pres: viewOnly, actor: { email: OWNER }, access: 'write' }), true);
+    assert.equal(
+      checkActorAccess({
+        pres: viewOnly,
+        actor: { email: OWNER },
+        access: 'write',
+      }),
+      true,
+    );
   });
 });
 
 describe('checkActorAccess — edge cases', () => {
   it('defaults to read access', () => {
-    assert.equal(checkActorAccess({ pres: privateDeck, actor: { email: OWNER } }), true);
-    assert.equal(checkActorAccess({ pres: privateDeck, actor: { email: OTHER } }), false);
+    assert.equal(
+      checkActorAccess({ pres: privateDeck, actor: { email: OWNER } }),
+      true,
+    );
+    assert.equal(
+      checkActorAccess({ pres: privateDeck, actor: { email: OTHER } }),
+      false,
+    );
   });
 
   it('rejects without an actor email', () => {
-    assert.equal(checkActorAccess({ pres: organizationDeck, actor: { email: null }, access: 'read' }), false);
-    assert.equal(checkActorAccess({ pres: organizationDeck, actor: { email: '' }, access: 'write' }), false);
-    assert.equal(checkActorAccess({ pres: organizationDeck, actor: null, access: 'read' }), false);
+    assert.equal(
+      checkActorAccess({
+        pres: organizationDeck,
+        actor: { email: null },
+        access: 'read',
+      }),
+      false,
+    );
+    assert.equal(
+      checkActorAccess({
+        pres: organizationDeck,
+        actor: { email: '' },
+        access: 'write',
+      }),
+      false,
+    );
+    assert.equal(
+      checkActorAccess({ pres: organizationDeck, actor: null, access: 'read' }),
+      false,
+    );
   });
 
   it('rejects without a presentation', () => {
-    assert.equal(checkActorAccess({ pres: null, actor: { email: OWNER } }), false);
+    assert.equal(
+      checkActorAccess({ pres: null, actor: { email: OWNER } }),
+      false,
+    );
     assert.equal(checkActorAccess({}), false);
   });
 
   it('creator (createdBy) counts as owner', () => {
-    const created = { id: 'c1', ownerEmail: 'boss@example.com', createdBy: OTHER, visibility: 'private' };
-    assert.equal(checkActorAccess({ pres: created, actor: { email: OTHER }, access: 'write' }), true);
+    const created = {
+      id: 'c1',
+      ownerEmail: 'boss@example.com',
+      createdBy: OTHER,
+      visibility: 'private',
+    };
+    assert.equal(
+      checkActorAccess({
+        pres: created,
+        actor: { email: OTHER },
+        access: 'write',
+      }),
+      true,
+    );
   });
 });

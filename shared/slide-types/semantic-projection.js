@@ -70,7 +70,8 @@ function str(v) {
  * @returns {{ text: string, key: string|null }}
  */
 export function slideHeading(slide, def, index = 0) {
-  const content = slide?.content && typeof slide.content === 'object' ? slide.content : {};
+  const content =
+    slide?.content && typeof slide.content === 'object' ? slide.content : {};
   const a11y = str(content.a11yTitle);
   if (a11y) return { text: a11y, key: null };
 
@@ -91,9 +92,7 @@ function renderFigure(src, { alt, decorative, caption }) {
   if (!url) return '';
   const altAttr = decorative ? '' : escapeHtml(alt || '');
   const ariaHidden = decorative ? ' aria-hidden="true"' : '';
-  const fig = caption
-    ? `<figcaption>${escapeHtml(caption)}</figcaption>`
-    : '';
+  const fig = caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : '';
   return `<figure class="reader-figure"><img src="${escapeHtml(url)}" alt="${altAttr}"${ariaHidden} loading="lazy" />${fig}</figure>`;
 }
 
@@ -104,7 +103,14 @@ function renderFigure(src, { alt, decorative, caption }) {
  * @returns {string[]}
  */
 function imageSiblingKeys(fieldKey) {
-  return [`${fieldKey}Alt`, 'alt', `${fieldKey}Caption`, 'caption', `${fieldKey}Role`, 'imageRole'];
+  return [
+    `${fieldKey}Alt`,
+    'alt',
+    `${fieldKey}Caption`,
+    'caption',
+    `${fieldKey}Role`,
+    'imageRole',
+  ];
 }
 
 /**
@@ -113,9 +119,10 @@ function imageSiblingKeys(fieldKey) {
  */
 function resolveImageA11y(fieldKey, content, headingText) {
   const explicit =
-    str(content[`${fieldKey}Alt`]) || str(content.alt) || str(content[`${fieldKey}Caption`]);
-  const role =
-    str(content[`${fieldKey}Role`]) || str(content.imageRole);
+    str(content[`${fieldKey}Alt`]) ||
+    str(content.alt) ||
+    str(content[`${fieldKey}Caption`]);
+  const role = str(content[`${fieldKey}Role`]) || str(content.imageRole);
   const caption = str(content[`${fieldKey}Caption`]) || str(content.caption);
   const decorative = role === 'decorative';
   const alt = decorative
@@ -144,7 +151,8 @@ function renderCsvTable(csv) {
   const tbody = body.length
     ? `<tbody>${body
         .map(
-          (r) => `<tr>${r.map((c) => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`
+          (r) =>
+            `<tr>${r.map((c) => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`,
         )
         .join('')}</tbody>`
     : '';
@@ -172,11 +180,12 @@ function renderItemList(blocks, ordered = false) {
  * non-empty string becomes an <h3>, the rest of its fields project by type.
  */
 function renderItemBlock(item, itemFields) {
-  if (!item || typeof item !== 'object' || !Array.isArray(itemFields)) return '';
+  if (!item || typeof item !== 'object' || !Array.isArray(itemFields))
+    return '';
   const parts = [];
   let headingKey = null;
   const firstString = itemFields.find(
-    (f) => f?.type === 'string' && !f.hidden && str(item[f.key])
+    (f) => f?.type === 'string' && !f.hidden && str(item[f.key]),
   );
   if (firstString) {
     headingKey = firstString.key;
@@ -212,7 +221,9 @@ function renderFieldValue(field, content, headingText) {
     }
     case 'code': {
       const v = str(value);
-      return v ? `<pre class="reader-code"><code>${escapeHtml(v)}</code></pre>` : '';
+      return v
+        ? `<pre class="reader-code"><code>${escapeHtml(v)}</code></pre>`
+        : '';
     }
     case 'csv': {
       const v = str(value);
@@ -230,10 +241,12 @@ function renderFieldValue(field, content, headingText) {
             alt: pickAltText({ src, fallbacks: [headingText] }),
             decorative: false,
             caption: '',
-          })
+          }),
         )
         .filter(Boolean);
-      return figs.length ? `<div class="reader-gallery">${figs.join('')}</div>` : '';
+      return figs.length
+        ? `<div class="reader-gallery">${figs.join('')}</div>`
+        : '';
     }
     case 'items': {
       if (!Array.isArray(value) || !value.length) return '';
@@ -243,7 +256,8 @@ function renderFieldValue(field, content, headingText) {
       // list becomes an <ol> and each relating item gets a small relation
       // marker. `relationLabels` maps a stored value to its reader label; a
       // value without a label is treated as "no relation" (e.g. arrow "none").
-      const relField = typeof field.relationField === 'string' ? field.relationField : null;
+      const relField =
+        typeof field.relationField === 'string' ? field.relationField : null;
       const relLabels =
         field.relationLabels && typeof field.relationLabels === 'object'
           ? field.relationLabels
@@ -261,7 +275,7 @@ function renderFieldValue(field, content, headingText) {
           const rel = relationOf(item);
           if (!rel) return li;
           const marker = `<p class="reader-relation" data-relation="${escapeHtml(
-            rel
+            rel,
           )}">${escapeHtml(relLabels[rel])}</p>`;
           return li.replace(/<\/li>\s*$/, `${marker}</li>`);
         })
@@ -324,7 +338,9 @@ function projectRepeatingGroup(group, content, fields) {
   });
   // Upper bound: how many slots the schema actually declares.
   let maxSlots = 0;
-  while (slotFields.some((s) => fieldByKey.has(`${prefix}${maxSlots + 1}${s}`))) {
+  while (
+    slotFields.some((s) => fieldByKey.has(`${prefix}${maxSlots + 1}${s}`))
+  ) {
     maxSlots += 1;
   }
   const declared = Number.parseInt(str(content[countKey]), 10);
@@ -334,7 +350,8 @@ function projectRepeatingGroup(group, content, fields) {
   const blocks = [];
   for (let n = 1; n <= count; n += 1) {
     const item = {};
-    for (const suffix of slotFields) item[suffix] = content[`${prefix}${n}${suffix}`];
+    for (const suffix of slotFields)
+      item[suffix] = content[`${prefix}${n}${suffix}`];
     const block = renderItemBlock(item, itemFields);
     if (block) blocks.push(block);
   }
@@ -351,13 +368,19 @@ function projectRepeatingGroup(group, content, fields) {
  * @param {{ headingKey?: string|null, headingText?: string }} [opts]
  * @returns {string} inner HTML for the slide section
  */
-export function renderSlideBodySemanticHtml(slide, def, { headingKey = null, headingText = '' } = {}) {
-  const content = slide?.content && typeof slide.content === 'object' ? slide.content : {};
+export function renderSlideBodySemanticHtml(
+  slide,
+  def,
+  { headingKey = null, headingText = '' } = {},
+) {
+  const content =
+    slide?.content && typeof slide.content === 'object' ? slide.content : {};
   const fields = Array.isArray(def?.fields) ? def.fields : [];
   const parts = [];
 
   const summary = str(content.a11ySummary);
-  if (summary) parts.push(`<p class="reader-summary">${escapeHtml(summary)}</p>`);
+  if (summary)
+    parts.push(`<p class="reader-summary">${escapeHtml(summary)}</p>`);
 
   // An image field folds its sibling alt/caption/role keys INTO the <figure>,
   // so those sibling string fields must not also render as standalone
@@ -387,9 +410,13 @@ export function renderSlideBodySemanticHtml(slide, def, { headingKey = null, hea
     }
     consumed.add(group.countKey);
     for (const field of fields) {
-      if (field && isRepeatingGroupSlotKey(group, field.key)) consumed.add(field.key);
+      if (field && isRepeatingGroupSlotKey(group, field.key))
+        consumed.add(field.key);
     }
-    groupHtmlByAnchor.set(group.countKey, projectRepeatingGroup(group, content, fields));
+    groupHtmlByAnchor.set(
+      group.countKey,
+      projectRepeatingGroup(group, content, fields),
+    );
   }
 
   for (const field of fields) {

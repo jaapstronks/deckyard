@@ -9,7 +9,13 @@ import { buildSlideTypesPrompt } from './slide-types-prompt.js';
 
 export async function generateDeckJsonFromRawContent(
   rawContent,
-  { userName = '', targetLang = null, vendor = null, disabledSlideTypes = [], customSlideTypes = [] } = {}
+  {
+    userName = '',
+    targetLang = null,
+    vendor = null,
+    disabledSlideTypes = [],
+    customSlideTypes = [],
+  } = {},
 ) {
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
   userName = String(userName || '').trim();
@@ -20,8 +26,8 @@ export async function generateDeckJsonFromRawContent(
     requestedLang === 'nl'
       ? 'DUTCH'
       : requestedLang === 'en-GB'
-      ? 'ENGLISH (UK)'
-      : null;
+        ? 'ENGLISH (UK)'
+        : null;
 
   const system = [
     'You are a presentation-deck generator for a self-hosted slide editor.',
@@ -54,8 +60,7 @@ export async function generateDeckJsonFromRawContent(
     '}',
     '',
     buildSlideTypesPrompt({
-      preferredPlaceholderImage:
-        '/assets/images/backgrounds/demo-aurora.jpg',
+      preferredPlaceholderImage: '/assets/images/backgrounds/demo-aurora.jpg',
       disabledSlideTypes,
       customSlideTypes,
     }),
@@ -157,9 +162,7 @@ export async function generateDeckJsonFromRawContent(
         'calendar',
         'globe',
       ];
-      const allowed = new Set(
-        Array.isArray(ICON_NAMES) ? ICON_NAMES : []
-      );
+      const allowed = new Set(Array.isArray(ICON_NAMES) ? ICON_NAMES : []);
       const list = preferred.filter((n) => allowed.has(n));
       return ['  ' + list.join(', ')];
     })(),

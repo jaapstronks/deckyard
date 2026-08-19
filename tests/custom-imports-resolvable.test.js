@@ -41,7 +41,10 @@ import { fileURLToPath } from 'node:url';
 
 import { init as initLexer, parse as parseModule } from 'es-module-lexer';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const CUSTOM_DIR = path.join(REPO_ROOT, 'custom');
 
 /**
@@ -82,11 +85,13 @@ function resolveRelative(specifier, fromDir) {
  */
 async function relativeImportsOf(file) {
   const [imports] = parseModule(fs.readFileSync(file, 'utf8'), file);
-  return imports
-    .map((i) => i.n)
-    // `n` is undefined for a dynamic import with a computed specifier, and a
-    // specifier that does not start with `.` or `/` is a package.
-    .filter((n) => n && (n.startsWith('.') || n.startsWith('/')));
+  return (
+    imports
+      .map((i) => i.n)
+      // `n` is undefined for a dynamic import with a computed specifier, and a
+      // specifier that does not start with `.` or `/` is a package.
+      .filter((n) => n && (n.startsWith('.') || n.startsWith('/')))
+  );
 }
 
 /**
@@ -121,7 +126,7 @@ test('the scan would notice files if a fork dropped some in', () => {
     .map((e) => e.name);
   assert.ok(
     dirs.includes('slide-types') && dirs.includes('themes'),
-    `custom/ should hold the fork drop-in directories, found: ${dirs.join(', ') || '(none)'}`
+    `custom/ should hold the fork drop-in directories, found: ${dirs.join(', ') || '(none)'}`,
   );
 });
 
@@ -133,7 +138,7 @@ test('every relative import in custom/ resolves to a file that exists', async ()
     'these imports resolve to nothing — the app will fail at runtime, not at ' +
       `build time, because there is no bundler:\n  ${broken.join('\n  ')}\n\n` +
       'A core module probably moved. Check the release notes for the version ' +
-      'you are upgrading to.'
+      'you are upgrading to.',
   );
 });
 
@@ -142,17 +147,19 @@ test('the resolver rejects what it should — a hermetic self-test on a temp tre
   // nothing: a `resolveRelative` that returned a truthy value for everything
   // would pass CI forever and only fail in a fork. So build a tree that a
   // working checker MUST report on, and check it reports exactly that.
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'deckyard-custom-imports-'));
+  const tmp = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'deckyard-custom-imports-'),
+  );
   try {
     fs.mkdirSync(path.join(tmp, 'nested'));
     fs.writeFileSync(path.join(tmp, 'target.js'), 'export const ok = true;\n');
     fs.writeFileSync(
       path.join(tmp, 'nested', 'good.js'),
-      "import { ok } from '../target.js';\nexport default ok;\n"
+      "import { ok } from '../target.js';\nexport default ok;\n",
     );
     fs.writeFileSync(
       path.join(tmp, 'nested', 'broken.js'),
-      "import { gone } from '../moved-away.js';\nexport default gone;\n"
+      "import { gone } from '../moved-away.js';\nexport default gone;\n",
     );
 
     // The walk finds every .js at every depth, and nothing else.
@@ -160,7 +167,7 @@ test('the resolver rejects what it should — a hermetic self-test on a temp tre
       jsFilesUnder(tmp)
         .map((f) => path.relative(tmp, f).split(path.sep).join('/'))
         .sort(),
-      ['nested/broken.js', 'nested/good.js', 'target.js']
+      ['nested/broken.js', 'nested/good.js', 'target.js'],
     );
 
     // The whole check, over that tree: one name, the right one.
@@ -172,9 +179,20 @@ test('the resolver rejects what it should — a hermetic self-test on a temp tre
     // loader does not have it either: no extension resolution, no index
     // resolution. Both of these throw ERR_MODULE_NOT_FOUND at runtime.
     const fromNested = path.join(tmp, 'nested');
-    assert.ok(resolveRelative('../target.js', fromNested), 'the literal path resolves');
-    assert.equal(resolveRelative('../target', fromNested), null, 'no extension resolution');
-    assert.equal(resolveRelative('../nested', fromNested), null, 'no index/directory resolution');
+    assert.ok(
+      resolveRelative('../target.js', fromNested),
+      'the literal path resolves',
+    );
+    assert.equal(
+      resolveRelative('../target', fromNested),
+      null,
+      'no extension resolution',
+    );
+    assert.equal(
+      resolveRelative('../nested', fromNested),
+      null,
+      'no index/directory resolution',
+    );
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }

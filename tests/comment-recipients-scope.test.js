@@ -19,7 +19,9 @@ import assert from 'node:assert/strict';
 
 // Assembled rather than written as one literal so secret scanners do not flag
 // it; authConfigError() only requires MIN_AUTH_SECRET_LENGTH characters.
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
@@ -28,9 +30,14 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { resolveCommentRecipients } = await import('../server/services/comment-subscriptions.js');
+const { resolveCommentRecipients } =
+  await import('../server/services/comment-subscriptions.js');
 
-const scope = { organizationId: ORG, actorEmail: 'author@example.com', repoRoot: null };
+const scope = {
+  organizationId: ORG,
+  actorEmail: 'author@example.com',
+  repoRoot: null,
+};
 
 /**
  * @param {string} id
@@ -55,32 +62,47 @@ test.afterEach(() => {
 });
 
 test('a mentioned in-org user is resolved as a recipient through the passed scope', async () => {
-  __setTestDb(createFakeDb({
-    organizations: [{ id: ORG, name: 'Alpha', slug: 'alpha', settings: {} }],
-    users: [userRow('user-mira', 'mira@example.com')],
-  }));
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Alpha', slug: 'alpha', settings: {} }],
+      users: [userRow('user-mira', 'mira@example.com')],
+    }),
+  );
 
   const recipients = await resolveCommentRecipients({
     presentation: { id: 'deck-1', ownerEmail: 'owner@example.com' },
-    comment: { id: 'c1', body: 'ping @[mira@example.com]' , mentions: [{ email: 'mira@example.com' }] },
+    comment: {
+      id: 'c1',
+      body: 'ping @[mira@example.com]',
+      mentions: [{ email: 'mira@example.com' }],
+    },
     actor: { email: 'author@example.com' },
     scope,
   });
 
   const mention = recipients.find((r) => r.email === 'mira@example.com');
-  assert.ok(mention, 'the mentioned account must survive the org-scoped account check');
+  assert.ok(
+    mention,
+    'the mentioned account must survive the org-scoped account check',
+  );
   assert.equal(mention.reason, 'mention');
 });
 
 test('a mention to an address without an account is dropped', async () => {
-  __setTestDb(createFakeDb({
-    organizations: [{ id: ORG, name: 'Alpha', slug: 'alpha', settings: {} }],
-    users: [],
-  }));
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Alpha', slug: 'alpha', settings: {} }],
+      users: [],
+    }),
+  );
 
   const recipients = await resolveCommentRecipients({
     presentation: { id: 'deck-1', ownerEmail: 'owner@example.com' },
-    comment: { id: 'c1', body: 'ping', mentions: [{ email: 'ghost@example.com' }] },
+    comment: {
+      id: 'c1',
+      body: 'ping',
+      mentions: [{ email: 'ghost@example.com' }],
+    },
     actor: { email: 'author@example.com' },
     scope,
   });
@@ -88,6 +110,6 @@ test('a mention to an address without an account is dropped', async () => {
   assert.equal(
     recipients.find((r) => r.email === 'ghost@example.com'),
     undefined,
-    'unmatched mentions must never produce a notification'
+    'unmatched mentions must never produce a notification',
   );
 });

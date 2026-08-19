@@ -157,7 +157,13 @@ export default {
         // Optional: makes the whole logo clickable. `#N` jumps to slide N in the
         // deck (presenter only); an http(s)/mailto URL opens in a new tab.
         // `editor:` marks the widget exception (step-4 vocabulary seed).
-        { key: 'link', type: 'string', label: 'Link URL', maxLength: 500, editor: 'card-link' },
+        {
+          key: 'link',
+          type: 'string',
+          label: 'Link URL',
+          maxLength: 500,
+          editor: 'card-link',
+        },
       ],
     },
 
@@ -225,7 +231,11 @@ export default {
     // export stay empty. The inline editor's `ensure` knob (ensureLogos) has
     // already materialized content.logos, so index 0 has a live item to mutate.
     const renderLogos =
-      logos.length > 0 ? logos : editMode ? [{ image: '', name: '', alt: '', link: '' }] : [];
+      logos.length > 0
+        ? logos
+        : editMode
+          ? [{ image: '', name: '', alt: '', link: '' }]
+          : [];
 
     const title = nonEmpty(content?.title);
     const subtitle = nonEmpty(content?.subheading);
@@ -262,15 +272,23 @@ export default {
       const photoAttr = ` data-inline-photo="${i}"`;
       const imgHtml = img
         ? `<img class="logo-wall-img"${photoAttr} src="${escapeHtml(img)}" alt="${escapeHtml(alt)}" />`
-        : imagePlaceholderHtml({ className: 'logo-wall-placeholder', label: copy.logoPlaceholder, attrs: photoAttr });
+        : imagePlaceholderHtml({
+            className: 'logo-wall-placeholder',
+            label: copy.logoPlaceholder,
+            attrs: photoAttr,
+          });
 
       // Optional click behavior: a full-item overlay anchor (shared helper).
       // Suppressed in the editor so it never blocks the media popover.
-      const linkHtml = cardLinkOverlayHtml(logo.link, mode, name || `Logo ${i + 1}`);
+      const linkHtml = cardLinkOverlayHtml(
+        logo.link,
+        mode,
+        name || `Logo ${i + 1}`,
+      );
 
       items.push(`
         <div class="logo-wall-item${linkHtml ? ' has-link' : ''}" role="group" data-inline-item="logos" data-inline-item-index="${i}" aria-label="${escapeHtml(
-          name || `Logo ${i + 1}`
+          name || `Logo ${i + 1}`,
         )}">
           <div class="logo-wall-frame">
             ${imgHtml}

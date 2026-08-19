@@ -33,7 +33,7 @@ const MIGRATIONS_DIR = path.join(
   '..',
   'server',
   'db',
-  'migrations'
+  'migrations',
 );
 
 /**
@@ -47,12 +47,14 @@ async function collectStrippedFields() {
     .sort();
   const byField = new Map();
   for (const file of files) {
-    const mod = await import(pathToFileURL(path.join(MIGRATIONS_DIR, file)).href);
+    const mod = await import(
+      pathToFileURL(path.join(MIGRATIONS_DIR, file)).href
+    );
     const declared = mod.STRIPPED_SNAPSHOT_FIELDS;
     if (!declared) continue;
     assert.ok(
       Array.isArray(declared),
-      `${file} exports STRIPPED_SNAPSHOT_FIELDS but it is not an array`
+      `${file} exports STRIPPED_SNAPSHOT_FIELDS but it is not an array`,
     );
     for (const field of declared) {
       byField.set(field, [...(byField.get(field) || []), file]);
@@ -68,17 +70,19 @@ test('every snapshot identity field has a migration that erased it from old rows
     missing,
     [],
     `no migration erases ${missing.join(', ')} from presentation_versions.presentation_data — ` +
-      'add one (see migration 068) and export STRIPPED_SNAPSHOT_FIELDS from it'
+      'add one (see migration 068) and export STRIPPED_SNAPSHOT_FIELDS from it',
   );
 });
 
 test('the backfill declares nothing that is not an identity field', async () => {
   const byField = await collectStrippedFields();
-  const stray = [...byField.keys()].filter((f) => !SNAPSHOT_IDENTITY_FIELDS.includes(f));
+  const stray = [...byField.keys()].filter(
+    (f) => !SNAPSHOT_IDENTITY_FIELDS.includes(f),
+  );
   assert.deepEqual(
     stray,
     [],
     'a migration erased a snapshot key that is not on the identity list — ' +
-      'either it is identity (add it to SNAPSHOT_IDENTITY_FIELDS) or it was data loss'
+      'either it is identity (add it to SNAPSHOT_IDENTITY_FIELDS) or it was data loss',
   );
 });

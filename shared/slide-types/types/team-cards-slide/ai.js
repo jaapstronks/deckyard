@@ -19,9 +19,9 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       A grid of image blocks — each block is an image with an optional Title
       and Caption. Labelled "Image blocks" in the editor. Despite the name,
       this is the general-purpose type for showing MULTIPLE separate images
@@ -48,19 +48,19 @@ export const ai = {
       Use this whenever several distinct images belong together in one slide,
       or whenever people are mentioned by name with their roles.
     `,
-    bestFor: [
-      'Multiple screenshots / UI captures in one slide (imageAspect: original)',
-      'Testimonials or mixed image grids with short labels',
-      'Team introductions and speaker panels (name + role)',
-      'Advisory boards or committees (up to 25, imageShape: circle)',
-      'Any set of separate images that each want a small Title/Caption',
-    ],
-    notFor: [
-      'A single hero image (use image-slide)',
-      'One image beside a paragraph of text (use image-text-slide)',
-      'A curated photo gallery with masonry/featured layout (use gallery-slide)',
-      'More than 25 blocks (split into multiple slides)',
-    ],
+  bestFor: [
+    'Multiple screenshots / UI captures in one slide (imageAspect: original)',
+    'Testimonials or mixed image grids with short labels',
+    'Team introductions and speaker panels (name + role)',
+    'Advisory boards or committees (up to 25, imageShape: circle)',
+    'Any set of separate images that each want a small Title/Caption',
+  ],
+  notFor: [
+    'A single hero image (use image-slide)',
+    'One image beside a paragraph of text (use image-text-slide)',
+    'A curated photo gallery with masonry/featured layout (use gallery-slide)',
+    'More than 25 blocks (split into multiple slides)',
+  ],
 };
 
 /**

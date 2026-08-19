@@ -6,7 +6,10 @@
  * budget.
  */
 
-import { SLIDE_ITEM_REQUIREMENTS, NON_CONTENT_SLIDE_TYPES } from './constants.js';
+import {
+  SLIDE_ITEM_REQUIREMENTS,
+  NON_CONTENT_SLIDE_TYPES,
+} from './constants.js';
 import { logValidation } from './logging.js';
 import { createLogger } from '../../logger.js';
 
@@ -39,10 +42,15 @@ export function isSlideTypeValid(type, content) {
  */
 export function validateSlideCount(slides, targetSlides) {
   if (!Array.isArray(slides) || !targetSlides || targetSlides <= 0) {
-    return { contentSlides: 0, totalSlides: 0, overBudget: false, percentage: 0 };
+    return {
+      contentSlides: 0,
+      totalSlides: 0,
+      overBudget: false,
+      percentage: 0,
+    };
   }
 
-  const contentSlides = slides.filter(s => {
+  const contentSlides = slides.filter((s) => {
     const type = s?.type || '';
     return !NON_CONTENT_SLIDE_TYPES.has(type);
   }).length;
@@ -62,7 +70,9 @@ export function validateSlideCount(slides, targetSlides) {
     });
   } else {
     // Info-level log for monitoring
-    log.info(`Slide budget: ${contentSlides}/${targetSlides} content slides (${percentage}%)`);
+    log.info(
+      `Slide budget: ${contentSlides}/${targetSlides} content slides (${percentage}%)`,
+    );
   }
 
   return { contentSlides, totalSlides, overBudget, percentage };

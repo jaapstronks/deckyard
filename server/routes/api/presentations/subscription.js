@@ -29,19 +29,24 @@ import { getUserSettings } from '../../../storage/settings.js';
 
 export async function handlePresentationSubscription(
   { storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'GET' && req.method !== 'PUT') {
     return methodNotAllowed(res, ['GET', 'PUT']);
   }
 
-  const { pres } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
+  const { pres } = await withPresentationReadAuth({
+    storageScope,
+    req,
+    id,
+    authedUser,
+    res,
+  });
   if (!pres) return true;
 
   if (!authedUser?.email) {
     return unauthorized(res);
   }
-
 
   if (req.method === 'GET') {
     const sub = await getSubscription(storageScope, id, authedUser.email);
@@ -59,12 +64,24 @@ export async function handlePresentationSubscription(
   if (!jsonResult.ok) return true;
   const level = jsonResult.body?.level ?? null;
   if (level !== null && !SUBSCRIPTION_LEVELS.includes(level)) {
-    return badRequest(res, `level must be one of ${SUBSCRIPTION_LEVELS.join('|')} or null`);
+    return badRequest(
+      res,
+      `level must be one of ${SUBSCRIPTION_LEVELS.join('|')} or null`,
+    );
   }
 
-  const result = await setSubscription(storageScope, id, authedUser.email, level);
+  const result = await setSubscription(
+    storageScope,
+    id,
+    authedUser.email,
+    level,
+  );
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason, 400), result.reason || 'internal_error');
+    return jsonError(
+      res,
+      getErrorStatus(result.reason, 400),
+      result.reason || 'internal_error',
+    );
   }
 
   serveJson(res, 200, { ok: true, level: result.level });

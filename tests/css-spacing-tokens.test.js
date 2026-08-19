@@ -46,13 +46,16 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const stylesDir = path.join(repoRoot, 'client', 'styles');
 const tokensFile = path.join(stylesDir, 'shared', 'ui-tokens.css');
 const suppressionsFile = path.join(repoRoot, 'css-spacing-suppressions.json');
 
 const updating = /^(1|true|yes)$/i.test(
-  String(process.env.UPDATE_CSS_SPACING_SUPPRESSIONS || '').trim()
+  String(process.env.UPDATE_CSS_SPACING_SUPPRESSIONS || '').trim(),
 );
 
 /**
@@ -121,7 +124,9 @@ async function cssFiles(dir) {
  * @returns {string}
  */
 function stripComments(source) {
-  return source.replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ' '));
+  return source.replace(/\/\*[\s\S]*?\*\//g, (block) =>
+    block.replace(/[^\n]/g, ' '),
+  );
 }
 
 /** The root element sets no `font-size`, so `1rem` is exactly 16px. */
@@ -151,7 +156,7 @@ function pxKey(px) {
 function readSpacingScale(source) {
   const scale = new Map();
   for (const m of stripComments(source).matchAll(
-    /(--ps-space-[\w-]+)\s*:\s*([\d.]+)rem\s*;/g
+    /(--ps-space-[\w-]+)\s*:\s*([\d.]+)rem\s*;/g,
   )) {
     scale.set(pxKey(Number(m[2]) * REM_IN_PX), m[1]);
   }
@@ -172,7 +177,7 @@ function readSpacingScale(source) {
  */
 function stripVarExpressions(value) {
   let out = '';
-  for (let i = 0; i < value.length; ) {
+  for (let i = 0; i < value.length;) {
     if (value.startsWith('var(', i)) {
       let depth = 0;
       let j = i + 3; // at the '('
@@ -244,7 +249,10 @@ function findViolations(source, label, scale) {
   const out = [];
 
   const propAlternation = SPACING_PROPERTIES.join('|');
-  const declRe = new RegExp(`(^|[;{])\\s*(${propAlternation})\\s*:([^;{}]*)`, 'gi');
+  const declRe = new RegExp(
+    `(^|[;{])\\s*(${propAlternation})\\s*:([^;{}]*)`,
+    'gi',
+  );
 
   for (const decl of clean.matchAll(declRe)) {
     const prop = decl[2].toLowerCase();
@@ -281,8 +289,12 @@ const files = (await cssFiles(stylesDir))
 const violations = (
   await Promise.all(
     files.map(async (rel) =>
-      findViolations(await fs.readFile(path.join(repoRoot, rel), 'utf8'), rel, scale)
-    )
+      findViolations(
+        await fs.readFile(path.join(repoRoot, rel), 'utf8'),
+        rel,
+        scale,
+      ),
+    ),
   )
 ).flat();
 
@@ -294,19 +306,23 @@ if (updating) {
   const next = Object.fromEntries(
     [...counts.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([file, count]) => [file, { 'tokenisable-spacing': { count } }])
+      .map(([file, count]) => [file, { 'tokenisable-spacing': { count } }]),
   );
   await fs.writeFile(suppressionsFile, `${JSON.stringify(next, null, 2)}\n`);
 }
 
 const suppressions = JSON.parse(await fs.readFile(suppressionsFile, 'utf8'));
-const budgetFor = (file) => suppressions[file]?.['tokenisable-spacing']?.count ?? 0;
+const budgetFor = (file) =>
+  suppressions[file]?.['tokenisable-spacing']?.count ?? 0;
 
 describe('css spacing tokens', () => {
   it('reads the scale out of ui-tokens.css', () => {
     // If this ever comes back empty the gate would pass vacuously, which is the
     // one failure mode a guard must not have.
-    assert.ok(scale.size >= 15, `expected the full spacing scale, parsed ${scale.size} tokens`);
+    assert.ok(
+      scale.size >= 15,
+      `expected the full spacing scale, parsed ${scale.size} tokens`,
+    );
     for (const px of [2, 6, 10, 14, 18]) {
       assert.ok(scale.has(px), `the fine band should carry ${px}px`);
     }
@@ -330,9 +346,12 @@ describe('css spacing tokens', () => {
       const examples = violations
         .filter((v) => v.file === file)
         .slice(0, 4)
-        .map((v) => `      ${v.file}:${v.line}  ${v.prop}: ${v.value}  → ${v.token}`);
+        .map(
+          (v) =>
+            `      ${v.file}:${v.line}  ${v.prop}: ${v.value}  → ${v.token}`,
+        );
       over.push(
-        `${file}: ${count} tokenisable length(s), budget ${budget}\n${examples.join('\n')}`
+        `${file}: ${count} tokenisable length(s), budget ${budget}\n${examples.join('\n')}`,
       );
     }
 
@@ -345,7 +364,7 @@ describe('css spacing tokens', () => {
         'Off-scale values (13px, 22px, 30px…) are fine and are not counted —\n' +
         'see docs/reference/css-tokens.md.\n\n' +
         'Do NOT raise a budget in css-spacing-suppressions.json to make this pass.\n' +
-        'The list may only shrink.'
+        'The list may only shrink.',
     );
   });
 
@@ -354,14 +373,15 @@ describe('css spacing tokens', () => {
     for (const [file, entry] of Object.entries(suppressions)) {
       const budget = entry?.['tokenisable-spacing']?.count ?? 0;
       const actual = counts.get(file) || 0;
-      if (actual < budget) stale.push(`${file}: budget ${budget}, actual ${actual}`);
+      if (actual < budget)
+        stale.push(`${file}: budget ${budget}, actual ${actual}`);
     }
     assert.deepStrictEqual(
       stale.sort(),
       [],
       `${stale.length} burndown budget(s) are now too generous.\n` +
         'Lower them (or delete the entry) — the conversion is that much done:\n' +
-        '  UPDATE_CSS_SPACING_SUPPRESSIONS=1 node --test tests/css-spacing-tokens.test.js'
+        '  UPDATE_CSS_SPACING_SUPPRESSIONS=1 node --test tests/css-spacing-tokens.test.js',
     );
   });
 
@@ -369,12 +389,12 @@ describe('css spacing tokens', () => {
     // A suppressions entry for slides/** or a parked sheet would be dead weight
     // the gate never re-checks.
     const outOfScope = Object.keys(suppressions).filter(
-      (file) => !files.includes(file)
+      (file) => !files.includes(file),
     );
     assert.deepStrictEqual(
       outOfScope.sort(),
       [],
-      'burndown entries for files the gate does not scan; delete them'
+      'burndown entries for files the gate does not scan; delete them',
     );
   });
 });

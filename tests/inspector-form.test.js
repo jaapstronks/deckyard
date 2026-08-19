@@ -24,7 +24,8 @@ globalThis.Node = dom.window.Node;
 globalThis.Element = dom.window.Element;
 globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.getComputedStyle = dom.window.getComputedStyle;
-globalThis.requestAnimationFrame = dom.window.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
+globalThis.requestAnimationFrame =
+  dom.window.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
 globalThis.ResizeObserver =
   dom.window.ResizeObserver ||
   class {
@@ -34,13 +35,15 @@ globalThis.ResizeObserver =
   };
 
 const { h } = await import('../client/lib/dom.js');
-const { createFieldRenderers } = await import('../client/views/editor/fields.js');
-const { createRerenderEditor } = await import('../client/views/editor/editor-form.js');
-const { getInspectorKeepKeys } = await import(
-  '../client/views/editor/editor-form/inspector-form.js'
-);
+const { createFieldRenderers } =
+  await import('../client/views/editor/fields.js');
+const { createRerenderEditor } =
+  await import('../client/views/editor/editor-form.js');
+const { getInspectorKeepKeys } =
+  await import('../client/views/editor/editor-form/inspector-form.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
-const { GLOBAL_SLIDE_FIELD_KEYS } = await import('../shared/slide-types/registry.js');
+const { GLOBAL_SLIDE_FIELD_KEYS } =
+  await import('../shared/slide-types/registry.js');
 
 function renderForm({
   type,
@@ -90,13 +93,13 @@ function renderForm({
 
 const fieldLabels = (mount) =>
   [...mount.querySelectorAll('label, .field-label')].map((el) =>
-    el.textContent.trim().toLowerCase()
+    el.textContent.trim().toLowerCase(),
   );
 
 /** The slide form (the no-selection view / the "Slide" tab). */
 const slideForm = (mount) =>
   [...mount.querySelectorAll('.editor-form')].find(
-    (el) => !el.classList.contains('editor-element-form')
+    (el) => !el.classList.contains('editor-element-form'),
   );
 
 /** The element form (the "This image" / "This card" tab), if rendered. */
@@ -108,7 +111,7 @@ test('every keeps key exists in its slide-type schema (no audit/schema drift)', 
     for (const key of getInspectorKeepKeys(type, def)) {
       assert.ok(
         schemaKeys.has(key),
-        `${type}: keeps key "${key}" is not a schema field`
+        `${type}: keeps key "${key}" is not a schema field`,
       );
     }
   }
@@ -117,26 +120,48 @@ test('every keeps key exists in its slide-type schema (no audit/schema drift)', 
 test('inspector renders settings but no content text fields (content-slide)', () => {
   const mount = renderForm({ type: 'content-slide' });
 
-  assert.ok(mount.querySelector('.editor-bg-color'), 'background colour renders in the form');
-  assert.ok(mount.querySelector('.editor-bg-section'), 'Background image section renders');
-  assert.equal(mount.querySelector('.editor-text-fields'), null, 'Text section is gone');
+  assert.ok(
+    mount.querySelector('.editor-bg-color'),
+    'background colour renders in the form',
+  );
+  assert.ok(
+    mount.querySelector('.editor-bg-section'),
+    'Background image section renders',
+  );
+  assert.equal(
+    mount.querySelector('.editor-text-fields'),
+    null,
+    'Text section is gone',
+  );
 
   const labels = fieldLabels(mount);
   // The content slide's layout enum only toggles 1/2 text columns, so it's
   // labelled "Text columns" (the toolbar chip owns the structural "Layout").
-  assert.ok(labels.some((l) => l.includes('text columns')), 'text-columns enum renders');
-  assert.ok(labels.some((l) => l.includes('text size')), 'density enum renders');
+  assert.ok(
+    labels.some((l) => l.includes('text columns')),
+    'text-columns enum renders',
+  );
+  assert.ok(
+    labels.some((l) => l.includes('text size')),
+    'density enum renders',
+  );
   // Content fields (title/body live on the slide + bulk modal) must not
   // render. Inputs inside the Background/Accessibility sections
   // (.editor-advanced) are settings and don't count.
   const form = mount.querySelector('.editor-form');
   const outsideSections = (sel) =>
-    [...form.querySelectorAll(sel)].filter((el) => !el.closest('.editor-advanced'));
-  assert.equal(outsideSections('textarea').length, 0, 'no body/markdown editor');
+    [...form.querySelectorAll(sel)].filter(
+      (el) => !el.closest('.editor-advanced'),
+    );
+  assert.equal(
+    outsideSections('textarea').length,
+    0,
+    'no body/markdown editor',
+  );
   assert.equal(
     outsideSections('input[type="text"], input:not([type])').length,
     0,
-    'no content text inputs in the inspector'
+    'no content text inputs in the inspector',
   );
 });
 
@@ -150,9 +175,13 @@ test('the background image section stays collapsed but never hides an active ima
   assert.equal(plainSection.open, false, 'closed with no background set');
   assert.ok(
     plainSection.querySelector('.editor-bg-status'),
-    'says so in the summary'
+    'says so in the summary',
   );
-  assert.equal(plainSection.querySelector('.editor-bg-summary-thumb'), null, 'no thumbnail');
+  assert.equal(
+    plainSection.querySelector('.editor-bg-summary-thumb'),
+    null,
+    'no thumbnail',
+  );
 
   const withImage = renderForm({
     type: 'content-slide',
@@ -162,7 +191,11 @@ test('the background image section stays collapsed but never hides an active ima
     },
   });
   const setSection = withImage.querySelector('.editor-bg-section');
-  assert.equal(setSection.open, false, 'a set image no longer forces the panel open');
+  assert.equal(
+    setSection.open,
+    false,
+    'a set image no longer forces the panel open',
+  );
   const thumb = setSection.querySelector('.editor-bg-summary-thumb');
   assert.ok(thumb, 'the active background shows as a summary thumbnail');
   assert.equal(thumb.getAttribute('src'), '/uploads/bg.jpg');
@@ -171,16 +204,25 @@ test('the background image section stays collapsed but never hides an active ima
   const body = setSection.querySelector('.editor-advanced-body');
   assert.ok(
     (body.textContent || '').toLowerCase().includes('focus'),
-    'crop focus renders for a set image'
+    'crop focus renders for a set image',
   );
 });
 
 test('chart inspector keeps the data editor but drops text and axis labels', () => {
   const mount = renderForm({ type: 'chart-slide' });
   const labels = fieldLabels(mount);
-  assert.ok(labels.some((l) => l.includes('data')), 'data editor renders');
-  assert.ok(labels.some((l) => l.includes('type')), 'chartType renders');
-  assert.ok(!labels.some((l) => l.includes('x-axis') || l.includes('x axis')), 'no axis labels');
+  assert.ok(
+    labels.some((l) => l.includes('data')),
+    'data editor renders',
+  );
+  assert.ok(
+    labels.some((l) => l.includes('type')),
+    'chartType renders',
+  );
+  assert.ok(
+    !labels.some((l) => l.includes('x-axis') || l.includes('x axis')),
+    'no axis labels',
+  );
   assert.ok(!labels.some((l) => l === 'title'), 'no title field');
 });
 
@@ -232,7 +274,10 @@ const RENDER_PRECONDITIONS = {
   ],
   // No single chart type shows all config: pie carries pieLabelMode + legend,
   // line carries the series labels. Two states cover the eight chart keeps.
-  'chart-slide': [{ content: { chartType: 'pie' } }, { content: { chartType: 'line' } }],
+  'chart-slide': [
+    { content: { chartType: 'pie' } },
+    { content: { chartType: 'line' } },
+  ],
 };
 
 test('every inspector-keep field renders (no config field is bulk-modal-only)', () => {
@@ -240,7 +285,9 @@ test('every inspector-keep field renders (no config field is bulk-modal-only)', 
   // rest, and a fork running this wants the whole list in one go.
   const orphaned = [];
   for (const [type, def] of Object.entries(SLIDE_TYPES)) {
-    const keepKeys = [...getInspectorKeepKeys(type, def)].filter((k) => !GLOBAL_KEYS.has(k));
+    const keepKeys = [...getInspectorKeepKeys(type, def)].filter(
+      (k) => !GLOBAL_KEYS.has(k),
+    );
     if (!keepKeys.length) continue;
     const fieldByKey = new Map((def.fields || []).map((f) => [f.key, f]));
     // A keep-field may surface in the no-selection view, the selected-image
@@ -264,7 +311,7 @@ test('every inspector-keep field renders (no config field is bulk-modal-only)', 
     [],
     'these settings/config/metadata fields render nowhere but the bulk modal, so ' +
       'the user cannot reach them from the inspector:\n' +
-      orphaned.join('\n')
+      orphaned.join('\n'),
   );
 });
 
@@ -273,10 +320,19 @@ test('video/embed source fields render in the inspector (no orphaned fields)', (
   // inline-editable), so per the parity invariant the inspector must carry
   // them — before this they were orphaned to the bulk "All text" modal.
   const video = fieldLabels(renderForm({ type: 'video-slide' }));
-  assert.ok(video.some((l) => l.includes('video url')), 'video source renders');
-  assert.ok(video.some((l) => l.includes('autoplay')), 'autoplay still renders');
+  assert.ok(
+    video.some((l) => l.includes('video url')),
+    'video source renders',
+  );
+  assert.ok(
+    video.some((l) => l.includes('autoplay')),
+    'autoplay still renders',
+  );
   const embed = fieldLabels(renderForm({ type: 'embed-slide' }));
-  assert.ok(embed.some((l) => l.includes('url')), 'embed url renders');
+  assert.ok(
+    embed.some((l) => l.includes('url')),
+    'embed url renders',
+  );
 });
 
 test('unknown custom types fall back to rendering all non-inline-covered fields', () => {
@@ -290,10 +346,19 @@ test('unknown custom types fall back to rendering all non-inline-covered fields'
       defaults: { headline: '', mode: 'a' },
     },
   };
-  const mount = renderForm({ type: 'my-custom-slide', slideTypes: customTypes });
+  const mount = renderForm({
+    type: 'my-custom-slide',
+    slideTypes: customTypes,
+  });
   const labels = fieldLabels(mount);
-  assert.ok(labels.some((l) => l.includes('headline')), 'unaudited text field stays (parity)');
-  assert.ok(labels.some((l) => l.includes('mode')), 'enum stays');
+  assert.ok(
+    labels.some((l) => l.includes('headline')),
+    'unaudited text field stays (parity)',
+  );
+  assert.ok(
+    labels.some((l) => l.includes('mode')),
+    'enum stays',
+  );
 });
 
 // ---- Editing-surfaces tab split: Slide tab == no-selection view, and the
@@ -310,7 +375,10 @@ const DUO_CONTENT = {
 };
 
 test('image-text: Slide tab renders the same fields as the no-selection view', () => {
-  const noSel = renderForm({ type: 'image-text-slide', content: structuredClone(DUO_CONTENT) });
+  const noSel = renderForm({
+    type: 'image-text-slide',
+    content: structuredClone(DUO_CONTENT),
+  });
   const withSel = renderForm({
     type: 'image-text-slide',
     content: structuredClone(DUO_CONTENT),
@@ -320,7 +388,7 @@ test('image-text: Slide tab renders the same fields as the no-selection view', (
   assert.deepEqual(
     fieldLabels(slideForm(withSel)),
     fieldLabels(slideForm(noSel)),
-    'Slide tab and no-selection view render identical fields'
+    'Slide tab and no-selection view render identical fields',
   );
 });
 
@@ -333,42 +401,83 @@ test('image-text: element tab shows only the selected cell, slide form only slid
   const elForm = elementFormOf(mount);
   const elLabels = fieldLabels(elForm);
   // The selected cell's own controls...
-  assert.ok(elLabels.some((l) => l.includes('alt text')), 'alt renders in element tab');
-  assert.ok(elLabels.some((l) => l.includes('image fit')), 'fit renders in element tab');
-  assert.ok(elLabels.some((l) => l.includes('image focus')), 'focus renders in element tab');
-  // ...and nothing of the collection or the slide-wide settings.
-  assert.ok(!elLabels.some((l) => l === 'images'), 'no collection manager in element tab');
-  assert.equal(
-    [...elForm.querySelectorAll('button')].filter((b) => b.textContent.includes('Add image')).length,
-    0,
-    'no add button in element tab'
+  assert.ok(
+    elLabels.some((l) => l.includes('alt text')),
+    'alt renders in element tab',
   );
-  assert.ok(!elLabels.some((l) => l.includes('layout')), 'no layout settings in element tab');
+  assert.ok(
+    elLabels.some((l) => l.includes('image fit')),
+    'fit renders in element tab',
+  );
+  assert.ok(
+    elLabels.some((l) => l.includes('image focus')),
+    'focus renders in element tab',
+  );
+  // ...and nothing of the collection or the slide-wide settings.
+  assert.ok(
+    !elLabels.some((l) => l === 'images'),
+    'no collection manager in element tab',
+  );
+  assert.equal(
+    [...elForm.querySelectorAll('button')].filter((b) =>
+      b.textContent.includes('Add image'),
+    ).length,
+    0,
+    'no add button in element tab',
+  );
+  assert.ok(
+    !elLabels.some((l) => l.includes('layout')),
+    'no layout settings in element tab',
+  );
 
   const sLabels = fieldLabels(slideForm(mount));
-  assert.ok(!sLabels.some((l) => l.includes('alt text')), 'no per-image alt on the Slide tab');
-  assert.ok(!sLabels.some((l) => l.includes('image fit')), 'no per-image fit on the Slide tab');
-  assert.ok(!sLabels.some((l) => l.includes('image focus')), 'no per-image focus on the Slide tab');
-  assert.ok(sLabels.some((l) => l === 'images'), 'slim collection section on the Slide tab');
+  assert.ok(
+    !sLabels.some((l) => l.includes('alt text')),
+    'no per-image alt on the Slide tab',
+  );
+  assert.ok(
+    !sLabels.some((l) => l.includes('image fit')),
+    'no per-image fit on the Slide tab',
+  );
+  assert.ok(
+    !sLabels.some((l) => l.includes('image focus')),
+    'no per-image focus on the Slide tab',
+  );
+  assert.ok(
+    sLabels.some((l) => l === 'images'),
+    'slim collection section on the Slide tab',
+  );
   // The layout settings render as plain keep fields since step 5 (the "Layout
   // options" wrapper is gone); `layout` itself is absent because the toolbar
   // chip owns it — which is what image-text's inspectorKeeps has always said.
-  assert.ok(sLabels.some((l) => l.includes('image position')), 'image side on the Slide tab');
-  assert.ok(sLabels.some((l) => l.includes('image width')), 'image width on the Slide tab');
-  assert.ok(!sLabels.some((l) => l === 'layout'), 'layout variant belongs to the toolbar chip');
+  assert.ok(
+    sLabels.some((l) => l.includes('image position')),
+    'image side on the Slide tab',
+  );
+  assert.ok(
+    sLabels.some((l) => l.includes('image width')),
+    'image width on the Slide tab',
+  );
+  assert.ok(
+    !sLabels.some((l) => l === 'layout'),
+    'layout variant belongs to the toolbar chip',
+  );
 });
 
 test('image-text: layout settings render as plain fields, behind no collapsible', () => {
-  const mount = renderForm({ type: 'image-text-slide', content: structuredClone(DUO_CONTENT) });
+  const mount = renderForm({
+    type: 'image-text-slide',
+    content: structuredClone(DUO_CONTENT),
+  });
   const form = slideForm(mount);
   const sideLabel = [...form.querySelectorAll('.field-label')].find((el) =>
-    el.textContent.toLowerCase().includes('image position')
+    el.textContent.toLowerCase().includes('image position'),
   );
   assert.ok(sideLabel, 'image side renders on the Slide tab');
   assert.equal(
     sideLabel.closest('details'),
     null,
-    'layout settings are not tucked behind a collapsible'
+    'layout settings are not tucked behind a collapsible',
   );
   // Side and width declare `formLayout: 'pair'`, so the generic loop puts them
   // on one row — the declaration replacing the helper's hand-built fieldGrid.
@@ -376,16 +485,25 @@ test('image-text: layout settings render as plain fields, behind no collapsible'
   assert.ok(grid, 'image side sits in a paired row');
   assert.ok(
     grid.textContent.toLowerCase().includes('image width'),
-    'image width shares that row'
+    'image width shares that row',
   );
 });
 
 test('image-slide: image controls live in the element tab only; Slide tab == no-selection view', () => {
   const content = { title: '', image: '/uploads/a.jpg', alt: 'a' };
-  const noSel = renderForm({ type: 'image-slide', content: structuredClone(content) });
+  const noSel = renderForm({
+    type: 'image-slide',
+    content: structuredClone(content),
+  });
   const noSelLabels = fieldLabels(slideForm(noSel));
-  assert.ok(!noSelLabels.some((l) => l.includes('image fit')), 'no fit in the no-selection view');
-  assert.ok(!noSelLabels.some((l) => l.includes('edge-to-edge')), 'no bleed in the no-selection view');
+  assert.ok(
+    !noSelLabels.some((l) => l.includes('image fit')),
+    'no fit in the no-selection view',
+  );
+  assert.ok(
+    !noSelLabels.some((l) => l.includes('edge-to-edge')),
+    'no bleed in the no-selection view',
+  );
 
   const withSel = renderForm({
     type: 'image-slide',
@@ -393,20 +511,35 @@ test('image-slide: image controls live in the element tab only; Slide tab == no-
     selectedElement: { kind: 'image', idx: 0 },
   });
   const elLabels = fieldLabels(elementFormOf(withSel));
-  assert.ok(elLabels.some((l) => l.includes('image fit')), 'fit renders in element tab');
-  assert.ok(elLabels.some((l) => l.includes('edge-to-edge')), 'bleed renders in element tab');
-  assert.ok(elLabels.some((l) => l.includes('alt text')), 'alt renders in element tab');
+  assert.ok(
+    elLabels.some((l) => l.includes('image fit')),
+    'fit renders in element tab',
+  );
+  assert.ok(
+    elLabels.some((l) => l.includes('edge-to-edge')),
+    'bleed renders in element tab',
+  );
+  assert.ok(
+    elLabels.some((l) => l.includes('alt text')),
+    'alt renders in element tab',
+  );
 
   assert.deepEqual(
     fieldLabels(slideForm(withSel)),
     fieldLabels(slideForm(noSel)),
-    'Slide tab and no-selection view render identical fields'
+    'Slide tab and no-selection view render identical fields',
   );
 });
 
 test('bulk modal (contentOnly) still renders the content fields the inspector dropped', () => {
   const mount = renderForm({ type: 'content-slide', contentOnly: true });
   const labels = fieldLabels(mount);
-  assert.ok(labels.some((l) => l.includes('title')), 'title renders in bulk modal');
-  assert.ok(mount.querySelector('textarea, [contenteditable]'), 'body editor renders');
+  assert.ok(
+    labels.some((l) => l.includes('title')),
+    'title renders in bulk modal',
+  );
+  assert.ok(
+    mount.querySelector('textarea, [contenteditable]'),
+    'body editor renders',
+  );
 });

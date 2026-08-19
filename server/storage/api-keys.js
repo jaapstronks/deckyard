@@ -6,7 +6,11 @@
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
-import { generateSecureToken, hashToken, isValidEmail } from '../utils/secure-tokens.js';
+import {
+  generateSecureToken,
+  hashToken,
+  isValidEmail,
+} from '../utils/secure-tokens.js';
 import { withDbGuard } from './utils/db-guard.js';
 
 /**
@@ -49,11 +53,11 @@ export const TIER_LIMITS = {
 
 // Available permissions
 export const AVAILABLE_PERMISSIONS = [
-  'read',           // Read presentations, themes, slide types
-  'write',          // Create, update, delete presentations
-  'export',         // Export presentations
-  'ai',             // Use AI generation features
-  'comments:read',  // Read comments on accessible presentations
+  'read', // Read presentations, themes, slide types
+  'write', // Create, update, delete presentations
+  'export', // Export presentations
+  'ai', // Use AI generation features
+  'comments:read', // Read comments on accessible presentations
   'comments:write', // Create comments/replies and change comment status
 ];
 
@@ -112,7 +116,9 @@ export async function createApiKey(scope, { name, ownerEmail, permissions }) {
 
   // Validate permissions if provided
   const keyPermissions = permissions || ['read', 'write'];
-  const invalidPermissions = keyPermissions.filter(s => !AVAILABLE_PERMISSIONS.includes(s));
+  const invalidPermissions = keyPermissions.filter(
+    (s) => !AVAILABLE_PERMISSIONS.includes(s),
+  );
   if (invalidPermissions.length > 0) {
     return { ok: false, reason: 'invalid_permissions', invalidPermissions };
   }
@@ -180,9 +186,10 @@ export async function validateApiKey(rawKey) {
     let permissions = ['read', 'write'];
     try {
       if (row.permissions) {
-        permissions = typeof row.permissions === 'string'
-          ? JSON.parse(row.permissions)
-          : row.permissions;
+        permissions =
+          typeof row.permissions === 'string'
+            ? JSON.parse(row.permissions)
+            : row.permissions;
       }
     } catch {
       // Use default permissions on parse error
@@ -274,13 +281,14 @@ export async function listApiKeys(scope, options = {}) {
 
     const rows = await query.execute();
 
-    const keys = rows.map(row => {
+    const keys = rows.map((row) => {
       let permissions = ['read', 'write'];
       try {
         if (row.permissions) {
-          permissions = typeof row.permissions === 'string'
-            ? JSON.parse(row.permissions)
-            : row.permissions;
+          permissions =
+            typeof row.permissions === 'string'
+              ? JSON.parse(row.permissions)
+              : row.permissions;
         }
       } catch {
         // Use default permissions on parse error
@@ -333,9 +341,10 @@ export async function getApiKeyById(scope, keyId) {
     let permissions = ['read', 'write'];
     try {
       if (row.permissions) {
-        permissions = typeof row.permissions === 'string'
-          ? JSON.parse(row.permissions)
-          : row.permissions;
+        permissions =
+          typeof row.permissions === 'string'
+            ? JSON.parse(row.permissions)
+            : row.permissions;
       }
     } catch {
       // Use default permissions on parse error
@@ -367,5 +376,7 @@ export async function getApiKeyById(scope, keyId) {
  * @returns {boolean}
  */
 export function hasPermission(keyPermissions, requiredPermission) {
-  return Array.isArray(keyPermissions) && keyPermissions.includes(requiredPermission);
+  return (
+    Array.isArray(keyPermissions) && keyPermissions.includes(requiredPermission)
+  );
 }

@@ -9,11 +9,21 @@
  */
 
 import { createReadStream } from 'node:fs';
-import { getJobStatus, getQueueStats, QUEUE_NAMES } from '../../jobs/queue/connection.js';
+import {
+  getJobStatus,
+  getQueueStats,
+  QUEUE_NAMES,
+} from '../../jobs/queue/connection.js';
 import { getStoredResult } from '../../jobs/queue/workers/export-worker.js';
 import { getStoredTranslationResult } from '../../jobs/queue/workers/translate-worker.js';
 import { getStoredBulkResult } from '../../jobs/queue/workers/bulk-export-worker.js';
-import { serveJson, notFound, badRequest, forbidden, withErrorHandler } from '../../utils/http.js';
+import {
+  serveJson,
+  notFound,
+  badRequest,
+  forbidden,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 
@@ -53,7 +63,8 @@ function parseJobId(jobId) {
  */
 function getStoredResultForQueue(queueName, id) {
   if (queueName === QUEUE_NAMES.EXPORT) return getStoredResult(id);
-  if (queueName === QUEUE_NAMES.TRANSLATE) return getStoredTranslationResult(id);
+  if (queueName === QUEUE_NAMES.TRANSLATE)
+    return getStoredTranslationResult(id);
   if (queueName === QUEUE_NAMES.HEAVY) return getStoredBulkResult(id);
   return null;
 }
@@ -247,9 +258,21 @@ async function handleQueueStats({ res, authedUser }, queueName) {
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'GET', pattern: /^\/api\/jobs\/([^/]+)\/download$/, handler: handleJobDownload },
-  { method: 'GET', pattern: /^\/api\/jobs\/queue\/([^/]+)\/stats$/, handler: handleQueueStats },
-  { method: 'GET', pattern: /^\/api\/jobs\/([^/]+)$/, handler: handleGetJobStatus },
+  {
+    method: 'GET',
+    pattern: /^\/api\/jobs\/([^/]+)\/download$/,
+    handler: handleJobDownload,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/jobs\/queue\/([^/]+)\/stats$/,
+    handler: handleQueueStats,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/jobs\/([^/]+)$/,
+    handler: handleGetJobStatus,
+  },
 ];
 
 /**

@@ -11,7 +11,12 @@
 /**
  * Build the system prompt for slide-level iteration
  */
-export function buildSlideIterationPrompt({ command, strategy, lang, catalogPrompt }) {
+export function buildSlideIterationPrompt({
+  command,
+  strategy,
+  lang,
+  catalogPrompt,
+}) {
   const langLabel = lang === 'nl' ? 'DUTCH' : 'ENGLISH';
 
   const strategyInstructions = {
@@ -61,18 +66,27 @@ RULES:
 ${catalogPrompt}
 
 OUTPUT FORMAT:
-${strategy === 'split' ? `Return a JSON array of slides:
+${
+  strategy === 'split'
+    ? `Return a JSON array of slides:
 [
   { "type": "<slide-type>", "content": { ... }, "reasoning": "..." },
   { "type": "<slide-type>", "content": { ... }, "reasoning": "..." }
-]` : `Return a single JSON object:
-{ "type": "<slide-type>", "content": { ... }, "reasoning": "Why this change was made" }`}`;
+]`
+    : `Return a single JSON object:
+{ "type": "<slide-type>", "content": { ... }, "reasoning": "Why this change was made" }`
+}`;
 }
 
 /**
  * Build the system prompt for deck-level iteration
  */
-export function buildDeckIterationPrompt({ command, strategy, lang, catalogPrompt }) {
+export function buildDeckIterationPrompt({
+  command,
+  strategy,
+  lang,
+  catalogPrompt,
+}) {
   const langLabel = lang === 'nl' ? 'DUTCH' : 'ENGLISH';
 
   const strategyInstructions = {

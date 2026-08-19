@@ -6,9 +6,18 @@
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { getUserByEmailGlobal } from './identity.js';
-import { nowIso, isoAfter, isoBefore, normalizeEmail } from '../utils/normalize.js';
+import {
+  nowIso,
+  isoAfter,
+  isoBefore,
+  normalizeEmail,
+} from '../utils/normalize.js';
 import { sessionVersion } from '../utils/session-version.js';
-import { generateSecureToken, hashToken, isValidEmail } from '../utils/secure-tokens.js';
+import {
+  generateSecureToken,
+  hashToken,
+  isValidEmail,
+} from '../utils/secure-tokens.js';
 import { withDbGuard } from './utils/db-guard.js';
 
 // ============================================================

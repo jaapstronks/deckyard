@@ -65,10 +65,13 @@ test('a fork type name contributes its own slideType.* i18n keys', () => {
     },
   };
   const keys = slideTypeUiKeys(registry);
-  assert.ok(keys.has('slideType.acme-hero-slide.label'), 'the type label is a key');
+  assert.ok(
+    keys.has('slideType.acme-hero-slide.label'),
+    'the type label is a key',
+  );
   assert.ok(
     keys.has('slideType.acme-hero-slide.field.tagline.label'),
-    'the field label is a key'
+    'the field label is a key',
   );
 });
 
@@ -77,7 +80,7 @@ test('a fork type name contributes its own slideType.* i18n keys', () => {
 // ---------------------------------------------------------------------------
 
 test(
-  'the i18n prune keeps a loaded fork type\'s keys (guards #499)',
+  "the i18n prune keeps a loaded fork type's keys (guards #499)",
   { skip: liveSkip },
   () => {
     const valid = liveSlideTypeI18nKeys();
@@ -90,10 +93,10 @@ test(
       assert.ok(
         valid.has(key),
         `${key} is a live fork key — the prune must not treat it as orphaned. ` +
-          'If this fails, the sync valid-set has started excluding fork types (#499).'
+          'If this fails, the sync valid-set has started excluding fork types (#499).',
       );
     }
-  }
+  },
 );
 
 test(
@@ -109,7 +112,7 @@ test(
       slideTypeInspectorKeeps(ALPHA, SLIDE_TYPES[ALPHA]),
       null,
       'fork fixture A must stay keepless — a keep-list here would skip the ' +
-        'fallback branch and quietly defuse the #501 guardrail'
+        'fallback branch and quietly defuse the #501 guardrail',
     );
-  }
+  },
 );

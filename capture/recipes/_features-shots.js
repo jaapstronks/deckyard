@@ -58,9 +58,12 @@ const PRESENTER_VIEWPORT = { width: 1760, height: 1100, deviceScaleFactor: 2 };
  */
 async function editorReady(page) {
   await page
-    .waitForFunction(() => !document.querySelector('.editor-loading-skeleton'), {
-      timeout: 15_000,
-    })
+    .waitForFunction(
+      () => !document.querySelector('.editor-loading-skeleton'),
+      {
+        timeout: 15_000,
+      },
+    )
     .catch(() => {});
 }
 
@@ -96,7 +99,9 @@ export function presenterViewShot(lang) {
     viewport: PRESENTER_VIEWPORT,
     localStorage: {
       'deckyard:presenterConsole': '1',
-      'deckyard:presenterConsoleTargetSeconds': String(PRESENTER_CONSOLE_TARGET_SECONDS),
+      'deckyard:presenterConsoleTargetSeconds': String(
+        PRESENTER_CONSOLE_TARGET_SECONDS,
+      ),
     },
 
     async state(api) {
@@ -134,24 +139,27 @@ export function presenterViewShot(lang) {
         () => {
           const notes = document.querySelector('.presenter-console-notes-body');
           const thumb = document.querySelector('.presenter-console-thumb');
-          const hasNotes = !!notes && (notes.textContent || '').trim().length > 20;
+          const hasNotes =
+            !!notes && (notes.textContent || '').trim().length > 20;
           const hasNext = !!thumb && !thumb.classList.contains('is-empty');
           return hasNotes && hasNext;
         },
-        { timeout: 20_000 }
+        { timeout: 20_000 },
       );
       // The tally arrives over the interaction poll after the stage renders,
       // so wait for the seeded total on the stage itself: shooting early gets
       // the zero state, and a poll at zero is the timeline slide with bars.
       await page.waitForFunction(
         (expected) => {
-          const el = document.querySelector('.deck-stage-inner [data-poll-total]');
+          const el = document.querySelector(
+            '.deck-stage-inner [data-poll-total]',
+          );
           if (!el) return false;
           const n = Number((el.textContent || '').replace(/\D+/g, ''));
           return n === expected;
         },
         { timeout: 20_000 },
-        MARKETING_POLL_VOTES.reduce((a, b) => a + b, 0)
+        MARKETING_POLL_VOTES.reduce((a, b) => a + b, 0),
       );
       // Stop the stopwatch the presentation started, then zero it: reset alone
       // restarts a running timer (see console-timer.js), and a running clock
@@ -160,9 +168,10 @@ export function presenterViewShot(lang) {
       await page.click('.presenter-console-timer-reset');
       await page.waitForFunction(
         () =>
-          document.querySelector('.presenter-console-clock')?.textContent?.trim() ===
-          '0:00',
-        { timeout: 5_000 }
+          document
+            .querySelector('.presenter-console-clock')
+            ?.textContent?.trim() === '0:00',
+        { timeout: 5_000 },
       );
       // page.click scrolls its target into view; if anything overflowed after
       // all, that scroll would crop the frame. Pin the origin before the shot.
@@ -206,7 +215,10 @@ export function commentsShot(lang) {
       const slideId = deck.slideIds.funnel;
       await seedCommentThreads(
         deckId,
-        MARKETING_COMMENT_THREADS[lang].map((thread) => ({ ...thread, slideId }))
+        MARKETING_COMMENT_THREADS[lang].map((thread) => ({
+          ...thread,
+          slideId,
+        })),
       );
       return { deckId, slideId };
     },
@@ -234,14 +246,14 @@ export function commentsShot(lang) {
       await page.waitForFunction(
         () => {
           const threads = document.querySelectorAll(
-            '.comments-panel-list .comment-thread'
+            '.comments-panel-list .comment-thread',
           );
           const resolved = document.querySelectorAll(
-            '.comments-panel-list .comment-item.comment-resolved'
+            '.comments-panel-list .comment-item.comment-resolved',
           );
           return threads.length >= 2 && resolved.length >= 1;
         },
-        { timeout: 10_000 }
+        { timeout: 10_000 },
       );
       // The slide rail renders the invite slide as a thumbnail, and that
       // thumbnail carries the same client-built join URL the join-screen shot
@@ -314,10 +326,13 @@ export function shareLinkRulesShot(lang) {
         timeout: 10_000,
       });
       await page.click('.share-tabs [data-value="link"]');
-      await page.waitForSelector('.share-tab-panel[data-tab="link"] .share-link-item', {
-        visible: true,
-        timeout: 10_000,
-      });
+      await page.waitForSelector(
+        '.share-tab-panel[data-tab="link"] .share-link-item',
+        {
+          visible: true,
+          timeout: 10_000,
+        },
+      );
       // Set the create form to the same rules the listed link carries. Native
       // setters + an input event, because the selects and inputs are plain DOM
       // with change listeners on them.
@@ -327,8 +342,16 @@ export function shareLinkRulesShot(lang) {
           el.value = value;
           el.dispatchEvent(new Event(event, { bubbles: true }));
         };
-        set(document.querySelector('.share-permission-select'), 'comment', 'change');
-        set(document.querySelector('.share-expiration-select'), '30d', 'change');
+        set(
+          document.querySelector('.share-permission-select'),
+          'comment',
+          'change',
+        );
+        set(
+          document.querySelector('.share-expiration-select'),
+          '30d',
+          'change',
+        );
         set(document.querySelector('.share-password-input'), password, 'input');
       }, copy.password);
     },
@@ -380,7 +403,9 @@ export function aiFillsFieldsShot(lang) {
 
     async state(api) {
       // Dominant = the shot's language, so the preview fills *this* version.
-      const { deckId, deck } = await seedMarketingDeck(api, lang, { dominant: deckLang });
+      const { deckId, deck } = await seedMarketingDeck(api, lang, {
+        dominant: deckLang,
+      });
       const slideId = deck.slideIds.funnel;
       const target = deck.versions[deckLang].find((s) => s.id === slideId);
       const source = deck.versions[sourceLang].find((s) => s.id === slideId);
@@ -396,15 +421,21 @@ export function aiFillsFieldsShot(lang) {
       await stubTranslateFields(page, ctx.target.content);
       await editorReady(page);
       await page.click('.slide-actions-btn');
-      await page.waitForSelector('.slide-actions-menu .slide-fill-translation-item', {
-        visible: true,
-        timeout: 10_000,
-      });
+      await page.waitForSelector(
+        '.slide-actions-menu .slide-fill-translation-item',
+        {
+          visible: true,
+          timeout: 10_000,
+        },
+      );
       await page.click('.slide-actions-menu .slide-fill-translation-item');
-      await page.waitForSelector('.modal.translate-slide-modal .translate-preview-list', {
-        visible: true,
-        timeout: 15_000,
-      });
+      await page.waitForSelector(
+        '.modal.translate-slide-modal .translate-preview-list',
+        {
+          visible: true,
+          timeout: 15_000,
+        },
+      );
     },
   };
 }

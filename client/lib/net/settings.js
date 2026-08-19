@@ -20,7 +20,8 @@ export async function fetchAppSettings({ maxAgeMs = 60_000 } = {}) {
   const now = Date.now();
   if (cachedApp && now - cachedAppAt < maxAgeMs) return cachedApp;
   const resp = await api('/api/settings/app');
-  const s = resp?.settings && typeof resp.settings === 'object' ? resp.settings : {};
+  const s =
+    resp?.settings && typeof resp.settings === 'object' ? resp.settings : {};
   cachedApp = s;
   cachedAppAt = now;
   return s;
@@ -31,7 +32,8 @@ export async function updateAppSettings(next) {
     method: 'PUT',
     body: JSON.stringify(next || {}),
   });
-  const s = resp?.settings && typeof resp.settings === 'object' ? resp.settings : {};
+  const s =
+    resp?.settings && typeof resp.settings === 'object' ? resp.settings : {};
   cachedApp = s;
   cachedAppAt = Date.now();
   return s;
@@ -41,7 +43,8 @@ export async function fetchOrgSettings({ maxAgeMs = 60_000 } = {}) {
   const now = Date.now();
   if (cachedOrg && now - cachedOrgAt < maxAgeMs) return cachedOrg;
   const resp = await api('/api/settings/organization');
-  const s = resp?.settings && typeof resp.settings === 'object' ? resp.settings : {};
+  const s =
+    resp?.settings && typeof resp.settings === 'object' ? resp.settings : {};
   cachedOrg = s;
   cachedOrgAt = now;
   return s;
@@ -52,7 +55,8 @@ export async function updateOrgSettings(next) {
     method: 'PATCH',
     body: JSON.stringify(next || {}),
   });
-  const s = resp?.settings && typeof resp.settings === 'object' ? resp.settings : {};
+  const s =
+    resp?.settings && typeof resp.settings === 'object' ? resp.settings : {};
   cachedOrg = s;
   cachedOrgAt = Date.now();
   return s;
@@ -62,7 +66,8 @@ export async function fetchMySettings({ maxAgeMs = 60_000 } = {}) {
   const now = Date.now();
   if (cachedMe && now - cachedMeAt < maxAgeMs) return cachedMe;
   const resp = await api('/api/settings/me');
-  const s = resp?.settings && typeof resp.settings === 'object' ? resp.settings : {};
+  const s =
+    resp?.settings && typeof resp.settings === 'object' ? resp.settings : {};
   cachedMe = s;
   cachedMeAt = now;
   return s;
@@ -73,7 +78,8 @@ export async function updateMySettings(next) {
     method: 'PUT',
     body: JSON.stringify(next || {}),
   });
-  const s = resp?.settings && typeof resp.settings === 'object' ? resp.settings : {};
+  const s =
+    resp?.settings && typeof resp.settings === 'object' ? resp.settings : {};
   cachedMe = s;
   cachedMeAt = Date.now();
   return s;

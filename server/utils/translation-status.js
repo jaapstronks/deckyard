@@ -1,5 +1,9 @@
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
-import { normalizeLang, otherLang, isNonEmptyString } from '../../shared/i18n-utils.js';
+import {
+  normalizeLang,
+  otherLang,
+  isNonEmptyString,
+} from '../../shared/i18n-utils.js';
 
 export { normalizeLang, otherLang };
 
@@ -8,7 +12,8 @@ function translateKeysForSlideType(type) {
   if (!def || !Array.isArray(def.fields)) return [];
   return def.fields
     .filter(
-      (f) => f && (f.type === 'string' || f.type === 'markdown' || f.type === 'csv')
+      (f) =>
+        f && (f.type === 'string' || f.type === 'markdown' || f.type === 'csv'),
     )
     .map((f) => f.key)
     .filter((k) => typeof k === 'string' && k.trim());
@@ -25,10 +30,7 @@ function buildSlideIndex(slides) {
   return { arr, byId };
 }
 
-export function computeMissingTranslation({
-  source,
-  target,
-} = {}) {
+export function computeMissingTranslation({ source, target } = {}) {
   const srcTitle = source?.title;
   const tgtTitle = target?.title;
   const missing = [];
@@ -52,12 +54,8 @@ export function computeMissingTranslation({
 
     // Prefer match by id, else fallback to same index.
     const match =
-      (typeof s.id === 'string' && s.id && tgtIdx.byId.get(s.id)) ||
-      null;
-    const t =
-      match?.slide ||
-      tgtIdx.arr[i] ||
-      null;
+      (typeof s.id === 'string' && s.id && tgtIdx.byId.get(s.id)) || null;
+    const t = match?.slide || tgtIdx.arr[i] || null;
     const tgtContent =
       t?.content && typeof t.content === 'object' ? t.content : {};
 
@@ -113,14 +111,10 @@ export function buildBlankTargetFromSource(source) {
     const nextContent = { ...srcContent };
     for (const k of keys) nextContent[k] = '';
     return {
-      id:
-        typeof s?.id === 'string' && s.id
-          ? s.id
-          : `missing-${idx}`,
+      id: typeof s?.id === 'string' && s.id ? s.id : `missing-${idx}`,
       type,
       content: nextContent,
-      notes:
-        typeof s?.notes === 'string' ? s.notes : '',
+      notes: typeof s?.notes === 'string' ? s.notes : '',
     };
   });
   return { title: '', slides: outSlides };

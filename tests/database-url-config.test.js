@@ -44,7 +44,8 @@ function withEnv(env, fn) {
 test('DATABASE_URL wins over the discrete DATABASE_* vars', () => {
   withEnv(
     {
-      DATABASE_URL: 'postgres://scratch_user:scratch_pw@db.example:6543/deckyard_pg_tests',
+      DATABASE_URL:
+        'postgres://scratch_user:scratch_pw@db.example:6543/deckyard_pg_tests',
       // The dev config that must be ignored when DATABASE_URL is set.
       DATABASE_HOST: 'localhost',
       DATABASE_PORT: '5432',
@@ -59,7 +60,7 @@ test('DATABASE_URL wins over the discrete DATABASE_* vars', () => {
       assert.equal(config.database, 'deckyard_pg_tests');
       assert.equal(config.user, 'scratch_user');
       assert.equal(config.password, 'scratch_pw');
-    }
+    },
   );
 });
 
@@ -75,11 +76,23 @@ test('DATABASE_URL is a complete override, not a merge with DATABASE_*', () => {
     () => {
       const config = getDatabaseConfig();
       assert.equal(config.host, 'localhost');
-      assert.equal(config.port, 5432, 'missing URL port defaults to 5432, not DATABASE_PORT');
+      assert.equal(
+        config.port,
+        5432,
+        'missing URL port defaults to 5432, not DATABASE_PORT',
+      );
       assert.equal(config.database, 'deckyard_pg_tests');
-      assert.equal(config.user, 'deckyard', 'missing URL user is the default, not DATABASE_USER');
-      assert.equal(config.password, '', 'missing URL password is empty, not DATABASE_PASSWORD');
-    }
+      assert.equal(
+        config.user,
+        'deckyard',
+        'missing URL user is the default, not DATABASE_USER',
+      );
+      assert.equal(
+        config.password,
+        '',
+        'missing URL password is empty, not DATABASE_PASSWORD',
+      );
+    },
   );
 });
 
@@ -94,7 +107,7 @@ test('an empty DATABASE_URL is ignored, falling back to DATABASE_*', () => {
       const config = getDatabaseConfig();
       assert.equal(config.host, 'dev.example');
       assert.equal(config.database, 'deckyard_dev');
-    }
+    },
   );
 });
 
@@ -114,7 +127,7 @@ test('with no DATABASE_URL the discrete DATABASE_* vars are used', () => {
       assert.equal(config.database, 'deckyard_dev');
       assert.equal(config.user, 'devuser');
       assert.equal(config.password, 'devpw');
-    }
+    },
   );
 });
 
@@ -129,10 +142,13 @@ test('SSL derives from the DATABASE_URL host, and DATABASE_SSL still applies on 
   });
   // DATABASE_SSL=false forces it off even for a remote host.
   withEnv(
-    { DATABASE_URL: 'postgres://u:p@managed.db:5432/deckyard', DATABASE_SSL: 'false' },
+    {
+      DATABASE_URL: 'postgres://u:p@managed.db:5432/deckyard',
+      DATABASE_SSL: 'false',
+    },
     () => {
       assert.equal(getDatabaseConfig().ssl, false);
-    }
+    },
   );
 });
 
@@ -143,7 +159,7 @@ test('percent-encoded credentials in DATABASE_URL are decoded', () => {
       const config = getDatabaseConfig();
       assert.equal(config.user, 'user@corp');
       assert.equal(config.password, 'p@ss:word');
-    }
+    },
   );
 });
 

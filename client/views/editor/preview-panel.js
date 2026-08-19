@@ -85,8 +85,13 @@ export function createPreviewPanel({
       text: t('comments.addLabel', 'Add comment'),
     });
     pinCommentBtn.append(
-      h('img', { class: 'btn-pin-icon', src: iconUrl('map-pin'), alt: '', 'aria-hidden': 'true' }),
-      pinCommentLabel
+      h('img', {
+        class: 'btn-pin-icon',
+        src: iconUrl('map-pin'),
+        alt: '',
+        'aria-hidden': 'true',
+      }),
+      pinCommentLabel,
     );
     // Mode hint: rendered as an overlay on the stage (appended to previewStage
     // further down), toggled with add-mode. Kept out of the flex toolbar row.
@@ -115,7 +120,9 @@ export function createPreviewPanel({
   const openersSlot = h('div', { class: 'slide-bar-openers' });
   slideBar.append(slideBarLeft, openersSlot);
 
-  const previewScroll = h('div', { class: 'panel-scroll preview-panel-scroll' });
+  const previewScroll = h('div', {
+    class: 'panel-scroll preview-panel-scroll',
+  });
   const previewStage = h('div', { class: 'preview-stage' });
   const thumb = h('div', {
     class: 'thumb is-clickable-preview',
@@ -191,7 +198,8 @@ export function createPreviewPanel({
     const stageRect = previewStage.getBoundingClientRect();
 
     // Position within stage (which is the positioning context)
-    const pixelX = thumbRect.left - stageRect.left + (x / 100) * thumbRect.width;
+    const pixelX =
+      thumbRect.left - stageRect.left + (x / 100) * thumbRect.width;
     const pixelY = thumbRect.top - stageRect.top + (y / 100) * thumbRect.height;
 
     // Smart positioning: avoid edge clipping

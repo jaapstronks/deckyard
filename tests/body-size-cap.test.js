@@ -53,7 +53,7 @@ test('readRequestBody throws 413 over the cap', () => {
   return withEnv('8', async () => {
     await assert.rejects(
       () => readRequestBody(reqFrom('0123456789')),
-      (e) => e.statusCode === 413
+      (e) => e.statusCode === 413,
     );
   });
 });
@@ -61,7 +61,10 @@ test('readRequestBody throws 413 over the cap', () => {
 test('requireJsonBody parses a body under the cap', () => {
   return withEnv('1000', async () => {
     const res = fakeRes();
-    const result = await requireJsonBody(reqFrom(JSON.stringify({ a: 1 })), res);
+    const result = await requireJsonBody(
+      reqFrom(JSON.stringify({ a: 1 })),
+      res,
+    );
     assert.equal(result.ok, true);
     assert.deepEqual(result.body, { a: 1 });
     assert.equal(res.statusCode, null, 'nothing was sent on the happy path');
@@ -98,7 +101,9 @@ test('requireJsonBody answers 400 on unparseable JSON', async () => {
 
 test('allowEmpty turns an absent body into {} instead of a 400', async () => {
   const res = fakeRes();
-  const result = await requireJsonBody(reqFrom('   '), res, { allowEmpty: true });
+  const result = await requireJsonBody(reqFrom('   '), res, {
+    allowEmpty: true,
+  });
   assert.equal(result.ok, true);
   assert.deepEqual(result.body, {});
   assert.equal(res.statusCode, null);
@@ -106,7 +111,9 @@ test('allowEmpty turns an absent body into {} instead of a 400', async () => {
 
 test('allowEmpty still rejects a broken body — absent is not the same as malformed', async () => {
   const res = fakeRes();
-  const result = await requireJsonBody(reqFrom('{nope'), res, { allowEmpty: true });
+  const result = await requireJsonBody(reqFrom('{nope'), res, {
+    allowEmpty: true,
+  });
   assert.equal(result.ok, false);
   assert.equal(res.statusCode, 400);
 });

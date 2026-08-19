@@ -45,48 +45,82 @@ export function createEmailTemplatesPanel({ user }) {
     class: 'help',
     text: t(
       'settings.admin.emailTemplates.hint',
-      'Customize email templates sent by the system. Changes override code defaults.'
+      'Customize email templates sent by the system. Changes override code defaults.',
     ),
   });
 
   // Default locale selector
-  const defaultLocaleRow = h('div', { class: 'row', style: 'gap: 10px; align-items: center; margin-bottom: 16px;' });
+  const defaultLocaleRow = h('div', {
+    class: 'row',
+    style: 'gap: 10px; align-items: center; margin-bottom: 16px;',
+  });
   const defaultLocaleLabel = h('label', {
-    text: t('settings.admin.emailTemplates.defaultLocale', 'Default language for new user invitations:'),
+    text: t(
+      'settings.admin.emailTemplates.defaultLocale',
+      'Default language for new user invitations:',
+    ),
     style: 'font-weight: 500;',
   });
-  const defaultLocaleSelect = h('select', { class: 'form-input', style: 'width: auto;' });
+  const defaultLocaleSelect = h('select', {
+    class: 'form-input',
+    style: 'width: auto;',
+  });
   defaultLocaleRow.append(defaultLocaleLabel, defaultLocaleSelect);
 
   // Template selector
-  const templateRow = h('div', { class: 'row', style: 'gap: 10px; align-items: center; margin-bottom: 16px;' });
+  const templateRow = h('div', {
+    class: 'row',
+    style: 'gap: 10px; align-items: center; margin-bottom: 16px;',
+  });
   const templateLabel = h('label', {
     text: t('settings.admin.emailTemplates.templateType', 'Template:'),
     style: 'font-weight: 500;',
   });
-  const templateSelect = h('select', { class: 'form-input', style: 'width: auto; min-width: 200px;' });
+  const templateSelect = h('select', {
+    class: 'form-input',
+    style: 'width: auto; min-width: 200px;',
+  });
   templateRow.append(templateLabel, templateSelect);
 
   // Locale tabs
-  const localeTabs = h('div', { class: 'email-template-locale-tabs sb-segmented is-toggle', style: 'margin-bottom: 16px;' });
+  const localeTabs = h('div', {
+    class: 'email-template-locale-tabs sb-segmented is-toggle',
+    style: 'margin-bottom: 16px;',
+  });
 
   // Form fields container
-  const formContainer = h('div', { class: 'email-template-form', style: 'margin-bottom: 16px;' });
+  const formContainer = h('div', {
+    class: 'email-template-form',
+    style: 'margin-bottom: 16px;',
+  });
 
   // Placeholders sidebar
-  const placeholdersContainer = h('div', { class: 'email-template-placeholders', style: 'margin-bottom: 16px;' });
+  const placeholdersContainer = h('div', {
+    class: 'email-template-placeholders',
+    style: 'margin-bottom: 16px;',
+  });
 
   // Preview container
-  const previewContainer = h('div', { class: 'email-template-preview', style: 'margin-bottom: 16px; display: none;' });
-  const previewTitle = h('div', { class: 'field-label', text: t('settings.admin.emailTemplates.preview', 'Preview') });
+  const previewContainer = h('div', {
+    class: 'email-template-preview',
+    style: 'margin-bottom: 16px; display: none;',
+  });
+  const previewTitle = h('div', {
+    class: 'field-label',
+    text: t('settings.admin.emailTemplates.preview', 'Preview'),
+  });
   const previewContent = h('div', {
     class: 'email-preview-content',
-    style: 'border: 1px solid var(--border-color); border-radius: 4px; padding: 16px; background: white; max-height: 400px; overflow: auto;',
+    style:
+      'border: 1px solid var(--border-color); border-radius: 4px; padding: 16px; background: white; max-height: 400px; overflow: auto;',
   });
   previewContainer.append(previewTitle, previewContent);
 
   // Action buttons
-  const actions = h('div', { class: 'row', style: 'gap: 10px; justify-content: space-between;' });
+  const actions = h('div', {
+    class: 'row',
+    style: 'gap: 10px; justify-content: space-between;',
+  });
   const leftActions = h('div', { class: 'row', style: 'gap: 10px;' });
   const rightActions = h('div', { class: 'row', style: 'gap: 10px;' });
 
@@ -127,7 +161,7 @@ export function createEmailTemplatesPanel({ user }) {
     formContainer,
     placeholdersContainer,
     previewContainer,
-    actions
+    actions,
   );
 
   // Initialize state
@@ -159,13 +193,18 @@ export function createEmailTemplatesPanel({ user }) {
       currentType,
       currentLocale,
       panelActions.onLocaleChange,
-      () => state.isBusy()
+      () => state.isBusy(),
     );
 
     const templateData = data?.templates?.[currentType];
     buildPlaceholders(placeholdersContainer, templateData?.placeholders);
 
-    const formInputs = buildForm(formContainer, data, currentType, currentLocale);
+    const formInputs = buildForm(
+      formContainer,
+      data,
+      currentType,
+      currentLocale,
+    );
     state.setFormInputs(formInputs);
   };
 
@@ -177,7 +216,10 @@ export function createEmailTemplatesPanel({ user }) {
     panelActions.onTemplateTypeChange(templateSelect.value);
   });
 
-  defaultLocaleSelect.addEventListener('change', panelActions.onDefaultLocaleChange);
+  defaultLocaleSelect.addEventListener(
+    'change',
+    panelActions.onDefaultLocaleChange,
+  );
   saveBtn.addEventListener('click', panelActions.onSave);
   resetBtn.addEventListener('click', panelActions.onReset);
   previewBtn.addEventListener('click', panelActions.onPreview);

@@ -42,18 +42,18 @@ A full sweep of `client/` (B8) classified every `innerHTML` occurrence. The
 counts below are a snapshot; the **categories** are the durable part — a new
 write is safe only if it falls into one of them.
 
-| Category | What it is | Why safe |
-|---|---|---|
-| Clears (`= ''`) | Emptying a node before re-render | No markup written |
-| Comparisons (`=== ''`) | Reads, not writes | Not a sink |
-| Static SVG / entity strings | Icon markup, `&larr;`, `&#8942;` — string **literals** in source | No runtime data; author-controlled constants |
-| Icon maps | `ICONS[name]`, `VIEW_ICON[mode]`, `dom/icons.js` `svg.innerHTML` | Values are module-level static SVG constants, keys are internal enums |
-| `escapeHtml`-guarded interpolation | e.g. `app.js` fatal screen, `share-viewer/guest-join.js` email confirmation | Every interpolated value passes through `escapeHtml()` first |
-| `markdownToSafeHtml` output | `notes/index.js`, `presenter/console.js` speaker notes | Sanitized by the sanctioned renderer |
-| Round-trip / parse buffers | `inline-edit/inline-editor.js` restore (`el.innerHTML` captured then restored), `slide-authoring/markdown-serialize.js` scratch div | Restores the element's own prior trusted DOM, or parses into a **detached** node never attached to the page |
-| Slide-render contract boundary | `lib/slide-runtime/slide-render.js` parsing `renderSlideHtml()` output | Per **`AGENTS.md`**, escaping is the slide-type's responsibility at render time; this is the sanctioned handoff |
-| Self-escaping renderer | `modals/json-debug-modal.js` `renderSchemaAsHtml()` | Escapes `& < >` before applying its mini-markdown transforms |
-| Intentional trusted HTML | `settings/email-templates/actions.js` template preview | Server-generated, admin-only; rendered verbatim by design (re-verified, see below) |
+| Category                           | What it is                                                                                                                          | Why safe                                                                                                        |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Clears (`= ''`)                    | Emptying a node before re-render                                                                                                    | No markup written                                                                                               |
+| Comparisons (`=== ''`)             | Reads, not writes                                                                                                                   | Not a sink                                                                                                      |
+| Static SVG / entity strings        | Icon markup, `&larr;`, `&#8942;` — string **literals** in source                                                                    | No runtime data; author-controlled constants                                                                    |
+| Icon maps                          | `ICONS[name]`, `VIEW_ICON[mode]`, `dom/icons.js` `svg.innerHTML`                                                                    | Values are module-level static SVG constants, keys are internal enums                                           |
+| `escapeHtml`-guarded interpolation | e.g. `app.js` fatal screen, `share-viewer/guest-join.js` email confirmation                                                         | Every interpolated value passes through `escapeHtml()` first                                                    |
+| `markdownToSafeHtml` output        | `notes/index.js`, `presenter/console.js` speaker notes                                                                              | Sanitized by the sanctioned renderer                                                                            |
+| Round-trip / parse buffers         | `inline-edit/inline-editor.js` restore (`el.innerHTML` captured then restored), `slide-authoring/markdown-serialize.js` scratch div | Restores the element's own prior trusted DOM, or parses into a **detached** node never attached to the page     |
+| Slide-render contract boundary     | `lib/slide-runtime/slide-render.js` parsing `renderSlideHtml()` output                                                              | Per **`AGENTS.md`**, escaping is the slide-type's responsibility at render time; this is the sanctioned handoff |
+| Self-escaping renderer             | `modals/json-debug-modal.js` `renderSchemaAsHtml()`                                                                                 | Escapes `& < >` before applying its mini-markdown transforms                                                    |
+| Intentional trusted HTML           | `settings/email-templates/actions.js` template preview                                                                              | Server-generated, admin-only; rendered verbatim by design (re-verified, see below)                              |
 
 The last row is the only one whose safety rests on an authorization claim rather
 than on escaping, so it was re-checked in full (2026-08-04):
@@ -71,7 +71,7 @@ than on escaping, so it was re-checked in full (2026-08-04):
   behind the same instance-admin gate, into an instance-global store. Writer and
   reader therefore hold identical privilege. That is what distinguishes this from
   the comment `author_email` leak, where an unprivileged guest wrote into a
-  privileged reader's view — the shape that made *that* one a real vector.
+  privileged reader's view — the shape that made _that_ one a real vector.
 
 ## The gate
 
@@ -118,5 +118,5 @@ were converted to `h()`.
 - Rich text → `markdownToSafeHtml()`.
 - A static icon → a string literal or an icon map is fine; don't convert
   existing static SVG to nested `h()` calls just to avoid `innerHTML` — that adds
-  noise without a security gain. "Safe" here means *verified escaped*, not
-  *`innerHTML`-free*.
+  noise without a security gain. "Safe" here means _verified escaped_, not
+  _`innerHTML`-free_.

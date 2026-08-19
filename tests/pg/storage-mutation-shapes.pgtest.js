@@ -75,7 +75,12 @@ pgDescribe('storage mutation shapes (real PostgreSQL)', () => {
   });
 
   beforeEach(async () => {
-    await truncate(db, 'organizations', 'image_library', 'published_presentations');
+    await truncate(
+      db,
+      'organizations',
+      'image_library',
+      'published_presentations',
+    );
     await seedDefaultOrganization(db);
   });
 
@@ -88,7 +93,10 @@ pgDescribe('storage mutation shapes (real PostgreSQL)', () => {
     });
 
     // A live deck is not restorable either: the UPDATE filters on trashed_at.
-    const live = await createPresentation(storageScope, { title: 'Live', ownerEmail: ALICE });
+    const live = await createPresentation(storageScope, {
+      title: 'Live',
+      ownerEmail: ALICE,
+    });
     assert.deepEqual(await restorePresentation(storageScope, live.id), {
       ok: false,
       reason: 'not_found',
@@ -96,7 +104,10 @@ pgDescribe('storage mutation shapes (real PostgreSQL)', () => {
   });
 
   it('restorePresentation hands the restored deck back under ok', async () => {
-    const pres = await createPresentation(storageScope, { title: 'Deck', ownerEmail: ALICE });
+    const pres = await createPresentation(storageScope, {
+      title: 'Deck',
+      ownerEmail: ALICE,
+    });
     await deletePresentation(storageScope, pres.id, { actorEmail: ALICE });
 
     const restored = await restorePresentation(storageScope, pres.id);
@@ -106,15 +117,23 @@ pgDescribe('storage mutation shapes (real PostgreSQL)', () => {
   });
 
   it('duplicatePresentation answers not_found for a deck this scope cannot see', async () => {
-    assert.deepEqual(await duplicatePresentation(storageScope, absentId(), {}), {
-      ok: false,
-      reason: 'not_found',
-    });
+    assert.deepEqual(
+      await duplicatePresentation(storageScope, absentId(), {}),
+      {
+        ok: false,
+        reason: 'not_found',
+      },
+    );
   });
 
   it('duplicatePresentation hands the copy back under ok', async () => {
-    const pres = await createPresentation(storageScope, { title: 'Deck', ownerEmail: ALICE });
-    const copy = await duplicatePresentation(storageScope, pres.id, { actorEmail: ALICE });
+    const pres = await createPresentation(storageScope, {
+      title: 'Deck',
+      ownerEmail: ALICE,
+    });
+    const copy = await duplicatePresentation(storageScope, pres.id, {
+      actorEmail: ALICE,
+    });
     assert.equal(copy.ok, true);
     assert.notEqual(copy.presentation.id, pres.id, 'a duplicate is a new deck');
     assert.match(copy.presentation.title, /Deck$/);
@@ -123,10 +142,13 @@ pgDescribe('storage mutation shapes (real PostgreSQL)', () => {
   // ─── image library: update + delete ────────────────────────────────────────
 
   it('updateImageLibraryItem answers not_found for an image that is not here', async () => {
-    assert.deepEqual(await updateImageLibraryItem(storageScope, absentId(), { title: 'x' }), {
-      ok: false,
-      reason: 'not_found',
-    });
+    assert.deepEqual(
+      await updateImageLibraryItem(storageScope, absentId(), { title: 'x' }),
+      {
+        ok: false,
+        reason: 'not_found',
+      },
+    );
   });
 
   it('updateImageLibraryItem hands the patched row back under ok', async () => {
@@ -147,7 +169,9 @@ pgDescribe('storage mutation shapes (real PostgreSQL)', () => {
       url: '/uploads/two.png',
       title: 'Doomed',
     });
-    assert.deepEqual(await deleteImageLibraryItem(storageScope, created.id), { ok: true });
+    assert.deepEqual(await deleteImageLibraryItem(storageScope, created.id), {
+      ok: true,
+    });
     assert.equal(await getImageLibraryItem(storageScope, created.id), null);
     assert.deepEqual(await deleteImageLibraryItem(storageScope, created.id), {
       ok: false,
@@ -162,17 +186,25 @@ pgDescribe('storage mutation shapes (real PostgreSQL)', () => {
       ok: false,
       reason: 'invalid',
     });
-    assert.deepEqual(await removePublishedEntry(storageScope, 'no-such-entry'), {
-      ok: false,
-      reason: 'not_found',
-    });
+    assert.deepEqual(
+      await removePublishedEntry(storageScope, 'no-such-entry'),
+      {
+        ok: false,
+        reason: 'not_found',
+      },
+    );
 
-    const pres = await createPresentation(storageScope, { title: 'Published', ownerEmail: ALICE });
+    const pres = await createPresentation(storageScope, {
+      title: 'Published',
+      ownerEmail: ALICE,
+    });
     await upsertPublishedEntry(storageScope, {
       publishId: 'pub-1',
       presentationId: pres.id,
       title: 'Published',
     });
-    assert.deepEqual(await removePublishedEntry(storageScope, 'pub-1'), { ok: true });
+    assert.deepEqual(await removePublishedEntry(storageScope, 'pub-1'), {
+      ok: true,
+    });
   });
 });

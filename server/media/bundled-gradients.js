@@ -65,10 +65,13 @@ function hex(v) {
  * @returns {GradientPalette|null}
  */
 export function paletteFromTheme(theme) {
-  const id = String(theme?.id || '').trim().toLowerCase();
+  const id = String(theme?.id || '')
+    .trim()
+    .toLowerCase();
   if (!THEME_ID_RE.test(id)) return null;
 
-  const vars = theme?.cssVars && typeof theme.cssVars === 'object' ? theme.cssVars : {};
+  const vars =
+    theme?.cssVars && typeof theme.cssVars === 'object' ? theme.cssVars : {};
   const brand = (Array.isArray(theme?.brandColors) ? theme.brandColors : [])
     .map(hex)
     .filter(Boolean);
@@ -147,9 +150,21 @@ export const GRADIENT_COMPOSITIONS = [
     build: (p) => ({
       base: p.dark,
       layers: [
-        radial(0.62, 0.18, 0.72, p.brand[1], [[0, 0.55], [0.38, 0.18], [1, 0]]),
-        radial(0.12, 0.88, 0.78, p.brand[0], [[0, 0.5], [0.44, 0.14], [1, 0]]),
-        radial(0.88, 0.74, 0.6, p.brand[2], [[0, 0.34], [0.5, 0.1], [1, 0]]),
+        radial(0.62, 0.18, 0.72, p.brand[1], [
+          [0, 0.55],
+          [0.38, 0.18],
+          [1, 0],
+        ]),
+        radial(0.12, 0.88, 0.78, p.brand[0], [
+          [0, 0.5],
+          [0.44, 0.14],
+          [1, 0],
+        ]),
+        radial(0.88, 0.74, 0.6, p.brand[2], [
+          [0, 0.34],
+          [0.5, 0.1],
+          [1, 0],
+        ]),
       ],
     }),
   },
@@ -161,7 +176,11 @@ export const GRADIENT_COMPOSITIONS = [
     build: (p) => ({
       base: p.dark,
       layers: [
-        radial(0.5, 0.42, 0.85, p.accent, [[0, 0.45], [0.45, 0.14], [1, 0]]),
+        radial(0.5, 0.42, 0.85, p.accent, [
+          [0, 0.45],
+          [0.45, 0.14],
+          [1, 0],
+        ]),
         linear(0, 1, 0, 0, [
           [0, p.brand[3], 0.22],
           [0.55, p.brand[3], 0.05],
@@ -182,7 +201,11 @@ export const GRADIENT_COMPOSITIONS = [
           [0.5, p.brand[1], 0.38],
           [1, p.brand[3], 0.52],
         ]),
-        radial(0.85, 0.12, 0.6, p.brand[3], [[0, 0.38], [0.5, 0.1], [1, 0]]),
+        radial(0.85, 0.12, 0.6, p.brand[3], [
+          [0, 0.38],
+          [0.5, 0.1],
+          [1, 0],
+        ]),
       ],
     }),
   },
@@ -198,8 +221,16 @@ export const GRADIENT_COMPOSITIONS = [
           [0, p.brand[2], 0.3],
           [1, p.brand[0], 0.34],
         ]),
-        radial(0.08, 0.1, 0.55, p.brand[2], [[0, 0.44], [0.5, 0.12], [1, 0]]),
-        radial(0.92, 0.9, 0.6, p.brand[3], [[0, 0.38], [0.5, 0.1], [1, 0]]),
+        radial(0.08, 0.1, 0.55, p.brand[2], [
+          [0, 0.44],
+          [0.5, 0.12],
+          [1, 0],
+        ]),
+        radial(0.92, 0.9, 0.6, p.brand[3], [
+          [0, 0.38],
+          [0.5, 0.1],
+          [1, 0],
+        ]),
       ],
     }),
   },
@@ -217,8 +248,16 @@ export const GRADIENT_COMPOSITIONS = [
           [0, p.mist, 0.85],
           [1, p.mist, 0],
         ]),
-        radial(0.2, 0.15, 0.7, p.brand[2], [[0, 0.42], [0.45, 0.12], [1, 0]]),
-        radial(0.85, 0.85, 0.75, p.brand[1], [[0, 0.34], [0.5, 0.1], [1, 0]]),
+        radial(0.2, 0.15, 0.7, p.brand[2], [
+          [0, 0.42],
+          [0.45, 0.12],
+          [1, 0],
+        ]),
+        radial(0.85, 0.85, 0.75, p.brand[1], [
+          [0, 0.34],
+          [0.5, 0.1],
+          [1, 0],
+        ]),
       ],
     }),
   },
@@ -239,7 +278,7 @@ function gradientDef(id, layer) {
     const stops = layer.stops
       .map(
         ([offset, opacity]) =>
-          `<stop offset="${num(offset)}" stop-color="${layer.color}" stop-opacity="${num(opacity)}"/>`
+          `<stop offset="${num(offset)}" stop-color="${layer.color}" stop-opacity="${num(opacity)}"/>`,
       )
       .join('');
     return `<radialGradient id="${id}" cx="${num(layer.cx)}" cy="${num(layer.cy)}" r="${num(layer.r)}">${stops}</radialGradient>`;
@@ -247,7 +286,7 @@ function gradientDef(id, layer) {
   const stops = layer.stops
     .map(
       ([offset, color, opacity]) =>
-        `<stop offset="${num(offset)}" stop-color="${color}" stop-opacity="${num(opacity)}"/>`
+        `<stop offset="${num(offset)}" stop-color="${color}" stop-opacity="${num(opacity)}"/>`,
     )
     .join('');
   return `<linearGradient id="${id}" x1="${num(layer.x1)}" y1="${num(layer.y1)}" x2="${num(layer.x2)}" y2="${num(layer.y2)}">${stops}</linearGradient>`;
@@ -263,10 +302,14 @@ function gradientDef(id, layer) {
  * @returns {string} SVG source, newline-terminated.
  */
 export function renderGradientSvg(spec) {
-  const defs = spec.layers.map((layer, i) => gradientDef(`g${i}`, layer)).join('');
+  const defs = spec.layers
+    .map((layer, i) => gradientDef(`g${i}`, layer))
+    .join('');
   const rects = [
     `<rect width="100%" height="100%" fill="${spec.base}"/>`,
-    ...spec.layers.map((_, i) => `<rect width="100%" height="100%" fill="url(#g${i})"/>`),
+    ...spec.layers.map(
+      (_, i) => `<rect width="100%" height="100%" fill="url(#g${i})"/>`,
+    ),
   ].join('');
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${GRADIENT_WIDTH} ${GRADIENT_HEIGHT}"` +

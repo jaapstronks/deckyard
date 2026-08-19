@@ -26,7 +26,10 @@ const lockedLogo = { id: 't', locks: { logo: 'locked' } };
 const openTheme = { id: 't', locks: { background: 'open', logo: 'open' } };
 
 test('every property defaults to open', () => {
-  assert.deepEqual(getLockPolicy(undefined), { background: 'open', logo: 'open' });
+  assert.deepEqual(getLockPolicy(undefined), {
+    background: 'open',
+    logo: 'open',
+  });
   assert.deepEqual(getLockPolicy({}), { background: 'open', logo: 'open' });
   assert.deepEqual(getLockPolicy({ locks: 'nonsense' }), {
     background: 'open',
@@ -36,9 +39,15 @@ test('every property defaults to open', () => {
 
 test('an unknown lock mode reads as open, never as locked', () => {
   // Fail open: a typo in a theme must not silently strip every slide.
-  assert.equal(isLocked({ locks: { background: 'LOCKED' } }, 'background'), false);
+  assert.equal(
+    isLocked({ locks: { background: 'LOCKED' } }, 'background'),
+    false,
+  );
   assert.equal(isLocked({ locks: { background: true } }, 'background'), false);
-  assert.equal(isLocked({ locks: { background: 'locked' } }, 'background'), true);
+  assert.equal(
+    isLocked({ locks: { background: 'locked' } }, 'background'),
+    true,
+  );
 });
 
 test('a missing theme locks nothing', () => {
@@ -52,7 +61,10 @@ test('a missing theme locks nothing', () => {
 
 test('an unlockable property is never locked', () => {
   assert.equal(isLocked({ locks: { shadow: 'locked' } }, 'shadow'), false);
-  assert.equal(isLocked({ locks: { imageRadius: 'locked' } }, 'imageRadius'), false);
+  assert.equal(
+    isLocked({ locks: { imageRadius: 'locked' } }, 'imageRadius'),
+    false,
+  );
 });
 
 test('an open theme returns the very same content object', () => {
@@ -102,8 +114,9 @@ test('the locks are independent of each other', () => {
 test('every lockable property declares the keys it governs', () => {
   for (const prop of LOCKABLE_PROPERTIES) {
     assert.ok(
-      Array.isArray(LOCKED_CONTENT_KEYS[prop]) && LOCKED_CONTENT_KEYS[prop].length,
-      `${prop} governs no content keys`
+      Array.isArray(LOCKED_CONTENT_KEYS[prop]) &&
+        LOCKED_CONTENT_KEYS[prop].length,
+      `${prop} governs no content keys`,
     );
   }
 });
@@ -132,7 +145,10 @@ test('renderSlideHtml drops a locked per-slide background image', () => {
   };
 
   assert.match(renderSlideHtml(slide, { theme: openTheme }), /photo\.jpg/);
-  assert.doesNotMatch(renderSlideHtml(slide, { theme: lockedBg }), /photo\.jpg/);
+  assert.doesNotMatch(
+    renderSlideHtml(slide, { theme: lockedBg }),
+    /photo\.jpg/,
+  );
 });
 
 test('renderSlideHtml without a theme renders every override, as before', () => {
@@ -153,6 +169,10 @@ test('unlocking restores the slide, because nothing was written', () => {
   };
 
   renderSlideHtml(slide, { theme: lockedBg });
-  assert.equal(slide.content.background, 'mist', 'render mutated stored content');
+  assert.equal(
+    slide.content.background,
+    'mist',
+    'render mutated stored content',
+  );
   assert.match(renderSlideHtml(slide, { theme: openTheme }), /slide-bg-mist/);
 });

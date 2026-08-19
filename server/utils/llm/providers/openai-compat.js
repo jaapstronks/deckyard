@@ -19,7 +19,9 @@ import { envStr } from '../../../config/utils.js';
 export async function requestOpenAiCompatChatCompletionContent(params = {}) {
   const endpoint = envStr('OPENAI_COMPAT_ENDPOINT');
   if (!endpoint) {
-    throw new ValidationError('OPENAI_COMPAT_ENDPOINT is not set in environment.');
+    throw new ValidationError(
+      'OPENAI_COMPAT_ENDPOINT is not set in environment.',
+    );
   }
 
   const headers = createOptionalBearerHeaders(params.apiKey);
@@ -33,7 +35,12 @@ export async function requestOpenAiCompatChatCompletionContent(params = {}) {
 
   const bodyText = await resp.text();
   if (!resp.ok) {
-    throw LlmError.fromProviderFailure('openai-compat', resp.status, bodyText, params.model);
+    throw LlmError.fromProviderFailure(
+      'openai-compat',
+      resp.status,
+      bodyText,
+      params.model,
+    );
   }
 
   return parseOpenAiCompatibleResponse(bodyText);

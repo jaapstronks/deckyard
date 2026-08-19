@@ -46,7 +46,7 @@ export function openSlideTypeModal({
     {
       class: 'btn btn-secondary btn-icon ps-modal-close',
       type: 'button',
-        'aria-label': t('common.close', 'Close'),
+      'aria-label': t('common.close', 'Close'),
       onclick: () => close(),
     },
     [
@@ -60,9 +60,9 @@ export function openSlideTypeModal({
           stroke: 'currentColor',
           'stroke-width': '2',
         },
-        [h('path', { d: 'M18 6L6 18M6 6l12 12' })]
+        [h('path', { d: 'M18 6L6 18M6 6l12 12' })],
       ),
-    ]
+    ],
   );
   header.append(title, closeBtn);
 
@@ -148,7 +148,8 @@ export function openSlideTypeModal({
   // types | library | import. Restore the last-used tab, but only if it's
   // actually available in this context (library/import are conditional).
   const tabAvailable = (tab) => {
-    if (tab === 'library') return typeof renderSlideLibraryPicker === 'function';
+    if (tab === 'library')
+      return typeof renderSlideLibraryPicker === 'function';
     if (tab === 'import') return !!(api && pres?.id);
     return tab === 'types';
   };
@@ -187,7 +188,10 @@ export function openSlideTypeModal({
       }
       return;
     }
-    if (activeTab === 'library' && typeof renderSlideLibraryPicker === 'function') {
+    if (
+      activeTab === 'library' &&
+      typeof renderSlideLibraryPicker === 'function'
+    ) {
       typesMount.hidden = true;
       libraryMount.hidden = false;
       importMount.hidden = true;
@@ -221,8 +225,10 @@ export function openSlideTypeModal({
 
     const updateActiveStates = () => {
       btnTypes.classList.toggle('is-active', activeTab === 'types');
-      if (btnLibrary) btnLibrary.classList.toggle('is-active', activeTab === 'library');
-      if (btnImport) btnImport.classList.toggle('is-active', activeTab === 'import');
+      if (btnLibrary)
+        btnLibrary.classList.toggle('is-active', activeTab === 'library');
+      if (btnImport)
+        btnImport.classList.toggle('is-active', activeTab === 'import');
     };
 
     const selectTab = (tab) => {
@@ -234,7 +240,8 @@ export function openSlideTypeModal({
     // Expose library-tab switching to the types picker's "See all" affordance.
     // An optional shelf ('personal' | 'organization') routes straight to that shelf.
     selectLibraryTab = (shelf) => {
-      if (shelf === 'personal' || shelf === 'organization') pendingLibraryShelf = shelf;
+      if (shelf === 'personal' || shelf === 'organization')
+        pendingLibraryShelf = shelf;
       selectTab('library');
     };
 

@@ -11,9 +11,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const { createDeckReviewOpeners } = await import(
-  '../client/views/editor/deck-review-openers.js'
-);
+const { createDeckReviewOpeners } =
+  await import('../client/views/editor/deck-review-openers.js');
 
 function setup(pres) {
   const calls = { selected: [], rerenders: [] };
@@ -71,7 +70,7 @@ test('jumpToSlide selects and repaints for a known slide', () => {
     assert.deepEqual(
       calls.rerenders,
       ['list', 'editor', 'preview'],
-      'repaints list, editor and preview'
+      'repaints list, editor and preview',
     );
     assert.equal(rafRan, true, 'schedules the scroll-into-view frame');
   } finally {

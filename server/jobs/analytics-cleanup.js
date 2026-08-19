@@ -9,9 +9,15 @@
  * `server/storage/settings.js`.
  */
 
-import { deleteOldViewSessions, anonymizeOldIpAddresses } from '../storage/analytics/view-sessions.js';
+import {
+  deleteOldViewSessions,
+  anonymizeOldIpAddresses,
+} from '../storage/analytics/view-sessions.js';
 import { deleteOldSlideViews } from '../storage/analytics/slide-views.js';
-import { anonymizeExpiredLeads, anonymizeOldLeadIpAddresses } from '../storage/leads.js';
+import {
+  anonymizeExpiredLeads,
+  anonymizeOldLeadIpAddresses,
+} from '../storage/leads.js';
 import { getAnalyticsRetention } from '../storage/settings.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from '../utils/logger.js';
@@ -31,10 +37,14 @@ const log = createLogger('analytics-cleanup');
  */
 async function runAnalyticsCleanup(overrides = {}) {
   const retention = await getAnalyticsRetention(
-    crossOrganizationScope(null, 'analytics retention job: instance-wide cleanup')
+    crossOrganizationScope(
+      null,
+      'analytics retention job: instance-wide cleanup',
+    ),
   );
   const retentionDays = overrides.retentionDays ?? retention.sessionDataDays;
-  const ipAnonymizationDays = overrides.ipAnonymizationDays ?? retention.ipAnonymizationDays;
+  const ipAnonymizationDays =
+    overrides.ipAnonymizationDays ?? retention.ipAnonymizationDays;
 
   // Calculate cutoff dates
   const deletionCutoff = new Date();
@@ -119,9 +129,13 @@ if (process.argv[1]?.endsWith('analytics-cleanup.js')) {
   // No args: retention comes from instance settings (env-seeded defaults).
   runAnalyticsCleanup()
     .then((result) => {
-      console.log(`Deleted ${result.deletedSessions} sessions and ${result.deletedSlideViews} slide views`);
+      console.log(
+        `Deleted ${result.deletedSessions} sessions and ${result.deletedSlideViews} slide views`,
+      );
       console.log(`Anonymized ${result.anonymizedIps} IP addresses`);
-      console.log(`Anonymized ${result.anonymizedLeads} expired leads and ${result.anonymizedLeadIps} lead IP addresses`);
+      console.log(
+        `Anonymized ${result.anonymizedLeads} expired leads and ${result.anonymizedLeadIps} lead IP addresses`,
+      );
       process.exit(0);
     })
     .catch((err) => {

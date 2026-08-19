@@ -13,29 +13,40 @@ import { HEADER_GHOSTS, HEADER_TEXT } from '../../inline-edit-common.js';
 
 /** @type {Object} InlineDescriptor for gallery-slide. */
 export const inlineEdit = {
-    ghosts: HEADER_GHOSTS,
-    itemGhosts: [
-      { list: 'images', field: 'caption', item: '.gallery-item', pos: 'append', chip: 'bottom-start' },
-    ],
-    cards: { field: 'images', container: '.gallery-container', itemSelector: '.gallery-item' },
-    // Clicking a gallery image opens the media popover (image + alt); caption is
-    // inline-editable via the item ghost above.
-    media: {
+  ghosts: HEADER_GHOSTS,
+  itemGhosts: [
+    {
       list: 'images',
-      photoSelector: '.gallery-image[data-inline-photo], .gallery-image-placeholder[data-inline-photo]',
-      imageField: 'src',
-      altField: 'alt',
+      field: 'caption',
+      item: '.gallery-item',
+      pos: 'append',
+      chip: 'bottom-start',
     },
-    // Focal point per gallery image. Gallery tiles always crop (cover), so the
-    // handle is always available on a filled image.
-    focus: {
-      xField: 'focusX',
-      yField: 'focusY',
-      cropMode: () => 'cover',
-    },
-    // images stays: the per-image cards also carry focus-point controls.
-    formText: HEADER_TEXT,
-  };
+  ],
+  cards: {
+    field: 'images',
+    container: '.gallery-container',
+    itemSelector: '.gallery-item',
+  },
+  // Clicking a gallery image opens the media popover (image + alt); caption is
+  // inline-editable via the item ghost above.
+  media: {
+    list: 'images',
+    photoSelector:
+      '.gallery-image[data-inline-photo], .gallery-image-placeholder[data-inline-photo]',
+    imageField: 'src',
+    altField: 'alt',
+  },
+  // Focal point per gallery image. Gallery tiles always crop (cover), so the
+  // handle is always available on a filled image.
+  focus: {
+    xField: 'focusX',
+    yField: 'focusY',
+    cropMode: () => 'cover',
+  },
+  // images stays: the per-image cards also carry focus-point controls.
+  formText: HEADER_TEXT,
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the

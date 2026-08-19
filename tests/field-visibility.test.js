@@ -29,7 +29,7 @@ test('an unset driving field falls back to the type default', () => {
   // Empty string counts as unset — the '' convention for cleared fields.
   assert.equal(
     isFieldVisible(showValues, { chartType: '' }, { chartType: 'bar' }),
-    true
+    true,
   );
 });
 
@@ -50,7 +50,7 @@ test('malformed declarations degrade to visible, never to hidden', () => {
     assert.equal(
       isFieldVisible({ key: 'x', visibleWhen }, { chartType: 'pie' }),
       true,
-      `expected visible for ${JSON.stringify(visibleWhen)}`
+      `expected visible for ${JSON.stringify(visibleWhen)}`,
     );
   }
 });

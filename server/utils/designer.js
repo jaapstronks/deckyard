@@ -4,7 +4,10 @@
  * membership flags, role, and organization settings.
  */
 
-import { getMembershipByEmail, hasDesignerCapability } from '../storage/user-organizations/index.js';
+import {
+  getMembershipByEmail,
+  hasDesignerCapability,
+} from '../storage/user-organizations/index.js';
 import { getOrganizationById } from '../storage/user-organizations/index.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { getOrgSettings } from './org-settings.js';
@@ -49,14 +52,18 @@ export async function resolveDesignerCapability(user) {
     // flag. Otherwise (single-organization member, dev bypass, sandbox) read it.
     const membership =
       user.organizationRole != null
-        ? { role: user.organizationRole, isDesigner: Boolean(user.organizationIsDesigner) }
+        ? {
+            role: user.organizationRole,
+            isDesigner: Boolean(user.organizationIsDesigner),
+          }
         : await getMembershipByEmail(user.email, orgId);
     if (!membership) return false;
 
     // Owners, explicit designers and plain members are decided by the membership
     // alone; only an admin without the flag depends on `adminsAreDesigners`, so
     // defer that organization read until it is the deciding factor.
-    const needsOrgSettings = membership.role === 'admin' && !membership.isDesigner;
+    const needsOrgSettings =
+      membership.role === 'admin' && !membership.isDesigner;
     const org = needsOrgSettings ? await getOrganizationById(orgId) : null;
 
     return hasDesignerCapability(membership, getOrgSettings(org));

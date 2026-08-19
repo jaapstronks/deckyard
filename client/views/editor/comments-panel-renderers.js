@@ -59,10 +59,13 @@ export function createCommentRenderers({
         text: filter.slideMissing
           ? t('comments.empty.noSlide', 'Select a slide to see its comments')
           : filter.attention === 'waiting'
-          ? t('comments.empty.waiting', 'Nothing waiting for you here')
-          : filter.status === 'resolved'
-            ? t('comments.empty.resolved', 'No resolved comments')
-            : t('comments.empty.none', 'No comments yet. Be the first to add one!'),
+            ? t('comments.empty.waiting', 'Nothing waiting for you here')
+            : filter.status === 'resolved'
+              ? t('comments.empty.resolved', 'No resolved comments')
+              : t(
+                  'comments.empty.none',
+                  'No comments yet. Be the first to add one!',
+                ),
       });
       listEl.append(emptyEl);
       return;
@@ -78,7 +81,10 @@ export function createCommentRenderers({
    * Render a comment thread (main comment + replies).
    */
   function renderCommentThread(comment) {
-    const threadEl = h('div', { class: 'comment-thread', 'data-comment-id': comment.id });
+    const threadEl = h('div', {
+      class: 'comment-thread',
+      'data-comment-id': comment.id,
+    });
     // Mail convention: someone else's unseen activity bolds the thread and
     // dots it. The server computes unreadForUser; guests never get the flag.
     if (comment.unreadForUser === true) threadEl.classList.add('is-unread');
@@ -104,7 +110,12 @@ export function createCommentRenderers({
     if (comment.slideId && !filter.slideId && getSlideNumber(comment.slideId)) {
       threadEl.classList.add('is-jumpable');
       threadEl.addEventListener('click', (e) => {
-        if (e.target.closest('button, a, textarea, input, select, .comment-reply-input')) return;
+        if (
+          e.target.closest(
+            'button, a, textarea, input, select, .comment-reply-input',
+          )
+        )
+          return;
         onJumpToSlide?.(comment.slideId);
       });
     }
@@ -116,10 +127,13 @@ export function createCommentRenderers({
    * Render a single comment.
    */
   function renderComment(comment, isReply, threadEl = null) {
-    const isAiSuggestion = comment.commentType === 'ai-suggestion'
-      || isAiAuthorEmail(comment.authorEmail, getAiEmail?.());
+    const isAiSuggestion =
+      comment.commentType === 'ai-suggestion' ||
+      isAiAuthorEmail(comment.authorEmail, getAiEmail?.());
     const isDismissed = comment.status === 'dismissed';
-    const hasProposedSlide = !!(comment.proposedSlide && comment.proposedSlide.type);
+    const hasProposedSlide = !!(
+      comment.proposedSlide && comment.proposedSlide.type
+    );
 
     const commentEl = h('div', {
       class: `comment-item ${isReply ? 'comment-reply' : ''} ${comment.status === 'resolved' || isDismissed ? 'comment-resolved' : ''} ${isAiSuggestion ? 'is-ai-suggestion' : ''}`,
@@ -129,7 +143,11 @@ export function createCommentRenderers({
     const headerEl = h('div', { class: 'comment-item-header' });
     const authorEl = h('span', {
       class: `comment-author ${isAiSuggestion ? 'comment-author-ai' : ''}`,
-      text: isAiSuggestion ? t('comments.aiAuthor', 'AI Assistant') : (comment.authorName || comment.authorEmail || t('comments.unknownAuthor', 'Unknown')),
+      text: isAiSuggestion
+        ? t('comments.aiAuthor', 'AI Assistant')
+        : comment.authorName ||
+          comment.authorEmail ||
+          t('comments.unknownAuthor', 'Unknown'),
     });
     const timeEl = h('span', {
       class: 'comment-time',
@@ -139,11 +157,13 @@ export function createCommentRenderers({
 
     // Unread dot on the thread header (top-level only)
     if (!isReply && comment.unreadForUser === true) {
-      headerEl.append(h('span', {
-        class: 'comment-unread-dot',
-        title: t('comments.unread', 'New activity'),
-        'aria-label': t('comments.unread', 'New activity'),
-      }));
+      headerEl.append(
+        h('span', {
+          class: 'comment-unread-dot',
+          title: t('comments.unread', 'New activity'),
+          'aria-label': t('comments.unread', 'New activity'),
+        }),
+      );
     }
 
     // Category badge for AI suggestions
@@ -163,7 +183,9 @@ export function createCommentRenderers({
           class: 'comment-slide-link',
           type: 'button',
           text: t('comments.slideLink', 'Slide {num}', { num: slideNum }),
-          title: t('comments.jumpToSlide', 'Jump to slide {num}', { num: slideNum }),
+          title: t('comments.jumpToSlide', 'Jump to slide {num}', {
+            num: slideNum,
+          }),
         });
         slideLink.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -295,7 +317,7 @@ export function createCommentRenderers({
     container.append(
       replyInput.el,
       createCommentLinkButton({ input: replyInput }),
-      submitBtn
+      submitBtn,
     );
     mentionAc = attachMentions?.(replyInput, container, { ephemeral: true });
     return container;

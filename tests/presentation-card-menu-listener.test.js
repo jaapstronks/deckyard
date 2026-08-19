@@ -14,9 +14,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 
-const dom = new JSDOM('<!doctype html><html><body><div id="app"></div></body></html>', {
-  url: 'http://localhost/app',
-});
+const dom = new JSDOM(
+  '<!doctype html><html><body><div id="app"></div></body></html>',
+  {
+    url: 'http://localhost/app',
+  },
+);
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 globalThis.location = dom.window.location;
@@ -44,7 +47,8 @@ document.removeEventListener = (type, fn, opts) => {
   return origRemove(type, fn, opts);
 };
 
-const { createCardRenderer } = await import('../client/views/list/presentation-card.js');
+const { createCardRenderer } =
+  await import('../client/views/list/presentation-card.js');
 
 function renderOneCard() {
   const { renderCard } = createCardRenderer({
@@ -68,7 +72,7 @@ test('rendering a card attaches no document click listener up front', () => {
   assert.equal(
     liveClickListeners,
     before,
-    'no document click listener until the menu is opened'
+    'no document click listener until the menu is opened',
   );
   card.remove();
 });
@@ -84,13 +88,25 @@ test('opening the menu attaches one listener; an outside click removes it', () =
 
   moreBtn.click();
   assert.equal(menu.classList.contains('is-open'), true, 'menu opens on click');
-  assert.equal(liveClickListeners, before + 1, 'exactly one document listener while open');
+  assert.equal(
+    liveClickListeners,
+    before + 1,
+    'exactly one document listener while open',
+  );
 
   // Outside click closes the menu and releases the listener.
   const outside = new dom.window.MouseEvent('click', { bubbles: true });
   document.body.dispatchEvent(outside);
-  assert.equal(menu.classList.contains('is-open'), false, 'menu closes on outside click');
-  assert.equal(liveClickListeners, before, 'listener removed on close — no leak');
+  assert.equal(
+    menu.classList.contains('is-open'),
+    false,
+    'menu closes on outside click',
+  );
+  assert.equal(
+    liveClickListeners,
+    before,
+    'listener removed on close — no leak',
+  );
 
   card.remove();
 });
@@ -104,7 +120,11 @@ test('toggling the menu closed with the button also releases the listener', () =
   moreBtn.click(); // open
   assert.equal(liveClickListeners, before + 1);
   moreBtn.click(); // toggle closed
-  assert.equal(liveClickListeners, before, 'closing via the button removes the listener');
+  assert.equal(
+    liveClickListeners,
+    before,
+    'closing via the button removes the listener',
+  );
 
   card.remove();
 });
@@ -112,5 +132,9 @@ test('toggling the menu closed with the button also releases the listener', () =
 test('many cards do not accumulate document click listeners', () => {
   const before = liveClickListeners;
   for (let i = 0; i < 25; i += 1) document.body.append(renderOneCard());
-  assert.equal(liveClickListeners, before, '25 rendered cards add zero standing listeners');
+  assert.equal(
+    liveClickListeners,
+    before,
+    '25 rendered cards add zero standing listeners',
+  );
 });

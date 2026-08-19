@@ -55,16 +55,20 @@ export function createStartCurtain({
       class: 'presenter-start-hint',
       text: t(
         'presenter.start.hint',
-        '←/→ to navigate · F for fullscreen · Esc to exit'
+        '←/→ to navigate · F for fullscreen · Esc to exit',
       ),
     }),
   ]);
 
-  const el = h('div', {
-    class: 'presenter-start-curtain',
-    role: 'dialog',
-    'aria-modal': 'true',
-  }, [card]);
+  const el = h(
+    'div',
+    {
+      class: 'presenter-start-curtain',
+      role: 'dialog',
+      'aria-modal': 'true',
+    },
+    [card],
+  );
 
   const dismiss = () => {
     if (dismissed) return;

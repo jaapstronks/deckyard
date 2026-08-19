@@ -27,7 +27,8 @@ import { ensureTitleSlideBackground } from '../shared/slide-types/types/title-sl
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const dirIdx = args.indexOf('--dir');
-const dataDir = dirIdx !== -1 ? resolve(args[dirIdx + 1]) : resolve('data/decks');
+const dataDir =
+  dirIdx !== -1 ? resolve(args[dirIdx + 1]) : resolve('data/decks');
 
 let totalDecks = 0;
 let modifiedDecks = 0;
@@ -92,7 +93,9 @@ async function walkDir(dir) {
   }
 }
 
-console.log(`${dryRun ? '[DRY RUN] ' : ''}Migrating title backgrounds in: ${dataDir}`);
+console.log(
+  `${dryRun ? '[DRY RUN] ' : ''}Migrating title backgrounds in: ${dataDir}`,
+);
 await walkDir(dataDir);
 console.log(`\nResults:`);
 console.log(`  Decks scanned:            ${totalDecks}`);

@@ -19,7 +19,8 @@ globalThis.Node = dom.window.Node;
 globalThis.Element = dom.window.Element;
 
 const { h } = await import('../client/lib/dom.js');
-const { renderCommentBodyNodes } = await import('../client/lib/comments/comment-body.js');
+const { renderCommentBodyNodes } =
+  await import('../client/lib/comments/comment-body.js');
 
 function render(body) {
   const el = document.createElement('div');
@@ -90,7 +91,11 @@ test('a mention and a link can sit in the same body', () => {
 test('an unsafe URL produces no anchor at all', () => {
   for (const url of ['javascript:alert(1)', 'data:text/html,x', 'vbscript:x']) {
     const el = render(`klik [hier](${url})`);
-    assert.equal(el.querySelectorAll('a').length, 0, `${url} must not become an anchor`);
+    assert.equal(
+      el.querySelectorAll('a').length,
+      0,
+      `${url} must not become an anchor`,
+    );
     // The raw markup stays readable, which is the harmless outcome.
     assert.ok(el.textContent.includes('[hier]'), `${url} should stay literal`);
   }

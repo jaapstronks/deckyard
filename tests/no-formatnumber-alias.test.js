@@ -61,10 +61,16 @@ test('the ambiguous formatNumber name stays retired', () => {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     const src = fs.readFileSync(file, 'utf8');
     if (/\bformatNumber\b/.test(src)) {
-      violations.push(`${rel}: uses 'formatNumber' — split into formatCount / formatCompact / formatDecimal`);
+      violations.push(
+        `${rel}: uses 'formatNumber' — split into formatCount / formatCompact / formatDecimal`,
+      );
     }
   }
-  assert.equal(violations.length, 0, `formatNumber reintroduced:\n  ${violations.join('\n  ')}`);
+  assert.equal(
+    violations.length,
+    0,
+    `formatNumber reintroduced:\n  ${violations.join('\n  ')}`,
+  );
 });
 
 test('each number formatter has one definition, in its canonical module', () => {
@@ -74,10 +80,14 @@ test('each number formatter has one definition, in its canonical module', () => 
     const src = fs.readFileSync(file, 'utf8');
     for (const [name, owner] of Object.entries(OWNED)) {
       if (rel !== owner && definesName(src, name)) {
-        violations.push(`${rel}: redefines '${name}' — the only definition lives in ${owner}`);
+        violations.push(
+          `${rel}: redefines '${name}' — the only definition lives in ${owner}`,
+        );
       }
       if (new RegExp(`\\bas\\s+${name}\\b`).test(src)) {
-        violations.push(`${rel}: aliases something 'as ${name}' — that name has one canonical definition`);
+        violations.push(
+          `${rel}: aliases something 'as ${name}' — that name has one canonical definition`,
+        );
       }
     }
   }
@@ -85,5 +95,9 @@ test('each number formatter has one definition, in its canonical module', () => 
     const src = fs.readFileSync(path.join(repoRoot, owner), 'utf8');
     assert.ok(definesName(src, name), `${owner} must define ${name}`);
   }
-  assert.equal(violations.length, 0, `number formatter drift:\n  ${violations.join('\n  ')}`);
+  assert.equal(
+    violations.length,
+    0,
+    `number formatter drift:\n  ${violations.join('\n  ')}`,
+  );
 });

@@ -68,17 +68,20 @@ export function createBulkEditModal({
     body.append(formMount, previewStage);
     // Locked-slide banner: hidden unless the current slide is locked (author
     // lock or another editor holding the concurrent-edit lock).
-    const lockedNote = h('div', { class: 'bulk-edit-locked-note', hidden: true });
+    const lockedNote = h('div', {
+      class: 'bulk-edit-locked-note',
+      hidden: true,
+    });
     modal.append(
       h('div', {
         class: 'help bulk-edit-hint',
         text: t(
           'editor.bulkEdit.hint',
-          'The slide updates live while you type. Layout, background and accessibility stay in the side panel.'
+          'The slide updates live while you type. Layout, background and accessibility stay in the side panel.',
         ),
       }),
       lockedNote,
-      body
+      body,
     );
 
     // ---- Prev/next nav in the modal header ----
@@ -129,10 +132,14 @@ export function createBulkEditModal({
         modal.close();
         return;
       }
-      counter.textContent = t('editor.bulkEdit.counter', 'Slide {n} of {total}', {
-        n: String(idx + 1),
-        total: String(pres.slides.length),
-      });
+      counter.textContent = t(
+        'editor.bulkEdit.counter',
+        'Slide {n} of {total}',
+        {
+          n: String(idx + 1),
+          total: String(pres.slides.length),
+        },
+      );
       prevBtn.disabled = idx <= 0;
       nextBtn.disabled = idx >= pres.slides.length - 1;
       // Mirror the panel's locked-slide state: the shell-scoped CSS gating
@@ -142,9 +149,15 @@ export function createBulkEditModal({
       lockedNote.hidden = !lockKind;
       lockedNote.textContent =
         lockKind === 'author'
-          ? t('editor.authorLocked.banner', 'This slide is locked by the author')
+          ? t(
+              'editor.authorLocked.banner',
+              'This slide is locked by the author',
+            )
           : lockKind
-            ? t('editor.slideLocked.banner', 'This slide is being edited by someone else')
+            ? t(
+                'editor.slideLocked.banner',
+                'This slide is being edited by someone else',
+              )
             : '';
       rerenderForm();
       refreshPreview();

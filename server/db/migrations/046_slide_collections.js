@@ -17,10 +17,10 @@ export const up = async (db) => {
     .createTable('slide_collections')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade').notNull()
+      col.references('organizations.id').onDelete('cascade').notNull(),
     )
     .addColumn('owner_email', 'varchar(320)')
     .addColumn('scope', 'varchar(20)', (col) => col.notNull())
@@ -44,10 +44,10 @@ export const up = async (db) => {
     .createTable('slide_collection_items')
     .ifNotExists()
     .addColumn('collection_id', 'uuid', (col) =>
-      col.references('slide_collections.id').onDelete('cascade').notNull()
+      col.references('slide_collections.id').onDelete('cascade').notNull(),
     )
     .addColumn('slide_library_id', 'uuid', (col) =>
-      col.references('slide_library.id').onDelete('cascade').notNull()
+      col.references('slide_library.id').onDelete('cascade').notNull(),
     )
     .addColumn('position', 'integer', (col) => col.notNull().defaultTo(0))
     .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
@@ -73,6 +73,9 @@ export const down = async (db) => {
     .ifExists()
     .execute();
   await db.schema.dropTable('slide_collection_items').ifExists().execute();
-  await db.schema.dropIndex('idx_slide_collections_org_scope').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_slide_collections_org_scope')
+    .ifExists()
+    .execute();
   await db.schema.dropTable('slide_collections').ifExists().execute();
 };

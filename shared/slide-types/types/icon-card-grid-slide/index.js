@@ -73,19 +73,55 @@ export default {
       minItems: 1,
       maxItems: 6,
       collapsible: true, // item-rich: per-card collapse in the editor
-      itemDefaults: { icon: 'lightbulb', title: 'Title', body: 'Description.', link: '' },
+      itemDefaults: {
+        icon: 'lightbulb',
+        title: 'Title',
+        body: 'Description.',
+        link: '',
+      },
       itemDefaultsByLang: {
-        nl: { icon: 'lightbulb', title: 'Titel', body: 'Omschrijving.', link: '' },
+        nl: {
+          icon: 'lightbulb',
+          title: 'Titel',
+          body: 'Omschrijving.',
+          link: '',
+        },
       },
       itemFields: [
         // `editor:` marks the widget exception beyond string/image (icon
         // picker); the closed vocabulary lands in editor-behaviour step 4.
-        { key: 'icon', label: 'Icon', type: 'string', required: false, maxLength: 40, editor: 'icon-picker' },
-        { key: 'title', label: 'Title', type: 'string', required: false, maxLength: 80 },
-        { key: 'body', label: 'Body', type: 'markdown', required: false, maxLength: 700 },
+        {
+          key: 'icon',
+          label: 'Icon',
+          type: 'string',
+          required: false,
+          maxLength: 40,
+          editor: 'icon-picker',
+        },
+        {
+          key: 'title',
+          label: 'Title',
+          type: 'string',
+          required: false,
+          maxLength: 80,
+        },
+        {
+          key: 'body',
+          label: 'Body',
+          type: 'markdown',
+          required: false,
+          maxLength: 700,
+        },
         // Optional: makes the whole card clickable. `#N` jumps to slide N in the
         // deck (presenter only); an http(s)/mailto URL opens in a new tab.
-        { key: 'link', label: 'Link URL', type: 'string', required: false, maxLength: 500, editor: 'card-link' },
+        {
+          key: 'link',
+          label: 'Link URL',
+          type: 'string',
+          required: false,
+          maxLength: 500,
+          editor: 'card-link',
+        },
       ],
     },
 

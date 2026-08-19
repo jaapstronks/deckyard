@@ -14,19 +14,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 
-const dom = new JSDOM('<!doctype html><html><body><div id="app"></div></body></html>', {
-  url: 'http://localhost/app/test-id',
-});
+const dom = new JSDOM(
+  '<!doctype html><html><body><div id="app"></div></body></html>',
+  {
+    url: 'http://localhost/app/test-id',
+  },
+);
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 globalThis.location = dom.window.location;
 
-const { showEditorLoadingSkeleton, hideEditorLoadingSkeleton } = await import(
-  '../client/views/editor/loading-skeleton.js'
-);
-const { loadEditorModel } = await import(
-  '../client/views/editor/load-editor-model.js'
-);
+const { showEditorLoadingSkeleton, hideEditorLoadingSkeleton } =
+  await import('../client/views/editor/loading-skeleton.js');
+const { loadEditorModel } =
+  await import('../client/views/editor/load-editor-model.js');
 
 test('skeleton mounts the editor layout classes and removes cleanly', () => {
   const root = document.getElementById('app');
@@ -46,7 +47,7 @@ test('skeleton mounts the editor layout classes and removes cleanly', () => {
   assert.equal(
     root.querySelectorAll('.editor-loading-skeleton').length,
     1,
-    'no duplicate skeletons'
+    'no duplicate skeletons',
   );
 
   hide();
@@ -85,7 +86,7 @@ test('loadEditorModel skips the presentation fetch when initialPres is given', a
   assert.equal(model.pres, initialPres, 'returns the given presentation');
   assert.ok(
     !calls.some((p) => p.startsWith('/api/presentations/test-id')),
-    'no duplicate presentation fetch'
+    'no duplicate presentation fetch',
   );
 });
 
@@ -107,6 +108,6 @@ test('loadEditorModel still fetches when initialPres is absent', async () => {
 
   assert.ok(
     calls.some((p) => p.startsWith('/api/presentations/test-id')),
-    'fetches the presentation itself'
+    'fetches the presentation itself',
   );
 });

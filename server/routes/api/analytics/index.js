@@ -10,7 +10,13 @@ import {
 } from '../../../analytics/helpers.js';
 import { AUTH_RATE_LIMITS } from '../../../config/rate-limits.js';
 import { handleDashboard, handlePresentationsList } from './dashboard.js';
-import { handleOverview, handleSlides, handleHeatmap, handleJourney, handleSessions } from './metrics.js';
+import {
+  handleOverview,
+  handleSlides,
+  handleHeatmap,
+  handleJourney,
+  handleSessions,
+} from './metrics.js';
 import { handleRealtime } from './realtime.js';
 import {
   handleListReports,
@@ -43,28 +49,93 @@ import { rateLimited, withErrorHandler } from '../../../utils/http.js';
  */
 export const ROUTES = [
   // Combined dashboard endpoints
-  { method: 'GET', pattern: '/api/analytics/dashboard', handler: handleDashboard },
-  { method: 'GET', pattern: '/api/analytics/presentations', handler: handlePresentationsList },
+  {
+    method: 'GET',
+    pattern: '/api/analytics/dashboard',
+    handler: handleDashboard,
+  },
+  {
+    method: 'GET',
+    pattern: '/api/analytics/presentations',
+    handler: handlePresentationsList,
+  },
 
   // Presentation-specific analytics endpoints
-  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/analytics$/, handler: handleOverview },
-  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/slides$/, handler: handleSlides },
-  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/heatmap$/, handler: handleHeatmap },
-  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/journey$/, handler: handleJourney },
-  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/sessions$/, handler: handleSessions },
-  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/realtime$/, handler: handleRealtime },
+  {
+    method: 'GET',
+    pattern: /^\/api\/presentations\/([^/]+)\/analytics$/,
+    handler: handleOverview,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/presentations\/([^/]+)\/analytics\/slides$/,
+    handler: handleSlides,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/presentations\/([^/]+)\/analytics\/heatmap$/,
+    handler: handleHeatmap,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/presentations\/([^/]+)\/analytics\/journey$/,
+    handler: handleJourney,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/presentations\/([^/]+)\/analytics\/sessions$/,
+    handler: handleSessions,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/presentations\/([^/]+)\/analytics\/realtime$/,
+    handler: handleRealtime,
+  },
 
   // Report CRUD endpoints
-  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports$/, handler: handleListReports },
-  { method: 'POST', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports$/, handler: handleCreateReport },
-  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)$/, handler: handleGetReport },
-  { method: 'PATCH', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)$/, handler: handleUpdateReport },
-  { method: 'DELETE', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)$/, handler: handleDeleteReport },
-  { method: 'POST', pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)\/regenerate-token$/, handler: handleRegenerateToken },
+  {
+    method: 'GET',
+    pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports$/,
+    handler: handleListReports,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports$/,
+    handler: handleCreateReport,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)$/,
+    handler: handleGetReport,
+  },
+  {
+    method: 'PATCH',
+    pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)$/,
+    handler: handleUpdateReport,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)$/,
+    handler: handleDeleteReport,
+  },
+  {
+    method: 'POST',
+    pattern:
+      /^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)\/regenerate-token$/,
+    handler: handleRegenerateToken,
+  },
 
   // GDPR data access endpoints
-  { method: 'GET', pattern: '/api/analytics/my-data', handler: handleExportMyData },
-  { method: 'DELETE', pattern: '/api/analytics/my-data', handler: handleDeleteMyData },
+  {
+    method: 'GET',
+    pattern: '/api/analytics/my-data',
+    handler: handleExportMyData,
+  },
+  {
+    method: 'DELETE',
+    pattern: '/api/analytics/my-data',
+    handler: handleDeleteMyData,
+  },
 ];
 
 /**
@@ -79,7 +150,12 @@ export const handleAnalytics = withErrorHandler('analytics', async (ctx) => {
   // every request that reaches the module (there is no prefix guard), exactly
   // as the original chain did before its first path compare.
   const rateLimitKey = authedUser?.email || authedUser?.id || getClientIp(req);
-  if (!(await allowRequest(`analytics:auth:${rateLimitKey}`, AUTH_RATE_LIMITS.standard))) {
+  if (
+    !(await allowRequest(
+      `analytics:auth:${rateLimitKey}`,
+      AUTH_RATE_LIMITS.standard,
+    ))
+  ) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
       endpoint: url.pathname,
       user: authedUser?.email,

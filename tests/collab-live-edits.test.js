@@ -25,21 +25,26 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { maybeAttachCollab, shutdownCollab } = await import('../server/collab/mount.js');
-const { createPresentation, getPresentation } = await import(
-  '../server/storage/presentations/index.js'
-);
-const { getYDocState } = await import('../server/storage/presentations/ydocs.js');
-const { createPresenceSession } = await import('../client/lib/collab/presence-session.js');
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { maybeAttachCollab, shutdownCollab } =
+  await import('../server/collab/mount.js');
+const { createPresentation, getPresentation } =
+  await import('../server/storage/presentations/index.js');
+const { getYDocState } =
+  await import('../server/storage/presentations/ydocs.js');
+const { createPresenceSession } =
+  await import('../client/lib/collab/presence-session.js');
 
 // The mount still takes a `repoRoot`; storage ignores it now that PostgreSQL
 // is the only backend.
 const REPO_ROOT = process.cwd();
 
-__setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+__setTestDb(
+  createFakeDb({
+    organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+  }),
+);
 await initializeStorage();
 
 // `closeStorage()` would call `db.destroy()`, which the in-memory double does
@@ -94,29 +99,46 @@ test('live edits: bootstrap, concurrent edits converge, JSON persists', async (t
   const docB = bob._provider.document;
 
   // Server-side bootstrap syncs to both clients.
-  await waitFor(() => docA.getMap('meta').get('extra') && docB.getMap('meta').get('extra'));
-  assert.equal(docA.getMap('meta').get('title').get('nl').toString(), 'Live edits deck');
+  await waitFor(
+    () => docA.getMap('meta').get('extra') && docB.getMap('meta').get('extra'),
+  );
+  assert.equal(
+    docA.getMap('meta').get('title').get('nl').toString(),
+    'Live edits deck',
+  );
 
   // Concurrent edits: Alice prepends to the deck title, Bob edits the first
   // slide's title text. Both must converge on both clients.
   const titleA = docA.getMap('meta').get('title').get('nl');
   titleA.insert(0, 'Onze ');
 
-  const slideTitleB = docB.getArray('slides').get(0).get('content').get('title').get('nl');
+  const slideTitleB = docB
+    .getArray('slides')
+    .get(0)
+    .get('content')
+    .get('title')
+    .get('nl');
   slideTitleB.delete(0, slideTitleB.length);
   slideTitleB.insert(0, 'Door Bob bewerkt');
 
   await waitFor(
     () =>
-      docB.getMap('meta').get('title').get('nl').toString() === 'Onze Live edits deck' &&
-      docA.getArray('slides').get(0).get('content').get('title').get('nl').toString() ===
-        'Door Bob bewerkt'
+      docB.getMap('meta').get('title').get('nl').toString() ===
+        'Onze Live edits deck' &&
+      docA
+        .getArray('slides')
+        .get(0)
+        .get('content')
+        .get('title')
+        .get('nl')
+        .toString() === 'Door Bob bewerkt',
   );
 
   // The debounced store (2s) serializes back to the deck JSON.
   const updated = await waitFor(async () => {
     const p = await getPresentation(testScope(), pres.id);
-    return p?.title === 'Onze Live edits deck' && p?.slides?.[0]?.content?.title === 'Door Bob bewerkt'
+    return p?.title === 'Onze Live edits deck' &&
+      p?.slides?.[0]?.content?.title === 'Door Bob bewerkt'
       ? p
       : null;
   });

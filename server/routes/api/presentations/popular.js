@@ -15,14 +15,21 @@ import { getCollaboratorPermission } from '../../../storage/collaborators.js';
  * Returns presentations that are organization-visible or published,
  * sorted by recent activity (views, updates).
  */
-export async function handlePopularPresentations({ storageScope, res, authedUser }) {
+export async function handlePopularPresentations({
+  storageScope,
+  res,
+  authedUser,
+}) {
   if (!authedUser) {
     return unauthorized(res);
   }
 
   // The organization comes from the request's storage scope, so this list stays
   // inside the organization the session is working in.
-  const ctx = { user: authedUser, organizationId: storageScope?.organizationId };
+  const ctx = {
+    user: authedUser,
+    organizationId: storageScope?.organizationId,
+  };
   const presentations = await getPopularPresentations(ctx);
 
   serveJson(res, 200, presentations);
@@ -43,7 +50,9 @@ export async function getPopularPresentations(ctx) {
 
     // Get presentations with recent activity (last 30 days)
     // Prioritize presentations with more recent activity
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const thirtyDaysAgo = new Date(
+      Date.now() - 30 * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
     // Query: Find presentations with activity events, sorted by most recent
     // Filter to organization visibility OR published presentations
@@ -53,7 +62,7 @@ export async function getPopularPresentations(ctx) {
         join
           .onRef('ae.presentation_id', '=', 'p.id')
           .on('ae.organization_id', '=', orgId)
-          .on('ae.created_at', '>=', thirtyDaysAgo)
+          .on('ae.created_at', '>=', thirtyDaysAgo),
       )
       .leftJoin('published_presentations as pub', 'pub.presentation_id', 'p.id')
       .select([
@@ -76,7 +85,7 @@ export async function getPopularPresentations(ctx) {
         eb.or([
           eb('p.visibility', '=', 'organization'),
           eb('pub.id', 'is not', null),
-        ])
+        ]),
       )
       .groupBy([
         'p.id',
@@ -99,7 +108,11 @@ export async function getPopularPresentations(ctx) {
     if (rows.length === 0) {
       const fallbackRows = await db
         .selectFrom('presentations as p')
-        .leftJoin('published_presentations as pub', 'pub.presentation_id', 'p.id')
+        .leftJoin(
+          'published_presentations as pub',
+          'pub.presentation_id',
+          'p.id',
+        )
         .select([
           'p.id',
           'p.title',
@@ -118,13 +131,16 @@ export async function getPopularPresentations(ctx) {
           eb.or([
             eb('p.visibility', '=', 'organization'),
             eb('pub.id', 'is not', null),
-          ])
+          ]),
         )
         .orderBy('p.modified_at', 'desc')
         .limit(10)
         .execute();
 
-      return formatPresentations(await filterReadableRows(fallbackRows, ctx), ctx);
+      return formatPresentations(
+        await filterReadableRows(fallbackRows, ctx),
+        ctx,
+      );
     }
 
     return formatPresentations(await filterReadableRows(rows, ctx), ctx);
@@ -158,7 +174,10 @@ async function filterReadableRows(rows, ctx) {
       continue;
     }
     try {
-      collaboratorPermission = await getCollaboratorPermission(row.id, user?.email);
+      collaboratorPermission = await getCollaboratorPermission(
+        row.id,
+        user?.email,
+      );
     } catch {
       collaboratorPermission = null;
     }

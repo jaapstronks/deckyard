@@ -140,8 +140,9 @@ export function validatePresentationSize(presentation, options = {}) {
     stats: {
       slideCount,
       totalSlideCount,
-      sizeBytes: options.skipSizeCheck ? undefined : estimatePresentationSize(presentation),
+      sizeBytes: options.skipSizeCheck
+        ? undefined
+        : estimatePresentationSize(presentation),
     },
   };
 }
-

@@ -21,7 +21,9 @@ export function createColorFields({ h } = {}) {
    * Returns normalized 6-character hex with # prefix, or empty string if invalid.
    */
   function normalizeHex(raw) {
-    const s = String(raw || '').trim().toLowerCase();
+    const s = String(raw || '')
+      .trim()
+      .toLowerCase();
     if (!s) return '';
 
     // Remove # prefix if present

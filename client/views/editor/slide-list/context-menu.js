@@ -68,7 +68,7 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx }) {
 
   const menu = h('div', { class: 'slide-context-menu', role: 'menu' });
 
-  const count = ids instanceof Set ? ids.size : (ids?.length || 0);
+  const count = ids instanceof Set ? ids.size : ids?.length || 0;
 
   const addItem = ({ label, danger = false, onClick }) =>
     h('button', {
@@ -106,7 +106,11 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx }) {
   // end sends it to the end. "Move to end" is the one-click shortcut.
   const slides = ctx.pres?.slides || [];
   const total = slides.length;
-  if (count <= 1 && total > 1 && typeof ctx.moveSlideToPosition === 'function') {
+  if (
+    count <= 1 &&
+    total > 1 &&
+    typeof ctx.moveSlideToPosition === 'function'
+  ) {
     const curIdx = slides.findIndex((s) => s.id === slide?.id);
     const curPos = curIdx >= 0 ? curIdx + 1 : total;
 
@@ -124,7 +128,7 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx }) {
           title: t('editor.slide.moveTo', 'Move to position…'),
           message: t(
             'editor.slide.moveToHint',
-            'Enter a slide number (1–{total}). A higher number moves it to the end.'
+            'Enter a slide number (1–{total}). A higher number moves it to the end.',
           ).replace('{total}', String(total)),
           value: String(curPos),
           placeholder: String(total),
@@ -133,14 +137,17 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx }) {
             if (!Number.isInteger(n) || n < 1) {
               return t(
                 'editor.slide.moveToInvalid',
-                'Enter a whole number of 1 or more.'
+                'Enter a whole number of 1 or more.',
               );
             }
             return null;
           },
         });
         if (answer == null) return;
-        ctx.moveSlideToPosition?.({ fromId: slide?.id, position: Number(answer) });
+        ctx.moveSlideToPosition?.({
+          fromId: slide?.id,
+          position: Number(answer),
+        });
         reselect();
       },
     });
@@ -158,14 +165,16 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx }) {
     menu.append(
       h('div', { class: 'slide-context-menu-sep', role: 'separator' }),
       moveToItem,
-      moveEndItem
+      moveEndItem,
     );
   }
 
   // Visibility only makes sense for a single slide (the one clicked); the
   // preset menu edits one slide at a time.
   if (count <= 1) {
-    menu.append(h('div', { class: 'slide-context-menu-sep', role: 'separator' }));
+    menu.append(
+      h('div', { class: 'slide-context-menu-sep', role: 'separator' }),
+    );
     const visItem = addItem({
       label: t('editor.slideList.visibility', 'Change visibility'),
       onClick: () => {

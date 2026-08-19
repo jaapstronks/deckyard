@@ -42,7 +42,8 @@ export function openBundledGradientPicker({
   title = t('stockMedia.gradients.title', 'Gradients'),
   onPick,
 } = {}) {
-  if (typeof h !== 'function') throw new Error('openBundledGradientPicker: h is required');
+  if (typeof h !== 'function')
+    throw new Error('openBundledGradientPicker: h is required');
   if (!root) throw new Error('openBundledGradientPicker: root is required');
 
   const unlockScroll = lockDocumentScroll();
@@ -55,12 +56,12 @@ export function openBundledGradientPicker({
       title,
       hint: t(
         'stockMedia.gradients.hint',
-        'Abstract backgrounds generated from the built-in themes. No attribution needed.'
+        'Abstract backgrounds generated from the built-in themes. No attribution needed.',
       ),
       modalClass: 'gradient-picker-modal',
       onClose: () => unlockScroll(),
     },
-    openOverlayClosers
+    openOverlayClosers,
   );
 
   const statusLine = h('div', { class: 'help ui-status-line' });
@@ -81,7 +82,7 @@ export function openBundledGradientPicker({
             renderFilters();
             renderGrid();
           },
-        })
+        }),
       );
     }
   };
@@ -103,13 +104,15 @@ export function openBundledGradientPicker({
 
   const renderGrid = () => {
     grid.innerHTML = '';
-    const items = (manifestCache || []).filter((it) => tone === 'all' || it.tone === tone);
+    const items = (manifestCache || []).filter(
+      (it) => tone === 'all' || it.tone === tone,
+    );
     if (!items.length) {
       grid.append(
         h('div', {
           class: 'stock-media-empty',
           text: t('stockMedia.gradients.empty', 'No gradients available.'),
-        })
+        }),
       );
       return;
     }
@@ -125,13 +128,23 @@ export function openBundledGradientPicker({
             onclick: () => pick(item),
           },
           [
-            h('img', { src: item.url, alt: '', loading: 'lazy', width: 320, height: 180 }),
+            h('img', {
+              src: item.url,
+              alt: '',
+              loading: 'lazy',
+              width: 320,
+              height: 180,
+            }),
             h('span', { class: 'gradient-picker-label', text: item.label }),
-          ]
-        )
+          ],
+        ),
       );
     }
-    statusLine.textContent = t('stockMedia.gradients.count', '{count} gradients', { count: items.length });
+    statusLine.textContent = t(
+      'stockMedia.gradients.count',
+      '{count} gradients',
+      { count: items.length },
+    );
   };
 
   modalApi.append(statusLine, filterBar, grid);
@@ -142,12 +155,18 @@ export function openBundledGradientPicker({
       renderGrid();
       return;
     }
-    statusLine.textContent = t('stockMedia.gradients.loading', 'Loading gradients...');
+    statusLine.textContent = t(
+      'stockMedia.gradients.loading',
+      'Loading gradients...',
+    );
     try {
       manifestCache = await fetchBundledGradients();
       renderGrid();
     } catch {
-      statusLine.textContent = t('stockMedia.gradients.loadFailed', 'Could not load the gradient library.');
+      statusLine.textContent = t(
+        'stockMedia.gradients.loadFailed',
+        'Could not load the gradient library.',
+      );
     }
   };
   load();

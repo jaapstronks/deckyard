@@ -72,10 +72,14 @@ test('each time/date/duration formatter has one definition, in its canonical mod
     const src = fs.readFileSync(file, 'utf8');
     for (const [name, owner] of Object.entries(OWNED)) {
       if (rel !== owner && definesName(src, name)) {
-        violations.push(`${rel}: redefines '${name}' — the only definition lives in ${owner}`);
+        violations.push(
+          `${rel}: redefines '${name}' — the only definition lives in ${owner}`,
+        );
       }
       if (new RegExp(`\\bas\\s+${name}\\b`).test(src)) {
-        violations.push(`${rel}: aliases something 'as ${name}' — that name has one canonical definition`);
+        violations.push(
+          `${rel}: aliases something 'as ${name}' — that name has one canonical definition`,
+        );
       }
     }
   }
@@ -85,7 +89,11 @@ test('each time/date/duration formatter has one definition, in its canonical mod
     const src = fs.readFileSync(path.join(repoRoot, owner), 'utf8');
     assert.ok(definesName(src, name), `${owner} must define ${name}`);
   }
-  assert.equal(violations.length, 0, `time/date/duration formatter drift:\n  ${violations.join('\n  ')}`);
+  assert.equal(
+    violations.length,
+    0,
+    `time/date/duration formatter drift:\n  ${violations.join('\n  ')}`,
+  );
 });
 
 test('the retired fmt* formatter spellings stay gone', () => {
@@ -95,9 +103,15 @@ test('the retired fmt* formatter spellings stay gone', () => {
     const src = fs.readFileSync(file, 'utf8');
     for (const name of RETIRED) {
       if (new RegExp(`\\b${name}\\b`).test(src)) {
-        violations.push(`${rel}: uses retired '${name}' — the format* spelling is canonical`);
+        violations.push(
+          `${rel}: uses retired '${name}' — the format* spelling is canonical`,
+        );
       }
     }
   }
-  assert.equal(violations.length, 0, `retired fmt* spelling reintroduced:\n  ${violations.join('\n  ')}`);
+  assert.equal(
+    violations.length,
+    0,
+    `retired fmt* spelling reintroduced:\n  ${violations.join('\n  ')}`,
+  );
 });

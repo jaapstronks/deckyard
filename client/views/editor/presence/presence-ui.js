@@ -85,7 +85,11 @@ export function createPresenceUI({
         }),
       });
       wrap.append(
-        createAvatar({ email: peer.user.email, name: peer.user.name, size: 'sm' })
+        createAvatar({
+          email: peer.user.email,
+          name: peer.user.name,
+          size: 'sm',
+        }),
       );
       stackEl.append(wrap);
     }
@@ -98,7 +102,7 @@ export function createPresenceUI({
             .slice(MAX_STACK_AVATARS)
             .map((p) => peerName(p))
             .join(', '),
-        })
+        }),
       );
     }
   }
@@ -141,7 +145,7 @@ export function createPresenceUI({
       const seen = new Set();
       for (const [slideId, slidePeers] of bySlide) {
         const item = listEl.querySelector(
-          `.slide-item[data-slide-id="${CSS.escape(slideId)}"]`
+          `.slide-item[data-slide-id="${CSS.escape(slideId)}"]`,
         );
         // Skip missing/hidden items (e.g. filtered out by slide search).
         if (!item || item.offsetParent === null) continue;
@@ -159,7 +163,7 @@ export function createPresenceUI({
             el = h('div', { class: 'collab-list-peer', 'aria-hidden': 'true' });
             el.append(
               h('span', { class: 'collab-list-peer-name' }),
-              h('span', { class: 'collab-slide-dot' })
+              h('span', { class: 'collab-slide-dot' }),
             );
             // Set the position before inserting so a new peer appears in
             // place instead of gliding in from the list origin.
@@ -168,11 +172,23 @@ export function createPresenceUI({
           }
           if (!el.isConnected) listEl.append(el);
           el.style.setProperty('--presence-color', peer.user.color);
-          el.querySelector('.collab-list-peer-name').textContent = peerName(peer);
-          el.querySelector('.collab-slide-dot').classList.toggle('is-editing', isEditing);
+          el.querySelector('.collab-list-peer-name').textContent =
+            peerName(peer);
+          el.querySelector('.collab-slide-dot').classList.toggle(
+            'is-editing',
+            isEditing,
+          );
           el.title = isEditing
-            ? t('editor.presence.editingSlide', '{name} is editing this slide', { name: peerName(peer) })
-            : t('editor.presence.viewingSlide', '{name} is viewing this slide', { name: peerName(peer) });
+            ? t(
+                'editor.presence.editingSlide',
+                '{name} is editing this slide',
+                { name: peerName(peer) },
+              )
+            : t(
+                'editor.presence.viewingSlide',
+                '{name} is viewing this slide',
+                { name: peerName(peer) },
+              );
           el.style.transform = transform;
           seen.add(peer.user.email);
         });
@@ -233,7 +249,9 @@ export function createPresenceUI({
     if (!thumb) return;
     applying = true;
     try {
-      for (const el of thumb.querySelectorAll('.collab-focus-ring, .collab-focus-label'))
+      for (const el of thumb.querySelectorAll(
+        '.collab-focus-ring, .collab-focus-label',
+      ))
         el.remove();
       for (const el of document.querySelectorAll('.collab-remote-focus')) {
         el.classList.remove('collab-remote-focus');
@@ -247,7 +265,8 @@ export function createPresenceUI({
       const fallbackEmails = new Set();
       for (const peer of peers) {
         const focus = peer.focus;
-        if (!focus || focus.slideId !== selectedId || !focus.fieldPath) continue;
+        if (!focus || focus.slideId !== selectedId || !focus.fieldPath)
+          continue;
 
         // Flat surfaces: mark every element bound to this field key (the
         // side-form wrapper, the notes textarea's block, a matching open
@@ -255,10 +274,11 @@ export function createPresenceUI({
         // decoration lands on their parent block.
         let matched = false;
         for (const bound of document.querySelectorAll(
-          `[data-collab-field-key="${CSS.escape(focus.fieldPath)}"]`
+          `[data-collab-field-key="${CSS.escape(focus.fieldPath)}"]`,
         )) {
           const target =
-            bound instanceof HTMLTextAreaElement || bound instanceof HTMLInputElement
+            bound instanceof HTMLTextAreaElement ||
+            bound instanceof HTMLInputElement
               ? bound.parentElement
               : bound;
           if (!target) continue;
@@ -277,7 +297,7 @@ export function createPresenceUI({
         }
 
         const el = thumb.querySelector(
-          `[data-inline-field="${CSS.escape(focus.fieldPath)}"]`
+          `[data-inline-field="${CSS.escape(focus.fieldPath)}"]`,
         );
         if (!el) {
           // The focused field has no local element yet — typically a field

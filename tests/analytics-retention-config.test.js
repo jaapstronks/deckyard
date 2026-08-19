@@ -18,7 +18,10 @@ const { defaultAppSettings } = await import('../server/storage/settings.js');
 describe('analytics retention config', () => {
   it('defaults to 90-day session data and 7-day IP anonymization', () => {
     const retention = defaultAppSettings().analytics.retention;
-    assert.deepEqual(retention, { sessionDataDays: 90, ipAnonymizationDays: 7 });
+    assert.deepEqual(retention, {
+      sessionDataDays: 90,
+      ipAnonymizationDays: 7,
+    });
   });
 
   it('seeds the defaults from env when the vars are set', () => {
@@ -28,7 +31,10 @@ describe('analytics retention config', () => {
     process.env.ANALYTICS_IP_ANONYMIZATION_DAYS = '14';
     try {
       const retention = defaultAppSettings().analytics.retention;
-      assert.deepEqual(retention, { sessionDataDays: 120, ipAnonymizationDays: 14 });
+      assert.deepEqual(retention, {
+        sessionDataDays: 120,
+        ipAnonymizationDays: 14,
+      });
     } finally {
       restore('ANALYTICS_RETENTION_DAYS', prevRetention);
       restore('ANALYTICS_IP_ANONYMIZATION_DAYS', prevIp);
@@ -39,7 +45,10 @@ describe('analytics retention config', () => {
     const prevIp = process.env.ANALYTICS_IP_ANONYMIZATION_DAYS;
     process.env.ANALYTICS_IP_ANONYMIZATION_DAYS = '9999'; // max is 90
     try {
-      assert.equal(defaultAppSettings().analytics.retention.ipAnonymizationDays, 90);
+      assert.equal(
+        defaultAppSettings().analytics.retention.ipAnonymizationDays,
+        90,
+      );
     } finally {
       restore('ANALYTICS_IP_ANONYMIZATION_DAYS', prevIp);
     }
@@ -49,7 +58,10 @@ describe('analytics retention config', () => {
     const prevRetention = process.env.ANALYTICS_RETENTION_DAYS;
     process.env.ANALYTICS_RETENTION_DAYS = 'not-a-number';
     try {
-      assert.equal(defaultAppSettings().analytics.retention.sessionDataDays, 90);
+      assert.equal(
+        defaultAppSettings().analytics.retention.sessionDataDays,
+        90,
+      );
     } finally {
       restore('ANALYTICS_RETENTION_DAYS', prevRetention);
     }

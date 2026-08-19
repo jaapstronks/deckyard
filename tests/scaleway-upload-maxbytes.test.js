@@ -14,7 +14,12 @@ import assert from 'node:assert';
 // Minimal SCW_* config so getScalewayConfig() resolves in the constructor.
 const SAVED = {};
 before(() => {
-  for (const k of ['SCW_ACCESS_KEY', 'SCW_SECRET_KEY', 'SCW_BUCKET', 'SCW_REGION']) {
+  for (const k of [
+    'SCW_ACCESS_KEY',
+    'SCW_SECRET_KEY',
+    'SCW_BUCKET',
+    'SCW_REGION',
+  ]) {
     SAVED[k] = process.env[k];
   }
   process.env.SCW_ACCESS_KEY = 'ak-test';
@@ -35,9 +40,15 @@ test('rejects a buffer over the caller-supplied maxBytes before uploading', asyn
   const provider = new ScalewayProvider();
   const buffer = Buffer.alloc(1024, 0x41); // 1KB
   await assert.rejects(
-    () => provider.uploadBuffer({ buffer, filename: 'big', contentType: 'image/png', maxBytes: 512 }),
+    () =>
+      provider.uploadBuffer({
+        buffer,
+        filename: 'big',
+        contentType: 'image/png',
+        maxBytes: 512,
+      }),
     /File too large/,
-    'a 1KB buffer must be refused under a 512-byte cap, without reaching S3'
+    'a 1KB buffer must be refused under a 512-byte cap, without reaching S3',
   );
 });
 
@@ -45,7 +56,12 @@ test('rejects a buffer over the 20MB default when no maxBytes is given', async (
   const provider = new ScalewayProvider();
   const buffer = Buffer.alloc(20 * 1024 * 1024 + 1, 0x41); // just over 20MB
   await assert.rejects(
-    () => provider.uploadBuffer({ buffer, filename: 'huge', contentType: 'image/png' }),
-    /File too large/
+    () =>
+      provider.uploadBuffer({
+        buffer,
+        filename: 'huge',
+        contentType: 'image/png',
+      }),
+    /File too large/,
   );
 });

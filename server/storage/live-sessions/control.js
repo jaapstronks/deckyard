@@ -1,4 +1,9 @@
-import { broadcast, getSessionSync, touchSessionSync, updateLiveSessionState } from './sse.js';
+import {
+  broadcast,
+  getSessionSync,
+  touchSessionSync,
+  updateLiveSessionState,
+} from './sse.js';
 import { getPresentation } from '../presentations/index.js';
 import { getOptionCountForSlide } from '../../utils/interaction-helpers.js';
 import { liveInteractionKind } from '../../../shared/slide-types/runtime.js';
@@ -7,7 +12,11 @@ import {
   ensureLikertInteractionForSlide,
 } from '../interactions.js';
 import { ensureFeedbackForSlide } from '../feedback.js';
-import { crossOrganizationScope, repoRootOf, toStorageContext } from '../scope.js';
+import {
+  crossOrganizationScope,
+  repoRootOf,
+  toStorageContext,
+} from '../scope.js';
 
 /**
  * Get slides array from presentation, respecting i18n active language
@@ -98,8 +107,11 @@ export async function sendLiveSessionControlCommand(scope, sessionId, cmd) {
   try {
     const presentationId = s.presentationId;
     const pres = await getPresentation(
-      crossOrganizationScope(repoRootOf(scope), 'live session control: the session id is the authorization'),
-      presentationId
+      crossOrganizationScope(
+        repoRootOf(scope),
+        'live session control: the session id is the authorization',
+      ),
+      presentationId,
     );
     if (pres) {
       const slides = getSlidesFromPresentation(pres);
@@ -110,7 +122,7 @@ export async function sendLiveSessionControlCommand(scope, sessionId, cmd) {
           currentIndex,
           action,
           slideCount,
-          cmd?.slideIndex
+          cmd?.slideIndex,
         );
         const slide = slides[newIndex];
         if (slide) {

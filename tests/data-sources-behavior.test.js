@@ -20,7 +20,10 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { refreshSlideData, fetchProviderData } from '../server/utils/data-source/index.js';
+import {
+  refreshSlideData,
+  fetchProviderData,
+} from '../server/utils/data-source/index.js';
 import { applyBindings } from '../server/utils/data-source/bindings.js';
 import { isAppError, ValidationError } from '../server/utils/errors.js';
 
@@ -28,11 +31,9 @@ import { isAppError, ValidationError } from '../server/utils/errors.js';
 // directly, no DNS lookup, and the stubbed fetch never actually connects.
 const PUBLIC_CSV_URL = 'http://203.0.114.1/data.csv';
 
-const CSV_TEXT = [
-  'Metric,Revenue,Note',
-  'Q1,100,strong',
-  'Q2,250,record',
-].join('\n');
+const CSV_TEXT = ['Metric,Revenue,Note', 'Q1,100,strong', 'Q2,250,record'].join(
+  '\n',
+);
 
 const originalFetch = globalThis.fetch;
 let fetchCalls;
@@ -50,7 +51,10 @@ function fakeResponse(body, { status = 200, contentType = 'text/plain' } = {}) {
   return {
     ok: status >= 200 && status < 300,
     status,
-    headers: { get: (k) => (String(k).toLowerCase() === 'content-type' ? contentType : null) },
+    headers: {
+      get: (k) =>
+        String(k).toLowerCase() === 'content-type' ? contentType : null,
+    },
     text: async () => text,
     json: async () => JSON.parse(text),
   };
@@ -90,7 +94,7 @@ describe('csv-url provider', () => {
           { target: 'title', source: 'A1' },
         ],
       }),
-      { title: 'stale', metrics: [{ label: 'old', value: '0' }] }
+      { title: 'stale', metrics: [{ label: 'old', value: '0' }] },
     );
 
     assert.equal(result.applied, 4);
@@ -99,11 +103,18 @@ describe('csv-url provider', () => {
     assert.equal(result.content.metrics[0].label, 'Q1');
     assert.equal(result.content.metrics[0].value, '100');
     assert.equal(result.content.metrics[1].value, '250');
-    assert.ok(!Number.isNaN(Date.parse(result.lastSync)), 'lastSync is a timestamp');
+    assert.ok(
+      !Number.isNaN(Date.parse(result.lastSync)),
+      'lastSync is a timestamp',
+    );
 
     assert.equal(fetchCalls.length, 1);
     assert.equal(fetchCalls[0].url, PUBLIC_CSV_URL);
-    assert.equal(fetchCalls[0].options.redirect, 'error', 'redirects must not be followed (SSRF)');
+    assert.equal(
+      fetchCalls[0].options.redirect,
+      'error',
+      'redirects must not be followed (SSRF)',
+    );
   });
 
   it('refresh does not mutate the current content object', async () => {
@@ -111,7 +122,7 @@ describe('csv-url provider', () => {
     const current = { title: 'stale' };
     const result = await refreshSlideData(
       csvDataSource({ bindings: [{ target: 'title', source: 'A1' }] }),
-      current
+      current,
     );
     assert.equal(current.title, 'stale', 'input untouched');
     assert.equal(result.content.title, 'Metric');
@@ -127,12 +138,18 @@ describe('csv-url provider', () => {
           { target: 'note', source: 'nonsense-key' }, // matches no format at all
         ],
       }),
-      {}
+      {},
     );
     assert.equal(result.content.title, 'Metric');
-    assert.equal(result.content.body, '', 'out-of-range named column maps to empty string');
+    assert.equal(
+      result.content.body,
+      '',
+      'out-of-range named column maps to empty string',
+    );
     assert.equal(result.applied, 2);
-    assert.deepEqual(result.errors, ['Source "nonsense-key" not found in fetched data']);
+    assert.deepEqual(result.errors, [
+      'Source "nonsense-key" not found in fetched data',
+    ]);
   });
 
   it('forwards custom headers but strips credential-bearing ones', async () => {
@@ -149,7 +166,7 @@ describe('csv-url provider', () => {
           },
         },
       }),
-      {}
+      {},
     );
     const sent = fetchCalls[0].options.headers;
     assert.equal(sent['X-Api-Key'], 'ok-to-send');
@@ -179,7 +196,11 @@ describe('csv-url SSRF guard (binding level)', () => {
   const refusals = [
     ['loopback', 'http://127.0.0.1/x.csv', /internal\/private/],
     ['private range', 'http://10.0.0.5/x.csv', /internal\/private/],
-    ['cloud metadata', 'http://169.254.169.254/latest/meta-data', /internal\/private/],
+    [
+      'cloud metadata',
+      'http://169.254.169.254/latest/meta-data',
+      /internal\/private/,
+    ],
     ['IPv6 loopback', 'http://[::1]/x.csv', /internal\/private/],
     ['non-http scheme', 'file:///etc/passwd', /must use HTTP or HTTPS/],
     ['garbage', 'not a url at all', /Invalid CSV URL/],
@@ -199,7 +220,7 @@ describe('csv-url SSRF guard (binding level)', () => {
           assert.equal(err.statusCode, 502);
           assert.match(err.message, message);
           return true;
-        }
+        },
       );
       assert.equal(fetchCalls.length, 0, 'no network request was made');
     });
@@ -225,8 +246,8 @@ describe('notion-database provider', () => {
             },
           ],
         },
-        { contentType: 'application/json' }
-      )
+        { contentType: 'application/json' },
+      ),
     );
 
     const result = await refreshSlideData(
@@ -241,17 +262,26 @@ describe('notion-database provider', () => {
         ],
         refresh: { mode: 'manual' },
       },
-      {}
+      {},
     );
 
     assert.equal(result.content.metrics[0].label, 'Q1 revenue');
-    assert.equal(result.content.metrics[0].value, '1250', 'numbers arrive as strings');
+    assert.equal(
+      result.content.metrics[0].value,
+      '1250',
+      'numbers arrive as strings',
+    );
     assert.equal(result.content.metrics[0].note, 'Final');
     assert.equal(result.applied, 3);
-    assert.deepEqual(result.errors, ['Source "row[9].Revenue" not found in fetched data']);
+    assert.deepEqual(result.errors, [
+      'Source "row[9].Revenue" not found in fetched data',
+    ]);
 
     assert.equal(fetchCalls.length, 1);
-    assert.match(fetchCalls[0].url, /^https:\/\/api\.notion\.com\/v1\/databases\/db-123\/query$/);
+    assert.match(
+      fetchCalls[0].url,
+      /^https:\/\/api\.notion\.com\/v1\/databases\/db-123\/query$/,
+    );
     assert.equal(fetchCalls[0].options.method, 'POST');
   });
 
@@ -269,9 +299,9 @@ describe('notion-database provider', () => {
             bindings: [{ target: 'title', source: 'row[0].Name' }],
             refresh: { mode: 'manual' },
           },
-          {}
+          {},
         ),
-      (err) => isAppError(err) && err.statusCode === 501
+      (err) => isAppError(err) && err.statusCode === 501,
     );
     assert.equal(fetchCalls.length, 0);
   });
@@ -284,14 +314,22 @@ describe('notion-block provider', () => {
       fakeResponse(
         {
           results: [
-            { id: 'b1', type: 'heading_1', heading_1: { rich_text: [{ plain_text: 'The plan' }] } },
-            { id: 'b2', type: 'paragraph', paragraph: { rich_text: [{ plain_text: 'Ship it.' }] } },
+            {
+              id: 'b1',
+              type: 'heading_1',
+              heading_1: { rich_text: [{ plain_text: 'The plan' }] },
+            },
+            {
+              id: 'b2',
+              type: 'paragraph',
+              paragraph: { rich_text: [{ plain_text: 'Ship it.' }] },
+            },
             { id: 'b3', type: 'divider', divider: {} }, // no text → skipped
           ],
           has_more: false,
         },
-        { contentType: 'application/json' }
-      )
+        { contentType: 'application/json' },
+      ),
     );
 
     const result = await refreshSlideData(
@@ -305,7 +343,7 @@ describe('notion-block provider', () => {
         ],
         refresh: { mode: 'manual' },
       },
-      {}
+      {},
     );
 
     assert.equal(result.content.title, 'The plan');
@@ -326,8 +364,11 @@ describe('refreshSlideData dispatcher', () => {
     });
     const current = { title: 'as-is' };
     const result = await refreshSlideData(
-      csvDataSource({ refresh: { mode: 'frozen' }, lastSync: '2026-01-01T00:00:00.000Z' }),
-      current
+      csvDataSource({
+        refresh: { mode: 'frozen' },
+        lastSync: '2026-01-01T00:00:00.000Z',
+      }),
+      current,
     );
     assert.equal(result.content, current, 'same reference, no clone/refetch');
     assert.equal(result.applied, 0);
@@ -338,8 +379,17 @@ describe('refreshSlideData dispatcher', () => {
 
   it('an invalid dataSource is a 400 ValidationError', async () => {
     await assert.rejects(
-      () => refreshSlideData({ provider: 'csv-url', config: {}, bindings: [], refresh: { mode: 'sometimes' } }, {}),
-      (err) => err instanceof ValidationError && err.statusCode === 400
+      () =>
+        refreshSlideData(
+          {
+            provider: 'csv-url',
+            config: {},
+            bindings: [],
+            refresh: { mode: 'sometimes' },
+          },
+          {},
+        ),
+      (err) => err instanceof ValidationError && err.statusCode === 400,
     );
   });
 
@@ -351,8 +401,11 @@ describe('refreshSlideData dispatcher', () => {
       throw new Error('fetch must not be reached');
     });
     await assert.rejects(
-      () => refreshSlideData(csvDataSource({ refresh: { mode: 'on-view' } }), {}),
-      (err) => err instanceof ValidationError && /Invalid refresh mode/.test(err.message)
+      () =>
+        refreshSlideData(csvDataSource({ refresh: { mode: 'on-view' } }), {}),
+      (err) =>
+        err instanceof ValidationError &&
+        /Invalid refresh mode/.test(err.message),
     );
     assert.equal(fetchCalls.length, 0);
   });
@@ -360,7 +413,9 @@ describe('refreshSlideData dispatcher', () => {
   it('an unknown provider on the preview path is a 400 ValidationError', async () => {
     await assert.rejects(
       () => fetchProviderData('no-such-provider', {}),
-      (err) => err instanceof ValidationError && /Unknown data source provider/.test(err.message)
+      (err) =>
+        err instanceof ValidationError &&
+        /Unknown data source provider/.test(err.message),
     );
   });
 });
@@ -375,7 +430,7 @@ describe('applyBindings', () => {
         { target: 'metrics[1].value', source: 'v' },
         { target: 'nested.deep.title', source: 't' },
       ],
-      { v: '42', t: 'hello' }
+      { v: '42', t: 'hello' },
     );
     assert.deepEqual(content.metrics[1], { value: '42' });
     assert.equal(content.nested.deep.title, 'hello');
@@ -390,7 +445,7 @@ describe('applyBindings', () => {
         { target: 'title', source: 'present' },
         { target: 'body', source: 'absent' },
       ],
-      { present: 'new' }
+      { present: 'new' },
     );
     assert.equal(content.title, 'new');
     assert.equal(content.body, undefined);

@@ -1,0 +1,5 @@
+# Commits that git blame should look through (pure mechanical reformats).
+# Activate once per clone: git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# 2026-08-19 — chore: format the repository with Prettier (B99), directly after v1.22.0
+1d5a95b3e523e7aca694f70414813e22d48d73a4

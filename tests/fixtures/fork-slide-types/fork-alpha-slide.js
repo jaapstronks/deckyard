@@ -23,7 +23,12 @@ export default {
   label: 'Fork Alpha',
   fields: [
     { key: 'heading', type: 'string', label: 'Fork heading' },
-    { key: 'accent', type: 'enum', label: 'Fork accent', options: ['calm', 'bold'] },
+    {
+      key: 'accent',
+      type: 'enum',
+      label: 'Fork accent',
+      options: ['calm', 'bold'],
+    },
   ],
   defaults: { heading: '', accent: 'calm' },
 };

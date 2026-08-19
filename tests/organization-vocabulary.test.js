@@ -44,7 +44,14 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
-const TARGET_DIRS = ['client', 'server', 'shared', 'scripts', 'capture', 'tests'];
+const TARGET_DIRS = [
+  'client',
+  'server',
+  'shared',
+  'scripts',
+  'capture',
+  'tests',
+];
 const EXCLUDED_DIRS = new Set([
   path.join('server', 'db', 'migrations'),
   path.join('client', 'vendor'),
@@ -54,17 +61,54 @@ const SELF = 'organization-vocabulary.test.js';
 // Needles built from fragments so this guard file does not match its own text.
 const W = 'work' + 'space';
 const FORBIDDEN = [
-  { label: `quoted '${W}' value (visibility value is 'organization')`, re: new RegExp(`['"]${W}['"]`) },
-  { label: `MULTI_${W.toUpperCase()}_ENABLED (use MULTI_ORG_ENABLED)`, re: new RegExp(`MULTI_${W.toUpperCase()}_ENABLED`) },
-  { label: `isMulti${W[0].toUpperCase()}${W.slice(1)}Enabled (use isMultiOrgEnabled)`, re: new RegExp(`isMulti${W[0].toUpperCase()}${W.slice(1)}Enabled`) },
-  { label: `requireMulti${W[0].toUpperCase()}${W.slice(1)} (use requireMultiOrg)`, re: new RegExp(`requireMulti${W[0].toUpperCase()}${W.slice(1)}`) },
-  { label: `single${W[0].toUpperCase()}${W.slice(1)}Scope (use singleOrganizationScope)`, re: new RegExp(`single${W[0].toUpperCase()}${W.slice(1)}Scope`) },
-  { label: `${W}-as-identifier (is${W[0].toUpperCase()}${W.slice(1)}…, ${W}-role — use organization)`, re: new RegExp(`is${W[0].toUpperCase()}${W.slice(1)}|${W[0].toUpperCase()}${W.slice(1)}Role|${W}-role`) },
-  { label: 'normalizePresentation' + 'Scope (use normalizePresentationVisibility)', re: new RegExp('normalizePresentation' + 'Scope') },
-  { label: 'canChangePresentation' + 'Scope (use canChangePresentationVisibility)', re: new RegExp('canChangePresentation' + 'Scope') },
-  { label: 'allowScope' + 'Change (use allowVisibilityChange)', re: new RegExp('allowScope' + 'Change') },
-  { label: `moved_to_${W} event (use presentation.moved_to_organization)`, re: new RegExp(`moved_to_${W}`) },
-  { label: `presentationMovedTo${W[0].toUpperCase()}${W.slice(1)}Url (use presentationMovedToOrganizationUrl)`, re: new RegExp(`presentationMovedTo${W[0].toUpperCase()}${W.slice(1)}Url`) },
+  {
+    label: `quoted '${W}' value (visibility value is 'organization')`,
+    re: new RegExp(`['"]${W}['"]`),
+  },
+  {
+    label: `MULTI_${W.toUpperCase()}_ENABLED (use MULTI_ORG_ENABLED)`,
+    re: new RegExp(`MULTI_${W.toUpperCase()}_ENABLED`),
+  },
+  {
+    label: `isMulti${W[0].toUpperCase()}${W.slice(1)}Enabled (use isMultiOrgEnabled)`,
+    re: new RegExp(`isMulti${W[0].toUpperCase()}${W.slice(1)}Enabled`),
+  },
+  {
+    label: `requireMulti${W[0].toUpperCase()}${W.slice(1)} (use requireMultiOrg)`,
+    re: new RegExp(`requireMulti${W[0].toUpperCase()}${W.slice(1)}`),
+  },
+  {
+    label: `single${W[0].toUpperCase()}${W.slice(1)}Scope (use singleOrganizationScope)`,
+    re: new RegExp(`single${W[0].toUpperCase()}${W.slice(1)}Scope`),
+  },
+  {
+    label: `${W}-as-identifier (is${W[0].toUpperCase()}${W.slice(1)}…, ${W}-role — use organization)`,
+    re: new RegExp(
+      `is${W[0].toUpperCase()}${W.slice(1)}|${W[0].toUpperCase()}${W.slice(1)}Role|${W}-role`,
+    ),
+  },
+  {
+    label:
+      'normalizePresentation' + 'Scope (use normalizePresentationVisibility)',
+    re: new RegExp('normalizePresentation' + 'Scope'),
+  },
+  {
+    label:
+      'canChangePresentation' + 'Scope (use canChangePresentationVisibility)',
+    re: new RegExp('canChangePresentation' + 'Scope'),
+  },
+  {
+    label: 'allowScope' + 'Change (use allowVisibilityChange)',
+    re: new RegExp('allowScope' + 'Change'),
+  },
+  {
+    label: `moved_to_${W} event (use presentation.moved_to_organization)`,
+    re: new RegExp(`moved_to_${W}`),
+  },
+  {
+    label: `presentationMovedTo${W[0].toUpperCase()}${W.slice(1)}Url (use presentationMovedToOrganizationUrl)`,
+    re: new RegExp(`presentationMovedTo${W[0].toUpperCase()}${W.slice(1)}Url`),
+  },
 ];
 
 function walk(dir, out = []) {
@@ -74,7 +118,11 @@ function walk(dir, out = []) {
     if (entry.isDirectory()) {
       if (EXCLUDED_DIRS.has(rel)) continue;
       walk(full, out);
-    } else if (entry.isFile() && entry.name.endsWith('.js') && entry.name !== SELF) {
+    } else if (
+      entry.isFile() &&
+      entry.name.endsWith('.js') &&
+      entry.name !== SELF
+    ) {
       out.push(full);
     }
   }
@@ -91,7 +139,8 @@ test('organization vocabulary: no workspace/scope-as-visibility spellings surviv
       const lines = fs.readFileSync(file, 'utf8').split('\n');
       lines.forEach((line, i) => {
         for (const { label, re } of FORBIDDEN) {
-          if (re.test(line)) violations.push(`${rel}:${i + 1}  [${label}]  ${line.trim()}`);
+          if (re.test(line))
+            violations.push(`${rel}:${i + 1}  [${label}]  ${line.trim()}`);
         }
       });
     }
@@ -99,16 +148,24 @@ test('organization vocabulary: no workspace/scope-as-visibility spellings surviv
   assert.equal(
     violations.length,
     0,
-    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`
+    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`,
   );
 });
 
 test('the public contract carries visibility, not scope-as-visibility', () => {
-  const openapi = fs.readFileSync(path.join(repoRoot, 'docs', 'openapi.yaml'), 'utf8');
-  assert.ok(!new RegExp(W, 'i').test(openapi), `docs/openapi.yaml still mentions ${W}`);
+  const openapi = fs.readFileSync(
+    path.join(repoRoot, 'docs', 'openapi.yaml'),
+    'utf8',
+  );
   assert.ok(
-    /visibility:\s*\n\s+type: string\s*\n\s+enum: \[private, organization\]/.test(openapi),
-    'docs/openapi.yaml must document the visibility field with enum [private, organization]'
+    !new RegExp(W, 'i').test(openapi),
+    `docs/openapi.yaml still mentions ${W}`,
+  );
+  assert.ok(
+    /visibility:\s*\n\s+type: string\s*\n\s+enum: \[private, organization\]/.test(
+      openapi,
+    ),
+    'docs/openapi.yaml must document the visibility field with enum [private, organization]',
   );
 });
 
@@ -141,7 +198,8 @@ function referenceDocs() {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) walkDocs(full);
-      else if (entry.name.endsWith('.md') && !DOC_EXEMPT.has(entry.name)) out.push(full);
+      else if (entry.name.endsWith('.md') && !DOC_EXEMPT.has(entry.name))
+        out.push(full);
     }
   })(path.join(repoRoot, DOC_DIR));
   return out;
@@ -154,14 +212,15 @@ test('organization vocabulary: reference prose names the tenant organization, no
     const lines = fs.readFileSync(file, 'utf8').split('\n');
     lines.forEach((line, i) => {
       for (const { label, re } of DOC_FORBIDDEN) {
-        if (re.test(line)) violations.push(`${rel}:${i + 1}  [${label}]  ${line.trim()}`);
+        if (re.test(line))
+          violations.push(`${rel}:${i + 1}  [${label}]  ${line.trim()}`);
       }
     });
   }
   assert.equal(
     violations.length,
     0,
-    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`
+    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`,
   );
 });
 
@@ -169,7 +228,7 @@ test('the doc-prose exemptions still exist, so the list cannot rot', () => {
   for (const name of DOC_EXEMPT) {
     assert.ok(
       fs.existsSync(path.join(repoRoot, DOC_DIR, name)),
-      `${DOC_DIR}/${name} is exempt but no longer exists`
+      `${DOC_DIR}/${name} is exempt but no longer exists`,
     );
   }
 });

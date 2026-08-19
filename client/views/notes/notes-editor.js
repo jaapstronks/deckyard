@@ -100,7 +100,7 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
     try {
       await api(
         `/api/live-sessions/${encodeURIComponent(sessionId)}/notes/${encodeURIComponent(targetSlideId)}`,
-        { method: 'PUT', body: { notes: value } }
+        { method: 'PUT', body: { notes: value } },
       );
       if (targetSlideId === slideId) {
         stored = value;
@@ -111,9 +111,15 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
     } catch (err) {
       const msg =
         err?.statusCode === 423
-          ? t('notes.edit.locked', 'This slide is locked — your change was not saved.')
+          ? t(
+              'notes.edit.locked',
+              'This slide is locked — your change was not saved.',
+            )
           : err?.statusCode === 429
-            ? t('notes.edit.tooFast', 'Too many changes at once — try again in a moment.')
+            ? t(
+                'notes.edit.tooFast',
+                'Too many changes at once — try again in a moment.',
+              )
             : t('notes.edit.failed', 'Could not save the notes.');
       toast.error(msg, { id: 'notes-save' });
       if (targetSlideId === slideId) setStatus(msg);
@@ -127,7 +133,8 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
     const targetSlideId = slideId;
     timer = setTimeout(() => {
       timer = null;
-      if (notesTextarea.value !== stored) void save(targetSlideId, notesTextarea.value);
+      if (notesTextarea.value !== stored)
+        void save(targetSlideId, notesTextarea.value);
     }, AUTOSAVE_DELAY_MS);
   };
 
@@ -216,7 +223,9 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
       // Leaving the view with an unsaved buffer would silently drop it, so send
       // it on the way out. Fire-and-forget: teardown is synchronous, and a save
       // that loses the race is no worse than not trying.
-      const pending = isDirty() ? { id: slideId, value: notesTextarea.value } : null;
+      const pending = isDirty()
+        ? { id: slideId, value: notesTextarea.value }
+        : null;
       clearTimer();
       if (pending) void save(pending.id, pending.value);
       destroyed = true;

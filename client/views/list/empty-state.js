@@ -36,7 +36,7 @@ export function createEmptyState({
         type: 'button',
         text: primaryLabel,
         onclick: () => onPrimary(),
-      })
+      }),
     );
   }
 
@@ -47,7 +47,7 @@ export function createEmptyState({
         type: 'button',
         text: secondaryLabel,
         onclick: () => onSecondary(),
-      })
+      }),
     );
   }
 
@@ -61,7 +61,9 @@ export function createEmptyState({
     h('div', { class: 'empty-state-title', text: title || '' }),
   ];
   if (message) {
-    children.push(h('div', { class: 'empty-state-message help', text: message }));
+    children.push(
+      h('div', { class: 'empty-state-message help', text: message }),
+    );
   }
   if (actions.childNodes.length) children.push(actions);
 
@@ -85,7 +87,7 @@ export function createNoPresentationsEmptyState({
     title: title || t('list.empty.title', 'No presentations yet'),
     message: t(
       'list.empty.message',
-      'Create your first presentation — start blank, from your notes, or from a template.'
+      'Create your first presentation — start blank, from your notes, or from a template.',
     ),
     primaryLabel: t('list.empty.create', 'Create your first presentation'),
     onPrimary: onCreate,

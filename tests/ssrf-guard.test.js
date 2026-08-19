@@ -32,7 +32,14 @@ test('isPrivateAddress allows public IPv4', () => {
 });
 
 test('isPrivateAddress flags non-public IPv6', () => {
-  for (const ip of ['::1', 'fe80::1', 'fc00::1', 'fd12:3456::1', '::ffff:169.254.169.254', '::ffff:127.0.0.1']) {
+  for (const ip of [
+    '::1',
+    'fe80::1',
+    'fc00::1',
+    'fd12:3456::1',
+    '::ffff:169.254.169.254',
+    '::ffff:127.0.0.1',
+  ]) {
     assert.equal(isPrivateAddress(ip), true, `${ip} should be private`);
   }
   assert.equal(isPrivateAddress('2606:4700:4700::1111'), false);
@@ -61,7 +68,7 @@ test('assertPublicHttpUrl blocks hex-group IPv4-mapped literals', async () => {
     await assert.rejects(
       () => assertPublicHttpUrl(url),
       (e) => e.code === 'SSRF_BLOCKED_ADDRESS',
-      `should block ${url}`
+      `should block ${url}`,
     );
   }
 });
@@ -82,7 +89,7 @@ test('assertPublicHttpUrl blocks metadata and private IP literals', async () => 
     await assert.rejects(
       () => assertPublicHttpUrl(url),
       (e) => e.code === 'SSRF_BLOCKED_ADDRESS',
-      `should block ${url}`
+      `should block ${url}`,
     );
   }
 });
@@ -91,7 +98,7 @@ test('assertPublicHttpUrl blocks non-http schemes', async () => {
   for (const url of ['file:///etc/passwd', 'gopher://x/', 'ftp://x/']) {
     await assert.rejects(
       () => assertPublicHttpUrl(url),
-      (e) => e.code === 'SSRF_BAD_SCHEME'
+      (e) => e.code === 'SSRF_BAD_SCHEME',
     );
   }
 });
@@ -99,7 +106,7 @@ test('assertPublicHttpUrl blocks non-http schemes', async () => {
 test('assertPublicHttpUrl blocks hostnames resolving to loopback (localhost)', async () => {
   await assert.rejects(
     () => assertPublicHttpUrl('http://localhost/x.png'),
-    (e) => e.code === 'SSRF_BLOCKED_ADDRESS'
+    (e) => e.code === 'SSRF_BLOCKED_ADDRESS',
   );
 });
 
@@ -121,9 +128,13 @@ test('safeFetchRemoteImage returns null for a blocked URL (no network)', async (
 });
 
 test('toDataUrlIfLocal with embedRemote strips a blocked remote URL', async () => {
-  const out = await toDataUrlIfLocal('/repo', 'http://169.254.169.254/latest/', {
-    embedRemote: true,
-  });
+  const out = await toDataUrlIfLocal(
+    '/repo',
+    'http://169.254.169.254/latest/',
+    {
+      embedRemote: true,
+    },
+  );
   assert.equal(out, '');
 });
 

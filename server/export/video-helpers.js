@@ -95,14 +95,14 @@ function parseVimeoUrl(raw) {
 
 function looksLikeUuid(s) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    String(s || '').trim()
+    String(s || '').trim(),
   );
 }
 
 function parseBunnySource(raw, defaultLibraryId) {
   // Check for embed/play URL: https://iframe.mediadelivery.net/embed/366590/<uuid>
   const embedMatch = raw.match(
-    /iframe\.mediadelivery\.net\/(?:embed|play)\/(\d+)\/([0-9a-f-]{36})/i
+    /iframe\.mediadelivery\.net\/(?:embed|play)\/(\d+)\/([0-9a-f-]{36})/i,
   );
   if (embedMatch) {
     return { videoId: embedMatch[2], libraryId: embedMatch[1] };
@@ -171,7 +171,10 @@ export function buildVimeoThumbnailUrl(videoId) {
  * @param {number} options.maxSizeMb - Maximum file size in MB (default: 100)
  * @returns {Promise<{ success: boolean, buffer?: Buffer, contentType?: string, error?: string }>}
  */
-export async function fetchVideoBuffer(url, { timeoutMs = 60000, maxSizeMb = 100 } = {}) {
+export async function fetchVideoBuffer(
+  url,
+  { timeoutMs = 60000, maxSizeMb = 100 } = {},
+) {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);

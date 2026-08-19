@@ -68,14 +68,14 @@ npm run setup -- --yes --auth=on --admin-email=you@example.com  # enable auth
 
 Recognised flags:
 
-| Flag | Values | Effect |
-|---|---|---|
-| `--ai` | `openai` \| `claude` \| `mistral` \| `deepseek` \| `ollama` | Which AI provider |
-| `--ai-key` | your key | API key for that provider (skipped if absent) |
-| `--auth` | `on` \| `off` | On generates a strong `AUTH_SECRET`; off disables auth |
-| `--admin-email` | email | The user who gets the admin role (with `--auth=on`) |
-| `--port` | number | App port (default 4177) |
-| `--theme` | theme id | Default theme (default `brand`) |
+| Flag            | Values                                                      | Effect                                                 |
+| --------------- | ----------------------------------------------------------- | ------------------------------------------------------ |
+| `--ai`          | `openai` \| `claude` \| `mistral` \| `deepseek` \| `ollama` | Which AI provider                                      |
+| `--ai-key`      | your key                                                    | API key for that provider (skipped if absent)          |
+| `--auth`        | `on` \| `off`                                               | On generates a strong `AUTH_SECRET`; off disables auth |
+| `--admin-email` | email                                                       | The user who gets the admin role (with `--auth=on`)    |
+| `--port`        | number                                                      | App port (default 4177)                                |
+| `--theme`       | theme id                                                    | Default theme (default `brand`)                        |
 
 The wizard upserts only the keys it is given on top of your existing `.env`
 (or a fresh copy of `.env.example` if there is none), so `.env.example` stays
@@ -85,12 +85,12 @@ echo or commit the key — it only ever lands in the local, gitignored `.env`.
 **If you hand-edit `.env` instead of using the flags**, use the exact variable
 names the app reads (see `.env.example`), not the provider's own naming:
 
-| Provider | `.env` variable |
-|---|---|
-| Anthropic (Claude) | `CLAUDE_API` |
-| OpenAI | `OPENAI_API` (not `OPENAI_API_KEY`) |
-| Mistral | `MISTRAL_API` |
-| DeepSeek | `DEEPSEEK_API` |
+| Provider           | `.env` variable                     |
+| ------------------ | ----------------------------------- |
+| Anthropic (Claude) | `CLAUDE_API`                        |
+| OpenAI             | `OPENAI_API` (not `OPENAI_API_KEY`) |
+| Mistral            | `MISTRAL_API`                       |
+| DeepSeek           | `DEEPSEEK_API`                      |
 
 `.env` values are read literally, so a secret-manager reference like
 `op://vault/item/key` won't resolve unless you launch the process through that

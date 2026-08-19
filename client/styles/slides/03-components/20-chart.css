@@ -270,19 +270,6 @@
   color: rgba(0, 0, 0, 0.82);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* Header-block alignment (author-driven, horizontal axis). `is-align-center`
    comes from the type's `headerAlign`. The title sits in a flex row and shrinks
    to its text, so the ROW has to centre it — a `text-align` on the title alone

@@ -5,7 +5,7 @@ import { subscribeFollowStatus } from './status-ticker.js';
 
 export async function handleFollowQuestionsEvents(
   { repoRoot, req, res },
-  presentationId
+  presentationId,
 ) {
   if (req.method !== 'GET') return false;
 
@@ -47,7 +47,11 @@ export async function handleFollowQuestionsEvents(
       if (state.sessionId !== currentSessionId) {
         detachSession();
         currentSessionId = state.sessionId;
-        detach = await attachQuestionsSseClient(followAudienceScope(repoRoot), currentSessionId, res);
+        detach = await attachQuestionsSseClient(
+          followAudienceScope(repoRoot),
+          currentSessionId,
+          res,
+        );
       }
     } else {
       detachSession();

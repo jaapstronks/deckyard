@@ -15,7 +15,8 @@ export function slideA11yLabel(slide, idx, total) {
   const n = Number(idx || 0) + 1;
   const t = Math.max(0, Number(total || 0) || 0);
   const type = String(slide?.type || '');
-  const c = slide?.content && typeof slide.content === 'object' ? slide.content : {};
+  const c =
+    slide?.content && typeof slide.content === 'object' ? slide.content : {};
   const titleKeys = ['title', 'authorName', 'label'];
   let title = '';
   for (const k of titleKeys) {
@@ -40,7 +41,9 @@ export function parseBoolParam(v, fallback) {
 }
 
 export function parseUiParam(v, fallback = 'default') {
-  const s = String(v || '').trim().toLowerCase();
+  const s = String(v || '')
+    .trim()
+    .toLowerCase();
   if (s === 'min') return 'min';
   if (s === 'default') return 'default';
   return fallback;

@@ -29,7 +29,12 @@ export function belongsInCollection({ user, pres } = {}) {
   return isOwnerOrCreator(user, pres);
 }
 
-export async function handlePresentationsList({ repoRoot, storageScope, res, authedUser } = {}) {
+export async function handlePresentationsList({
+  repoRoot,
+  storageScope,
+  res,
+  authedUser,
+} = {}) {
   const list = await listPresentations(storageScope);
   // Filter to show only the user's own presentations + organization-visible presentations.
   // Admin status doesn't change what appears in their collection.
@@ -44,7 +49,10 @@ export async function handlePresentationsList({ repoRoot, storageScope, res, aut
   // Fetch published status and collaborator counts. The organization rides
   // along on the request's storage scope, so these stay in the session's
   // organization instead of resolving against the instance default.
-  const ctx = { user: authedUser, organizationId: storageScope?.organizationId };
+  const ctx = {
+    user: authedUser,
+    organizationId: storageScope?.organizationId,
+  };
   const publishedSet = await getPublishedPresentationIds(presentationIds, ctx);
   const collaboratorCounts = await getCollaboratorCounts(presentationIds, ctx);
 
@@ -52,9 +60,14 @@ export async function handlePresentationsList({ repoRoot, storageScope, res, aut
   // placeholder shown until the rasterized PNG loads (theme loads are memoized).
   const thumbBgByTheme = new Map();
   await Promise.all(
-    [...new Set(filtered.map((p) => p.theme).filter(Boolean))].map(async (themeId) => {
-      thumbBgByTheme.set(themeId, await resolveThemeThumbBg(repoRoot, themeId));
-    })
+    [...new Set(filtered.map((p) => p.theme).filter(Boolean))].map(
+      async (themeId) => {
+        thumbBgByTheme.set(
+          themeId,
+          await resolveThemeThumbBg(repoRoot, themeId),
+        );
+      },
+    ),
   );
 
   // Attach tags, isPublished, collaboratorCount, and thumbBg to each presentation

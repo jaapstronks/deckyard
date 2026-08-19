@@ -33,7 +33,9 @@
   color: hsl(var(--app-text-secondary));
   text-decoration: none;
   border-radius: var(--ps-radius-md, 6px);
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .dashboard-back-btn:hover {
@@ -80,7 +82,9 @@
   background: hsl(var(--app-bg-elevated));
   color: hsl(var(--app-text-primary));
   cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .dashboard-period-select:hover {
@@ -106,12 +110,18 @@
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-lg, 12px);
   padding: var(--ps-space-5, 20px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
-  transition: box-shadow 0.15s, transform 0.15s;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 1px 2px rgba(0, 0, 0, 0.06);
+  transition:
+    box-shadow 0.15s,
+    transform 0.15s;
 }
 
 .dashboard-metric-card:hover {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.05),
+    0 2px 4px rgba(0, 0, 0, 0.06);
   transform: translateY(-1px);
 }
 
@@ -156,7 +166,9 @@
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-lg, 12px);
   padding: var(--ps-space-5, 20px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .dashboard-card-title {
@@ -219,10 +231,16 @@
 
 .dashboard-chart-bar {
   width: 100%;
-  background: linear-gradient(180deg, hsl(var(--app-accent-primary)) 0%, hsl(var(--app-accent-primary-active)) 100%);
+  background: linear-gradient(
+    180deg,
+    hsl(var(--app-accent-primary)) 0%,
+    hsl(var(--app-accent-primary-active)) 100%
+  );
   border-radius: var(--ps-radius-sm, 4px) var(--ps-radius-sm, 4px) 0 0;
   min-height: 4px;
-  transition: opacity 0.15s, transform 0.15s;
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
   cursor: pointer;
 }
 
@@ -351,7 +369,11 @@
 }
 
 .dashboard-source-bar-shareLink {
-  background: linear-gradient(90deg, hsl(var(--app-accent-primary)) 0%, hsl(var(--app-accent-primary-active)) 100%);
+  background: linear-gradient(
+    90deg,
+    hsl(var(--app-accent-primary)) 0%,
+    hsl(var(--app-accent-primary-active)) 100%
+  );
 }
 
 .dashboard-source-bar-published {
@@ -409,7 +431,6 @@
   min-height: 400px;
   gap: var(--ps-space-3, 12px);
 }
-
 
 .dashboard-shell .analytics-loading-text {
   color: hsl(var(--app-text-secondary));

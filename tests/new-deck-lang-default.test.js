@@ -31,34 +31,67 @@ const DEFAULT_SUPPORTED = ['nl', 'en-GB'];
 test.beforeEach(() => setSupportedLangs(DEFAULT_SUPPORTED));
 
 test('UI locale decides when no preference is stored', () => {
-  assert.equal(resolveInitialDeckLang({ storedLang: null, uiLocale: 'en' }), 'en-GB');
-  assert.equal(resolveInitialDeckLang({ storedLang: null, uiLocale: 'nl' }), 'nl');
+  assert.equal(
+    resolveInitialDeckLang({ storedLang: null, uiLocale: 'en' }),
+    'en-GB',
+  );
+  assert.equal(
+    resolveInitialDeckLang({ storedLang: null, uiLocale: 'nl' }),
+    'nl',
+  );
 });
 
 test('a stored preference outranks the UI locale', () => {
   // Someone who once picked NL keeps NL, even reading the app in English.
-  assert.equal(resolveInitialDeckLang({ storedLang: 'nl', uiLocale: 'en' }), 'nl');
-  assert.equal(resolveInitialDeckLang({ storedLang: 'en-GB', uiLocale: 'nl' }), 'en-GB');
+  assert.equal(
+    resolveInitialDeckLang({ storedLang: 'nl', uiLocale: 'en' }),
+    'nl',
+  );
+  assert.equal(
+    resolveInitialDeckLang({ storedLang: 'en-GB', uiLocale: 'nl' }),
+    'en-GB',
+  );
 });
 
 test('an unsupported stored value is ignored, not honoured', () => {
   // Stale localStorage must not beat the locale — it is not a valid choice.
-  assert.equal(resolveInitialDeckLang({ storedLang: 'de', uiLocale: 'en' }), 'en-GB');
-  assert.equal(resolveInitialDeckLang({ storedLang: '', uiLocale: 'en' }), 'en-GB');
-  assert.equal(resolveInitialDeckLang({ storedLang: undefined, uiLocale: 'en' }), 'en-GB');
+  assert.equal(
+    resolveInitialDeckLang({ storedLang: 'de', uiLocale: 'en' }),
+    'en-GB',
+  );
+  assert.equal(
+    resolveInitialDeckLang({ storedLang: '', uiLocale: 'en' }),
+    'en-GB',
+  );
+  assert.equal(
+    resolveInitialDeckLang({ storedLang: undefined, uiLocale: 'en' }),
+    'en-GB',
+  );
 });
 
 test('falls back to the first supported language when neither source helps', () => {
-  assert.equal(resolveInitialDeckLang({ storedLang: null, uiLocale: 'de' }), defaultLang());
-  assert.equal(resolveInitialDeckLang({ storedLang: null, uiLocale: null }), defaultLang());
+  assert.equal(
+    resolveInitialDeckLang({ storedLang: null, uiLocale: 'de' }),
+    defaultLang(),
+  );
+  assert.equal(
+    resolveInitialDeckLang({ storedLang: null, uiLocale: null }),
+    defaultLang(),
+  );
   assert.equal(resolveInitialDeckLang(), defaultLang());
 });
 
 test('the fallback follows the organization, not a hardcoded nl', () => {
   setSupportedLangs(['en-GB']);
-  assert.equal(resolveInitialDeckLang({ storedLang: null, uiLocale: 'de' }), 'en-GB');
+  assert.equal(
+    resolveInitialDeckLang({ storedLang: null, uiLocale: 'de' }),
+    'en-GB',
+  );
   // A stored 'nl' is no longer supported here, so it cannot win either.
-  assert.equal(resolveInitialDeckLang({ storedLang: 'nl', uiLocale: 'de' }), 'en-GB');
+  assert.equal(
+    resolveInitialDeckLang({ storedLang: 'nl', uiLocale: 'de' }),
+    'en-GB',
+  );
 });
 
 test('locale mapping matches the full tag, then the primary subtag', () => {

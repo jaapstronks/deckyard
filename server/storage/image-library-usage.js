@@ -62,7 +62,7 @@ async function findPresentationsUsingUrl(url, ctx) {
     .where('trashed_at', 'is', null)
     .where(
       sql`jsonb_path_exists(slides, '$[*].content.** ? (@ == $u)', jsonb_build_object('u', ${url}::text))
-          or jsonb_path_exists(i18n, '$.versions.*.slides[*].content.** ? (@ == $u)', jsonb_build_object('u', ${url}::text))`
+          or jsonb_path_exists(i18n, '$.versions.*.slides[*].content.** ? (@ == $u)', jsonb_build_object('u', ${url}::text))`,
     )
     .orderBy('modified_at', 'desc')
     .execute();

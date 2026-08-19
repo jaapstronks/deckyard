@@ -97,7 +97,9 @@ export async function resolveIdentity(identifier = {}) {
   if (kind !== IDENTIFIER_KINDS.EMAIL) {
     // A future kind (SSO subject, atproto DID) is a new branch here, not a
     // silent failure — an unknown kind is a programming error, so fail loud.
-    throw new TypeError(`resolveIdentity: unsupported identifier kind "${kind}"`);
+    throw new TypeError(
+      `resolveIdentity: unsupported identifier kind "${kind}"`,
+    );
   }
 
   const value = normalizeEmail(identifier.value);

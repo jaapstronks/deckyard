@@ -11,19 +11,28 @@
 
 /** @type {Object} InlineDescriptor for table-slide. */
 export const inlineEdit = {
-    ghosts: [
-      { field: 'caption', anchors: [{ sel: '.md-table-wrap', pos: 'after' }] },
-    ],
-    // Every cell is editable (rows.N.cM); add/remove works on whole rows. Note
-    // the header is rows[0] when the header row is enabled.
-    cards: { field: 'rows', container: '.md-table-wrap', itemSelector: '.md-table tr' },
-    // rows stays: column add/remove only exists in the form's grid editor.
-    formText: ['title', 'caption'],
-  };
+  ghosts: [
+    { field: 'caption', anchors: [{ sel: '.md-table-wrap', pos: 'after' }] },
+  ],
+  // Every cell is editable (rows.N.cM); add/remove works on whole rows. Note
+  // the header is rows[0] when the header row is enabled.
+  cards: {
+    field: 'rows',
+    container: '.md-table-wrap',
+    itemSelector: '.md-table tr',
+  },
+  // rows stays: column add/remove only exists in the form's grid editor.
+  formText: ['title', 'caption'],
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the
  * rest of the slide.
  * @type {string[]}
  */
-export const inspectorKeeps = ['headerRow', 'tableStyle', 'animateByCell', 'cornerCell'];
+export const inspectorKeeps = [
+  'headerRow',
+  'tableStyle',
+  'animateByCell',
+  'cornerCell',
+];

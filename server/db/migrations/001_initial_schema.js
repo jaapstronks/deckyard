@@ -10,7 +10,9 @@ export const up = async (db) => {
   await db.schema
     .createTable('organizations')
     .ifNotExists()
-    .addColumn('id', 'uuid', (col) => col.primaryKey().defaultTo(sql`gen_random_uuid()`))
+    .addColumn('id', 'uuid', (col) =>
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
+    )
     .addColumn('name', 'varchar(255)', (col) => col.notNull())
     .addColumn('slug', 'varchar(100)', (col) => col.unique().notNull())
     .addColumn('settings', 'jsonb', (col) => col.defaultTo(sql`'{}'::jsonb`))
@@ -22,9 +24,11 @@ export const up = async (db) => {
   await db.schema
     .createTable('users')
     .ifNotExists()
-    .addColumn('id', 'uuid', (col) => col.primaryKey().defaultTo(sql`gen_random_uuid()`))
+    .addColumn('id', 'uuid', (col) =>
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
+    )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('email', 'varchar(320)', (col) => col.unique().notNull())
     .addColumn('name', 'varchar(255)')
@@ -40,7 +44,7 @@ export const up = async (db) => {
     .ifNotExists()
     .addColumn('id', 'uuid', (col) => col.primaryKey())
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('owner_email', 'varchar(320)')
     .addColumn('created_by', 'varchar(320)')
@@ -65,12 +69,14 @@ export const up = async (db) => {
   await db.schema
     .createTable('presentation_versions')
     .ifNotExists()
-    .addColumn('id', 'uuid', (col) => col.primaryKey().defaultTo(sql`gen_random_uuid()`))
+    .addColumn('id', 'uuid', (col) =>
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
+    )
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade')
+      col.references('presentations.id').onDelete('cascade'),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('created_by', 'varchar(320)')
     .addColumn('reason', 'varchar(50)', (col) => col.defaultTo('snapshot'))
@@ -87,10 +93,10 @@ export const up = async (db) => {
     .ifNotExists()
     .addColumn('id', 'varchar(20)', (col) => col.primaryKey())
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade')
+      col.references('presentations.id').onDelete('cascade'),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('title', 'varchar(500)')
     .addColumn('slug', 'varchar(255)')
@@ -143,7 +149,7 @@ export const up = async (db) => {
     .ifNotExists()
     .addColumn('code', 'char(4)', (col) => col.primaryKey())
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('follow_url', 'text', (col) => col.notNull())
     .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
@@ -167,28 +173,34 @@ export const up = async (db) => {
     .ifNotExists()
     .addColumn('session_id', 'varchar(100)', (col) => col.primaryKey())
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('set null')
+      col.references('presentations.id').onDelete('set null'),
     )
     .addColumn('state', 'jsonb', (col) => col.defaultTo(sql`'{}'::jsonb`))
     .addColumn('control_enabled', 'boolean', (col) => col.defaultTo(false))
-    .addColumn('follow_codes', 'jsonb', (col) => col.defaultTo(sql`'{}'::jsonb`))
+    .addColumn('follow_codes', 'jsonb', (col) =>
+      col.defaultTo(sql`'{}'::jsonb`),
+    )
     .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
-    .addColumn('last_activity_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('last_activity_at', 'timestamptz', (col) =>
+      col.defaultTo(sql`now()`),
+    )
     .execute();
 
   // Interactions (polls, likert)
   await db.schema
     .createTable('interactions')
     .ifNotExists()
-    .addColumn('id', 'uuid', (col) => col.primaryKey().defaultTo(sql`gen_random_uuid()`))
+    .addColumn('id', 'uuid', (col) =>
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
+    )
     .addColumn('session_id', 'varchar(100)', (col) =>
-      col.references('present_sessions.session_id').onDelete('cascade')
+      col.references('present_sessions.session_id').onDelete('cascade'),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('slide_id', 'uuid', (col) => col.notNull())
     .addColumn('type', 'varchar(20)', (col) => col.notNull())
@@ -203,7 +215,7 @@ export const up = async (db) => {
     .createTable('interaction_votes')
     .ifNotExists()
     .addColumn('interaction_id', 'uuid', (col) =>
-      col.references('interactions.id').onDelete('cascade')
+      col.references('interactions.id').onDelete('cascade'),
     )
     .addColumn('device_id', 'varchar(100)', (col) => col.notNull())
     .addColumn('option_index', 'integer', (col) => col.notNull())
@@ -246,12 +258,14 @@ export const up = async (db) => {
   await db.schema
     .createTable('feedback')
     .ifNotExists()
-    .addColumn('id', 'uuid', (col) => col.primaryKey().defaultTo(sql`gen_random_uuid()`))
+    .addColumn('id', 'uuid', (col) =>
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
+    )
     .addColumn('session_id', 'varchar(100)', (col) =>
-      col.references('present_sessions.session_id').onDelete('cascade')
+      col.references('present_sessions.session_id').onDelete('cascade'),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('slide_id', 'uuid', (col) => col.notNull())
     .addColumn('device_id', 'varchar(100)', (col) => col.notNull())

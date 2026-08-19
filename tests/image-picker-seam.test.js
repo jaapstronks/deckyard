@@ -26,9 +26,8 @@ globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
 globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
 
 const { h } = await import('../client/lib/dom.js');
-const { createImagePickerSeam } = await import(
-  '../client/views/editor/media/picker-provider.js'
-);
+const { createImagePickerSeam } =
+  await import('../client/views/editor/media/picker-provider.js');
 
 const noop = () => {};
 
@@ -58,7 +57,7 @@ test('a single provider opens directly, without a chooser', () => {
   });
   assert.deepEqual(
     seam.providers.map((p) => p.id),
-    ['local-library']
+    ['local-library'],
   );
   seam({ title: 'Pick', onPick: noop });
   assert.equal(lib.calls.length, 1);
@@ -78,7 +77,7 @@ test('bundled gradients register as a third source when their opener is injected
   });
   assert.deepEqual(
     seam.providers.map((p) => p.id),
-    ['local-library', 'bundled', 'imagekit']
+    ['local-library', 'bundled', 'imagekit'],
   );
 });
 
@@ -92,7 +91,7 @@ test('without an injected opener the bundled source is absent, not merely hidden
   });
   assert.equal(
     seam.providers.some((p) => p.id === 'bundled'),
-    false
+    false,
   );
 });
 
@@ -107,7 +106,7 @@ test('enableImageLibrary: false drops the library but keeps the other sources', 
   });
   assert.deepEqual(
     seam.providers.map((p) => p.id),
-    ['bundled']
+    ['bundled'],
   );
 });
 
@@ -138,7 +137,7 @@ test('more than one provider shows a chooser, and choosing opens that source', (
   root.remove();
 });
 
-test('the gradient picker keeps its own heading, not the field\'s', () => {
+test("the gradient picker keeps its own heading, not the field's", () => {
   const root = document.createElement('div');
   const lib = spyOpener();
   const bundled = spyOpener();

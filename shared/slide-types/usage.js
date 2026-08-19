@@ -103,7 +103,8 @@ export function validateUsage(value) {
 
   const usage = normalizeUsage(value);
   if (usage === null) return { ok: true, usage: null };
-  if (usage.length > USAGE_MAX_LENGTH) return { ok: false, reason: 'usage_too_long' };
+  if (usage.length > USAGE_MAX_LENGTH)
+    return { ok: false, reason: 'usage_too_long' };
 
   return { ok: true, usage };
 }

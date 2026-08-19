@@ -29,7 +29,13 @@ export async function resolveSlideImages(slides, opts = {}) {
     // Resolve known image fields
     for (const key of IMAGE_FIELDS) {
       if (typeof content[key] === 'string' && content[key].trim()) {
-        content[key] = await resolveImageRef(content[key], i + 1, key, warnings, imageMap);
+        content[key] = await resolveImageRef(
+          content[key],
+          i + 1,
+          key,
+          warnings,
+          imageMap,
+        );
       }
     }
 
@@ -38,7 +44,13 @@ export async function resolveSlideImages(slides, opts = {}) {
       for (let j = 0; j < content.images.length; j++) {
         const img = content.images[j];
         if (typeof img?.src === 'string' && img.src.trim()) {
-          img.src = await resolveImageRef(img.src, i + 1, `images[${j}]`, warnings, imageMap);
+          img.src = await resolveImageRef(
+            img.src,
+            i + 1,
+            `images[${j}]`,
+            warnings,
+            imageMap,
+          );
         }
       }
     }
@@ -81,7 +93,9 @@ async function resolveImageRef(ref, slideNum, fieldName, warnings, imageMap) {
       });
       return result.publicUrl || '';
     } catch (err) {
-      warnings.push(`Slide ${slideNum}: Failed to upload data URI for ${fieldName}: ${err.message}`);
+      warnings.push(
+        `Slide ${slideNum}: Failed to upload data URI for ${fieldName}: ${err.message}`,
+      );
       return '';
     }
   }
@@ -100,14 +114,14 @@ async function resolveImageRef(ref, slideNum, fieldName, warnings, imageMap) {
       }
 
       warnings.push(
-        `Slide ${slideNum}: Image "${trimmed}" in ${fieldName} not found in zip bundle.`
+        `Slide ${slideNum}: Image "${trimmed}" in ${fieldName} not found in zip bundle.`,
       );
       return '';
     }
 
     warnings.push(
       `Slide ${slideNum}: Relative image path "${trimmed}" in ${fieldName} cannot be resolved. ` +
-      `Use an absolute URL (https://...) or upload a zip bundle with images.`
+        `Use an absolute URL (https://...) or upload a zip bundle with images.`,
     );
     return '';
   }

@@ -24,7 +24,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-search-meta .slide-title-line {
+  .slide-search-meta
+  .slide-title-line {
   font-size: var(--ps-text-sm);
   font-weight: 500;
   color: hsl(var(--app-text-primary));

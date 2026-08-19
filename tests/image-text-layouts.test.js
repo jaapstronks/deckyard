@@ -34,8 +34,14 @@ test('render: default is a plain half split (no width/layout class)', () => {
 });
 
 test('render: imageWidth narrow/wide map to their classes', () => {
-  assert.match(DEF.renderHtml(slide({ imageWidth: 'narrow' }).content), /is-image-narrow/);
-  assert.match(DEF.renderHtml(slide({ imageWidth: 'wide' }).content), /is-image-wide/);
+  assert.match(
+    DEF.renderHtml(slide({ imageWidth: 'narrow' }).content),
+    /is-image-narrow/,
+  );
+  assert.match(
+    DEF.renderHtml(slide({ imageWidth: 'wide' }).content),
+    /is-image-wide/,
+  );
 });
 
 test('render: layout corner adds is-layout-corner and keeps the split DOM', () => {
@@ -50,9 +56,13 @@ test('render: layout corner adds is-layout-corner and keeps the split DOM', () =
 });
 
 test('render: corner mirrors through imageSide like the splits', () => {
-  const right = DEF.renderHtml(slide({ layout: 'corner', imageSide: 'right' }).content);
+  const right = DEF.renderHtml(
+    slide({ layout: 'corner', imageSide: 'right' }).content,
+  );
   assert.match(right, /split is-right/);
-  const left = DEF.renderHtml(slide({ layout: 'corner', imageSide: 'left' }).content);
+  const left = DEF.renderHtml(
+    slide({ layout: 'corner', imageSide: 'left' }).content,
+  );
   assert.match(left, /split is-left/);
 });
 
@@ -86,7 +96,7 @@ test('layoutVariants: ids are unique and every set-value exists in the schema en
     for (const [key, value] of Object.entries(v.set)) {
       assert.ok(
         enumOptions(key).includes(value),
-        `${v.id}: ${key}=${value} is a valid enum value`
+        `${v.id}: ${key}=${value} is a valid enum value`,
       );
     }
   }
@@ -97,7 +107,7 @@ test('layoutVariants: cross-type tiles are covered by the convert seam', () => {
     if (!v.convertTo) continue;
     assert.ok(
       getConvertibleSlideTypes(slide()).includes(v.convertTo),
-      `${v.id}: seam supports image-text -> ${v.convertTo}`
+      `${v.id}: seam supports image-text -> ${v.convertTo}`,
     );
   }
 });
@@ -112,15 +122,29 @@ test('active variant: defaults match split-half; older slides without layout too
 
 test('active variant: corner wins regardless of the remembered imageWidth', () => {
   assert.equal(
-    activeLayoutVariantId(slide({ layout: 'corner', imageWidth: 'narrow' }), DEF),
-    'corner'
+    activeLayoutVariantId(
+      slide({ layout: 'corner', imageWidth: 'narrow' }),
+      DEF,
+    ),
+    'corner',
   );
-  assert.equal(activeLayoutVariantId(slide({ imageWidth: 'wide' }), DEF), 'split-wide');
-  assert.equal(activeLayoutVariantId(slide({ imageWidth: 'narrow' }), DEF), 'split-narrow');
+  assert.equal(
+    activeLayoutVariantId(slide({ imageWidth: 'wide' }), DEF),
+    'split-wide',
+  );
+  assert.equal(
+    activeLayoutVariantId(slide({ imageWidth: 'narrow' }), DEF),
+    'split-narrow',
+  );
 });
 
 test('applyLayoutVariant: switches fields, keeps content, reports change', () => {
-  const s = slide({ title: 'Titel', body: '- punt', image: '/x.png', imageSide: 'right' });
+  const s = slide({
+    title: 'Titel',
+    body: '- punt',
+    image: '/x.png',
+    imageSide: 'right',
+  });
   const variants = getLayoutVariants(DEF);
   const corner = variants.find((v) => v.id === 'corner');
 
@@ -164,14 +188,20 @@ import {
   imageTextCellCount,
   ensureImageTextImages,
 } from '../shared/slide-types/types/image-text-slide/images.js';
-import { convertSlideToType, getConversionLossyKeys } from '../shared/slide-types/convert.js';
+import {
+  convertSlideToType,
+  getConversionLossyKeys,
+} from '../shared/slide-types/convert.js';
 
 test('imageTextImageItems: legacy flat image folds into item 0; images[] wins', () => {
   assert.deepEqual(imageTextImageItems({}), []);
   const legacy = imageTextImageItems({ image: '/x.png' });
   assert.equal(legacy.length, 1);
   assert.equal(legacy[0].src, '/x.png');
-  const both = imageTextImageItems({ image: '/x.png', images: [{ src: '/a.png' }] });
+  const both = imageTextImageItems({
+    image: '/x.png',
+    images: [{ src: '/a.png' }],
+  });
   assert.equal(both.length, 1);
   assert.equal(both[0].src, '/a.png');
   // Sanitization: junk items become empty canonical items, capped at max.
@@ -185,8 +215,14 @@ test('imageTextCellCount: 1 for split/corner, 2 for duo, 2-3 for rows', () => {
   assert.equal(imageTextCellCount({ layout: 'corner' }), 1);
   assert.equal(imageTextCellCount({ layout: 'duo' }), 2);
   assert.equal(imageTextCellCount({ layout: 'row-top' }), 2);
-  assert.equal(imageTextCellCount({ layout: 'row-top', images: [{}, {}, {}] }), 3);
-  assert.equal(imageTextCellCount({ layout: 'row-bottom', image: '/x.png' }), 2);
+  assert.equal(
+    imageTextCellCount({ layout: 'row-top', images: [{}, {}, {}] }),
+    3,
+  );
+  assert.equal(
+    imageTextCellCount({ layout: 'row-bottom', image: '/x.png' }),
+    2,
+  );
 });
 
 test('ensureImageTextImages: migrates flat -> images[0], pads to cell count, idempotent', () => {
@@ -202,7 +238,10 @@ test('ensureImageTextImages: migrates flat -> images[0], pads to cell count, ide
 });
 
 test('ensureImageTextImages: keeps extra items and caps at the maximum', () => {
-  const content = { layout: 'split', images: [{ src: '/a' }, { src: '/b' }, { src: '/c' }, { src: '/d' }] };
+  const content = {
+    layout: 'split',
+    images: [{ src: '/a' }, { src: '/b' }, { src: '/c' }, { src: '/d' }],
+  };
   ensureImageTextImages(content);
   assert.equal(content.images.length, IMAGE_TEXT_MAX_IMAGES, 'capped at max');
   assert.equal(content.images[0].src, '/a', 'existing items untouched');
@@ -210,7 +249,8 @@ test('ensureImageTextImages: keeps extra items and caps at the maximum', () => {
 
 test('render: duo shows two frames with indexed inline-photo hooks', () => {
   const html = DEF.renderHtml(
-    slide({ layout: 'duo', images: [{ src: '/a.png' }, { src: '/b.png' }] }).content
+    slide({ layout: 'duo', images: [{ src: '/a.png' }, { src: '/b.png' }] })
+      .content,
   );
   assert.match(html, /is-layout-duo/);
   assert.match(html, /class="media is-multi" data-count="2"/);
@@ -220,11 +260,16 @@ test('render: duo shows two frames with indexed inline-photo hooks', () => {
 
 test('render: rows follow the image count and pad placeholders', () => {
   const three = DEF.renderHtml(
-    slide({ layout: 'row-top', images: [{ src: '/a' }, { src: '/b' }, { src: '/c' }] }).content
+    slide({
+      layout: 'row-top',
+      images: [{ src: '/a' }, { src: '/b' }, { src: '/c' }],
+    }).content,
   );
   assert.match(three, /is-layout-row-top/);
   assert.match(three, /data-count="3"/);
-  const one = DEF.renderHtml(slide({ layout: 'row-bottom', images: [{ src: '/a' }] }).content);
+  const one = DEF.renderHtml(
+    slide({ layout: 'row-bottom', images: [{ src: '/a' }] }).content,
+  );
   assert.match(one, /is-layout-row-bottom/);
   assert.match(one, /data-count="2"/);
   assert.match(one, /image-placeholder is-empty" data-inline-photo="1"/);
@@ -238,7 +283,7 @@ test('render: per-image fit and focus override the slide level', () => {
         { src: '/a.png', fit: 'contain', focusX: 10, focusY: 20 },
         { src: '/b.png' },
       ],
-    }).content
+    }).content,
   );
   assert.match(html, /frame is-fit-contain/);
   assert.match(html, /object-position:10% 20%/);
@@ -246,13 +291,14 @@ test('render: per-image fit and focus override the slide level', () => {
 
 test('render: legacy alt and focus keep working as item-0 fallbacks', () => {
   const html = DEF.renderHtml(
-    slide({ image: '/x.png', alt: 'Legacy alt', focusX: 30, focusY: 40 }).content
+    slide({ image: '/x.png', alt: 'Legacy alt', focusX: 30, focusY: 40 })
+      .content,
   );
   assert.match(html, /alt="Legacy alt"/);
   assert.match(html, /object-position:30% 40%/);
   // Migrated shape without item alt still falls back to the slide-level alt.
   const migrated = DEF.renderHtml(
-    slide({ images: [{ src: '/x.png' }], alt: 'Legacy alt' }).content
+    slide({ images: [{ src: '/x.png' }], alt: 'Legacy alt' }).content,
   );
   assert.match(migrated, /alt="Legacy alt"/);
 });
@@ -267,10 +313,16 @@ test('layoutVariants: the phase-2 catalogue carries rows and duo', () => {
 test('active variant: rows and duo match on their layout value', () => {
   assert.equal(activeLayoutVariantId(slide({ layout: 'duo' }), DEF), 'duo');
   assert.equal(
-    activeLayoutVariantId(slide({ layout: 'row-top', imageWidth: 'wide' }), DEF),
-    'row-top'
+    activeLayoutVariantId(
+      slide({ layout: 'row-top', imageWidth: 'wide' }),
+      DEF,
+    ),
+    'row-top',
   );
-  assert.equal(activeLayoutVariantId(slide({ layout: 'row-bottom' }), DEF), 'row-bottom');
+  assert.equal(
+    activeLayoutVariantId(slide({ layout: 'row-bottom' }), DEF),
+    'row-bottom',
+  );
 });
 
 test('convert: image-slide -> image-text lands in canonical images[0]', () => {
@@ -306,7 +358,11 @@ test('convert: centered image-slide -> image-text contain on the ImageRef', () =
   };
   const next = convertSlideToType(src, 'image-text-slide', { lang: 'nl' });
   assert.equal(next.content.images[0].fit, 'contain');
-  assert.equal(next.content.imageFit ?? '', '', 'fit lands on the item, not the slide');
+  assert.equal(
+    next.content.imageFit ?? '',
+    '',
+    'fit lands on the item, not the slide',
+  );
 });
 
 test('convert: filled images[] warns as lossy towards content-slide', () => {
@@ -331,7 +387,14 @@ test('content-slide layoutVariants: full series, valid sets, seam-covered, JSON-
   const variants = getLayoutVariants(CONTENT_DEF);
   const ids = variants.map((v) => v.id);
   assert.equal(new Set(ids).size, ids.length, 'variant ids are unique');
-  for (const id of ['one-column', 'two-column', 'split-half', 'row-top', 'duo', 'corner']) {
+  for (const id of [
+    'one-column',
+    'two-column',
+    'split-half',
+    'row-top',
+    'duo',
+    'corner',
+  ]) {
     assert.ok(ids.includes(id), `series carries ${id}`);
   }
   // Sets of cross-type tiles apply to the *target* type after conversion, so
@@ -341,13 +404,18 @@ test('content-slide layoutVariants: full series, valid sets, seam-covered, JSON-
     if (v.convertTo) {
       assert.ok(
         getConvertibleSlideTypes(contentSlide()).includes(v.convertTo),
-        `${v.id}: seam supports content-slide -> ${v.convertTo}`
+        `${v.id}: seam supports content-slide -> ${v.convertTo}`,
       );
     }
     for (const [key, value] of Object.entries(v.set || {})) {
       const field = def.fields.find((f) => f.key === key);
-      assert.ok(field, `${v.id}: set key "${key}" exists on ${v.convertTo || 'content-slide'}`);
-      const options = field.options.map((o) => (typeof o === 'string' ? o : o.value));
+      assert.ok(
+        field,
+        `${v.id}: set key "${key}" exists on ${v.convertTo || 'content-slide'}`,
+      );
+      const options = field.options.map((o) =>
+        typeof o === 'string' ? o : o.value,
+      );
       assert.ok(options.includes(value), `${v.id}: ${key}=${value} is valid`);
     }
   }
@@ -355,17 +423,30 @@ test('content-slide layoutVariants: full series, valid sets, seam-covered, JSON-
 });
 
 test('content-slide active variant follows the layout enum', () => {
-  assert.equal(activeLayoutVariantId(contentSlide(), CONTENT_DEF), 'one-column');
+  assert.equal(
+    activeLayoutVariantId(contentSlide(), CONTENT_DEF),
+    'one-column',
+  );
   assert.equal(
     activeLayoutVariantId(contentSlide({ layout: 'two-column' }), CONTENT_DEF),
-    'two-column'
+    'two-column',
   );
 });
 
 test('layoutMirror: image-text declares the imageSide flip, JSON-safe', () => {
-  assert.deepEqual(DEF.layoutMirror, { key: 'imageSide', values: ['left', 'right'] });
-  assert.deepEqual(JSON.parse(JSON.stringify(DEF.layoutMirror)), DEF.layoutMirror);
-  assert.equal(CONTENT_DEF.layoutMirror, undefined, 'text slide has nothing to mirror');
+  assert.deepEqual(DEF.layoutMirror, {
+    key: 'imageSide',
+    values: ['left', 'right'],
+  });
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(DEF.layoutMirror)),
+    DEF.layoutMirror,
+  );
+  assert.equal(
+    CONTENT_DEF.layoutMirror,
+    undefined,
+    'text slide has nothing to mirror',
+  );
 });
 
 // ---- Text columns (follow-up 2026-07-17): 2-col copy in rows/duo ----------
@@ -382,14 +463,23 @@ test('render: textColumns 2 is inert outside rows/duo (no phantom columns)', () 
   // - the same model as imageSide: right on a row (the phase-3 bijvangst).
   for (const layout of ['split', 'corner']) {
     const html = DEF.renderHtml(slide({ layout, textColumns: '2' }).content);
-    assert.ok(!html.includes('is-text-cols-2'), `${layout} stays single-column`);
+    assert.ok(
+      !html.includes('is-text-cols-2'),
+      `${layout} stays single-column`,
+    );
   }
 });
 
 test('render: default and explicit 1 render without the class', () => {
-  assert.ok(!DEF.renderHtml(slide({ layout: 'row-bottom' }).content).includes('is-text-cols-2'));
   assert.ok(
-    !DEF.renderHtml(slide({ layout: 'duo', textColumns: '1' }).content).includes('is-text-cols-2')
+    !DEF.renderHtml(slide({ layout: 'row-bottom' }).content).includes(
+      'is-text-cols-2',
+    ),
+  );
+  assert.ok(
+    !DEF.renderHtml(
+      slide({ layout: 'duo', textColumns: '1' }).content,
+    ).includes('is-text-cols-2'),
   );
 });
 
@@ -409,11 +499,21 @@ test('layoutTextColumns declaration is consistent with the schema, JSON-safe', (
   };
   assert.equal(d.values.length, 2, 'exactly two values (a toggle)');
   for (const v of d.values) {
-    assert.ok(enumOptions(d.key).includes(v), `${d.key}=${v} is a valid enum value`);
+    assert.ok(
+      enumOptions(d.key).includes(v),
+      `${d.key}=${v} is a valid enum value`,
+    );
   }
   for (const v of d.when.values) {
-    assert.ok(enumOptions(d.when.key).includes(v), `when: ${d.when.key}=${v} is valid`);
+    assert.ok(
+      enumOptions(d.when.key).includes(v),
+      `when: ${d.when.key}=${v} is valid`,
+    );
   }
   assert.deepEqual(JSON.parse(JSON.stringify(d)), d, 'JSON-safe');
-  assert.equal(CONTENT_DEF.layoutTextColumns, undefined, 'content-slide uses its layout enum instead');
+  assert.equal(
+    CONTENT_DEF.layoutTextColumns,
+    undefined,
+    'content-slide uses its layout enum instead',
+  );
 });

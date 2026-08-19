@@ -125,11 +125,11 @@ export function buildFollowLayout({ getCopy }) {
     class: 'btn btn-primary',
     text: copy.qaAsk,
   });
-  const qaForm = h('div', { class: 'follow-qa-form' }, [
-    qaInput,
-    qaAskBtn,
-  ]);
-  const qaList = h('div', { class: 'follow-qa-list', id: 'follow-qa-collapsible' });
+  const qaForm = h('div', { class: 'follow-qa-form' }, [qaInput, qaAskBtn]);
+  const qaList = h('div', {
+    class: 'follow-qa-list',
+    id: 'follow-qa-collapsible',
+  });
   // Put questions ABOVE the input (so your own question shows above the box after posting).
   qaWrap.append(qaHeader, qaList, qaForm);
   applyQaCollapsed();

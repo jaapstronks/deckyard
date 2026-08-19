@@ -2,7 +2,10 @@ import { openImageLibraryPicker } from './image-library-picker.js';
 import { openImageKitPicker } from './imagekit-picker.js';
 import { openBundledGradientPicker } from './bundled-gradients/picker.js';
 import { createImagePickerSeam } from './media/picker-provider.js';
-import { fetchStockMediaStatus, isStockSourceAvailable } from '../../lib/net/stock-media.js';
+import {
+  fetchStockMediaStatus,
+  isStockSourceAvailable,
+} from '../../lib/net/stock-media.js';
 
 /**
  * Build the pluggable image-picker seam that the editor's field renderers and
@@ -27,7 +30,14 @@ import { fetchStockMediaStatus, isStockSourceAvailable } from '../../lib/net/sto
  * @param {Function} ctx.openOverlayClosers - overlay registry closer collector
  * @returns {Promise<{ openImagePicker: Function }>} the single seam every call site uses
  */
-export async function createImagePickers({ h, root, user, api, features, openOverlayClosers }) {
+export async function createImagePickers({
+  h,
+  root,
+  user,
+  api,
+  features,
+  openOverlayClosers,
+}) {
   const openImageLibrary = (opts) =>
     openImageLibraryPicker({
       ...opts,

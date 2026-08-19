@@ -21,8 +21,14 @@ export function createRealtimeViewer({ h, presentationId }) {
       h('span', { class: 'analytics-realtime-dot' }),
     ]),
     h('div', { class: 'analytics-card-content' }, [
-      h('div', { class: 'analytics-card-value analytics-realtime-count', text: '0' }),
-      h('div', { class: 'analytics-card-label', text: t('analytics.liveViewers', 'Live Viewers') }),
+      h('div', {
+        class: 'analytics-card-value analytics-realtime-count',
+        text: '0',
+      }),
+      h('div', {
+        class: 'analytics-card-label',
+        text: t('analytics.liveViewers', 'Live Viewers'),
+      }),
     ]),
   ]);
 
@@ -42,7 +48,10 @@ export function createRealtimeViewer({ h, presentationId }) {
           count = Number(data?.count) || 0;
           updateDisplay();
         } catch (err) {
-          console.warn('[analytics] Failed to parse viewer count data:', err.message);
+          console.warn(
+            '[analytics] Failed to parse viewer count data:',
+            err.message,
+          );
         }
       },
       onConnected: () => {

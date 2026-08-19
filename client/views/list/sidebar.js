@@ -11,10 +11,29 @@ import { iconUrl } from '../../../shared/icon-names.js';
  */
 const SIDEBAR_VIEWS = [
   { key: 'home', icon: 'house', label: () => t('list.nav.home', 'Home') },
-  { key: 'presentations', icon: 'files', label: () => t('list.nav.presentations', 'Presentations') },
-  { key: 'slideLibrary', icon: 'library', label: () => t('list.nav.library', 'Library') },
-  { key: 'insights', icon: 'chart-column', label: () => t('list.nav.insights', 'Insights'), action: true, href: '/insights' },
-  { key: 'activity', icon: 'newspaper', label: () => t('list.nav.activity', 'Activity'), badge: true },
+  {
+    key: 'presentations',
+    icon: 'files',
+    label: () => t('list.nav.presentations', 'Presentations'),
+  },
+  {
+    key: 'slideLibrary',
+    icon: 'library',
+    label: () => t('list.nav.library', 'Library'),
+  },
+  {
+    key: 'insights',
+    icon: 'chart-column',
+    label: () => t('list.nav.insights', 'Insights'),
+    action: true,
+    href: '/insights',
+  },
+  {
+    key: 'activity',
+    icon: 'newspaper',
+    label: () => t('list.nav.activity', 'Activity'),
+    badge: true,
+  },
   { key: 'trash', icon: 'trash-2', label: () => t('list.nav.trash', 'Trash') },
 ];
 
@@ -29,8 +48,19 @@ const SIDEBAR_VIEWS = [
  * @param {number} options.unreadCount - Unread activity count
  * @returns {Object} { el, updateBadge, setActiveView }
  */
-export function createSidebar({ h, activeView = 'home', onViewChange, onAction, onNewClick, unreadCount = 0 }) {
-  const el = h('aside', { class: 'app-sidebar', role: 'navigation', 'aria-label': t('list.nav.aria', 'Main navigation') });
+export function createSidebar({
+  h,
+  activeView = 'home',
+  onViewChange,
+  onAction,
+  onNewClick,
+  unreadCount = 0,
+}) {
+  const el = h('aside', {
+    class: 'app-sidebar',
+    role: 'navigation',
+    'aria-label': t('list.nav.aria', 'Main navigation'),
+  });
 
   // New presentation button at top
   const newBtn = h('button', {
@@ -40,7 +70,7 @@ export function createSidebar({ h, activeView = 'home', onViewChange, onAction, 
   });
   newBtn.append(
     h('span', { class: 'sidebar-new-icon', text: '+' }),
-    h('span', { text: t('list.new', 'New') })
+    h('span', { text: t('list.new', 'New') }),
   );
   el.append(newBtn);
 
@@ -69,7 +99,12 @@ export function createSidebar({ h, activeView = 'home', onViewChange, onAction, 
       },
     });
 
-    const icon = h('img', { class: 'sidebar-nav-icon', src: iconUrl(view.icon), alt: '', 'aria-hidden': 'true' });
+    const icon = h('img', {
+      class: 'sidebar-nav-icon',
+      src: iconUrl(view.icon),
+      alt: '',
+      'aria-hidden': 'true',
+    });
     const label = h('span', { class: 'sidebar-nav-text', text: view.label() });
     item.append(icon, label);
 
@@ -122,7 +157,12 @@ export function createSidebar({ h, activeView = 'home', onViewChange, onAction, 
  * @param {number} options.unreadCount - Unread activity count
  * @returns {Object} { el, updateBadge, setActiveView }
  */
-export function createBottomTabs({ h, activeView = 'home', onViewChange, unreadCount = 0 }) {
+export function createBottomTabs({
+  h,
+  activeView = 'home',
+  onViewChange,
+  unreadCount = 0,
+}) {
   const el = h('nav', { class: 'app-bottom-tabs' });
   const inner = h('div', { class: 'app-bottom-tabs-inner' });
 
@@ -130,8 +170,8 @@ export function createBottomTabs({ h, activeView = 'home', onViewChange, unreadC
   let badgeEl = null;
 
   // Build tab items (subset for mobile - home, presentations, slideLibrary, activity)
-  const mobileViews = SIDEBAR_VIEWS.filter(v =>
-    ['home', 'presentations', 'slideLibrary', 'activity'].includes(v.key)
+  const mobileViews = SIDEBAR_VIEWS.filter((v) =>
+    ['home', 'presentations', 'slideLibrary', 'activity'].includes(v.key),
   );
 
   for (const view of mobileViews) {
@@ -144,7 +184,12 @@ export function createBottomTabs({ h, activeView = 'home', onViewChange, unreadC
       },
     });
 
-    const icon = h('img', { class: 'bottom-tab-icon', src: iconUrl(view.icon), alt: '', 'aria-hidden': 'true' });
+    const icon = h('img', {
+      class: 'bottom-tab-icon',
+      src: iconUrl(view.icon),
+      alt: '',
+      'aria-hidden': 'true',
+    });
     const label = h('span', { class: 'bottom-tab-label', text: view.label() });
     tab.append(icon, label);
 

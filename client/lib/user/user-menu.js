@@ -65,19 +65,23 @@ export function createUserMenu({ h = defaultH, user, nav, onLogout } = {}) {
       title: displayName,
       'aria-label': t('common.userMenu', 'User menu'),
     },
-    [avatar]
+    [avatar],
   );
 
   // Menu items
   const menuItems = [];
 
   // User info header
-  const userInfo = h('div', { class: 'user-menu-header' }, [
-    h('div', { class: 'user-menu-name', text: displayName }),
-    email && !isAnonymous
-      ? h('div', { class: 'user-menu-email', text: email })
-      : null,
-  ].filter(Boolean));
+  const userInfo = h(
+    'div',
+    { class: 'user-menu-header' },
+    [
+      h('div', { class: 'user-menu-name', text: displayName }),
+      email && !isAnonymous
+        ? h('div', { class: 'user-menu-email', text: email })
+        : null,
+    ].filter(Boolean),
+  );
   menuItems.push(userInfo);
 
   // Separator
@@ -151,7 +155,11 @@ export function createUserMenu({ h = defaultH, user, nav, onLogout } = {}) {
     menuItems.push(btnLogout);
   }
 
-  const menu = h('div', { class: 'dropdown-menu dropdown-menu-right' }, menuItems);
+  const menu = h(
+    'div',
+    { class: 'dropdown-menu dropdown-menu-right' },
+    menuItems,
+  );
   details.append(summary, menu);
 
   // Close on outside click / Escape
@@ -162,7 +170,7 @@ export function createUserMenu({ h = defaultH, user, nav, onLogout } = {}) {
       close: () => {
         details.open = false;
       },
-    })
+    }),
   );
 
   return {

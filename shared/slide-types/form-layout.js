@@ -59,7 +59,8 @@ export const FORM_LAYOUT_VALUES = Object.freeze(['pair']);
  * @returns {string} a value from FORM_LAYOUT_VALUES, or ''
  */
 export function fieldFormLayout(field) {
-  const hint = typeof field?.formLayout === 'string' ? field.formLayout.trim() : '';
+  const hint =
+    typeof field?.formLayout === 'string' ? field.formLayout.trim() : '';
   return FORM_LAYOUT_VALUES.includes(hint) ? hint : '';
 }
 

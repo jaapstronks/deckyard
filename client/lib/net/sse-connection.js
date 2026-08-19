@@ -148,7 +148,10 @@ export function createSSEConnection({
       clearTimeout(reconnectTimeoutId);
       reconnectTimeoutId = null;
     }
-    if (connectionState !== STATE.FAILED && connectionState !== STATE.DISCONNECTED) {
+    if (
+      connectionState !== STATE.FAILED &&
+      connectionState !== STATE.DISCONNECTED
+    ) {
       setState(STATE.DISCONNECTED);
       onDisconnected?.();
     }
@@ -160,7 +163,9 @@ export function createSSEConnection({
   function scheduleReconnect() {
     if (stopped) return;
     if (connectionState === STATE.FAILED) {
-      console.warn('SSE: Max reconnect attempts reached, not scheduling reconnect');
+      console.warn(
+        'SSE: Max reconnect attempts reached, not scheduling reconnect',
+      );
       return;
     }
 
@@ -178,7 +183,10 @@ export function createSSEConnection({
     }
 
     // Exponential backoff (1s, 2s, 4s, …), capped at maxDelayMs.
-    const delay = Math.min(maxDelayMs, baseDelayMs * Math.pow(2, reconnectAttempts));
+    const delay = Math.min(
+      maxDelayMs,
+      baseDelayMs * Math.pow(2, reconnectAttempts),
+    );
     reconnectAttempts++;
 
     setState(STATE.RECONNECTING);

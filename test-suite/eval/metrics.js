@@ -76,12 +76,18 @@ export function extractSlideText(slide) {
   const body = bodyParts.join('\n');
   if (!bullets.length) {
     for (const line of body.split('\n')) {
-      if (/^\s*([-*+]|\d+\.)\s+/.test(line)) bullets.push(line.replace(/^\s*([-*+]|\d+\.)\s+/, ''));
+      if (/^\s*([-*+]|\d+\.)\s+/.test(line))
+        bullets.push(line.replace(/^\s*([-*+]|\d+\.)\s+/, ''));
     }
   }
 
   const title = titleParts.join(' ');
-  return { title, body, bullets, allText: [title, body].filter(Boolean).join('\n') };
+  return {
+    title,
+    body,
+    bullets,
+    allText: [title, body].filter(Boolean).join('\n'),
+  };
 }
 
 /**
@@ -143,12 +149,18 @@ export function deckMetrics(deck) {
     repetition: typeRepetition(perSlide.map((s) => s.type)),
     // Share of the deck that is section dividers rather than content.
     dividerShare: slides.length
-      ? round(perSlide.filter((s) => s.type === 'chapter-title-slide').length / slides.length)
+      ? round(
+          perSlide.filter((s) => s.type === 'chapter-title-slide').length /
+            slides.length,
+        )
       : 0,
     structure: {
       hasTitleSlide: slides[0]?.type === 'title-slide',
-      hasClosing: /^(payoff|quote|chapter-title)/.test(slides.at(-1)?.type || ''),
-      chapterCount: perSlide.filter((s) => s.type === 'chapter-title-slide').length,
+      hasClosing: /^(payoff|quote|chapter-title)/.test(
+        slides.at(-1)?.type || '',
+      ),
+      chapterCount: perSlide.filter((s) => s.type === 'chapter-title-slide')
+        .length,
     },
     perSlide,
   };
@@ -167,12 +179,15 @@ export function deckMetrics(deck) {
  * @returns {{checked: number, unsupported: string[], supportRate: number}}
  */
 export function numberFidelity(deck, sourceText) {
-  const sourceNumbers = new Set(extractNumbers(sourceText).map(normalizeNumber));
+  const sourceNumbers = new Set(
+    extractNumbers(sourceText).map(normalizeNumber),
+  );
   const slides = Array.isArray(deck?.slides) ? deck.slides : [];
 
   const deckNumbers = new Set();
   for (const slide of slides) {
-    for (const raw of extractNumbers(extractSlideText(slide).allText)) deckNumbers.add(raw);
+    for (const raw of extractNumbers(extractSlideText(slide).allText))
+      deckNumbers.add(raw);
   }
 
   const checked = [];
@@ -189,7 +204,9 @@ export function numberFidelity(deck, sourceText) {
   return {
     checked: checked.length,
     unsupported: unsupported.sort(),
-    supportRate: checked.length ? (checked.length - unsupported.length) / checked.length : 1,
+    supportRate: checked.length
+      ? (checked.length - unsupported.length) / checked.length
+      : 1,
   };
 }
 
@@ -236,7 +253,9 @@ function median(values) {
   if (!values.length) return 0;
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 ? sorted[mid] : round((sorted[mid - 1] + sorted[mid]) / 2);
+  return sorted.length % 2
+    ? sorted[mid]
+    : round((sorted[mid - 1] + sorted[mid]) / 2);
 }
 
 /**
@@ -263,7 +282,8 @@ function typeRepetition(types) {
   return {
     consecutiveRepeats,
     longestRun,
-    repeatRate: types.length > 1 ? round(consecutiveRepeats / (types.length - 1)) : 0,
+    repeatRate:
+      types.length > 1 ? round(consecutiveRepeats / (types.length - 1)) : 0,
   };
 }
 
@@ -324,7 +344,9 @@ export function specialTypeUsage(deck, expected = []) {
     expected: expected.length,
     found,
     missing,
-    recall: expected.length ? Math.round((found.length / expected.length) * 100) / 100 : 1,
+    recall: expected.length
+      ? Math.round((found.length / expected.length) * 100) / 100
+      : 1,
     substitutes,
   };
 }

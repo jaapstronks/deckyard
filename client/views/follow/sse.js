@@ -35,7 +35,12 @@ export function createFollowSse({
     try {
       return JSON.parse(event.data || '{}');
     } catch (err) {
-      console.error('[follow] SSE parse error:', err.message, 'Raw:', event.data?.slice?.(0, 200));
+      console.error(
+        '[follow] SSE parse error:',
+        err.message,
+        'Raw:',
+        event.data?.slice?.(0, 200),
+      );
       return null;
     }
   }
@@ -75,7 +80,11 @@ export function createFollowSse({
     onEvent: handleEvent,
     onStateChange: (state) => {
       const copy = getCopy?.();
-      if (statusEl && copy?.connecting && state === connection.STATE.RECONNECTING) {
+      if (
+        statusEl &&
+        copy?.connecting &&
+        state === connection.STATE.RECONNECTING
+      ) {
         statusEl.textContent = copy.connecting;
       }
     },

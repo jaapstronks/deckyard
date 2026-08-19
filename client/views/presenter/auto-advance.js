@@ -118,7 +118,10 @@ export function createAutoAdvance({
      */
     configure(opts = {}) {
       if (typeof opts.intervalSeconds === 'number') {
-        intervalMs = Math.max(1000, Math.min(300_000, opts.intervalSeconds * 1000));
+        intervalMs = Math.max(
+          1000,
+          Math.min(300_000, opts.intervalSeconds * 1000),
+        );
       }
       loop = !!opts.loop;
       mode = opts.mode === 'pacing' ? 'pacing' : 'auto';

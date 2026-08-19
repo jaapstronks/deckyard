@@ -61,7 +61,9 @@ export function renderOrganizationProfilePanel({
   // place to land.
   onDeleted = () => location.assign('/app'),
 } = {}) {
-  const card = h('div', { class: 'stack editor-card organization-profile-card' });
+  const card = h('div', {
+    class: 'stack editor-card organization-profile-card',
+  });
   const body = h('div', { class: 'stack' });
   card.append(body);
 
@@ -80,10 +82,15 @@ export function renderOrganizationProfilePanel({
   let busy = false;
 
   const fields = {};
-  const status = h('div', { class: 'help organization-profile-status', role: 'status' });
+  const status = h('div', {
+    class: 'help organization-profile-status',
+    role: 'status',
+  });
   let saveBtn = null;
 
-  body.append(h('div', { class: 'help', text: t('common.loading', 'Loading…') }));
+  body.append(
+    h('div', { class: 'help', text: t('common.loading', 'Loading…') }),
+  );
 
   const ready = show();
 
@@ -100,7 +107,10 @@ export function renderOrganizationProfilePanel({
       organization = result.organization;
       renderForm();
     } catch (err) {
-      console.warn('[organization-profile] Could not load the organization:', err);
+      console.warn(
+        '[organization-profile] Could not load the organization:',
+        err,
+      );
       showLoadFailure();
     }
   }
@@ -119,37 +129,45 @@ export function renderOrganizationProfilePanel({
           class: 'help',
           text: editable
             ? t(
-              'organization.profile.help',
-              'How this organization is named across the app, for everyone in it.'
-            )
+                'organization.profile.help',
+                'How this organization is named across the app, for everyone in it.',
+              )
             : t(
-              'organization.profile.readOnlyHelp',
-              'How this organization is named across the app. Only an admin or the owner can change it.'
-            ),
+                'organization.profile.readOnlyHelp',
+                'How this organization is named across the app. Only an admin or the owner can change it.',
+              ),
         }),
-      ])
+      ]),
     );
 
     body.append(
       textField('name', t('organization.profile.nameLabel', 'Name'), {
         help: t(
           'organization.profile.nameHelp',
-          'The organization as it is referred to when there is no display name.'
+          'The organization as it is referred to when there is no display name.',
         ),
       }),
-      textField('displayName', t('organization.profile.displayNameLabel', 'Display name'), {
-        help: t(
-          'organization.profile.displayNameHelp',
-          'Shown in the organization switcher when set.'
-        ),
-      }),
-      textField('description', t('organization.profile.descriptionLabel', 'Description'), {
-        multiline: true,
-      }),
+      textField(
+        'displayName',
+        t('organization.profile.displayNameLabel', 'Display name'),
+        {
+          help: t(
+            'organization.profile.displayNameHelp',
+            'Shown in the organization switcher when set.',
+          ),
+        },
+      ),
+      textField(
+        'description',
+        t('organization.profile.descriptionLabel', 'Description'),
+        {
+          multiline: true,
+        },
+      ),
       textField('logoUrl', t('organization.profile.logoLabel', 'Logo URL'), {
         type: 'url',
         placeholder: 'https://…',
-      })
+      }),
     );
 
     body.append(
@@ -159,11 +177,14 @@ export function renderOrganizationProfilePanel({
             slug: organization.slug || '—',
           }),
         }),
-      ])
+      ]),
     );
 
     if (editable) {
-      const actions = h('div', { class: 'row is-between', style: 'margin-top: 12px;' });
+      const actions = h('div', {
+        class: 'row is-between',
+        style: 'margin-top: 12px;',
+      });
       saveBtn = h('button', {
         class: 'btn btn-primary',
         type: 'button',
@@ -188,7 +209,9 @@ export function renderOrganizationProfilePanel({
     wrap.querySelector('.organization-danger-card')?.remove();
     if (!isOrganizationOwner(user)) return;
 
-    const danger = h('div', { class: 'stack editor-card organization-danger-card' });
+    const danger = h('div', {
+      class: 'stack editor-card organization-danger-card',
+    });
     danger.append(
       h('div', {
         class: 'field-label',
@@ -198,9 +221,9 @@ export function renderOrganizationProfilePanel({
         class: 'help',
         text: t(
           'organization.profile.transferHint',
-          'Handing this organization to someone else is done from the Members tab, next to the person who should get it.'
+          'Handing this organization to someone else is done from the Members tab, next to the person who should get it.',
         ),
-      })
+      }),
     );
 
     if (canDeleteOrganization(user, organization)) {
@@ -215,7 +238,10 @@ export function renderOrganizationProfilePanel({
           organization,
           onDeleted: () => {
             toast.success(
-              t('organization.profile.delete.done', 'The organization has been deleted.')
+              t(
+                'organization.profile.delete.done',
+                'The organization has been deleted.',
+              ),
             );
             onDeleted();
           },
@@ -227,9 +253,9 @@ export function renderOrganizationProfilePanel({
           class: 'help',
           text: t(
             'organization.profile.delete.isDefault',
-            'This is the default organization of this instance, so it cannot be deleted.'
+            'This is the default organization of this instance, so it cannot be deleted.',
           ),
-        })
+        }),
       );
     }
 
@@ -248,11 +274,20 @@ export function renderOrganizationProfilePanel({
    * @param {string} [options.placeholder] - Input placeholder.
    * @returns {HTMLElement}
    */
-  function textField(key, label, { help, multiline, type = 'text', placeholder } = {}) {
+  function textField(
+    key,
+    label,
+    { help, multiline, type = 'text', placeholder } = {},
+  ) {
     const field = h('label', { class: 'stack', style: 'gap: 4px;' });
     const control = multiline
       ? h('textarea', { class: 'form-input', rows: '3', name: key })
-      : h('input', { class: 'form-input', type, name: key, autocomplete: 'off' });
+      : h('input', {
+          class: 'form-input',
+          type,
+          name: key,
+          autocomplete: 'off',
+        });
     if (placeholder) control.setAttribute('placeholder', placeholder);
     control.value = organization?.[key] || '';
     control.disabled = !editable;
@@ -273,14 +308,15 @@ export function renderOrganizationProfilePanel({
     if (busy) return;
 
     const draft = {};
-    for (const [key, control] of Object.entries(fields)) draft[key] = control.value;
+    for (const [key, control] of Object.entries(fields))
+      draft[key] = control.value;
 
     // The route's own minimum. Catching it here keeps the reader in the field
     // they emptied instead of bouncing a 400 off the form.
     if (draft.name.trim().length < 2) {
       status.textContent = t(
         'organization.profile.nameTooShort',
-        'The name needs at least two characters.'
+        'The name needs at least two characters.',
       );
       fields.name.focus();
       return;
@@ -288,7 +324,10 @@ export function renderOrganizationProfilePanel({
 
     const updates = changedFields(organization, draft);
     if (Object.keys(updates).length === 0) {
-      status.textContent = t('organization.profile.noChanges', 'Nothing has changed yet.');
+      status.textContent = t(
+        'organization.profile.noChanges',
+        'Nothing has changed yet.',
+      );
       return;
     }
 
@@ -317,7 +356,8 @@ export function renderOrganizationProfilePanel({
       // required"), which beats anything this form could reconstruct from a
       // status code.
       status.textContent =
-        err?.message || t('organization.profile.saveFailed', 'Could not save the changes.');
+        err?.message ||
+        t('organization.profile.saveFailed', 'Could not save the changes.');
     } finally {
       setBusy(false);
     }
@@ -330,7 +370,8 @@ export function renderOrganizationProfilePanel({
   function setBusy(value) {
     busy = value;
     if (saveBtn) saveBtn.disabled = value;
-    for (const control of Object.values(fields)) control.disabled = value || !editable;
+    for (const control of Object.values(fields))
+      control.disabled = value || !editable;
   }
 
   function showLoadFailure() {
@@ -338,8 +379,11 @@ export function renderOrganizationProfilePanel({
     body.append(
       h('div', {
         class: 'help',
-        text: t('organization.profile.loadFailed', 'Could not load the organization.'),
-      })
+        text: t(
+          'organization.profile.loadFailed',
+          'Could not load the organization.',
+        ),
+      }),
     );
   }
 }

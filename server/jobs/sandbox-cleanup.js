@@ -50,7 +50,7 @@ export async function sweepExpiredSandboxDecks() {
     if (total >= ceiling) {
       log.warn(
         `sandbox presentations at ${total} bytes ≥ ceiling ${ceiling}; ` +
-          'consider lowering SANDBOX_TTL_HOURS or the per-guest quota.'
+          'consider lowering SANDBOX_TTL_HOURS or the per-guest quota.',
       );
     }
   }

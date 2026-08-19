@@ -44,6 +44,9 @@ export function applySecurityHeaders(req, res, pathname) {
   // HSTS only when the connection is actually HTTPS (or secure cookies are
   // forced) — never send it over plain HTTP, where it can lock users out.
   if (shouldUseSecureCookies(req)) {
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    res.setHeader(
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains',
+    );
   }
 }

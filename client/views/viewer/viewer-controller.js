@@ -81,7 +81,11 @@ export async function createViewerController({
     id,
     permission,
     onToggleComments: canComment ? () => commentsPanel?.toggle?.() : null,
-    setCommentsBadge: canComment ? (fn) => { setCommentsBadgeFn = fn; } : null,
+    setCommentsBadge: canComment
+      ? (fn) => {
+          setCommentsBadgeFn = fn;
+        }
+      : null,
   });
   shell.append(topbarApi.topbarEl);
 
@@ -161,7 +165,9 @@ export async function createViewerController({
   if (initialSlideId) {
     requestAnimationFrame(() => {
       try {
-        const active = slidesPanel.panelEl.querySelector?.('.viewer-slide-item.is-active');
+        const active = slidesPanel.panelEl.querySelector?.(
+          '.viewer-slide-item.is-active',
+        );
         active?.scrollIntoView?.({ block: 'nearest' });
       } catch {
         // ignore
@@ -184,7 +190,11 @@ export async function createViewerController({
     if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
       e.preventDefault();
       navigateSlide(-1);
-    } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+    } else if (
+      e.key === 'ArrowRight' ||
+      e.key === 'ArrowDown' ||
+      e.key === ' '
+    ) {
       e.preventDefault();
       navigateSlide(1);
     }

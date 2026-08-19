@@ -44,8 +44,8 @@ export const SLIDE_TYPE_SCHEMATIC = Object.freeze(
   Object.fromEntries(
     Object.entries(SLIDE_TYPE_AUTHORING)
       .filter(([, authoring]) => authoring?.schematic)
-      .map(([type, authoring]) => [type, authoring.schematic])
-  )
+      .map(([type, authoring]) => [type, authoring.schematic]),
+  ),
 );
 
 /**
@@ -56,12 +56,11 @@ export const SLIDE_TYPE_SCHEMATIC = Object.freeze(
 const SLIDE_TYPE_PRESET_SCHEMATIC = Object.freeze(
   Object.fromEntries(
     Object.entries(SLIDE_TYPE_AUTHORING).flatMap(([type, authoring]) =>
-      Object.entries(authoring?.presetSchematics || {}).map(([presetId, spec]) => [
-        `${type}:${presetId}`,
-        spec,
-      ])
-    )
-  )
+      Object.entries(authoring?.presetSchematics || {}).map(
+        ([presetId, spec]) => [`${type}:${presetId}`, spec],
+      ),
+    ),
+  ),
 );
 
 /**
@@ -72,8 +71,8 @@ export const SLIDE_TYPE_SAMPLE_CONTENT = Object.freeze(
   Object.fromEntries(
     Object.entries(SLIDE_TYPE_AUTHORING)
       .filter(([, authoring]) => authoring?.sample !== undefined)
-      .map(([type, authoring]) => [type, authoring.sample])
-  )
+      .map(([type, authoring]) => [type, authoring.sample]),
+  ),
 );
 
 /**
@@ -89,7 +88,9 @@ export const SLIDE_TYPE_SAMPLE_CONTENT = Object.freeze(
  * @returns {Object|null}
  */
 export function slideTypeSchematic(type, def = null, presetId = null) {
-  const override = presetId ? SLIDE_TYPE_PRESET_SCHEMATIC[`${type}:${presetId}`] : null;
+  const override = presetId
+    ? SLIDE_TYPE_PRESET_SCHEMATIC[`${type}:${presetId}`]
+    : null;
   if (override) return override;
   if (def?.schematic && typeof def.schematic === 'object') return def.schematic;
   return SLIDE_TYPE_SCHEMATIC[type] || null;
@@ -123,8 +124,8 @@ export const SLIDE_TYPE_DESCRIPTION = Object.freeze(
   Object.fromEntries(
     Object.entries(SLIDE_TYPE_AUTHORING)
       .filter(([, authoring]) => typeof authoring?.description === 'string')
-      .map(([type, authoring]) => [type, authoring.description])
-  )
+      .map(([type, authoring]) => [type, authoring.description]),
+  ),
 );
 
 /**
@@ -137,8 +138,8 @@ export const SLIDE_TYPE_ALIASES = Object.freeze(
   Object.fromEntries(
     Object.entries(SLIDE_TYPE_AUTHORING)
       .filter(([, authoring]) => typeof authoring?.aliases === 'string')
-      .map(([type, authoring]) => [type, authoring.aliases])
-  )
+      .map(([type, authoring]) => [type, authoring.aliases]),
+  ),
 );
 
 /**

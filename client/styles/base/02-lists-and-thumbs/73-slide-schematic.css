@@ -509,7 +509,8 @@
   height: 0;
   border-style: solid;
   border-width: 3px 0 3px 5px;
-  border-color: transparent transparent transparent var(--sd-strong, hsl(var(--app-border-strong)));
+  border-color: transparent transparent transparent
+    var(--sd-strong, hsl(var(--app-border-strong)));
 }
 
 .layout-tile-schematic.is-timeline {
@@ -643,8 +644,7 @@
 .sd-qr {
   width: 36%;
   aspect-ratio: 1;
-  background:
-    repeating-conic-gradient(
+  background: repeating-conic-gradient(
       var(--sd-strong, hsl(var(--app-border-strong))) 0% 25%,
       hsl(var(--app-bg-elevated)) 0% 50%
     )

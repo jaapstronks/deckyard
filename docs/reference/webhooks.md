@@ -40,16 +40,16 @@ See [`security-posture.md`](security-posture.md).
 
 Fire sites (each names the event it fires):
 
-| Event | Fired from |
-|---|---|
-| `presentation.moved_to_organization` | `server/routes/api/presentations/visibility.js` |
-| `presentation.published` | `server/routes/api/publish.js` |
-| `slide.added_to_organization_library` | `server/routes/api/slide-library.js` |
-| `comment.created` | `server/services/comment-notifications.js` |
-| `lead.submitted` | `server/routes/api/leads.js` |
-| `interaction.poll_closed` | `server/storage/interactions.js` |
-| `interaction.likert_closed` | `server/storage/interactions.js` |
-| `interaction.feedback_submitted` | `server/storage/feedback.js` |
+| Event                                 | Fired from                                      |
+| ------------------------------------- | ----------------------------------------------- |
+| `presentation.moved_to_organization`  | `server/routes/api/presentations/visibility.js` |
+| `presentation.published`              | `server/routes/api/publish.js`                  |
+| `slide.added_to_organization_library` | `server/routes/api/slide-library.js`            |
+| `comment.created`                     | `server/services/comment-notifications.js`      |
+| `lead.submitted`                      | `server/routes/api/leads.js`                    |
+| `interaction.poll_closed`             | `server/storage/interactions.js`                |
+| `interaction.likert_closed`           | `server/storage/interactions.js`                |
+| `interaction.feedback_submitted`      | `server/storage/feedback.js`                    |
 
 ## Data model
 
@@ -76,7 +76,7 @@ change between the two. `signingSecret` is trimmed and capped at 512 characters
 (over-length → `''`), otherwise stored opaque.
 
 Nothing about a delivery is stored: no attempt log, no last-status. The signing
-secret is a *setting*, not a per-delivery record.
+secret is a _setting_, not a per-delivery record.
 
 ### The request
 
@@ -108,14 +108,27 @@ convenience, not authentication; the signature is the authentication.
 {
   "event": "presentation.published",
   "createdAt": "2026-08-05T12:00:00.000Z",
-  "actor":  { "id": "…@…", "email": "…@…", "name": "…", "role": "admin|user" },
+  "actor": { "id": "…@…", "email": "…@…", "name": "…", "role": "admin|user" },
   "presentation": {
-    "id": "…", "title": "…", "description": "…", "theme": "…",
+    "id": "…",
+    "title": "…",
+    "description": "…",
+    "theme": "…",
     "visibility": "private|organization",
-    "published": { "id": "…", "slug": "…", "path": "/p/<id>-<slug>", "url": "https://…" }
+    "published": {
+      "id": "…",
+      "slug": "…",
+      "path": "/p/<id>-<slug>",
+      "url": "https://…"
+    }
   },
-  "links": { "editPath": "/app/<id>", "editUrl": "…", "publicPath": "…", "publicUrl": "…" },
-  "extra": { }
+  "links": {
+    "editPath": "/app/<id>",
+    "editUrl": "…",
+    "publicPath": "…",
+    "publicUrl": "…"
+  },
+  "extra": {}
 }
 ```
 
@@ -140,7 +153,13 @@ live session, where the acting party is the audience.
   "event": "interaction.poll_closed",
   "timestamp": "…",
   "session": { "id": "…" },
-  "interaction": { "type": "…", "slideId": "…", "totals": [], "total": 0, "status": "…" }
+  "interaction": {
+    "type": "…",
+    "slideId": "…",
+    "totals": [],
+    "total": 0,
+    "status": "…"
+  }
 }
 ```
 
@@ -155,7 +174,7 @@ it is retained and erased.
 
 ### 1. Configure
 
-Settings → *Admin: webhooks*. One text field per event plus one optional
+Settings → _Admin: webhooks_. One text field per event plus one optional
 signing-secret field, saved with the rest of app settings through
 `PUT /api/settings/app`.
 
@@ -243,7 +262,7 @@ the admin UI.** Where the code stands, as of 2026-08-17 (B81):
   are unsigned and `x-sb-event` is a convenience header, not authentication — a
   receiver with no secret configured should still treat the payload as
   unverified.
-- **No retry, no delivery record.** *(Deliberately out of scope — B81 decision.)*
+- **No retry, no delivery record.** _(Deliberately out of scope — B81 decision.)_
   A failed POST is a warn line. Nothing records that an event happened, so a
   receiver that was down loses the event permanently and neither side can tell.
   If retry/delivery-log is ever picked up, this note is its address.
@@ -255,7 +274,7 @@ the admin UI.** Where the code stands, as of 2026-08-17 (B81):
   for receivers keying on `actor.id` — the kind the beta window is for.
 - **The user-agent is `Deckyard-Webhook/1`** (B81), replacing the pre-rename
   `presentation-system-webhook/1`.
-- **The shelf event and its settings key say *organization*** (B92, 1.21.0,
+- **The shelf event and its settings key say _organization_** (B92, 1.21.0,
   migration 077). The event `slide.added_to_team_library` is now
   `slide.added_to_organization_library` and its URL key
   `slideAddedToTeamLibraryUrl` is now `slideAddedToOrganizationLibraryUrl` — the

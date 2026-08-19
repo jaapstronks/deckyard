@@ -75,10 +75,13 @@ For a modified slide:
 function summarizeSlideContent(slide) {
   const parts = [];
   if (slide.content?.title) parts.push(`Title: "${slide.content.title}"`);
-  if (slide.content?.subtitle) parts.push(`Subtitle: "${slide.content.subtitle}"`);
+  if (slide.content?.subtitle)
+    parts.push(`Subtitle: "${slide.content.subtitle}"`);
   if (slide.content?.body) {
     const body = String(slide.content.body).slice(0, 200);
-    parts.push(`Body: "${body}${slide.content.body.length > 200 ? '...' : ''}"`);
+    parts.push(
+      `Body: "${body}${slide.content.body.length > 200 ? '...' : ''}"`,
+    );
   }
   if (slide.content?.items) {
     const items = Array.isArray(slide.content.items) ? slide.content.items : [];
@@ -90,8 +93,15 @@ function summarizeSlideContent(slide) {
 /**
  * Build the user prompt with version data.
  */
-function buildCompareUserPrompt({ currentSlides, snapshotSlides, snapshotDate, diff }) {
-  const lines = [`Analyze the differences between these presentation versions:\n`];
+function buildCompareUserPrompt({
+  currentSlides,
+  snapshotSlides,
+  snapshotDate,
+  diff,
+}) {
+  const lines = [
+    `Analyze the differences between these presentation versions:\n`,
+  ];
 
   // Added slides (in current only)
   if (diff.added.length > 0) {
@@ -128,8 +138,12 @@ function buildCompareUserPrompt({ currentSlides, snapshotSlides, snapshotDate, d
   }
 
   lines.push(`Snapshot date: ${snapshotDate}`);
-  lines.push(`Total: ${diff.added.length} added, ${diff.removed.length} removed, ${diff.modified.length} modified, ${diff.unchanged.length} unchanged`);
-  lines.push('\nProvide insights for each changed slide using the exact slide IDs shown above.');
+  lines.push(
+    `Total: ${diff.added.length} added, ${diff.removed.length} removed, ${diff.modified.length} modified, ${diff.unchanged.length} unchanged`,
+  );
+  lines.push(
+    '\nProvide insights for each changed slide using the exact slide IDs shown above.',
+  );
 
   return lines.join('\n');
 }

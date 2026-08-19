@@ -258,13 +258,13 @@ export function mergeSlideTypes(core, custom) {
       console.warn(
         `[registry] Custom slide type "${name}" would shadow the core type ` +
           `"${name}" but does not declare "override: true" — keeping core. ` +
-          `Rename the custom type, or set override:true to replace core on purpose.`
+          `Rename the custom type, or set override:true to replace core on purpose.`,
       );
       continue; // core wins; the shadow is refused, not applied silently
     }
     if (shadowsCore) {
       console.log(
-        `[registry] Custom slide type "${name}" intentionally overrides core (override:true).`
+        `[registry] Custom slide type "${name}" intentionally overrides core (override:true).`,
       );
     }
     merged[name] = def;
@@ -287,7 +287,8 @@ export function overriddenCoreNames(core, custom) {
   const c = custom && typeof custom === 'object' ? custom : {};
   return Object.keys(core).filter(
     (name) =>
-      Object.prototype.hasOwnProperty.call(c, name) && Boolean(c[name]?.override)
+      Object.prototype.hasOwnProperty.call(c, name) &&
+      Boolean(c[name]?.override),
   );
 }
 
@@ -301,7 +302,7 @@ const RAW_SLIDE_TYPES = mergeSlideTypes(CORE_SLIDE_TYPES, customTypes);
 const APPLIED_CUSTOM_NAMES = Object.keys(customTypes).filter(
   (name) =>
     !Object.prototype.hasOwnProperty.call(CORE_SLIDE_TYPES, name) ||
-    customTypes[name]?.override
+    customTypes[name]?.override,
 );
 
 /**
@@ -320,7 +321,10 @@ function composeSlideType(type, def) {
 }
 
 export const SLIDE_TYPES = Object.fromEntries(
-  Object.entries(RAW_SLIDE_TYPES).map(([type, def]) => [type, composeSlideType(type, def)])
+  Object.entries(RAW_SLIDE_TYPES).map(([type, def]) => [
+    type,
+    composeSlideType(type, def),
+  ]),
 );
 
 /**
@@ -339,8 +343,11 @@ export const SLIDE_TYPES = Object.fromEntries(
  */
 export const CORE_SLIDE_TYPE_DEFS = Object.freeze(
   Object.fromEntries(
-    Object.entries(CORE_SLIDE_TYPES).map(([type, def]) => [type, composeSlideType(type, def)])
-  )
+    Object.entries(CORE_SLIDE_TYPES).map(([type, def]) => [
+      type,
+      composeSlideType(type, def),
+    ]),
+  ),
 );
 
 // Names of types that came from custom/slide-types/ AND actually entered the
@@ -364,7 +371,7 @@ export const CUSTOM_SLIDE_TYPE_NAMES = APPLIED_CUSTOM_NAMES;
  */
 export const OVERRIDDEN_CORE_SLIDE_TYPE_NAMES = overriddenCoreNames(
   CORE_SLIDE_TYPES,
-  customTypes
+  customTypes,
 );
 
 // The bare core type names, in registration order. This is the fork-stable
@@ -395,7 +402,8 @@ function slideTypeIdentityFor(name) {
   const custom = customTypes[name];
   const isAppliedCustom = APPLIED_CUSTOM_NAMES.includes(name);
   if (custom && isAppliedCustom) {
-    const declared = typeof custom.namespace === 'string' ? custom.namespace : '';
+    const declared =
+      typeof custom.namespace === 'string' ? custom.namespace : '';
     const namespace = NAMESPACE_SEGMENT_RE.test(declared)
       ? declared
       : DEFAULT_CUSTOM_NAMESPACE;
@@ -422,7 +430,7 @@ export const SLIDE_TYPE_IDS = Object.fromEntries(
   Object.keys(SLIDE_TYPES).map((name) => [
     name,
     formatCanonicalId(slideTypeIdentityFor(name)),
-  ])
+  ]),
 );
 
 /**

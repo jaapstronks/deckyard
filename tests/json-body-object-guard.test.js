@@ -19,7 +19,10 @@ import { requireJsonBody, isJsonObject } from '../server/utils/http.js';
  * guard so a whole-body `typeof body` check does not grow back in a route.
  */
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 function reqFrom(str) {
   return Readable.from([Buffer.from(str)]);
@@ -42,7 +45,11 @@ test('isJsonObject accepts a plain object and nothing else', () => {
   assert.equal(isJsonObject({}), true);
   assert.equal(isJsonObject({ a: 1 }), true);
   assert.equal(isJsonObject([]), false, 'an array is not a JSON object');
-  assert.equal(isJsonObject(null), false, 'null is typeof "object" but not a body');
+  assert.equal(
+    isJsonObject(null),
+    false,
+    'null is typeof "object" but not a body',
+  );
   assert.equal(isJsonObject(5), false);
   assert.equal(isJsonObject('x'), false);
   assert.equal(isJsonObject(true), false);
@@ -79,7 +86,9 @@ test('the object guarantee has no opt-out (B55): even the old flag rejects an ar
   // `allowNonObject` was removed when the slide-library tag PUTs moved to
   // `{ tags: [...] }`. Passing the old flag must change nothing.
   const res = fakeRes();
-  const result = await requireJsonBody(reqFrom('["a","b"]'), res, { allowNonObject: true });
+  const result = await requireJsonBody(reqFrom('["a","b"]'), res, {
+    allowNonObject: true,
+  });
   assert.equal(result.ok, false);
   assert.equal(res.statusCode, 400);
   assert.equal(res.body.message, 'Request body must be a JSON object');
@@ -97,13 +106,15 @@ test('no server code reintroduces an allowNonObject opt-out', async () => {
   assert.deepEqual(
     offenders,
     [],
-    `The JSON body object guarantee is invariant — no opt-out (B55):\n${offenders.join('\n')}`
+    `The JSON body object guarantee is invariant — no opt-out (B55):\n${offenders.join('\n')}`,
   );
 });
 
 test('allowEmpty still yields a plain object, not the parsed primitive', async () => {
   const res = fakeRes();
-  const result = await requireJsonBody(reqFrom('   '), res, { allowEmpty: true });
+  const result = await requireJsonBody(reqFrom('   '), res, {
+    allowEmpty: true,
+  });
   assert.equal(result.ok, true);
   assert.equal(isJsonObject(result.body), true);
 });
@@ -136,6 +147,6 @@ test('no route re-checks the whole body with typeof', async () => {
   assert.deepEqual(
     offenders,
     [],
-    `requireJsonBody guarantees a plain object; drop the per-route re-check:\n${offenders.join('\n')}`
+    `requireJsonBody guarantees a plain object; drop the per-route re-check:\n${offenders.join('\n')}`,
   );
 });

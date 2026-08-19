@@ -4,7 +4,10 @@
  */
 
 import { h, installDismissOnOutside } from '../dom.js';
-import { createSSEConnection, LONG_LIVED_STREAM } from '../net/sse-connection.js';
+import {
+  createSSEConnection,
+  LONG_LIVED_STREAM,
+} from '../net/sse-connection.js';
 import { t } from '../ui-i18n.js';
 import { createAvatar } from './avatar.js';
 import { getUserProfile, prefetchProfiles } from './user-profiles.js';
@@ -19,10 +22,15 @@ function notificationLabel(notif) {
   const title = notif.title || '';
   const body = notif.body || '';
   if (body && !notif.isRead) {
-    return t('notifications.label.bodyUnread', '{title}: {body} (unread)', { title, body });
+    return t('notifications.label.bodyUnread', '{title}: {body} (unread)', {
+      title,
+      body,
+    });
   }
-  if (body) return t('notifications.label.body', '{title}: {body}', { title, body });
-  if (!notif.isRead) return t('notifications.label.unread', '{title} (unread)', { title });
+  if (body)
+    return t('notifications.label.body', '{title}: {body}', { title, body });
+  if (!notif.isRead)
+    return t('notifications.label.unread', '{title} (unread)', { title });
   return title;
 }
 
@@ -70,7 +78,7 @@ export function createNotificationBell({ api, onNavigate }) {
     [
       h('path', { d: 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9' }),
       h('path', { d: 'M13.73 21a2 2 0 0 1-3.46 0' }),
-    ]
+    ],
   );
 
   // Badge for unread count
@@ -83,7 +91,10 @@ export function createNotificationBell({ api, onNavigate }) {
 
   // Dropdown header
   const dropdownHeader = h('div', { class: 'notification-bell-header' }, [
-    h('span', { class: 'notification-bell-title', text: t('notifications.title', 'Notifications') }),
+    h('span', {
+      class: 'notification-bell-title',
+      text: t('notifications.title', 'Notifications'),
+    }),
   ]);
 
   const markAllReadBtn = h('button', {
@@ -111,9 +122,18 @@ export function createNotificationBell({ api, onNavigate }) {
   // Filter chips (events-inbox lenses)
   const FILTERS = [
     { value: 'all', label: () => t('notifications.filter.all', 'All') },
-    { value: 'mentions', label: () => t('notifications.filter.mentions', 'Mentions') },
-    { value: 'unread', label: () => t('notifications.filter.unread', 'Unread') },
-    { value: 'archived', label: () => t('notifications.filter.archived', 'Archived') },
+    {
+      value: 'mentions',
+      label: () => t('notifications.filter.mentions', 'Mentions'),
+    },
+    {
+      value: 'unread',
+      label: () => t('notifications.filter.unread', 'Unread'),
+    },
+    {
+      value: 'archived',
+      label: () => t('notifications.filter.archived', 'Archived'),
+    },
   ];
   const filterBtns = FILTERS.map((f) => {
     const btn = h('button', {
@@ -132,7 +152,11 @@ export function createNotificationBell({ api, onNavigate }) {
     btn.dataset.filter = f.value;
     return btn;
   });
-  const filterRow = h('div', { class: 'notification-bell-filters' }, filterBtns);
+  const filterRow = h(
+    'div',
+    { class: 'notification-bell-filters' },
+    filterBtns,
+  );
 
   function syncFilterUi() {
     for (const btn of filterBtns) {
@@ -182,7 +206,7 @@ export function createNotificationBell({ api, onNavigate }) {
         h('div', {
           class: 'notification-bell-item is-loading',
           text: t('notifications.loading', 'Loading...'),
-        })
+        }),
       );
       return;
     }
@@ -191,10 +215,11 @@ export function createNotificationBell({ api, onNavigate }) {
       listContainer.append(
         h('div', {
           class: 'notification-bell-item is-empty',
-          text: filter === 'archived'
-            ? t('notifications.empty.archived', 'Nothing archived yet')
-            : t('notifications.empty', 'No notifications'),
-        })
+          text:
+            filter === 'archived'
+              ? t('notifications.empty.archived', 'Nothing archived yet')
+              : t('notifications.empty', 'No notifications'),
+        }),
       );
       return;
     }
@@ -222,24 +247,36 @@ export function createNotificationBell({ api, onNavigate }) {
 
       // Content
       const content = h('div', { class: 'notification-bell-content' });
-      const title = h('div', { class: 'notification-bell-item-title', text: notif.title });
+      const title = h('div', {
+        class: 'notification-bell-item-title',
+        text: notif.title,
+      });
       content.append(title);
 
       if (notif.body) {
-        const body = h('div', { class: 'notification-bell-item-body', text: notif.body });
+        const body = h('div', {
+          class: 'notification-bell-item-body',
+          text: notif.body,
+        });
         content.append(body);
       }
 
       // Timestamp
       const timeAgo = formatTimeAgo(notif.createdAt);
-      const time = h('div', { class: 'notification-bell-item-time', text: timeAgo });
+      const time = h('div', {
+        class: 'notification-bell-item-time',
+        text: timeAgo,
+      });
       content.append(time);
 
       item.append(avatar, content);
 
       // Unread indicator
       if (!notif.isRead) {
-        const unreadDot = h('div', { class: 'notification-bell-unread-dot', 'aria-hidden': 'true' });
+        const unreadDot = h('div', {
+          class: 'notification-bell-unread-dot',
+          'aria-hidden': 'true',
+        });
         item.append(unreadDot);
       }
 
@@ -277,9 +314,12 @@ export function createNotificationBell({ api, onNavigate }) {
     const diffDay = Math.floor(diffHour / 24);
 
     if (diffSec < 60) return t('list.time.justNow', 'just now');
-    if (diffMin < 60) return t('list.time.minutesAgo', '{count} min ago', { count: diffMin });
-    if (diffHour < 24) return t('list.time.hoursAgo', '{count}h ago', { count: diffHour });
-    if (diffDay < 7) return t('list.time.daysAgo', '{count}d ago', { count: diffDay });
+    if (diffMin < 60)
+      return t('list.time.minutesAgo', '{count} min ago', { count: diffMin });
+    if (diffHour < 24)
+      return t('list.time.hoursAgo', '{count}h ago', { count: diffHour });
+    if (diffDay < 7)
+      return t('list.time.daysAgo', '{count}d ago', { count: diffDay });
 
     return date.toLocaleDateString();
   }
@@ -312,15 +352,15 @@ export function createNotificationBell({ api, onNavigate }) {
     renderNotifications();
 
     try {
-      const resp = await api(`/api/notifications?limit=20&filter=${encodeURIComponent(filter)}`);
+      const resp = await api(
+        `/api/notifications?limit=20&filter=${encodeURIComponent(filter)}`,
+      );
       notifications = resp?.notifications || [];
       unreadCount = resp?.unreadCount || 0;
       updateBadge();
 
       // Prefetch profiles for all notification actors
-      const emails = notifications
-        .map((n) => n.actorEmail)
-        .filter(Boolean);
+      const emails = notifications.map((n) => n.actorEmail).filter(Boolean);
       if (emails.length) {
         prefetchProfiles(emails);
       }
@@ -484,14 +524,18 @@ export function createNotificationBell({ api, onNavigate }) {
             const notif = JSON.parse(e.data);
             // Add to the list when it belongs in the current lens (a new
             // item is never archived; mentions lens wants mentions only).
-            const belongs = filter === 'all'
-              || filter === 'unread'
-              || (filter === 'mentions' && notif.notificationType === 'comment_mention');
+            const belongs =
+              filter === 'all' ||
+              filter === 'unread' ||
+              (filter === 'mentions' &&
+                notif.notificationType === 'comment_mention');
             // Coalesced bundles (e.g. deck_activity) re-send the SAME id with a
             // bumped count. Replace the existing row and move it to the top
             // instead of adding a duplicate, and don't re-increment the badge —
             // an authoritative notification:counts follows for those.
-            const existingIdx = notifications.findIndex((n) => n.id === notif.id);
+            const existingIdx = notifications.findIndex(
+              (n) => n.id === notif.id,
+            );
             if (existingIdx !== -1) {
               notifications.splice(existingIdx, 1);
               if (belongs) notifications.unshift(notif);

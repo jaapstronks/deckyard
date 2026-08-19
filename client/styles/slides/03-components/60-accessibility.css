@@ -34,29 +34,7 @@
 }
 
 /* Visible focus ring for interactive content in slides */
-.deck
-  :is(
-    a,
-    button,
-    input,
-    textarea,
-    select,
-    summary,
-    iframe
-  ):focus-visible {
+.deck :is(a, button, input, textarea, select, summary, iframe):focus-visible {
   outline: 3px solid rgba(226, 254, 82, 0.95);
   outline-offset: 3px;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

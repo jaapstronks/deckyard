@@ -34,9 +34,6 @@ test('embed <html> emits dir="rtl" for an RTL deck (pres.lang)', () => {
 });
 
 test('embed <html> emits dir="rtl" when i18n active is RTL', () => {
-  const html = buildEmbedHtml(
-    repoRoot,
-    deck({ i18n: { active: 'he' } }),
-  );
+  const html = buildEmbedHtml(repoRoot, deck({ i18n: { active: 'he' } }));
   assert.match(html, /dir="rtl"/);
 });

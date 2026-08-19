@@ -1,6 +1,5 @@
 import { h } from '../../../lib/dom.js';
 
-
 /** Slide aspect ratio (16:9) */
 const SLIDE_ASPECT_RATIO = 16 / 9;
 
@@ -19,7 +18,8 @@ function loadImageDimensions(url) {
       return;
     }
     const img = new Image();
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onload = () =>
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
     img.onerror = () => reject(new Error('Failed to load image'));
     img.src = url;
   });
@@ -35,7 +35,8 @@ function loadImageDimensions(url) {
 export async function getRecommendedImageFit(url) {
   const { width, height } = await loadImageDimensions(url);
   const imageAspect = width / height;
-  const mismatch = Math.abs(SLIDE_ASPECT_RATIO - imageAspect) / SLIDE_ASPECT_RATIO;
+  const mismatch =
+    Math.abs(SLIDE_ASPECT_RATIO - imageAspect) / SLIDE_ASPECT_RATIO;
   const shouldContain = mismatch > ASPECT_MISMATCH_THRESHOLD;
   return { shouldContain, width, height, mismatch };
 }
@@ -61,7 +62,9 @@ export const readFileAsDataUrl = (file) =>
  * @returns {boolean} Whether the item matches
  */
 export function matchesSearch(item, query, activeTag) {
-  const q = String(query || '').trim().toLowerCase();
+  const q = String(query || '')
+    .trim()
+    .toLowerCase();
   const tags = Array.isArray(item?.tags) ? item.tags : [];
   const alts = item?.alts && typeof item.alts === 'object' ? item.alts : {};
 

@@ -42,18 +42,17 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 // `__resetStorageForTests` rather than `closeStorage`: the double is not a real
 // Kysely handle, so closing it would call a `destroy()` it does not have.
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { handleLiveSessions } = await import('../server/routes/api/live-sessions.js');
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { handleLiveSessions } =
+  await import('../server/routes/api/live-sessions.js');
 const { createStorageScope } = await import('../server/utils/context.js');
-const { handleLiveSessionsPublic } = await import(
-  '../server/routes/api/live-session-audience.js'
-);
-const { handleShareLinkManagement, shareLinkBelongsToPresentation } = await import(
-  '../server/routes/api/share-links/management.js'
-);
-const { fetchCsvData } = await import('../server/utils/data-source/providers/csv-url.js');
+const { handleLiveSessionsPublic } =
+  await import('../server/routes/api/live-session-audience.js');
+const { handleShareLinkManagement, shareLinkBelongsToPresentation } =
+  await import('../server/routes/api/share-links/management.js');
+const { fetchCsvData } =
+  await import('../server/utils/data-source/providers/csv-url.js');
 const { sessions } = await import('../server/storage/live-sessions/state.js');
 
 const OWNER = { email: 'owner@example.com' };
@@ -290,7 +289,10 @@ test('H4: a non-owner cannot export audience feedback CSV (401, no PII leaked)',
       authedUser: FOREIGN,
     });
     assert.equal(res.statusCode, 401);
-    assert.ok(!/deviceId/.test(res.body()), 'no feedback CSV emitted to a non-owner');
+    assert.ok(
+      !/deviceId/.test(res.body()),
+      'no feedback CSV emitted to a non-owner',
+    );
     sessions.delete('sess-f');
   });
 });
@@ -345,18 +347,38 @@ test('MH1: non-http(s) schemes and malformed URLs are rejected', async () => {
     () => fetchCsvData({ url: 'ftp://example.com/x.csv' }),
     /HTTP or HTTPS/,
   );
-  await assert.rejects(() => fetchCsvData({ url: 'not-a-url' }), /Invalid CSV URL/);
+  await assert.rejects(
+    () => fetchCsvData({ url: 'not-a-url' }),
+    /Invalid CSV URL/,
+  );
   await assert.rejects(() => fetchCsvData({}), /url is required/);
 });
 
 test('MH1: the fetch is pinned to redirect:error (no 30x bounce into private space)', async () => {
   const src = await fs.readFile(
-    fileURLToPath(new URL('../server/utils/data-source/providers/csv-url.js', import.meta.url)),
+    fileURLToPath(
+      new URL(
+        '../server/utils/data-source/providers/csv-url.js',
+        import.meta.url,
+      ),
+    ),
     'utf8',
   );
-  assert.match(src, /redirect:\s*'error'/, 'csv-url fetch must set redirect:error');
-  assert.match(src, /assertPublicHttpUrl/, 'csv-url must use the shared SSRF guard');
-  assert.doesNotMatch(src, /function isPrivateUrl/, 'the weak string blocklist must be gone');
+  assert.match(
+    src,
+    /redirect:\s*'error'/,
+    'csv-url fetch must set redirect:error',
+  );
+  assert.match(
+    src,
+    /assertPublicHttpUrl/,
+    'csv-url must use the shared SSRF guard',
+  );
+  assert.doesNotMatch(
+    src,
+    /function isPrivateUrl/,
+    'the weak string blocklist must be gone',
+  );
 });
 
 // ============================================================================
@@ -366,20 +388,37 @@ test('MH1: the fetch is pinned to redirect:error (no 30x bounce into private spa
 test('MH2: shareLinkBelongsToPresentation is fail-closed', () => {
   assert.equal(shareLinkBelongsToPresentation(null, 'p1'), false);
   assert.equal(shareLinkBelongsToPresentation(undefined, 'p1'), false);
-  assert.equal(shareLinkBelongsToPresentation({ presentationId: 'p2' }, 'p1'), false);
-  assert.equal(shareLinkBelongsToPresentation({ presentationId: 'p1' }, ''), false);
-  assert.equal(shareLinkBelongsToPresentation({ presentationId: 'p1' }, 'p1'), true);
+  assert.equal(
+    shareLinkBelongsToPresentation({ presentationId: 'p2' }, 'p1'),
+    false,
+  );
+  assert.equal(
+    shareLinkBelongsToPresentation({ presentationId: 'p1' }, ''),
+    false,
+  );
+  assert.equal(
+    shareLinkBelongsToPresentation({ presentationId: 'p1' }, 'p1'),
+    true,
+  );
 });
 
 test('MH2: revoke/update/access-log run the containment gate before mutating', async () => {
   const src = await fs.readFile(
-    fileURLToPath(new URL('../server/routes/api/share-links/management.js', import.meta.url)),
+    fileURLToPath(
+      new URL(
+        '../server/routes/api/share-links/management.js',
+        import.meta.url,
+      ),
+    ),
     'utf8',
   );
   // The gate must precede each linkId-scoped storage call so a forged linkId
   // from another deck can't slip through.
   const gates = src.match(/loadLinkForPresentation\(/g) || [];
-  assert.ok(gates.length >= 3, `expected containment on all 3 linkId routes, found ${gates.length}`);
+  assert.ok(
+    gates.length >= 3,
+    `expected containment on all 3 linkId routes, found ${gates.length}`,
+  );
 });
 
 test('MH2: a linkId that resolves to no in-scope link is denied (404, fail closed)', async () => {

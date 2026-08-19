@@ -20,7 +20,7 @@ export function openAnalyzeModal({
     title: t('editor.analyzeModal.title', 'AI Analysis'),
     hint: t(
       'editor.analyzeModal.hint',
-      'AI will analyze your presentation and create improvement suggestions as comments.'
+      'AI will analyze your presentation and create improvement suggestions as comments.',
     ),
     closeOnBackdrop: false,
     onClose: (result) => result,
@@ -48,7 +48,7 @@ export function openAnalyzeModal({
     class: 'analyze-info',
     text: t(
       'editor.analyzeModal.info',
-      'AI will review your slides and suggest improvements for clarity, structure, and visual balance. Suggestions appear as comments you can accept, dismiss, or act on.'
+      'AI will review your slides and suggest improvements for clarity, structure, and visual balance. Suggestions appear as comments you can accept, dismiss, or act on.',
     ),
   });
 
@@ -103,7 +103,10 @@ export function openAnalyzeModal({
     btnAnalyze.style.display = 'none';
     btnCancel.textContent = t('common.cancel', 'Cancel');
 
-    statusText.textContent = t('editor.analyzeModal.starting', 'Starting analysis...');
+    statusText.textContent = t(
+      'editor.analyzeModal.starting',
+      'Starting analysis...',
+    );
     progressFill.style.width = '0%';
     suggestionsList.innerHTML = '';
 
@@ -156,9 +159,13 @@ export function openAnalyzeModal({
       // Cancel aborts the fetch: the modal is already closing, so stay silent.
       if (error?.name === 'AbortError') return;
       console.error('[analyze] Error:', error);
-      statusText.textContent = t('editor.analyzeModal.error', 'Analysis failed: {message}', {
-        message: error?.message || t('common.unknownError', 'Unknown error'),
-      });
+      statusText.textContent = t(
+        'editor.analyzeModal.error',
+        'Analysis failed: {message}',
+        {
+          message: error?.message || t('common.unknownError', 'Unknown error'),
+        },
+      );
       btnCancel.style.display = 'none';
       btnClose.style.display = '';
     } finally {
@@ -173,20 +180,33 @@ export function openAnalyzeModal({
   function handleSSEEvent(event, data) {
     switch (event) {
       case 'connected':
-        statusText.textContent = t('editor.analyzeModal.connected', 'Connected, analyzing...');
+        statusText.textContent = t(
+          'editor.analyzeModal.connected',
+          'Connected, analyzing...',
+        );
         break;
 
       case 'progress':
         if (data.phase === 'analyzing') {
-          statusText.textContent = t('editor.analyzeModal.analyzing', 'Analyzing {count} slides...', {
-            count: String(data.slideCount || 0),
-          });
+          statusText.textContent = t(
+            'editor.analyzeModal.analyzing',
+            'Analyzing {count} slides...',
+            {
+              count: String(data.slideCount || 0),
+            },
+          );
           progressFill.style.width = '30%';
         } else if (data.phase === 'parsing') {
-          statusText.textContent = t('editor.analyzeModal.parsing', 'Processing suggestions...');
+          statusText.textContent = t(
+            'editor.analyzeModal.parsing',
+            'Processing suggestions...',
+          );
           progressFill.style.width = '60%';
         } else if (data.phase === 'creating') {
-          statusText.textContent = t('editor.analyzeModal.creating', 'Creating suggestions...');
+          statusText.textContent = t(
+            'editor.analyzeModal.creating',
+            'Creating suggestions...',
+          );
           progressFill.style.width = '70%';
         } else if (data.phase === 'complete') {
           progressFill.style.width = '100%';
@@ -194,11 +214,15 @@ export function openAnalyzeModal({
         break;
 
       case 'suggestion': {
-        progressFill.style.width = `${70 + (30 * data.index / data.total)}%`;
-        statusText.textContent = t('editor.analyzeModal.creatingN', 'Creating suggestion {n} of {total}...', {
-          n: String(data.index),
-          total: String(data.total),
-        });
+        progressFill.style.width = `${70 + (30 * data.index) / data.total}%`;
+        statusText.textContent = t(
+          'editor.analyzeModal.creatingN',
+          'Creating suggestion {n} of {total}...',
+          {
+            n: String(data.index),
+            total: String(data.total),
+          },
+        );
 
         // Add suggestion to list
         const suggestionEl = h('div', { class: 'analyze-suggestion-item' });
@@ -220,11 +244,18 @@ export function openAnalyzeModal({
         progressFill.style.width = '100%';
 
         if (data.suggestionCount === 0) {
-          statusText.textContent = t('editor.analyzeModal.noSuggestions', 'No suggestions found. Your presentation looks great!');
+          statusText.textContent = t(
+            'editor.analyzeModal.noSuggestions',
+            'No suggestions found. Your presentation looks great!',
+          );
         } else {
-          statusText.textContent = t('editor.analyzeModal.complete', 'Analysis complete! {count} suggestions added as comments.', {
-            count: String(data.suggestionCount),
-          });
+          statusText.textContent = t(
+            'editor.analyzeModal.complete',
+            'Analysis complete! {count} suggestions added as comments.',
+            {
+              count: String(data.suggestionCount),
+            },
+          );
         }
 
         btnCancel.style.display = 'none';
@@ -236,9 +267,13 @@ export function openAnalyzeModal({
 
       case 'error':
         isRunning = false;
-        statusText.textContent = t('editor.analyzeModal.error', 'Analysis failed: {message}', {
-          message: data.message || t('common.unknownError', 'Unknown error'),
-        });
+        statusText.textContent = t(
+          'editor.analyzeModal.error',
+          'Analysis failed: {message}',
+          {
+            message: data.message || t('common.unknownError', 'Unknown error'),
+          },
+        );
         btnCancel.style.display = 'none';
         btnClose.style.display = '';
         break;

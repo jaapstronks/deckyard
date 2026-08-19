@@ -12,8 +12,7 @@ export function buildQaSection({ h, pres, markDirty, requestSave }) {
     titleKey: 'editor.deckSettings.qa.title',
     title: 'Enable Q&A',
     helpKey: 'editor.deckSettings.qa.help',
-    help:
-      "When disabled, Q&A is hidden in follow-along (participants can't ask questions).",
+    help: "When disabled, Q&A is hidden in follow-along (participants can't ask questions).",
     onChange: (checked) => {
       pres.settings.qaEnabled = checked;
       markDirty?.();
@@ -36,8 +35,7 @@ export function buildBuildsSection({ h, pres, markDirty, requestSave }) {
     titleKey: 'editor.deckSettings.builds.title',
     title: 'Builds',
     helpKey: 'editor.deckSettings.builds.help',
-    help:
-      'Reveal content step-by-step while presenting. Use ←/→ or space to advance.',
+    help: 'Reveal content step-by-step while presenting. Use ←/→ or space to advance.',
     onChange: (checked) => {
       pres.settings.stepParagraphs = checked;
       markDirty?.();
@@ -64,8 +62,7 @@ export function buildAuthorPreviewSection({ h, pres, markDirty, requestSave }) {
     titleKey: 'editor.deckSettings.authorPreview.title',
     title: 'Show author on preview',
     helpKey: 'editor.deckSettings.authorPreview.help',
-    help:
-      'Display your name and photo on the social media preview image when published.',
+    help: 'Display your name and photo on the social media preview image when published.',
     onChange: (checked) => {
       pres.settings.ogPreview.showAuthor = checked;
       markDirty?.();
@@ -87,8 +84,7 @@ export function buildRssFeedSection({ h, pres, api, markDirty, requestSave }) {
     titleKey: 'editor.deckSettings.rssFeed.title',
     title: 'Exclude from RSS feed',
     helpKey: 'editor.deckSettings.rssFeed.help',
-    help:
-      'When checked, this presentation will not appear in the public RSS feed.',
+    help: 'When checked, this presentation will not appear in the public RSS feed.',
     onChange: (checked) => {
       pres.settings.excludeFromFeed = checked;
       markDirty?.();

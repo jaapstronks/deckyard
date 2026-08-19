@@ -34,7 +34,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Kysely, PostgresDialect } from 'kysely';
 import pg from 'pg';
 import { loadDotEnv } from '../server/config/env.js';
-import { getDatabaseConfig, getDefaultOrganizationId } from '../server/config/database.js';
+import {
+  getDatabaseConfig,
+  getDefaultOrganizationId,
+} from '../server/config/database.js';
 import { dataDir } from '../server/config/storage-paths.js';
 import { DEFAULT_THEME_ID } from '../shared/constants/themes.js';
 
@@ -328,8 +331,12 @@ async function migrateSlideLibrary(db, dataPath) {
               favorites: [],
               trashed_at: item.trashedAt ? new Date(item.trashedAt) : null,
               trashed_by: item.trashedBy || null,
-              created_at: item.createdAt ? new Date(item.createdAt) : new Date(),
-              updated_at: item.updatedAt ? new Date(item.updatedAt) : new Date(),
+              created_at: item.createdAt
+                ? new Date(item.createdAt)
+                : new Date(),
+              updated_at: item.updatedAt
+                ? new Date(item.updatedAt)
+                : new Date(),
               created_by: item.createdBy || null,
               updated_by: item.updatedBy || null,
             })
@@ -465,7 +472,8 @@ export async function migrateTags(db, dataPath, { dryRun, organizationId }) {
 
   const store = await readJsonIfExists(path.join(dataPath, 'tags.json'));
   const fileTags = store && Array.isArray(store.tags) ? store.tags : [];
-  const links = store && store.links && typeof store.links === 'object' ? store.links : {};
+  const links =
+    store && store.links && typeof store.links === 'object' ? store.links : {};
 
   if (fileTags.length === 0 && Object.keys(links).length === 0) {
     console.log('   No tags found');
@@ -480,7 +488,10 @@ export async function migrateTags(db, dataPath, { dryRun, organizationId }) {
     .where('organization_id', '=', organizationId)
     .execute();
   const byLowerName = new Map(
-    existingRows.map((r) => [String(r.name).toLowerCase(), { id: r.id, name: r.name }])
+    existingRows.map((r) => [
+      String(r.name).toLowerCase(),
+      { id: r.id, name: r.name },
+    ]),
   );
 
   // file tag id -> DB tag { id, name }; null means "would be created" (dry run).
@@ -503,7 +514,11 @@ export async function migrateTags(db, dataPath, { dryRun, organizationId }) {
     } else {
       const row = await db
         .insertInto('tags')
-        .values({ organization_id: organizationId, name, created_at: new Date() })
+        .values({
+          organization_id: organizationId,
+          name,
+          created_at: new Date(),
+        })
         .returning(['id', 'name'])
         .executeTakeFirst();
       const created = { id: row.id, name: row.name };
@@ -565,9 +580,12 @@ export async function migrateTags(db, dataPath, { dryRun, organizationId }) {
   }
 
   console.log(
-    `   Ensured ${tagsExisting + tagsCreated} tags (${tagsCreated} new), ${linksMigrated} links migrated`
+    `   Ensured ${tagsExisting + tagsCreated} tags (${tagsCreated} new), ${linksMigrated} links migrated`,
   );
-  return { migrated: tagsCreated + linksMigrated, skipped: tagsExisting + linksSkipped };
+  return {
+    migrated: tagsCreated + linksMigrated,
+    skipped: tagsExisting + linksSkipped,
+  };
 }
 
 /**
@@ -582,10 +600,16 @@ export async function migrateTags(db, dataPath, { dryRun, organizationId }) {
  * @param {{ dryRun: boolean, organizationId: string }} opts
  * @returns {Promise<{ migrated: number, skipped: number }>}
  */
-export async function migrateSlideCollections(db, dataPath, { dryRun, organizationId }) {
+export async function migrateSlideCollections(
+  db,
+  dataPath,
+  { dryRun, organizationId },
+) {
   console.log('\n🗂 Migrating slide collections...');
 
-  const store = await readJsonIfExists(path.join(dataPath, 'slide-collections.json'));
+  const store = await readJsonIfExists(
+    path.join(dataPath, 'slide-collections.json'),
+  );
   const items = store && Array.isArray(store.items) ? store.items : [];
 
   if (items.length === 0) {
@@ -638,7 +662,7 @@ export async function migrateSlideCollections(db, dataPath, { dryRun, organizati
       const validIds = await filterExistingSlideIds(
         db,
         organizationId,
-        Array.isArray(item.slideIds) ? item.slideIds : []
+        Array.isArray(item.slideIds) ? item.slideIds : [],
       );
       if (validIds.length > 0) {
         await db
@@ -649,7 +673,7 @@ export async function migrateSlideCollections(db, dataPath, { dryRun, organizati
               slide_library_id: slideId,
               position: index,
               created_at: new Date(),
-            }))
+            })),
           )
           .execute();
       }
@@ -676,10 +700,16 @@ export async function migrateSlideCollections(db, dataPath, { dryRun, organizati
  * @param {{ dryRun: boolean, organizationId: string }} opts
  * @returns {Promise<{ migrated: number, skipped: number }>}
  */
-export async function migrateSlideLibraryUsage(db, dataPath, { dryRun, organizationId }) {
+export async function migrateSlideLibraryUsage(
+  db,
+  dataPath,
+  { dryRun, organizationId },
+) {
   console.log('\n📌 Migrating slide-library usage...');
 
-  const store = await readJsonIfExists(path.join(dataPath, 'slide-library-usage.json'));
+  const store = await readJsonIfExists(
+    path.join(dataPath, 'slide-library-usage.json'),
+  );
   const items = store && Array.isArray(store.items) ? store.items : [];
 
   if (items.length === 0) {
@@ -691,7 +721,9 @@ export async function migrateSlideLibraryUsage(db, dataPath, { dryRun, organizat
   let skipped = 0;
 
   for (const item of items) {
-    const userEmail = String(item?.userEmail || '').trim().toLowerCase();
+    const userEmail = String(item?.userEmail || '')
+      .trim()
+      .toLowerCase();
     const itemType = String(item?.itemType || '').trim();
     const itemId = String(item?.itemId || '').trim();
     if (!userEmail || !itemType || !itemId) {
@@ -725,7 +757,9 @@ export async function migrateSlideLibraryUsage(db, dataPath, { dryRun, organizat
           user_email: userEmail,
           item_type: itemType,
           item_id: itemId,
-          first_used_at: item.firstUsedAt ? new Date(item.firstUsedAt) : new Date(),
+          first_used_at: item.firstUsedAt
+            ? new Date(item.firstUsedAt)
+            : new Date(),
           use_count: Number(item.useCount) || 1,
           updated_at: item.updatedAt ? new Date(item.updatedAt) : new Date(),
         })
@@ -812,18 +846,34 @@ async function main() {
     console.log('\n═══════════════════════════════════════════════════════');
     console.log(' Summary');
     console.log('═══════════════════════════════════════════════════════');
-    console.log(`\n Presentations: ${results.presentations.migrated} migrated, ${results.presentations.skipped} skipped`);
-    console.log(` Images: ${results.images.migrated} migrated, ${results.images.skipped} skipped`);
-    console.log(` Slide Library: ${results.slideLibrary.migrated} migrated, ${results.slideLibrary.skipped} skipped`);
-    console.log(` Published: ${results.published.migrated} migrated, ${results.published.skipped} skipped`);
-    console.log(` Tags: ${results.tags.migrated} migrated, ${results.tags.skipped} skipped`);
-    console.log(` Slide Collections: ${results.slideCollections.migrated} migrated, ${results.slideCollections.skipped} skipped`);
-    console.log(` Slide Library Usage: ${results.slideLibraryUsage.migrated} migrated, ${results.slideLibraryUsage.skipped} skipped`);
+    console.log(
+      `\n Presentations: ${results.presentations.migrated} migrated, ${results.presentations.skipped} skipped`,
+    );
+    console.log(
+      ` Images: ${results.images.migrated} migrated, ${results.images.skipped} skipped`,
+    );
+    console.log(
+      ` Slide Library: ${results.slideLibrary.migrated} migrated, ${results.slideLibrary.skipped} skipped`,
+    );
+    console.log(
+      ` Published: ${results.published.migrated} migrated, ${results.published.skipped} skipped`,
+    );
+    console.log(
+      ` Tags: ${results.tags.migrated} migrated, ${results.tags.skipped} skipped`,
+    );
+    console.log(
+      ` Slide Collections: ${results.slideCollections.migrated} migrated, ${results.slideCollections.skipped} skipped`,
+    );
+    console.log(
+      ` Slide Library Usage: ${results.slideLibraryUsage.migrated} migrated, ${results.slideLibraryUsage.skipped} skipped`,
+    );
 
     console.log(
-      '\n Not imported by design: presentation-versions (covered by DB migration 053)'
+      '\n Not imported by design: presentation-versions (covered by DB migration 053)',
     );
-    console.log('   and ydoc-state (derived collab state, re-seeds from deck JSON).');
+    console.log(
+      '   and ydoc-state (derived collab state, re-seeds from deck JSON).',
+    );
 
     if (dryRun) {
       console.log('\n⚡ Run without --dry-run to apply changes\n');
@@ -836,7 +886,10 @@ async function main() {
 }
 
 // Only run as a CLI; importing the module (tests) must not touch a database.
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   main().catch((err) => {
     console.error('\n❌ Import failed:', err.message);
     process.exit(1);

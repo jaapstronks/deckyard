@@ -13,7 +13,14 @@ import { AUTH_RATE_LIMITS } from '../../../config/rate-limits.js';
 import { getAnalyticsReportByToken } from '../../../storage/analytics/reports.js';
 import { normalizePresentationVisibility } from '../../../utils/presentation-authz.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
-import { badRequest, forbidden, notFound, rateLimited, serveJson, withErrorHandler } from '../../../utils/http.js';
+import {
+  badRequest,
+  forbidden,
+  notFound,
+  rateLimited,
+  serveJson,
+  withErrorHandler,
+} from '../../../utils/http.js';
 
 /**
  * GET /api/analytics/reports/:token - Public report access (no auth required).
@@ -27,7 +34,12 @@ async function handlePublicReport({ req, res, url }, token) {
   const clientIp = getClientIp(req);
 
   // Rate limit to prevent token enumeration attacks
-  if (!(await allowRequest(`report:public:${clientIp}`, AUTH_RATE_LIMITS.publicReport))) {
+  if (
+    !(await allowRequest(
+      `report:public:${clientIp}`,
+      AUTH_RATE_LIMITS.publicReport,
+    ))
+  ) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
       ip: clientIp,
       endpoint: path,
@@ -54,13 +66,20 @@ async function handlePublicReport({ req, res, url }, token) {
 
   // Verify the associated presentation still exists and is accessible
   // This prevents sharing reports for deleted/private presentations
-  const { getPresentation } = await import('../../../storage/presentations/index.js');
+  const { getPresentation } =
+    await import('../../../storage/presentations/index.js');
   const presentation = await getPresentation(
-    crossOrganizationScope(null, 'public analytics report: the report token is the authorization'),
-    report.presentationId
+    crossOrganizationScope(
+      null,
+      'public analytics report: the report token is the authorization',
+    ),
+    report.presentationId,
   );
   if (!presentation) {
-    return notFound(res, 'Report not available - presentation no longer exists');
+    return notFound(
+      res,
+      'Report not available - presentation no longer exists',
+    );
   }
 
   // Check if the presentation has been set to private. Decks carry
@@ -72,7 +91,7 @@ async function handlePublicReport({ req, res, url }, token) {
     return forbidden(res, 'Report not available - presentation is private');
   }
 
-  return serveJson(res, 200, report), true;
+  return (serveJson(res, 200, report), true);
 }
 
 /**
@@ -82,7 +101,11 @@ async function handlePublicReport({ req, res, url }, token) {
  * @type {import('../../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'GET', pattern: /^\/api\/analytics\/reports\/([^/]+)$/, handler: handlePublicReport },
+  {
+    method: 'GET',
+    pattern: /^\/api\/analytics\/reports\/([^/]+)$/,
+    handler: handlePublicReport,
+  },
 ];
 
 /**
@@ -90,6 +113,9 @@ export const ROUTES = [
  * @param {import('../../../utils/context.js').PublicContext} ctx
  * @returns {Promise<boolean>} True if handled
  */
-export const handleAnalyticsReportPublic = withErrorHandler('analytics', (ctx) => {
-  return dispatchRoutes(ROUTES, ctx);
-});
+export const handleAnalyticsReportPublic = withErrorHandler(
+  'analytics',
+  (ctx) => {
+    return dispatchRoutes(ROUTES, ctx);
+  },
+);

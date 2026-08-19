@@ -18,13 +18,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ROUTES as MEDIA_ROUTES, handleMedia } from '../server/routes/api/media.js';
-import { ROUTES as SL_ROUTES, handleSlideLibrary } from '../server/routes/api/slide-library.js';
-import { ROUTES as UP_ROUTES, handleUploads } from '../server/routes/api/uploads.js';
-import { ROUTES as SB_ROUTES, handleSandbox } from '../server/routes/api/sandbox.js';
-import { ROUTES as OM_ROUTES, handleOrganizationMembers } from '../server/routes/api/organization-members.js';
+import {
+  ROUTES as MEDIA_ROUTES,
+  handleMedia,
+} from '../server/routes/api/media.js';
+import {
+  ROUTES as SL_ROUTES,
+  handleSlideLibrary,
+} from '../server/routes/api/slide-library.js';
+import {
+  ROUTES as UP_ROUTES,
+  handleUploads,
+} from '../server/routes/api/uploads.js';
+import {
+  ROUTES as SB_ROUTES,
+  handleSandbox,
+} from '../server/routes/api/sandbox.js';
+import {
+  ROUTES as OM_ROUTES,
+  handleOrganizationMembers,
+} from '../server/routes/api/organization-members.js';
 import { ROUTES as EX_ROUTES } from '../server/routes/api/export.js';
-import { ROUTES as BE_ROUTES, handleBulkExport } from '../server/routes/api/bulk-export.js';
+import {
+  ROUTES as BE_ROUTES,
+  handleBulkExport,
+} from '../server/routes/api/bulk-export.js';
 
 function select(routes, method, pathname) {
   for (const route of routes) {
@@ -43,9 +61,14 @@ function mockRes() {
   return {
     statusCode: null,
     headers: {},
-    writeHead(c, headers) { this.statusCode = c; Object.assign(this.headers, headers); },
+    writeHead(c, headers) {
+      this.statusCode = c;
+      Object.assign(this.headers, headers);
+    },
     end() {},
-    setHeader(k, v) { this.headers[k] = v; },
+    setHeader(k, v) {
+      this.headers[k] = v;
+    },
   };
 }
 
@@ -67,7 +90,11 @@ function ctx(method, pathname, authedUser = { email: 'a@b.test' }) {
 function named(routes, method, path, handlerName) {
   const route = select(routes, method, path);
   assert.ok(route, `${method} ${path} matches a route`);
-  assert.equal(route.handler.name, handlerName, `${method} ${path} → ${handlerName}`);
+  assert.equal(
+    route.handler.name,
+    handlerName,
+    `${method} ${path} → ${handlerName}`,
+  );
 }
 
 // ─── media (prefix guard; Form B throughout) ───
@@ -76,11 +103,36 @@ test('media: routes resolve to their named handlers in order', () => {
   named(MEDIA_ROUTES, 'GET', '/api/media/status', 'handleMediaStatus');
   named(MEDIA_ROUTES, 'POST', '/api/media/presign', 'handleMediaPresign');
   named(MEDIA_ROUTES, 'POST', '/api/media/confirm', 'handleMediaConfirm');
-  named(MEDIA_ROUTES, 'GET', '/api/media/imagekit/status', 'handleImageKitStatus');
-  named(MEDIA_ROUTES, 'GET', '/api/media/imagekit/files', 'handleImageKitFiles');
-  named(MEDIA_ROUTES, 'GET', '/api/media/imagekit/tags', 'handleImageKitTagList');
-  named(MEDIA_ROUTES, 'GET', '/api/media/imagekit/files/f-1/details', 'handleImageKitDetailsGet');
-  named(MEDIA_ROUTES, 'PATCH', '/api/media/imagekit/files/f-1/details', 'handleImageKitDetailsPatch');
+  named(
+    MEDIA_ROUTES,
+    'GET',
+    '/api/media/imagekit/status',
+    'handleImageKitStatus',
+  );
+  named(
+    MEDIA_ROUTES,
+    'GET',
+    '/api/media/imagekit/files',
+    'handleImageKitFiles',
+  );
+  named(
+    MEDIA_ROUTES,
+    'GET',
+    '/api/media/imagekit/tags',
+    'handleImageKitTagList',
+  );
+  named(
+    MEDIA_ROUTES,
+    'GET',
+    '/api/media/imagekit/files/f-1/details',
+    'handleImageKitDetailsGet',
+  );
+  named(
+    MEDIA_ROUTES,
+    'PATCH',
+    '/api/media/imagekit/files/f-1/details',
+    'handleImageKitDetailsPatch',
+  );
 });
 
 test('media: a wrong method 405s with the pinned Allow list', async () => {
@@ -96,7 +148,11 @@ test('media: a wrong method 405s with the pinned Allow list', async () => {
     const { ctx: c, res } = ctx(method, path);
     await handleMedia(c);
     assert.equal(res.statusCode, 405, `${method} ${path} → 405`);
-    assert.equal(res.headers.Allow, allow, `${method} ${path} → Allow: ${allow}`);
+    assert.equal(
+      res.headers.Allow,
+      allow,
+      `${method} ${path} → Allow: ${allow}`,
+    );
   }
 });
 
@@ -106,7 +162,11 @@ test('media: module prefix guard falls through, presign auth 401s after the meth
 
   const unauth = ctx('POST', '/api/media/presign', null);
   await handleMedia(unauth.ctx);
-  assert.equal(unauth.res.statusCode, 401, 'unauth presign → 401 (method matched first)');
+  assert.equal(
+    unauth.res.statusCode,
+    401,
+    'unauth presign → 401 (method matched first)',
+  );
 });
 
 // ─── slide-library (prefix + auth guard; Form B per path group) ───
@@ -115,17 +175,72 @@ test('slide-library: routes resolve to their named handlers in order', () => {
   named(SL_ROUTES, 'GET', '/api/slide-library/usage', 'handleUsageList');
   named(SL_ROUTES, 'POST', '/api/slide-library/usage', 'handleUsageRecord');
   named(SL_ROUTES, 'GET', '/api/slide-library/personal', 'handlePersonalList');
-  named(SL_ROUTES, 'POST', '/api/slide-library/personal', 'handlePersonalCreate');
-  named(SL_ROUTES, 'PATCH', '/api/slide-library/personal/i-1', 'handlePersonalUpdate');
-  named(SL_ROUTES, 'DELETE', '/api/slide-library/personal/i-1', 'handlePersonalDelete');
-  named(SL_ROUTES, 'GET', '/api/slide-library/organization', 'handleOrganizationList');
-  named(SL_ROUTES, 'POST', '/api/slide-library/organization', 'handleOrganizationCreate');
-  named(SL_ROUTES, 'PATCH', '/api/slide-library/organization/i-1', 'handleOrganizationUpdate');
-  named(SL_ROUTES, 'DELETE', '/api/slide-library/organization/i-1', 'handleOrganizationDelete');
-  named(SL_ROUTES, 'GET', '/api/slide-library/personal/i-1/tags', 'handleItemTagsGet');
-  named(SL_ROUTES, 'PUT', '/api/slide-library/personal/i-1/tags', 'handleItemTagsPut');
-  named(SL_ROUTES, 'GET', '/api/slide-library/organization/i-1/tags', 'handleItemTagsGet');
-  named(SL_ROUTES, 'PUT', '/api/slide-library/organization/i-1/tags', 'handleItemTagsPut');
+  named(
+    SL_ROUTES,
+    'POST',
+    '/api/slide-library/personal',
+    'handlePersonalCreate',
+  );
+  named(
+    SL_ROUTES,
+    'PATCH',
+    '/api/slide-library/personal/i-1',
+    'handlePersonalUpdate',
+  );
+  named(
+    SL_ROUTES,
+    'DELETE',
+    '/api/slide-library/personal/i-1',
+    'handlePersonalDelete',
+  );
+  named(
+    SL_ROUTES,
+    'GET',
+    '/api/slide-library/organization',
+    'handleOrganizationList',
+  );
+  named(
+    SL_ROUTES,
+    'POST',
+    '/api/slide-library/organization',
+    'handleOrganizationCreate',
+  );
+  named(
+    SL_ROUTES,
+    'PATCH',
+    '/api/slide-library/organization/i-1',
+    'handleOrganizationUpdate',
+  );
+  named(
+    SL_ROUTES,
+    'DELETE',
+    '/api/slide-library/organization/i-1',
+    'handleOrganizationDelete',
+  );
+  named(
+    SL_ROUTES,
+    'GET',
+    '/api/slide-library/personal/i-1/tags',
+    'handleItemTagsGet',
+  );
+  named(
+    SL_ROUTES,
+    'PUT',
+    '/api/slide-library/personal/i-1/tags',
+    'handleItemTagsPut',
+  );
+  named(
+    SL_ROUTES,
+    'GET',
+    '/api/slide-library/organization/i-1/tags',
+    'handleItemTagsGet',
+  );
+  named(
+    SL_ROUTES,
+    'PUT',
+    '/api/slide-library/organization/i-1/tags',
+    'handleItemTagsPut',
+  );
 });
 
 test('slide-library: a wrong method 405s with the pinned Allow list', async () => {
@@ -143,7 +258,11 @@ test('slide-library: a wrong method 405s with the pinned Allow list', async () =
     const { ctx: c, res } = ctx(method, path);
     await handleSlideLibrary(c);
     assert.equal(res.statusCode, 405, `${method} ${path} → 405`);
-    assert.equal(res.headers.Allow, allow, `${method} ${path} → Allow: ${allow}`);
+    assert.equal(
+      res.headers.Allow,
+      allow,
+      `${method} ${path} → Allow: ${allow}`,
+    );
   }
 });
 
@@ -153,7 +272,11 @@ test('slide-library: module guards — foreign prefix falls through, unauth 401s
 
   const unauth = ctx('GET', '/api/slide-library/personal', null);
   await handleSlideLibrary(unauth.ctx);
-  assert.equal(unauth.res.statusCode, 401, 'no user → 401 for any slide-library path');
+  assert.equal(
+    unauth.res.statusCode,
+    401,
+    'no user → 401 for any slide-library path',
+  );
 });
 
 // ─── uploads (one POST-only row, Form A) ───
@@ -189,18 +312,26 @@ test('sandbox: GET resolves, other methods fall through, disabled mode 404s', as
 // ─── organization-members (guards-before-method single handlers) ───
 
 test('organization-members: both member shapes resolve with their captures', () => {
-  const collection = select(OM_ROUTES, 'GET', '/api/organizations/org-1/members');
+  const collection = select(
+    OM_ROUTES,
+    'GET',
+    '/api/organizations/org-1/members',
+  );
   assert.equal(collection?.handler.name, 'handleMembersCollection');
   assert.deepEqual(
     collection.pattern.exec('/api/organizations/org-1/members').slice(1),
-    ['org-1']
+    ['org-1'],
   );
 
-  const item = select(OM_ROUTES, 'DELETE', '/api/organizations/org-1/members/m-1');
+  const item = select(
+    OM_ROUTES,
+    'DELETE',
+    '/api/organizations/org-1/members/m-1',
+  );
   assert.equal(item?.handler.name, 'handleMemberItem');
   assert.deepEqual(
     item.pattern.exec('/api/organizations/org-1/members/m-1').slice(1),
-    ['org-1', 'm-1']
+    ['org-1', 'm-1'],
   );
 });
 
@@ -226,13 +357,20 @@ test('organization-members: the flag guard answers 403 before the method decisio
 // ─── export (PNG-slide row before the factory-built routes) ───
 
 test('export: the PNG-slide row resolves with both captures, GET-only', () => {
-  const route = select(EX_ROUTES, 'GET', '/api/presentations/p-1/export/png/3.png');
+  const route = select(
+    EX_ROUTES,
+    'GET',
+    '/api/presentations/p-1/export/png/3.png',
+  );
   assert.equal(route?.handler.name, 'handlePngSlideExport');
   assert.deepEqual(
     route.pattern.exec('/api/presentations/p-1/export/png/3.png').slice(1),
-    ['p-1', '3']
+    ['p-1', '3'],
   );
-  assert.equal(select(EX_ROUTES, 'POST', '/api/presentations/p-1/export/png/3.png'), null);
+  assert.equal(
+    select(EX_ROUTES, 'POST', '/api/presentations/p-1/export/png/3.png'),
+    null,
+  );
 });
 
 // ─── bulk-export (two method-bearing rows, Form A) ───

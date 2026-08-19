@@ -18,10 +18,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ROUTES as SETTINGS_ROUTES, handleSettings } from '../server/routes/api/settings.js';
-import { ROUTES as USERS_ROUTES, handleUsers } from '../server/routes/api/users.js';
-import { ROUTES as DS_ROUTES, handleDataSources } from '../server/routes/api/data-sources.js';
-import { ROUTES as ACT_ROUTES, handleActivity } from '../server/routes/api/activity.js';
+import {
+  ROUTES as SETTINGS_ROUTES,
+  handleSettings,
+} from '../server/routes/api/settings.js';
+import {
+  ROUTES as USERS_ROUTES,
+  handleUsers,
+} from '../server/routes/api/users.js';
+import {
+  ROUTES as DS_ROUTES,
+  handleDataSources,
+} from '../server/routes/api/data-sources.js';
+import {
+  ROUTES as ACT_ROUTES,
+  handleActivity,
+} from '../server/routes/api/activity.js';
 
 function select(routes, method, pathname) {
   for (const route of routes) {
@@ -40,9 +52,14 @@ function mockRes() {
   return {
     statusCode: null,
     headers: {},
-    writeHead(c, headers) { this.statusCode = c; Object.assign(this.headers, headers); },
+    writeHead(c, headers) {
+      this.statusCode = c;
+      Object.assign(this.headers, headers);
+    },
     end() {},
-    setHeader(k, v) { this.headers[k] = v; },
+    setHeader(k, v) {
+      this.headers[k] = v;
+    },
   };
 }
 
@@ -64,7 +81,11 @@ function ctx(method, pathname, authedUser = { email: 'a@b.test' }) {
 function named(routes, method, path, handlerName) {
   const route = select(routes, method, path);
   assert.ok(route, `${method} ${path} matches a route`);
-  assert.equal(route.handler.name, handlerName, `${method} ${path} → ${handlerName}`);
+  assert.equal(
+    route.handler.name,
+    handlerName,
+    `${method} ${path} → ${handlerName}`,
+  );
 }
 
 // ─── settings (no module guard; Form B on app/organization; /me combined) ───
@@ -72,8 +93,18 @@ function named(routes, method, path, handlerName) {
 test('settings: routes resolve to their named handlers in order', () => {
   named(SETTINGS_ROUTES, 'GET', '/api/settings/app', 'handleAppSettingsGet');
   named(SETTINGS_ROUTES, 'PUT', '/api/settings/app', 'handleAppSettingsPut');
-  named(SETTINGS_ROUTES, 'GET', '/api/settings/organization', 'handleOrgSettingsGet');
-  named(SETTINGS_ROUTES, 'PATCH', '/api/settings/organization', 'handleOrgSettingsPatch');
+  named(
+    SETTINGS_ROUTES,
+    'GET',
+    '/api/settings/organization',
+    'handleOrgSettingsGet',
+  );
+  named(
+    SETTINGS_ROUTES,
+    'PATCH',
+    '/api/settings/organization',
+    'handleOrgSettingsPatch',
+  );
   named(SETTINGS_ROUTES, 'GET', '/api/settings/me', 'handleMySettings');
 });
 
@@ -86,7 +117,11 @@ test('settings: a wrong method still 405s (Form B + /me guard)', async () => {
     const { ctx: c, res } = ctx(method, path);
     await handleSettings(c);
     assert.equal(res.statusCode, 405, `${method} ${path} → 405`);
-    assert.equal(res.headers.Allow, allow, `${method} ${path} → Allow: ${allow}`);
+    assert.equal(
+      res.headers.Allow,
+      allow,
+      `${method} ${path} → Allow: ${allow}`,
+    );
   }
 });
 
@@ -123,12 +158,25 @@ test('users: /profiles keeps auth-before-method (401 unauth, 405 wrong method)',
 
 test('data-sources: routes resolve to their named handlers', () => {
   named(DS_ROUTES, 'GET', '/api/data-sources/providers', 'handleProviders');
-  named(DS_ROUTES, 'POST', '/api/data-sources/preview', 'handleDataSourcePreview');
-  named(DS_ROUTES, 'POST', '/api/data-sources/refresh', 'handleDataSourceRefresh');
+  named(
+    DS_ROUTES,
+    'POST',
+    '/api/data-sources/preview',
+    'handleDataSourcePreview',
+  );
+  named(
+    DS_ROUTES,
+    'POST',
+    '/api/data-sources/refresh',
+    'handleDataSourceRefresh',
+  );
 });
 
 test('data-sources: the preview/refresh 405 catch-alls emit 405', () => {
-  for (const path of ['/api/data-sources/preview', '/api/data-sources/refresh']) {
+  for (const path of [
+    '/api/data-sources/preview',
+    '/api/data-sources/refresh',
+  ]) {
     const route = select(DS_ROUTES, 'GET', path);
     assert.ok(route && route.handler.name !== 'handleDataSourcePreview');
     const res = mockRes();
@@ -172,7 +220,11 @@ test('activity: a wrong method 405s on each path (authed)', async () => {
     const { ctx: c, res } = ctx(method, path);
     await handleActivity(c);
     assert.equal(res.statusCode, 405, `${method} ${path} → 405`);
-    assert.equal(res.headers.Allow, allow, `${method} ${path} → Allow: ${allow}`);
+    assert.equal(
+      res.headers.Allow,
+      allow,
+      `${method} ${path} → Allow: ${allow}`,
+    );
   }
 });
 

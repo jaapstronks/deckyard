@@ -35,29 +35,30 @@ const OWNER = 'owner@example.com';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { createPresentation, updatePresentation } = await import(
-  '../server/storage/presentations/index.js'
-);
-const { createLiveSession, updateLiveSessionState } = await import(
-  '../server/storage/live-sessions/index.js'
-);
-const { createShareLink } = await import('../server/storage/share-links/index.js');
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { createPresentation, updatePresentation } =
+  await import('../server/storage/presentations/index.js');
+const { createLiveSession, updateLiveSessionState } =
+  await import('../server/storage/live-sessions/index.js');
+const { createShareLink } =
+  await import('../server/storage/share-links/index.js');
 const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
 
-const { handleFollowQuestions, handleFollowUpvote } = await import(
-  '../server/routes/api/follow/questions.js'
-);
-const { handleFollowInteractionsCurrent, handleFollowInteractionVote } = await import(
-  '../server/routes/api/follow/interactions.js'
-);
-const { handleShareLink } = await import('../server/routes/static/share-viewer.js');
+const { handleFollowQuestions, handleFollowUpvote } =
+  await import('../server/routes/api/follow/questions.js');
+const { handleFollowInteractionsCurrent, handleFollowInteractionVote } =
+  await import('../server/routes/api/follow/interactions.js');
+const { handleShareLink } =
+  await import('../server/routes/static/share-viewer.js');
 const { getErrorStatus } = await import('../server/utils/http.js');
 
 test.before(async () => {
-  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    }),
+  );
   await initializeStorage();
 });
 test.after(() => {
@@ -109,7 +110,12 @@ const presenterScope = { repoRoot: REPO_ROOT, organizationId: ORG };
  * A deck with a live session pushed onto the given slide, so
  * `getFollowStateForPresentation` reports `status: 'live'`.
  */
-async function seedLiveDeck({ slides, currentSlide = 0, slideType, settings } = {}) {
+async function seedLiveDeck({
+  slides,
+  currentSlide = 0,
+  slideType,
+  settings,
+} = {}) {
   const pres = await createPresentation(testScope(), {
     title: 'Live deck',
     ownerEmail: OWNER,
@@ -122,12 +128,12 @@ async function seedLiveDeck({ slides, currentSlide = 0, slideType, settings } = 
       testScope(null, { actorEmail: OWNER }),
       pres.id,
       { settings },
-      { actorEmail: OWNER, user: { email: OWNER } }
+      { actorEmail: OWNER, user: { email: OWNER } },
     );
   }
   const session = await createLiveSession(
     { repoRoot: REPO_ROOT, organizationId: ORG, actorEmail: null },
-    { presentationId: pres.id }
+    { presentationId: pres.id },
   );
   const slide = pres.slides[currentSlide];
   await updateLiveSessionState(presenterScope, session.sessionId, {
@@ -136,25 +142,38 @@ async function seedLiveDeck({ slides, currentSlide = 0, slideType, settings } = 
     slideType: slideType || slide.type,
     updatedAt: Date.now(),
   });
-  return { pres, sessionId: session.sessionId, slideId: slide.id, slideIds: pres.slides.map((s) => s.id) };
+  return {
+    pres,
+    sessionId: session.sessionId,
+    slideId: slide.id,
+    slideIds: pres.slides.map((s) => s.id),
+  };
 }
 
 // ---------------------------------------------------------------------------
 // Follow Q&A (questions.js)
 // ---------------------------------------------------------------------------
 
-async function callQuestions({ method = 'GET', presentationId, body, headers }) {
+async function callQuestions({
+  method = 'GET',
+  presentationId,
+  body,
+  headers,
+}) {
   const res = fakeRes();
   const handled = await handleFollowQuestions(
     { repoRoot: REPO_ROOT, req: fakeReq({ method, body, headers }), res },
-    presentationId
+    presentationId,
   );
   return { res, handled };
 }
 
 test('Q&A GET on a live, non-interactive slide reports canUseQa and an empty list', async () => {
   const { pres } = await seedLiveDeck();
-  const { res } = await callQuestions({ method: 'GET', presentationId: pres.id });
+  const { res } = await callQuestions({
+    method: 'GET',
+    presentationId: pres.id,
+  });
   assert.equal(res.statusCode, 200);
   const out = jsonBody(res);
   assert.equal(out.status, 'live');
@@ -175,7 +194,9 @@ test('Q&A POST with a valid live session accepts the question', async () => {
   assert.equal(out.question.text, 'What is the roadmap?');
 
   // And it now shows up in the list.
-  const list = jsonBody((await callQuestions({ method: 'GET', presentationId: pres.id })).res);
+  const list = jsonBody(
+    (await callQuestions({ method: 'GET', presentationId: pres.id })).res,
+  );
   assert.equal(list.questions.length, 1);
   assert.equal(list.questions[0].text, 'What is the roadmap?');
 });
@@ -198,7 +219,9 @@ test('Q&A POST on a deck that is not live is refused (400)', async () => {
 test('Q&A is suppressed and writes refused when the deck disables it', async () => {
   const { pres } = await seedLiveDeck({ settings: { qaEnabled: false } });
 
-  const getOut = jsonBody((await callQuestions({ method: 'GET', presentationId: pres.id })).res);
+  const getOut = jsonBody(
+    (await callQuestions({ method: 'GET', presentationId: pres.id })).res,
+  );
   assert.equal(getOut.capabilities.canUseQa, false);
   assert.deepEqual(getOut.questions, [], 'a disabled deck leaks no questions');
 
@@ -212,17 +235,31 @@ test('Q&A is suppressed and writes refused when the deck disables it', async () 
 
 test('Q&A is suppressed while an interactive slide is current', async () => {
   const { pres } = await seedLiveDeck({
-    slides: [{ type: 'poll-slide', content: { question: 'Pick', option1: 'A', option2: 'B' } }],
+    slides: [
+      {
+        type: 'poll-slide',
+        content: { question: 'Pick', option1: 'A', option2: 'B' },
+      },
+    ],
     slideType: 'poll-slide',
   });
-  const out = jsonBody((await callQuestions({ method: 'GET', presentationId: pres.id })).res);
-  assert.equal(out.capabilities.canUseQa, false, 'the live interaction owns the audience');
+  const out = jsonBody(
+    (await callQuestions({ method: 'GET', presentationId: pres.id })).res,
+  );
+  assert.equal(
+    out.capabilities.canUseQa,
+    false,
+    'the live interaction owns the audience',
+  );
   assert.equal(out.capabilities.interaction.type, 'poll');
 });
 
 test('Q&A rejects an unsupported method (405)', async () => {
   const { pres } = await seedLiveDeck();
-  const { res } = await callQuestions({ method: 'PUT', presentationId: pres.id });
+  const { res } = await callQuestions({
+    method: 'PUT',
+    presentationId: pres.id,
+  });
   assert.equal(res.statusCode, 405);
 });
 
@@ -236,7 +273,7 @@ test('an upvote on a deck that is not live is refused (400)', async () => {
   await handleFollowUpvote(
     { repoRoot: REPO_ROOT, req: fakeReq({ method: 'POST' }), res },
     pres.id,
-    'some-question-id'
+    'some-question-id',
   );
   assert.equal(res.statusCode, 400);
 });
@@ -252,9 +289,12 @@ async function callInteractionsCurrent({ presentationId, headers } = {}) {
       repoRoot: REPO_ROOT,
       req: fakeReq({ method: 'GET', headers }),
       res,
-      url: new URL(`/api/follow/${presentationId}/interactions/current`, 'http://localhost'),
+      url: new URL(
+        `/api/follow/${presentationId}/interactions/current`,
+        'http://localhost',
+      ),
     },
-    presentationId
+    presentationId,
   );
   return res;
 }
@@ -264,7 +304,7 @@ async function callVote({ presentationId, slideId, body }) {
   await handleFollowInteractionVote(
     { repoRoot: REPO_ROOT, req: fakeReq({ method: 'POST', body }), res },
     presentationId,
-    slideId
+    slideId,
   );
   return res;
 }
@@ -276,7 +316,9 @@ async function callVote({ presentationId, slideId, body }) {
 
 test('interactions/current on a non-interactive live slide carries no interaction', async () => {
   const { pres } = await seedLiveDeck(); // content-slide
-  const out = jsonBody(await callInteractionsCurrent({ presentationId: pres.id }));
+  const out = jsonBody(
+    await callInteractionsCurrent({ presentationId: pres.id }),
+  );
   assert.equal(out.status, 'live');
   assert.equal(out.interaction, null);
 });
@@ -285,23 +327,42 @@ test('voting on a deck that is not live is refused (400)', async () => {
   const pres = await createPresentation(testScope(), {
     title: 'Dormant deck 3',
     ownerEmail: OWNER,
-    slides: [{ type: 'poll-slide', content: { question: 'Q', option1: 'A', option2: 'B' } }],
+    slides: [
+      {
+        type: 'poll-slide',
+        content: { question: 'Q', option1: 'A', option2: 'B' },
+      },
+    ],
   });
-  const res = await callVote({ presentationId: pres.id, slideId: pres.slides[0].id, body: { optionIndex: 0 } });
+  const res = await callVote({
+    presentationId: pres.id,
+    slideId: pres.slides[0].id,
+    body: { optionIndex: 0 },
+  });
   assert.equal(res.statusCode, 400);
 });
 
 test('voting on a slide other than the current one is refused (400)', async () => {
   const { pres } = await seedLiveDeck({
     slides: [
-      { type: 'poll-slide', content: { question: 'Q', option1: 'A', option2: 'B' } },
-      { type: 'poll-slide', content: { question: 'Q2', option1: 'C', option2: 'D' } },
+      {
+        type: 'poll-slide',
+        content: { question: 'Q', option1: 'A', option2: 'B' },
+      },
+      {
+        type: 'poll-slide',
+        content: { question: 'Q2', option1: 'C', option2: 'D' },
+      },
     ],
     currentSlide: 0,
     slideType: 'poll-slide',
   });
   // Vote targets the *other* slide, which is not the presenter's current one.
-  const res = await callVote({ presentationId: pres.id, slideId: pres.slides[1].id, body: { optionIndex: 0 } });
+  const res = await callVote({
+    presentationId: pres.id,
+    slideId: pres.slides[1].id,
+    body: { optionIndex: 0 },
+  });
   assert.equal(res.statusCode, 400);
 });
 
@@ -345,8 +406,13 @@ async function seedShareLink(title) {
     ownerEmail: OWNER,
     slides: [{ type: 'content-slide', content: { title: 'A' } }],
   });
-  const link = await createShareLink(testScope(), pres.id, { permission: 'view' });
-  return { pres, token: link.token || link.shareLink?.token || link?.link?.token };
+  const link = await createShareLink(testScope(), pres.id, {
+    permission: 'view',
+  });
+  return {
+    pres,
+    token: link.token || link.shareLink?.token || link?.link?.token,
+  };
 }
 
 test('a valid share token serves the shell with escaped og: metadata', async () => {
@@ -358,18 +424,27 @@ test('a valid share token serves the shell with escaped og: metadata', async () 
   assert.equal(res.statusCode, 200);
   const html = String(res.body || '');
   // The title is present, HTML-escaped, and never as raw markup.
-  assert.match(html, /og:title" content="&lt;script&gt;alert\(1\)&lt;\/script&gt; deck"/);
+  assert.match(
+    html,
+    /og:title" content="&lt;script&gt;alert\(1\)&lt;\/script&gt; deck"/,
+  );
   assert.doesNotMatch(html, /content="<script>alert\(1\)<\/script> deck"/);
 });
 
 test('an unknown share token serves the shell but leaks no presentation', async () => {
   // A real deck exists, but we request a token that resolves to nothing.
   await seedShareLink('Secret quarterly numbers');
-  const { res, handled } = await callShare({ token: 'this-token-does-not-exist' });
+  const { res, handled } = await callShare({
+    token: 'this-token-does-not-exist',
+  });
   assert.equal(handled, true);
   assert.equal(res.statusCode, 200);
   const html = String(res.body || '');
-  assert.doesNotMatch(html, /Secret quarterly numbers/, 'no deck title leaks for an unknown token');
+  assert.doesNotMatch(
+    html,
+    /Secret quarterly numbers/,
+    'no deck title leaks for an unknown token',
+  );
 });
 
 test('the share viewer ignores a non-GET request', async () => {

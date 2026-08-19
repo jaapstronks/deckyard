@@ -40,7 +40,9 @@ function makeFakeDb({ presentations }) {
       async executeTakeFirst() {
         if (state.table === 'presentations') {
           const id = state.conditions.id;
-          return presentations.has(id) ? { organization_id: presentations.get(id) } : undefined;
+          return presentations.has(id)
+            ? { organization_id: presentations.get(id) }
+            : undefined;
         }
         if (state.table === 'presentation_versions') {
           const id = state.conditions.id;
@@ -58,7 +60,10 @@ function makeFakeDb({ presentations }) {
         return {
           async execute() {
             if (table !== 'presentation_versions') return;
-            assert.ok(!versionRows.has(row.id), `must not overwrite existing row ${row.id}`);
+            assert.ok(
+              !versionRows.has(row.id),
+              `must not overwrite existing row ${row.id}`,
+            );
             versionRows.set(row.id, row);
             insertCount += 1;
           },
@@ -77,7 +82,10 @@ function makeFakeDb({ presentations }) {
 }
 
 describe('053 import migration', () => {
-  const tmpDataDir = path.join(os.tmpdir(), `deckyard-migrate-${crypto.randomUUID()}`);
+  const tmpDataDir = path.join(
+    os.tmpdir(),
+    `deckyard-migrate-${crypto.randomUUID()}`,
+  );
   const versionsBase = path.join(tmpDataDir, 'presentation-versions');
   const existingDeck = 'deck-existing';
   const orphanDeck = 'deck-orphan';
@@ -102,7 +110,10 @@ describe('053 import migration', () => {
         title: 'Existing deck',
         presentation: { id: existingDeck, title: 'Existing deck', slides: [] },
       };
-      await fs.writeFile(path.join(versionsBase, existingDeck, `${vid}.json`), JSON.stringify(snap, null, 2));
+      await fs.writeFile(
+        path.join(versionsBase, existingDeck, `${vid}.json`),
+        JSON.stringify(snap, null, 2),
+      );
     }
 
     // One snapshot for a presentation that no longer exists -> must be skipped.
@@ -118,10 +129,11 @@ describe('053 import migration', () => {
     };
     await fs.writeFile(
       path.join(versionsBase, orphanDeck, `${orphanSnap.id}.json`),
-      JSON.stringify(orphanSnap, null, 2)
+      JSON.stringify(orphanSnap, null, 2),
     );
 
-    migration = await import('../server/db/migrations/053_import_file_versions_to_table.js');
+    migration =
+      await import('../server/db/migrations/053_import_file_versions_to_table.js');
   });
 
   after(async () => {
@@ -130,10 +142,16 @@ describe('053 import migration', () => {
   });
 
   it('imports each on-disk snapshot once, skips orphans, and is idempotent on re-run', async () => {
-    const fake = makeFakeDb({ presentations: new Map([[existingDeck, 'org-1']]) });
+    const fake = makeFakeDb({
+      presentations: new Map([[existingDeck, 'org-1']]),
+    });
 
     await migration.up(fake.db);
-    assert.strictEqual(fake.insertCount, 2, 'both snapshots of the existing deck imported');
+    assert.strictEqual(
+      fake.insertCount,
+      2,
+      'both snapshots of the existing deck imported',
+    );
     assert.strictEqual(fake.versionRows.size, 2);
     // Orphan deck snapshot skipped (presentation absent from the fake DB).
     for (const row of fake.versionRows.values()) {
@@ -147,12 +165,19 @@ describe('053 import migration', () => {
 
     // Second run must import nothing new (idempotent) and never overwrite.
     await migration.up(fake.db);
-    assert.strictEqual(fake.insertCount, 2, 'second run imported no additional rows');
+    assert.strictEqual(
+      fake.insertCount,
+      2,
+      'second run imported no additional rows',
+    );
     assert.strictEqual(fake.versionRows.size, 2);
   });
 
   it('is a no-op when the versions directory is absent', async () => {
-    const missingDir = path.join(os.tmpdir(), `deckyard-missing-${crypto.randomUUID()}`);
+    const missingDir = path.join(
+      os.tmpdir(),
+      `deckyard-missing-${crypto.randomUUID()}`,
+    );
     process.env.DATA_DIR = missingDir;
     const fake = makeFakeDb({ presentations: new Map() });
     await migration.up(fake.db); // must not throw

@@ -1,12 +1,18 @@
 import { api } from '../lib/api.js';
 import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
-import { createSSEConnection, LONG_LIVED_STREAM } from '../lib/net/sse-connection.js';
+import {
+  createSSEConnection,
+  LONG_LIVED_STREAM,
+} from '../lib/net/sse-connection.js';
 
 export async function renderModerate(root, presentationId, { user } = {}) {
   const pid = String(presentationId || '').trim();
   if (!pid) throw new Error(t('moderate.missingId', 'Missing presentationId'));
-  if (!user?.isAdmin) throw new Error(t('moderate.adminRequired', 'Moderator access requires admin login'));
+  if (!user?.isAdmin)
+    throw new Error(
+      t('moderate.adminRequired', 'Moderator access requires admin login'),
+    );
 
   const shell = h('div', { class: 'app-shell' });
   const panel = h('div', { class: 'panel moderate-panel' });
@@ -18,7 +24,7 @@ export async function renderModerate(root, presentationId, { user } = {}) {
     class: 'help',
     text: t(
       'moderate.help',
-      'Remove questions that have been answered or are inappropriate. The list is live and sorted by upvotes.'
+      'Remove questions that have been answered or are inappropriate. The list is live and sorted by upvotes.',
     ),
   });
   const status = h('div', { class: 'help', text: '' });
@@ -60,9 +66,9 @@ export async function renderModerate(root, presentationId, { user } = {}) {
           try {
             await api(
               `/api/moderate/${encodeURIComponent(pid)}/questions/${encodeURIComponent(
-                qid
+                qid,
               )}/remove`,
-              { method: 'POST', body: JSON.stringify({}) }
+              { method: 'POST', body: JSON.stringify({}) },
             );
           } catch (e) {
             removeBtn.disabled = false;
@@ -76,7 +82,7 @@ export async function renderModerate(root, presentationId, { user } = {}) {
           h('div', {
             class: 'help moderate-badge',
             text: t('moderate.addedToDeck', 'Added to deck'),
-          })
+          }),
         );
       } else {
         actions.append(removeBtn);

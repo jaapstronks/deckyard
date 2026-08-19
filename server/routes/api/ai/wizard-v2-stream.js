@@ -8,7 +8,10 @@ import {
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { cryptoUuid } from '../../../../shared/slide-types/helpers.js';
 import { DECK_FORMAT_ID } from '../../../../shared/slide-types/deck-format-id.js';
-import { generateSessionId, createSessionLogger } from '../../../utils/ai/index.js';
+import {
+  generateSessionId,
+  createSessionLogger,
+} from '../../../utils/ai/index.js';
 import {
   generateOutline,
   separateSlidesForProcessing,
@@ -21,7 +24,10 @@ import {
 } from '../../../utils/ai/validate-slides.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
 import { sseErrorPayload, openSseStream } from '../../../utils/sse.js';
-import { sandboxDefaultThemeId, sandboxEnabled } from '../../../config/sandbox.js';
+import {
+  sandboxDefaultThemeId,
+  sandboxEnabled,
+} from '../../../config/sandbox.js';
 import {
   log,
   loadSlideTypeContext,
@@ -36,7 +42,13 @@ import {
  * presentation.
  * @param {import('./shared.js').AiContext} ctx
  */
-export async function handleAiWizardV2Stream({ repoRoot, storageScope, req, res, authedUser }) {
+export async function handleAiWizardV2Stream({
+  repoRoot,
+  storageScope,
+  req,
+  res,
+  authedUser,
+}) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -57,16 +69,17 @@ export async function handleAiWizardV2Stream({ repoRoot, storageScope, req, res,
   const sessionId = generateSessionId();
   const logger = enableLogging ? createSessionLogger(sessionId) : null;
   const effectiveTheme =
-    themeFromRequest || (sandboxEnabled() ? sandboxDefaultThemeId() : 'default');
+    themeFromRequest ||
+    (sandboxEnabled() ? sandboxDefaultThemeId() : 'default');
 
   // Load theme to get the correct title slide type and theme context for AI
   const { titleSlideType, themeContext } = await loadAiThemeContext(
     repoRoot,
-    effectiveTheme
+    effectiveTheme,
   );
 
   log.info(
-    `[AI Wizard V2 Stream] Starting session ${sessionId}, theme: ${effectiveTheme}, titleSlideType: ${titleSlideType}, targetLength: ${targetLength}`
+    `[AI Wizard V2 Stream] Starting session ${sessionId}, theme: ${effectiveTheme}, titleSlideType: ${titleSlideType}, targetLength: ${targetLength}`,
   );
 
   const stream = openSseStream(req, res);
@@ -79,7 +92,10 @@ export async function handleAiWizardV2Stream({ repoRoot, storageScope, req, res,
 
   try {
     // Phase 1: Generate outline (get status messages)
-    sendEvent('status', { message: 'Analyzing your content...', phase: 'outline' });
+    sendEvent('status', {
+      message: 'Analyzing your content...',
+      phase: 'outline',
+    });
 
     const outline = await generateOutline(raw, {
       userName,
@@ -97,7 +113,7 @@ export async function handleAiWizardV2Stream({ repoRoot, storageScope, req, res,
 
     // Phase 2: Separate structural vs content slides
     const { structuralSlides, contentGroups } = separateSlidesForProcessing(
-      outline.slides
+      outline.slides,
     );
     const langCode =
       outline.metadata.requestedLang || outline.metadata.detectedLang || 'en';
@@ -145,14 +161,17 @@ export async function handleAiWizardV2Stream({ repoRoot, storageScope, req, res,
 
     // Combine structural + content slides, sorted by original index
     const allSlides = [...structuralSlides, ...refinedContentSlides].sort(
-      (a, b) => a.originalIndex - b.originalIndex
+      (a, b) => a.originalIndex - b.originalIndex,
     );
 
     // Validate and fix slides to meet minimum requirements
     const validatedSlides = validateAndFixRefinedSlides(allSlides);
 
     // Validate slide count against target budget
-    const { targetSlides: budgetTarget } = calculateTargetSlides(raw, targetLength);
+    const { targetSlides: budgetTarget } = calculateTargetSlides(
+      raw,
+      targetLength,
+    );
     const budgetValidation = validateSlideCount(validatedSlides, budgetTarget);
 
     // Assemble deck with automatic title slide using theme-appropriate type

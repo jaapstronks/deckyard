@@ -15,12 +15,12 @@ The runtime reads its options from the URL, so **one exported file serves every
 case** — full-page at `/p/`, chrome-less in an iframe, kiosk loop on a screen —
 without re-exporting. They apply to the downloaded `.html` and to `/p/` alike.
 
-| Param | Values | Effect |
-|-------|--------|--------|
-| `ui` | `min` | Hide the topbar and the control row; the scaled stage fills the frame. Anything else is the default chrome. |
-| `loop` | `1`/`0` (also `true`/`false`, `on`/`off`, `yes`/`no`) | Autoplay and restart at the end. Overrides the deck's auto-advance setting. |
-| `autoplay` | same | Autoplay without looping at the end. |
-| `interval` | `1`–`300` | Seconds per slide; overrides per-slide and deck defaults. |
+| Param      | Values                                                | Effect                                                                                                      |
+| ---------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `ui`       | `min`                                                 | Hide the topbar and the control row; the scaled stage fills the frame. Anything else is the default chrome. |
+| `loop`     | `1`/`0` (also `true`/`false`, `on`/`off`, `yes`/`no`) | Autoplay and restart at the end. Overrides the deck's auto-advance setting.                                 |
+| `autoplay` | same                                                  | Autoplay without looping at the end.                                                                        |
+| `interval` | `1`–`300`                                             | Seconds per slide; overrides per-slide and deck defaults.                                                   |
 
 The `#slide=N` hash deep-links to a slide and is kept in sync while navigating;
 it combines with the params above (`?ui=min#slide=2`).
@@ -57,13 +57,13 @@ Two deliberate choices about what "min" keeps:
 
 Everything the page needs is embedded into the one HTML file:
 
-| Asset | How | Where |
-|-------|-----|-------|
-| Slide images / uploads | base64 data URLs | `embedSlideImages`, `embedImgSrcDataUrls` (`html-utils.js`) |
-| Lucide icon SVGs / client assets | base64 data URLs | same image-embed pass (`includeClient: true`) |
-| Theme fonts (curated + uploaded) | base64 `@font-face` data URLs | `buildEmbeddedFontCss` from `theme.embedFonts` (`embed-fonts.js`) |
-| Any other `/assets/...` font a bundled stylesheet references | base64 data URLs, in place | `inlineLocalFontUrls` (`embed-fonts.js`) |
-| Viewer chrome + slide CSS | inlined `<style>` (imports flattened) | `readCssWithImports`, `loadExportCssBundle` |
+| Asset                                                        | How                                   | Where                                                             |
+| ------------------------------------------------------------ | ------------------------------------- | ----------------------------------------------------------------- |
+| Slide images / uploads                                       | base64 data URLs                      | `embedSlideImages`, `embedImgSrcDataUrls` (`html-utils.js`)       |
+| Lucide icon SVGs / client assets                             | base64 data URLs                      | same image-embed pass (`includeClient: true`)                     |
+| Theme fonts (curated + uploaded)                             | base64 `@font-face` data URLs         | `buildEmbeddedFontCss` from `theme.embedFonts` (`embed-fonts.js`) |
+| Any other `/assets/...` font a bundled stylesheet references | base64 data URLs, in place            | `inlineLocalFontUrls` (`embed-fonts.js`)                          |
+| Viewer chrome + slide CSS                                    | inlined `<style>` (imports flattened) | `readCssWithImports`, `loadExportCssBundle`                       |
 
 ### Which CSS ships — the viewer boundary
 
@@ -92,7 +92,7 @@ is separate, out-of-scope work.
 `inlineLocalFontUrls` rewrites any root-relative `url('/…​.woff2')` in the CSS
 to a data URL by reading the file from the repo. No built-in stylesheet
 declares an `@font-face` any more — slide text is served by the theme's
-`embedFonts` and the export *chrome* deliberately resolves `--ps-font-sans`
+`embedFonts` and the export _chrome_ deliberately resolves `--ps-font-sans`
 through its native system fallback — so this is the safety net for a **custom**
 theme that ships its own `/custom/…` face in a stylesheet the bundle picks up.
 It is what guarantees the invariant the tests assert: no `/assets/`-style font
@@ -106,13 +106,13 @@ curated families; embedding all of it would bloat every export, so we never do.
 
 Measured on the built-in themes, the embedded `@font-face` block is:
 
-| Theme | `@font-face` rules | Embedded fonts |
-|-------|-------------------|----------------|
-| `deckyard` (default), `brand` | 4 | ~253 KB |
-| `corporate` | 4 | ~141 KB |
-| `editorial` | 4 | ~205 KB |
-| `midnight` | 6 | ~286 KB |
-| `playful` | 10 | ~171 KB |
+| Theme                         | `@font-face` rules | Embedded fonts |
+| ----------------------------- | ------------------ | -------------- |
+| `deckyard` (default), `brand` | 4                  | ~253 KB        |
+| `corporate`                   | 4                  | ~141 KB        |
+| `editorial`                   | 4                  | ~205 KB        |
+| `midnight`                    | 6                  | ~286 KB        |
+| `playful`                     | 10                 | ~171 KB        |
 
 Two numbers explain the shape of that table. **Two Latin subsets**: Google
 splits every family into a disjoint `latin` and `latin-ext` file, and both ship
@@ -121,7 +121,7 @@ every Polish, Czech, Turkish and Hungarian letter in a fallback face. **One
 file per variable family**: Google serves a single variable `woff2` for all of
 a family's weights, so a heading font and a body font come to four files, not
 one per weight. `playful` is the outlier at ten rules because Poppins is a
-*static* family — genuinely one file per weight.
+_static_ family — genuinely one file per weight.
 
 Base64 costs a third on top of the raw bytes; the numbers above are the encoded
 size, which is what actually lands in the file.
@@ -138,11 +138,11 @@ from someone else's server are the three optional runtime libraries. All three
 are conditional — a deck with no code, no math and no video makes **zero**
 third-party requests:
 
-| Library | Loaded when | Emitted by |
-|---------|-------------|------------|
-| Prism (jsDelivr) | a slide renders a `.md-code-block` | `detectPrismKatexNeeds` → `buildPrismKatexCdnTags` (`prism-katex.js`) |
-| KaTeX (jsDelivr) | a slide renders `.md-math-block` / `.md-math-inline` | same |
-| Bunny `player.js` | the reader reaches a slide with a Bunny video iframe | `ensureBunnyPlayerJs()` in the page runtime |
+| Library           | Loaded when                                          | Emitted by                                                            |
+| ----------------- | ---------------------------------------------------- | --------------------------------------------------------------------- |
+| Prism (jsDelivr)  | a slide renders a `.md-code-block`                   | `detectPrismKatexNeeds` → `buildPrismKatexCdnTags` (`prism-katex.js`) |
+| KaTeX (jsDelivr)  | a slide renders `.md-math-block` / `.md-math-inline` | same                                                                  |
+| Bunny `player.js` | the reader reaches a slide with a Bunny video iframe | `ensureBunnyPlayerJs()` in the page runtime                           |
 
 Detection reads the **rendered slide HTML**, not the deck model, so it can't
 drift from what the init script queries and it covers custom slide types for

@@ -24,7 +24,13 @@ const PROVIDER_OPTIONS = [
     hintKey: 'dataSource.provider.notionDatabase.hint',
     hint: 'Query a Notion database and map properties to slide fields',
     configFields: [
-      { key: 'databaseId', labelKey: 'dataSource.field.databaseId', label: 'Database ID or URL', type: 'text', placeholder: 'abc123... or https://notion.so/...' },
+      {
+        key: 'databaseId',
+        labelKey: 'dataSource.field.databaseId',
+        label: 'Database ID or URL',
+        type: 'text',
+        placeholder: 'abc123... or https://notion.so/...',
+      },
     ],
   },
   {
@@ -33,7 +39,13 @@ const PROVIDER_OPTIONS = [
     hintKey: 'dataSource.provider.notionBlock.hint',
     hint: 'Fetch content from a specific Notion page or block',
     configFields: [
-      { key: 'pageId', labelKey: 'dataSource.field.pageId', label: 'Page ID or URL', type: 'text', placeholder: 'abc123... or https://notion.so/...' },
+      {
+        key: 'pageId',
+        labelKey: 'dataSource.field.pageId',
+        label: 'Page ID or URL',
+        type: 'text',
+        placeholder: 'abc123... or https://notion.so/...',
+      },
     ],
   },
   {
@@ -42,7 +54,14 @@ const PROVIDER_OPTIONS = [
     hintKey: 'dataSource.provider.csvUrl.hint',
     hint: 'Fetch CSV data from a URL (Google Sheets: File → Share → Publish to web → CSV)',
     configFields: [
-      { key: 'url', labelKey: 'dataSource.field.csvUrl', label: 'CSV URL', type: 'text', placeholder: 'https://docs.google.com/spreadsheets/d/.../gviz/tq?tqx=out:csv' },
+      {
+        key: 'url',
+        labelKey: 'dataSource.field.csvUrl',
+        label: 'CSV URL',
+        type: 'text',
+        placeholder:
+          'https://docs.google.com/spreadsheets/d/.../gviz/tq?tqx=out:csv',
+      },
     ],
   },
 ];
@@ -77,22 +96,36 @@ export function openDataSourceConfigModal({
 
   // Step 1: Provider selection
   const providerSection = h('div', { class: 'data-source-section' });
-  const providerLabel = h('div', { class: 'form-label', text: t('dataSource.provider', 'Data source') });
+  const providerLabel = h('div', {
+    class: 'form-label',
+    text: t('dataSource.provider', 'Data source'),
+  });
   const providerSelect = h('select', { class: 'form-select' });
-  providerSelect.append(h('option', { value: '', text: t('dataSource.selectProvider', 'Select a provider…') }));
+  providerSelect.append(
+    h('option', {
+      value: '',
+      text: t('dataSource.selectProvider', 'Select a provider…'),
+    }),
+  );
   for (const opt of PROVIDER_OPTIONS) {
     providerSelect.append(h('option', { value: opt.value, text: opt.label }));
   }
   providerSection.append(providerLabel, providerSelect);
 
   // Step 2: Configuration (rendered dynamically)
-  const configSection = h('div', { class: 'data-source-section data-source-config' });
+  const configSection = h('div', {
+    class: 'data-source-section data-source-config',
+  });
 
   // Step 3: Preview data
-  const previewSection = h('div', { class: 'data-source-section data-source-preview' });
+  const previewSection = h('div', {
+    class: 'data-source-section data-source-preview',
+  });
 
   // Step 4: Binding configuration
-  const bindingSection = h('div', { class: 'data-source-section data-source-bindings' });
+  const bindingSection = h('div', {
+    class: 'data-source-section data-source-bindings',
+  });
 
   // Status area
   const statusEl = h('div', { class: 'data-source-modal-status' });
@@ -113,15 +146,23 @@ export function openDataSourceConfigModal({
 
   function renderConfigFields() {
     configSection.innerHTML = '';
-    const providerOpt = PROVIDER_OPTIONS.find((p) => p.value === selectedProvider);
+    const providerOpt = PROVIDER_OPTIONS.find(
+      (p) => p.value === selectedProvider,
+    );
     if (!providerOpt) return;
 
-    const hint = h('div', { class: 'help', text: t(providerOpt.hintKey, providerOpt.hint) });
+    const hint = h('div', {
+      class: 'help',
+      text: t(providerOpt.hintKey, providerOpt.hint),
+    });
     configSection.append(hint);
 
     for (const field of providerOpt.configFields) {
       const wrap = h('div', { class: 'form-group' });
-      const label = h('label', { class: 'form-label', text: t(field.labelKey, field.label) });
+      const label = h('label', {
+        class: 'form-label',
+        text: t(field.labelKey, field.label),
+      });
       const input = h('input', {
         type: field.type || 'text',
         class: 'form-input',
@@ -148,7 +189,10 @@ export function openDataSourceConfigModal({
     previewSection.innerHTML = '';
     if (!data) return;
 
-    const heading = h('div', { class: 'form-label', text: t('dataSource.previewData', 'Available data') });
+    const heading = h('div', {
+      class: 'form-label',
+      text: t('dataSource.previewData', 'Available data'),
+    });
     previewSection.append(heading);
 
     if (Array.isArray(data)) {
@@ -170,7 +214,10 @@ export function openDataSourceConfigModal({
           const cell = h('div', { class: 'data-source-preview-cell' });
           cell.append(
             h('span', { class: 'data-source-preview-key', text: key }),
-            h('span', { class: 'data-source-preview-value', text: String(value || '').slice(0, 60) })
+            h('span', {
+              class: 'data-source-preview-value',
+              text: String(value || '').slice(0, 60),
+            }),
           );
           rowEl.append(cell);
         }
@@ -178,7 +225,12 @@ export function openDataSourceConfigModal({
       }
 
       if (data.length > 5) {
-        table.append(h('div', { class: 'help', text: `…and ${data.length - 5} more rows` }));
+        table.append(
+          h('div', {
+            class: 'help',
+            text: `…and ${data.length - 5} more rows`,
+          }),
+        );
       }
       previewSection.append(table);
     } else if (data?.blocks) {
@@ -188,7 +240,10 @@ export function openDataSourceConfigModal({
         const blockEl = h('div', { class: 'data-source-preview-cell' });
         blockEl.append(
           h('span', { class: 'data-source-preview-key', text: `block[${i}]` }),
-          h('span', { class: 'data-source-preview-value', text: String(block.text || '').slice(0, 80) })
+          h('span', {
+            class: 'data-source-preview-value',
+            text: String(block.text || '').slice(0, 80),
+          }),
         );
         previewSection.append(blockEl);
       }
@@ -199,10 +254,16 @@ export function openDataSourceConfigModal({
     bindingSection.innerHTML = '';
     if (!previewData || !bindableInfo) return;
 
-    const heading = h('div', { class: 'form-label', text: t('dataSource.bindings', 'Field bindings') });
+    const heading = h('div', {
+      class: 'form-label',
+      text: t('dataSource.bindings', 'Field bindings'),
+    });
     const hint = h('div', {
       class: 'help',
-      text: t('dataSource.bindings.hint', 'Map source data to slide fields. Use row[0].PropertyName for databases, or A1/B2 for CSV cells.'),
+      text: t(
+        'dataSource.bindings.hint',
+        'Map source data to slide fields. Use row[0].PropertyName for databases, or A1/B2 for CSV cells.',
+      ),
     });
     bindingSection.append(heading, hint);
 
@@ -217,7 +278,10 @@ export function openDataSourceConfigModal({
         text: target.path,
         title: target.label,
       });
-      const arrow = h('span', { class: 'data-source-binding-arrow', text: '←' });
+      const arrow = h('span', {
+        class: 'data-source-binding-arrow',
+        text: '←',
+      });
       const sourceInput = h('input', {
         type: 'text',
         class: 'form-input form-input-sm',
@@ -229,7 +293,10 @@ export function openDataSourceConfigModal({
         if (existing) {
           existing.source = sourceInput.value.trim();
         } else if (sourceInput.value.trim()) {
-          bindings.push({ target: target.path, source: sourceInput.value.trim() });
+          bindings.push({
+            target: target.path,
+            source: sourceInput.value.trim(),
+          });
         }
         updateActionStates();
       });
@@ -264,7 +331,9 @@ export function openDataSourceConfigModal({
       updateActionStates();
     } catch (err) {
       statusEl.textContent = t('dataSource.error', 'Error: {message}', {
-        message: err.message || t('editor.dataSource.fetchFailed', 'Failed to fetch data'),
+        message:
+          err.message ||
+          t('editor.dataSource.fetchFailed', 'Failed to fetch data'),
       });
     } finally {
       previewBtn.disabled = false;
@@ -302,7 +371,7 @@ export function openDataSourceConfigModal({
     previewSection,
     bindingSection,
     statusEl,
-    actionsRow
+    actionsRow,
   );
 
   modal.show(root, openOverlayClosers);

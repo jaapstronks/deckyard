@@ -8,7 +8,7 @@ runs without an explicit organization scope) and the **query contract** (one
 Postgres-only backend reached by every facade through direct Kysely on
 `getDb()` — there is no adapter class; B79/D34 stripped it). Route handlers
 never touch SQL directly; they call a per-domain facade
-(`server/storage/presentations/`, `server/storage/themes.js`, …) with a *scope*
+(`server/storage/presentations/`, `server/storage/themes.js`, …) with a _scope_
 as the first argument, and the facade runs its own Kysely queries.
 
 This document maps the layer: the module inventory, the query seam, the
@@ -25,9 +25,9 @@ each path resolves.
 
 **The seam (read these first):**
 
-- `server/storage/scope.js` — defines and validates storage *scopes*, and
+- `server/storage/scope.js` — defines and validates storage _scopes_, and
   reduces a caller scope to a `StorageContext` via `toStorageContext()`; the
-  tenancy gate (see *Authz & tenancy*). Every facade calls this once, then
+  tenancy gate (see _Authz & tenancy_). Every facade calls this once, then
   passes the context down to its queries.
 - `server/storage/lifecycle.js` — the storage lifecycle
   (`initializeStorage` / `closeStorage`), thin wrappers over `db/client.js`'s
@@ -62,7 +62,7 @@ each path resolves.
 - `server/storage/identity-resolver.js` /
   `server/storage/identity-verification.js` — map an external identifier to a
   stable `users.id`, and check that every dual key still agrees (see
-  *Identity dual keys* below).
+  _Identity dual keys_ below).
 
 **Top-level facades** cover the remaining domains: auth/account
 (`users.js`, `sso.js`, `magic-link.js`, `password-reset.js`, `api-keys.js`,
@@ -97,16 +97,16 @@ Ownership and ACLs used to key on an **e-mail string**. Migrations `062`
 (`user_settings`) put a nullable `users.id` column beside each of those e-mail
 columns and backfilled it. Five pairs exist today:
 
-| Table                        | id column             | e-mail column |
-| ---------------------------- | --------------------- | ------------- |
-| `presentations`              | `owner_user_id`       | `owner_email` |
-| `presentations`              | `created_by_user_id`  | `created_by`  |
-| `presentations`              | `updated_by_user_id`  | `updated_by`  |
-| `presentation_collaborators` | `user_id`             | `user_email`  |
-| `user_settings`              | `user_id`             | `email`       |
+| Table                        | id column            | e-mail column |
+| ---------------------------- | -------------------- | ------------- |
+| `presentations`              | `owner_user_id`      | `owner_email` |
+| `presentations`              | `created_by_user_id` | `created_by`  |
+| `presentations`              | `updated_by_user_id` | `updated_by`  |
+| `presentation_collaborators` | `user_id`            | `user_email`  |
+| `user_settings`              | `user_id`            | `email`       |
 
-The **id leads and the e-mail is the fallback**, under one invariant: *id
-present ⇒ the e-mail column equals that user's current address*. Facades that
+The **id leads and the e-mail is the fallback**, under one invariant: _id
+present ⇒ the e-mail column equals that user's current address_. Facades that
 write by id re-stamp the e-mail so the two never drift. A NULL id is a defined
 state, not a defect — external collaborators, the shared `anonymous` settings
 bucket and rows imported off disk stay NULL forever.
@@ -140,7 +140,7 @@ that one has no id beside it yet.
   mixin runs a query filtered by `organization_id`. No org on the scope and no
   declared cross-org reason → `TypeError` before any SQL.
 - **A deliberate cross-org read.** Published decks, share tokens and follow
-  codes are authorized by the *token*, not the org. These go through
+  codes are authorized by the _token_, not the org. These go through
   `crossOrganizationScope(repoRoot, reason, …)` — the mandatory `reason` string
   makes `grep -r crossOrganization` a complete census of every unscoped path.
 - **A list read.** The list facades (`listPresentations`,
@@ -180,7 +180,7 @@ Storage selection lives in `server/config/database.js`:
   removed `file` mode (→ run `npm run db:import`) and the misspelling
   `postgresql` (→ `postgres`).
 - Connection: `DATABASE_URL` **or** the discrete `DATABASE_HOST/PORT/NAME/USER/
-  PASSWORD` set (`DATABASE_URL` wins when both are present), plus
+PASSWORD` set (`DATABASE_URL` wins when both are present), plus
   `DATABASE_SSL`, `DATABASE_SSL_REJECT_UNAUTHORIZED`, `DATABASE_POOL_MIN/MAX`.
 - `DEFAULT_ORGANIZATION_ID` — single-organization default org
   (`00000000-0000-0000-0000-000000000001`), used only where a scope is legitimately
@@ -189,7 +189,7 @@ Storage selection lives in `server/config/database.js`:
 ## Failure signalling
 
 A storage facade answers in exactly one of three shapes, decided by what the
-call *is* — not by what it happens to have returned since it was written.
+call _is_ — not by what it happens to have returned since it was written.
 
 **Reads** — an export that answers a question about stored state (`get*`,
 `find*`, `list*`, `count*`, `search*`, `aggregate*`) returns the value it was
@@ -208,13 +208,13 @@ one field to branch and one to use.
 `reason` is a short snake_case token, drawn from the layer-wide vocabulary
 before a domain-specific one is minted:
 
-| `reason` | Means |
-| --- | --- |
-| `not_found` | The target row does not exist (or is not visible in this scope). |
-| `invalid` | The caller's input is malformed — blank id, unparseable field. |
-| `forbidden` | The row exists but this scope may not change it. |
-| `conflict` | Another writer got there first, or a uniqueness rule bites. |
-| `unavailable` | The database is not reachable; the `withDbGuard` fallback. |
+| `reason`      | Means                                                            |
+| ------------- | ---------------------------------------------------------------- |
+| `not_found`   | The target row does not exist (or is not visible in this scope). |
+| `invalid`     | The caller's input is malformed — blank id, unparseable field.   |
+| `forbidden`   | The row exists but this scope may not change it.                 |
+| `conflict`    | Another writer got there first, or a uniqueness rule bites.      |
+| `unavailable` | The database is not reachable; the `withDbGuard` fallback.       |
 
 Domain-specific reasons are fine where they carry information a route or UI
 acts on (`slug_exists`, `last_owner`, `limit_exceeded`, `expired`). What is not
@@ -242,7 +242,7 @@ interaction/feedback cluster, and the presentation trash/duplicate,
 image-library and publishing exports. The two boolean-shaped verdicts the gate
 could not see went with them — `deleteImageLibraryItem` and
 `removePublishedEntry` now answer `{ ok: true }` / `{ ok: false, reason }`
-rather than `true`/`false`. A boolean that is a *payload* is untouched and
+rather than `true`/`false`. A boolean that is a _payload_ is untouched and
 stays correct: `toggleImageFavorite` returns the new favourite state, not "it
 worked".
 
@@ -282,9 +282,9 @@ non-throwing failure branch.
 
 ## Authz & tenancy
 
-`server/storage/scope.js` is the enforcement point. Its rule: *a storage call
+`server/storage/scope.js` is the enforcement point. Its rule: _a storage call
 may not invent an organization the caller did not give it — there is no
-fallback.* The entry points:
+fallback._ The entry points:
 
 - `resolveScope(storageScope, operation, { allowCrossOrganization })` — validates the
   scope object and reduces it to `{organizationId, actorEmail, crossOrganization}`;

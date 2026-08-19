@@ -17,7 +17,11 @@
 
 import { resolveRows } from './types/text-blocks-slide.js';
 import { getSlideType, resolveSlideTypeName } from './registry.js';
-import { getFieldGroup, getFieldGroups, groupAlignValues } from './field-groups.js';
+import {
+  getFieldGroup,
+  getFieldGroups,
+  groupAlignValues,
+} from './field-groups.js';
 
 /** The schema version every freshly written deck is stamped with. */
 export const CURRENT_SCHEMA_VERSION = 6;
@@ -115,7 +119,10 @@ export const SCHEMA_MIGRATIONS = [
   // `align` is touched — `color`/`size` on the same field are per-field styling
   // and stay. Idempotent: a slide without the legacy key is untouched.
   (pres) => {
-    const group = getFieldGroup(getSlideType(QUOTE_SLIDE_TYPE), QUOTE_BLOCK_GROUP);
+    const group = getFieldGroup(
+      getSlideType(QUOTE_SLIDE_TYPE),
+      QUOTE_BLOCK_GROUP,
+    );
     const alignKey = typeof group?.alignKey === 'string' ? group.alignKey : '';
     if (!alignKey) return pres;
     const offered = groupAlignValues(group);
@@ -130,7 +137,8 @@ export const SCHEMA_MIGRATIONS = [
       if (!quoteStyle || typeof quoteStyle !== 'object') continue;
       if (!Object.prototype.hasOwnProperty.call(quoteStyle, 'align')) continue;
       const legacy = quoteStyle.align;
-      if (!content[alignKey] && offered.includes(legacy)) content[alignKey] = legacy;
+      if (!content[alignKey] && offered.includes(legacy))
+        content[alignKey] = legacy;
       delete quoteStyle.align;
       if (!Object.keys(quoteStyle).length) delete styles.quote;
       if (!Object.keys(styles).length) delete content.textStyles;
@@ -163,7 +171,7 @@ export const SCHEMA_MIGRATIONS = [
       const groupIds = new Set(
         getFieldGroups(def)
           .map((g) => (g && typeof g.id === 'string' ? g.id : ''))
-          .filter(Boolean)
+          .filter(Boolean),
       );
       if (!groupIds.size) continue;
       const content = slide.content;
@@ -177,7 +185,8 @@ export const SCHEMA_MIGRATIONS = [
         if (!group || !groupIds.has(group)) continue;
         const fieldStyle = styles[field.key];
         if (!fieldStyle || typeof fieldStyle !== 'object') continue;
-        if (!Object.prototype.hasOwnProperty.call(fieldStyle, 'align')) continue;
+        if (!Object.prototype.hasOwnProperty.call(fieldStyle, 'align'))
+          continue;
         delete fieldStyle.align;
         if (!Object.keys(fieldStyle).length) delete styles[field.key];
       }
@@ -212,7 +221,8 @@ export function migratePresentation(pres) {
   if (from >= CURRENT_SCHEMA_VERSION) {
     // Already current, or ahead of us (a deck written by a newer build). Don't
     // downgrade; only normalise the stamp to a number when it is exactly current.
-    if (from === CURRENT_SCHEMA_VERSION) pres.schemaVersion = CURRENT_SCHEMA_VERSION;
+    if (from === CURRENT_SCHEMA_VERSION)
+      pres.schemaVersion = CURRENT_SCHEMA_VERSION;
     return pres;
   }
   let out = pres;

@@ -79,7 +79,8 @@ export function createDeckFromLibraryItems({
   };
   const themeId = String(theme || '').trim();
   if (themeId) payload.theme = themeId;
-  if (sourceLibraryItemIds.length) payload.sourceLibraryItemIds = sourceLibraryItemIds;
+  if (sourceLibraryItemIds.length)
+    payload.sourceLibraryItemIds = sourceLibraryItemIds;
   const collectionId = String(sourceCollectionId || '').trim();
   if (collectionId) payload.sourceCollectionId = collectionId;
   return api('/api/presentations', {

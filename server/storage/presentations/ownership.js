@@ -21,7 +21,11 @@ const log = createLogger('ownership');
  * @param {string} [options.actorEmail] - Email of the user performing the transfer
  * @returns {Promise<Object>} - Result with updated presentation
  */
-export async function transferPresentationOwnership(scope, presentationId, options) {
+export async function transferPresentationOwnership(
+  scope,
+  presentationId,
+  options,
+) {
   toStorageContext(scope, 'transferPresentationOwnership');
   const newOwnerEmail = normalizeEmail(options?.newOwnerEmail);
   const previousOwnerEmail = normalizeEmail(options?.previousOwnerEmail);
@@ -67,7 +71,11 @@ export async function transferPresentationOwnership(scope, presentationId, optio
 
   // Optionally add previous owner as collaborator
   let collaboratorAdded = false;
-  if (keepAsCollaborator && previousOwnerEmail && previousOwnerEmail !== newOwnerEmail) {
+  if (
+    keepAsCollaborator &&
+    previousOwnerEmail &&
+    previousOwnerEmail !== newOwnerEmail
+  ) {
     try {
       const result = await addCollaborator(presentationId, {
         userEmail: previousOwnerEmail,
@@ -76,7 +84,10 @@ export async function transferPresentationOwnership(scope, presentationId, optio
       });
       collaboratorAdded = result.ok;
     } catch (err) {
-      log.error('[ownership] Failed to add previous owner as collaborator:', err);
+      log.error(
+        '[ownership] Failed to add previous owner as collaborator:',
+        err,
+      );
       // Non-fatal - ownership transfer still succeeded
     }
   }

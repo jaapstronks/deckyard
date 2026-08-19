@@ -27,7 +27,10 @@
 
 import { loadDotEnv } from '../../server/config/env.js';
 import { repoRoot } from '../../server/config/paths.js';
-import { initializeStorage, closeStorage } from '../../server/storage/lifecycle.js';
+import {
+  initializeStorage,
+  closeStorage,
+} from '../../server/storage/lifecycle.js';
 import {
   createComment,
   resolveComment,
@@ -94,11 +97,11 @@ export async function seedCommentThreads(presentationId, threads) {
         body: thread.body,
         slideId: thread.slideId,
       },
-      ctx
+      ctx,
     );
     if (!created?.ok) {
       throw new Error(
-        `Seeding comment failed: ${created?.reason || 'unknown'} (${thread.body.slice(0, 40)}…)`
+        `Seeding comment failed: ${created?.reason || 'unknown'} (${thread.body.slice(0, 40)}…)`,
       );
     }
     ids.push(created.comment.id);
@@ -113,11 +116,11 @@ export async function seedCommentThreads(presentationId, threads) {
           slideId: thread.slideId,
           parentId: created.comment.id,
         },
-        ctx
+        ctx,
       );
       if (!repliedTo?.ok) {
         throw new Error(
-          `Seeding reply failed: ${repliedTo?.reason || 'unknown'} (${reply.body.slice(0, 40)}…)`
+          `Seeding reply failed: ${repliedTo?.reason || 'unknown'} (${reply.body.slice(0, 40)}…)`,
         );
       }
     }
@@ -128,10 +131,12 @@ export async function seedCommentThreads(presentationId, threads) {
       const done = await resolveComment(
         created.comment.id,
         { email: thread.author.email },
-        ctx
+        ctx,
       );
       if (!done?.ok) {
-        throw new Error(`Resolving seeded comment failed: ${done?.reason || 'unknown'}`);
+        throw new Error(
+          `Resolving seeded comment failed: ${done?.reason || 'unknown'}`,
+        );
       }
     }
   }

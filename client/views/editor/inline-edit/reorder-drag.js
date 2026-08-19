@@ -42,16 +42,23 @@ export function createReorderDrag({ h, thumb, overlay, onReorder }) {
     const grip = e.currentTarget;
     const thumbRect = thumb.getBoundingClientRect();
     const items = [...scopeEl.querySelectorAll(itemSelector)]
-      .filter((el) => Number.isInteger(Number(el.getAttribute('data-inline-item-index'))))
+      .filter((el) =>
+        Number.isInteger(Number(el.getAttribute('data-inline-item-index'))),
+      )
       .sort(
         (a, b) =>
           Number(a.getAttribute('data-inline-item-index')) -
-          Number(b.getAttribute('data-inline-item-index'))
+          Number(b.getAttribute('data-inline-item-index')),
       );
     if (items.length < 2) return;
     const rects = items.map((el) => {
       const r = el.getBoundingClientRect();
-      return { left: r.left - thumbRect.left, top: r.top - thumbRect.top, width: r.width, height: r.height };
+      return {
+        left: r.left - thumbRect.left,
+        top: r.top - thumbRect.top,
+        width: r.width,
+        height: r.height,
+      };
     });
 
     const indicator = h('div', { class: 'ie-drop-indicator' });
@@ -62,7 +69,10 @@ export function createReorderDrag({ h, thumb, overlay, onReorder }) {
 
     let drop = null;
     const onMove = (ev) => {
-      drop = computeDrop(rects, { x: ev.clientX - thumbRect.left, y: ev.clientY - thumbRect.top });
+      drop = computeDrop(rects, {
+        x: ev.clientX - thumbRect.left,
+        y: ev.clientY - thumbRect.top,
+      });
       if (!drop) return;
       const line = drop.line;
       const s = indicator.style;

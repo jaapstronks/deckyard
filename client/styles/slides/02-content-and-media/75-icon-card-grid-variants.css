@@ -18,7 +18,8 @@
 .slide-icon-card-grid[data-layout='cards'] .icon-card-grid[data-card-count='1'],
 .slide-icon-card-grid[data-layout='cards'] .icon-card-grid[data-card-count='2'],
 .slide-icon-card-grid[data-layout='cards'] .icon-card-grid[data-card-count='3'],
-.slide-icon-card-grid[data-layout='cards'] .icon-card-grid[data-card-count='4'] {
+.slide-icon-card-grid[data-layout='cards']
+  .icon-card-grid[data-card-count='4'] {
   grid-template-rows: repeat(2, var(--icg-row-h));
   flex: 0 0 auto;
   margin-top: auto;
@@ -29,7 +30,8 @@
    the 2-column brick layout — which floats the 3rd card awkwardly halfway down
    the right side. One column, sized to leave room on the right, vertically
    centered in the space below the header (which stays pinned to the top). */
-.slide-icon-card-grid[data-layout='cards'] .icon-card-grid[data-card-count='3'] {
+.slide-icon-card-grid[data-layout='cards']
+  .icon-card-grid[data-card-count='3'] {
   grid-template-columns: minmax(0, 60%);
   grid-template-rows: repeat(3, auto);
   justify-content: start;
@@ -45,7 +47,8 @@
    of the first column before moving to the second. The invisible 6th card
    (renderHtml always emits 6, hiding the spare) takes the empty bottom-right
    cell. Only the default "cards" layout; tiles is a single row. */
-.slide-icon-card-grid[data-layout='cards'] .icon-card-grid[data-card-count='5'] {
+.slide-icon-card-grid[data-layout='cards']
+  .icon-card-grid[data-card-count='5'] {
   grid-auto-flow: column;
   align-content: center;
   row-gap: var(--slide-space-5);
@@ -98,20 +101,24 @@
 /* Column count tracks the tile count so 1-4 fill their row without a phantom
    empty column, and 5-6 break into a 3-wide, 2-row grid. Fewer tiles get a
    larger square, up to what the height below the header allows. */
-.slide-icon-card-grid[data-layout='tiles'] .icon-card-grid[data-card-count='1'] {
+.slide-icon-card-grid[data-layout='tiles']
+  .icon-card-grid[data-card-count='1'] {
   --icg-tile: 560px;
   grid-template-columns: repeat(1, var(--icg-tile));
 }
-.slide-icon-card-grid[data-layout='tiles'] .icon-card-grid[data-card-count='2'] {
+.slide-icon-card-grid[data-layout='tiles']
+  .icon-card-grid[data-card-count='2'] {
   --icg-tile: 520px;
   grid-template-columns: repeat(2, var(--icg-tile));
 }
-.slide-icon-card-grid[data-layout='tiles'] .icon-card-grid[data-card-count='3'] {
+.slide-icon-card-grid[data-layout='tiles']
+  .icon-card-grid[data-card-count='3'] {
   --icg-tile: 460px;
   grid-template-columns: repeat(3, var(--icg-tile));
 }
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-grid[data-card-count='5'],
-.slide-icon-card-grid[data-layout='tiles'] .icon-card-grid[data-card-count='6'] {
+.slide-icon-card-grid[data-layout='tiles']
+  .icon-card-grid[data-card-count='6'] {
   --icg-tile: 306px;
   grid-template-columns: repeat(3, var(--icg-tile));
 }

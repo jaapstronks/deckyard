@@ -33,11 +33,10 @@ export function openAiAppendWizard({
 
   const ta = h('textarea', {
     class: 'form-input form-textarea-lg',
-    placeholder:
-      t(
-        'editor.aiAppend.placeholder',
-        'E.g.\n- Add 2 slides about approach and planning\n- Add a slide with a photo (placeholder) and 4 bullet points with key messages\n- Add a "list" slide with 6 tips (bullets)\n- Add a chart slide with a bar chart based on these numbers: ...\n'
-      ),
+    placeholder: t(
+      'editor.aiAppend.placeholder',
+      'E.g.\n- Add 2 slides about approach and planning\n- Add a slide with a photo (placeholder) and 4 bullet points with key messages\n- Add a "list" slide with 6 tips (bullets)\n- Add a chart slide with a bar chart based on these numbers: ...\n',
+    ),
   });
   // Prefilled when reached from the picker's "build with AI" escape hatch, so
   // the user's search query seeds the request. A textarea's value is its text
@@ -60,7 +59,7 @@ export function openAiAppendWizard({
     for: 'ai-append-content-only',
     text: t(
       'editor.aiAppend.contentOnly',
-      'Content slides only (no section headers)'
+      'Content slides only (no section headers)',
     ),
   });
   const contentOnlyWrap = h('div', { class: 'form-group form-group-checkbox' });
@@ -81,7 +80,7 @@ export function openAiAppendWizard({
     for: 'ai-append-verbatim',
     text: t(
       'editor.aiAppend.verbatim',
-      'Use my text verbatim (only fix typos, don’t rewrite)'
+      'Use my text verbatim (only fix typos, don’t rewrite)',
     ),
   });
   const verbatimWrap = h('div', { class: 'form-group form-group-checkbox' });
@@ -90,7 +89,7 @@ export function openAiAppendWizard({
     class: 'help',
     text: t(
       'editor.aiAppend.verbatimHint',
-      'Keeps your wording as-is. Your text may mix instructions with the copy to place on the slides; the AI follows the instructions but quotes the copy instead of rephrasing it.'
+      'Keeps your wording as-is. Your text may mix instructions with the copy to place on the slides; the AI follows the instructions but quotes the copy instead of rephrasing it.',
     ),
   });
 
@@ -101,7 +100,7 @@ export function openAiAppendWizard({
     isDirty,
     confirmMessage: t(
       'editor.aiAppend.confirmDiscard',
-      'You have entered text. Close this wizard and discard your input?'
+      'You have entered text. Close this wizard and discard your input?',
     ),
   });
 
@@ -111,18 +110,18 @@ export function openAiAppendWizard({
       langMode === 'nl'
         ? t(
             'editor.aiAppend.langHint.nl',
-            'Language mode: Dutch (AI output will be Dutch).'
+            'Language mode: Dutch (AI output will be Dutch).',
           )
         : t(
             'editor.aiAppend.langHint.en',
-            'Language mode: English (UK) (AI output will be English).'
+            'Language mode: English (UK) (AI output will be English).',
           ),
   });
   const help = h('div', {
     class: 'help modal-hint-lg',
     text: t(
       'editor.aiAppend.help',
-      'Describe what you want to add. You can request one or multiple slides at once. The AI also sees the existing presentation and tries to fit in logically. If you ask for a photo/image, an existing background image will be used as a placeholder (which you can replace afterwards).'
+      'Describe what you want to add. You can request one or multiple slides at once. The AI also sees the existing presentation and tries to fit in logically. If you ask for a photo/image, an existing background image will be used as a placeholder (which you can replace afterwards).',
     ),
   });
   const status = h('div', {
@@ -185,7 +184,7 @@ export function openAiAppendWizard({
     if (!raw.trim()) {
       status.textContent = t(
         'editor.aiAppend.required',
-        'First describe what you want to add.'
+        'First describe what you want to add.',
       );
       return;
     }
@@ -220,7 +219,7 @@ export function openAiAppendWizard({
       if (!newSlides.length) {
         status.textContent = t(
           'editor.aiAppend.noneReceived',
-          'No slides received (please try again).'
+          'No slides received (please try again).',
         );
         return;
       }
@@ -278,7 +277,7 @@ export function openAiAppendWizard({
       if (e?.name === 'AbortError') {
         status.textContent = t(
           'editor.aiAppend.cancelled',
-          'Generation cancelled.'
+          'Generation cancelled.',
         );
       } else {
         status.textContent = String(e.message || e);
@@ -307,7 +306,7 @@ export function openAiAppendWizard({
     verbatimWrap,
     verbatimHint,
     status,
-    actions
+    actions,
   );
   ta.focus();
 
@@ -323,7 +322,7 @@ export function openAiAppendWizard({
         const norm = normalizeLlmVendor(v);
         if (!norm) continue;
         llmSelect.append(
-          h('option', { value: norm, text: labelForVendor(norm, st) })
+          h('option', { value: norm, text: labelForVendor(norm, st) }),
         );
       }
       llmVendor = initial;

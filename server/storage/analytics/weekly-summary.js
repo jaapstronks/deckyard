@@ -63,149 +63,216 @@ export async function getWeeklyAnalyticsForUser(userId, userEmail) {
   const dateRange = getWeekDateRange();
   const previousRange = getPreviousWeekDateRange();
 
-  return withDbGuard({
-    userName: '',
-    weekStart: dateRange.weekStart,
-    weekEnd: dateRange.weekEnd,
-    totalViews: 0,
-    uniqueViewers: 0,
-    avgDurationSeconds: 0,
-    completionRate: 0,
-    presentationCount: 0,
-    topPresentations: [],
-    insights: [],
-    weekOverWeek: {
-      views: { current: 0, previous: 0, percentChange: 0, direction: 'flat' },
-      uniqueViewers: { current: 0, previous: 0, percentChange: 0, direction: 'flat' },
-      avgDuration: { current: 0, previous: 0, percentChange: 0, direction: 'flat' },
+  return withDbGuard(
+    {
+      userName: '',
+      weekStart: dateRange.weekStart,
+      weekEnd: dateRange.weekEnd,
+      totalViews: 0,
+      uniqueViewers: 0,
+      avgDurationSeconds: 0,
+      completionRate: 0,
+      presentationCount: 0,
+      topPresentations: [],
+      insights: [],
+      weekOverWeek: {
+        views: { current: 0, previous: 0, percentChange: 0, direction: 'flat' },
+        uniqueViewers: {
+          current: 0,
+          previous: 0,
+          percentChange: 0,
+          direction: 'flat',
+        },
+        avgDuration: {
+          current: 0,
+          previous: 0,
+          percentChange: 0,
+          direction: 'flat',
+        },
+      },
+      hasActivity: false,
     },
-    hasActivity: false,
-  }, async (db) => {
-    // Get user info
-    const user = await db
-      .selectFrom('users')
-      .select(['id', 'email', 'display_name'])
-      .where('id', '=', userId)
-      .executeTakeFirst();
+    async (db) => {
+      // Get user info
+      const user = await db
+        .selectFrom('users')
+        .select(['id', 'email', 'display_name'])
+        .where('id', '=', userId)
+        .executeTakeFirst();
 
-    const userName = user?.display_name || userEmail.split('@')[0];
+      const userName = user?.display_name || userEmail.split('@')[0];
 
-    // Get user's presentations
-    const userPresentations = await getUserPresentationIds(db, userEmail);
-    if (!userPresentations.length) {
+      // Get user's presentations
+      const userPresentations = await getUserPresentationIds(db, userEmail);
+      if (!userPresentations.length) {
+        return {
+          userName,
+          weekStart: dateRange.weekStart,
+          weekEnd: dateRange.weekEnd,
+          totalViews: 0,
+          uniqueViewers: 0,
+          avgDurationSeconds: 0,
+          completionRate: 0,
+          presentationCount: 0,
+          topPresentations: [],
+          insights: [],
+          weekOverWeek: {
+            views: {
+              current: 0,
+              previous: 0,
+              percentChange: 0,
+              direction: 'flat',
+            },
+            uniqueViewers: {
+              current: 0,
+              previous: 0,
+              percentChange: 0,
+              direction: 'flat',
+            },
+            avgDuration: {
+              current: 0,
+              previous: 0,
+              percentChange: 0,
+              direction: 'flat',
+            },
+          },
+          hasActivity: false,
+        };
+      }
+
+      // Build base query conditions
+      const buildBaseQuery = (query) =>
+        query.where('presentation_id', 'in', userPresentations);
+
+      // Current week summary
+      let currentQuery = db
+        .selectFrom('view_sessions')
+        .select([
+          (eb) => eb.fn.count('id').as('total_views'),
+          sql`COUNT(DISTINCT COALESCE(device_id, id::text))`.as(
+            'unique_viewers',
+          ),
+          (eb) => eb.fn.avg('duration_seconds').as('avg_duration'),
+        ]);
+      currentQuery = buildBaseQuery(currentQuery);
+      currentQuery = applyDateFilters(currentQuery, dateRange);
+      const currentResult = await currentQuery.executeTakeFirst();
+
+      // Previous week summary
+      let previousQuery = db
+        .selectFrom('view_sessions')
+        .select([
+          (eb) => eb.fn.count('id').as('total_views'),
+          sql`COUNT(DISTINCT COALESCE(device_id, id::text))`.as(
+            'unique_viewers',
+          ),
+          (eb) => eb.fn.avg('duration_seconds').as('avg_duration'),
+        ]);
+      previousQuery = buildBaseQuery(previousQuery);
+      previousQuery = applyDateFilters(previousQuery, previousRange);
+      const previousResult = await previousQuery.executeTakeFirst();
+
+      // Get top presentations
+      let topQuery = db
+        .selectFrom('view_sessions')
+        .innerJoin(
+          'presentations',
+          'presentations.id',
+          'view_sessions.presentation_id',
+        )
+        .select([
+          'presentations.id',
+          'presentations.title',
+          (eb) => eb.fn.count('view_sessions.id').as('views'),
+          sql`COUNT(DISTINCT COALESCE(view_sessions.device_id, view_sessions.id::text))`.as(
+            'unique_viewers',
+          ),
+          (eb) =>
+            eb.fn.avg('view_sessions.duration_seconds').as('avg_duration'),
+        ])
+        .where('view_sessions.presentation_id', 'in', userPresentations)
+        .groupBy(['presentations.id', 'presentations.title'])
+        .orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc')
+        .limit(5);
+
+      topQuery = applyDateFilters(
+        topQuery,
+        dateRange,
+        'view_sessions.started_at',
+      );
+      const topRows = await topQuery.execute();
+
+      // Get engagement insights
+      const insights = await getWeeklyInsights(
+        db,
+        userPresentations,
+        dateRange,
+      );
+
+      // Calculate values
+      const currentViews = Number(currentResult?.total_views) || 0;
+      const previousViews = Number(previousResult?.total_views) || 0;
+      const currentUniqueViewers = Number(currentResult?.unique_viewers) || 0;
+      const previousUniqueViewers = Number(previousResult?.unique_viewers) || 0;
+      const currentAvgDuration = Math.round(
+        Number(currentResult?.avg_duration) || 0,
+      );
+      const previousAvgDuration = Math.round(
+        Number(previousResult?.avg_duration) || 0,
+      );
+
+      // Calculate week-over-week changes
+      const calcChange = (current, previous) => {
+        if (previous === 0) {
+          return {
+            current,
+            previous,
+            percentChange: current > 0 ? 100 : 0,
+            direction: current > 0 ? 'up' : 'flat',
+          };
+        }
+        const percentChange = Math.round(
+          ((current - previous) / previous) * 100,
+        );
+        const direction =
+          percentChange > 0 ? 'up' : percentChange < 0 ? 'down' : 'flat';
+        return {
+          current,
+          previous,
+          percentChange: Math.abs(percentChange),
+          direction,
+        };
+      };
+
       return {
         userName,
         weekStart: dateRange.weekStart,
         weekEnd: dateRange.weekEnd,
-        totalViews: 0,
-        uniqueViewers: 0,
-        avgDurationSeconds: 0,
-        completionRate: 0,
-        presentationCount: 0,
-        topPresentations: [],
-        insights: [],
+        totalViews: currentViews,
+        uniqueViewers: currentUniqueViewers,
+        avgDurationSeconds: currentAvgDuration,
+        completionRate: 0, // TODO: Calculate from slide views
+        presentationCount: userPresentations.length,
+        topPresentations: topRows.map((row) => ({
+          id: row.id,
+          title: row.title || 'Untitled',
+          views: Number(row.views) || 0,
+          uniqueViewers: Number(row.unique_viewers) || 0,
+          avgDurationSeconds: Math.round(Number(row.avg_duration) || 0),
+        })),
+        insights,
         weekOverWeek: {
-          views: { current: 0, previous: 0, percentChange: 0, direction: 'flat' },
-          uniqueViewers: { current: 0, previous: 0, percentChange: 0, direction: 'flat' },
-          avgDuration: { current: 0, previous: 0, percentChange: 0, direction: 'flat' },
+          views: calcChange(currentViews, previousViews),
+          uniqueViewers: calcChange(
+            currentUniqueViewers,
+            previousUniqueViewers,
+          ),
+          avgDuration: calcChange(currentAvgDuration, previousAvgDuration),
         },
-        hasActivity: false,
+        hasActivity: currentViews > 0,
       };
-    }
-
-    // Build base query conditions
-    const buildBaseQuery = (query) =>
-      query.where('presentation_id', 'in', userPresentations);
-
-    // Current week summary
-    let currentQuery = db
-      .selectFrom('view_sessions')
-      .select([
-        (eb) => eb.fn.count('id').as('total_views'),
-        sql`COUNT(DISTINCT COALESCE(device_id, id::text))`.as('unique_viewers'),
-        (eb) => eb.fn.avg('duration_seconds').as('avg_duration'),
-      ]);
-    currentQuery = buildBaseQuery(currentQuery);
-    currentQuery = applyDateFilters(currentQuery, dateRange);
-    const currentResult = await currentQuery.executeTakeFirst();
-
-    // Previous week summary
-    let previousQuery = db
-      .selectFrom('view_sessions')
-      .select([
-        (eb) => eb.fn.count('id').as('total_views'),
-        sql`COUNT(DISTINCT COALESCE(device_id, id::text))`.as('unique_viewers'),
-        (eb) => eb.fn.avg('duration_seconds').as('avg_duration'),
-      ]);
-    previousQuery = buildBaseQuery(previousQuery);
-    previousQuery = applyDateFilters(previousQuery, previousRange);
-    const previousResult = await previousQuery.executeTakeFirst();
-
-    // Get top presentations
-    let topQuery = db
-      .selectFrom('view_sessions')
-      .innerJoin('presentations', 'presentations.id', 'view_sessions.presentation_id')
-      .select([
-        'presentations.id',
-        'presentations.title',
-        (eb) => eb.fn.count('view_sessions.id').as('views'),
-        sql`COUNT(DISTINCT COALESCE(view_sessions.device_id, view_sessions.id::text))`.as('unique_viewers'),
-        (eb) => eb.fn.avg('view_sessions.duration_seconds').as('avg_duration'),
-      ])
-      .where('view_sessions.presentation_id', 'in', userPresentations)
-      .groupBy(['presentations.id', 'presentations.title'])
-      .orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc')
-      .limit(5);
-
-    topQuery = applyDateFilters(topQuery, dateRange, 'view_sessions.started_at');
-    const topRows = await topQuery.execute();
-
-    // Get engagement insights
-    const insights = await getWeeklyInsights(db, userPresentations, dateRange);
-
-    // Calculate values
-    const currentViews = Number(currentResult?.total_views) || 0;
-    const previousViews = Number(previousResult?.total_views) || 0;
-    const currentUniqueViewers = Number(currentResult?.unique_viewers) || 0;
-    const previousUniqueViewers = Number(previousResult?.unique_viewers) || 0;
-    const currentAvgDuration = Math.round(Number(currentResult?.avg_duration) || 0);
-    const previousAvgDuration = Math.round(Number(previousResult?.avg_duration) || 0);
-
-    // Calculate week-over-week changes
-    const calcChange = (current, previous) => {
-      if (previous === 0) {
-        return { current, previous, percentChange: current > 0 ? 100 : 0, direction: current > 0 ? 'up' : 'flat' };
-      }
-      const percentChange = Math.round(((current - previous) / previous) * 100);
-      const direction = percentChange > 0 ? 'up' : percentChange < 0 ? 'down' : 'flat';
-      return { current, previous, percentChange: Math.abs(percentChange), direction };
-    };
-
-    return {
-      userName,
-      weekStart: dateRange.weekStart,
-      weekEnd: dateRange.weekEnd,
-      totalViews: currentViews,
-      uniqueViewers: currentUniqueViewers,
-      avgDurationSeconds: currentAvgDuration,
-      completionRate: 0, // TODO: Calculate from slide views
-      presentationCount: userPresentations.length,
-      topPresentations: topRows.map((row) => ({
-        id: row.id,
-        title: row.title || 'Untitled',
-        views: Number(row.views) || 0,
-        uniqueViewers: Number(row.unique_viewers) || 0,
-        avgDurationSeconds: Math.round(Number(row.avg_duration) || 0),
-      })),
-      insights,
-      weekOverWeek: {
-        views: calcChange(currentViews, previousViews),
-        uniqueViewers: calcChange(currentUniqueViewers, previousUniqueViewers),
-        avgDuration: calcChange(currentAvgDuration, previousAvgDuration),
-      },
-      hasActivity: currentViews > 0,
-    };
-  });
+    },
+  );
 }
 
 // ============================================================
@@ -222,146 +289,193 @@ export async function getTeamWeeklyAnalytics(organizationId) {
   const dateRange = getWeekDateRange();
   const previousRange = getPreviousWeekDateRange();
 
-  return withDbGuard({
-    weekStart: dateRange.weekStart,
-    weekEnd: dateRange.weekEnd,
-    totalViews: 0,
-    uniqueViewers: 0,
-    presentationCount: 0,
-    activePresenters: 0,
-    topPresentations: [],
-    topPresenters: [],
-    weekOverWeek: {
-      views: { current: 0, previous: 0, percentChange: 0, direction: 'flat' },
+  return withDbGuard(
+    {
+      weekStart: dateRange.weekStart,
+      weekEnd: dateRange.weekEnd,
+      totalViews: 0,
+      uniqueViewers: 0,
+      presentationCount: 0,
+      activePresenters: 0,
+      topPresentations: [],
+      topPresenters: [],
+      weekOverWeek: {
+        views: { current: 0, previous: 0, percentChange: 0, direction: 'flat' },
+      },
+      hasActivity: false,
     },
-    hasActivity: false,
-  }, async (db) => {
-    // Get all presentations for this organization
-    const orgPresentations = await db
-      .selectFrom('presentations')
-      .select('id')
-      .where('organization_id', '=', organizationId)
-      .execute();
+    async (db) => {
+      // Get all presentations for this organization
+      const orgPresentations = await db
+        .selectFrom('presentations')
+        .select('id')
+        .where('organization_id', '=', organizationId)
+        .execute();
 
-    const presentationIds = orgPresentations.map((p) => p.id);
-    if (!presentationIds.length) {
+      const presentationIds = orgPresentations.map((p) => p.id);
+      if (!presentationIds.length) {
+        return {
+          weekStart: dateRange.weekStart,
+          weekEnd: dateRange.weekEnd,
+          totalViews: 0,
+          uniqueViewers: 0,
+          presentationCount: 0,
+          activePresenters: 0,
+          topPresentations: [],
+          topPresenters: [],
+          weekOverWeek: {
+            views: {
+              current: 0,
+              previous: 0,
+              percentChange: 0,
+              direction: 'flat',
+            },
+          },
+          hasActivity: false,
+        };
+      }
+
+      // Current week summary
+      let currentQuery = db
+        .selectFrom('view_sessions')
+        .select([
+          (eb) => eb.fn.count('id').as('total_views'),
+          sql`COUNT(DISTINCT COALESCE(device_id, id::text))`.as(
+            'unique_viewers',
+          ),
+        ])
+        .where('presentation_id', 'in', presentationIds);
+      currentQuery = applyDateFilters(currentQuery, dateRange);
+      const currentResult = await currentQuery.executeTakeFirst();
+
+      // Previous week summary
+      let previousQuery = db
+        .selectFrom('view_sessions')
+        .select((eb) => eb.fn.count('id').as('total_views'))
+        .where('presentation_id', 'in', presentationIds);
+      previousQuery = applyDateFilters(previousQuery, previousRange);
+      const previousResult = await previousQuery.executeTakeFirst();
+
+      // Top presentations for the org
+      let topPresentationsQuery = db
+        .selectFrom('view_sessions')
+        .innerJoin(
+          'presentations',
+          'presentations.id',
+          'view_sessions.presentation_id',
+        )
+        .select([
+          'presentations.id',
+          'presentations.title',
+          'presentations.owner_email',
+          (eb) => eb.fn.count('view_sessions.id').as('views'),
+        ])
+        .where('view_sessions.presentation_id', 'in', presentationIds)
+        .groupBy([
+          'presentations.id',
+          'presentations.title',
+          'presentations.owner_email',
+        ])
+        .orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc')
+        .limit(5);
+      topPresentationsQuery = applyDateFilters(
+        topPresentationsQuery,
+        dateRange,
+        'view_sessions.started_at',
+      );
+      const topPresentationRows = await topPresentationsQuery.execute();
+
+      // Top presenters (users with most engagement)
+      let topPresentersQuery = db
+        .selectFrom('view_sessions')
+        .innerJoin(
+          'presentations',
+          'presentations.id',
+          'view_sessions.presentation_id',
+        )
+        .leftJoin('users', 'users.email', 'presentations.owner_email')
+        .select([
+          'presentations.owner_email',
+          sql`COALESCE(users.display_name, split_part(presentations.owner_email, '@', 1))`.as(
+            'presenter_name',
+          ),
+          (eb) => eb.fn.count('view_sessions.id').as('total_views'),
+          sql`COUNT(DISTINCT view_sessions.presentation_id)`.as(
+            'presentation_count',
+          ),
+        ])
+        .where('view_sessions.presentation_id', 'in', presentationIds)
+        .groupBy(['presentations.owner_email', 'users.display_name'])
+        .orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc')
+        .limit(5);
+      topPresentersQuery = applyDateFilters(
+        topPresentersQuery,
+        dateRange,
+        'view_sessions.started_at',
+      );
+      const topPresenterRows = await topPresentersQuery.execute();
+
+      // Active presenters count (users with at least 1 view this week)
+      let activePresentersQuery = db
+        .selectFrom('view_sessions')
+        .innerJoin(
+          'presentations',
+          'presentations.id',
+          'view_sessions.presentation_id',
+        )
+        .select(sql`COUNT(DISTINCT presentations.owner_email)`.as('count'))
+        .where('view_sessions.presentation_id', 'in', presentationIds);
+      activePresentersQuery = applyDateFilters(
+        activePresentersQuery,
+        dateRange,
+        'view_sessions.started_at',
+      );
+      const activePresentersResult =
+        await activePresentersQuery.executeTakeFirst();
+
+      const currentViews = Number(currentResult?.total_views) || 0;
+      const previousViews = Number(previousResult?.total_views) || 0;
+
+      const percentChange =
+        previousViews > 0
+          ? Math.round(((currentViews - previousViews) / previousViews) * 100)
+          : currentViews > 0
+            ? 100
+            : 0;
+      const direction =
+        percentChange > 0 ? 'up' : percentChange < 0 ? 'down' : 'flat';
+
       return {
         weekStart: dateRange.weekStart,
         weekEnd: dateRange.weekEnd,
-        totalViews: 0,
-        uniqueViewers: 0,
-        presentationCount: 0,
-        activePresenters: 0,
-        topPresentations: [],
-        topPresenters: [],
+        totalViews: currentViews,
+        uniqueViewers: Number(currentResult?.unique_viewers) || 0,
+        presentationCount: presentationIds.length,
+        activePresenters: Number(activePresentersResult?.count) || 0,
+        topPresentations: topPresentationRows.map((row) => ({
+          id: row.id,
+          title: row.title || 'Untitled',
+          ownerEmail: row.owner_email,
+          views: Number(row.views) || 0,
+        })),
+        topPresenters: topPresenterRows.map((row) => ({
+          email: row.owner_email,
+          name: row.presenter_name,
+          totalViews: Number(row.total_views) || 0,
+          presentationCount: Number(row.presentation_count) || 0,
+        })),
         weekOverWeek: {
-          views: { current: 0, previous: 0, percentChange: 0, direction: 'flat' },
+          views: {
+            current: currentViews,
+            previous: previousViews,
+            percentChange: Math.abs(percentChange),
+            direction,
+          },
         },
-        hasActivity: false,
+        hasActivity: currentViews > 0,
       };
-    }
-
-    // Current week summary
-    let currentQuery = db
-      .selectFrom('view_sessions')
-      .select([
-        (eb) => eb.fn.count('id').as('total_views'),
-        sql`COUNT(DISTINCT COALESCE(device_id, id::text))`.as('unique_viewers'),
-      ])
-      .where('presentation_id', 'in', presentationIds);
-    currentQuery = applyDateFilters(currentQuery, dateRange);
-    const currentResult = await currentQuery.executeTakeFirst();
-
-    // Previous week summary
-    let previousQuery = db
-      .selectFrom('view_sessions')
-      .select((eb) => eb.fn.count('id').as('total_views'))
-      .where('presentation_id', 'in', presentationIds);
-    previousQuery = applyDateFilters(previousQuery, previousRange);
-    const previousResult = await previousQuery.executeTakeFirst();
-
-    // Top presentations for the org
-    let topPresentationsQuery = db
-      .selectFrom('view_sessions')
-      .innerJoin('presentations', 'presentations.id', 'view_sessions.presentation_id')
-      .select([
-        'presentations.id',
-        'presentations.title',
-        'presentations.owner_email',
-        (eb) => eb.fn.count('view_sessions.id').as('views'),
-      ])
-      .where('view_sessions.presentation_id', 'in', presentationIds)
-      .groupBy(['presentations.id', 'presentations.title', 'presentations.owner_email'])
-      .orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc')
-      .limit(5);
-    topPresentationsQuery = applyDateFilters(topPresentationsQuery, dateRange, 'view_sessions.started_at');
-    const topPresentationRows = await topPresentationsQuery.execute();
-
-    // Top presenters (users with most engagement)
-    let topPresentersQuery = db
-      .selectFrom('view_sessions')
-      .innerJoin('presentations', 'presentations.id', 'view_sessions.presentation_id')
-      .leftJoin('users', 'users.email', 'presentations.owner_email')
-      .select([
-        'presentations.owner_email',
-        sql`COALESCE(users.display_name, split_part(presentations.owner_email, '@', 1))`.as('presenter_name'),
-        (eb) => eb.fn.count('view_sessions.id').as('total_views'),
-        sql`COUNT(DISTINCT view_sessions.presentation_id)`.as('presentation_count'),
-      ])
-      .where('view_sessions.presentation_id', 'in', presentationIds)
-      .groupBy(['presentations.owner_email', 'users.display_name'])
-      .orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc')
-      .limit(5);
-    topPresentersQuery = applyDateFilters(topPresentersQuery, dateRange, 'view_sessions.started_at');
-    const topPresenterRows = await topPresentersQuery.execute();
-
-    // Active presenters count (users with at least 1 view this week)
-    let activePresentersQuery = db
-      .selectFrom('view_sessions')
-      .innerJoin('presentations', 'presentations.id', 'view_sessions.presentation_id')
-      .select(sql`COUNT(DISTINCT presentations.owner_email)`.as('count'))
-      .where('view_sessions.presentation_id', 'in', presentationIds);
-    activePresentersQuery = applyDateFilters(activePresentersQuery, dateRange, 'view_sessions.started_at');
-    const activePresentersResult = await activePresentersQuery.executeTakeFirst();
-
-    const currentViews = Number(currentResult?.total_views) || 0;
-    const previousViews = Number(previousResult?.total_views) || 0;
-
-    const percentChange = previousViews > 0
-      ? Math.round(((currentViews - previousViews) / previousViews) * 100)
-      : (currentViews > 0 ? 100 : 0);
-    const direction = percentChange > 0 ? 'up' : percentChange < 0 ? 'down' : 'flat';
-
-    return {
-      weekStart: dateRange.weekStart,
-      weekEnd: dateRange.weekEnd,
-      totalViews: currentViews,
-      uniqueViewers: Number(currentResult?.unique_viewers) || 0,
-      presentationCount: presentationIds.length,
-      activePresenters: Number(activePresentersResult?.count) || 0,
-      topPresentations: topPresentationRows.map((row) => ({
-        id: row.id,
-        title: row.title || 'Untitled',
-        ownerEmail: row.owner_email,
-        views: Number(row.views) || 0,
-      })),
-      topPresenters: topPresenterRows.map((row) => ({
-        email: row.owner_email,
-        name: row.presenter_name,
-        totalViews: Number(row.total_views) || 0,
-        presentationCount: Number(row.presentation_count) || 0,
-      })),
-      weekOverWeek: {
-        views: {
-          current: currentViews,
-          previous: previousViews,
-          percentChange: Math.abs(percentChange),
-          direction,
-        },
-      },
-      hasActivity: currentViews > 0,
-    };
-  });
+    },
+  );
 }
 
 // ============================================================
@@ -387,7 +501,10 @@ async function getWeeklyInsights(db, presentationIds, dateRange) {
       (eb) => eb.fn.count('id').as('views'),
     ])
     .where('presentation_id', 'in', presentationIds)
-    .groupBy([sql`to_char(started_at, 'Day')`, sql`EXTRACT(DOW FROM started_at)`])
+    .groupBy([
+      sql`to_char(started_at, 'Day')`,
+      sql`EXTRACT(DOW FROM started_at)`,
+    ])
     .orderBy((eb) => eb.fn.count('id'), 'desc')
     .limit(2);
 
@@ -399,14 +516,23 @@ async function getWeeklyInsights(db, presentationIds, dateRange) {
     insights.push({
       type: 'peak_days',
       text: `${dayNames} saw peak engagement - consider sharing new content early in the week`,
-      data: { days: peakDays.map((d) => ({ name: d.day_name?.trim(), views: Number(d.views) })) },
+      data: {
+        days: peakDays.map((d) => ({
+          name: d.day_name?.trim(),
+          views: Number(d.views),
+        })),
+      },
     });
   }
 
   // Insight 2: Returning viewers
   let returningQuery = db
     .selectFrom('view_sessions')
-    .innerJoin('presentations', 'presentations.id', 'view_sessions.presentation_id')
+    .innerJoin(
+      'presentations',
+      'presentations.id',
+      'view_sessions.presentation_id',
+    )
     .select([
       'presentations.title',
       'view_sessions.device_id',
@@ -419,7 +545,11 @@ async function getWeeklyInsights(db, presentationIds, dateRange) {
     .orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc')
     .limit(1);
 
-  returningQuery = applyDateFilters(returningQuery, dateRange, 'view_sessions.started_at');
+  returningQuery = applyDateFilters(
+    returningQuery,
+    dateRange,
+    'view_sessions.started_at',
+  );
   const returningViewers = await returningQuery.execute();
 
   if (returningViewers.length > 0) {
@@ -458,19 +588,22 @@ export async function getUsersWithDigestDay(dayOfWeek) {
       .select(['id', 'email', 'organization_id', 'role', 'settings'])
       .execute();
 
-    return users.filter((user) => {
-      const settings = user.settings || {};
-      const digest = settings.digest || {};
-      // Default: enabled on Monday (day 1)
-      const isEnabled = digest.enabled !== false;
-      const preferredDay = typeof digest.dayOfWeek === 'number' ? digest.dayOfWeek : 1;
-      return isEnabled && preferredDay === dayOfWeek;
-    }).map((user) => ({
-      id: user.id,
-      email: user.email,
-      organizationId: user.organization_id,
-      role: user.role,
-    }));
+    return users
+      .filter((user) => {
+        const settings = user.settings || {};
+        const digest = settings.digest || {};
+        // Default: enabled on Monday (day 1)
+        const isEnabled = digest.enabled !== false;
+        const preferredDay =
+          typeof digest.dayOfWeek === 'number' ? digest.dayOfWeek : 1;
+        return isEnabled && preferredDay === dayOfWeek;
+      })
+      .map((user) => ({
+        id: user.id,
+        email: user.email,
+        organizationId: user.organization_id,
+        role: user.role,
+      }));
   });
 }
 
@@ -494,9 +627,17 @@ async function getUserPresentationIds(db, userEmail) {
   // Get presentations shared with user (edit or admin access)
   const sharedQuery = db
     .selectFrom('presentation_collaborators')
-    .innerJoin('presentations', 'presentations.id', 'presentation_collaborators.presentation_id')
+    .innerJoin(
+      'presentations',
+      'presentations.id',
+      'presentation_collaborators.presentation_id',
+    )
     .select('presentations.id')
-    .where('presentation_collaborators.user_email', '=', userEmail.toLowerCase())
+    .where(
+      'presentation_collaborators.user_email',
+      '=',
+      userEmail.toLowerCase(),
+    )
     .where('presentation_collaborators.permission', 'in', ['edit', 'admin']);
 
   const [ownedRows, sharedRows] = await Promise.all([
@@ -522,7 +663,9 @@ export function formatDuration(seconds) {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
   if (minutes < 60) {
-    return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+    return remainingSeconds > 0
+      ? `${minutes}m ${remainingSeconds}s`
+      : `${minutes}m`;
   }
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;

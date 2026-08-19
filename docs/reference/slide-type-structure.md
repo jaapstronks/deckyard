@@ -9,7 +9,7 @@ by hand in two places (`slide-type-picker/data.js` and
 `settings/tabs/slide-types-tab/categories.js`), and those two already disagreed.
 Worse, they mixed four independent axes: `basic` is familiarity, `media` and
 `data` are payload, `process` is rhetorical function, `interaction` is runtime
-behaviour. So there was no place a new type *belonged*, no rule for when
+behaviour. So there was no place a new type _belonged_, no rule for when
 something is its own type versus a variant of one, and no way to see that two
 types do the same thing.
 
@@ -21,11 +21,11 @@ both labelled "List".
 ## Facets, not a hierarchy
 
 Not one tree. Every tree goes wrong the moment types differ along independent
-axes — `funnel` and `timeline` are both ordered collections *and* different
+axes — `funnel` and `timeline` are both ordered collections _and_ different
 rhetorical moves, and a single hierarchy has to pick one and lie about the
 other. Instead: a small number of **orthogonal, declarative facets** on the type
 definition, with the picker, the settings categories, the AI catalog and the
-conversion map as *derivations* rather than sources.
+conversion map as _derivations_ rather than sources.
 
 There is deliberately **no inheritance**. No `extends` in the spec: composition
 already works (`withGlobalSlideFields()`, field groups), and inheritance across
@@ -43,14 +43,14 @@ also the facet that catches the duplicates.
 Defined in `shared/slide-types/structure.js`; declared as `structure: '…'` on
 each type's definition; served out through `/api/slide-types`.
 
-| `structure` | Meaning | Examples |
-|---|---|---|
-| `singleton` | a fixed set of scalar slots | title, content, quote, image-text, video, comparison |
-| `collection` | *n* items of one repeated shape, *n* is the author's choice | list, process, timeline, funnel, gallery, team-cards |
-| `fixed-collection` | exactly *n* items; the count is part of the meaning | matrix (4 quadrants), poll, likert |
-| `tabular` | rows × columns | table |
-| `dataset` | data points plus an encoding | chart |
-| `chrome` | no content fields at all | payoff, follow-invite |
+| `structure`        | Meaning                                                     | Examples                                             |
+| ------------------ | ----------------------------------------------------------- | ---------------------------------------------------- |
+| `singleton`        | a fixed set of scalar slots                                 | title, content, quote, image-text, video, comparison |
+| `collection`       | _n_ items of one repeated shape, _n_ is the author's choice | list, process, timeline, funnel, gallery, team-cards |
+| `fixed-collection` | exactly _n_ items; the count is part of the meaning         | matrix (4 quadrants), poll, likert                   |
+| `tabular`          | rows × columns                                              | table                                                |
+| `dataset`          | data points plus an encoding                                | chart                                                |
+| `chrome`           | no content fields at all                                    | payoff, follow-invite                                |
 
 These six partition the current <!--gen:slide-type-count-->34<!--/gen:slide-type-count--> completely. There is no "other" bucket, which
 is the best evidence available that the axis is the right one.
@@ -66,14 +66,14 @@ statement, and it is why conformance is two-level rather than 36-or-nothing —
 see [`deck-conformance.md`](./deck-conformance.md), which holds the full table
 and the reader rules.
 
-| `structure` | The content carries | The count means |
-|---|---|---|
-| `singleton` | no repeated-item array | nothing to count |
-| `collection` | exactly one item array | the author's choice |
+| `structure`        | The content carries                             | The count means            |
+| ------------------ | ----------------------------------------------- | -------------------------- |
+| `singleton`        | no repeated-item array                          | nothing to count           |
+| `collection`       | exactly one item array                          | the author's choice        |
 | `fixed-collection` | exactly one item array, `minItems === maxItems` | part of the type's meaning |
-| `tabular` | exactly one item array (the rows) | the author's choice |
-| `dataset` | an encoded payload plus its encoding | inside the payload |
-| `chrome` | no content fields at all | nothing to count |
+| `tabular`          | exactly one item array (the rows)               | the author's choice        |
+| `dataset`          | an encoded payload plus its encoding            | inside the payload         |
+| `chrome`           | no content fields at all                        | nothing to count           |
 
 The reason this is worth writing down at all: **it is the only part of the
 format that does not scale with the number of types.** A reader that implements
@@ -82,7 +82,7 @@ a reader that implements six structure contracts can render a type that did not
 exist when it shipped.
 
 The contract is declared beside the vocabulary rather than only asserted in the
-test, and assertion 2 below *derives* from it. A promise and its enforcement
+test, and assertion 2 below _derives_ from it. A promise and its enforcement
 keeping separate copies of the same rule is the drift this facet exists to
 prevent.
 
@@ -99,15 +99,15 @@ Worked on the case the question came from — `image-text-slide`, which offers 9
 layout tiles over ~180 renderable combinations (`layout` × `imageSide` ×
 `imageWidth` × `textColumns` × `imageFit` × `imageBackground`):
 
-| Tile | Fields | Verdict |
-|---|---|---|
-| `split` / `corner` / `row-top` / `row-bottom` | `image`, `title`, `body` | real variants ✅ |
-| "Text without image" | `image` left empty | not a variant but the *absence* of the payload; the result is a `content-slide` under a different type id ⚠️ |
-| `duo` / "own text per column" | reads `images[0-3]` | flipping back to `split` orphans images 2 and 3 → **boundary crossed** ⚠️ |
+| Tile                                          | Fields                   | Verdict                                                                                                      |
+| --------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `split` / `corner` / `row-top` / `row-bottom` | `image`, `title`, `body` | real variants ✅                                                                                             |
+| "Text without image"                          | `image` left empty       | not a variant but the _absence_ of the payload; the result is a `content-slide` under a different type id ⚠️ |
+| `duo` / "own text per column"                 | reads `images[0-3]`      | flipping back to `split` orphans images 2 and 3 → **boundary crossed** ⚠️                                    |
 
 The combinatorial explosion is therefore not the problem — that is exactly what a
-variant axis is for. The problem is that two of the nine tiles are a *different
-contract* under the same id.
+variant axis is for. The problem is that two of the nine tiles are a _different
+contract_ under the same id.
 
 ## The guardrail
 
@@ -155,12 +155,12 @@ the existing violations are a shrinking list rather than a reason to weaken the
 rule (the pattern `eslint-suppressions.json` established). Recording them is the
 point: this is what the facet was built to make visible.
 
-| Type | What the schema says | Why it is not a relabelling |
-|---|---|---|
-| `image-text-slide` | declared `singleton`, carries `images[0-3]` | the `duo` tile is a second contract; the cut (image-text strictly one image, plural cases to the image collection) is a product decision |
-| `quote-slide` | declared `singleton`, carries `quotes[0-2]` beside scalar `quote`/`authorName` | one type, two representations — the legacy-mirror disease; fix by retiring one side |
-| `poll-slide` | declared `fixed-collection`, carries `option1..option4` as scalars | never got the `items[]` migration the other collections did |
-| `likert-slide` | same, `option1..option10` | as poll-slide |
+| Type               | What the schema says                                                           | Why it is not a relabelling                                                                                                              |
+| ------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `image-text-slide` | declared `singleton`, carries `images[0-3]`                                    | the `duo` tile is a second contract; the cut (image-text strictly one image, plural cases to the image collection) is a product decision |
+| `quote-slide`      | declared `singleton`, carries `quotes[0-2]` beside scalar `quote`/`authorName` | one type, two representations — the legacy-mirror disease; fix by retiring one side                                                      |
+| `poll-slide`       | declared `fixed-collection`, carries `option1..option4` as scalars             | never got the `items[]` migration the other collections did                                                                              |
+| `likert-slide`     | same, `option1..option10`                                                      | as poll-slide                                                                                                                            |
 
 Assertion 3's `SIGNATURE_BURNDOWN` is now empty: its one pair was the List type
 registered under both `list-slide` and a Dutch alias, and rung 3 of the list
@@ -168,8 +168,8 @@ consolidation removed the alias, so no two core types share a field signature.
 
 Assertion 4 adds one type, in `VARIANT_BURNDOWN`:
 
-| Type | Why |
-|---|---|
+| Type               | Why                                                                                                                                                                                                                                                                  |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `image-text-slide` | the tiles disagree about how many images they render — `split`/`corner` one cell, `duo` two, the rows up to three — so flipping `duo` → `split` orphans image 2. The same finding as the structure burndown, reached from the render side instead of the schema side |
 
 That the two assertions converge on `image-text-slide` from opposite directions
@@ -200,7 +200,7 @@ replaced by a ceiling that forbids the pattern.
 
 - ~~**Derivation.**~~ Done. The picker shelves and the settings curation
   headings were two hand-written tables that disagreed about five types; both
-  are now derived from a `group` declared on the type. It is deliberately *not*
+  are now derived from a `group` declared on the type. It is deliberately _not_
   derived from `structure` — that was measured and it dismembers `media` and
   drops `chart` and `table` out of view. See
   [`slide-type-groups.md`](./slide-type-groups.md).

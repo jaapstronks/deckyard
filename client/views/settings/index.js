@@ -51,7 +51,12 @@ const ORGANIZATION_TAB = 'organization';
  * @param {boolean} gates.canSeeOrganization - Whether the organization tab is reachable
  * @returns {string} Tab key
  */
-function getTabFromHash({ isAdmin, isDesigner, canSeeMembers, canSeeOrganization }) {
+function getTabFromHash({
+  isAdmin,
+  isDesigner,
+  canSeeMembers,
+  canSeeOrganization,
+}) {
   const hash = location.hash.slice(1); // Remove #
   if (!hash) return DEFAULT_TAB;
 
@@ -74,7 +79,9 @@ function getTabFromHash({ isAdmin, isDesigner, canSeeMembers, canSeeOrganization
   }
 
   const validTabs = [
-    'account', 'preferences', 'export',
+    'account',
+    'preferences',
+    'export',
     ...(isDesigner ? DESIGNER_TABS : []),
     ...(canSeeOrganization ? [ORGANIZATION_TAB] : []),
     ...(canSeeMembers ? [MEMBERS_TAB] : []),
@@ -117,12 +124,20 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
   // profile is readable by any member on the route, and what may be changed on
   // it is decided inside the panel.
   const canSeeOrganization = isOrganizationMember(user);
-  const initialTab = getTabFromHash({ isAdmin, isDesigner, canSeeMembers, canSeeOrganization });
+  const initialTab = getTabFromHash({
+    isAdmin,
+    isDesigner,
+    canSeeMembers,
+    canSeeOrganization,
+  });
 
   const shell = h('div', { class: 'app-shell settings-page' });
 
   // Topbar
-  const topbar = h('header', { class: 'topbar settings-topbar', role: 'banner' });
+  const topbar = h('header', {
+    class: 'topbar settings-topbar',
+    role: 'banner',
+  });
   const backBtn = h('button', {
     class: 'btn btn-secondary btn-icon',
     'aria-label': t('common.back', 'Back'),
@@ -137,7 +152,7 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
     h('h1', {
       class: 'settings-page-title',
       text: t('settings.title', 'Settings'),
-    })
+    }),
   );
 
   topbar.append(backBtn, topbarTitle);
@@ -260,7 +275,12 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
 
   // Handle hash changes
   const handleHashChange = () => {
-    const newTab = getTabFromHash({ isAdmin, isDesigner, canSeeMembers, canSeeOrganization });
+    const newTab = getTabFromHash({
+      isAdmin,
+      isDesigner,
+      canSeeMembers,
+      canSeeOrganization,
+    });
     if (newTab !== activeTab) {
       setActiveTab(newTab);
     }

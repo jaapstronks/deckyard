@@ -26,14 +26,24 @@ import { renderSlideHtml } from '../shared/slide-types/presentation.js';
 import { resolveListLayout } from '../shared/slide-types/types/list-slide.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
-function content({ n, density, layout, text = 'Short line', title = 'Item', subheading = '' } = {}) {
+function content({
+  n,
+  density,
+  layout,
+  text = 'Short line',
+  title = 'Item',
+  subheading = '',
+} = {}) {
   return {
     title: 'List',
     subheading,
     variant: 'numbers',
     density,
     layout,
-    items: Array.from({ length: n }, (_, i) => ({ title: `${title} ${i + 1}`, text })),
+    items: Array.from({ length: n }, (_, i) => ({
+      title: `${title} ${i + 1}`,
+      text,
+    })),
   };
 }
 
@@ -47,55 +57,110 @@ const resolve = (opts) => resolveListLayout(content(opts));
 const LONG_TEXT =
   'A full sentence of real body copy that keeps going for quite a while, well past the wrap point.';
 // >60 characters: wraps to a second line even in a full-width column.
-const LONG_TITLE = 'A deliberately long item heading that runs past the one-line measure';
+const LONG_TITLE =
+  'A deliberately long item heading that runs past the one-line measure';
 
-const isTwoCol = (html) => /\bis-two-col\b/.test(html) && !/\bis-one-col\b/.test(html);
-const isOneCol = (html) => /\bis-one-col\b/.test(html) && !/\bis-two-col\b/.test(html);
+const isTwoCol = (html) =>
+  /\bis-two-col\b/.test(html) && !/\bis-one-col\b/.test(html);
+const isOneCol = (html) =>
+  /\bis-one-col\b/.test(html) && !/\bis-two-col\b/.test(html);
 const isLarge = (html) => /\bis-comfortable\b/.test(html);
 const isSmall = (html) => /\bis-compact\b/.test(html);
 
 describe('list-slide: measured capacity boundaries', () => {
   it('one column at Large holds 4 title+text items, 3 once a subheading takes the room', () => {
-    assert.equal(resolve({ n: 4, density: 'comfortable', layout: 'one-column' }).twoCol, false);
     assert.equal(
-      resolve({ n: 4, density: 'comfortable', layout: 'one-column', subheading: 'Intro' }).twoCol,
-      true,
-      'the subheading costs the fourth item its room, so the list moves to two columns'
+      resolve({ n: 4, density: 'comfortable', layout: 'one-column' }).twoCol,
+      false,
     );
-    assert.equal(resolve({ n: 5, density: 'comfortable', layout: 'one-column' }).twoCol, true);
+    assert.equal(
+      resolve({
+        n: 4,
+        density: 'comfortable',
+        layout: 'one-column',
+        subheading: 'Intro',
+      }).twoCol,
+      true,
+      'the subheading costs the fourth item its room, so the list moves to two columns',
+    );
+    assert.equal(
+      resolve({ n: 5, density: 'comfortable', layout: 'one-column' }).twoCol,
+      true,
+    );
   });
 
   it('one column at Large holds 5 title-only items (no description line)', () => {
-    assert.equal(resolve({ n: 5, density: 'comfortable', layout: 'one-column', text: '' }).twoCol, false);
-    assert.equal(resolve({ n: 6, density: 'comfortable', layout: 'one-column', text: '' }).twoCol, true);
+    assert.equal(
+      resolve({ n: 5, density: 'comfortable', layout: 'one-column', text: '' })
+        .twoCol,
+      false,
+    );
+    assert.equal(
+      resolve({ n: 6, density: 'comfortable', layout: 'one-column', text: '' })
+        .twoCol,
+      true,
+    );
   });
 
   it('a wrapping item title costs one column at Large two items of capacity', () => {
     assert.equal(
-      resolve({ n: 4, density: 'comfortable', layout: 'one-column', title: LONG_TITLE }).twoCol,
-      true
+      resolve({
+        n: 4,
+        density: 'comfortable',
+        layout: 'one-column',
+        title: LONG_TITLE,
+      }).twoCol,
+      true,
     );
     assert.equal(
-      resolve({ n: 3, density: 'comfortable', layout: 'one-column', title: LONG_TITLE }).twoCol,
-      false
+      resolve({
+        n: 3,
+        density: 'comfortable',
+        layout: 'one-column',
+        title: LONG_TITLE,
+      }).twoCol,
+      false,
     );
   });
 
   it('two columns at Large hold 8 short items, 6 wordy ones', () => {
-    assert.equal(resolve({ n: 8, density: 'comfortable', layout: 'two-column' }).size, 'comfortable');
-    const wordy = resolve({ n: 8, density: 'comfortable', layout: 'two-column', text: LONG_TEXT });
+    assert.equal(
+      resolve({ n: 8, density: 'comfortable', layout: 'two-column' }).size,
+      'comfortable',
+    );
+    const wordy = resolve({
+      n: 8,
+      density: 'comfortable',
+      layout: 'two-column',
+      text: LONG_TEXT,
+    });
     assert.equal(wordy.size, 'normal', 'eight wordy items do not fit at Large');
     assert.equal(
-      resolve({ n: 6, density: 'comfortable', layout: 'two-column', text: LONG_TEXT }).size,
-      'comfortable'
+      resolve({
+        n: 6,
+        density: 'comfortable',
+        layout: 'two-column',
+        text: LONG_TEXT,
+      }).size,
+      'comfortable',
     );
   });
 
   it('two columns at the default and small sizes hold the schema maximum of 8', () => {
     for (const density of ['auto', 'compact']) {
-      const r = resolve({ n: 8, density, layout: 'two-column', text: LONG_TEXT, title: LONG_TITLE });
+      const r = resolve({
+        n: 8,
+        density,
+        layout: 'two-column',
+        text: LONG_TEXT,
+        title: LONG_TITLE,
+      });
       assert.equal(r.twoCol, true);
-      assert.equal(r.steppedDownFrom, null, `${density} never has to step down in two columns`);
+      assert.equal(
+        r.steppedDownFrom,
+        null,
+        `${density} never has to step down in two columns`,
+      );
     }
   });
 });
@@ -113,21 +178,39 @@ describe('list-slide: capacity re-measured on the current sizes (A7.9 batch 2.5 
     // Three such items still fit one column at Large; the fourth no longer does,
     // so it moves to two columns instead of spilling off the slide.
     assert.equal(
-      resolve({ n: 3, density: 'comfortable', layout: 'one-column', text: BODY_2LINE }).twoCol,
-      false
+      resolve({
+        n: 3,
+        density: 'comfortable',
+        layout: 'one-column',
+        text: BODY_2LINE,
+      }).twoCol,
+      false,
     );
     assert.equal(
-      resolve({ n: 4, density: 'comfortable', layout: 'one-column', text: BODY_2LINE }).twoCol,
-      true
+      resolve({
+        n: 4,
+        density: 'comfortable',
+        layout: 'one-column',
+        text: BODY_2LINE,
+      }).twoCol,
+      true,
     );
   });
 
   it('a wrapping title with a wrapping body and a subheading drops it to 2', () => {
     const opts = {
-      n: 3, density: 'comfortable', layout: 'one-column',
-      title: LONG_TITLE, text: BODY_2LINE, subheading: 'Intro',
+      n: 3,
+      density: 'comfortable',
+      layout: 'one-column',
+      title: LONG_TITLE,
+      text: BODY_2LINE,
+      subheading: 'Intro',
     };
-    assert.equal(resolve(opts).twoCol, true, 'three no longer fit one column at Large');
+    assert.equal(
+      resolve(opts).twoCol,
+      true,
+      'three no longer fit one column at Large',
+    );
     assert.equal(resolve({ ...opts, n: 2 }).twoCol, false);
   });
 
@@ -135,12 +218,24 @@ describe('list-slide: capacity re-measured on the current sizes (A7.9 batch 2.5 
     // A half-width column with both a wrapped title and a 3-line body: six of
     // those overflow at Large, four clear the bottom edge.
     assert.equal(
-      resolve({ n: 6, density: 'comfortable', layout: 'two-column', title: LONG_TITLE, text: LONG_TEXT }).size,
-      'normal'
+      resolve({
+        n: 6,
+        density: 'comfortable',
+        layout: 'two-column',
+        title: LONG_TITLE,
+        text: LONG_TEXT,
+      }).size,
+      'normal',
     );
     assert.equal(
-      resolve({ n: 4, density: 'comfortable', layout: 'two-column', title: LONG_TITLE, text: LONG_TEXT }).size,
-      'comfortable'
+      resolve({
+        n: 4,
+        density: 'comfortable',
+        layout: 'two-column',
+        title: LONG_TITLE,
+        text: LONG_TEXT,
+      }).size,
+      'comfortable',
     );
   });
 });
@@ -161,16 +256,28 @@ describe('list-slide: normal two-column holds 8 except with a subheading + 3-lin
 
   it('steps an 8-item list to compact once a subheading meets 3-line titles', () => {
     const r = resolve({
-      n: 8, density: 'auto', layout: 'two-column',
-      title: TITLE_3LINE, text: LONG_TEXT, subheading: 'Intro line',
+      n: 8,
+      density: 'auto',
+      layout: 'two-column',
+      title: TITLE_3LINE,
+      text: LONG_TEXT,
+      subheading: 'Intro line',
     });
     assert.equal(r.twoCol, true);
-    assert.equal(r.size, 'compact', 'normal no longer holds 8 here, so it steps to compact');
+    assert.equal(
+      r.size,
+      'compact',
+      'normal no longer holds 8 here, so it steps to compact',
+    );
   });
 
   it('still holds 8 at normal without a subheading, even with 3-line titles', () => {
     const r = resolve({
-      n: 8, density: 'auto', layout: 'two-column', title: TITLE_3LINE, text: LONG_TEXT,
+      n: 8,
+      density: 'auto',
+      layout: 'two-column',
+      title: TITLE_3LINE,
+      text: LONG_TEXT,
     });
     assert.equal(r.size, 'normal');
   });
@@ -179,19 +286,34 @@ describe('list-slide: normal two-column holds 8 except with a subheading + 3-lin
     // LONG_TITLE wraps to two lines (past 40, under 79), so it is not the case
     // that overflows — the cap must not shrink here.
     const r = resolve({
-      n: 8, density: 'auto', layout: 'two-column',
-      title: LONG_TITLE, text: LONG_TEXT, subheading: 'Intro line',
+      n: 8,
+      density: 'auto',
+      layout: 'two-column',
+      title: LONG_TITLE,
+      text: LONG_TEXT,
+      subheading: 'Intro line',
     });
     assert.equal(r.size, 'normal');
   });
 
   it('holds 6 at normal with the subheading + 3-line title, and 7 steps down', () => {
     const opts = {
-      density: 'auto', layout: 'two-column',
-      title: TITLE_3LINE, text: LONG_TEXT, subheading: 'Intro line',
+      density: 'auto',
+      layout: 'two-column',
+      title: TITLE_3LINE,
+      text: LONG_TEXT,
+      subheading: 'Intro line',
     };
-    assert.equal(resolve({ ...opts, n: 6 }).size, 'normal', 'six still clear the edge');
-    assert.equal(resolve({ ...opts, n: 7 }).size, 'compact', 'seven overflow, like eight');
+    assert.equal(
+      resolve({ ...opts, n: 6 }).size,
+      'normal',
+      'six still clear the edge',
+    );
+    assert.equal(
+      resolve({ ...opts, n: 7 }).size,
+      'compact',
+      'seven overflow, like eight',
+    );
   });
 });
 
@@ -205,32 +327,59 @@ describe('list-slide: an explicit text size is not thrown away', () => {
       const html = render({ n, density: 'comfortable', layout: 'auto' });
       assert.ok(isLarge(html), `${n} short items keep Large`);
       assert.ok(isTwoCol(html), `${n} short items use two columns`);
-      assert.equal(resolve({ n, density: 'comfortable', layout: 'auto' }).steppedDownFrom, null);
+      assert.equal(
+        resolve({ n, density: 'comfortable', layout: 'auto' }).steppedDownFrom,
+        null,
+      );
     }
   });
 
   it('changes the column count rather than the size when only one of them can give', () => {
     // Four items at Large do not fit one column once a subheading is present,
     // but they fit two. The size is the promise; the column count is the knob.
-    const r = resolve({ n: 4, density: 'comfortable', layout: 'auto', subheading: 'Intro' });
+    const r = resolve({
+      n: 4,
+      density: 'comfortable',
+      layout: 'auto',
+      subheading: 'Intro',
+    });
     assert.equal(r.size, 'comfortable');
     assert.equal(r.twoCol, true);
     assert.equal(r.steppedDownFrom, null);
   });
 
   it('steps the size down only when no column count can hold it, and reports it', () => {
-    const opts = { n: 8, density: 'comfortable', layout: 'auto', text: LONG_TEXT, title: LONG_TITLE };
+    const opts = {
+      n: 8,
+      density: 'comfortable',
+      layout: 'auto',
+      text: LONG_TEXT,
+      title: LONG_TITLE,
+    };
     const r = resolve(opts);
     assert.equal(r.size, 'normal');
-    assert.equal(r.steppedDownFrom, 'comfortable', 'the editor needs this to explain the change');
+    assert.equal(
+      r.steppedDownFrom,
+      'comfortable',
+      'the editor needs this to explain the change',
+    );
     assert.ok(!isLarge(render(opts)));
   });
 
   it('honours Small exactly: it always fits, so it never steps anywhere', () => {
     for (const n of [2, 5, 8]) {
-      const html = render({ n, density: 'compact', layout: 'auto', text: LONG_TEXT });
+      const html = render({
+        n,
+        density: 'compact',
+        layout: 'auto',
+        text: LONG_TEXT,
+      });
       assert.ok(isSmall(html), `${n} items keep Small`);
-      assert.equal(resolve({ n, density: 'compact', layout: 'auto', text: LONG_TEXT }).steppedDownFrom, null);
+      assert.equal(
+        resolve({ n, density: 'compact', layout: 'auto', text: LONG_TEXT })
+          .steppedDownFrom,
+        null,
+      );
     }
   });
 });
@@ -242,17 +391,32 @@ describe('list-slide: auto sizing fills the slide', () => {
     // natural shape, so auto keeps one column at the default size - which
     // measured fuller (~0.88 of the height) than splitting them Large (~0.66).
     for (const n of [2, 3, 4, 6, 7, 8]) {
-      assert.ok(isLarge(render({ n, density: 'auto', layout: 'auto' })), `${n} short items render Large`);
+      assert.ok(
+        isLarge(render({ n, density: 'auto', layout: 'auto' })),
+        `${n} short items render Large`,
+      );
     }
-    assert.equal(resolve({ n: 5, density: 'auto', layout: 'auto' }).size, 'normal');
-    assert.equal(resolve({ n: 5, density: 'auto', layout: 'auto' }).twoCol, false);
+    assert.equal(
+      resolve({ n: 5, density: 'auto', layout: 'auto' }).size,
+      'normal',
+    );
+    assert.equal(
+      resolve({ n: 5, density: 'auto', layout: 'auto' }).twoCol,
+      false,
+    );
     // Without description lines, 5 items do fit one column at Large.
-    assert.ok(isLarge(render({ n: 5, density: 'auto', layout: 'auto', text: '' })));
+    assert.ok(
+      isLarge(render({ n: 5, density: 'auto', layout: 'auto', text: '' })),
+    );
   });
 
   it('one column is the shape for up to 5 items, two columns beyond', () => {
-    assert.ok(isOneCol(render({ n: 4, density: 'auto', layout: 'auto', text: '' })));
-    assert.ok(isOneCol(render({ n: 5, density: 'auto', layout: 'auto', text: '' })));
+    assert.ok(
+      isOneCol(render({ n: 4, density: 'auto', layout: 'auto', text: '' })),
+    );
+    assert.ok(
+      isOneCol(render({ n: 5, density: 'auto', layout: 'auto', text: '' })),
+    );
     assert.ok(isTwoCol(render({ n: 6, density: 'auto', layout: 'auto' })));
   });
 
@@ -260,13 +424,22 @@ describe('list-slide: auto sizing fills the slide', () => {
     // Four items whose titles wrap: Large holds only 3 of those in one column,
     // so auto stays in one column at the default size rather than splitting a
     // 4-item list across two.
-    const r = resolve({ n: 4, density: 'auto', layout: 'auto', title: LONG_TITLE });
+    const r = resolve({
+      n: 4,
+      density: 'auto',
+      layout: 'auto',
+      title: LONG_TITLE,
+    });
     assert.equal(r.size, 'normal');
     assert.equal(r.twoCol, false);
   });
 
   it('wordy lists keep the default fit instead of being forced Large', () => {
-    assert.ok(!isLarge(render({ n: 8, density: 'auto', layout: 'auto', text: LONG_TEXT })));
+    assert.ok(
+      !isLarge(
+        render({ n: 8, density: 'auto', layout: 'auto', text: LONG_TEXT }),
+      ),
+    );
   });
 });
 
@@ -278,52 +451,109 @@ describe('list-slide: fill', () => {
   const isFill = (html) => /\bis-fill\b/.test(html);
 
   it('fills from three rows per column up', () => {
-    assert.ok(isFill(render({ n: 3, density: 'auto', layout: 'one-column' })), '3 rows, one column');
-    assert.ok(isFill(render({ n: 6, density: 'auto', layout: 'two-column' })), '3 rows per column');
-    assert.ok(isFill(render({ n: 7, density: 'auto', layout: 'auto' })), 'the reported case');
+    assert.ok(
+      isFill(render({ n: 3, density: 'auto', layout: 'one-column' })),
+      '3 rows, one column',
+    );
+    assert.ok(
+      isFill(render({ n: 6, density: 'auto', layout: 'two-column' })),
+      '3 rows per column',
+    );
+    assert.ok(
+      isFill(render({ n: 7, density: 'auto', layout: 'auto' })),
+      'the reported case',
+    );
     assert.ok(isFill(render({ n: 8, density: 'auto', layout: 'auto' })));
   });
 
   it('leaves two-row columns alone, where growth would make half-slide bands', () => {
     assert.ok(!isFill(render({ n: 2, density: 'auto', layout: 'one-column' })));
-    assert.ok(!isFill(render({ n: 4, density: 'auto', layout: 'two-column' })), '2 rows per column');
+    assert.ok(
+      !isFill(render({ n: 4, density: 'auto', layout: 'two-column' })),
+      '2 rows per column',
+    );
   });
 
   it('leaves wrapped items alone, where centring would detach the marker', () => {
-    assert.ok(!isFill(render({ n: 6, density: 'auto', layout: 'auto', title: LONG_TITLE })));
+    assert.ok(
+      !isFill(
+        render({ n: 6, density: 'auto', layout: 'auto', title: LONG_TITLE }),
+      ),
+    );
     // ~95-char body text wraps to a second line in BOTH a half-width and a
     // full-width column at the current sizes (the wrap point was re-measured in
     // A7.9 batch 2.5's tail — a full column keeps body text on one line only up
     // to ~60 chars, not "never" as the older heuristic assumed). Neither shape
     // fills: a grown, centred row detaches the marker from the wrapped line.
-    assert.ok(!isFill(render({ n: 8, density: 'auto', layout: 'two-column', text: LONG_TEXT })));
-    assert.ok(!isFill(render({ n: 4, density: 'auto', layout: 'one-column', text: LONG_TEXT })));
+    assert.ok(
+      !isFill(
+        render({
+          n: 8,
+          density: 'auto',
+          layout: 'two-column',
+          text: LONG_TEXT,
+        }),
+      ),
+    );
+    assert.ok(
+      !isFill(
+        render({
+          n: 4,
+          density: 'auto',
+          layout: 'one-column',
+          text: LONG_TEXT,
+        }),
+      ),
+    );
   });
 });
 
 describe('list-slide: layout choices', () => {
   it('explicit two-column is always honoured, even with few items', () => {
-    assert.ok(isTwoCol(render({ n: 2, density: 'auto', layout: 'two-column' })));
+    assert.ok(
+      isTwoCol(render({ n: 2, density: 'auto', layout: 'two-column' })),
+    );
   });
 
   it('explicit one-column is held while anything fits there', () => {
-    assert.ok(isOneCol(render({ n: 5, density: 'auto', layout: 'one-column' })));
-    assert.ok(isOneCol(render({ n: 6, density: 'auto', layout: 'one-column' })));
+    assert.ok(
+      isOneCol(render({ n: 5, density: 'auto', layout: 'one-column' })),
+    );
+    assert.ok(
+      isOneCol(render({ n: 6, density: 'auto', layout: 'one-column' })),
+    );
   });
 
   it('explicit one-column falls back to two columns only when nothing fits', () => {
     // Eight wordy items overflow one column at every size.
-    assert.ok(isTwoCol(render({ n: 8, density: 'auto', layout: 'one-column', text: LONG_TEXT })));
+    assert.ok(
+      isTwoCol(
+        render({
+          n: 8,
+          density: 'auto',
+          layout: 'one-column',
+          text: LONG_TEXT,
+        }),
+      ),
+    );
   });
 
   it('legacy/unset layout resolves like auto', () => {
-    assert.ok(isOneCol(render({ n: 4, density: 'auto', layout: undefined, text: '' })));
+    assert.ok(
+      isOneCol(render({ n: 4, density: 'auto', layout: undefined, text: '' })),
+    );
     assert.ok(isTwoCol(render({ n: 7, density: 'auto', layout: undefined })));
   });
 
   it('legacy/unset density resolves like auto', () => {
-    assert.equal(resolve({ n: 3, density: undefined, layout: 'auto' }).size, 'comfortable');
-    assert.equal(resolve({ n: 3, density: '', layout: 'auto' }).size, 'comfortable');
+    assert.equal(
+      resolve({ n: 3, density: undefined, layout: 'auto' }).size,
+      'comfortable',
+    );
+    assert.equal(
+      resolve({ n: 3, density: '', layout: 'auto' }).size,
+      'comfortable',
+    );
   });
 });
 
@@ -334,13 +564,13 @@ describe('list-slide: exactly one type carries the List label', () => {
   // is the guard that the duplicate never comes back.
   it('is offered nowhere: exactly one insertable type carries the List label', () => {
     const insertable = Object.entries(SLIDE_TYPES).filter(
-      ([, def]) => def?.deprecated !== true
+      ([, def]) => def?.deprecated !== true,
     );
     const lists = insertable.filter(([, def]) => def.label === 'List');
     assert.deepEqual(
       lists.map(([name]) => name),
       ['list-slide'],
-      'two insertable types labelled "List" is the bug this consolidation removed'
+      'two insertable types labelled "List" is the bug this consolidation removed',
     );
   });
 });
