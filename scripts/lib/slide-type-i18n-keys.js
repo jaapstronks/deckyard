@@ -3,8 +3,9 @@
  * i18n keys — labels, field labels/placeholders/help, item fields, and options.
  *
  * `i18n-sync.js` reads the registry through it to prune locale keys the registry
- * no longer produces. (`i18n-extract.js` was the second reader until B94 retired
- * it; the skip-set parameter below is the shape it left behind.)
+ * no longer produces. It is the only reader since B94 retired `i18n-extract.js`,
+ * and it walks the *whole* registry on purpose: there is no skip-set to pass,
+ * so a fork type's keys can never be left out of the valid set (#499).
  *
  * Keeping the walk here means "which keys does a type own?" has a single answer.
  * A departed type, field or option simply stops appearing in the returned set,
@@ -38,12 +39,10 @@ export function normalizeOption(opt) {
  * one); everything else follows the `slideType.<type>.field.<key>…` convention.
  *
  * @param {Record<string, {label?: string, labelKey?: string, fields?: Array}>} slideTypes - `SLIDE_TYPES`
- * @param {Iterable<string>} [customNames] - fork-only type names to skip (`CUSTOM_SLIDE_TYPE_NAMES`)
  * @returns {Map<string, string>} key → English default
  */
-function slideTypeUiStrings(slideTypes, customNames = []) {
+function slideTypeUiStrings(slideTypes) {
   const out = new Map();
-  const custom = new Set(customNames || []);
   const add = (key, def) => {
     const k = String(key || '').trim();
     if (!k) return;
@@ -51,7 +50,6 @@ function slideTypeUiStrings(slideTypes, customNames = []) {
   };
 
   for (const [type, def] of Object.entries(slideTypes || {})) {
-    if (custom.has(type)) continue;
     add(def?.labelKey || `slideType.${type}.label`, def?.label || type);
 
     for (const f of Array.isArray(def?.fields) ? def.fields : []) {
@@ -91,9 +89,8 @@ function slideTypeUiStrings(slideTypes, customNames = []) {
  * matching `slideType.` but absent here is an orphan from a removed type, field
  * or option and is safe to prune.
  * @param {Record<string, Object>} slideTypes
- * @param {Iterable<string>} [customNames]
  * @returns {Set<string>}
  */
-export function slideTypeUiKeys(slideTypes, customNames = []) {
-  return new Set(slideTypeUiStrings(slideTypes, customNames).keys());
+export function slideTypeUiKeys(slideTypes) {
+  return new Set(slideTypeUiStrings(slideTypes).keys());
 }

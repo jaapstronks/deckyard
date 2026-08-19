@@ -49,16 +49,17 @@ function sortKeys(obj) {
  * The set of `slideType.*` keys the live registry currently produces — the
  * authority the prune below measures every locale against.
  *
- * Derived from the whole of `SLIDE_TYPES`, fork types **included**: the prune
- * passes no skip-set. `slideTypeUiKeys()` still takes one because the retired
- * `i18n-extract` needed it — a fork's strings must not leak into a shared
- * extraction template. The prune has the opposite duty — a fork type's keys are
- * as live as a core type's, so narrowing this set to core would make the prune
- * silently delete a fork's own translations, and delete a core type's keys
- * outright once a fork registers over its name with `override: true`. That
- * asymmetry is the #499 regression; `tests/fork-slide-type-derivations.test.js`
- * pins it against a file-based fork type loaded from `custom/slide-types/`, which
- * is the only place it is observable.
+ * Derived from the whole of `SLIDE_TYPES`, fork types **included** — and since
+ * B94 `slideTypeUiKeys()` cannot be asked for anything narrower: the skip-set
+ * the retired `i18n-extract` used (a fork's strings must not leak into a shared
+ * extraction template) is gone with it. The prune has the opposite duty — a fork
+ * type's keys are as live as a core type's, so narrowing this set to core would
+ * make the prune silently delete a fork's own translations, and delete a core
+ * type's keys outright once a fork registers over its name with `override:
+ * true`. That asymmetry was the #499 regression; it is now structurally
+ * impossible at this seam, and `tests/fork-slide-type-derivations.test.js` still
+ * pins the result against a file-based fork type loaded from `custom/slide-types/`,
+ * which is the only place it is observable.
  *
  * Kept as its own export (not inlined into the prune) so that test can assert on
  * the exact set the prune uses, rather than a re-derivation that could drift.

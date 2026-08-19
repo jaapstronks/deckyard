@@ -8,17 +8,19 @@
  *
  *   - #499: `i18n:sync`'s orphan prune derived its valid-key set with fork types
  *     excluded (copied from the since-retired `i18n-extract`, where the skip was
- *     right — a shared extraction template must not carry a fork's strings), so it would
- *     have deleted a fork's own translations, and a core type's keys outright once
- *     a fork registered over its name with `override: true`.
+ *     right — a shared extraction template must not carry a fork's strings), so it
+ *     would have deleted a fork's own translations, and a core type's keys
+ *     outright once a fork registered over its name with `override: true`. B94
+ *     removed the skip-set parameter altogether, so the derivation can no longer
+ *     be asked the wrong question.
  *   - #501 (→ #503): the inspector coverage audit asked every type for every
  *     keep-field, and the fallback branch of `getInspectorKeepKeys()` returns the
  *     nine globally-injected bg/a11y keys too. Every core type declares a keep
  *     list so upstream never takes that branch; a keepless file-based fork does.
  *
- * Two guardrails live here. The **synthetic** ones run everywhere (core CI too):
- * they pin the extract-vs-sync asymmetry at the library seam, where it is cheap
- * and deterministic. The **live** ones only mean anything with a fork type
+ * Two guardrails live here. The **synthetic** one runs everywhere (core CI too):
+ * it pins, at the library seam, that a fork type's keys come out of the
+ * derivation like any core type's. The **live** ones only mean anything with a fork type
  * actually in the registry, so they self-skip unless `tests/fixtures/
  * fork-slide-types/` has been copied into `custom/slide-types/` — which is what
  * the `test-fork` CI job does (see `.github/workflows/ci.yml`). A local `npm
@@ -50,8 +52,9 @@ const liveSkip = forkLoaded
 
 // ---------------------------------------------------------------------------
 // Synthetic seam — always runs. #499 was a one-line choice at this seam: whether
-// the i18n prune's valid-key derivation passes a fork skip-set. Both directions
-// are pinned so a future edit that "tidies" sync to match extract fails loudly.
+// the i18n prune's valid-key derivation passed a fork skip-set. Since B94 the
+// derivation takes none (the skip-set left with `i18n-extract`), so the only
+// thing left to pin is that a fork name is derived exactly like a core one.
 // ---------------------------------------------------------------------------
 
 test('a fork type name contributes its own slideType.* i18n keys', () => {
@@ -66,43 +69,6 @@ test('a fork type name contributes its own slideType.* i18n keys', () => {
   assert.ok(
     keys.has('slideType.acme-hero-slide.field.tagline.label'),
     'the field label is a key'
-  );
-});
-
-test('excluding a name drops ALL of its keys — the extract-only skip', () => {
-  const registry = {
-    'acme-hero-slide': {
-      label: 'Hero',
-      fields: [{ key: 'tagline', type: 'string', label: 'Tagline' }],
-    },
-  };
-  const kept = slideTypeUiKeys(registry);
-  const skipped = slideTypeUiKeys(registry, ['acme-hero-slide']);
-  assert.ok(kept.has('slideType.acme-hero-slide.label'));
-  assert.equal(
-    skipped.has('slideType.acme-hero-slide.label'),
-    false,
-    'a skip-set removes the whole namespace — which is why an extraction step may ' +
-      'pass one and the i18n-sync prune must not'
-  );
-});
-
-test('an override of a core name is skipped WITH its core keys under a skip-set', () => {
-  // The sharpest face of #499: once a fork registers `override: true` over a core
-  // name, that name is in CUSTOM_SLIDE_TYPE_NAMES. A prune that fed that skip-set
-  // to the derivation would treat the LIVE type's keys as
-  // orphaned and delete the core translations wholesale. Modelled here so the
-  // danger is a checked assertion, not only prose in i18n-sync.js.
-  const registry = {
-    'content-slide': {
-      label: 'Forked content',
-      fields: [{ key: 'body', type: 'markdown', label: 'Body' }],
-    },
-  };
-  assert.ok(slideTypeUiKeys(registry).has('slideType.content-slide.label'));
-  assert.equal(
-    slideTypeUiKeys(registry, ['content-slide']).has('slideType.content-slide.label'),
-    false
   );
 });
 
