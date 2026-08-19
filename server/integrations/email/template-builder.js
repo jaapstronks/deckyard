@@ -12,6 +12,7 @@ import {
   EMAIL_STYLES,
   emailButton,
   emailWrapper,
+  stripTags,
   troubleClickingFooter,
 } from '../email-templates/index.js';
 import { sendEmail } from './core.js';
@@ -109,7 +110,7 @@ export function buildFromResolvedTemplate(fields, vars, actionUrl) {
   const textContent = `
 ${greeting}
 
-${body.replace(/<[^>]*>/g, '')}
+${stripTags(body)}
 
 ${actionUrl}
 

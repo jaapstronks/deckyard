@@ -2,6 +2,7 @@
  * Notion Parser
  * Functions for parsing Notion blocks and extracting text content.
  */
+import { hostMatchesAny } from '../../../shared/url-host.js';
 
 export function richTextToPlain(richText) {
   const parts = Array.isArray(richText) ? richText : [];
@@ -118,10 +119,7 @@ export function extractPageId(urlOrId) {
   }
 
   // Must be a notion.so domain
-  if (
-    !url.hostname.endsWith('notion.so') &&
-    !url.hostname.endsWith('notion.site')
-  ) {
+  if (!hostMatchesAny(url.hostname, ['notion.so', 'notion.site'])) {
     return null;
   }
 

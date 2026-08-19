@@ -1,6 +1,7 @@
 // Shared helpers used by slide type registry + renderers.
 
 import { SLIDE_BG_ID_RE } from '../theme-slide-backgrounds.js';
+import { hostMatches, hostMatchesAny } from '../url-host.js';
 
 export function escapeHtml(s) {
   return String(s || '')
@@ -170,15 +171,15 @@ export function youtubeEmbedUrl(input) {
   if (!raw) return '';
   try {
     const u = new URL(raw.startsWith('//') ? `https:${raw}` : raw);
-    const host = u.hostname.toLowerCase();
-    if (host === 'youtu.be') {
+    const host = u.hostname;
+    if (hostMatches(host, 'youtu.be')) {
       const id = u.pathname.replace(/^\//, '').trim();
       if (!id) return '';
       return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(
         id,
       )}?rel=0&modestbranding=1`;
     }
-    if (host.endsWith('youtube.com') || host.endsWith('youtube-nocookie.com')) {
+    if (hostMatchesAny(host, ['youtube.com', 'youtube-nocookie.com'])) {
       const v = u.searchParams.get('v');
       if (v) {
         return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(
@@ -209,8 +210,8 @@ export function vimeoEmbedUrl(input) {
   if (!raw) return '';
   try {
     const u = new URL(raw.startsWith('//') ? `https:${raw}` : raw);
-    const host = u.hostname.toLowerCase();
-    if (host.endsWith('vimeo.com')) {
+    const host = u.hostname;
+    if (hostMatches(host, 'vimeo.com')) {
       let id = '';
       const m1 = u.pathname.match(/\/video\/(\d+)/);
       if (m1?.[1]) id = m1[1];

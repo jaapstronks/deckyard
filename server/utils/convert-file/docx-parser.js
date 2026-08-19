@@ -166,13 +166,14 @@ function stripHtml(html) {
     String(html || '')
       // Remove HTML tags
       .replace(/<[^>]+>/g, '\n')
-      // Decode common entities
+      // Decode common entities — `&amp;` last, so `&amp;lt;` decodes to the
+      // literal text `&lt;` instead of `<` (js/double-escaping)
       .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'")
+      .replace(/&amp;/g, '&')
       // Clean up whitespace
       .replace(/[ \t]+/g, ' ')
       .replace(/\n{3,}/g, '\n\n')

@@ -66,9 +66,10 @@ export async function parsePptx(buffer) {
 
         // Try to get slide notes
         let notes = '';
-        const notesPath = slidePath
-          .replace('slides/slide', 'notesSlides/notesSlide')
-          .replace('.xml', '.xml');
+        const notesPath = slidePath.replace(
+          'slides/slide',
+          'notesSlides/notesSlide',
+        );
         try {
           const notesXml = await zip.file(notesPath)?.async('string');
           if (notesXml) {
@@ -279,14 +280,17 @@ function extractTextFromSlideXml(xml) {
  * Decode XML entities
  */
 function decodeXmlEntities(text) {
+  // `&amp;` is decoded LAST — decoding it before the others would turn
+  // `&amp;lt;` into `&lt;` and then into `<`, un-escaping text the document
+  // escaped on purpose (js/double-escaping).
   return String(text || '')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&')
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
     .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)))
     .replace(/&#x([0-9a-fA-F]+);/g, (_, code) =>
       String.fromCharCode(parseInt(code, 16)),
-    );
+    )
+    .replace(/&amp;/g, '&');
 }

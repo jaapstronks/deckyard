@@ -157,13 +157,20 @@ async function toText(bytes, asset, originalPath) {
  * @returns {string}
  */
 function htmlToText(html) {
-  const withoutNoise = html
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
-    .replace(/<nav[\s\S]*?<\/nav>/gi, ' ')
-    .replace(/<footer[\s\S]*?<\/footer>/gi, ' ')
-    .replace(/<header[\s\S]*?<\/header>/gi, ' ')
+  // The end tags allow whitespace before the `>` (`</script >` is valid HTML),
+  // so the closing pattern does too — a stricter `<\/script>` leaves the block
+  // behind (js/bad-tag-filter).
+  const dropElement = (s, tag) =>
+    s.replace(new RegExp(`<${tag}[\\s\\S]*?<\\/${tag}\\s*>`, 'gi'), ' ');
+  const withoutNoise = [
+    'script',
+    'style',
+    'noscript',
+    'nav',
+    'footer',
+    'header',
+  ]
+    .reduce(dropElement, html)
     .replace(/<!--[\s\S]*?-->/g, ' ');
 
   // Keep block structure as newlines so headings don't run into body text.

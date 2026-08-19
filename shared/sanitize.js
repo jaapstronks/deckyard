@@ -212,14 +212,16 @@ export async function stripHtml(html) {
     ALLOWED_ATTR: [],
   });
 
-  // Decode common HTML entities
+  // Decode common HTML entities. `&amp;` goes LAST: decoding it first turns
+  // `&amp;lt;` into `&lt;` and the next pass into `<`, which un-escapes markup
+  // the author escaped on purpose (js/double-escaping).
   return text
-    .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, ' ');
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&');
 }
 
 /**

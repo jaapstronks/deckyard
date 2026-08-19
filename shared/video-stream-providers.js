@@ -2,6 +2,7 @@
  * Video stream provider detection, embed URL building, and position presets.
  * Shared between client and server (ESM).
  */
+import { hostMatches, hostMatchesAny } from './url-host.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -20,40 +21,40 @@ const PROVIDERS = [
   {
     id: 'youtube',
     match: (url) => {
-      const h = url.hostname.toLowerCase();
-      return (
-        h === 'youtu.be' ||
-        h.endsWith('youtube.com') ||
-        h.endsWith('youtube-nocookie.com')
-      );
+      return hostMatchesAny(url.hostname, [
+        'youtu.be',
+        'youtube.com',
+        'youtube-nocookie.com',
+      ]);
     },
   },
   {
     id: 'vimeo',
-    match: (url) => url.hostname.toLowerCase().endsWith('vimeo.com'),
+    match: (url) => hostMatches(url.hostname, 'vimeo.com'),
   },
   {
     id: 'bunny',
     match: (url) => {
-      const h = url.hostname.toLowerCase();
-      return h.endsWith('mediadelivery.net') || h === 'video.bunnycdn.com';
+      return hostMatchesAny(url.hostname, [
+        'mediadelivery.net',
+        'video.bunnycdn.com',
+      ]);
     },
   },
   {
     id: 'mux',
     match: (url) => {
-      const h = url.hostname.toLowerCase();
-      return h.endsWith('mux.com') || h.endsWith('mux.dev');
+      return hostMatchesAny(url.hostname, ['mux.com', 'mux.dev']);
     },
   },
   {
     id: 'cloudflare',
     match: (url) => {
-      const h = url.hostname.toLowerCase();
       // Covers customer-<id>.cloudflarestream.com and *.videodelivery.net
-      return (
-        h.endsWith('cloudflarestream.com') || h.endsWith('videodelivery.net')
-      );
+      return hostMatchesAny(url.hostname, [
+        'cloudflarestream.com',
+        'videodelivery.net',
+      ]);
     },
   },
 ];
@@ -89,11 +90,11 @@ export function detectStreamProvider(input) {
 function extractYouTubeId(raw) {
   try {
     const u = new URL(toAbsoluteUrl(raw));
-    const host = u.hostname.toLowerCase();
-    if (host === 'youtu.be') {
+    const host = u.hostname;
+    if (hostMatches(host, 'youtu.be')) {
       return u.pathname.replace(/^\//, '').split('/')[0] || '';
     }
-    if (host.endsWith('youtube.com') || host.endsWith('youtube-nocookie.com')) {
+    if (hostMatchesAny(host, ['youtube.com', 'youtube-nocookie.com'])) {
       const v = u.searchParams.get('v');
       if (v) return v;
       const m = u.pathname.match(/\/(?:embed|shorts|live)\/([^/?]+)/);
@@ -108,7 +109,7 @@ function extractYouTubeId(raw) {
 function extractVimeoId(raw) {
   try {
     const u = new URL(toAbsoluteUrl(raw));
-    if (u.hostname.toLowerCase().endsWith('vimeo.com')) {
+    if (hostMatches(u.hostname, 'vimeo.com')) {
       const m1 = u.pathname.match(/\/video\/(\d+)/);
       if (m1?.[1]) return m1[1];
       const m2 = u.pathname.match(/\/(\d+)/);

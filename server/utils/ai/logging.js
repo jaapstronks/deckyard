@@ -8,6 +8,7 @@
  * filling up disk space on the VPS.
  */
 
+import { randomBytes } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -225,6 +226,8 @@ export function createSessionLogger(sessionId) {
  */
 export function generateSessionId() {
   const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 8);
+  // Session ids end up in log filenames and are handed back to callers, so the
+  // random half comes from the CSPRNG, not Math.random() (js/insecure-randomness).
+  const random = randomBytes(4).toString('hex');
   return `${timestamp}-${random}`;
 }
