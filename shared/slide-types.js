@@ -37,6 +37,7 @@ export {
 } from './slide-types/layout-variants.js';
 
 export {
+  getAiConvertibleSlideTypes,
   getConvertibleSlideTypes,
   convertSlideToType,
   getConversionLossyKeys,

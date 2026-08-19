@@ -35,6 +35,8 @@ export default {
       key: 'body',
       label: 'Body (Markdown)',
       type: 'markdown',
+      // Long-form prose beside the image: same as content-slide.
+      toolbar: ['heading'],
       required: true,
       maxLength: 3000,
     },
@@ -49,6 +51,10 @@ export default {
       type: 'image',
       hidden: true,
       required: false,
+      // A picked image that would be heavily cropped switches to `contain`,
+      // unless the author already chose a fit. Canonical sink is the first
+      // ImageRef's `fit`; `imageFit` is the pre-migration fallback.
+      autoFit: { fit: 'imageFit', item: { list: 'images', fit: 'fit' } },
     },
     {
       key: 'images',

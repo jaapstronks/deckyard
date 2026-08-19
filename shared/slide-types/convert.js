@@ -106,6 +106,66 @@ export function getConvertibleSlideTypes(
   return [];
 }
 
+/**
+ * The **AI Convert** pairs: which types an LLM is asked to restructure a slide
+ * into, as opposed to the field-mapping conversion above.
+ *
+ * One source, two consumers. It used to be written out twice —
+ * `AI_CONVERT_TARGETS` in the editor's header menu (with a hand-copied label
+ * per target) and `SUPPORTED_CONVERSIONS` in
+ * server/utils/openai/convert-slide.js — two hand-maintained maps of one fact,
+ * the second of which silently decided what the first was allowed to offer.
+ *
+ * It lives here rather than on the types because a conversion is a relation
+ * *between* two types, not a property of one, and because its other half — the
+ * per-pair prompt — is core prose a fork type could not supply anyway. Same
+ * shape and the same seam as the deterministic map above.
+ *
+ * Deliberately partial: most types have no meaningful restructuring target.
+ *
+ * @type {Readonly<Record<string, ReadonlyArray<string>>>}
+ */
+export const AI_CONVERT_PAIRS = Object.freeze({
+  'content-slide': [
+    'list-slide',
+    'icon-card-grid-slide',
+    'text-blocks-slide',
+    'kpi-metrics-slide',
+  ],
+  'list-slide': ['icon-card-grid-slide', 'content-slide', 'text-blocks-slide'],
+  'icon-card-grid-slide': ['list-slide', 'content-slide', 'text-blocks-slide'],
+  'text-blocks-slide': ['icon-card-grid-slide', 'list-slide'],
+  'kpi-metrics-slide': ['content-slide', 'list-slide'],
+});
+
+/**
+ * Which types the **AI Convert** submenu offers for this slide — the LLM
+ * restructuring path, not the field-mapping conversion above.
+ *
+ * Read by both consumers: the editor menu
+ * (client/views/editor/editor-form/header-actions.js) and the server route
+ * that validates the request (server/utils/openai/convert-slide.js).
+ *
+ * Targets that are not registered are dropped, so a fork that removes a core
+ * type does not leave a menu entry pointing at nothing.
+ *
+ * @param {{type?: string}|string} slide - a slide, or a type name
+ * @param {Object} [opts]
+ * @param {Object} [opts.slideTypes] - registry or `/api/slide-types` metadata
+ * @returns {string[]}
+ */
+export function getAiConvertibleSlideTypes(
+  slide,
+  { slideTypes = SLIDE_TYPES } = {},
+) {
+  const type =
+    typeof slide === 'string' ? slide : String(slide?.type || '').trim();
+  if (!type || !slideTypes?.[type]) return [];
+  return (AI_CONVERT_PAIRS[type] || []).filter(
+    (name) => name !== type && !!slideTypes?.[name],
+  );
+}
+
 export function getConversionLossyKeys(
   slide,
   toType,

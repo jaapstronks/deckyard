@@ -50,6 +50,10 @@ export default {
       // Allow creating a new image slide without selecting an image yet.
       // Rendering/export already handle missing images gracefully.
       required: false,
+      // A picked image that would be heavily cropped switches to `contain`,
+      // unless the author already chose a fit — through `fit`, or through the
+      // legacy `layout` enum it superseded.
+      autoFit: { fit: 'fit', legacy: { key: 'layout', default: 'full' } },
     },
     {
       key: 'imageRole',
