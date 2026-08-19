@@ -21,6 +21,7 @@ import {
   updatePresentation,
 } from '../../../storage/presentations/index.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
+import { handleNotionError } from './utils.js';
 import { createLogger } from '../../../utils/logger.js';
 import { sseErrorPayload, openSseStream } from '../../../utils/sse.js';
 const log = createLogger('import');
@@ -118,21 +119,7 @@ export async function handleNotionImport({
       detectedLang: effectiveLang,
     });
   } catch (e) {
-    const msg = String(e?.message || e || 'Unknown error');
-    const code = e?.statusCode || 500;
-    if (msg.includes('Could not find') || code === 404) {
-      return badRequest(
-        res,
-        'Notion page not found. Make sure the page is shared with your Notion integration.',
-      );
-    }
-    if (msg.includes('unauthorized') || code === 401 || code === 403) {
-      return badRequest(
-        res,
-        'Access denied. Make sure the page is shared with your Notion integration.',
-      );
-    }
-    jsonError(res, code >= 400 && code < 600 ? code : 500, 'notion_error', msg);
+    handleNotionError(e, res);
   }
   return true;
 }

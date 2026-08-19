@@ -7,6 +7,13 @@
  * resource loads / data-exfil via `@import`. Strip/defang those. This is not a
  * full CSS parser — it neutralises the known-dangerous constructs.
  *
+ * `data:` is deliberately NOT defanged (CodeQL js/incomplete-url-scheme-check
+ * flags its absence next to `javascript:`/`vbscript:`; dismissed with this
+ * reasoning): inside a `<style>` block a `data:` URL has no script path — it
+ * can only be an image/font/cursor payload for `url()`, and the one place it
+ * could pull in CSS, `@import`, is already stripped above. Blocking it would
+ * break legitimate inline-SVG backgrounds in author CSS for no gain.
+ *
  * @param {string} css
  * @returns {string}
  */
