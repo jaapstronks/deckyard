@@ -4,6 +4,23 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.22.0](https://github.com/jaapstronks/deckyard/compare/v1.21.0...v1.22.0) (2026-08-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **themes:** the built-in theme id `deckyard` is now `amethyst` (label "Amethyst", neutral placeholder logo instead of the green mark); no alias is kept. A deck stored with "theme": "deckyard" still loads and renders in the default theme (brand / Forest), but fails validation on its next save until it is re-themed. Custom themes in custom/themes/ are unaffected. Version stays 1.x per versioning.md § The beta stance.
+
+### Fixed
+
+* **i18n:** fill the descriptor-table key gaps and teach the coverage gate to see them ([#831](https://github.com/jaapstronks/deckyard/issues/831)) ([ed3c907](https://github.com/jaapstronks/deckyard/commit/ed3c907dc6cddf4247c40051272f205a9238e802))
+* **sanitize:** initialize the sanitizer in the MCP process, warn when it is missing ([#836](https://github.com/jaapstronks/deckyard/issues/836)) ([aa71704](https://github.com/jaapstronks/deckyard/commit/aa71704fd8ad2534aef9f0e69ddb27b5eefdec7d))
+
+
+### Changed
+
+* **themes:** rename the deckyard theme to amethyst and give it the neutral logo ([#837](https://github.com/jaapstronks/deckyard/issues/837)) ([fb3e5d3](https://github.com/jaapstronks/deckyard/commit/fb3e5d3f7a127bb330784f6fc3a8c2819151b379))
+
 ## [1.21.0](https://github.com/jaapstronks/deckyard/compare/v1.20.0...v1.21.0) (2026-08-19)
 
 
