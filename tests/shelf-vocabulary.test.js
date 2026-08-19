@@ -21,7 +21,7 @@
  *
  * The migration is stored-data: deploying this needs migration 076 to run
  * (`slide_library.scope`/`slide_collections.scope` → `shelf`, `'team'` →
- * `'organization'`).
+ * `'organization'`), and migration 077 for the webhook settings key (B92).
  *
  * NOT covered: the public v1 API, which never exposed this field
  * (`sanitizeLibraryItem` omits it) and stays scope-free.
@@ -46,6 +46,12 @@
  * `client/` and `tests/` so it cannot creep back. The tenant axis (a *team* as
  * an organization: `getTeamWeeklyAnalytics`, `buildTeamDigestEmail`) is a
  * different concept and stays.
+ *
+ * **Webhook surface (B92).** B90 left one remainder: the settings key
+ * `slideAddedToTeamLibraryUrl` and the event `slide.added_to_team_library`,
+ * held back because they are stored operator settings plus a public payload
+ * contract. B92 renamed both to *…OrganizationLibrary…* and moved the stored
+ * key with migration 077, so `CODE_IDENTIFIERS` pins the old spellings too.
  *
  * Run with: node --test tests/shelf-vocabulary.test.js
  */
@@ -228,6 +234,10 @@ test('the doc-prose exemptions still exist, so the list cannot rot', () => {
 const CODE_IDENTIFIERS = {
   dirs: ['server', 'client', 'tests'],
   exempt: new Set(['tests/shelf-vocabulary.test.js']),
+  // The historical record: the rename migrations own both spellings and must
+  // name the loser one to move the stored data (same exclusion as
+  // tests/organization-vocabulary.test.js).
+  exemptDirs: new Set([path.join('server', 'db', 'migrations')]),
   forbidden: [
     {
       label: 'shelf storage export named *Team* (use *Organization*)',
@@ -254,6 +264,12 @@ const CODE_IDENTIFIERS = {
       label: 'teamSlideLibraryItems manifest stat (use organizationSlideLibraryItems)',
       re: /\bteamSlideLibraryItems\b/,
     },
+    // B92: the webhook surface — a stored settings key plus a public payload
+    // contract, which is why it needed migration 077 rather than a rename.
+    {
+      label: 'shelf webhook key/event spelled *TeamLibrary* (use *OrganizationLibrary*)',
+      re: /\bslideAddedToTeamLibrary(Url)?\b|slide\.added_to_team_library/,
+    },
   ],
 };
 
@@ -263,8 +279,9 @@ function sourceFiles() {
     (function walk(abs) {
       for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
         const full = path.join(abs, entry.name);
-        if (entry.isDirectory()) walk(full);
-        else if (entry.name.endsWith('.js')) {
+        if (entry.isDirectory()) {
+          if (!CODE_IDENTIFIERS.exemptDirs.has(path.relative(repoRoot, full))) walk(full);
+        } else if (entry.name.endsWith('.js')) {
           const rel = path.relative(repoRoot, full).split(path.sep).join('/');
           if (!CODE_IDENTIFIERS.exempt.has(rel)) out.push(full);
         }
@@ -298,6 +315,8 @@ test('the canonical Organization identifiers are present, so the scan cannot pas
     ['server/storage/collections/index.js', /export async function listOrganizationCollections\b/],
     ['server/export/bulk-export.js', /slide-library\/organization\.json/],
     ['server/routes/api/home.js', /organizationSlides:/],
+    ['server/storage/settings.js', /slideAddedToOrganizationLibraryUrl/],
+    ['server/utils/webhooks.js', /slide\.added_to_organization_library/],
   ];
   for (const [file, re] of required) {
     const text = fs.readFileSync(path.join(repoRoot, file), 'utf8');

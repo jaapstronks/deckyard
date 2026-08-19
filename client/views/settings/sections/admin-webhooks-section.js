@@ -18,12 +18,12 @@ const WEBHOOK_CONFIGS = [
     hintDefault: 'Event: presentation.moved_to_organization',
   },
   {
-    key: 'slideAddedToTeamLibrary',
-    settingsKey: 'slideAddedToTeamLibraryUrl',
-    titleKey: 'settings.admin.webhooks.slideAddedToTeamLibrary.title',
+    key: 'slideAddedToOrganizationLibrary',
+    settingsKey: 'slideAddedToOrganizationLibraryUrl',
+    titleKey: 'settings.admin.webhooks.slideAddedToOrganizationLibrary.title',
     titleDefault: 'When a slide is added to the team library',
-    hintKey: 'settings.admin.webhooks.slideAddedToTeamLibrary.hint',
-    hintDefault: 'Event: slide.added_to_team_library',
+    hintKey: 'settings.admin.webhooks.slideAddedToOrganizationLibrary.hint',
+    hintDefault: 'Event: slide.added_to_organization_library',
   },
   {
     key: 'published',
