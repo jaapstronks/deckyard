@@ -13,15 +13,18 @@
  *
  * A `t()` call is not the only *static* spelling, though. Descriptor tables pass
  * the key and its English fallback as a paired property and hand both to `t()`
- * later, in two spellings: `<x>Key` / `<x>Default` (`WEBHOOK_CONFIGS` in
- * client/views/settings/sections/admin-webhooks-section.js, the settings
- * sidebar tabs) and `<x>Key` / `<x>` (`labelKey` / `label` on slide-type,
- * preset and field descriptors, `hintKey` / `hint` on the data-source
- * providers). Those keys are every bit as static, and they used to be invisible
- * here — which is how six webhook keys, three settings-tab keys and fourteen
- * font-editor / field-type keys went missing from Tier 1 without the coverage
- * gate noticing. DESCRIPTOR_PAIR picks both spellings up; the pair must be
- * adjacent, key first.
+ * later, in one spelling: `<x>Key` / `<x>` — `labelKey` / `label` on slide-type,
+ * preset and field descriptors, `titleKey` / `title` + `hintKey` / `hint` on
+ * `WEBHOOK_CONFIGS`, `hintKey` / `hint` on the data-source providers. Those keys
+ * are every bit as static, and they used to be invisible here — which is how six
+ * webhook keys, three settings-tab keys and fourteen font-editor / field-type
+ * keys went missing from Tier 1 without the coverage gate noticing.
+ * DESCRIPTOR_PAIR picks them up; the pair must be adjacent, key first.
+ *
+ * `<x>Default` was a second spelling of the same pair until B94 normalized it
+ * away (41 pairs in four files). One meaning, one shape: a new `<x>Default:`
+ * next to an `<x>Key:` is a drift the coverage gate fails on — see
+ * tests/i18n-coverage.test.js.
  */
 
 import fs from 'node:fs/promises';
@@ -95,13 +98,12 @@ async function* walkJs(dir) {
   }
 }
 
-// <x>Key: '<key>', <x>Default: '<English fallback>' — or the bare
 // <x>Key: '<key>', <x>: '<English fallback>' — a descriptor-table entry whose
 // two halves are handed to t() elsewhere. The prefix backreference is what
 // makes this a *pair* rather than two unrelated properties, so an unrelated
-// `settingsKey` next to a `titleDefault` cannot match.
+// `settingsKey` next to a `title` cannot match.
 const DESCRIPTOR_PAIR =
-  /\b(\w+)Key:\s*(['"])([\w.-]+)\2\s*,\s*\1(?:Default)?:\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g;
+  /\b(\w+)Key:\s*(['"])([\w.-]+)\2\s*,\s*\1:\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g;
 
 /**
  * Extract every static t() key used in the client, whether it is spelled at the
@@ -126,6 +128,30 @@ export async function extractUsedKeys(clientDir) {
     for (const m of src.matchAll(DESCRIPTOR_PAIR)) record(m[3], m[4] ?? m[5] ?? null, file);
   }
   return used;
+}
+
+// The pre-B94 spelling of the same pair: <x>Key: '<key>', <x>Default: '…'.
+// Kept only as a needle — a match means the second spelling is growing back.
+const LEGACY_DESCRIPTOR_PAIR = /\b(\w+)Key:\s*(['"])([\w.-]+)\2\s*,\s*\1Default:/g;
+
+/**
+ * Find descriptor pairs still written in the retired `<x>Key` / `<x>Default`
+ * spelling. B94 normalized every one of them to the bare `<x>Key` / `<x>` form
+ * and narrowed DESCRIPTOR_PAIR to match only that, so a hit here is a key the
+ * extractor no longer sees *and* a second shape for one meaning.
+ * @param {string} clientDir - absolute path to client/
+ * @returns {Promise<string[]>} `<file>:<line>  <prefix>Key/<prefix>Default` per hit
+ */
+export async function findLegacyDescriptorPairs(clientDir) {
+  const offenders = [];
+  for await (const file of walkJs(clientDir)) {
+    const src = await fs.readFile(file, 'utf8');
+    for (const m of src.matchAll(LEGACY_DESCRIPTOR_PAIR)) {
+      const line = src.slice(0, m.index).split('\n').length;
+      offenders.push(`${file}:${line}  ${m[1]}Key/${m[1]}Default`);
+    }
+  }
+  return offenders;
 }
 
 // Any dotted string literal, e.g. the 'editor.foo.bar' in `{ labelKey: 'editor.foo.bar' }`.
