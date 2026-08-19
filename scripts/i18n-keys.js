@@ -22,9 +22,9 @@
  * DESCRIPTOR_PAIR picks them up; the pair must be adjacent, key first.
  *
  * `<x>Default` was a second spelling of the same pair until B94 normalized it
- * away (41 pairs in four files). One meaning, one shape: a new `<x>Default:`
- * next to an `<x>Key:` is a drift the coverage gate fails on — see
- * tests/i18n-coverage.test.js.
+ * away (46 pairs in four files, against 72 bare ones across client/ and
+ * shared/). One meaning, one shape: a new `<x>Default:` next to an `<x>Key:` is
+ * a drift the coverage gate fails on — see tests/i18n-coverage.test.js.
  */
 
 import fs from 'node:fs/promises';
@@ -139,12 +139,14 @@ const LEGACY_DESCRIPTOR_PAIR = /\b(\w+)Key:\s*(['"])([\w.-]+)\2\s*,\s*\1Default:
  * spelling. B94 normalized every one of them to the bare `<x>Key` / `<x>` form
  * and narrowed DESCRIPTOR_PAIR to match only that, so a hit here is a key the
  * extractor no longer sees *and* a second shape for one meaning.
- * @param {string} clientDir - absolute path to client/
+ * @param {string} dir - absolute path to a tree that holds descriptor tables:
+ *   client/ (what extractUsedKeys scans) or shared/, where the slide-type
+ *   registry spells the same pair
  * @returns {Promise<string[]>} `<file>:<line>  <prefix>Key/<prefix>Default` per hit
  */
-export async function findLegacyDescriptorPairs(clientDir) {
+export async function findLegacyDescriptorPairs(dir) {
   const offenders = [];
-  for await (const file of walkJs(clientDir)) {
+  for await (const file of walkJs(dir)) {
     const src = await fs.readFile(file, 'utf8');
     for (const m of src.matchAll(LEGACY_DESCRIPTOR_PAIR)) {
       const line = src.slice(0, m.index).split('\n').length;

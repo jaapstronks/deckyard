@@ -126,7 +126,12 @@ describe('i18n coverage', () => {
     // to match only the survivor. Re-introducing `<x>Default` makes those keys
     // invisible to the coverage check above — which is exactly how six webhook
     // keys went missing before #831 — so it fails here instead.
-    const offenders = await findLegacyDescriptorPairs(clientDir);
+    // shared/ too: the slide-type registry spells the same pair there, and a
+    // `<x>Default` in it would be just as invisible.
+    const offenders = [
+      ...(await findLegacyDescriptorPairs(clientDir)),
+      ...(await findLegacyDescriptorPairs(path.join(repoRoot, 'shared'))),
+    ];
     assert.deepStrictEqual(
       offenders.map((o) => o.replace(repoRoot + '/', '')).sort(),
       [],
