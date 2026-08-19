@@ -12,6 +12,8 @@
  * languages instead of collapsing to whichever the picker happened to show.
  */
 
+import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
+
 const SUPPORTED_LANGS = ['nl', 'en-GB'];
 
 /**
@@ -63,7 +65,7 @@ export function createDeckFromLibraryItems({
   items,
   title,
   lang = 'nl',
-  theme = 'deckyard',
+  theme = DEFAULT_THEME_ID,
   sourceCollectionId = null,
 }) {
   const slides = buildSlidesFromLibraryItems(items);

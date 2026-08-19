@@ -50,7 +50,7 @@ const LEGACY_SNAPSHOT = {
   id: DECK_ID,
   title: 'A deck',
   slides: [{ id: 's1', type: 'title-slide', content: { title: 'Kept' } }],
-  settings: { theme: 'deckyard' },
+  settings: { theme: 'amethyst' },
   ownerId: ALICE_ID,
   ownerEmail: ALICE,
   createdById: ALICE_ID,

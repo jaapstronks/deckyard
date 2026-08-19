@@ -99,7 +99,7 @@ const bilingualPres = () => ({
   id: 'deck-1',
   title: 'NL titel',
   lang: 'nl',
-  themeId: 'deckyard',
+  themeId: 'amethyst',
   revision: 3,
   slides: [
     {

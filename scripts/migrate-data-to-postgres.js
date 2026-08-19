@@ -36,6 +36,7 @@ import pg from 'pg';
 import { loadDotEnv } from '../server/config/env.js';
 import { getDatabaseConfig, getDefaultOrganizationId } from '../server/config/database.js';
 import { dataDir } from '../server/config/storage-paths.js';
+import { DEFAULT_THEME_ID } from '../shared/constants/themes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
@@ -125,7 +126,7 @@ async function migratePresentations(db, dataPath) {
           id: data.id,
           organization_id: organizationId,
           title: data.title || 'Untitled',
-          theme: data.theme || 'deckyard',
+          theme: data.theme || DEFAULT_THEME_ID,
           owner_email: data.ownerEmail || null,
           slides: JSON.stringify(data.slides || []),
           settings: JSON.stringify(data.settings || {}),

@@ -11,6 +11,7 @@
 import { createPromiseModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { downloadBlob } from '../../../lib/dom/download.js';
+import { DEFAULT_THEME_ID } from '../../../../shared/constants/themes.js';
 
 /**
  * Open the change theme warning modal.
@@ -301,7 +302,7 @@ export async function analyzeAndApplyThemeChange({
   onThemeChanged,
 } = {}) {
   // Skip if same theme
-  const currentThemeId = String(pres.themeId || 'deckyard').trim();
+  const currentThemeId = String(pres.themeId || DEFAULT_THEME_ID).trim();
   if (currentThemeId === newThemeId) {
     return { ok: false, reason: 'same_theme' };
   }

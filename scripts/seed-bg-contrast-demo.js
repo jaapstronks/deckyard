@@ -31,7 +31,7 @@ const BASE =
 const themesArg = args.find((a) => a.startsWith('--themes='));
 const THEMES = themesArg
   ? themesArg.slice('--themes='.length).split(',').filter(Boolean)
-  : ['deckyard', 'playful', 'midnight'];
+  : ['amethyst', 'playful', 'midnight'];
 
 const DEMO_PREFIX = 'BG contrast demo';
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), '../..');

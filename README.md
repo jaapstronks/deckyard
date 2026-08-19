@@ -164,7 +164,7 @@ Create organization-specific themes in `custom/themes/`:
 }
 ```
 
-See `themes/deckyard.json` for a complete example.
+See `themes/amethyst.json` for a complete example.
 
 ### Custom Slide Types
 

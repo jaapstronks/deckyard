@@ -81,11 +81,11 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
   it('round-trips the organization theme and normalizes an invalid id to empty', async () => {
     await writeAppSettings(testScope(), {
       defaultThemeId: 'clicknl',
-      enabledThemes: ['deckyard', 'clicknl'],
+      enabledThemes: ['amethyst', 'clicknl'],
     });
     let s = await getAppSettings(testScope());
     assert.equal(s.defaultThemeId, 'clicknl');
-    assert.deepEqual(s.enabledThemes, ['deckyard', 'clicknl']);
+    assert.deepEqual(s.enabledThemes, ['amethyst', 'clicknl']);
 
     // getDefaultThemeId prefers the stored setting over env/built-in.
     delete process.env.DEFAULT_THEME;

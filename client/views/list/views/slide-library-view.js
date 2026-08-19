@@ -6,6 +6,7 @@ import { createCollectionsBar } from '../../../lib/slide-collections/collections
 import { toast } from '../../../lib/dom/toast.js';
 import { getFeatures } from '../../../lib/state/features.js';
 import { createSandboxLibraryExplainer } from './sandbox-library-explainer.js';
+import { DEFAULT_THEME_ID } from '../../../../shared/constants/themes.js';
 
 /**
  * Create the slide library view (lazy-loaded)
@@ -59,7 +60,7 @@ export function createSlideLibraryView({ api, nav }) {
       // path forwards it via _selectedLang), else fall back to the picker state.
       const selectedLang = items[0]?._selectedLang || picker?.getActiveLang?.() || 'nl';
       // Use theme from first item
-      const theme = items[0]?.themeId || 'deckyard';
+      const theme = items[0]?.themeId || DEFAULT_THEME_ID;
 
       // The shared helper forwards per-language content so the deck keeps NL + EN.
       const result = await createDeckFromLibraryItems({

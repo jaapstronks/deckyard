@@ -1,13 +1,13 @@
 {
-  "id": "deckyard",
-  "label": "Deckyard",
+  "id": "amethyst",
+  "label": "Amethyst",
   "defaultTitleSlide": "title-slide",
   "titleLayout": "bottom",
   "assets": {
-    "logo": "/assets/images/deckyard-mark.svg",
-    "logoAlt": "Deckyard",
-    "payoffLogo": "/assets/images/deckyard-mark.svg",
-    "payoffAlt": "Deckyard"
+    "logo": "/assets/images/logo-placeholder.svg",
+    "logoAlt": "Your logo",
+    "payoffLogo": "/assets/images/logo-placeholder.svg",
+    "payoffAlt": "Your logo"
   },
   "textColorLight": "#ffffff",
   "textColorDark": "#111827",
@@ -66,7 +66,7 @@
     "--t-chart-5": "#6b7280",
     "--t-chart-6": "#374151",
     "--t-chart-7": "#ddd6fe",
-    "--t-logo-url": "url('/assets/images/deckyard-mark.svg')"
+    "--t-logo-url": "url('/assets/images/logo-placeholder.svg')"
   },
   "embedFonts": [
     {

@@ -164,7 +164,7 @@ test('sandbox theme list excludes filesystem custom (branded) themes', async () 
     listThemeIds(repoRoot),
   ]);
   // Core themes are the neutral built-ins surfaced on the public sandbox.
-  assert.ok(core.includes('deckyard'), 'core set must include the built-in themes');
+  assert.ok(core.includes('amethyst'), 'core set must include the built-in themes');
   assert.ok(core.length > 0, 'core theme set must not be empty');
   // Any theme present in the full list but absent from the core set is a
   // filesystem custom (potentially branded) theme, which sandbox must not show.
