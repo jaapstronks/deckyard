@@ -34,4 +34,20 @@ export default {
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'statement' },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    title: 'Thank you',
+    body: 'Questions are welcome — now, or in the hallway afterwards.',
+    contactName: 'Robin Meyer',
+    contactEmail: 'robin@example.com',
+    contactUrl: 'example.com/talks',
+    social1Label: 'LinkedIn',
+    social1Url: 'linkedin.com/in/example',
+    background: 'lime',
+  },
 };

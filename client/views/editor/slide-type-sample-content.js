@@ -43,7 +43,13 @@ export function getSampleContent(type, SLIDE_TYPES, theme) {
   const def = SLIDE_TYPES?.[type];
   const defaults = def?.defaults || def?.defaultsByLang?.['en-GB'] || {};
 
-  // Merge defaults with sample content (sample takes precedence)
+  // `defaults` is the base, not a fallback for a missing sample: every
+  // insertable core type declares one (gated as the `picker-sample` companion),
+  // and a sample deliberately names only the fields that make the example read
+  // as a real slide. The enum-ish rest — layout, direction, aspect ratio — comes
+  // from defaults, so a sample never has to restate the type's own settings.
+  // The one type with no sample at all is embed-slide, which is exempt on
+  // purpose; there the defaults are the whole preview.
   const content = {
     ...defaults,
     ...(slideTypeSample(type, def) || {}),

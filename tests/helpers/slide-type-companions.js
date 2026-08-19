@@ -48,6 +48,7 @@ import { SLIDE_TYPE_GROUP } from '../../shared/slide-types/authoring-groups.js';
 import {
   SLIDE_TYPE_DESCRIPTION,
   SLIDE_TYPE_ALIASES,
+  SLIDE_TYPE_SAMPLE_CONTENT,
 } from '../../shared/slide-types/authoring-companions.js';
 
 /** Registered type names, minus fork-local ones (see the scope note above). */
@@ -289,6 +290,35 @@ export const COMPANIONS = [
       Boolean(def?.schematic && typeof def.schematic === 'object'),
     keys: () => Object.keys(SLIDE_TYPE_SCHEMATIC),
     exempt: {},
+  },
+  {
+    id: 'picker-sample',
+    label: 'sample content',
+    where:
+      'shared/slide-types/types/<name>/authoring.js (sample) — surfaced as ' +
+      'SLIDE_TYPE_SAMPLE_CONTENT by shared/slide-types/authoring-companions.js',
+    degradesTo:
+      'every preview of the type is rendered from `defaults` instead — the ' +
+      'picker thumbnail, the peek lightbox and the settings curation tile all ' +
+      'show what an empty slide looks like where they promise an example',
+    appliesTo: (name, def) => isAuthorable(def),
+    // A fork type declares its own example as `sampleContent` on the definition
+    // (the fork-facing name, and what /api/slide-types carries); core's is
+    // `sample` inside authoring.js. slideTypeSample() asks in that order.
+    has: (name, def) =>
+      Boolean(SLIDE_TYPE_SAMPLE_CONTENT[name]) ||
+      Boolean(def?.sampleContent && typeof def.sampleContent === 'object'),
+    keys: () => Object.keys(SLIDE_TYPE_SAMPLE_CONTENT),
+    exempt: {
+      'embed-slide':
+        'the whole content of the slide is a third-party URL. The picker draws ' +
+        'a static browser-window mockup for this type and never renders its ' +
+        'sample; the one surface that would (the settings curation tile) would ' +
+        'turn a hardcoded sample URL into a live external iframe on a settings ' +
+        'page. A URL-less example shows an empty frame, which is what defaults ' +
+        'already show — same reasoning as the ai.js note that there is no ' +
+        'sensible placeholder for an embed',
+    },
   },
   {
     id: 'picker-group',

@@ -34,4 +34,26 @@ export default {
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'timeline' },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    title: 'From pilot to platform',
+    subheading: 'Five years, five turns',
+    items: [
+      { date: '2021', title: 'Pilot', text: 'One team, one workflow' },
+      { date: '2022', title: 'First customers', text: 'Twelve teams paying' },
+      { date: '2023', title: 'Self-service', text: 'Signing up without us' },
+      {
+        date: '2024',
+        title: 'Platform',
+        text: 'Public API, first integrations',
+      },
+      { date: '2025', title: 'Scale', text: 'Eight countries, one product' },
+    ],
+    background: 'mist',
+  },
 };
