@@ -158,6 +158,12 @@ that one has no id beside it yet.
   resolve its target directly by id. Pushing `limit`/`offset` into SQL is a
   future deliberate feature, not an accidental default; when it lands it is one
   canonical shape across all six facades, not a per-site parameter.
+  **Decided 2026-08-19 (parked with a trigger):** DB-level pagination is
+  built when either a list read on a production instance returns more than
+  ~1 000 rows for one organization, or the single-service-layer work (A7.4)
+  starts — whichever comes first — and then as a keyset cursor inside that
+  service layer, never as a per-endpoint parameter. Until then the twelve
+  in-memory slicers over `parsePaginationParams` are the intended shape.
 - **Storage boot.** `initializeStorage()` (server/storage/lifecycle.js) opens
   the shared Kysely pool via `initializeDatabase()`; it is idempotent, and
   `getDb()` throws `"Database not initialized"` before it has run.
