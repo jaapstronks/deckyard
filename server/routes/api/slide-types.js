@@ -18,6 +18,7 @@ import {
   slideTypeSchematic,
 } from '../../../shared/slide-types/authoring-companions.js';
 import { slideTypeInspectorKeeps } from '../../../shared/slide-types/inline-edit-companions.js';
+import { slideRekeyOnClone } from '../../../shared/slide-types/clone.js';
 import { listPublishedCustomSlideTypes } from '../../storage/custom-slide-types.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
@@ -96,6 +97,15 @@ async function handleSlideTypeList({ storageScope, res, authedUser }) {
       layoutVariants: Array.isArray(def.layoutVariants)
         ? def.layoutVariants
         : undefined,
+      // Which content keys are bound to this slide instance and have to be
+      // re-derived when it is copied (duplicate / paste / library insert).
+      // Same seam half as `inspectorKeeps`: the editor's clone helper reads
+      // this response, so a fork type declaring an id of its own is only
+      // heard if the declaration travels. See shared/slide-types/clone.js.
+      rekeyOnClone: (() => {
+        const r = slideRekeyOnClone(def);
+        return Object.keys(r).length ? r : undefined;
+      })(),
       // Which content field names the slide in the slide list. Same seam
       // half as `inspectorKeeps` — the editor holds this response, not the
       // registry, so a fork type declaring its own labelField is only heard

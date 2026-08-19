@@ -33,6 +33,10 @@ export default {
   // `static`: the join code it renders is a render input the session hands
   // over (ctx.followCodes), not state the session keeps for this slide.
   runtime: 'static',
+  // `presentationId` caches which deck this slide invites people into (the QR
+  // code is built from it), so a copy into another deck has to re-point it.
+  // Vocabulary and rationale in shared/slide-types/clone.js.
+  rekeyOnClone: { presentationId: 'presentation-id' },
   label: 'Follow-along invite',
   // Deliberately not offered to agents (see server/utils/ai/slide-catalog/
   // agent-catalog.js): the app inserts and maintains this slide itself, right

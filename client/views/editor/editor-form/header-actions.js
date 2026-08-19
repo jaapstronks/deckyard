@@ -5,8 +5,8 @@
  * parameterised: every dependency arrives through its options object or the
  * module imports below, so it holds no state from the editor-form closure.
  */
-import { newId } from '../../../lib/util/id.js';
 import { debugLog } from '../../../lib/util/debug.js';
+import { cloneSlidesForInsert } from '../../../lib/slide-authoring/clone-slides.js';
 import { installDismissOnOutside } from '../../../lib/dom.js';
 import { createDropdown } from '../../../lib/dom/dropdown.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
@@ -399,13 +399,10 @@ export function buildHeaderActions({
         actionsDetails.open = false;
         if (convertDetails) convertDetails.open = false;
         if (aiConvertDetails) aiConvertDetails.open = false;
-        const clone = structuredClone(slide);
-        clone.id = newId();
-        if (clone.type === 'poll-slide') {
-          if (!clone.content || typeof clone.content !== 'object')
-            clone.content = {};
-          clone.content.pollId = newId();
-        }
+        const [clone] = cloneSlidesForInsert([slide], {
+          slideTypes: SLIDE_TYPES,
+          presentationId: pres?.id || '',
+        });
         pres.slides.splice(
           pres.slides.findIndex((s) => s.id === slide.id) + 1,
           0,
