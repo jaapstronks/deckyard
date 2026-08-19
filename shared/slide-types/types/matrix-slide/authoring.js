@@ -34,4 +34,37 @@ export default {
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'matrix' },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    title: 'Impact vs. effort',
+    subheading: 'Where the next quarter goes',
+    cells: [
+      {
+        title: 'Quick wins',
+        body: '- Faster search\n- Keyboard shortcuts\n- Better empty states',
+        tone: 'positive',
+      },
+      {
+        title: 'Big bets',
+        body: '- Offline editing\n- Real-time collaboration',
+        tone: 'neutral',
+      },
+      {
+        title: 'Fill-ins',
+        body: '- Icon refresh\n- Two more export formats',
+        tone: 'neutral',
+      },
+      {
+        title: 'Time sinks',
+        body: '- Per-team theming\n- Importing the legacy format',
+        tone: 'negative',
+      },
+    ],
+    background: 'mist',
+  },
 };

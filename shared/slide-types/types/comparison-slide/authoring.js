@@ -34,4 +34,22 @@ export default {
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'comparison' },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    title: 'Build or Buy',
+    subheading: 'Choosing the platform for next year',
+    leftTitle: 'Build in-house',
+    leftBody:
+      '- Fits our workflow exactly\n- Two engineers for six months\n- Every bug is ours',
+    rightTitle: 'Buy off the shelf',
+    rightBody:
+      '- Live within a month\n- Licence per seat, per year\n- Their roadmap, not ours',
+    verdict: 'Buy now, revisit when the team doubles',
+    background: 'mist',
+  },
 };

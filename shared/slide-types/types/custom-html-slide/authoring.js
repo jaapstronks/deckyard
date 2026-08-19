@@ -34,4 +34,15 @@ export default {
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'code' },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    html: '<div class="ch-card">\n  <p class="ch-kicker">Uptime this quarter</p>\n  <p class="ch-figure">99.98%</p>\n  <p class="ch-note">Two incidents, both under four minutes.</p>\n</div>',
+    css: '.ch-card {\n  height: 100%;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  gap: 0.35rem;\n  text-align: center;\n}\n.ch-kicker { text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.9rem; opacity: 0.7; }\n.ch-figure { font-size: 4.5rem; font-weight: 800; line-height: 1; }\n.ch-note { opacity: 0.7; }',
+    background: 'lime',
+  },
 };

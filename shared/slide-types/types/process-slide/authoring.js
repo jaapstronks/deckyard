@@ -34,4 +34,22 @@ export default {
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'process' },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    title: 'From brief to launch',
+    subheading: 'How a project runs here',
+    direction: 'horizontal',
+    items: [
+      { title: 'Discover', text: 'Interviews and a look at the numbers' },
+      { title: 'Shape', text: 'Three sketches, then one direction' },
+      { title: 'Build', text: 'Weekly demos, no big reveal' },
+      { title: 'Launch', text: 'Ship, measure, adjust' },
+    ],
+    background: 'mist',
+  },
 };
