@@ -158,9 +158,11 @@ are in [`slide-type-structure.md`](slide-type-structure.md) and
 
 ## Deliberately not in the matrix
 
-- **Translations** (`client/i18n/<locale>/slide-types.json`) — a generated
-  artifact (`scripts/i18n-extract.js`), not a hand-written per-type entry, and a
-  missing key renders the English fallback baked into the definition.
+- **Translations** (`client/i18n/<locale>/slide-types.json`) — tool-maintained
+  (`scripts/i18n-fill.js` adds, `scripts/i18n-sync.js` prunes, both walking the
+  registry through `scripts/lib/slide-type-i18n-keys.js`), not a hand-written
+  per-type entry, and a missing key renders the English fallback baked into the
+  definition.
   `tests/i18n-coverage.test.js` guards the static `t()` surface.
 - **A Dutch sample** — see the box below. The sample a type declares is
   preview-only, so it owes no per-deck-language variant.

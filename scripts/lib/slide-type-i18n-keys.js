@@ -2,9 +2,9 @@
  * The one generator that turns the live slide-type registry into its `slideType.*`
  * i18n keys — labels, field labels/placeholders/help, item fields, and options.
  *
- * Two tools read the registry the same way and must not drift apart:
- *   - `i18n-extract.js` writes the English defaults into the extraction template;
- *   - `i18n-sync.js` prunes locale keys the registry no longer produces.
+ * `i18n-sync.js` reads the registry through it to prune locale keys the registry
+ * no longer produces. (`i18n-extract.js` was the second reader until B94 retired
+ * it; the skip-set parameter below is the shape it left behind.)
  *
  * Keeping the walk here means "which keys does a type own?" has a single answer.
  * A departed type, field or option simply stops appearing in the returned set,
@@ -35,14 +35,13 @@ export function normalizeOption(opt) {
  *
  * A field/option that declares an explicit `*Key` reuses that key verbatim
  * (some options localise through a hand-picked key rather than the generated
- * one); everything else follows the `slideType.<type>.field.<key>…` convention
- * that `i18n-extract.js` established.
+ * one); everything else follows the `slideType.<type>.field.<key>…` convention.
  *
  * @param {Record<string, {label?: string, labelKey?: string, fields?: Array}>} slideTypes - `SLIDE_TYPES`
  * @param {Iterable<string>} [customNames] - fork-only type names to skip (`CUSTOM_SLIDE_TYPE_NAMES`)
  * @returns {Map<string, string>} key → English default
  */
-export function slideTypeUiStrings(slideTypes, customNames = []) {
+function slideTypeUiStrings(slideTypes, customNames = []) {
   const out = new Map();
   const custom = new Set(customNames || []);
   const add = (key, def) => {
@@ -76,7 +75,7 @@ export function slideTypeUiStrings(slideTypes, customNames = []) {
         const opt = normalizeOption(raw);
         // An option only contributes keys when it names them explicitly — the
         // generated fallbacks below are the option *value*, which is a machine
-        // token, not copy. (This matches i18n-extract's original behaviour.)
+        // token, not copy.
         if (!(opt?.labelKey || opt?.titleKey || opt?.ariaLabelKey)) continue;
         if (opt.labelKey) add(opt.labelKey, opt.label);
         if (opt.titleKey) add(opt.titleKey, opt.title);

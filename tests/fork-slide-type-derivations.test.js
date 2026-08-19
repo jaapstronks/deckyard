@@ -7,7 +7,8 @@
  * — and that shape bit twice in two days, both times caught only at review:
  *
  *   - #499: `i18n:sync`'s orphan prune derived its valid-key set with fork types
- *     excluded (copied from `i18n-extract`, where the skip is right), so it would
+ *     excluded (copied from the since-retired `i18n-extract`, where the skip was
+ *     right — a shared extraction template must not carry a fork's strings), so it would
  *     have deleted a fork's own translations, and a core type's keys outright once
  *     a fork registered over its name with `override: true`.
  *   - #501 (→ #503): the inspector coverage audit asked every type for every
@@ -81,15 +82,15 @@ test('excluding a name drops ALL of its keys — the extract-only skip', () => {
   assert.equal(
     skipped.has('slideType.acme-hero-slide.label'),
     false,
-    'a skip-set removes the whole namespace — which is why i18n-extract may pass ' +
-      'one and the i18n-sync prune must not'
+    'a skip-set removes the whole namespace — which is why an extraction step may ' +
+      'pass one and the i18n-sync prune must not'
   );
 });
 
 test('an override of a core name is skipped WITH its core keys under a skip-set', () => {
   // The sharpest face of #499: once a fork registers `override: true` over a core
   // name, that name is in CUSTOM_SLIDE_TYPE_NAMES. A prune that fed that skip-set
-  // to the derivation (as extract does) would treat the LIVE type's keys as
+  // to the derivation would treat the LIVE type's keys as
   // orphaned and delete the core translations wholesale. Modelled here so the
   // danger is a checked assertion, not only prose in i18n-sync.js.
   const registry = {

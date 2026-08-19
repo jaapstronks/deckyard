@@ -9,8 +9,9 @@
  * namespace through `scripts/lib/slide-type-i18n-keys.js`, exactly as a core
  * type's copy does. `i18n:sync`'s prune deletes any `slideType.*` locale key the
  * registry no longer produces — and #499 was that prune deriving its valid set
- * with fork types *excluded* (copied from `i18n-extract`, where the skip is
- * correct), so a fork's own translations looked orphaned and were wiped. With
+ * with fork types *excluded* (copied from the since-retired `i18n-extract`, where
+ * the skip was correct), so a fork's own translations looked orphaned and were
+ * wiped. With
  * this type loaded, `tests/fork-slide-type-derivations.test.js` asserts these
  * keys count as live in `liveSlideTypeI18nKeys()`, the exact set the prune uses.
  *
