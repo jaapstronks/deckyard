@@ -34,14 +34,14 @@ No MCP SDK or Node.js required. Pure Python, zero dependencies.
 
 > **User:** Maak een presentatie over onze Q1 resultaten: omzet +15%, 3 nieuwe klanten, team gegroeid van 8 naar 12
 
-> **Agent:** *calls `deckyard.py create`*
+> **Agent:** _calls `deckyard.py create`_
 > ✅ Presentatie aangemaakt: "Q1 2026 Results" (5 slides)
 > 🔗 Bekijk: https://deckyard.example.com/present/abc123
 > Wil je dat ik iets aanpas?
 
 > **User:** Slide 3 moet korter en voeg een timeline toe
 
-> **Agent:** *calls `deckyard.py iterate`*
+> **Agent:** _calls `deckyard.py iterate`_
 > Done! Slide 3 ingekort en timeline toegevoegd na slide 4.
 
 ## License

@@ -54,6 +54,7 @@ python3 SKILL_DIR/scripts/deckyard.py iterate \
 ```
 
 The AI understands commands like:
+
 - "Make it shorter" (compresses the whole deck)
 - "Slide 3 needs more detail"
 - "Convert the list to an icon card grid"
