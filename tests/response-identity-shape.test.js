@@ -181,9 +181,10 @@ const PERMITTED_ADDRESSES = new Map([
   ],
   [
     'server/storage/slide-locks.js :: holderEmail',
-    'STILL TO CONVERT: client/views/editor/slide-lock-manager.js mirrors the ' +
-      'ownership rule on (holderId, holderEmail) to decide whether the lock ' +
-      'is yours. Same fallback question as the comment author above.',
+    'STILL TO CONVERT: display only since the address stopped being a key — ' +
+      'the client shows who holds the lock and falls back to the address when ' +
+      'the holder has no name (slide-lock-manager.js, render-item.js). ' +
+      'Converts to a holder pair with the rest of the lock surface.',
   ],
 ]);
 
@@ -197,20 +198,19 @@ const PERMITTED_STAMPS = new Map([
   // ── ownership stamps: compared, not merely rendered ──────────────────────
   [
     'server/storage/presentations/index.js :: createdBy',
-    'STILL TO CONVERT: shared/identity-match.js reads (createdById, createdBy) ' +
-      'as an ownership stamp — isOwnerOrCreator falls back to the address for ' +
-      'rows whose id column is a defined NULL. Converting it means retiring ' +
-      'that fallback, which is a decision about legacy rows, not a rename.',
+    'STILL TO CONVERT: the deck creator, now display only — the guards match ' +
+      'on createdById alone since the address fallback was retired (D22). ' +
+      'Converts to a pair with trashedBy below.',
   ],
   [
     'server/storage/presentations/index.js :: trashedBy',
-    'STILL TO CONVERT: routes/api/presentations/trash.js matches on ' +
-      '(trashedById, trashedBy) to decide who may restore. Same question.',
+    'STILL TO CONVERT: who trashed the deck, shown on the trash surface; ' +
+      'routes/api/presentations/trash.js matches on trashedById alone.',
   ],
   [
     'server/storage/slide-library/index.js :: createdBy',
-    'STILL TO CONVERT: the library trash/delete guard matches on ' +
-      '(createdById, createdBy); see routes/api/slide-library.js.',
+    'STILL TO CONVERT: who authored a library item, shown on the shelf; the ' +
+      'trash/delete guard matches on createdById alone.',
   ],
   [
     'server/storage/slide-library/index.js :: trashedBy',
@@ -219,8 +219,8 @@ const PERMITTED_STAMPS = new Map([
   ],
   [
     'server/storage/collections/index.js :: createdBy',
-    'STILL TO CONVERT: the organization-collection mutate guard matches on ' +
-      '(createdById, createdBy); see routes/api/slide-collections.js.',
+    'STILL TO CONVERT: who created an organization collection, shown on the ' +
+      'shelf; the mutate guard matches on createdById alone.',
   ],
   [
     'server/storage/collaborators.js :: createdBy',

@@ -62,27 +62,42 @@ const { handleCollaborators } =
   await import('../server/routes/api/collaborators.js');
 
 /**
+ * The `users.id` an address belongs to. Ownership is keyed on that id and on
+ * nothing else (shared/identity-match.js), so the seeded rows and the sessions
+ * that act on them have to agree on it — deriving both from the address keeps
+ * the fixture readable.
+ * @param {string} email
+ * @returns {string}
+ */
+function uid(email) {
+  return `user-${email.split('@')[0]}`;
+}
+
+/**
  * The people. `organizationId` is what `createStorageScope` binds the request
- * to, so `outsider` acts in a different organization than everyone else.
+ * to, so `outsider` acts in a different organization than everyone else. The
+ * `id` is what every ownership decision compares.
  */
 const ACTORS = {
-  owner: { email: 'owner@example.com', name: 'Olive', organizationId: ORG },
-  admin: { email: 'admin@example.com', name: 'Ada', organizationId: ORG },
-  editor: { email: 'editor@example.com', name: 'Ed', organizationId: ORG },
-  viewer: { email: 'viewer@example.com', name: 'Vera', organizationId: ORG },
-  revoked: { email: 'revoked@example.com', name: 'Rob', organizationId: ORG },
-  stranger: { email: 'stranger@example.com', name: 'Sam', organizationId: ORG },
-  newcomer: {
-    email: 'newcomer@example.com',
-    name: 'Nils',
-    organizationId: ORG,
-  },
-  outsider: {
-    email: 'outsider@other.example',
-    name: 'Otto',
-    organizationId: OTHER_ORG,
-  },
+  owner: person('owner@example.com', 'Olive', ORG),
+  admin: person('admin@example.com', 'Ada', ORG),
+  editor: person('editor@example.com', 'Ed', ORG),
+  viewer: person('viewer@example.com', 'Vera', ORG),
+  revoked: person('revoked@example.com', 'Rob', ORG),
+  stranger: person('stranger@example.com', 'Sam', ORG),
+  newcomer: person('newcomer@example.com', 'Nils', ORG),
+  outsider: person('outsider@other.example', 'Otto', OTHER_ORG),
 };
+
+/**
+ * @param {string} email
+ * @param {string} name
+ * @param {string} organizationId
+ * @returns {{id: string, email: string, name: string, organizationId: string}}
+ */
+function person(email, name, organizationId) {
+  return { id: uid(email), email, name, organizationId };
+}
 
 const DECKS = [
   'deck-owned',
@@ -120,7 +135,7 @@ test.after(() => {
  */
 function userRow(actor) {
   return {
-    id: `user-${actor.email.split('@')[0]}`,
+    id: actor.id,
     organization_id: actor.organizationId,
     email: actor.email,
     name: actor.name,
@@ -145,6 +160,9 @@ function deckRow(overrides) {
     owner_email: ACTORS.owner.email,
     created_by: ACTORS.owner.email,
     updated_by: ACTORS.owner.email,
+    owner_user_id: ACTORS.owner.id,
+    created_by_user_id: ACTORS.owner.id,
+    updated_by_user_id: ACTORS.owner.id,
     visibility: 'private',
     theme: 'default',
     lang: 'nl',
@@ -213,6 +231,9 @@ async function seed() {
         owner_email: ACTORS.outsider.email,
         created_by: ACTORS.outsider.email,
         updated_by: ACTORS.outsider.email,
+        owner_user_id: ACTORS.outsider.id,
+        created_by_user_id: ACTORS.outsider.id,
+        updated_by_user_id: ACTORS.outsider.id,
       }),
     ],
     presentation_collaborators: [

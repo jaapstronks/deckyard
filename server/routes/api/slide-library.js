@@ -222,14 +222,11 @@ async function handleOrganizationUpdate(
       trashed: !!body.trashed,
       actorEmail: email,
       allowTrash: (item) => {
-        // Id-first identity match (T10 PR F2): the creator keeps their
-        // trash right across a rename. Falls back to the e-mail for items
-        // whose creator has no users row.
+        // Identity is the `users.id` (T10 PR F2): the creator keeps their
+        // trash right across a rename, and an item whose creator column is a
+        // defined NULL belongs to nobody but an admin.
         if (authedUser?.isAdmin) return true;
-        return matchesIdentity(authedUser, {
-          userId: item?.createdById,
-          email: item?.createdBy,
-        });
+        return matchesIdentity(authedUser, { userId: item?.createdById });
       },
     });
     if (!r.ok) {
@@ -256,13 +253,9 @@ async function handleOrganizationDelete({ storageScope, res, authedUser }, id) {
   const r = await deleteOrganizationLibraryItem(storageScope, id, {
     actorEmail: actorEmail(authedUser),
     allowDelete: (item) => {
-      // Id-first identity match (T10 PR F2), e-mail fallback for a creator
-      // with no users row.
+      // Identity is the `users.id` (T10 PR F2); see the trash guard above.
       if (authedUser?.isAdmin) return true;
-      return matchesIdentity(authedUser, {
-        userId: item?.createdById,
-        email: item?.createdBy,
-      });
+      return matchesIdentity(authedUser, { userId: item?.createdById });
     },
   });
   if (!r.ok) {

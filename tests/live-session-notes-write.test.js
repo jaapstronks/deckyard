@@ -20,6 +20,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { testScope } from './helpers/storage-scope.js';
+import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -43,6 +44,10 @@ test.before(async () => {
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      // The owner needs a `users` row: the deck's owner id is resolved from the
+      // address at create, and authorship is decided on that id alone
+      // (shared/identity-match.js).
+      users: userRows(OWNER),
     }),
   );
   await initializeStorage();
@@ -236,7 +241,7 @@ test('PUT /notes refuses an author-locked slide (423)', async () => {
     testScope(null, { actorEmail: OWNER }),
     pres.id,
     { slides: pres.slides.map((s) => ({ ...s, lockedByAuthor: true })) },
-    { actorEmail: OWNER, user: { email: OWNER } },
+    { actorEmail: OWNER, user: { id: userIdFor(OWNER), email: OWNER } },
   );
 
   const { res } = await call({

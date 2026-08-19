@@ -49,6 +49,7 @@ import { handlePresentationThumbnail } from '../server/routes/api/presentations/
 import { loadThemeAssets } from '../server/utils/themes.js';
 import { dataDir } from '../server/config/storage-paths.js';
 import { testScope } from './helpers/storage-scope.js';
+import { sessionFor, userRows } from './helpers/identity-fixtures.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -61,12 +62,16 @@ const { createPresentation, getPresentation, updatePresentation } =
   await import('../server/storage/presentations/index.js');
 
 const OWNER = 'owner@example.com';
-const owner = { email: OWNER, isAdmin: false };
+const owner = sessionFor(OWNER, { isAdmin: false });
 
 test.before(async () => {
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      // The owner needs a `users` row: the deck's `owner_user_id` is resolved
+      // from the address at create, and it is the only key ownership is
+      // decided on (shared/identity-match.js).
+      users: userRows(OWNER),
     }),
   );
   await initializeStorage();

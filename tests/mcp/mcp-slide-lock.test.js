@@ -38,6 +38,7 @@ const { repoRoot } = await import('../../server/config/paths.js');
 const { testScope } = await import('../helpers/storage-scope.js');
 const { createPresentation, getPresentation, updatePresentation } =
   await import('../../server/storage/presentations/index.js');
+const { userIdFor, userRows } = await import('../helpers/identity-fixtures.js');
 
 const OWNER = 'owner@example.com';
 const OTHER = 'collab@example.com';
@@ -66,6 +67,10 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
     __setTestDb(
       createFakeDb({
         organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+        // Both people need a `users` row: the MCP tools resolve the session
+        // owner's address to the id the lock policy compares
+        // (shared/identity-match.js).
+        users: userRows(OWNER, OTHER),
       }),
     );
     await initializeStorage();
@@ -89,7 +94,11 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
         ...created,
         visibility: 'organization',
       },
-      { allowVisibilityChange: true, actorEmail: OWNER },
+      {
+        allowVisibilityChange: true,
+        actorEmail: OWNER,
+        actorUserId: userIdFor(OWNER),
+      },
     );
   });
 
@@ -110,6 +119,7 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
     ];
     await updatePresentation(testScope(repoRoot), deckId, doc, {
       actorEmail: OWNER,
+      actorUserId: userIdFor(OWNER),
     });
   });
 

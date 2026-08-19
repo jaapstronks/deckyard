@@ -224,6 +224,7 @@ export async function updatePresentation(storageScope, id, body, opts) {
 
 async function updatePresentationUncached(storageScope, id, body, opts) {
   const ctx = toStorageContext(storageScope, 'updatePresentation', {
+    actorUserId: opts?.actorUserId,
     actorEmail: opts?.actorEmail,
   });
 
@@ -887,7 +888,7 @@ async function updatePresentationRow(id, data, ctx, opts = {}) {
     nextSlides: data.slides,
     nextI18nVersions: data?.i18n?.versions || null,
     user: opts?.user || null,
-    actorEmail: ctx?.actorEmail || '',
+    actorUserId: ctx?.actorUserId || null,
     bypassLockCheck: !!opts?.bypassLockCheck,
     ctx,
   });

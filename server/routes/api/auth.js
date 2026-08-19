@@ -15,6 +15,7 @@ import {
   clearSessionCookie,
   devAuthBypassEnabled,
   devBypassUser,
+  devBypassUserAsync,
   getUserFromRequestAsync,
   setSessionCookie,
   verifyLoginAsync,
@@ -59,7 +60,10 @@ async function handleDevLogin({ req, res }) {
   // If auth isn't enabled, /api/auth/me already returns an admin user, but
   // setting a session cookie makes the client path identical.
   if (authEnabled()) setSessionCookie(req, res, devBypassUser());
-  serveJson(res, 200, { user: devBypassUser() });
+  // The response carries the resolved `users.id`, like every other login
+  // response: the client compares identities on the key, never on an address
+  // (shared/identity-match.js).
+  serveJson(res, 200, { user: await devBypassUserAsync() });
   return true;
 }
 

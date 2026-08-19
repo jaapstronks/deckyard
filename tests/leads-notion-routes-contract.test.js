@@ -71,17 +71,31 @@ const { handleNotion } = await import('../server/routes/api/notion.js');
 // The cast
 // ---------------------------------------------------------------------------
 
-/** @typedef {{email: string, name: string, organizationId: string}} Actor */
+/** @typedef {{id: string, email: string, name: string, organizationId: string}} Actor */
+
+/**
+ * The `users.id` behind an address: ownership is keyed on that id and nothing
+ * else (shared/identity-match.js), so the seeded rows and the sessions acting
+ * on them must agree on it.
+ * @param {string} email
+ * @param {string} name
+ * @param {string} organizationId
+ * @returns {Actor}
+ */
+function person(email, name, organizationId) {
+  return {
+    id: `user-${email.split('@')[0]}`,
+    email,
+    name,
+    organizationId,
+  };
+}
 
 const ACTORS = {
-  owner: { email: 'owner@example.com', name: 'Olive', organizationId: ORG },
-  viewer: { email: 'viewer@example.com', name: 'Vera', organizationId: ORG },
-  stranger: { email: 'stranger@example.com', name: 'Sam', organizationId: ORG },
-  outsider: {
-    email: 'outsider@other.example',
-    name: 'Otto',
-    organizationId: OTHER_ORG,
-  },
+  owner: person('owner@example.com', 'Olive', ORG),
+  viewer: person('viewer@example.com', 'Vera', ORG),
+  stranger: person('stranger@example.com', 'Sam', ORG),
+  outsider: person('outsider@other.example', 'Otto', OTHER_ORG),
 };
 
 const DECKS = ['deck-owned', 'deck-foreign'];
@@ -114,7 +128,7 @@ test.beforeEach(() => {
 /** @param {Actor} actor */
 function userRow(actor) {
   return {
-    id: `user-${actor.email.split('@')[0]}`,
+    id: actor.id,
     organization_id: actor.organizationId,
     email: actor.email,
     name: actor.name,
@@ -135,6 +149,9 @@ function deckRow(overrides) {
     owner_email: ACTORS.owner.email,
     created_by: ACTORS.owner.email,
     updated_by: ACTORS.owner.email,
+    owner_user_id: ACTORS.owner.id,
+    created_by_user_id: ACTORS.owner.id,
+    updated_by_user_id: ACTORS.owner.id,
     visibility: 'private',
     theme: 'default',
     lang: 'nl',
@@ -191,6 +208,9 @@ async function seed() {
         id: 'deck-foreign',
         organization_id: OTHER_ORG,
         owner_email: ACTORS.outsider.email,
+        owner_user_id: ACTORS.outsider.id,
+        created_by_user_id: ACTORS.outsider.id,
+        updated_by_user_id: ACTORS.outsider.id,
         created_by: ACTORS.outsider.email,
         updated_by: ACTORS.outsider.email,
       }),

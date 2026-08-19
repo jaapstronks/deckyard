@@ -16,6 +16,7 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
 
 import { testScope } from './helpers/storage-scope.js';
+import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -57,7 +58,9 @@ function makeCtx(ownerEmail) {
     // What authenticateApiKey puts on the context: who is acting and in which
     // organization. Per-deck checks read the actor from here, not off the deck.
     authedUser: {
-      id: null,
+      // The middleware resolves the key owner's address to this id once per
+      // request; ownership is decided on it (shared/identity-match.js).
+      id: userIdFor(ownerEmail),
       email: ownerEmail,
       role: 'user',
       organizationId: null,
@@ -73,6 +76,7 @@ describe('getPresentationWithAccess', () => {
     __setTestDb(
       createFakeDb({
         organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+        users: userRows(OWNER),
       }),
     );
     await initializeStorage();

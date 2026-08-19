@@ -11,6 +11,7 @@ import { isMultiOrgEnabled } from '../config/features.js';
 import { getDefaultOrganizationId } from '../config/database.js';
 import { envBool, envStr } from '../config/utils.js';
 import { createLogger } from '../utils/logger.js';
+import { DEV_BYPASS_EMAIL, resolveDevBypassUserId } from './dev-bypass.js';
 
 const log = createLogger('auth');
 
@@ -194,14 +195,35 @@ export function devAuthBypassEnabled() {
   return envBool('AUTH_DEV_BYPASS');
 }
 
+/**
+ * The development bypass session, without its `users.id`.
+ *
+ * Synchronous, so the cookie-setting path can use it. Anything that takes an
+ * authorization decision needs the id — ownership is keyed on it and on nothing
+ * else (shared/identity-match.js) — and must use {@link devBypassUserAsync}.
+ *
+ * @returns {Object}
+ */
 export function devBypassUser() {
   return {
-    email: 'dev@local',
+    email: DEV_BYPASS_EMAIL,
     role: 'admin',
     name: 'Dev',
     isAdmin: true,
     v: 'dev',
   };
+}
+
+/**
+ * The development bypass session with its `users.id` resolved (row created on
+ * first use). This is the shape every request path should carry: with it the
+ * bypass user owns the decks they create, exactly like a logged-in user.
+ *
+ * @returns {Promise<Object>}
+ */
+export async function devBypassUserAsync() {
+  const id = await resolveDevBypassUserId();
+  return { ...devBypassUser(), id: id || null };
 }
 
 function sign(secret, payloadB64) {
@@ -279,6 +301,8 @@ export function getUserFromRequest(req) {
       organizationId: getDefaultOrganizationId(),
     };
   if (devAuthBypassEnabled()) {
+    // No id here: resolving it is a database read, and this path is
+    // synchronous and display-only by contract (see the doc comment above).
     const user = devBypassUser();
     return {
       ...user,
@@ -336,7 +360,7 @@ export async function getUserFromRequestAsync(req, ctx) {
       organizationId: getDefaultOrganizationId(),
     };
   if (devAuthBypassEnabled()) {
-    const user = devBypassUser();
+    const user = await devBypassUserAsync();
     return {
       ...user,
       // The bypass pins the organization on the default one and ignores the
@@ -514,7 +538,7 @@ export async function verifyLoginAsync(emailRaw, passwordRaw, ctx) {
       isAdmin: true,
       v: 'anon',
     };
-  if (devAuthBypassEnabled()) return devBypassUser();
+  if (devAuthBypassEnabled()) return devBypassUserAsync();
 
   const email = String(emailRaw || '')
     .trim()

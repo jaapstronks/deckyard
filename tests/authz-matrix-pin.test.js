@@ -1,12 +1,18 @@
 /**
- * The authorization matrix, pinned against today's **email-keyed** behaviour.
+ * The authorization matrix, pinned on the **id-keyed** rule.
  *
  * This is the contract for the identity-decoupling epic (T10; see
- * docs/plans/briefs/identity-decoupling.md). Every ownership/ACL decision
- * currently compares email strings; the epic rebuilds that layer onto the stable
- * `users.id`. That rebuild must be **behaviour-preserving**, and this file is the
- * proof obligation: it captures who may do what *before* a single call site
- * moves, so a later PR that swaps email for id has to keep every cell green.
+ * docs/plans/briefs/identity-decoupling.md). Every ownership/ACL decision keys
+ * on the stable `users.id` — an address is not an identity and is never
+ * compared (D22; shared/identity-match.js). This file is the proof obligation
+ * for the matrix itself: who may do what, cell by cell, so a later change to a
+ * decider has to keep every cell green.
+ *
+ * The matrix was written against the email-keyed layer it replaced and moved
+ * over wholesale when the fallback was retired: the *answers* are unchanged,
+ * only the key each actor and each deck is identified by. The one row that had
+ * to go is "an actor with only an address matches an ownerless deck" — that was
+ * the fallback, and it is gone on purpose.
  *
  * The deciders live in `server/utils/presentation-authz/` and are **pure** — they
  * take plain `pres` / `user` / `collaboratorPermission` objects and touch no
@@ -55,24 +61,34 @@ const {
 // --- Actors -----------------------------------------------------------------
 // Owner and creator are deliberately different emails so a deck can distinguish
 // "owns it" from "authored it" — both grant author-level rights today.
-const OWNER = { email: 'owner@example.com' };
-const CREATOR = { email: 'creator@example.com' };
+const OWNER_ID = '11111111-1111-4111-8111-111111111111';
+const CREATOR_ID = '33333333-3333-4333-8333-333333333333';
+const OWNER = { id: OWNER_ID, email: 'owner@example.com' };
+const CREATOR = { id: CREATOR_ID, email: 'creator@example.com' };
 const OTHER = { email: 'other@example.com' };
 const ADMIN = { email: 'admin@example.com', isAdmin: true };
-const ANON = {}; // authenticated shape with no email (or an unauthenticated actor)
+const ANON = {}; // no id and no email: an unauthenticated actor
+// An actor the instance knows by address alone (an API key whose owner never
+// became a user here). They are *someone* — hasIdentity passes — but they are
+// nobody in particular, so no ownership stamp is theirs.
+const ADDRESS_ONLY = { email: 'owner@example.com' };
 const OPERATOR = { email: 'anonymous', unrestricted: true, isAdmin: true };
 
 // --- Decks ------------------------------------------------------------------
 const privateDeck = {
   id: 'p1',
   visibility: 'private',
+  ownerId: OWNER_ID,
   ownerEmail: 'owner@example.com',
+  createdById: CREATOR_ID,
   createdBy: 'creator@example.com',
 };
 const organizationDeck = {
   id: 'w1',
   visibility: 'organization',
+  ownerId: OWNER_ID,
   ownerEmail: 'owner@example.com',
+  createdById: CREATOR_ID,
   createdBy: 'creator@example.com',
 };
 const viewOnlyOrganizationDeck = {
@@ -114,8 +130,14 @@ describe('canReadPresentation — private deck', () => {
       false,
     );
   });
-  it('an actor with no email cannot read', () => {
+  it('an actor with no identity at all cannot read', () => {
     assert.equal(canReadPresentation({ user: ANON, pres: privateDeck }), false);
+  });
+  it("an actor known only by the owner's address cannot read", () => {
+    assert.equal(
+      canReadPresentation({ user: ADDRESS_ONLY, pres: privateDeck }),
+      false,
+    );
   });
   it('the unrestricted operator can always read', () => {
     assert.equal(
@@ -323,12 +345,24 @@ describe('canChangePresentationVisibility', () => {
       false,
     );
   });
-  it('this decider is NOT short-circuited by the unrestricted flag (email still required)', () => {
-    // Pins current behaviour: canChangePresentationVisibility has no isUnrestricted()
-    // fast-path. The operator wins here only via its isAdmin flag, not unrestricted.
+  it('the unrestricted operator passes as the owner, without a fast-path', () => {
+    // canChangePresentationVisibility still has no isUnrestricted() fast-path.
+    // It does not need one: on an auth-off install there is nobody else, so the
+    // operator matches every ownership stamp by rule (shared/identity-match.js)
+    // and reaches this branch as the owner. The real operator also carries
+    // isAdmin, which grants it a line earlier.
     assert.equal(
       canChangePresentationVisibility({
         user: { email: 'anonymous', unrestricted: true },
+        pres: privateDeck,
+        nextVisibility: 'organization',
+      }),
+      true,
+    );
+    // …and an actor with neither flag nor id is still refused.
+    assert.equal(
+      canChangePresentationVisibility({
+        user: ADDRESS_ONLY,
         pres: privateDeck,
         nextVisibility: 'organization',
       }),

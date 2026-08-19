@@ -141,7 +141,7 @@ pgDescribe(
       assert.equal(belongsInCollection({ user: twin, pres }), false);
     });
 
-    it('a deck whose owner has no users row still resolves on the email', async () => {
+    it('a deck whose owner has no users row belongs to nobody', async () => {
       const external = 'nobody@external.test'; // deliberately NOT in `users`
       const created = await createPresentation(storageScope, {
         title: 'Deck',
@@ -150,9 +150,11 @@ pgDescribe(
       const pres = await getPresentation(storageScope, created.id);
 
       assert.equal(pres.ownerId, null); // defined NULL, the external/legacy path
+      // The address is stamped on the row, but it is not a key: the retired
+      // fallback (D22, decision (a)) is what let it act as one.
       assert.equal(
         canReadPresentation({ user: { id: TWIN_ID, email: external }, pres }),
-        true,
+        false,
       );
       assert.equal(
         canReadPresentation({

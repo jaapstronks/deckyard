@@ -280,12 +280,11 @@ export async function handlePresentationItem(
       broadcastToPresentation(id, PresentationEventTypes.UPDATED, {
         revision: updated.revision,
         modifiedSlideIds: modifiedSlideIds || [],
-        // The actor pair, matching every other identity surface in the epic:
-        // the id is what the receiving editor compares against its own user to
-        // skip its own saves (shared/identity-match.js), the e-mail is display
-        // and the fallback for actors with no users row (external collaborators).
+        // Who saved, as the only key that identifies anyone: the receiving
+        // editor compares it against its own user to skip its own saves
+        // (shared/identity-match.js). Nothing renders it, so no display name
+        // rides along and no address does either (D22).
         actorId: authedUser?.id || null,
-        actorEmail: authedUser?.email || null,
       });
     } catch {
       // Ignore broadcast failures — SSE is best-effort

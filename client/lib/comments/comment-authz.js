@@ -4,8 +4,7 @@
  * Advisory only: these decide which affordance the UI offers. Every operation
  * is authorized again on the server, by the same rule — deck ownership through
  * {@link isOwnerOrCreator} in shared/identity-match.js, which keys on the
- * stable `users.id` and falls back to the email identifier only where no id
- * exists (file mode, external/legacy rows).
+ * stable `users.id` and on nothing else.
  */
 
 import { isOwnerOrCreator } from '../../../shared/identity-match.js';

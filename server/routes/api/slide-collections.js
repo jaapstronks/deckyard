@@ -35,19 +35,16 @@ import { dispatchRoutes } from '../../utils/router.js';
 /**
  * Organization-shelf collections may only be mutated by an admin or the creator.
  *
- * Identity is matched through shared/identity-match.js (id-first, e-mail
- * fallback) rather than raw lowercased e-mail, so the creator keeps their
- * mutate right across a rename (T10 PR F2).
+ * Identity is matched through shared/identity-match.js, on the stable
+ * `users.id` and nothing else, so the creator keeps their mutate right across a
+ * rename (T10 PR F2) and a collection with no creator id is admin-only.
  * @param {object} authedUser
  * @returns {(collection: object) => boolean}
  */
 function organizationMutateGuard(authedUser) {
   return (collection) => {
     if (authedUser?.isAdmin) return true;
-    return matchesIdentity(authedUser, {
-      userId: collection?.createdById,
-      email: collection?.createdBy,
-    });
+    return matchesIdentity(authedUser, { userId: collection?.createdById });
   };
 }
 

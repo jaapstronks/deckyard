@@ -57,7 +57,7 @@ import { isMultiOrgEnabled } from '../config/features.js';
  *   may run unscoped. Reads of a token-addressed deck may; **writes never may**,
  *   because a write without an organization would land on whatever the storage
  *   layer picked — which is the behaviour this module exists to remove.
- * @returns {{organizationId: string|undefined, actorEmail: string|null, crossOrganization: string|undefined}}
+ * @returns {{organizationId: string|undefined, actorUserId: string|null, actorEmail: string|null, crossOrganization: string|undefined}}
  * @throws {TypeError} If the scope states no organization and declares no reason.
  */
 export function resolveScope(
@@ -111,6 +111,10 @@ export function resolveScope(
 
   return {
     organizationId,
+    // Who is acting, as the only key that identifies anyone (D22; see
+    // shared/identity-match.js). The address beside it is what gets *stamped*
+    // on a row for display; the id is what a write path compares.
+    actorUserId: storageScope.actorUserId ?? null,
     actorEmail: storageScope.actorEmail ?? null,
     crossOrganization,
   };
@@ -245,6 +249,7 @@ export function toStorageContext(
   const resolved = resolveScope(storageScope, operation, resolveOpts);
   return {
     ...resolved,
+    actorUserId: opts.actorUserId ?? resolved.actorUserId ?? null,
     actorEmail:
       opts.actorEmail ||
       opts.userEmail ||

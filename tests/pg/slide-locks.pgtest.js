@@ -31,8 +31,22 @@ import {
 const CTX = { organizationId: 'org-pg-test' };
 const PID = 'deck-1';
 const SID = 'slide-1';
-const ALICE = { email: 'alice@example.com', name: 'Alice' };
-const BOB = { email: 'bob@example.com', name: 'Bob' };
+// The organization the seeded people belong to (`users.organization_id` has a
+// foreign key; the locks themselves carry the free-form CTX organization).
+const ORG = '99999999-9999-4999-8999-999999999999';
+// A lock is held by a `users.id` (shared/identity-match.js); the address and
+// name ride along for display. These ids need no `users` row: nothing in this
+// file resolves them, it only compares them.
+const ALICE = {
+  userId: '11111111-1111-4111-8111-111111111111',
+  email: 'alice@example.com',
+  name: 'Alice',
+};
+const BOB = {
+  userId: '22222222-2222-4222-8222-222222222222',
+  email: 'bob@example.com',
+  name: 'Bob',
+};
 
 pgDescribe('acquireSlideLock (real PostgreSQL)', () => {
   /** @type {import('kysely').Kysely<any>} */
@@ -47,7 +61,25 @@ pgDescribe('acquireSlideLock (real PostgreSQL)', () => {
   });
 
   beforeEach(async () => {
-    await truncate(db, 'slide_locks');
+    // A lock's holder_user_id is a real foreign key, so the holders have to
+    // exist: identity is the id, and the id is a row (D22).
+    await truncate(db, 'slide_locks', 'users', 'organizations');
+    await db
+      .insertInto('organizations')
+      .values({ id: ORG, name: 'Default', slug: 'default' })
+      .execute();
+    await db
+      .insertInto('users')
+      .values(
+        [ALICE, BOB].map((person) => ({
+          id: person.userId,
+          organization_id: ORG,
+          email: person.email,
+          name: person.name,
+          role: 'user',
+        })),
+      )
+      .execute();
   });
 
   it('acquires a free slide and persists the holder', async () => {

@@ -11,7 +11,7 @@ import { matchesIdentity } from '../../../shared/identity-match.js';
  * @param {Object} deps.api - API client
  * @param {string} deps.presentationId - Current presentation ID
  * @param {Object} deps.pres - Shared mutable presentation reference
- * @param {Object} deps.user - The current user ({ id, email }), for self-echo skip
+ * @param {Object} deps.user - The current user ({ id }), for self-echo skip
  * @param {Function} deps.getSelectedSlideId - Returns currently selected slide ID
  * @param {Function} deps.getCurrentLockedSlideId - Returns slide ID locked by this user
  * @param {Function} deps.rerenderSlideList - Rerender the slide list panel
@@ -39,11 +39,10 @@ export function createSlideUpdateHandler({
     const { data } = e.detail || {};
     if (!data) return;
 
-    // Self-ignore: skip events from our own saves. Id-primary, e-mail fallback
-    // (shared/identity-match.js) — the same rule the server enforces, so a
-    // renamed editor still recognizes their own save.
-    if (matchesIdentity(user, { userId: data.actorId, email: data.actorEmail }))
-      return;
+    // Self-ignore: skip events from our own saves, on the stable id the event
+    // carries — the same rule the server enforces (shared/identity-match.js),
+    // so a renamed editor still recognizes their own save.
+    if (matchesIdentity(user, { userId: data.actorId })) return;
 
     // Revision check: skip stale events
     if (typeof data.revision === 'number' && data.revision <= pres.revision)

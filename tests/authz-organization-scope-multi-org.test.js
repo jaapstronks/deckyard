@@ -119,6 +119,7 @@ function seedDb() {
         org: ORG_A,
         visibility: 'private',
         owner: 'bob@beta.example',
+        ownerId: 'user-bob',
       }),
     ],
   });
@@ -142,7 +143,13 @@ function person({ id, org, email }) {
   };
 }
 
-function deckRow({ id, org, visibility, owner = 'carol@alpha.example' }) {
+function deckRow({
+  id,
+  org,
+  visibility,
+  owner = 'carol@alpha.example',
+  ownerId = null,
+}) {
   return {
     id,
     organization_id: org,
@@ -150,6 +157,12 @@ function deckRow({ id, org, visibility, owner = 'carol@alpha.example' }) {
     owner_email: owner,
     created_by: owner,
     updated_by: owner,
+    // Ownership is decided on the id, not the address (identity-match.js).
+    // 'carol@alpha.example' has no `users` row, so her decks are ownerless —
+    // which is exactly the shape the organization-visibility tests want.
+    owner_user_id: ownerId,
+    created_by_user_id: ownerId,
+    updated_by_user_id: ownerId,
     visibility,
     theme: 'default',
     lang: 'nl',

@@ -73,29 +73,45 @@ const {
 
 /** @typedef {{email: string, name: string, organizationId: string, isAdmin?: boolean}} Actor */
 
+/**
+ * The `users.id` an address belongs to: ownership is decided on that id and on
+ * nothing else (shared/identity-match.js), so the seeded rows and the sessions
+ * acting on them have to agree.
+ * @param {string} email
+ * @returns {string}
+ */
+function uid(email) {
+  return `user-${email.split('@')[0]}`;
+}
+
 const ACTORS = {
   owner: {
+    id: uid('owner@example.com'),
     email: 'owner@example.com',
     name: 'Olive Owner',
     organizationId: ORG,
   },
   admin: {
+    id: uid('admin@example.com'),
     email: 'admin@example.com',
     name: 'Ada Admin',
     organizationId: ORG,
     isAdmin: true,
   },
   author: {
+    id: uid('author@example.com'),
     email: 'author@example.com',
     name: 'Andy Author',
     organizationId: ORG,
   },
   member: {
+    id: uid('member@example.com'),
     email: 'member@example.com',
     name: 'Mia Member',
     organizationId: ORG,
   },
   outsider: {
+    id: uid('otto@other.example'),
     email: 'otto@other.example',
     name: 'Otto Outsider',
     organizationId: OTHER_ORG,
@@ -126,7 +142,7 @@ test.after(() => {
 /** @param {Actor} actor */
 function userRow(actor) {
   return {
-    id: `user-${actor.email.split('@')[0]}`,
+    id: actor.id,
     organization_id: actor.organizationId,
     email: actor.email,
     name: actor.name,
@@ -151,6 +167,9 @@ function deckRow() {
     owner_email: ACTORS.owner.email,
     created_by: ACTORS.owner.email,
     updated_by: ACTORS.owner.email,
+    owner_user_id: ACTORS.owner.id,
+    created_by_user_id: ACTORS.owner.id,
+    updated_by_user_id: ACTORS.owner.id,
     visibility: 'organization',
     theme: 'default',
     lang: 'nl',

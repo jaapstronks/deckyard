@@ -254,15 +254,10 @@ export function createSlideLockManager({
         case 'slide:locked':
           if (data.slideId && data.lock) {
             locks[data.slideId] = data.lock;
-            // Locked by someone else unless the holder is me. Id-primary, e-mail
-            // fallback (shared/identity-match.js) — the lock payload carries
-            // holderId, so a renamed holder still recognizes their own lock.
-            if (
-              !matchesIdentity(user, {
-                userId: data.lock.holderId,
-                email: data.lock.holderEmail,
-              })
-            ) {
+            // Locked by someone else unless the holder is me. Decided on the
+            // stable id the payload carries (shared/identity-match.js), so a
+            // renamed holder still recognizes their own lock.
+            if (!matchesIdentity(user, { userId: data.lock.holderId })) {
               lockedByOthers.add(data.slideId);
             }
             emitLocksChanged();

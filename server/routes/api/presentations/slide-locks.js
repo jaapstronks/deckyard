@@ -26,12 +26,23 @@ import {
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { matchesIdentity } from '../../../../shared/identity-match.js';
 
-/** The identity an authed user carries into a slide-lock write. */
+/**
+ * The identity an authed user carries into a slide-lock call.
+ *
+ * `userId` decides who holds a lock; the address and name ride along for
+ * display only. `unrestricted` marks the auth-off operator, who has no
+ * `users.id` and is the only person on their instance — see
+ * shared/identity-match.js.
+ *
+ * @param {Object} [authedUser]
+ * @returns {{email: string|undefined, name: string|undefined, userId: string|null, unrestricted: boolean}}
+ */
 function lockActor(authedUser) {
   return {
     email: authedUser?.email,
     name: authedUser?.name,
     userId: authedUser?.id || null,
+    unrestricted: authedUser?.unrestricted === true,
   };
 }
 
@@ -96,11 +107,8 @@ export async function handleSlideLocksList(
   const locks = await getSlideLocks(storageScope, id);
 
   // Also include list of slides locked by others (for UI)
-  const lockedByOthers = authedUser?.email
-    ? await getLockedByOthers(storageScope, id, {
-        email: authedUser.email,
-        userId: authedUser?.id || null,
-      })
+  const lockedByOthers = authedUser
+    ? await getLockedByOthers(storageScope, id, lockActor(authedUser))
     : [];
 
   serveJson(res, 200, {
@@ -133,11 +141,7 @@ export async function handleSlideLockStatus(
   const lock = await getSlideLock(storageScope, presentationId, slideId);
 
   const isHolder =
-    !!lock &&
-    matchesIdentity(authedUser, {
-      userId: lock.holderId,
-      email: lock.holderEmail,
-    });
+    !!lock && matchesIdentity(authedUser, { userId: lock.holderId });
 
   serveJson(res, 200, { ok: true, lock, isHolder });
   return true;
@@ -169,9 +173,9 @@ export async function handleSlideLockAcquire(
     lockActor(authedUser),
   );
 
-  // Broadcast lock event to other clients. `result.lock` carries holderId
-  // alongside holderEmail/holderName, so listeners decide "is this mine?" on
-  // the stable id (shared/identity-match.js), not a raw e-mail compare.
+  // Broadcast lock event to other clients. `result.lock` carries holderId, so
+  // listeners decide "is this mine?" on the stable id — the only key there is
+  // (shared/identity-match.js).
   if (result.ok) {
     broadcastToPresentation(presentationId, SlideLockEventTypes.LOCKED, {
       slideId,
@@ -201,10 +205,12 @@ export async function handleSlideLockRefresh(
   });
   if (!pres) return true;
 
-  const result = await refreshSlideLock(storageScope, presentationId, slideId, {
-    email: authedUser?.email,
-    userId: authedUser?.id || null,
-  });
+  const result = await refreshSlideLock(
+    storageScope,
+    presentationId,
+    slideId,
+    lockActor(authedUser),
+  );
 
   return serveLockResult(res, result);
 }
@@ -230,10 +236,12 @@ export async function handleSlideLockRelease(
   });
   if (!pres) return true;
 
-  const result = await releaseSlideLock(storageScope, presentationId, slideId, {
-    email: authedUser?.email,
-    userId: authedUser?.id || null,
-  });
+  const result = await releaseSlideLock(
+    storageScope,
+    presentationId,
+    slideId,
+    lockActor(authedUser),
+  );
 
   // Broadcast unlock event to other clients. The payload carries only the
   // slide: `releasedBy` was never read by any client (the receiver deletes the
@@ -267,10 +275,11 @@ export async function handleSlideLocksReleaseAll(
   });
   if (!pres) return true;
 
-  const result = await releaseAllUserSlideLocks(storageScope, presentationId, {
-    email: authedUser?.email,
-    userId: authedUser?.id || null,
-  });
+  const result = await releaseAllUserSlideLocks(
+    storageScope,
+    presentationId,
+    lockActor(authedUser),
+  );
 
   // Broadcast that locks have changed. Listeners re-fetch the whole lock set on
   // this event, so who released them is not consulted — `releasedBy` was dead

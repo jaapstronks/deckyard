@@ -38,14 +38,14 @@ export async function handlePresentationsTrashList({
   const items = await listTrashedPresentations(storageScope);
 
   // Filter to only show items the user can see (owner, creator, trasher, or
-  // admin). Identity is matched through shared/identity-match.js (id-first,
-  // e-mail fallback) rather than raw lowercased e-mail, so a renamed user
-  // still sees the items they own or trashed (T10 PR F2).
+  // admin). Identity is matched through shared/identity-match.js, on the stable
+  // `users.id` and nothing else, so a renamed user still sees the items they
+  // own or trashed (T10 PR F2).
   const filtered = items.filter((p) => {
     if (authedUser?.isAdmin) return true;
     return (
       isOwnerOrCreator(authedUser, p) ||
-      matchesIdentity(authedUser, { userId: p.trashedById, email: p.trashedBy })
+      matchesIdentity(authedUser, { userId: p.trashedById })
     );
   });
 
@@ -76,15 +76,12 @@ export async function handlePresentationRestore(
   }
 
   // Check authorization: owner, creator, trasher, or admin. Matched through
-  // shared/identity-match.js (id-first, e-mail fallback) so a rename does not
+  // shared/identity-match.js on the stable `users.id`, so a rename does not
   // strip the trasher of their restore right (T10 PR F2).
   const canRestore =
     authedUser?.isAdmin ||
     isOwnerOrCreator(authedUser, existing) ||
-    matchesIdentity(authedUser, {
-      userId: existing.trashedById,
-      email: existing.trashedBy,
-    });
+    matchesIdentity(authedUser, { userId: existing.trashedById });
 
   if (!canRestore) {
     return forbidden(

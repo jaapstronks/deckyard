@@ -21,6 +21,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
+import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
   .join('-')
@@ -50,6 +51,7 @@ async function installDb() {
       { id: ORG, name: 'Default', slug: 'default' },
       { id: OTHER_ORG, name: 'Other', slug: 'other' },
     ],
+    users: userRows(KEY_OWNER),
     slide_library: [
       libraryRow({
         id: 'item-team',
@@ -105,9 +107,9 @@ function libraryRow({ id, organization_id, shelf, name, trashed_at = null }) {
     trashed_at,
     trashed_by: null,
     created_by: KEY_OWNER,
-    created_by_user_id: null,
+    created_by_user_id: userIdFor(KEY_OWNER),
     updated_by: KEY_OWNER,
-    updated_by_user_id: null,
+    updated_by_user_id: userIdFor(KEY_OWNER),
     created_at: '2026-07-01T00:00:00.000Z',
     updated_at: '2026-07-01T00:00:00.000Z',
   };
@@ -120,6 +122,10 @@ function deckRow({ id, owner }) {
     owner_email: owner,
     created_by: owner,
     updated_by: owner,
+    // Ownership is decided on the id, not the address (identity-match.js).
+    owner_user_id: userIdFor(owner),
+    created_by_user_id: userIdFor(owner),
+    updated_by_user_id: userIdFor(owner),
     title: id,
     description: null,
     theme: 'default',
@@ -194,6 +200,7 @@ function makeCtx(
     storageScope: {
       repoRoot: process.cwd(),
       organizationId: ORG,
+      actorUserId: userIdFor(KEY_OWNER),
       actorEmail: KEY_OWNER,
     },
     apiKey: {
@@ -204,7 +211,8 @@ function makeCtx(
       organizationId: ORG,
     },
     authedUser: {
-      id: null,
+      // The middleware resolves the key owner to this id once per request.
+      id: userIdFor(KEY_OWNER),
       email: KEY_OWNER,
       role: 'user',
       organizationId: ORG,

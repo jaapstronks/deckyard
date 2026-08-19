@@ -69,18 +69,25 @@ The rule is enforced by `tests/response-identity-shape.test.js`, which scans
 the storage return literals and `serveJson` payloads for address-shaped keys
 and bare display stamps. It carries two allowlists, each entry with a reason.
 
+**The address is no longer a key.** `matchesIdentity` (`shared/identity-match.js`)
+compares `users.id` and nothing else since decision D22 (a): a stamp whose id
+column is a defined `NULL` — a legacy row, an external collaborator — names
+nobody, and no address is consulted to rescue it. That fallback was the reason
+an address had to travel at all, because the client mirrors could not answer "is
+this mine?" without one. With it gone, the remaining conversions are renames
+rather than decisions. See `permission-model.md` § _Identity: which key decides_
+for the rule and its two boundary cases (the auth-off operator, the dev bypass).
+
 Not every surface is converted yet. The remaining entries are marked
-`STILL TO CONVERT` in that test and share one blocker: the address is not only
-displayed there, it is also **compared** — by a client mirror deciding which
-affordance to show, or by a server guard falling back to the address for rows
-whose id column is a defined `NULL`. Converting those means retiring the email
-fallback in the matching rule first, which is a decision about legacy rows
-rather than a rename. Deck `createdBy`/`trashedBy`, the library and collection
-creator stamps, the comment author and the slide-lock holder are in that set.
+`STILL TO CONVERT` in that test: deck `createdBy`/`trashedBy`, the library and
+collection creator stamps, the share-link and admin authoring stamps, the
+comment author and the slide-lock holder. Comments additionally need an
+`author_user_id` column before their author can be named by id.
 
 Converted today: deck `updatedBy` (every list and single read, including the
 shared-with-me list and the popular board), version `createdBy`, notification
-and activity-event `actor`, and the library/collection `updatedBy`.
+and activity-event `actor`, the library/collection `updatedBy`, and the collab
+SSE `slides.updated` actor (which now carries `actorId` alone).
 
 ## Public API v1
 

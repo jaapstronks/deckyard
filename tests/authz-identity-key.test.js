@@ -1,20 +1,20 @@
 /**
  * The authorization layer keyed on `users.id` (T10, PR A).
  *
- * tests/authz-matrix-pin.test.js pins what the deciders answer for the shapes
- * that carry **no** user id — file mode, legacy rows, bare `{ email }` actors —
- * and stays green unchanged. This file covers the other half: what happens once
- * both sides carry the stable key, and where the email fallback still applies.
+ * tests/authz-matrix-pin.test.js pins the whole decider matrix. This file covers
+ * the rule underneath it: what the key *is*.
  *
- * The rule under test lives in shared/identity-match.js — shared, because the
- * client's advisory mirrors decide the same question the same way:
+ * The rule lives in shared/identity-match.js — shared, because the client's
+ * advisory mirrors decide the same question the same way:
  *
- *   1. actor id + stamped id present → the ids decide, no email is consulted;
- *   2. either missing → the emails decide, exactly as before.
+ *   1. both sides carry a `users.id` and the ids are equal → the same person;
+ *   2. anything else → not the same person. No address is ever compared.
  *
  * Rule 1 is why an email is no longer an identity: a matching email cannot buy
  * access to a deck stamped with someone else's id, and a mismatched email cannot
- * take it away from the id it is stamped with.
+ * take it away from the id it is stamped with. Rule 2 is the retirement of the
+ * old address fallback (D22, decision (a)): a stamp whose id column is a defined
+ * NULL — a legacy row, an external collaborator — names nobody at all.
  *
  * Run with: node --test tests/authz-identity-key.test.js
  */
@@ -84,21 +84,37 @@ describe('identity-match — the rule itself', () => {
       false,
     );
   });
-  it('an id missing on either side: the emails decide', () => {
+  it('an id missing on either side: nobody matches', () => {
+    // The actor has no id: an API key owner with no users row, say.
     assert.equal(
       matchesIdentity(
         { email: 'a@example.com' },
         { userId: OWNER_ID, email: 'a@example.com' },
       ),
-      true,
+      false,
     );
-    assert.equal(matchesIdentity(owner, { email: 'owner@example.com' }), true);
+    // The stamp has no id: a legacy row written before the address had an
+    // account. It names nobody, not even the person whose address it holds.
+    assert.equal(matchesIdentity(owner, { email: 'owner@example.com' }), false);
     assert.equal(
       matchesIdentity(owner, { email: 'someone@example.com' }),
       false,
     );
+    // Neither side has one.
+    assert.equal(
+      matchesIdentity({ email: 'a@example.com' }, { email: 'a@example.com' }),
+      false,
+    );
+  });
+  it('the auth-off operator matches every stamp: there is nobody else', () => {
+    const operator = { email: 'anonymous', unrestricted: true };
+    assert.equal(matchesIdentity(operator, { userId: OWNER_ID }), true);
+    assert.equal(matchesIdentity(operator, {}), true);
+    assert.equal(isOwnerOrCreator(operator, dualKeyDeck), true);
   });
   it('an actor is identifiable by id alone, by email alone, or not at all', () => {
+    // hasIdentity answers "is anyone there?", not "who is this?": an actor
+    // known only by an address passes it and still matches no stamp.
     assert.equal(hasIdentity({ id: OWNER_ID }), true);
     assert.equal(hasIdentity({ email: 'a@example.com' }), true);
     assert.equal(hasIdentity({}), false);
@@ -190,10 +206,11 @@ describe('a mismatched email does not remove an identity', () => {
   });
 });
 
-describe('the email fallback covers the id-less shapes', () => {
-  // An external/legacy row: the email never matched a `users` row, so the id
-  // column is a defined NULL (identity-resolver.js). Behaviour must be exactly
-  // what it was before the id existed.
+describe('an id-less stamp names nobody (the retired fallback)', () => {
+  // An external/legacy row: the address never matched a `users` row, so the id
+  // column is a defined NULL (identity-resolver.js). It used to fall back to
+  // comparing addresses; D22 decision (a) retired that, which is what lets the
+  // address stay out of the response entirely.
   const legacyDeck = {
     id: 'p2',
     visibility: 'private',
@@ -204,30 +221,34 @@ describe('the email fallback covers the id-less shapes', () => {
   };
   const legacyUser = { id: OTHER_ID, email: 'legacy@example.com' };
 
-  it('an id-carrying user still matches a deck stamped only by email', () => {
+  it('the person whose address is stamped no longer matches it', () => {
     assert.equal(
       canReadPresentation({ user: legacyUser, pres: legacyDeck }),
-      true,
+      false,
     );
     assert.equal(
       canWritePresentation({ user: legacyUser, pres: legacyDeck }),
-      true,
+      false,
     );
     assert.equal(
       canDeletePresentation({ user: legacyUser, pres: legacyDeck }),
-      true,
+      false,
+    );
+    assert.equal(
+      belongsInCollection({ user: legacyUser, pres: legacyDeck }),
+      false,
     );
   });
-  it('an id-less user (file mode, dev bypass) still matches a deck that has ids', () => {
+  it('an id-less actor matches a deck that has ids just as little', () => {
     assert.equal(
       canReadPresentation({
         user: { email: 'owner@example.com' },
         pres: dualKeyDeck,
       }),
-      true,
+      false,
     );
   });
-  it('an unrelated user is still refused on both shapes', () => {
+  it('an unrelated user is refused on both shapes', () => {
     assert.equal(
       canReadPresentation({ user: stranger, pres: legacyDeck }),
       false,
@@ -244,7 +265,7 @@ describe('the email fallback covers the id-less shapes', () => {
 
 describe('one stamp resolved, the other not', () => {
   // Half-resolved rows are normal: a deck created by a real user and later
-  // stamped with an external creator email, or the reverse.
+  // stamped with an external creator address, or the reverse.
   const halfDeck = {
     id: 'p3',
     visibility: 'private',
@@ -254,14 +275,14 @@ describe('one stamp resolved, the other not', () => {
     createdBy: 'external@example.com',
   };
 
-  it('the owner matches on the id, the external creator on the email', () => {
+  it('the owner matches on the id; the external creator matches nothing', () => {
     assert.equal(isOwnerOrCreator(owner, halfDeck), true);
     assert.equal(
       isOwnerOrCreator(
         { id: OTHER_ID, email: 'external@example.com' },
         halfDeck,
       ),
-      true,
+      false,
     );
   });
   it('the email twin of the id-stamped owner is still refused', () => {

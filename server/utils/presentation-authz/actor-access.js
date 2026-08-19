@@ -15,8 +15,10 @@
  *     owner, the MCP session owner). The deciders key on `users.id`
  *     (shared/identity-match.js), so this module resolves it through the identity
  *     resolver once per check. An email with no `users` row resolves to a
- *     defined NULL and simply leaves the actor id-less, putting the deciders on
- *     their email fallback — the same answer as before;
+ *     defined NULL, which leaves the actor id-less — and an id-less actor
+ *     matches no ownership stamp (D22), so such a key reaches only what being
+ *     *a* user grants (organization visibility), never what being *the* owner
+ *     does;
  *   - the **organization** is the one the key or session acts in, and it
  *     gates the one grant that rests on "we are in the same organization"
  *     (`isSameOrganization`). It used to be read off the presentation being
@@ -93,15 +95,17 @@ function actorUser(actor, actorUserId = null) {
 /**
  * Resolve an actor's email to its stable `users.id`, if the instance knows one.
  *
- * Returns null for an email with no user row (an external/legacy identity, or
- * file mode, which has no `users` table) — a defined state, not a failure: the
- * deciders then fall back to the email identifier, which is what such an actor
- * has. See server/storage/identity-resolver.js.
+ * Returns null for an email with no user row (an external or legacy identity) —
+ * a defined state, not a failure. Such an actor carries no key, so it matches
+ * no ownership stamp. See server/storage/identity-resolver.js.
  *
  * @param {Actor} [actor]
  * @returns {Promise<string|null>}
  */
 async function resolveActorUserId(actor) {
+  // Already resolved at the request boundary (the public API resolves the key
+  // owner once per request) — no reason to ask the database again.
+  if (actor?.id) return actor.id;
   if (!actor?.email) return null;
   const resolution = await resolveIdentityByEmail(actor.email);
   return resolution?.userId || null;

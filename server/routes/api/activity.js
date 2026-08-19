@@ -152,8 +152,7 @@ export const handleActivity = withErrorHandler('activity', (ctx) => {
  * @param {import('../../storage/scope.js').StorageScope} args.storageScope - The request's storage scope
  * @param {object} args.authedUser
  * @param {object} args.opts - listActivityEvents filters (limit, offset,
- *   presentationId, eventType, eventTypes[], actorEmail, excludeActorEmail,
- *   since, until)
+ *   presentationId, eventType, eventTypes[], excludeActorEmail, since, until)
  * @returns {Promise<{events: object[], total: number, limit: number, offset: number}>}
  */
 export async function getEnrichedActivity({ storageScope, authedUser, opts }) {

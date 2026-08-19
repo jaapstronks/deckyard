@@ -16,6 +16,7 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
 
 import { testScope } from '../helpers/storage-scope.js';
+import { userRows } from '../helpers/identity-fixtures.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -41,6 +42,10 @@ describe('loadPresentationChecked', () => {
     __setTestDb(
       createFakeDb({
         organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+        // Both people need a `users` row: a deck's owner id is resolved from
+        // the address at create, and ownership is decided on that id alone
+        // (shared/identity-match.js).
+        users: userRows(OWNER, OTHER),
       }),
     );
     await initializeStorage();

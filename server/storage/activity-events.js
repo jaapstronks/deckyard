@@ -127,12 +127,11 @@ export async function listActivityEvents(scope, opts = {}) {
       query = query.where('event_type', 'in', opts.eventTypes);
     }
 
-    // Filter by actor
-    if (opts?.actorEmail) {
-      query = query.where('actor_email', '=', opts.actorEmail.toLowerCase());
-    }
-
-    // Exclude events by actor (for "others' activity")
+    // Exclude events by actor (for "others' activity"). There is no positive
+    // actor filter: the route that offered one keyed it on an address no
+    // response carries any more (D22) and no client ever sent it.
+    // `excludeActorEmail` is different — the caller passes their *own* address,
+    // which they plainly have.
     if (opts?.excludeActorEmail) {
       query = query.where(
         'actor_email',

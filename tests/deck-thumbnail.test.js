@@ -29,6 +29,7 @@ import { dataDir } from '../server/config/storage-paths.js';
 import { loadThemeAssets } from '../server/utils/themes.js';
 import { handlePresentationThumbnail } from '../server/routes/api/presentations/thumbnail.js';
 import { testScope } from './helpers/storage-scope.js';
+import { sessionFor, userRows } from './helpers/identity-fixtures.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -44,6 +45,10 @@ test.before(async () => {
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      // The owner needs a `users` row: a deck's `owner_user_id` is resolved
+      // from the address at create, and ownership is decided on that id alone
+      // (shared/identity-match.js).
+      users: userRows('owner@example.com'),
     }),
   );
   await initializeStorage();
@@ -242,7 +247,7 @@ test('route serves a cached webp to the owner', async () => {
       storageScope: testScope(),
       req: { method: 'GET' },
       res,
-      authedUser: { email: 'owner@example.com' },
+      authedUser: sessionFor('owner@example.com'),
     },
     created.id,
   );
@@ -288,7 +293,7 @@ test('route 404s for an unknown deck', async () => {
       storageScope: testScope(),
       req: { method: 'GET' },
       res,
-      authedUser: { email: 'owner@example.com' },
+      authedUser: sessionFor('owner@example.com'),
     },
     'does-not-exist',
   );
@@ -411,7 +416,7 @@ test('route serves the previous raster instead of 404 while the new one renders'
       storageScope: testScope(),
       req: { method: 'GET' },
       res,
-      authedUser: { email: 'owner@example.com' },
+      authedUser: sessionFor('owner@example.com'),
     },
     created.id,
   );

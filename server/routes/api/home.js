@@ -42,8 +42,10 @@ import {
  * Build the activity filter opts from the request, mirroring `/api/activity`.
  * Defaults match the Home rail: at most 20 recent events, excluding the user's
  * own (`excludeSelf=false` opts out). The full storage filter surface
- * (since / until / actorEmail / eventTypes[]) is threaded through so a caller
- * can narrow the feed without a second endpoint.
+ * (since / until / eventTypes[]) is threaded through so a caller can narrow the
+ * feed without a second endpoint. There is no actor filter: the only one that
+ * ever existed keyed on an address the response no longer carries (D22), and no
+ * client ever sent it.
  *
  * @param {URLSearchParams} searchParams
  * @param {string} email - current user's email (for excludeSelf)
@@ -62,9 +64,6 @@ export function buildActivityOpts(searchParams, email) {
 
   const eventTypes = searchParams.getAll('eventTypes[]');
   if (eventTypes.length > 0) opts.eventTypes = eventTypes;
-
-  const actorEmail = searchParams.get('actorEmail');
-  if (actorEmail) opts.actorEmail = actorEmail;
 
   const since = searchParams.get('since');
   if (since) opts.since = since;
