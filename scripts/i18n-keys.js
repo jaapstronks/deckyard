@@ -10,6 +10,14 @@
  * runtime (e.g. `t(`slideType.${type}.label`, …)` in slide-library/controls.js);
  * those are unknowable here and are deliberately excluded rather than guessed —
  * see DYNAMIC_KEY_PREFIXES for the families they cover.
+ *
+ * A `t()` call is not the only *static* spelling, though. Descriptor tables pass
+ * the key and its English fallback as a paired `<x>Key` / `<x>Default` property
+ * and hand both to `t()` later (`WEBHOOK_CONFIGS` in
+ * client/views/settings/sections/admin-webhooks-section.js is the canonical
+ * shape). Those keys are every bit as static, and they used to be invisible
+ * here — which is how six webhook keys and three settings-tab keys went missing
+ * from Tier 1 without the coverage gate noticing. DESCRIPTOR_PAIR picks them up.
  */
 
 import fs from 'node:fs/promises';
@@ -83,25 +91,34 @@ async function* walkJs(dir) {
   }
 }
 
+// <x>Key: '<key>', <x>Default: '<English fallback>' — a descriptor-table entry
+// whose two halves are handed to t() elsewhere. The prefix backreference is
+// what makes this a *pair* rather than two unrelated properties, so an
+// unrelated `settingsKey` next to a `titleDefault` cannot match.
+const DESCRIPTOR_PAIR =
+  /\b(\w+)Key:\s*(['"])([\w.-]+)\2\s*,\s*\1Default:\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g;
+
 /**
- * Extract every static t() key used in the client.
+ * Extract every static t() key used in the client, whether it is spelled at the
+ * call site or in a descriptor table (see the module header).
  * @param {string} clientDir - absolute path to client/
  * @returns {Promise<Map<string, { file: string, fallback: string|null }>>}
  */
 export async function extractUsedKeys(clientDir) {
   /** @type {Map<string, { file: string, fallback: string|null }>} */
   const used = new Map();
+  /** @param {string} key @param {string|null} fallback @param {string} file */
+  const record = (key, fallback, file) => {
+    const prev = used.get(key);
+    // Prefer the first call site that actually supplies a fallback.
+    if (!prev || (prev.fallback == null && fallback != null)) {
+      used.set(key, { file, fallback });
+    }
+  };
   for await (const file of walkJs(clientDir)) {
     const src = await fs.readFile(file, 'utf8');
-    for (const m of src.matchAll(T_CALL)) {
-      const key = m[2];
-      const fallback = m[3] ?? m[4] ?? null;
-      const prev = used.get(key);
-      // Prefer the first call site that actually supplies a fallback.
-      if (!prev || (prev.fallback == null && fallback != null)) {
-        used.set(key, { file, fallback });
-      }
-    }
+    for (const m of src.matchAll(T_CALL)) record(m[2], m[3] ?? m[4] ?? null, file);
+    for (const m of src.matchAll(DESCRIPTOR_PAIR)) record(m[3], m[4] ?? m[5] ?? null, file);
   }
   return used;
 }
