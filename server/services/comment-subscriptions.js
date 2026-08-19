@@ -96,8 +96,11 @@ export function buildCandidates({
 
   if (parentComment?.authorEmail) add(parentComment.authorEmail, 'reply');
 
+  // The owner's address is the deck's contact address (D22). The creator no
+  // longer carries one — they are named, not addressed — so a creator who is
+  // not the owner reaches this list through the collaborator rows below, which
+  // is where a former owner lands after a transfer.
   add(presentation?.ownerEmail, 'participating');
-  add(presentation?.createdBy, 'participating');
   for (const email of threadParticipants) add(email, 'participating');
 
   for (const email of watchers) add(email, 'watching');

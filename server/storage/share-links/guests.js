@@ -13,7 +13,11 @@ import {
 } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
 import { generateGuestToken } from './index.js';
-import { formatShareLink, getValidShareLinkById } from './crud.js';
+import {
+  formatShareLink,
+  getValidShareLinkById,
+  shareLinkCreatorNames,
+} from './crud.js';
 
 /**
  * Format a database row into a guest object.
@@ -246,7 +250,10 @@ export async function verifyGuestEmail(verificationToken) {
     return {
       ok: true,
       guest: formatGuest(updated),
-      shareLink: formatShareLink(shareLink),
+      shareLink: formatShareLink(
+        shareLink,
+        await shareLinkCreatorNames([shareLink]),
+      ),
       sessionToken,
       sessionExpiresAt: sessionExpires,
     };
@@ -308,7 +315,10 @@ export async function getGuestBySessionToken(sessionToken) {
 
     return {
       guest: formatGuest(guest),
-      shareLink: formatShareLink(shareLink),
+      shareLink: formatShareLink(
+        shareLink,
+        await shareLinkCreatorNames([shareLink]),
+      ),
     };
   });
 }

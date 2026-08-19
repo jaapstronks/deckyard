@@ -347,6 +347,7 @@ export async function listPresentationsSharedWithUser(scope, userEmail) {
         'p.visibility',
         'p.owner_user_id',
         'p.owner_email',
+        'p.created_by_user_id',
         'p.created_by',
         'p.updated_by_user_id',
         'p.updated_by',
@@ -365,10 +366,10 @@ export async function listPresentationsSharedWithUser(scope, userEmail) {
 
     // One batched name lookup for the whole list, as in listPresentationRows.
     const lookup = await resolveDisplayNames(
-      rows.map((row) => ({
-        id: row.updated_by_user_id,
-        email: row.updated_by,
-      })),
+      rows.flatMap((row) => [
+        { id: row.updated_by_user_id, email: row.updated_by },
+        { id: row.created_by_user_id, email: row.created_by },
+      ]),
     );
 
     return rows.map((row) => ({
@@ -378,9 +379,14 @@ export async function listPresentationsSharedWithUser(scope, userEmail) {
       visibility: row.visibility,
       ownerId: row.owner_user_id || null,
       ownerEmail: row.owner_email,
-      createdBy: row.created_by,
-      // The last writer as a display pair (D22), the same shape the deck list
-      // in storage/presentations/index.js hands the same card component.
+      // Creator and last writer as display pairs (D22), the same shape the
+      // deck list in storage/presentations/index.js hands the same card
+      // component. The owner keeps its address: this reader can open the deck.
+      createdBy: toDisplayIdentity(
+        row.created_by_user_id,
+        row.created_by,
+        lookup,
+      ),
       updatedBy: toDisplayIdentity(
         row.updated_by_user_id,
         row.updated_by,

@@ -326,6 +326,24 @@ export async function resolveDisplayNames(stamps) {
 }
 
 /**
+ * Resolve display names for a batch of rows that store an **address and no id**
+ * — share links, custom slide types, font families, analytics reports.
+ *
+ * Those tables were never given a `*_user_id` column, because their stamp is
+ * rendered rather than compared (see the module header). The lookup still finds
+ * the person's id behind the address, which is what
+ * {@link toStoredActorIdentity} needs to hand the client an avatar key.
+ *
+ * @param {Array<string|null|undefined>} emails - The stamped addresses.
+ * @returns {Promise<DisplayNameLookup>}
+ */
+export function resolveNamesForAddresses(emails) {
+  return resolveDisplayNames(
+    (emails || []).filter(Boolean).map((email) => ({ email })),
+  );
+}
+
+/**
  * Read `profile.name` out of a stored user-settings bag.
  *
  * @param {any} settings

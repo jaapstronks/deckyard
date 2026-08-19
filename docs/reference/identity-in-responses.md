@@ -78,16 +78,30 @@ this mine?" without one. With it gone, the remaining conversions are renames
 rather than decisions. See `permission-model.md` § _Identity: which key decides_
 for the rule and its two boundary cases (the auth-off operator, the dev bypass).
 
-Not every surface is converted yet. The remaining entries are marked
-`STILL TO CONVERT` in that test: deck `createdBy`/`trashedBy`, the library and
-collection creator stamps, the share-link and admin authoring stamps, the
-comment author and the slide-lock holder. Comments additionally need an
-`author_user_id` column before their author can be named by id.
+What is left is marked `STILL TO CONVERT` in that test: the **comment author**
+and the **slide-lock holder**. Comments additionally need an `author_user_id`
+column before their author can be named by id.
 
-Converted today: deck `updatedBy` (every list and single read, including the
-shared-with-me list and the popular board), version `createdBy`, notification
-and activity-event `actor`, the library/collection `updatedBy`, and the collab
-SSE `slides.updated` actor (which now carries `actorId` alone).
+Converted: deck `ownerId` aside, every person a deck names — `createdBy`,
+`updatedBy`, `trashedBy` — plus the library and collection creator/trasher, the
+share-link issuer, the admin authoring stamps (custom slide types, font
+families, analytics reports), version `createdBy`, notification and
+activity-event `actor`, and the collab SSE `slides.updated` actor (which carries
+`actorId` alone).
+
+**The owner is the one address that stays.** `ownerEmail` travels on a deck the
+reader can already open, so the owner keeps a flat `ownerId` beside it while
+everyone else on the deck is a `{ id, displayName }` pair. That asymmetry is the
+claim rule, not an oversight: the id in the pair is still what
+`shared/identity-match.js` compares (`createdBy.id`), and a table with no id
+column of its own (share links, custom slide types, font families, analytics
+reports) resolves the id from the address at read time — see
+`toStoredActorIdentity` in `server/storage/display-identity.js`.
+
+One behaviour follows from that: a deck's **notification recipients** are its
+owner and its collaborators. A creator who is not the owner used to be added by
+address; there is no address to add any more, and after an ownership transfer
+that person is a collaborator anyway.
 
 ## Public API v1
 

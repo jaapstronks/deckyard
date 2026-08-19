@@ -46,7 +46,8 @@ export function createCollaboratorsSection({
   let collaborators = [];
   let isAddingCollaborator = false;
   let autocomplete = null;
-  const ownerEmail = pres?.ownerEmail || pres?.createdBy;
+  // Only the owner's address travels now; the creator is a display pair (D22).
+  const ownerEmail = pres?.ownerEmail;
 
   const section = h('div', { class: 'share-collaborators-section' });
   const title = h('div', {

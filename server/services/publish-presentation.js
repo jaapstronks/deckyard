@@ -102,7 +102,9 @@ export async function buildPublishOgImage({
       const showAuthor = pres?.settings?.ogPreview?.showAuthor === true;
       let authorInfo = null;
       if (showAuthor) {
-        const ownerEmail = pres?.ownerEmail || pres?.createdBy || actorEmail;
+        // The creator is a display pair now (D22) and carries no address, so
+        // the fallback is the acting user's.
+        const ownerEmail = pres?.ownerEmail || actorEmail;
         if (ownerEmail) {
           try {
             const userSettings = await getUserSettings(

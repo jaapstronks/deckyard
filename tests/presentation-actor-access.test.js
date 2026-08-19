@@ -246,8 +246,7 @@ describe('checkActorAccess — edge cases', () => {
       id: 'c1',
       ownerId: '33333333-3333-4333-8333-333333333333',
       ownerEmail: 'boss@example.com',
-      createdById: OTHER_ID,
-      createdBy: OTHER,
+      createdBy: { id: OTHER_ID, displayName: 'Other' },
       visibility: 'private',
     };
     assert.equal(

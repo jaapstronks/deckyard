@@ -7,6 +7,11 @@ import { norm, nowIso } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
 import { getOrgId } from '../../utils/context.js';
 import { toStorageContext } from '../scope.js';
+import {
+  NO_DISPLAY_NAMES,
+  resolveNamesForAddresses,
+  toStoredActorIdentity,
+} from '../display-identity.js';
 
 // ============================================================
 // CONSTANTS
@@ -94,7 +99,7 @@ export async function createAnalyticsReport(scope, data) {
 
     return {
       ok: true,
-      report: rowToReport(row),
+      report: rowToReport(row, await creatorNames([row])),
     };
   });
 }
@@ -121,7 +126,7 @@ export async function getAnalyticsReport(scope, reportId) {
       .executeTakeFirst();
 
     if (!row) return null;
-    return rowToReport(row);
+    return rowToReport(row, await creatorNames([row]));
   });
 }
 
@@ -179,7 +184,7 @@ export async function getAnalyticsReportByToken(shareToken) {
       }
     }
 
-    return rowToReport(row);
+    return rowToReport(row, await creatorNames([row]));
   });
 }
 
@@ -219,8 +224,9 @@ export async function listAnalyticsReports(scope, presentationId, opts = {}) {
 
     const rows = await query.execute();
 
+    const lookup = await creatorNames(rows);
     return {
-      reports: rows.map(rowToReport),
+      reports: rows.map((row) => rowToReport(row, lookup)),
       total,
       limit,
       offset,
@@ -348,7 +354,13 @@ export async function regenerateShareToken(scope, reportId) {
 // HELPERS
 // ============================================================
 
-function rowToReport(row) {
+/**
+ * @param {object} row - Database row
+ * @param {import('../display-identity.js').DisplayNameLookup} [lookup] -
+ *   Resolved display names; omitted derives them from the stored address.
+ * @returns {object}
+ */
+function rowToReport(row, lookup = NO_DISPLAY_NAMES) {
   return {
     id: row.id,
     organizationId: row.organization_id,
@@ -362,7 +374,19 @@ function rowToReport(row) {
     isPublic: row.is_public,
     reportData: row.report_data || {},
     generatedAt: row.generated_at,
-    createdBy: row.created_by,
+    // Who generated the report is named, not addressed (D22): the table has no
+    // creator id column, so the id comes from the same lookup that resolved
+    // the name. See storage/display-identity.js.
+    createdBy: toStoredActorIdentity(row.created_by, null, lookup),
     createdAt: row.created_at,
   };
+}
+
+/**
+ * The display names this batch of rows needs for its `created_by` addresses.
+ * @param {Array<Object>} rows
+ * @returns {Promise<import('../display-identity.js').DisplayNameLookup>}
+ */
+function creatorNames(rows) {
+  return resolveNamesForAddresses((rows || []).map((row) => row?.created_by));
 }

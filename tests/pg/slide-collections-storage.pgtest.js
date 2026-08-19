@@ -46,6 +46,9 @@ import {
 const storageScope = testScope();
 const ALICE = 'alice@example.com';
 const BOB = 'bob@example.com';
+// The `users.id` the create path resolves from Alice's address, and the only
+// key the organization-shelf mutate guard compares (shared/identity-match.js).
+const ALICE_ID = '11111111-1111-4111-8111-111111111111';
 
 pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
   /** @type {import('kysely').Kysely<any>} */
@@ -59,7 +62,18 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
     db = await openTestDb();
     await installFacadeStorage();
     await truncate(db, 'organizations');
-    await seedDefaultOrganization(db);
+    const orgId = await seedDefaultOrganization(db);
+    await db
+      .insertInto('users')
+      .values({
+        id: ALICE_ID,
+        organization_id: orgId,
+        email: ALICE,
+        name: 'Alice',
+        role: 'user',
+      })
+      .onConflict((oc) => oc.column('email').doNothing())
+      .execute();
     sA = await seedSlideLibraryItem(db, { name: 'A' });
     sB = await seedSlideLibraryItem(db, { name: 'B' });
     sC = await seedSlideLibraryItem(db, { name: 'C' });
@@ -210,7 +224,9 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
     );
     assert.ok(created.ok);
     assert.strictEqual(created.item.shelf, 'organization');
-    assert.strictEqual(created.item.createdBy, ALICE);
+    // The creator is named, not addressed (D22): a display pair whose id is
+    // the key the mutate guard compares.
+    assert.strictEqual(created.item.createdBy?.id, ALICE_ID);
 
     const { items } = await listOrganizationCollections(storageScope, {
       userEmail: BOB,
@@ -227,9 +243,14 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
       { name: 'Guarded' },
       { actorEmail: ALICE },
     );
-    const allowMutate = (collection, { actorEmail }) =>
-      String(collection?.createdBy || '').toLowerCase() ===
-      String(actorEmail || '').toLowerCase();
+    // The real guard (routes/api/slide-collections.js) closes over the acting
+    // session and matches on its `users.id`; this stands in for it with the
+    // same key, resolving the acting address the way the route's session does.
+    const idFor = (email) => (email === ALICE ? ALICE_ID : null);
+    const allowMutate = (collection, { actorEmail }) => {
+      const actorId = idFor(actorEmail);
+      return !!actorId && collection?.createdBy?.id === actorId;
+    };
 
     // Bob (non-creator, non-admin) is blocked.
     const blocked = await updateOrganizationCollection(

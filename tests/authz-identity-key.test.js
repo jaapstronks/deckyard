@@ -56,8 +56,8 @@ const dualKeyDeck = {
   visibility: 'private',
   ownerId: OWNER_ID,
   ownerEmail: 'owner@example.com',
-  createdById: CREATOR_ID,
-  createdBy: 'creator@example.com',
+  // The creator is a display pair on the way out (D22); its `id` is the key.
+  createdBy: { id: CREATOR_ID, displayName: 'Creator' },
 };
 
 const owner = { id: OWNER_ID, email: 'owner@example.com' };
@@ -216,8 +216,7 @@ describe('an id-less stamp names nobody (the retired fallback)', () => {
     visibility: 'private',
     ownerId: null,
     ownerEmail: 'legacy@example.com',
-    createdById: null,
-    createdBy: 'legacy@example.com',
+    createdBy: { id: null, displayName: 'Legacy' },
   };
   const legacyUser = { id: OTHER_ID, email: 'legacy@example.com' };
 
@@ -271,8 +270,7 @@ describe('one stamp resolved, the other not', () => {
     visibility: 'private',
     ownerId: OWNER_ID,
     ownerEmail: 'owner@example.com',
-    createdById: null,
-    createdBy: 'external@example.com',
+    createdBy: { id: null, displayName: 'External' },
   };
 
   it('the owner matches on the id; the external creator matches nothing', () => {

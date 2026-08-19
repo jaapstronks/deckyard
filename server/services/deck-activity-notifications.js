@@ -87,8 +87,9 @@ export function buildDeckActivityCandidates({
     const e = normalizeEmail(email);
     if (e) set.add(e);
   };
+  // Only the owner's address travels on a deck now (D22); a creator who is not
+  // the owner reaches this list as a collaborator. See comment-subscriptions.js.
   add(presentation?.ownerEmail);
-  add(presentation?.createdBy);
   for (const c of collaborators) add(c);
   set.delete(normalizeEmail(actor?.email)); // Never notify yourself.
   return [...set];

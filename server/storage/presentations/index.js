@@ -572,20 +572,19 @@ export function mapPresentationRow(row, lookup = NO_DISPLAY_NAMES) {
     visibility: row.visibility,
     isViewOnly: !!row.is_view_only,
     revision: row.revision,
-    // Identity travels as a pair per role: the stable `users.id` (migration 063)
-    // is the key every authorization decision compares, the email beside it is
-    // display/contact plus the fallback identifier for rows whose email never
-    // matched a user (external/legacy — a defined NULL). See
-    // shared/identity-match.js.
+    // The **owner** keeps its two flat fields: the id is the key every
+    // authorization decision compares (migration 063), and the address beside
+    // it is one a reader who can already open the deck may have (D22).
     ownerId: row.owner_user_id || null,
     ownerEmail: row.owner_email,
-    createdById: row.created_by_user_id || null,
-    createdBy: row.created_by,
-    // The last writer is display only — no decider asks who it was — so it
-    // travels as a display pair (D22) and its e-mail stays server-side. The
-    // owner/creator stamps above keep theirs: those are compared, and
-    // shared/identity-match.js still falls back to the address for rows whose
-    // id column is a defined NULL.
+    // Everyone else on a deck is *named*, not addressed: a display pair whose
+    // id is still the key (`createdBy.id` is what isOwnerOrCreator compares)
+    // and whose address stays server-side. See storage/display-identity.js.
+    createdBy: toDisplayIdentity(
+      row.created_by_user_id,
+      row.created_by,
+      lookup,
+    ),
     updatedBy: toDisplayIdentity(
       row.updated_by_user_id,
       row.updated_by,
@@ -598,8 +597,11 @@ export function mapPresentationRow(row, lookup = NO_DISPLAY_NAMES) {
     sandbox: row.sandbox,
     published: row.published,
     trashedAt: row.trashed_at,
-    trashedById: row.trashed_by_user_id || null,
-    trashedBy: row.trashed_by,
+    trashedBy: toDisplayIdentity(
+      row.trashed_by_user_id,
+      row.trashed_by,
+      lookup,
+    ),
   };
 }
 
@@ -619,9 +621,8 @@ async function listPresentationRows(ctx) {
       'modified_at as modified',
       'created_at as created',
       'theme',
-      // Identity as an (id, email) pair per role: the collection filter and
-      // the bulk-export filter decide on the id and fall back to the email
-      // only for rows that have none. See shared/identity-match.js.
+      // The owner keeps both fields (key + an address the reader may have);
+      // the creator is a display pair below. See storage/display-identity.js.
       'owner_user_id as ownerId',
       'owner_email as ownerEmail',
       'created_by_user_id as createdById',
@@ -649,7 +650,10 @@ async function listPresentationRows(ctx) {
   // One batched name lookup for the whole page rather than one per card:
   // a 200-deck organization would otherwise issue 200 identical queries.
   const displayNames = await resolveDisplayNames(
-    rows.map((row) => ({ id: row.updatedById, email: row.updatedBy })),
+    rows.flatMap((row) => [
+      { id: row.updatedById, email: row.updatedBy },
+      { id: row.createdById, email: row.createdBy },
+    ]),
   );
 
   return rows.map((row) => {
@@ -666,8 +670,11 @@ async function listPresentationRows(ctx) {
       theme: row.theme,
       ownerId: row.ownerId || null,
       ownerEmail: row.ownerEmail,
-      createdById: row.createdById || null,
-      createdBy: row.createdBy,
+      createdBy: toDisplayIdentity(
+        row.createdById,
+        row.createdBy,
+        displayNames,
+      ),
       updatedBy: toDisplayIdentity(
         row.updatedById,
         row.updatedBy,
@@ -730,6 +737,8 @@ async function getPresentationRow(id, ctx) {
 async function displayNamesFor(row) {
   return resolveDisplayNames([
     { id: row?.updated_by_user_id, email: row?.updated_by },
+    { id: row?.created_by_user_id, email: row?.created_by },
+    { id: row?.trashed_by_user_id, email: row?.trashed_by },
   ]);
 }
 
@@ -1071,7 +1080,11 @@ async function listTrashedPresentationRows(ctx) {
     .execute();
 
   const displayNames = await resolveDisplayNames(
-    rows.map((row) => ({ id: row.updatedById, email: row.updatedBy })),
+    rows.flatMap((row) => [
+      { id: row.updatedById, email: row.updatedBy },
+      { id: row.createdById, email: row.createdBy },
+      { id: row.trashedById, email: row.trashedBy },
+    ]),
   );
 
   return rows.map((row) => {
@@ -1086,13 +1099,19 @@ async function listTrashedPresentationRows(ctx) {
       modified: row.modified,
       created: row.created,
       trashedAt: row.trashedAt,
-      trashedBy: row.trashedBy,
-      trashedById: row.trashedById || null,
+      trashedBy: toDisplayIdentity(
+        row.trashedById,
+        row.trashedBy,
+        displayNames,
+      ),
       theme: row.theme,
       ownerId: row.ownerId || null,
       ownerEmail: row.ownerEmail,
-      createdById: row.createdById || null,
-      createdBy: row.createdBy,
+      createdBy: toDisplayIdentity(
+        row.createdById,
+        row.createdBy,
+        displayNames,
+      ),
       updatedBy: toDisplayIdentity(
         row.updatedById,
         row.updatedBy,

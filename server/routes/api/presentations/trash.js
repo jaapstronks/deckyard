@@ -45,7 +45,7 @@ export async function handlePresentationsTrashList({
     if (authedUser?.isAdmin) return true;
     return (
       isOwnerOrCreator(authedUser, p) ||
-      matchesIdentity(authedUser, { userId: p.trashedById })
+      matchesIdentity(authedUser, { userId: p.trashedBy?.id })
     );
   });
 
@@ -81,7 +81,7 @@ export async function handlePresentationRestore(
   const canRestore =
     authedUser?.isAdmin ||
     isOwnerOrCreator(authedUser, existing) ||
-    matchesIdentity(authedUser, { userId: existing.trashedById });
+    matchesIdentity(authedUser, { userId: existing.trashedBy?.id });
 
   if (!canRestore) {
     return forbidden(

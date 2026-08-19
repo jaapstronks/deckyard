@@ -29,8 +29,7 @@ const owner = { id: OWNER_ID, email: OWNER };
 const pres = {
   ownerId: OWNER_ID,
   ownerEmail: OWNER,
-  createdById: OWNER_ID,
-  createdBy: OWNER,
+  createdBy: { id: OWNER_ID, displayName: 'Owner' },
 };
 
 describe('canDeleteComment', () => {
@@ -63,8 +62,7 @@ describe('canDeleteComment', () => {
     const createdPres = {
       ownerId: '22222222-2222-4222-8222-222222222222',
       ownerEmail: 'other@example.com',
-      createdById: OWNER_ID,
-      createdBy: OWNER,
+      createdBy: { id: OWNER_ID, displayName: 'Owner' },
     };
     const comment = { authorEmail: 'guest@example.com' };
     assert.equal(

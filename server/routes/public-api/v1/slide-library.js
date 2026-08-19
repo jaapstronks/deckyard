@@ -41,7 +41,7 @@ function sanitizeLibraryItem(item, tags = []) {
     // handed to any API key with library read access — a contact detail the
     // caller has no claim on (D22). The id names the same person and discloses
     // nothing about them, exactly as `ownerId` does on a deck.
-    createdById: item.createdById || null,
+    createdById: item.createdBy?.id || null,
   };
 }
 

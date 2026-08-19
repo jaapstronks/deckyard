@@ -44,7 +44,9 @@ import { dispatchRoutes } from '../../utils/router.js';
 function organizationMutateGuard(authedUser) {
   return (collection) => {
     if (authedUser?.isAdmin) return true;
-    return matchesIdentity(authedUser, { userId: collection?.createdById });
+    return matchesIdentity(authedUser, {
+      userId: collection?.createdBy?.id,
+    });
   };
 }
 

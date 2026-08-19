@@ -75,7 +75,7 @@ test('every identity field a presentation carries is on the strip list', () => {
   );
   assert.deepEqual(
     retired,
-    ['updatedById'],
+    ['createdById', 'updatedById', 'trashedById'],
     'the strip list grew an entry that is neither current nor a known retired name',
   );
 });

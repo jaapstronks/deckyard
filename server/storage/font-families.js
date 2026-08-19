@@ -20,6 +20,11 @@ import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 import {
+  NO_DISPLAY_NAMES,
+  resolveNamesForAddresses,
+  toStoredActorIdentity,
+} from './display-identity.js';
+import {
   parseJson,
   generateSlug,
   isValidSlug,
@@ -89,7 +94,7 @@ export async function getFontFamily(scope, familyId) {
       .execute();
 
     return {
-      ...formatFamily(row),
+      ...formatFamily(row, await creatorNames([row])),
       variants: variants.map(formatVariant),
     };
   });
@@ -161,7 +166,13 @@ export async function createFontFamily(scope, data) {
       .returningAll()
       .executeTakeFirst();
 
-    return { ok: true, fontFamily: { ...formatFamily(row), variants: [] } };
+    return {
+      ok: true,
+      fontFamily: {
+        ...formatFamily(row, await creatorNames([row])),
+        variants: [],
+      },
+    };
   });
 }
 
@@ -244,7 +255,10 @@ export async function updateFontFamily(scope, familyId, updates) {
       return { ok: false, reason: 'not_found' };
     }
 
-    return { ok: true, fontFamily: formatFamily(row) };
+    return {
+      ok: true,
+      fontFamily: formatFamily(row, await creatorNames([row])),
+    };
   });
 }
 
@@ -508,8 +522,9 @@ export async function listAllFontFamiliesWithVariants(scope) {
       variantMap[v.font_family_id].push(formatVariant(v));
     }
 
+    const lookup = await creatorNames(families);
     return families.map((f) => ({
-      ...formatFamily(f),
+      ...formatFamily(f, lookup),
       variants: variantMap[f.id] || [],
     }));
   });
@@ -519,7 +534,13 @@ export async function listAllFontFamiliesWithVariants(scope) {
 // HELPERS
 // ============================================================
 
-function formatFamily(row) {
+/**
+ * @param {object} row - Database row
+ * @param {import('./display-identity.js').DisplayNameLookup} [lookup] -
+ *   Resolved display names; omitted derives them from the stored address.
+ * @returns {object}
+ */
+function formatFamily(row, lookup = NO_DISPLAY_NAMES) {
   return {
     id: row.id,
     name: row.name,
@@ -531,8 +552,20 @@ function formatFamily(row) {
     sortOrder: row.sort_order || 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    createdBy: row.created_by,
+    // Who added this family is named, not addressed (D22): the table has no
+    // creator id column, so the id comes from the same lookup that resolved
+    // the name. See storage/display-identity.js.
+    createdBy: toStoredActorIdentity(row.created_by, null, lookup),
   };
+}
+
+/**
+ * The display names this batch of rows needs for its `created_by` addresses.
+ * @param {Array<Object>} rows
+ * @returns {Promise<import('./display-identity.js').DisplayNameLookup>}
+ */
+function creatorNames(rows) {
+  return resolveNamesForAddresses((rows || []).map((row) => row?.created_by));
 }
 
 function formatVariant(row) {

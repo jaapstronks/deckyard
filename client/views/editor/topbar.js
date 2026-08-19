@@ -69,8 +69,8 @@ export function createEditorTopbar({
 
   // The owner's address is one a viewer of their own deck may see (D22), so it
   // still seeds the initials; the profile lookup keys on the stable id.
-  const ownerEmail = pres?.ownerEmail || pres?.createdBy || '';
-  const ownerId = pres?.ownerId || pres?.createdById || '';
+  const ownerEmail = pres?.ownerEmail || '';
+  const ownerId = pres?.ownerId || pres?.createdBy?.id || '';
   const authorDisplayEl = h('div', { class: 'topbar-author' });
 
   if (ownerEmail || ownerId) {

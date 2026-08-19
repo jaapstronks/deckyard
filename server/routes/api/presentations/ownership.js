@@ -64,7 +64,8 @@ export async function handleOwnershipTransfer(
   }
 
   // Prevent transferring to self
-  const currentOwner = normalizeEmail(pres?.ownerEmail || pres?.createdBy);
+  // The owner stamp is the only one that still carries an address (D22).
+  const currentOwner = normalizeEmail(pres?.ownerEmail);
   if (newOwnerEmail === currentOwner) {
     return badRequest(res, 'Cannot transfer ownership to the current owner');
   }

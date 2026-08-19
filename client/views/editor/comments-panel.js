@@ -232,9 +232,10 @@ export function createCommentsPanel({
   async function loadAccessEmails() {
     if (accessEmails !== null) return accessEmails;
     const emails = new Set();
-    const owner = String(
-      pres?.ownerEmail || pres?.createdBy || '',
-    ).toLowerCase();
+    // The owner's address, the one a reader of their own deck may still have
+    // (D22). The creator no longer offers one to fall back on: they are named,
+    // not addressed.
+    const owner = String(pres?.ownerEmail || '').toLowerCase();
     if (owner) emails.add(owner);
     try {
       const resp = await api(

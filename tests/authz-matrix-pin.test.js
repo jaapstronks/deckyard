@@ -75,21 +75,21 @@ const ADDRESS_ONLY = { email: 'owner@example.com' };
 const OPERATOR = { email: 'anonymous', unrestricted: true, isAdmin: true };
 
 // --- Decks ------------------------------------------------------------------
+// The owner keeps a flat id beside the address a reader of the deck may have;
+// the creator arrives as the display pair a response now carries (D22).
 const privateDeck = {
   id: 'p1',
   visibility: 'private',
   ownerId: OWNER_ID,
   ownerEmail: 'owner@example.com',
-  createdById: CREATOR_ID,
-  createdBy: 'creator@example.com',
+  createdBy: { id: CREATOR_ID, displayName: 'Creator' },
 };
 const organizationDeck = {
   id: 'w1',
   visibility: 'organization',
   ownerId: OWNER_ID,
   ownerEmail: 'owner@example.com',
-  createdById: CREATOR_ID,
-  createdBy: 'creator@example.com',
+  createdBy: { id: CREATOR_ID, displayName: 'Creator' },
 };
 const viewOnlyOrganizationDeck = {
   ...organizationDeck,

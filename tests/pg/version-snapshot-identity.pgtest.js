@@ -327,8 +327,8 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
     );
     assert.equal(after.ownerId, BOB_ID);
     assert.equal(
-      after.createdBy,
-      ALICE,
+      after.createdBy?.id,
+      ALICE_ID,
       'who made it is create-only and unchanged',
     );
     assert.equal(
@@ -378,7 +378,7 @@ pgDescribe('version snapshots are identity-clean (real PostgreSQL)', () => {
     const after = await getPresentation(storageScope, DECK_ID);
     assert.equal(after.ownerEmail, BOB);
     assert.equal(after.ownerId, BOB_ID);
-    assert.equal(after.createdBy, ALICE);
+    assert.equal(after.createdBy?.id, ALICE_ID);
     assert.equal(after.updatedBy?.id, BOB_ID);
     assert.equal(after.title, 'Deck as it was');
     assert.deepEqual(
