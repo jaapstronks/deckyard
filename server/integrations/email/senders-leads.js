@@ -33,7 +33,9 @@ export async function maybeSendLeadNotification(
 ) {
   if (!repoRoot || !presentation || !lead) return;
 
-  const ownerEmail = presentation.createdBy || presentation.owner;
+  // The deck's contact address is its owner's; the creator is a display pair
+  // and carries none (D22).
+  const ownerEmail = presentation.ownerEmail || presentation.owner;
   if (!ownerEmail) return;
 
   // Check if user has lead notifications enabled

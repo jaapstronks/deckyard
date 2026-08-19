@@ -43,8 +43,7 @@ describe('belongsInCollection', () => {
     };
     const created = {
       id: 'p2',
-      createdById: OWNER_ID,
-      createdBy: OWNER,
+      createdBy: { id: OWNER_ID, displayName: 'Owner' },
       visibility: 'private',
     };
     assert.equal(belongsInCollection({ user: owner, pres: owned }), true);
@@ -56,8 +55,7 @@ describe('belongsInCollection', () => {
       id: 'p1',
       ownerId: OWNER_ID,
       ownerEmail: OWNER,
-      createdById: OWNER_ID,
-      createdBy: OWNER,
+      createdBy: { id: OWNER_ID, displayName: 'Owner' },
       visibility: 'private',
     };
     assert.equal(belongsInCollection({ user: other, pres }), false);

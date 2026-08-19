@@ -12,7 +12,8 @@ import { isOwnerOrCreator } from '../../../shared/identity-match.js';
 /**
  * Check if the user is the presentation owner (can resolve/reopen comments).
  * @param {Object} user - Current user object (from /api/auth/me, carrying `id`)
- * @param {Object} pres - Presentation object (carrying `ownerId`/`createdById`)
+ * @param {Object} pres - Presentation object (carrying `ownerId` and the
+ *   `createdBy` display pair)
  * @returns {boolean} True if user is owner or admin
  */
 export function isCommentOwner(user, pres) {

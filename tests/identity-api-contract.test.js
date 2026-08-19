@@ -7,7 +7,9 @@
  *
  *   1. **the session carries an id**: login and `/api/auth/me` return one, so
  *      the client has something to compare with;
- *   2. **a presentation carries one**: `ownerId`/`createdById`/`updatedById`
+ *   2. **a presentation carries one**: `ownerId`, and the `createdBy` /
+ *      `updatedBy` display pairs (v1 projects them to `createdById` /
+ *      `updatedById`)
  *      ride along on both the app and the public-API shapes;
  *   3. **the client compares the same way the server does**: the mirrors in
  *      client/lib import the *same* rule from shared/identity-match.js, so the
@@ -132,9 +134,10 @@ test('the public-API shape carries the identity ids beside the display email', (
     title: 'Deck',
     ownerId: USER_ID,
     ownerEmail: 'alice@example.com',
-    createdById: USER_ID,
-    // The last writer travels as a display pair on the internal API (D22); the
-    // public v1 shape projects it back down to the bare id it always exposed.
+    // The creator and last writer travel as display pairs on the internal API
+    // (D22); the public v1 shape projects each back down to the bare id it
+    // always exposed.
+    createdBy: { id: USER_ID, displayName: 'Alice' },
     updatedBy: { id: OTHER_ID, displayName: 'Bob Builder' },
     slides: [],
   };
@@ -189,8 +192,7 @@ const dualKeyDeck = {
   visibility: 'private',
   ownerId: USER_ID,
   ownerEmail: 'alice@example.com',
-  createdById: USER_ID,
-  createdBy: 'alice@example.com',
+  createdBy: { id: USER_ID, displayName: 'Alice' },
 };
 
 test('the client mirrors grant the owner by id, under any address', () => {

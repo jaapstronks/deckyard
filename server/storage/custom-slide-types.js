@@ -20,6 +20,11 @@ import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 import {
+  NO_DISPLAY_NAMES,
+  resolveNamesForAddresses,
+  toStoredActorIdentity,
+} from './display-identity.js';
+import {
   parseJson,
   generateSlug,
   isValidSlug,
@@ -78,7 +83,8 @@ export async function listCustomSlideTypes(scope) {
       .orderBy('created_at', 'desc')
       .execute();
 
-    return rows.map(formatRow);
+    const lookup = await creatorNames(rows);
+    return rows.map((row) => formatRow(row, lookup));
   });
 }
 
@@ -101,7 +107,8 @@ export async function listPublishedCustomSlideTypes(scope) {
       .orderBy('label', 'asc')
       .execute();
 
-    return rows.map(formatRow);
+    const lookup = await creatorNames(rows);
+    return rows.map((row) => formatRow(row, lookup));
   });
 }
 
@@ -122,7 +129,7 @@ export async function getCustomSlideType(scope, typeId) {
       .where('id', '=', typeId)
       .where('organization_id', '=', getOrgId(scope))
       .executeTakeFirst();
-    return row ? formatRow(row) : null;
+    return row ? formatRow(row, await creatorNames([row])) : null;
   });
 }
 
@@ -205,7 +212,10 @@ export async function createCustomSlideType(scope, data) {
       .returningAll()
       .executeTakeFirst();
 
-    return { ok: true, customSlideType: formatRow(row) };
+    return {
+      ok: true,
+      customSlideType: formatRow(row, await creatorNames([row])),
+    };
   });
 }
 
@@ -314,7 +324,10 @@ export async function updateCustomSlideType(scope, typeId, updates) {
       return { ok: false, reason: 'not_found' };
     }
 
-    return { ok: true, customSlideType: formatRow(row) };
+    return {
+      ok: true,
+      customSlideType: formatRow(row, await creatorNames([row])),
+    };
   });
 }
 
@@ -405,7 +418,13 @@ export async function deleteCustomSlideType(scope, typeId) {
 // HELPERS
 // ============================================================
 
-function formatRow(row) {
+/**
+ * @param {object} row - Database row
+ * @param {import('./display-identity.js').DisplayNameLookup} [lookup] -
+ *   Resolved display names; omitted derives them from the stored address.
+ * @returns {object}
+ */
+function formatRow(row, lookup = NO_DISPLAY_NAMES) {
   return {
     id: row.id,
     slug: row.slug,
@@ -421,13 +440,25 @@ function formatRow(row) {
     sortOrder: row.sort_order || 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    createdBy: row.created_by,
+    // Who authored this type is named, not addressed (D22): this table has no
+    // creator id column, so the id comes from the same lookup that resolved
+    // the name. See storage/display-identity.js.
+    createdBy: toStoredActorIdentity(row.created_by, null, lookup),
   };
 }
 
 /**
  * Validate a fields array. Each field must have key, type, label.
  */
+/**
+ * The display names this batch of rows needs for its `created_by` addresses.
+ * @param {Array<Object>} rows
+ * @returns {Promise<import('./display-identity.js').DisplayNameLookup>}
+ */
+function creatorNames(rows) {
+  return resolveNamesForAddresses((rows || []).map((row) => row?.created_by));
+}
+
 function validateFields(fields) {
   if (!Array.isArray(fields)) return { ok: false };
   if (fields.length > MAX_FIELDS) return { ok: false };

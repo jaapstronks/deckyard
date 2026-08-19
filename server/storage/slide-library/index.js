@@ -21,6 +21,7 @@ import { toStorageContext } from '../scope.js';
 import {
   resolveDisplayNames,
   toDisplayIdentity,
+  toStoredActorIdentity,
   NO_DISPLAY_NAMES,
 } from '../display-identity.js';
 import { nowIso } from '../../utils/normalize.js';
@@ -55,15 +56,18 @@ function mapSlideLibraryRow(row, lookup = NO_DISPLAY_NAMES) {
     i18n: row.i18n || {},
     favorites: row.favorites || [],
     trashedAt: row.trashed_at,
-    // Identity travels as a pair (T10 PR F2): the stable `users.id`
-    // (migration 070) beside the display/fallback e-mail. The organization-library
-    // trash/delete guard matches on `createdById`; see shared/identity-match.js.
-    trashedBy: row.trashed_by,
-    createdById: row.created_by_user_id || null,
-    createdBy: row.created_by,
-    // The last writer is display only — no guard asks who it was — so it
-    // travels as a display pair (D22) while the creator/trasher stamps above
-    // keep their (id, e-mail) form for the matching they still do.
+    // Everyone named on an item is a display pair (D22): the stable `users.id`
+    // (migration 070) and the name to render, never the address. The id is
+    // still the key — the organization-shelf trash/delete guard matches on
+    // `createdBy.id`; see shared/identity-match.js.
+    // `slide_library.trashed_by` never got an id column (migration 070
+    // explains why), so the id comes from the lookup that resolved the name.
+    trashedBy: toStoredActorIdentity(row.trashed_by, null, lookup),
+    createdBy: toDisplayIdentity(
+      row.created_by_user_id,
+      row.created_by,
+      lookup,
+    ),
     updatedBy: toDisplayIdentity(
       row.updated_by_user_id,
       row.updated_by,
@@ -586,6 +590,10 @@ async function libraryDisplayNames(rows) {
   return resolveDisplayNames(
     (rows || [])
       .filter(Boolean)
-      .map((row) => ({ id: row.updated_by_user_id, email: row.updated_by })),
+      .flatMap((row) => [
+        { id: row.updated_by_user_id, email: row.updated_by },
+        { id: row.created_by_user_id, email: row.created_by },
+        { email: row.trashed_by },
+      ]),
   );
 }

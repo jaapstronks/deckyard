@@ -55,12 +55,15 @@ function mapSlideCollectionRow(row, slideIds = [], lookup = NO_DISPLAY_NAMES) {
     description: row.description || '',
     slideIds: Array.isArray(slideIds) ? slideIds : [],
     slideCount: Array.isArray(slideIds) ? slideIds.length : 0,
-    // Identity pair (T10 PR F2): the organization-collection mutate guard matches on
-    // `createdById`, with the e-mail as the fallback. See shared/identity-match.js.
-    createdById: row.created_by_user_id || null,
-    createdBy: row.created_by,
-    // The last writer is display only — the mutate guard above matches on the
-    // creator — so it travels as a display pair (D22).
+    // Both people on a collection are display pairs (D22): the stable
+    // `users.id` and the name to render, never the address. The id is still the
+    // key — the organization-shelf mutate guard matches on `createdBy.id`; see
+    // shared/identity-match.js.
+    createdBy: toDisplayIdentity(
+      row.created_by_user_id,
+      row.created_by,
+      lookup,
+    ),
     updatedBy: toDisplayIdentity(
       row.updated_by_user_id,
       row.updated_by,
@@ -503,8 +506,9 @@ export async function deleteOrganizationCollection(
  */
 async function collectionDisplayNames(rows) {
   return resolveDisplayNames(
-    (rows || [])
-      .filter(Boolean)
-      .map((row) => ({ id: row.updated_by_user_id, email: row.updated_by })),
+    (rows || []).filter(Boolean).flatMap((row) => [
+      { id: row.updated_by_user_id, email: row.updated_by },
+      { id: row.created_by_user_id, email: row.created_by },
+    ]),
   );
 }

@@ -8,7 +8,7 @@
  *
  *   - **soft-delete** stamps `trashed_by_user_id` (a known trasher writes their
  *     stable `users.id`, an external one writes NULL) and **restore** clears
- *     both halves; `listTrashedPresentations` surfaces `trashedById`;
+ *     both halves; `listTrashedPresentations` names the trasher as a pair;
  *   - **slide-library / collection create** stamp `created_by_user_id` and
  *     `updated_by_user_id` from the actor, NULL for an external actor;
  *   - the behaviour this PR is *for*: after the actor renames, the authz
@@ -131,13 +131,11 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
     assert.equal(row.trashed_by, ALICE);
     assert.equal(row.trashed_by_user_id, ALICE_ID);
 
+    // The trash list names the trasher, it does not hand out their address:
+    // a display pair whose id is the key (D22).
     const [item] = await listTrashedPresentations(storageScope);
-    assert.equal(item.trashedBy, ALICE);
-    assert.equal(
-      item.trashedById,
-      ALICE_ID,
-      'the trash list surfaces the id half',
-    );
+    assert.equal(item.trashedBy?.id, ALICE_ID, 'the pair carries the id');
+    assert.equal(item.trashedBy?.displayName, 'Alice');
   });
 
   it('an external trasher stamps a NULL id, not a failure', async () => {
@@ -165,11 +163,10 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
     await restorePresentation(storageScope, pres.id);
 
     const restored = await getPresentation(storageScope, pres.id);
-    assert.equal(restored.trashedBy, null);
     assert.equal(
-      restored.trashedById,
+      restored.trashedBy,
       null,
-      'no stale trasher id survives a restore',
+      'no stale trasher — neither name nor id — survives a restore',
     );
   });
 
@@ -184,14 +181,10 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
     await renameAlice();
     const renamed = { id: ALICE_ID, email: ALICE_RENAMED };
 
-    // The stamped e-mail is now stale, so the pre-F2 raw compare fails…
-    assert.notEqual(item.trashedBy.toLowerCase(), ALICE_RENAMED);
-    // …but the id half keeps the trasher's restore/visibility right.
+    // The stored address is now stale — and no longer reachable from the
+    // response at all — but the id half keeps the trasher's restore right.
     assert.equal(
-      matchesIdentity(renamed, {
-        userId: item.trashedById,
-        email: item.trashedBy,
-      }),
+      matchesIdentity(renamed, { userId: item.trashedBy?.id }),
       true,
     );
     // And owner/creator likewise survive the rename (isOwnerOrCreator, id-first).
@@ -207,10 +200,9 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
       { actorEmail: ALICE },
     );
     assert.equal(r.ok, true);
-    assert.equal(r.item.createdById, ALICE_ID);
-    // The last writer is display only, so it travels as a pair (D22) rather
-    // than as an `updatedById` beside an e-mail; the stored dual key below is
+    // Both people travel as display pairs (D22); the stored dual key below is
     // unchanged.
+    assert.equal(r.item.createdBy?.id, ALICE_ID);
     assert.equal(r.item.updatedBy?.id, ALICE_ID);
 
     const row = await db
@@ -229,12 +221,10 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
       { name: 'Shelf item', slideType: 'title-slide' },
       { actorEmail: EXTERNAL },
     );
-    assert.equal(r.item.createdById, null);
-    assert.equal(
-      r.item.createdBy,
-      EXTERNAL,
-      'the e-mail is still the fallback identifier',
-    );
+    // No users row behind the address: the pair carries a null id and a name
+    // derived from the address, and the address itself stays server-side.
+    assert.equal(r.item.createdBy?.id, null);
+    assert.equal(r.item.createdBy?.displayName, 'Nobody');
   });
 
   it('a renamed library creator still matches by id (the team trash/delete guard)', async () => {
@@ -250,12 +240,8 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
       storageScope,
       created.item.id,
     );
-    assert.notEqual(item.createdBy.toLowerCase(), ALICE_RENAMED);
     assert.equal(
-      matchesIdentity(renamed, {
-        userId: item.createdById,
-        email: item.createdBy,
-      }),
+      matchesIdentity(renamed, { userId: item.createdBy?.id }),
       true,
     );
   });
@@ -269,7 +255,7 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
       { actorEmail: ALICE },
     );
     assert.equal(r.ok, true);
-    assert.equal(r.item.createdById, ALICE_ID);
+    assert.equal(r.item.createdBy?.id, ALICE_ID);
 
     const row = await db
       .selectFrom('slide_collections')
@@ -282,12 +268,8 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
     await renameAlice();
     const renamed = { id: ALICE_ID, email: ALICE_RENAMED };
     const collection = await getOrganizationCollection(storageScope, r.item.id);
-    assert.notEqual(collection.createdBy.toLowerCase(), ALICE_RENAMED);
     assert.equal(
-      matchesIdentity(renamed, {
-        userId: collection.createdById,
-        email: collection.createdBy,
-      }),
+      matchesIdentity(renamed, { userId: collection.createdBy?.id }),
       true,
     );
   });

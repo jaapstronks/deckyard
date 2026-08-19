@@ -226,7 +226,7 @@ async function handleOrganizationUpdate(
         // trash right across a rename, and an item whose creator column is a
         // defined NULL belongs to nobody but an admin.
         if (authedUser?.isAdmin) return true;
-        return matchesIdentity(authedUser, { userId: item?.createdById });
+        return matchesIdentity(authedUser, { userId: item?.createdBy?.id });
       },
     });
     if (!r.ok) {
@@ -255,7 +255,7 @@ async function handleOrganizationDelete({ storageScope, res, authedUser }, id) {
     allowDelete: (item) => {
       // Identity is the `users.id` (T10 PR F2); see the trash guard above.
       if (authedUser?.isAdmin) return true;
-      return matchesIdentity(authedUser, { userId: item?.createdById });
+      return matchesIdentity(authedUser, { userId: item?.createdBy?.id });
     },
   });
   if (!r.ok) {

@@ -102,8 +102,11 @@ pgDescribe(
       const pres = await getPresentation(storageScope, created.id);
 
       assert.equal(pres.ownerId, OWNER_ID);
-      assert.equal(pres.createdById, OWNER_ID);
-      // The email stays beside it as display/contact.
+      // The creator comes back as the display pair a response carries (D22):
+      // the same id, and a name instead of the address.
+      assert.equal(pres.createdBy?.id, OWNER_ID);
+      assert.equal(pres.createdBy?.displayName, 'Owner');
+      // The owner's address stays beside the id as display/contact.
       assert.equal(pres.ownerEmail, OWNER_EMAIL);
     });
 
@@ -200,7 +203,7 @@ pgDescribe(
       const summary = list.find((p) => p.title === 'Deck');
 
       assert.equal(summary.ownerId, OWNER_ID);
-      assert.equal(summary.createdById, OWNER_ID);
+      assert.equal(summary.createdBy?.id, OWNER_ID);
       // Same conclusions as the per-deck reads, from the summary shape.
       assert.equal(
         belongsInCollection({

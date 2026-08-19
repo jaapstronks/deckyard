@@ -58,19 +58,17 @@
 export const SNAPSHOT_IDENTITY_FIELDS = Object.freeze([
   'ownerId',
   'ownerEmail',
-  'createdById',
+  // `createdBy`, `updatedBy` and `trashedBy` are display pairs
+  // `{ id, displayName }` since D22, so each carries its own id half. The bare
+  // `*ById` names beside them are kept as **retired field names**: decks
+  // snapshotted before the conversion still carry them, and a list that only
+  // covered today's shape would leave those rows stamped forever — the exact
+  // defect this module exists to prevent. Stripping an absent key is free.
   'createdBy',
-  // `updatedBy` is a display pair `{ id, displayName }` since D22, so the id
-  // half now travels inside it. `updatedById` is kept on the list as a
-  // **retired field name**: decks snapshotted before D22 still carry it, and a
-  // list that only covers today's shape would leave those rows stamped
-  // forever — the exact defect this module exists to prevent.
+  'createdById',
   'updatedBy',
   'updatedById',
   'trashedBy',
-  // `trashedBy` gained an id half in T10 PR F2 (migration 070). Like every
-  // other dual key here, both halves are stripped — keeping the id would leave
-  // a stable person-pointer in history.
   'trashedById',
 ]);
 

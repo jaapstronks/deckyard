@@ -8,13 +8,20 @@ import { toStorageContext } from '../scope.js';
 import { norm, nowIso } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
 import { generateShareToken, hashPassword, verifyPassword } from './index.js';
+import {
+  NO_DISPLAY_NAMES,
+  resolveNamesForAddresses,
+  toStoredActorIdentity,
+} from '../display-identity.js';
 
 /**
  * Format a database row into a share link object.
  * @param {Object} row - Database row
+ * @param {import('../display-identity.js').DisplayNameLookup} [lookup] -
+ *   Resolved display names; omitted derives them from the stored address.
  * @returns {Object} - Formatted share link
  */
-export function formatShareLink(row) {
+export function formatShareLink(row, lookup = NO_DISPLAY_NAMES) {
   return {
     id: row.id,
     presentationId: row.presentation_id,
@@ -25,7 +32,10 @@ export function formatShareLink(row) {
     expiresAt: row.expires_at,
     maxUses: row.max_uses,
     useCount: row.use_count,
-    createdBy: row.created_by,
+    // Who issued the link is named, not addressed (D22): this table has no
+    // creator id column, so the id comes from the same lookup that resolved
+    // the name. See storage/display-identity.js.
+    createdBy: toStoredActorIdentity(row.created_by, null, lookup),
     createdAt: row.created_at,
     lastUsedAt: row.last_used_at,
     revokedAt: row.revoked_at,
@@ -33,6 +43,15 @@ export function formatShareLink(row) {
     revocationMessage: row.revocation_message || null,
     registrationMode: row.registration_mode || 'invite_only',
   };
+}
+
+/**
+ * The display names a batch of share-link rows needs for `created_by`.
+ * @param {Array<Object>} rows
+ * @returns {Promise<import('../display-identity.js').DisplayNameLookup>}
+ */
+export function shareLinkCreatorNames(rows) {
+  return resolveNamesForAddresses((rows || []).map((row) => row?.created_by));
 }
 
 /**
@@ -95,7 +114,7 @@ export async function createShareLink(scope, presentationId, options) {
 
     return {
       ok: true,
-      shareLink: formatShareLink(row),
+      shareLink: formatShareLink(row, await shareLinkCreatorNames([row])),
     };
   });
 }
@@ -133,7 +152,9 @@ export async function getShareLinkByToken(scope, token) {
     }
 
     const row = await query.executeTakeFirst();
-    return row ? formatShareLink(row) : null;
+    return row
+      ? formatShareLink(row, await shareLinkCreatorNames([row]))
+      : null;
   });
 }
 
@@ -164,7 +185,9 @@ export async function getShareLinkById(scope, linkId) {
       .where('organization_id', '=', orgId)
       .executeTakeFirst();
 
-    return row ? formatShareLink(row) : null;
+    return row
+      ? formatShareLink(row, await shareLinkCreatorNames([row]))
+      : null;
   });
 }
 
@@ -252,7 +275,7 @@ export async function validateShareLink(token) {
 
     return {
       ok: true,
-      shareLink: formatShareLink(row),
+      shareLink: formatShareLink(row, await shareLinkCreatorNames([row])),
       requiresPassword: !!row.password_hash,
     };
   });
@@ -347,7 +370,8 @@ export async function listShareLinks(scope, presentationId, options) {
     }
 
     const rows = await query.execute();
-    return rows.map(formatShareLink);
+    const lookup = await shareLinkCreatorNames(rows);
+    return rows.map((row) => formatShareLink(row, lookup));
   });
 }
 
@@ -396,7 +420,7 @@ export async function updateShareLink(scope, linkId, updates) {
 
     return {
       ok: true,
-      shareLink: formatShareLink(row),
+      shareLink: formatShareLink(row, await shareLinkCreatorNames([row])),
     };
   });
 }

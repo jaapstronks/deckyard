@@ -196,37 +196,6 @@ const PERMITTED_ADDRESSES = new Map([
  */
 const PERMITTED_STAMPS = new Map([
   // ── ownership stamps: compared, not merely rendered ──────────────────────
-  [
-    'server/storage/presentations/index.js :: createdBy',
-    'STILL TO CONVERT: the deck creator, now display only — the guards match ' +
-      'on createdById alone since the address fallback was retired (D22). ' +
-      'Converts to a pair with trashedBy below.',
-  ],
-  [
-    'server/storage/presentations/index.js :: trashedBy',
-    'STILL TO CONVERT: who trashed the deck, shown on the trash surface; ' +
-      'routes/api/presentations/trash.js matches on trashedById alone.',
-  ],
-  [
-    'server/storage/slide-library/index.js :: createdBy',
-    'STILL TO CONVERT: who authored a library item, shown on the shelf; the ' +
-      'trash/delete guard matches on createdById alone.',
-  ],
-  [
-    'server/storage/slide-library/index.js :: trashedBy',
-    'STILL TO CONVERT: who trashed a library item gates its restore, same as ' +
-      'the deck trash above.',
-  ],
-  [
-    'server/storage/collections/index.js :: createdBy',
-    'STILL TO CONVERT: who created an organization collection, shown on the ' +
-      'shelf; the mutate guard matches on createdById alone.',
-  ],
-  [
-    'server/storage/collaborators.js :: createdBy',
-    'STILL TO CONVERT: the deck creator on a deck shared with you, carried ' +
-      'from the same presentations column as the stamp above; converts with it.',
-  ],
   // ── invitation stamps: who addressed whom ────────────────────────────────
   [
     'server/storage/collaborators.js :: invitedBy',
@@ -246,26 +215,7 @@ const PERMITTED_STAMPS = new Map([
     'server/storage/user-organizations/memberships.js :: invitedBy',
     'who invited this member, shown on the organization admin surface',
   ],
-  [
-    'server/storage/share-links/crud.js :: createdBy',
-    'STILL TO CONVERT: who issued a share link is shown to the deck owner ' +
-      'only; converts with the share-link surface.',
-  ],
   // ── org-admin authoring stamps ───────────────────────────────────────────
-  [
-    'server/storage/custom-slide-types.js :: createdBy',
-    'STILL TO CONVERT: who authored an instance-wide custom slide type, on an ' +
-      'admin-only surface.',
-  ],
-  [
-    'server/storage/font-families.js :: createdBy',
-    'STILL TO CONVERT: who added an organization font, on an admin-only surface.',
-  ],
-  [
-    'server/storage/analytics/reports.js :: createdBy',
-    'STILL TO CONVERT: who saved a report, on the analytics surface its own ' +
-      'organization sees.',
-  ],
   // ── guest-authored content ───────────────────────────────────────────────
   [
     'server/storage/presentations/comments.js :: authorName',

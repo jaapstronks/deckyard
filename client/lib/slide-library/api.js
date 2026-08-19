@@ -77,7 +77,9 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     const snap = state.patchInCache(s, id, (prev) => ({
       ...prev,
       trashedAt: trashed ? new Date().toISOString() : '',
-      trashedBy: trashed ? 'you' : '',
+      // Same shape the server sends back: a display pair, not a name
+      // (D22). Optimistic only — the response replaces it.
+      trashedBy: trashed ? { id: null, displayName: 'you' } : null,
       isTrashed: !!trashed,
     }));
     rerender?.();

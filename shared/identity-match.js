@@ -16,8 +16,8 @@
  *
  * ## The key is `users.id`, and nothing else
  *
- * A presentation carries an id per role since migration 063: `ownerId`,
- * `createdById`. **The id is the only key.** Two identities match when both
+ * A presentation carries an id per role since migration 063: `ownerId` and the
+ * `createdBy` pair's `id`. **The id is the only key.** Two identities match when both
  * carry a `users.id` and the two are equal; a stamp whose id column is a
  * defined NULL — a legacy row, an external collaborator who never became a user
  * here — matches *nobody*, and no address is consulted to rescue it.
@@ -156,6 +156,10 @@ export function isOwnerOrCreator(user, pres) {
   if (!pres || typeof pres !== 'object') return false;
   return (
     matchesIdentity(user, { userId: pres.ownerId }) ||
-    matchesIdentity(user, { userId: pres.createdById })
+    // The creator arrives as a display pair — `{ id, displayName }` — because
+    // their address does not travel (D22); the owner keeps a flat `ownerId`
+    // beside the address a reader of the deck may have. Different shapes, one
+    // key: the `users.id` in both.
+    matchesIdentity(user, { userId: pres.createdBy?.id })
   );
 }

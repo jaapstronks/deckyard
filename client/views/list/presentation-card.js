@@ -53,12 +53,12 @@ export function createCardRenderer({
   const authorForPresentation = (p) =>
     p?.updatedBy?.displayName
       ? p.updatedBy
-      : {
-          id: p?.ownerId || p?.createdById || null,
-          displayName: displayNameFromEmail(
-            p?.ownerEmail || p?.createdBy || '',
-          ),
-        };
+      : p?.createdBy?.displayName
+        ? p.createdBy
+        : {
+            id: p?.ownerId || null,
+            displayName: displayNameFromEmail(p?.ownerEmail || ''),
+          };
 
   const openPresentation = (id) => nav?.(`/app/${id}`);
   const openPresenter = (id) => nav?.(`/present/${id}`);
@@ -678,7 +678,6 @@ export function toListItem(pres) {
     theme,
     ownerId: p.ownerId || null,
     ownerEmail: p.ownerEmail || null,
-    createdById: p.createdById || null,
     createdBy: p.createdBy || null,
     updatedBy: p.updatedBy || null,
     visibility: p.visibility || 'private',

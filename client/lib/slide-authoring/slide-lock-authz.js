@@ -15,7 +15,7 @@ import { isOwnerOrCreator } from '../../../shared/identity-match.js';
  * Authors can lock/unlock slides to prevent editing by collaborators.
  *
  * @param {Object} user - The user object with id and isAdmin
- * @param {Object} pres - The presentation, with ownerId/createdById
+ * @param {Object} pres - The presentation, with `ownerId` and `createdBy`
  * @returns {boolean} True if user is an author
  */
 export function isPresentationAuthor(user, pres) {

@@ -72,7 +72,9 @@ export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
     description: pres.description || null,
     // Identity as an (id, email) pair: the id is the key, the email display.
     ownerId: pres.ownerId || null,
-    createdById: pres.createdById || null,
+    // The creator and last writer reach this layer as display pairs (D22);
+    // v1 publishes ids only, so the id is projected out of each.
+    createdById: pres.createdBy?.id || null,
     updatedById: pres.updatedBy?.id || null,
     ownerEmail,
     visibility: pres.visibility || 'private',

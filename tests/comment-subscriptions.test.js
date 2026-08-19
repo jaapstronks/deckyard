@@ -130,13 +130,20 @@ describe('buildCandidates', () => {
     assert.strictEqual(candidates.get('owner@example.com'), 'participating');
   });
 
-  it('createdBy counts as participating next to ownerEmail', () => {
+  it('the creator is not a candidate: a deck names them, it has no address', () => {
+    // Since D22 the creator travels as `{ id, displayName }` — there is no
+    // address to notify. A creator who is not the owner (a deck that changed
+    // hands) reaches this list through their collaborator row instead.
     const candidates = buildCandidates({
-      presentation: { ...PRES, createdBy: 'creator@example.com' },
+      presentation: {
+        ...PRES,
+        createdBy: { id: 'user-creator', displayName: 'Creator' },
+      },
       comment: { body: 'x' },
       actor: { email: 'someone@example.com' },
     });
-    assert.strictEqual(candidates.get('creator@example.com'), 'participating');
+    assert.strictEqual(candidates.get('creator@example.com'), undefined);
+    assert.strictEqual(candidates.get('owner@example.com'), 'participating');
   });
 });
 
