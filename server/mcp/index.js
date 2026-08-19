@@ -22,6 +22,10 @@
  *   }
  */
 
+// stdout is protocol: this redirect must be installed before any other
+// import can log (see ./stdout-guard.js). Keep it the first import.
+import './stdout-guard.js';
+
 import { McpServer, runStdio } from './protocol.js';
 import { registerTools } from './tools.js';
 import { loadCustomToolsRegistrar } from './custom-tools-loader.js';
@@ -33,21 +37,6 @@ import { strandedFileDataError } from '../storage/boot-check.js';
 import { storageModeError } from '../config/database.js';
 import { repoRoot } from '../config/paths.js';
 import { envStr } from '../config/utils.js';
-
-// ─── CRITICAL: Redirect console.log to stderr ────────────────────────────
-// MCP uses stdout exclusively for JSON-RPC protocol messages.
-// Deckyard modules (storage, DB, etc.) use console.log for status messages.
-// If those reach stdout, Claude Desktop sees invalid JSON and disconnects.
-const _origLog = console.log;
-console.log = (...args) => {
-  process.stderr.write(
-    args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ') +
-      '\n',
-  );
-};
-console.info = console.log;
-console.debug = console.log;
-// console.warn and console.error already go to stderr
 
 // Show help
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
