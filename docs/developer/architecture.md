@@ -107,9 +107,10 @@ means "already answered, stop here".
 ```javascript
 import { withPresentationAuth } from '../../utils/route-middleware.js';
 
-export async function handlePresentationLockAcquire(
+export async function handleSlideLockAcquire(
   { repoRoot, req, res, authedUser } = {},
   id,
+  slideId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
@@ -127,7 +128,7 @@ export async function handlePresentationLockAcquire(
 }
 ```
 
-Permissions are `read` | `write` | `delete` | `manage` | `forceLock`. Sibling
+Permissions are `read` | `write` | `delete` | `manage`. Sibling
 helpers cover the other shapes: `withPresentationReadAuth`,
 `withPresentationCommentAuth` (guest access via share links), `canManage`, and
 the custom-HTML capability checks.
@@ -404,13 +405,13 @@ flat siblings move in.
 # Wrong — folder next to flat siblings of the same noun
 server/storage/presentations/          # crud/, slides.js, ownership.js, …
 server/storage/presentation-cache.js   # same noun, arbitrarily left flat
-server/storage/presentation-locks.js
+server/storage/presentation-comments.js
 
 # Right — one form for the domain
 server/storage/presentations/
   index.js                             # the single barrel
   cache.js
-  locks.js
+  comments.js
   slides.js
   …
 ```

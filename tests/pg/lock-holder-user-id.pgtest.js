@@ -1,8 +1,8 @@
 /**
  * Lock holder identity on `users.id` (T10, PR F3).
  *
- * Migration 071 put a nullable `holder_user_id` beside `holder_email` on both
- * lock tables, and the storage layer stamps and matches on it through
+ * Migration 071 put a nullable `holder_user_id` beside `holder_email` on the
+ * lock table, and the storage layer stamps and matches on it through
  * `shared/identity-match.js` (id-primary, e-mail fallback). This file pins the
  * behaviour that motivates the whole change and can only be shown against a real
  * database — where the id column, the FK and the atomic slide-lock upsert are
@@ -15,10 +15,11 @@
  *     reads as "held by someone else" to them. This is the F3 improvement, and
  *     the one thing the old raw-e-mail compare could never give;
  *   - **the external path** — a holder with no `users` row (an external
- *     collaborator) stamps a NULL id and is still matched by e-mail, unchanged;
- *   - **transfer resolves the requester** — accepting a lock request stamps the
- *     new holder's id, resolved from the e-mail on the request row (the only
- *     write whose id is not the authed session's).
+ *     collaborator) stamps a NULL id and is still matched by e-mail, unchanged.
+ *
+ * 071 also laid the column on `presentation_locks`; that table and its
+ * transfer path (lock requests) were dropped by migration 078 (B96), so only
+ * the slide-lock half is pinned here.
  *
  * Runs only against the throwaway database named by DATABASE_URL — see
  * tests/pg/helpers/harness.js and docs/developer/pg-test-suite.md.
@@ -41,21 +42,13 @@ import {
   getSlideLock,
   getLockedByOthers,
 } from '../../server/storage/slide-locks.js';
-import {
-  acquirePresentationLock,
-  refreshPresentationLock,
-  releasePresentationLock,
-  createLockRequest,
-  acceptLockRequest,
-} from '../../server/storage/presentations/locks.js';
 
 // A real uuid: organizations.id and users.organization_id are uuid columns,
 // while slide_locks.organization_id is free text — one value keys all three.
 const ORG = '99999999-9999-9999-9999-999999999999';
 const CTX = { organizationId: ORG };
-// presentation_locks.presentation_id is a uuid FK to presentations(id); a real
-// row must exist. slide_locks.presentation_id is free text, so the same value
-// serves both tables.
+// slide_locks.presentation_id is free text (no FK); a uuid-shaped value keeps
+// the fixture realistic.
 const PID = '33333333-3333-3333-3333-333333333333';
 const SID = 'slide-1';
 
@@ -88,15 +81,7 @@ pgDescribe('lock holder identity on users.id (real PostgreSQL)', () => {
   });
 
   beforeEach(async () => {
-    await truncate(
-      db,
-      'slide_locks',
-      'presentation_locks',
-      'lock_requests',
-      'presentations',
-      'users',
-      'organizations',
-    );
+    await truncate(db, 'slide_locks', 'users', 'organizations');
     await db
       .insertInto('organizations')
       .values({ id: ORG, name: 'Default', slug: 'default' })
@@ -119,12 +104,6 @@ pgDescribe('lock holder identity on users.id (real PostgreSQL)', () => {
           role: 'user',
         },
       ])
-      .execute();
-    // The whole-deck lock's presentation_id is a real FK; slide locks reference
-    // the same id as free text.
-    await db
-      .insertInto('presentations')
-      .values({ id: PID, title: 'Deck', organization_id: ORG })
       .execute();
   });
 
@@ -248,93 +227,6 @@ pgDescribe('lock holder identity on users.id (real PostgreSQL)', () => {
       2,
       'both locks removed despite the stored old address',
     );
-  });
-
-  // ── Presentation locks ─────────────────────────────────────────
-
-  it('a renamed holder keeps their whole-deck lock', async () => {
-    const acq = await acquirePresentationLock(CTX, PID, alice());
-    assert.equal(acq.ok, true);
-    assert.equal(acq.lock.holderId, ALICE_ID);
-
-    await renameUser(ALICE_ID, ALICE_NEW_EMAIL);
-
-    const refreshed = await refreshPresentationLock(
-      CTX,
-      PID,
-      alice(ALICE_NEW_EMAIL),
-    );
-    assert.equal(
-      refreshed.ok,
-      true,
-      'the holder is recognized by id after a rename',
-    );
-    assert.equal(refreshed.lock.holderId, ALICE_ID);
-
-    // The acquire path re-stamps both halves, bringing the stored e-mail back in
-    // step with the id (the minimal refresh above only extends the TTL).
-    const reacquired = await acquirePresentationLock(
-      CTX,
-      PID,
-      alice(ALICE_NEW_EMAIL),
-    );
-    assert.equal(reacquired.ok, true);
-    assert.equal(reacquired.lock.holderEmail, ALICE_NEW_EMAIL);
-
-    const released = await releasePresentationLock(
-      CTX,
-      PID,
-      alice(ALICE_NEW_EMAIL),
-    );
-    assert.equal(released.ok, true);
-    assert.equal(released.released, true);
-  });
-
-  it("accepting a lock request stamps the requester's resolved id", async () => {
-    // Alice holds the deck; Bob requests it; Alice accepts. The transfer must
-    // stamp Bob's id — resolved from the e-mail on his request row, the one
-    // write whose holder id is not the authed session's.
-    await acquirePresentationLock(CTX, PID, alice());
-    const req = await createLockRequest(CTX, PID, {
-      email: BOB_EMAIL,
-      name: 'Bob',
-    });
-    assert.equal(req.ok, true);
-
-    const accepted = await acceptLockRequest(CTX, req.request.id, {});
-    assert.equal(accepted.ok, true);
-
-    const row = await db
-      .selectFrom('presentation_locks')
-      .select(['holder_user_id', 'holder_email'])
-      .where('presentation_id', '=', PID)
-      .where('organization_id', '=', ORG)
-      .executeTakeFirst();
-    assert.equal(
-      row.holder_user_id,
-      BOB_ID,
-      'the transferred lock carries the requester id',
-    );
-    assert.equal(row.holder_email, BOB_EMAIL);
-  });
-
-  it('a transfer to an external requester (no users row) stamps NULL', async () => {
-    await acquirePresentationLock(CTX, PID, alice());
-    const req = await createLockRequest(CTX, PID, {
-      email: EXTERNAL_EMAIL,
-      name: 'Ext',
-    });
-    const accepted = await acceptLockRequest(CTX, req.request.id, {});
-    assert.equal(accepted.ok, true);
-
-    const row = await db
-      .selectFrom('presentation_locks')
-      .select(['holder_user_id', 'holder_email'])
-      .where('presentation_id', '=', PID)
-      .where('organization_id', '=', ORG)
-      .executeTakeFirst();
-    assert.equal(row.holder_user_id, null);
-    assert.equal(row.holder_email, EXTERNAL_EMAIL);
   });
 
   it('deleting the holder user keeps the lock row, id dropped (ON DELETE SET NULL)', async () => {

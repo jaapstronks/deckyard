@@ -123,7 +123,8 @@ More than expected — Deckyard already has a coarse, lock-based collab layer:
   the slide list (`client/views/editor/slide-lock-manager.js`,
   `server/storage/slide-locks.js`).
 - **Deck-level lock + request/accept turn-taking (dormant)** — short-circuited
-  by `useSlideLevelLocking: true` (`client/views/editor/presence-lock.js:28-41`).
+  by `useSlideLevelLocking: true` (`client/views/editor/presence-lock.js:28-41`;
+  removed outright in B96, 2026-08, tables dropped by migration 078).
 - **Remote change push**: an SSE channel per presentation
   (`GET /api/presentations/:id/comments/events`) carries `presentation:updated`
   and `slide:*` lock events; `slide-update-handler.js` refetches and merges

@@ -3,7 +3,6 @@
  *
  * This module has been refactored to use focused sub-modules:
  * - topbar/language-mode.js - Language switching UI and logic
- * - topbar/lock-request.js - Lock state and access request UI
  * - topbar/more-menu.js - More menu dropdown
  */
 
@@ -19,7 +18,6 @@ import { createEditorTopbarMoreMenu } from './topbar/more-menu.js';
 import { openSubscriptionModal } from './modals/subscription-modal.js';
 import { createLanguageMode } from './topbar/language-mode.js';
 import { iconUrl } from '../../../shared/icon-names.js';
-import { createLockRequestUI } from './topbar/lock-request.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createAvatar, updateAvatar } from '../../lib/user/avatar.js';
 import { getUserProfileAsync } from '../../lib/user/user-profiles.js';
@@ -59,36 +57,11 @@ export function createEditorTopbar({
   syncShareUi,
   openOverlayClosers,
   markDirty,
-  setPresenceText,
-  setLockStateCallback,
-  onReadOnlyChange,
   onAnalyze,
   onOpenOverview,
   collabLanguage,
 } = {}) {
   const detachers = [];
-
-  // ============================================================
-  // PRESENCE INDICATOR
-  // ============================================================
-
-  const presenceEl = h('div', {
-    class: 'topbar-presence',
-    text: '',
-  });
-  const setPresence = (t) => {
-    const s = String(t || '').trim();
-    presenceEl.textContent = s;
-    presenceEl.style.display = s ? '' : 'none';
-  };
-  if (typeof setPresenceText === 'function') {
-    try {
-      setPresenceText(setPresence);
-    } catch {
-      // ignore
-    }
-  }
-  setPresence('');
 
   // ============================================================
   // AUTHOR DISPLAY
@@ -208,18 +181,6 @@ export function createEditorTopbar({
     topbarTitleEl,
     toast,
     collabLanguage,
-  });
-
-  // ============================================================
-  // LOCK REQUEST UI
-  // ============================================================
-
-  const lockRequestUI = createLockRequestUI({
-    h,
-    root,
-    toast,
-    setLockStateCallback,
-    onReadOnlyChange,
   });
 
   // ============================================================
@@ -546,7 +507,8 @@ export function createEditorTopbar({
   // pane openers moved to the slide bar (Option A), docked at its far right
   // above the inspector column they control.
   //   1. identity/navigation: back, title, save status, author + presence
-  //   2. edit session: undo/redo, language, lock-request state
+  //      (the collab avatar stack mounts into the spacer)
+  //   2. edit session: undo/redo, language
   //   3. deliver: overview/analytics/more as quiet ghosts, then Export,
   //      Share and the Present CTA - with the user avatar in the corner,
   //      its natural place, separated as the one global (non-deck) element.
@@ -570,10 +532,9 @@ export function createEditorTopbar({
     topbarTitleEl,
     saveStatusEl,
     authorDisplayEl,
-    h('div', { class: 'topbar-spacer' }, [presenceEl]),
+    h('div', { class: 'topbar-spacer' }),
     undoRedoGroup,
     languageMode.el,
-    lockRequestUI.el,
     h('div', { class: 'topbar-zone-sep', 'aria-hidden': 'true' }),
     btnOverview,
     btnAnalytics,

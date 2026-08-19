@@ -171,16 +171,6 @@ export function canChangePresentationVisibility({
 }
 
 /**
- * Check if a user can force release a lock on a presentation.
- */
-export function canForceLockRelease({ user, pres } = {}) {
-  if (isUnrestricted(user)) return true;
-  // Owner/creator of the presentation can force release locks.
-  if (!hasIdentity(user)) return false;
-  return isOwnerOrCreator(user, pres);
-}
-
-/**
  * Check if a user can transfer ownership of a presentation.
  * Only the owner/creator can transfer ownership.
  */
