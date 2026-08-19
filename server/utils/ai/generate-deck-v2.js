@@ -250,13 +250,6 @@ function countSlideTypes(slides) {
 }
 
 /**
- * Generate outline only (for preview/debugging)
- */
-export async function generateOutlineOnly(rawContent, options = {}) {
-  return generateOutline(rawContent, options);
-}
-
-/**
  * Re-export utilities for testing
  */
 export { groupSlidesForPhase2 } from './generate-outline.js';

@@ -7,13 +7,11 @@
  *
  * Exports:
  * - generateDeckV2: Main entry point for deck generation
- * - generateOutlineOnly: For preview/debugging
  * - SLIDE_TYPE_CATALOG: For reference
  */
 
 export {
   generateDeckV2,
-  generateOutlineOnly,
   groupSlidesForPhase2,
   refineSlideGroup,
   generateSessionId,

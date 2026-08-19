@@ -2,8 +2,6 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { withErrorHandler } from '../../utils/http.js';
 import { handleAiVendors } from './ai/vendors.js';
 import { handleAiWizard } from './ai/wizard.js';
-import { handleAiWizardV2 } from './ai/wizard-v2.js';
-import { handleAiWizardV2Outline } from './ai/wizard-v2-outline.js';
 import { handleAiWizardV2Stream } from './ai/wizard-v2-stream.js';
 import { handleAiAppendSlides } from './ai/append-slides.js';
 import { handleAiRefineSection } from './ai/refine-section.js';
@@ -22,8 +20,6 @@ import { handleAiIterate } from './ai/iterate.js';
 const ROUTES = [
   { method: 'GET', pattern: '/api/ai/vendors', handler: handleAiVendors },
   { method: 'POST', pattern: '/api/ai/wizard', handler: handleAiWizard },
-  { method: 'POST', pattern: '/api/ai/wizard-v2', handler: handleAiWizardV2 },
-  { method: 'POST', pattern: '/api/ai/wizard-v2/outline', handler: handleAiWizardV2Outline },
   { method: 'POST', pattern: '/api/ai/wizard-v2/stream', handler: handleAiWizardV2Stream },
   { method: 'POST', pattern: '/api/ai/append-slides', handler: handleAiAppendSlides },
   { method: 'POST', pattern: '/api/ai/refine-section', handler: handleAiRefineSection },
